@@ -1,8 +1,6 @@
 BabylonHx
 =========
 
-Port of JavaScript/WebGL engine BabylonJS to Haxe programming language and OpenFL framework.
-
 BabylonHx is a direct port of BabylonJs engine to Haxe/OpenFL. 
 It supports (almost) all features of the original.
 
@@ -17,6 +15,8 @@ It supports (almost) all features of the original.
 </ul>
 
 And probably a few more things ...
+
+Visit http://babylonjs.com/ for more info about the engine.
 
 <b>Known bugs (major ones):</b>
 <ul>
