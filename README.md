@@ -21,7 +21,7 @@ And probably a few more things ...
 <b>Known bugs (major ones):</b>
 <ul>
   <li>There is a bug with lights, most noticable in 'Train' and 'Heart' demos.</li>
-  <li>Fix 'Train' scene (particles and camera attached to train don't work</li>
+  <li>Bug in 'Train' scene (particles and camera attached to train don't work</li>
 </ul>
 
 <b>TODO list</b>
