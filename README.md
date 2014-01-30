@@ -24,7 +24,7 @@ Visit http://babylonjs.com/ for more info about the engine.
   <li>Bug in 'Train' scene (particles and camera attached to train don't work</li>
 </ul>
 
-<b>TODO list</b>
+<b>TODO:</b>
 <ul>
   <li>Fix bug with lights</li>
   <li>Update 'Matrix' class to use Float32Array for JavaScript target</li>
