@@ -21,6 +21,7 @@ Visit http://babylonjs.com/ for more info about the engine.
 <b>Known bugs (major ones):</b>
 <ul>
   <li>There is a bug with lights, most noticable in 'Train' and 'Heart' demos.</li>
+  <li>Mesh.clone() doesn't work (Tools.deepCopy() should be fixed)</li>
   <li>Bug in 'Train' scene (particles and camera attached to train don't work</li>
 </ul>
 
