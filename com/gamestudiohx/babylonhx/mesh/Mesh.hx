@@ -347,6 +347,10 @@ class Mesh extends Node {
 		return this._vertexBuffers.get(kind).getData();
 	}
 	
+	public function getVertexBuffer(kind:String):VertexBuffer {
+        return this._vertexBuffers.get(kind);
+    }
+	
 	public function isVerticesDataPresent(kind:String):Bool {
 		if (this._vertexBuffers == null && this._delayInfo != null) {            
             return Lambda.indexOf(this._delayInfo, kind) != -1;
@@ -354,6 +358,21 @@ class Mesh extends Node {
 
         return this._vertexBuffers.get(kind) != null;
 	}
+	
+	public function getVerticesDataKinds():Array<String> {
+        var result:Array<String> = [];
+        if (this._vertexBuffers == null && this._delayInfo != null) {
+            for (kind in this._delayInfo) {
+                result.push(kind);
+            }
+        } else {
+            for (kind in this._vertexBuffers.keys()) {
+                result.push(kind);
+            }
+        }
+
+        return result;
+    }
 	
 	public function getTotalIndicies():Int {
 		return this._indices.length;
@@ -1058,6 +1077,94 @@ class Mesh extends Node {
         this._scene._physicsEngine._createLink(this, otherMesh, pivot1, pivot2);
     }*/
 	
+	// Geometric tools
+	public function convertToFlatShadedMesh() {
+        /// <summary>Update normals and vertices to get a flat shading rendering.</summary>
+        /// <summary>Warning: This may imply adding vertices to the mesh in order to get exactly 3 vertices per face</summary>
+
+        var kinds:Array<String> = this.getVerticesDataKinds();
+        var vbs:Map<String, VertexBuffer> = new Map();
+        var data:Map<String, Array<Float>> = new Map();
+        var newdata:Map<String, Array<Float>> = new Map();
+        var updatableNormals:Bool = false;
+		for(kindIndex in 0...kinds.length) {
+            var kind = kinds[kindIndex];
+
+            if (kind == VertexBuffer.NormalKind) {
+                updatableNormals = this.getVertexBuffer(kind).isUpdatable();
+                kinds.remove(kind);
+                continue;
+            }
+		}
+		for(kind in kinds) {
+            vbs.set(kind, this.getVertexBuffer(kind));
+            data.set(kind, vbs.get(kind).getData());
+            newdata.set(kind, []);
+        }
+
+        // Save previous submeshes
+        var previousSubmeshes:Array<SubMesh> = this.subMeshes.slice(0);
+
+        var indices:Array<Int> = this.getIndices();
+
+        // Generating unique vertices per face
+        for (index in 0...indices.length) {
+            var vertexIndex:Int = indices[index];
+
+            for (kindIndex in 0...kinds.length) {
+                var kind = kinds[kindIndex];
+                var stride = vbs.get(kind).getStrideSize();
+
+                for (offset in 0...stride) {
+                    newdata[kind].push(data[kind][vertexIndex * stride + offset]);
+                }
+            }
+        }
+
+        // Updating faces & normal
+        var normals:Array<Float> = [];
+        var positions = newdata[VertexBuffer.PositionKind];
+		var index:Int = 0;
+		while(index < indices.length) {
+            indices[index] = index;
+            indices[index + 1] = index + 1;
+            indices[index + 2] = index + 2;
+
+            var p1 = Vector3.FromArray(positions, index * 3);
+            var p2 = Vector3.FromArray(positions, (index + 1) * 3);
+            var p3 = Vector3.FromArray(positions, (index + 2) * 3);
+
+            var p1p2 = p1.subtract(p2);
+            var p3p2 = p3.subtract(p2);
+
+            var normal = Vector3.Normalize(Vector3.Cross(p1p2, p3p2));
+
+            // Store same normals for every vertex
+            for (localIndex in 0...3) {
+                normals.push(normal.x);
+                normals.push(normal.y);
+                normals.push(normal.z);
+            }
+			
+			index += 3;
+        }
+
+        this.setIndices(indices);
+        this.setVerticesData(normals, VertexBuffer.NormalKind, updatableNormals);
+
+        // Updating vertex buffers
+        for (kindIndex in 0...kinds.length) {
+            var kind:String = kinds[kindIndex];
+            this.setVerticesData(newdata.get(kind), kind, vbs.get(kind).isUpdatable());
+        }
+
+        // Updating submeshes
+        this.subMeshes = [];
+        for (submeshIndex in 0...previousSubmeshes.length) {
+            var previousOne:SubMesh = previousSubmeshes[submeshIndex];
+            var subMesh = new SubMesh(previousOne.materialIndex, previousOne.indexStart, previousOne.indexCount, previousOne.indexStart, previousOne.indexCount, this);
+        }
+    }
 	
 	// Statics
 	public static function CreateBox(name:String, size:Float, scene:Scene, updatable:Bool = false):Mesh {
