@@ -666,8 +666,9 @@ class SceneLoader {
 			scene.gravity = Vector3.FromArray(parsedData.gravity);
 			
 			// Fog
-			if (parsedData.fogMode != 0) {
-				scene.fogMode = parsedData.fogMode;
+			var fogMode : Null<Int> = parsedData.fogMode;
+			if (fogMode != null && fogMode != 0) {
+				scene.fogMode = fogMode;
 				scene.fogColor = Color3.FromArray(parsedData.fogColor);
 				scene.fogStart = parsedData.fogStart;
 				scene.fogEnd = parsedData.fogEnd;
