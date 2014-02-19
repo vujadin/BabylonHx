@@ -4,6 +4,9 @@ BabylonHx
 BabylonHx is a direct port of BabylonJs engine to Haxe/OpenFL. 
 It supports (almost) all features of the original.
 
+<b>IMPORTANT:</b> Use this settings in your application.xml file for mobile targets to work (thanks @labe-me):<br/>
+<b><i>&lt;window require-shaders="true" hardware="true" depth-buffer="true" /&gt;</b></i>
+
 <i>Not supported features:</i>
 
 <ul>
