@@ -227,9 +227,9 @@ class ParticleSystem {
         // Update current
         this._alive = this.particles.length > 0;
 		
-		var index:Int = 0;
+		var index:Int = -1;
 		
-		while(index++ < this.particles.length-1) {
+		while(++index < this.particles.length) {
 			particle = this.particles[index];						
 			particle.age += this._scaledUpdateSpeed;
 
