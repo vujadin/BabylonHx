@@ -490,7 +490,7 @@ class SceneLoader {
         return mesh;
     }
 	
-	public static function isDescendantOf(mesh:Mesh, name:String, hierarchyIds:Array<String>):Bool {
+	public static function isDescendantOf(mesh:Dynamic, name:String, hierarchyIds:Array<String>):Bool {
         if (mesh.name == name) {
             hierarchyIds.push(mesh.id);
             return true;
