@@ -685,6 +685,7 @@ class Engine {
         switch (mode) {
             case Engine.ALPHA_DISABLE:
                 this.setDepthWrite(true);
+		GL.blendFuncSeparate(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ZERO, GL.ONE);
                 GL.disable(GL.BLEND);
 				
             case Engine.ALPHA_COMBINE:
