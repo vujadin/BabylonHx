@@ -4,35 +4,35 @@ BabylonHx
 BabylonHx is a direct port of BabylonJs engine to Haxe/OpenFL. 
 It supports (almost) all features of the original.
 
-<b>IMPORTANT:</b> Use this settings in your application.xml file for mobile targets to work (thanks @labe-me):<br/>
-<b><i>&lt;window require-shaders="true" hardware="true" depth-buffer="true" /&gt;</b></i>
+**IMPORTANT:** Use this settings in your application.xml file for mobile targets to work (thanks @labe-me):<br/>
+***&lt;window require-shaders="true" hardware="true" depth-buffer="true" /&gt;***
 
-<i>Not supported features:</i>
+*Not supported features:*
 
-<ul>
-  <li>Video textures</li>
-  <li>Image flipping (images have to be flipped by 'hand')</li>
-  <li>Incremental loading (because of OpenFL and its way of handling assets)</li>
-  <li>Support for drag'n'drop</li>
-  <li>Physics</li>
-</ul>
+
+  * Video textures
+  * Image flipping (images have to be flipped by 'hand')
+  * Incremental loading (because of OpenFL and its way of handling assets)
+  * Support for drag'n'drop
+  * Physics
+
 
 And probably a few more things ...
 
 Visit http://babylonjs.com/ for more info about the engine.
 
-<b>Known bugs (major ones):</b>
-<ul>
-  <li>There is a bug with lights, most noticable in 'Train' and 'Heart' demos.</li>
-  <li>Mesh.clone() doesn't work (Tools.deepCopy() should be fixed)</li>
-  <li>Bug in 'Train' scene (particles and camera attached to train don't work</li>
-</ul>
+**Known bugs (major ones):**
 
-<b>TODO:</b>
-<ul>
-  <li>Fix bug with lights</li>
-  <li>Update 'Matrix' class to use Float32Array for JavaScript target</li>
-  <li>Code refactor - remove reflections from critical places and general code cleanup</li>
-  <li>Keep up with BabylonJs (implement all stuff that was added/fixed between versions 1.8.0 and 1.8.5)</li>
-</ul>
+  * There is a bug with lights, most noticable in 'Train' and 'Heart' demos.
+  * Mesh.clone() doesn't work (Tools.deepCopy() should be fixed)
+  * Bug in 'Train' scene (particles and camera attached to train don't work
+
+
+**TODO:**
+
+  * Fix bug with lights
+  * ~~Update 'Matrix' class to use Float32Array for JavaScript target~~
+  * Code refactor - remove reflections from critical places and general code cleanup
+  * Keep up with BabylonJs (implement all stuff that was added/fixed between versions 1.8.0 and 1.8.5)
+
 
