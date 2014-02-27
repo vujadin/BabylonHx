@@ -11,18 +11,18 @@ import openfl.utils.Float32Array;
 
 class Matrix {
 
-	//#if html5
-	//public var m:Float32Array;
-	//#else
+	#if html5
+	public var m:Float32Array;
+	#else
 	public var m:Array<Float>;	
-	//#end
+	#end
 
 	public function new() {
-		//#if html5
-		//m = new Float32Array(16);
-		//#else
+		#if html5
+		m = new Float32Array(16);
+		#else
 		m = [];
-		//#end
+		#end
 	}
 
 	inline public function isIdentity():Bool {
@@ -52,7 +52,7 @@ class Matrix {
             (this.m[3] * (((this.m[4] * temp3) - (this.m[5] * temp5)) + (this.m[6] * temp6))));
 	}
 	
-	inline public function toArray():Array<Float> {
+	inline public function toArray(): #if html5 Float32Array #else Array<Float> #end {
 		return this.m;
 	}
 	
@@ -141,29 +141,7 @@ class Matrix {
 		this.multiplyToArray(other, result.m, 0);
 	}
 	
-	inline public function multiplyToArray(other:Matrix, result:Array<Float>, offset:Int):Array<Float> {
-		// old from 1.8.0
-		/*result[offset] = this.m[0] * other.m[0] + this.m[1] * other.m[4] + this.m[2] * other.m[8] + this.m[3] * other.m[12];
-        result[offset + 1] = this.m[0] * other.m[1] + this.m[1] * other.m[5] + this.m[2] * other.m[9] + this.m[3] * other.m[13];
-        result[offset + 2] = this.m[0] * other.m[2] + this.m[1] * other.m[6] + this.m[2] * other.m[10] + this.m[3] * other.m[14];
-        result[offset + 3] = this.m[0] * other.m[3] + this.m[1] * other.m[7] + this.m[2] * other.m[11] + this.m[3] * other.m[15];
-
-        result[offset + 4] = this.m[4] * other.m[0] + this.m[5] * other.m[4] + this.m[6] * other.m[8] + this.m[7] * other.m[12];
-        result[offset + 5] = this.m[4] * other.m[1] + this.m[5] * other.m[5] + this.m[6] * other.m[9] + this.m[7] * other.m[13];
-        result[offset + 6] = this.m[4] * other.m[2] + this.m[5] * other.m[6] + this.m[6] * other.m[10] + this.m[7] * other.m[14];
-        result[offset + 7] = this.m[4] * other.m[3] + this.m[5] * other.m[7] + this.m[6] * other.m[11] + this.m[7] * other.m[15];
-
-        result[offset + 8] = this.m[8] * other.m[0] + this.m[9] * other.m[4] + this.m[10] * other.m[8] + this.m[11] * other.m[12];
-        result[offset + 9] = this.m[8] * other.m[1] + this.m[9] * other.m[5] + this.m[10] * other.m[9] + this.m[11] * other.m[13];
-        result[offset + 10] = this.m[8] * other.m[2] + this.m[9] * other.m[6] + this.m[10] * other.m[10] + this.m[11] * other.m[14];
-        result[offset + 11] = this.m[8] * other.m[3] + this.m[9] * other.m[7] + this.m[10] * other.m[11] + this.m[11] * other.m[15];
-
-        result[offset + 12] = this.m[12] * other.m[0] + this.m[13] * other.m[4] + this.m[14] * other.m[8] + this.m[15] * other.m[12];
-        result[offset + 13] = this.m[12] * other.m[1] + this.m[13] * other.m[5] + this.m[14] * other.m[9] + this.m[15] * other.m[13];
-        result[offset + 14] = this.m[12] * other.m[2] + this.m[13] * other.m[6] + this.m[14] * other.m[10] + this.m[15] * other.m[14];
-        result[offset + 15] = this.m[12] * other.m[3] + this.m[13] * other.m[7] + this.m[14] * other.m[11] + this.m[15] * other.m[15];*/
-		
-		// new in 1.8.5
+	inline public function multiplyToArray(other:Matrix, result: #if html5 Float32Array #else Array<Float> #end , offset:Int): #if html5 Float32Array #else Array<Float> #end {
 		var tm0 = this.m[0];
         var tm1 = this.m[1];
         var tm2 = this.m[2];

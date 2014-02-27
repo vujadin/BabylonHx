@@ -35,6 +35,7 @@ import openfl.utils.Float32Array;
 import openfl.utils.Int16Array;
 import openfl.utils.Int32Array;
 import openfl.utils.UInt8Array;
+
 #if cpp
 import sys.io.File;
 #end
@@ -595,15 +596,15 @@ class Engine {
         this._currentEffect = effect;
     }
 
-    inline public function setMatrices(uniform:GLUniformLocation = null, matrices:Array<Float> /*Float32Array*/) {
+    inline public function setMatrices(uniform:GLUniformLocation = null, matrices: #if html5 Float32Array #else Array<Float> #end ) {
         if (uniform != null) {
-			GL.uniformMatrix4fv(uniform, false, new Float32Array(matrices));
+			GL.uniformMatrix4fv(uniform, false, #if html5 matrices #else new Float32Array(matrices) #end );
 		}
     }
 
     inline public function setMatrix(uniform:GLUniformLocation = null, matrix:Matrix) {
         if (uniform != null) {
-			GL.uniformMatrix4fv(uniform, false, new Float32Array(matrix.toArray()));
+			GL.uniformMatrix4fv(uniform, false, #if html5 matrix.toArray() #else new Float32Array(matrix.toArray()) #end );
 		}
     }
     

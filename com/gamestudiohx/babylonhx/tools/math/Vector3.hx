@@ -180,7 +180,7 @@ class Vector3 {
         return new Vector3(array[offset], array[offset + 1], array[offset + 2]);
 	}
 	
-	inline public static function FromArrayToRef(array:Array<Float>, offset:Int = 0, result:Vector3) {
+	inline public static function FromArrayToRef(array: #if html5 Float32Array #else Array<Float> #end , offset:Int = 0, result:Vector3) {
 		result.x = array[offset];
         result.y = array[offset + 1];
         result.z = array[offset + 2];

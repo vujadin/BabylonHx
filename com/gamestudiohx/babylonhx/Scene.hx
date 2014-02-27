@@ -34,6 +34,7 @@ import com.gamestudiohx.babylonhx.rendering.RenderingManager;
 import com.gamestudiohx.babylonhx.postprocess.PostProcessManager;
 import flash.geom.Rectangle;
 import flash.Lib;
+import openfl.gl.GL;
 
 /**
  * Port of BabylonJs project - http://www.babylonjs.com/
@@ -858,6 +859,10 @@ class Scene {
         }		
 
         this._toBeDisposed.reset();
+		
+		// TESTING: clearing GL state to allow mixing with OpenFL display list
+		GL.disable(GL.CULL_FACE);
+		GL.bindBuffer (GL.ARRAY_BUFFER, null);		
 
         this._lastFrameDuration = Lib.getTimer() - startDate;
 	}
