@@ -283,6 +283,8 @@ class SceneLoader {
                     data = Matrix.FromArray(key.values);
                 
                 case Animation.ANIMATIONTYPE_VECTOR3:
+                    data = Vector3.FromArray(key.values);
+
                 default:
                     data = Vector3.FromArray(key.values);
                 
