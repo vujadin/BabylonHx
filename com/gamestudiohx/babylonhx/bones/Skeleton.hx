@@ -18,7 +18,7 @@ class Skeleton {
 	public var _scene:Scene;
 	public var _isDirty:Bool;
 	
-	private var _transformMatrices:Array<Float>;// Float32Array
+	private var _transformMatrices: #if html5 Float32Array #else Array<Float> #end ;
 	
 	private var _animatables:Array<Dynamic>; // Array<Bone>;
 	
@@ -39,7 +39,7 @@ class Skeleton {
         this._isDirty = true;
     }
 
-	public function getTransformMatrices():Array<Float> /*Float32Array*/ {
+	public function getTransformMatrices(): #if html5 Float32Array #else Array<Float> #end {
 		return this._transformMatrices;
 	}
 	
@@ -48,8 +48,8 @@ class Skeleton {
             return;
         }
 
-        if (this._transformMatrices == null/* || this._transformMatrices.length != 16 * this.bones.length*/) {
-            this._transformMatrices = [];    // new Float32Array(16 * this.bones.length);
+        if (this._transformMatrices == null #if html5 || this._transformMatrices.length != 16 * this.bones.length #end ) {
+            this._transformMatrices = #if html5 new Float32Array(16 * this.bones.length) #else [] #end ;
         }
 
         for (index in 0...this.bones.length) {

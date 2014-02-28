@@ -278,7 +278,7 @@ class Effect {
 		}
     }
 	
-	inline public function setMatrices(uniformName:String, matrices:Array<Float> /*Float32Array*/) {
+	inline public function setMatrices(uniformName:String, matrices: #if html5 Float32Array #else Array<Float> #end ) {
         this._engine.setMatrices(this.getUniform(uniformName), matrices);
     }
 
