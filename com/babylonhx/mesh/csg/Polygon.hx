@@ -18,20 +18,20 @@ class Polygon {
 	public var plane:Plane;
 	
 
-	public function new(vertices:Vertex[], shared:Dynamic) {
+	public function new(vertices:Array<Vertex>, shared:Dynamic) {
 		this.vertices = vertices;
 		this.shared = shared;
 		this.plane = Plane.FromPoints(vertices[0].pos, vertices[1].pos, vertices[2].pos);
-
 	}
 
 	public function clone():Polygon {
-		var vertices = this.vertices.map(function(v) { v.clone(); });
+		var vertices = this.vertices.copy();
 		return new Polygon(vertices, this.shared);
 	}
 
 	public function flip() {
-		this.vertices.reverse().map(function(v) { v.flip(); });
+		this.vertices.reverse();
+		this.vertices.map(function(v) { v.flip(); } );
 		this.plane.flip();
 	}
 	

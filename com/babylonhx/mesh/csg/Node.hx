@@ -16,6 +16,7 @@ class Node {
 	private var front:Node = null;
 	private var back:Node = null;
 	private var polygons:Array<Polygon> = [];
+	
 
 	public function new (?polygons:Array<Polygon>) {
 		if (polygons != null) {
@@ -28,7 +29,7 @@ class Node {
 		node.plane = this.plane.clone();
 		node.front = this.front.clone();
 		node.back = this.back.clone();
-		node.polygons = this.polygons.map(function(p) { p.clone(); });
+		node.polygons = this.polygons.copy();
 		return node;
 	}
 
@@ -57,7 +58,8 @@ class Node {
 		if (this.plane == null) {
 			return polygons.slice(0);
 		}
-		var _front:Array<Polygon> = [], _back:Array<Polygon> = [];
+		var _front:Array<Polygon> = [];
+		var _back:Array<Polygon> = [];
 		for (i in 0...polygons.length) {
 			this.plane.splitPolygon(polygons[i], _front, _back, _front, _back);
 		}
@@ -76,8 +78,12 @@ class Node {
 	// `bsp`.
 	public function clipTo(bsp:Node):Void {
 		this.polygons = bsp.clipPolygons(this.polygons);
-		if (this.front != null) this.front.clipTo(bsp);
-		if (this.back != null) this.back.clipTo(bsp);
+		if (this.front != null) {
+			this.front.clipTo(bsp);
+		}
+		if (this.back != null) {
+			this.back.clipTo(bsp);
+		}
 	}
 
 	// Return a list of all polygons in this BSP tree.
@@ -97,17 +103,18 @@ class Node {
 			return;
 		}
 		
-		if (this.plane != null) {
+		if (this.plane == null) {
 			this.plane = polygons[0].plane.clone();
 		}
 		
-		var _front:Array<Polygon> = [], _back:Array<Polygon> = [];
+		var _front:Array<Polygon> = [];
+		var _back:Array<Polygon> = [];
 		for (i in 0...polygons.length) {
 			this.plane.splitPolygon(polygons[i], this.polygons, this.polygons, _front, _back);
 		}
 		
 		if (_front.length > 0) {
-			if (this.front = null) {
+			if (this.front == null) {
 				this.front = new Node();
 			}
 			this.front.build(_front);

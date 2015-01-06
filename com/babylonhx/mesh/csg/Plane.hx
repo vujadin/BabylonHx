@@ -10,6 +10,11 @@ import com.babylonhx.math.Vector3;
 // Represents a plane in 3D space.
 class Plane {
 	
+	static var COPLANAR:Int = 0;
+	static var FRONT:Int = 1;
+	static var BACK:Int = 2;
+	static var SPANNING:Int = 3;
+	
 	// `BABYLON.CSG.Plane.EPSILON` is the tolerance used by `splitPolygon()` to decide if a
 	// point is on the plane.
 	public static var EPSILON:Float = 1e-5;
@@ -26,11 +31,11 @@ class Plane {
 	public static function FromPoints(a:Vector3, b:Vector3, c:Vector3):Plane {
 		var v0 = c.subtract(a);
 		var v1 = b.subtract(a);
-
+		
 		if (v0.lengthSquared() == 0 || v1.lengthSquared() == 0) {
 			return null;
 		}
-
+		
 		var n = Vector3.Normalize(Vector3.Cross(v0, v1));
 		return new Plane(n, Vector3.Dot(n, a));
 	}
@@ -50,62 +55,59 @@ class Plane {
 	// respect to this plane. Polygons in front or in back of this plane go into
 	// either `front` or `back`.
 	public function splitPolygon(polygon:Polygon, coplanarFront:Array<Polygon>, coplanarBack:Array<Polygon>, front:Array<Polygon>, back:Array<Polygon>):Void {
-		var COPLANAR = 0;
-		var FRONT = 1;
-		var BACK = 2;
-		var SPANNING = 3;
-
 		// Classify each point as well as the entire polygon into one of the above
 		// four classes.
 		var polygonType:Int = 0;
 		var types:Array<Int> = [];
 		for (i in 0...polygon.vertices.length) {
 			var t = Vector3.Dot(this.normal, polygon.vertices[i].pos) - this.w;
-			var type = (t < -Plane.EPSILON) ? BACK :(t > Plane.EPSILON) ? FRONT : COPLANAR;
+			var type = (t < -Plane.EPSILON) ? Plane.BACK :(t > Plane.EPSILON) ? Plane.FRONT : Plane.COPLANAR;
 			polygonType |= type;
 			types.push(type);
 		}
-
+		
 		// Put the polygon in the correct list, splitting it when necessary.
 		switch (polygonType) {
-			case COPLANAR:
+			case Plane.COPLANAR:
 				(Vector3.Dot(this.normal, polygon.plane.normal) > 0 ? coplanarFront : coplanarBack).push(polygon);
 				
-			case FRONT:
+			case Plane.FRONT:
 				front.push(polygon);
 				
-			case BACK:
+			case Plane.BACK:
 				back.push(polygon);
 				
-			case SPANNING:
-				var f:Array<Vertex> = [], b:Array<Vertex> = [];
+			case Plane.SPANNING:
+				var f:Array<Vertex> = [];
+				var b:Array<Vertex> = [];
 				for (i in 0...polygon.vertices.length) {
 					var j = (i + 1) % polygon.vertices.length;
 					var ti = types[i], tj = types[j];
 					var vi = polygon.vertices[i], vj = polygon.vertices[j];
-					if (ti != BACK) f.push(vi);
-					if (ti != FRONT) b.push(ti != BACK ? vi.clone() : vi);
-					if ((ti | tj) == SPANNING) {
-						t = (this.w - Vector3.Dot(this.normal, vi.pos)) / Vector3.Dot(this.normal, vj.pos.subtract(vi.pos));
+					if (ti != Plane.BACK) f.push(vi);
+					if (ti != Plane.FRONT) b.push(ti != BACK ? vi.clone() : vi);
+					if ((ti | tj) == Plane.SPANNING) {
+						var t = (this.w - Vector3.Dot(this.normal, vi.pos)) / Vector3.Dot(this.normal, vj.pos.subtract(vi.pos));
 						var v = vi.interpolate(vj, t);
 						f.push(v);
 						b.push(v.clone());
 					}
 				}
+				
 				if (f.length >= 3) {
 					var poly = new Polygon(f, polygon.shared);
-
+					
 					if (poly.plane != null)
 						front.push(poly);
 				}
-
+				
 				if (b.length >= 3) {
-					poly = new Polygon(b, polygon.shared);
-
+					var poly = new Polygon(b, polygon.shared);
+					
 					if (poly.plane != null)
 						back.push(poly);
 				}
-
+				
 		}
 	}
 	
