@@ -168,8 +168,6 @@ class ParticleSystem implements IDisposable {
 				if (particle.age >= particle.lifeTime) { // Recycle
 					particles.splice(index, 1);
 					this._stockParticles.push(particle);
-					index--;
-					continue;
 				}
 				else {
 					particle.colorStep.scaleToRef(this._scaledUpdateSpeed, this._scaledColorStep);
@@ -186,9 +184,8 @@ class ParticleSystem implements IDisposable {
 					
 					this.gravity.scaleToRef(this._scaledUpdateSpeed, this._scaledGravity);
 					particle.direction.addInPlace(this._scaledGravity);
+					index++;
 				}
-				
-				index++;
 			}
 		}
 	}
