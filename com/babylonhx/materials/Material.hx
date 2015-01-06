@@ -71,9 +71,9 @@ class Material {
 
 	public function new(name:String, scene:Scene, doNotAdd:Bool = false/*?doNotAdd:Bool*/) {
 		this.id = name;
-
+		
 		this._scene = scene;
-
+		
 		if (!doNotAdd) {
 			scene.materials.push(this);
 		}
@@ -109,7 +109,7 @@ class Material {
 
 	public function _preBind():Void {
 		var engine = this._scene.getEngine();
-
+		
 		engine.enableEffect(this._effect);
 		engine.setState(this.backFaceCulling);
 	}
@@ -131,13 +131,13 @@ class Material {
 	public function dispose(forceDisposeEffect:Bool = false/*?forceDisposeEffect:Bool*/) {
 		// Remove from scene
 		this._scene.materials.remove(this);
-
+		
 		// Shader are kept in cache for further use but we can get rid of this by using forceDisposeEffect
 		if (forceDisposeEffect && this._effect != null) {
 			this._scene.getEngine()._releaseEffect(this._effect);
 			this._effect = null;
 		}
-
+		
 		// Callback
 		if (this.onDispose != null) {
 			this.onDispose();

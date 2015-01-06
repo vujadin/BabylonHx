@@ -169,6 +169,7 @@ class SubMesh {
 			var currentIntersectInfo = ray.intersectsTriangle(p0, p1, p2);
 			
 			if (currentIntersectInfo != null) {
+				if(currentIntersectInfo.distance < 0 ) continue;
 				if (fastCheck || intersectInfo == null || currentIntersectInfo.distance < intersectInfo.distance) {
 					intersectInfo = currentIntersectInfo;
 					intersectInfo.faceId = Std.int(index / 3);

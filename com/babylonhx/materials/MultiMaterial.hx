@@ -14,7 +14,7 @@ class MultiMaterial extends Material {
 
 	public function new(name:String, scene:Scene) {
 		super(name, scene, true);
-
+		
 		scene.multiMaterials.push(this);
 	}
 
@@ -23,7 +23,7 @@ class MultiMaterial extends Material {
 		if (index < 0 || index >= this.subMaterials.length) {
 			return this.getScene().defaultMaterial;
 		}
-
+		
 		return this.subMaterials[index];
 	}
 
@@ -37,7 +37,7 @@ class MultiMaterial extends Material {
 				}
 			}
 		}
-
+		
 		return true;
 	}
 	
