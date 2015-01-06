@@ -329,14 +329,11 @@ class CSG {
 			mesh.subMeshes = [];
 			
 			for (m in subMesh_dict.keys()) {
-				trace(m);
 				materialMaxIndex = -1;
-				for (sm in subMesh_dict.get(m)) {
-					subMesh_obj = subMesh_dict[m][sm];
-					if(subMesh_obj != null) {
-						SubMesh.CreateFromIndices(subMesh_obj.materialIndex + materialIndexOffset, subMesh_obj.indexStart, Std.int(subMesh_obj.indexEnd - subMesh_obj.indexStart + 1), mesh);
-						materialMaxIndex = Std.int(Math.max(subMesh_obj.materialIndex, materialMaxIndex));
-					}
+				for (sm in subMesh_dict.get(m).keys()) {
+					subMesh_obj = subMesh_dict[m][sm];					
+					SubMesh.CreateFromIndices(subMesh_obj.materialIndex + materialIndexOffset, subMesh_obj.indexStart, Std.int(subMesh_obj.indexEnd - subMesh_obj.indexStart + 1), mesh);
+					materialMaxIndex = Std.int(Math.max(subMesh_obj.materialIndex, materialMaxIndex));
 				}
 				materialIndexOffset += ++materialMaxIndex;
 			}
