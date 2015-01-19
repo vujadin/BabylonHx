@@ -5,7 +5,7 @@ package com.babylonhx.mesh.primitives;
  * @author Krtolica Vujadin
  */
 
-class TorusKnot extends _Primitive {
+@:expose('BABYLON.TorusKnot') class TorusKnot extends _Primitive {
 	
 	// Members
 	public var radius:Float;

@@ -7,7 +7,7 @@ import com.babylonhx.math.Matrix;
  * @author Krtolica Vujadin
  */
 
-class CubeTexture extends Texture {
+@:expose('BABYLON.CubeTexture') class CubeTexture extends Texture {
 	
 	private var _extensions:Array<String>;
 	private var _textureMatrix:Matrix;

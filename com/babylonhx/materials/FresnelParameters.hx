@@ -7,7 +7,7 @@ import com.babylonhx.math.Color3;
  * @author Krtolica Vujadin
  */
 
-class FresnelParameters {
+@:expose('BABYLON.FresnelParameters') class FresnelParameters {
 	
 	public var isEnabled:Bool = true;
 	public var leftColor:Color3 = Color3.White();

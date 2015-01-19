@@ -8,7 +8,7 @@ import com.babylonhx.math.Vector2;
  * @author Krtolica Vujadin
  */
 
-class OculusDistortionCorrectionPostProcess extends PostProcess {
+@:expose('BABYLON.OculusDistortionCorrectionPostProcess') class OculusDistortionCorrectionPostProcess extends PostProcess {
 	
 	public var aspectRatio:Float;
 

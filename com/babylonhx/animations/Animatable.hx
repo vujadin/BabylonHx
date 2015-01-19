@@ -5,7 +5,7 @@ package com.babylonhx.animations;
 * @author Krtolica Vujadin
 */
 
-class Animatable {
+@:expose('BABYLON.Animatable') class Animatable {
 	
 	private var _localDelayOffset:Float = -1;
 	private var _pausedDelay:Float = -1;

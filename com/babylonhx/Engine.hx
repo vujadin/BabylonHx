@@ -77,7 +77,7 @@ import js.Browser;
  * @author Krtolica Vujadin
  */
 
-class Engine {
+@:expose('BABYLON.Engine') class Engine {
 	
 	// Const statics
 	public static var ALPHA_DISABLE:Int = 0;

@@ -12,7 +12,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
  * @author Krtolica Vujadin
  */
 
-class OimoPlugin implements IPhysicsEnginePlugin {
+@:expose('BABYLON.OimoPlugin') class OimoPlugin implements IPhysicsEnginePlugin {
 	
 	//private var _world:World;
 	//private var _registeredMeshes:Array<Dynamic> = [];

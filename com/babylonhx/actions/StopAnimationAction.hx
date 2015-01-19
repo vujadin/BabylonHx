@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-class StopAnimationAction extends Action {
+@:expose('BABYLON.StopAnimationAction') class StopAnimationAction extends Action {
 	
 	private var _target:Dynamic;
 	

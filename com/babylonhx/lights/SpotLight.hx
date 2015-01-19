@@ -9,7 +9,7 @@ import com.babylonhx.math.Matrix;
  * @author Krtolica Vujadin
  */
 
-class SpotLight extends Light {
+@:expose('BABYLON.SpotLight') class SpotLight extends Light {
 
 	private var _transformedDirection:Vector3;
 	private var _transformedPosition:Vector3;

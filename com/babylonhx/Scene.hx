@@ -49,7 +49,7 @@ import haxe.Timer;
  * @author Krtolica Vujadin
  */
 
-class Scene {
+@:expose('BABYLON.Scene') class Scene {
 	
 	// Statics
 	public static var FOGMODE_NONE:Int = 0;

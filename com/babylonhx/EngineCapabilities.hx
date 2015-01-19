@@ -5,7 +5,7 @@ package com.babylonhx;
  * @author Krtolica Vujadin
  */
 
-class EngineCapabilities {
+@:expose('BABYLON.EngineCapabilities') class EngineCapabilities {
 	
 	public var maxTexturesImageUnits:Int;
 	public var maxTextureSize:Int;

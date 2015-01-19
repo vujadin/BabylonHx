@@ -7,7 +7,7 @@ import com.babylonhx.math.Color3;
  * @author Krtolica Vujadin
  */
 
-class GrassProceduralTexture extends ProceduralTexture {
+@:expose('BABYLON.GrassProceduralTexture') class GrassProceduralTexture extends ProceduralTexture {
 	
 	private var _grassColors:Array<Color3>;
 	private var _herb1:Color3 = new Color3(0.29, 0.38, 0.02);

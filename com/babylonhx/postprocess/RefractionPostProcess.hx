@@ -10,7 +10,7 @@ import com.babylonhx.materials.Effect;
  * @author Krtolica Vujadin
  */
 
-class RefractionPostProcess extends PostProcess {
+@:expose('BABYLON.RefractionPostProcess') class RefractionPostProcess extends PostProcess {
 	
 	public var color:Color3;
 	public var depth:Float;

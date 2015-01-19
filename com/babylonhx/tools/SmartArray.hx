@@ -5,7 +5,7 @@ package com.babylonhx.tools;
  * @author Krtolica Vujadin
  */
 
-class SmartArray {
+@:expose('BABYLON.SmartArray') class SmartArray {
 	
 	private static var _GlobalId:Int = 0;
 	

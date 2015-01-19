@@ -5,7 +5,7 @@ package com.babylonhx.tools.internals ;
  * @author Krtolica Vujadin
  */
 
-class AndOrNotEvaluator {
+@:expose('BABYLON.AndOrNotEvaluator') class AndOrNotEvaluator {
 	
 	public static function Eval(query:String, evaluateCallback:String->Bool):Bool {
 		var regex:EReg = ~/\([^\(\)]*\)/g;

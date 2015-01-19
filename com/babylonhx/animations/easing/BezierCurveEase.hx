@@ -7,7 +7,7 @@ import com.babylonhx.math.BezierCurve;
  * @author Krtolica Vujadin
  */
 
-class BezierCurveEase extends EasingFunction {
+@:expose('BABYLON.BezierCurveEase') class BezierCurveEase extends EasingFunction {
 	
 	public var x1:Float = 0;
 	public var x2:Float = 1;

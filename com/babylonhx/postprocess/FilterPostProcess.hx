@@ -8,12 +8,12 @@ import com.babylonhx.math.Matrix;
  * @author Krtolica Vujadin
  */
 
-class FilterPostProcess extends PostProcess {
+@:expose('BABYLON.FilterPostProcess') class FilterPostProcess extends PostProcess {
 	
 	public var kernelMatrix:Matrix;
 	
 	
-	public function new(name:String, kernelMatrix:Matrix, ratio:Float, camera?:Camera, ?samplingMode:Float, ?engine:Engine, reusable:Bool = false/*?reusable:Bool*/) {
+	public function new(name:String, kernelMatrix:Matrix, ratio:Float, ?camera:Camera, ?samplingMode:Float, ?engine:Engine, reusable:Bool = false/*?reusable:Bool*/) {
 		super(name, "filter", ["kernelMatrix"], null, ratio, camera, samplingMode, engine, reusable);
 
 		this.kernelMatrix = kernelMatrix;

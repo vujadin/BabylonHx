@@ -7,7 +7,7 @@ import lime.utils.UInt8Array;
  * @author Krtolica Vujadin
  */
 
-class TGATools {
+@:expose('BABYLON.TGATools') class TGATools {
 
 	private static var _TYPE_NO_DATA:Int = 0;
 	private static var _TYPE_INDEXED:Int = 1;

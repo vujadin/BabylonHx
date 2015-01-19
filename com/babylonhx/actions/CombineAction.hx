@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-class CombineAction extends Action {
+@:expose('BABYLON.CombineAction') class CombineAction extends Action {
 	
 	public var children:Array<Action> = [];
 	

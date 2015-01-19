@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-class ValueCondition extends Condition {
+@:expose('BABYLON.ValueCondition') class ValueCondition extends Condition {
 	
 	// Statics
 	private static var IsEqual:Int = 0;

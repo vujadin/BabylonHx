@@ -11,7 +11,7 @@ import com.babylonhx.math.Vector3;
  * @author Krtolica Vujadin
  */
 
-class HemisphericLight extends Light {
+@:expose('BABYLON.HemisphericLight') class HemisphericLight extends Light {
 	
 	public var groundColor = new Color3(0.0, 0.0, 0.0);
 	public var direction:Vector3;

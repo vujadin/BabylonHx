@@ -7,7 +7,7 @@ import com.babylonhx.math.Color3;
  * @author Krtolica Vujadin
  */
 
-class MarbleProceduralTexture extends ProceduralTexture {
+@:expose('BABYLON.MarbleProceduralTexture') class MarbleProceduralTexture extends ProceduralTexture {
 	
 	private var _numberOfTilesHeight:Int = 3;
 	private var _numberOfTilesWidth:Int = 3;

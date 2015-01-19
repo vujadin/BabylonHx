@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-class PredicateCondition extends Condition {
+@:expose('BABYLON.PredicateCondition') class PredicateCondition extends Condition {
 	
 	// Members
 	public var predicate:Void->Bool;

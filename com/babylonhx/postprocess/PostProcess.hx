@@ -22,7 +22,7 @@ import snow.render.opengl.GLTexture;
  * @author Krtolica Vujadin
  */
 
-class PostProcess {
+@:expose('BABYLON.PostProcess') class PostProcess {
 	
 	public var name:String;
 	

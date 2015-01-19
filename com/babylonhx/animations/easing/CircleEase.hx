@@ -5,7 +5,7 @@ package com.babylonhx.animations.easing;
  * @author Krtolica Vujadin
  */
 
-class CircleEase extends EasingFunction {
+@:expose('BABYLON.CircleEase') class CircleEase extends EasingFunction {
 	
 	override public function easeInCore(gradient:Float):Float {
 		gradient = Math.max(0, Math.min(1, gradient));

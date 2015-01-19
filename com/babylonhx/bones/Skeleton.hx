@@ -10,7 +10,7 @@ import openfl.utils.Float32Array;
 * @author Krtolica Vujadin
 */
 
-class Skeleton {
+@:expose('BABYLON.Skeleton') class Skeleton {
 	
 	public var id:String;
 	public var name:String;

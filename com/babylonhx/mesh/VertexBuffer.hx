@@ -16,7 +16,7 @@ import snow.utils.Float32Array;
  * @author Krtolica Vujadin
  */
 
-class VertexBuffer {
+@:expose('BABYLON.VertexBuffer') class VertexBuffer {
 	
 	// Enums
 	public static var PositionKind:String = "position";

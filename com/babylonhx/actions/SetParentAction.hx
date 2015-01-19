@@ -7,7 +7,7 @@ import com.babylonhx.math.Vector3;
  * @author Krtolica Vujadin
  */
 
-class SetParentAction extends Action {
+@:expose('BABYLON.SetParentAction') class SetParentAction extends Action {
 	
 	private var _parent:Dynamic;
 	private var _target:Dynamic;

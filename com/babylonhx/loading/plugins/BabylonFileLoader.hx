@@ -78,7 +78,7 @@ typedef ISceneLoaderPlugin = {
 	var load:Scene->String->String->Bool;
 }
 
-class BabylonFileLoader {
+@:expose('BABYLON.BabylonFileLoader') class BabylonFileLoader {
 	
 	public static var plugin(get, never):ISceneLoaderPlugin;
 	private static function get_plugin():ISceneLoaderPlugin {

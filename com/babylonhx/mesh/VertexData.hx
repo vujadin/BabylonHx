@@ -19,7 +19,7 @@ import snow.utils.UInt8Array;
  * @author Krtolica Vujadin
  */
 
-class VertexData {
+@:expose('BABYLON.VertexData') class VertexData {
 	
 	public var positions:Array<Float>;
 	public var normals:Array<Float>;

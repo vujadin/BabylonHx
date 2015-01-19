@@ -4,7 +4,7 @@ package com.babylonhx.collisions;
  * ...
  * @author Krtolica Vujadin
  */
-class IntersectionInfo {
+@:expose('BABYLON.IntersectionInfo') class IntersectionInfo {
 	
 	public var faceId:Int = 0;
 	public var bu:Float;

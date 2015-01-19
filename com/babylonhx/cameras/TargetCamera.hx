@@ -10,7 +10,7 @@ import com.babylonhx.tools.Tools;
 * @author Krtolica Vujadin
 */
 
-class TargetCamera extends Camera {
+@:expose('BABYLON.TargetCamera') class TargetCamera extends Camera {
 
 	public var cameraDirection:Vector3 = new Vector3(0, 0, 0);
 	public var cameraRotation:Vector2 = new Vector2(0, 0);

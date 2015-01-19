@@ -21,7 +21,7 @@ import snow.utils.Float32Array;
  * @author Krtolica Vujadin
  */
 
-class SpriteManager {
+@:expose('BABYLON.SpriteManager') class SpriteManager {
 	
 	public var name:String;
 	public var sprites:Array<Sprite> = [];

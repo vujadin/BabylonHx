@@ -8,7 +8,7 @@ import com.babylonhx.materials.textures.BabylonTexture;
  * @author Krtolica Vujadin
  */
 
-class PostProcessManager {
+@:expose('BABYLON.PostProcessManager') class PostProcessManager {
 	
 	private var _scene:Scene;
 	private var _indexBuffer:BabylonBuffer;
