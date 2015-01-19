@@ -9,7 +9,7 @@ import com.babylonhx.tools.Tools;
  * @author Krtolica Vujadin
  */
 
-class PostProcessRenderPipeline {
+@:expose('BABYLON.PostProcessRenderPipeline') class PostProcessRenderPipeline {
 	
 	private static var PASS_EFFECT_NAME:String = "passEffect";
 	private static var PASS_SAMPLER_NAME:String = "passSampler";

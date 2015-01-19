@@ -7,7 +7,7 @@ import com.babylonhx.math.Color3;
  * @author Krtolica Vujadin
  */
 
-class WoodProceduralTexture extends ProceduralTexture {
+@:expose('BABYLON.WoodProceduralTexture') class WoodProceduralTexture extends ProceduralTexture {
 	
 	private var _ampScale:Float = 100.0;
 	private var _woodColor:Color3 = new Color3(0.32, 0.17, 0.09);

@@ -30,7 +30,7 @@ enum Space {
 	WORLD;
 }
 
-class AbstractMesh extends Node implements IDisposable {
+@:expose('BABYLON.AbstractMesh') class AbstractMesh extends Node implements IDisposable {
 	
 	// Statics
 	public static var BILLBOARDMODE_NONE:Int = 0;

@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-class SwitchBooleanAction extends Action {
+@:expose('BABYLON.SwitchBooleanAction') class SwitchBooleanAction extends Action {
 	
 	private var _target:Dynamic;
 	private var _property:String;

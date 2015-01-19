@@ -7,7 +7,7 @@ package com.babylonhx.tools;
  * @author Krtolica Vujadin
  */
 
-class Tags {
+@:expose('BABYLON.Tags') class Tags {
 	
 	public static function EnableFor(obj:Dynamic) {
 		obj._tags = obj._tags != null ? obj._tags : {};

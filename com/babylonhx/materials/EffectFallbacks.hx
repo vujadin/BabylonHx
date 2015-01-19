@@ -5,7 +5,7 @@ package com.babylonhx.materials;
  * @author Krtolica Vujadin
  */
 
-class EffectFallbacks {
+@:expose('BABYLON.EffectFallbacks') class EffectFallbacks {
 	
 	private var _defines:Array<Array<String>> = [];
 	private var _currentRank:Int = 32;

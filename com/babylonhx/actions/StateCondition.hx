@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-class StateCondition extends Condition {
+@:expose('BABYLON.StateCondition') class StateCondition extends Condition {
 	
 	// Members
 	private var _target:Dynamic;

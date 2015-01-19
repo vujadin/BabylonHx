@@ -7,7 +7,7 @@ import com.babylonhx.cameras.Camera;
  * @author Krtolica Vujadin
  */
 
-class FxaaPostProcess extends PostProcess {
+@:expose('BABYLON.FxaaPostProcess') class FxaaPostProcess extends PostProcess {
 	
 	public var texelWidth:Float;
 	public var texelHeight:Float;

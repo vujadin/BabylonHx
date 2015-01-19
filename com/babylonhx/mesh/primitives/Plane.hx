@@ -5,7 +5,7 @@ package com.babylonhx.mesh.primitives;
  * @author Krtolica Vujadin
  */
 
-class Plane extends _Primitive {
+@:expose('BABYLON.Plane') class Plane extends _Primitive {
 	
 	// Members
 	public var size:Float;

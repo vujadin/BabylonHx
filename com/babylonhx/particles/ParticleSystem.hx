@@ -25,7 +25,7 @@ import snow.utils.Float32Array;
  * @author Krtolica Vujadin
  */
 
-class ParticleSystem implements IDisposable {
+@:expose('BABYLON.ParticleSystem') class ParticleSystem implements IDisposable {
 	
 	// Statics
 	public static var BLENDMODE_ONEONE:Int = 0;

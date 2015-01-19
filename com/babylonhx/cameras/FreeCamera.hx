@@ -14,7 +14,7 @@ import openfl.Lib;
 * @author Krtolica Vujadin
 */
 
-class FreeCamera extends TargetCamera {
+@:expose('BABYLON.FreeCamera') class FreeCamera extends TargetCamera {
 	
 	public var ellipsoid:Vector3 = new Vector3(0.5, 1, 0.5);
 	public var keysUp:Array<Int> = [38];

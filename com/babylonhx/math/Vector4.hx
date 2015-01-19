@@ -6,7 +6,7 @@ package com.babylonhx.math;
 */
 
 //Vector4 class created for EulerAngle class conversion to Quaternion
-class Vector4 {
+@:expose('BABYLON.Vector4') class Vector4 {
 	
 	public var x:Float;
 	public var y:Float;

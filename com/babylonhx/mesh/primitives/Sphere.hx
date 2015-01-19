@@ -5,7 +5,7 @@ package com.babylonhx.mesh.primitives;
  * @author Krtolica Vujadin
  */
 
-class Sphere extends _Primitive {
+@:expose('BABYLON.Sphere') class Sphere extends _Primitive {
 	
 	// Members
 	public var segments:Int;

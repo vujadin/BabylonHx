@@ -12,7 +12,7 @@ import com.babylonhx.math.Ray;
  * @author Krtolica Vujadin
  */
 
-class LinesMesh extends Mesh {
+@:expose('BABYLON.LinesMesh') class LinesMesh extends Mesh {
 	
 	public var color:Color3 = new Color3(1, 1, 1);
 	public var alpha:Float = 1;

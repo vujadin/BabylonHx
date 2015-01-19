@@ -12,7 +12,7 @@ import com.babylonhx.tools.SmartArray;
 * @author Krtolica Vujadin
 */
 
-class Octree<T> implements IOctreeContainer<T> {
+@:expose('BABYLON.Octree') class Octree<T> implements IOctreeContainer<T> {
 	
 	public var blocks:Array<OctreeBlock<T>>;
 	public var dynamicContent:Array<T> = new Array<T>();

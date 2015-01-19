@@ -4,7 +4,7 @@ package com.babylonhx.materials;
  * ...
  * @author Krtolica Vujadin
  */
-class ShadersStore {
+@:expose('BABYLON.ShadersStore') class ShadersStore {
 
 	public static var Shaders:Map<String, String> = [
 		"anaglyph.fragment" => "#ifdef GL_ES\nprecision highp float;\n#endif\n\n// Samplers\nvarying vec2 vUV;\nuniform sampler2D textureSampler;\nuniform sampler2D leftSampler;\n\nvoid main(void)\n{\n    vec4 leftFrag = texture2D(leftSampler, vUV);\n    leftFrag = vec4(1.0, leftFrag.g, leftFrag.b, 1.0);\n\n vec4 rightFrag = texture2D(textureSampler, vUV);\n    rightFrag = vec4(rightFrag.r, 1.0, 1.0, 1.0);\n\n    gl_FragColor = vec4(rightFrag.rgb * leftFrag.rgb, 1.0);\n}",

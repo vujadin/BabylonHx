@@ -7,7 +7,7 @@ import openfl.utils.Float32Array;
  * ...
  * @author Krtolica Vujadin
  */
-class Vector3 {
+@:expose('BABYLON.Vector3') class Vector3 {
 	
 	public var x:Float;
 	public var y:Float;

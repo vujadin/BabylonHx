@@ -7,7 +7,7 @@ import com.babylonhx.cameras.Camera;
  * @author Krtolica Vujadin
  */
 
-class ConvolutionPostProcess extends PostProcess {
+@:expose('BABYLON.ConvolutionPostProcess') class ConvolutionPostProcess extends PostProcess {
 	
 	// Based on http://en.wikipedia.org/wiki/Kernel_(image_processing)
     public static var EdgeDetect0Kernel = [1, 0, -1, 0, 0, 0, -1, 0, 1];
@@ -20,7 +20,7 @@ class ConvolutionPostProcess extends PostProcess {
 	public var kernel:Array<Float>;
 	
 	
-	public function new(name:String, public kernel:Array<Float>, ratio:Float, camera:Camera, ?samplingMode:Float, ?engine:Engine, reusable:Bool = false/*?reusable:Bool*/) {
+	public function new(name:String, kernel:Array<Float>, ratio:Float, camera:Camera, ?samplingMode:Float, ?engine:Engine, reusable:Bool = false/*?reusable:Bool*/) {
 		super(name, "convolution", ["kernel", "screenSize"], null, ratio, camera, samplingMode, engine, reusable);
 
 		this.onApply = function(effect:Effect) {

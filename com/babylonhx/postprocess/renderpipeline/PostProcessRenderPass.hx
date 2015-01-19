@@ -8,7 +8,7 @@ import com.babylonhx.mesh.Mesh;
  * @author Krtolica Vujadin
  */
 
-class PostProcessRenderPass {
+@:expose('BABYLON.PostProcessRenderPass') class PostProcessRenderPass {
 	
 	private var _enabled:Bool = true;
 	private var _renderList:Array<Mesh>;

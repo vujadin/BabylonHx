@@ -5,7 +5,7 @@ package com.babylonhx.animations.easing;
  * @author Krtolica Vujadin
  */
 
-class EasingFunction implements IEasingFunction {
+@:expose('BABYLON.EasingFunction') class EasingFunction implements IEasingFunction {
 	
 	//Statics
 	public static var EASINGMODE_EASEIN:Int = 0;

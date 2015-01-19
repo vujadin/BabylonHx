@@ -9,7 +9,7 @@ import com.babylonhx.tools.Tools;
  * @author Krtolica Vujadin
  */
 
-class AnaglyphFreeCamera extends FreeCamera {
+@:expose('BABYLON.AnaglyphFreeCamera') class AnaglyphFreeCamera extends FreeCamera {
 	
 	private var _eyeSpace:Float;
 	private var _leftCamera:FreeCamera;

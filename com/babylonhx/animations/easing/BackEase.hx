@@ -5,7 +5,7 @@ package com.babylonhx.animations.easing;
  * @author Krtolica Vujadin
  */
 
-class BackEase extends EasingFunction {
+@:expose('BABYLON.BackEase') class BackEase extends EasingFunction {
 	
 	public var amplitude:Float = 1;
 	

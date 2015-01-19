@@ -8,7 +8,7 @@ import com.babylonhx.math.Vector2;
  * @author Krtolica Vujadin
  */
 
-class BlurPostProcess extends PostProcess {
+@:expose('BABYLON.BlurPostProcess') class BlurPostProcess extends PostProcess {
 	
 	public var direction:Vector2;
 	public var blurWidth:Float;

@@ -13,7 +13,7 @@ import com.babylonhx.mesh.Mesh;
  * @author Krtolica Vujadin
  */
 
-class LensFlareSystem {
+@:expose('BABYLON.LensFlareSystem') class LensFlareSystem {
 	
 	public var name:String;
 	public var lensFlares:Array<LensFlare> = new Array<LensFlare>();

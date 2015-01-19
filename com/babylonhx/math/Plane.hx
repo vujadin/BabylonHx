@@ -4,7 +4,7 @@ package com.babylonhx.math;
 * ...
 * @author Krtolica Vujadin
 */
-class Plane {
+@:expose('BABYLON.Plane') class Plane {
 	
 	public var normal:Vector3;
 	public var d:Float;

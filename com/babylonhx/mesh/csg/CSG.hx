@@ -11,7 +11,7 @@ import com.babylonhx.mesh.SubMesh;
  * @author Krtolica Vujadin
  */
 
-class CSG {
+@:expose('BABYLON.CSG') class CSG {
 	
 	private static var currentCSGMeshId:Int = 0;
 	

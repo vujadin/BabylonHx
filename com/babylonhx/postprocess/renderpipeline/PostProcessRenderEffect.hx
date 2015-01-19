@@ -9,7 +9,7 @@ import com.babylonhx.tools.Tools;
  * @author Krtolica Vujadin
  */
 
-class PostProcessRenderEffect {
+@:expose('BABYLON.PostProcessRenderEffect') class PostProcessRenderEffect {
 	
 	private var _engine:Engine;
 

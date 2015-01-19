@@ -5,7 +5,7 @@ package com.babylonhx.mesh.primitives;
  * @author Krtolica Vujadin
  */
 
-class Box extends _Primitive {
+@:expose('BABYLON.Box') class Box extends _Primitive {
 	
 	// Members
 	public var size:Float;

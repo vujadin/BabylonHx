@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-class SetValueAction extends Action {
+@:expose('BABYLON.SetValueAction') class SetValueAction extends Action {
 	
 	private var _target:Dynamic;
 	private var _property:String;

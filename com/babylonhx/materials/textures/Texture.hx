@@ -8,7 +8,7 @@ import com.babylonhx.math.Vector3;
  * @author Krtolica Vujadin
  */
 
-class Texture extends BaseTexture {
+@:expose('BABYLON.Texture') class Texture extends BaseTexture {
 	
 	// Constants
 	public static var NEAREST_SAMPLINGMODE:Int = 1;

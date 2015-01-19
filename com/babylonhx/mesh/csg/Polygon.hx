@@ -11,7 +11,7 @@ package com.babylonhx.mesh.csg;
 // Each convex polygon has a `shared` property, which is shared between all
 // polygons that are clones of each other or were split from the same polygon.
 // This can be used to define per-polygon properties (such as surface color).
-class Polygon {
+@:expose('BABYLON.CSG.Polygon') class Polygon {
 	
 	public var vertices:Array<Vertex>;
 	public var shared:Dynamic;

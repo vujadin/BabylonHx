@@ -40,7 +40,7 @@ import snow.utils.UInt8Array;
  * @author Krtolica Vujadin
  */
 
-class Mesh extends AbstractMesh implements IGetSetVerticesData {
+@:expose('BABYLON.Mesh') class Mesh extends AbstractMesh implements IGetSetVerticesData {
 	
 	// Members
 	public var delayLoadState = Engine.DELAYLOADSTATE_NONE;

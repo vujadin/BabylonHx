@@ -11,7 +11,7 @@ import com.babylonhx.materials.Material;
  * @author Krtolica Vujadin
  */
 
-class OutlineRenderer {
+@:expose('BABYLON.OutlineRenderer') class OutlineRenderer {
 	
 	private var _scene:Scene;
 	private var _effect:Effect;

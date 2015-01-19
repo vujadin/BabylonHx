@@ -4,7 +4,7 @@ package com.babylonhx.math;
  * ...
  * @author Krtolica Vujadin
  */
-class Color4 {
+@:expose('BABYLON.Color4') class Color4 {
 	
 	public var r:Float;
 	public var g:Float;

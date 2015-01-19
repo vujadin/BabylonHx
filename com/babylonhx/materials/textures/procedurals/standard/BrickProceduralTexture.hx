@@ -7,7 +7,7 @@ import com.babylonhx.math.Color3;
  * @author Krtolica Vujadin
  */
 
-class BrickProceduralTexture extends ProceduralTexture {
+@:expose('BABYLON.BrickProceduralTexture') class BrickProceduralTexture extends ProceduralTexture {
 	
 	private var _numberOfBricksHeight:Int = 15;
 	private var _numberOfBricksWidth:Int = 5;

@@ -19,7 +19,7 @@ import snow.utils.Float32Array;
  * @author Krtolica Vujadin
  */
 
-class Geometry implements IGetSetVerticesData {
+@:expose('BABYLON.Geometry') class Geometry implements IGetSetVerticesData {
 	
 	// Members
 	public var id:String;
