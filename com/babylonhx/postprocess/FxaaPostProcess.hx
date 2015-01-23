@@ -1,7 +1,8 @@
 package com.babylonhx.postprocess;
 
 import com.babylonhx.cameras.Camera;
-
+import  com.babylonhx.materials.Effect;
+import com.babylonhx.materials.textures.Texture;
 /**
  * ...
  * @author Krtolica Vujadin
@@ -13,7 +14,7 @@ import com.babylonhx.cameras.Camera;
 	public var texelHeight:Float;
 	
 
-	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Float, ?engine:Engine, reusable:Bool = false/*?reusable:Bool*/) {
+	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false/*?reusable:Bool*/) {
 		super(name, "fxaa", ["texelSize"], null, ratio, camera, samplingMode, engine, reusable);
 
 		this.onSizeChanged = function() {

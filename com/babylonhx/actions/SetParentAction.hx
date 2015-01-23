@@ -27,7 +27,7 @@ import com.babylonhx.math.Vector3;
 		var invertParentWorldMatrix = this._parent.getWorldMatrix().clone();
 		invertParentWorldMatrix.invert();
 
-		this._target.position = Vector3.TransformCoordinates(this._target.position, invertParentWorldMatrix);
+		this._target.position = Vector3.TransformCoordinates(this._target.position, cast invertParentWorldMatrix);
 
 		this._target.parent = this._parent;
 	}
