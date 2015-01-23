@@ -1,5 +1,5 @@
 package com.babylonhx.math;
-
+import openfl.utils.Float32Array;
 /**
 * ...
 * @author Krtolica Vujadin
@@ -34,7 +34,7 @@ package com.babylonhx.math;
 		return result;
 	}
 
-	inline public function toArray(array:Array<Float>, index:Float = 0):Void {
+	inline public function toArray(array:Array<Float>, index:Int = 0):Void {
 		array[index] = this.x;
 		array[index + 1] = this.y;
 		array[index + 2] = this.z;
@@ -112,7 +112,7 @@ package com.babylonhx.math;
 	}
 
 	inline public function equals(otherVector:Vector4):Bool {
-		return otherVector && this.x == otherVector.x && this.y == otherVector.y && this.z == otherVector.z && this.w == otherVector.w;
+		return (otherVector != null && this.x == otherVector.x && this.y == otherVector.y && this.z == otherVector.z && this.w == otherVector.w);
 	}
 
 	inline public function equalsWithEpsilon(otherVector:Vector4):Bool {
@@ -218,18 +218,18 @@ package com.babylonhx.math;
 	}
 
 	// Statics
-	inline public static function FromArray(array:Array<Float>, offset:Float = 0):Vector4 {
+	inline public static function FromArray(array:Array<Float>, offset:Int = 0):Vector4 {
 		return new Vector4(array[offset], array[offset + 1], array[offset + 2], array[offset + 3]);
 	}
 
-	inline public static function FromArrayToRef(array:Array<Float>, offset:Float, result:Vector4):Void {
+	inline public static function FromArrayToRef(array:Array<Float>, offset:Int, result:Vector4):Void {
 		result.x = array[offset];
 		result.y = array[offset + 1];
 		result.z = array[offset + 2];
 		result.w = array[offset + 3];
 	}
 
-	inline public static function FromFloatArrayToRef(array:Float32Array, offset:Float, result:Vector4):Void {
+	inline public static function FromFloatArrayToRef(array:Float32Array, offset:Int, result:Vector4):Void {
 		result.x = array[offset];
 		result.y = array[offset + 1];
 		result.z = array[offset + 2];
