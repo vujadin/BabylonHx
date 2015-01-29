@@ -1,4 +1,4 @@
-#ussage haxe jstarget.hxml -D html5=true
+#usage haxe jsbuild.hxml -D html5=true
 --remap flash:openfl
 -lib lime
 -lib openfl
@@ -154,7 +154,7 @@ com.babylonhx.rendering.RenderingGroup
 com.babylonhx.rendering.RenderingManager 
 com.babylonhx.sprites.Sprite 
 com.babylonhx.sprites.SpriteManager 
-#com.babylonhx.tools.internals.AndOrNotEvaluator 
+com.babylonhx.tools.internals.AndOrNotEvaluator 
 com.babylonhx.tools.SmartArray 
 com.babylonhx.tools.Tags 
 com.babylonhx.tools.Tools 
