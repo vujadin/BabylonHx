@@ -28,6 +28,7 @@ import nme.gl.GLUniformLocation;
 import nme.Lib;
 import nme.utils.Float32Array;
 import nme.utils.Int16Array;
+import nme.utils.Int32Array;
 import nme.utils.ArrayBufferView;
 import nme.gl.GL;
 import nme.utils.UInt8Array;
@@ -56,14 +57,11 @@ import openfl.display.OpenGLView;
 import openfl.system.Capabilities;
 #elseif snow
 import snow.render.opengl.GL;
-import snow.render.opengl.GLBuffer;
-import snow.render.opengl.GLShader;
-import snow.render.opengl.GLTexture;
-import snow.render.opengl.GLProgram;
-import snow.render.opengl.GLRenderbuffer;
-import snow.render.opengl.GLUniformLocation;
 import snow.utils.Float32Array;
+import snow.utils.Int32Array;
 import snow.utils.Int16Array;
+import snow.utils.ArrayBufferView;
+import lime.app.Application;
 #elseif kha
 
 #end
@@ -77,17 +75,26 @@ import js.Browser;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Engine') class Engine {
+class Engine {
 	
 	// Const statics
-	public static var ALPHA_DISABLE:Int = 0;
-	public static var ALPHA_ADD:Int = 1;
-	public static var ALPHA_COMBINE:Int = 2;
+	public static inline var ALPHA_DISABLE:Int = 0;
+	public static inline var ALPHA_ADD:Int = 1;
+	public static inline var ALPHA_COMBINE:Int = 2;
 
-	public static var DELAYLOADSTATE_NONE:Int = 0;
-	public static var DELAYLOADSTATE_LOADED:Int = 1;
-	public static var DELAYLOADSTATE_LOADING:Int = 2;
-	public static var DELAYLOADSTATE_NOTLOADED:Int = 4;
+	public static inline var DELAYLOADSTATE_NONE:Int = 0;
+	public static inline var DELAYLOADSTATE_LOADED:Int = 1;
+	public static inline var DELAYLOADSTATE_LOADING:Int = 2;
+	public static inline var DELAYLOADSTATE_NOTLOADED:Int = 4;
+	
+	public static inline var TEXTUREFORMAT_ALPHA = 0;
+	public static inline var TEXTUREFORMAT_LUMINANCE = 1;
+	public static inline var TEXTUREFORMAT_LUMINANCE_ALPHA = 2;
+	public static inline var TEXTUREFORMAT_RGB = 3;
+	public static inline var TEXTUREFORMAT_RGBA = 4;
+
+	public static inline var TEXTURETYPE_UNSIGNED_INT = 0;
+	public static inline var TEXTURETYPE_FLOAT = 1;
 
 	public static var Version:String = "2.0.0";
 
@@ -105,7 +112,12 @@ import js.Browser;
 	public var scenes:Array<Scene> = [];
 
 	// Private Members
+	#if (nme || openfl)
 	private var _renderingCanvas:Sprite;
+	#elseif snow
+	private var app:Application;
+	private var _renderingCanvas:Dynamic;
+	#end
 	private var _windowIsBackground:Bool = false;
 
 	private var _onBlur:Void->Void;
@@ -135,6 +147,13 @@ import js.Browser;
         return this._drawCalls;
     }
 	
+	private var _glVersion:String;
+    private var _glRenderer:String;
+    private var _glVendor:String;
+	
+	private var _renderingQueueLaunched:Bool = false;
+	private var _activeRenderLoops:Array<Dynamic> = [];
+	
 	// FPS
     public var fpsRange:Float = 60.0;
     public var previousFramesDuration:Array<Float> = [];
@@ -157,16 +176,22 @@ import js.Browser;
 	private var _cachedIndexBuffer:BabylonBuffer;
 	private var _cachedEffectForVertexBuffers:Effect;
 	private var _currentRenderTarget:BabylonTexture;
+	#if (nme || openfl)
 	private var _canvasClientRect:Rectangle;
+	#end
 	private var _uintIndicesCurrentlySet:Bool = false;
 
+	#if (nme || openfl)
 	private var _workingCanvas:BitmapData;
 	private var _workingContext:OpenGLView;
+	#end
 
 	
-	public function new(canvas:Sprite, antialias:Bool = false/*?antialias:Bool*/, ?options:Dynamic) {
+	public function new(canvas:#if (nme || openfl) Sprite #else Dynamic #end , antialias:Bool = false, ?options:Dynamic) {
 		this._renderingCanvas = canvas;
-		//this._canvasClientRect = this._renderingCanvas.getBoundingClientRect();
+		#if (nme || openfl)
+		this._canvasClientRect = Lib.current.stage.getBounds(Lib.current.stage);// this._renderingCanvas.getBoundingClientRect();
+		#end
 		
 		options = options != null ? options : {};
 		options.antialias = antialias;
@@ -198,6 +223,23 @@ import js.Browser;
 		this._caps.maxTextureSize = GL.getParameter(GL.MAX_TEXTURE_SIZE);
 		this._caps.maxCubemapTextureSize = GL.getParameter(GL.MAX_CUBE_MAP_TEXTURE_SIZE);
 		this._caps.maxRenderTextureSize = GL.getParameter(GL.MAX_RENDERBUFFER_SIZE);
+		
+		// Infos
+		this._glVersion = GL.getParameter(GL.VERSION);
+		
+		/*var rendererInfo = GL.getExtension("WEBGL_debug_renderer_info");
+		if (rendererInfo != null) {
+			GLRenderer = GL.getParameter(rendererInfo.UNMASKED_RENDERER_WEBGL);
+			GLVendor = GL.getParameter(rendererInfo.UNMASKED_VENDOR_WEBGL);
+		}
+		
+		if (!GLVendor) {
+			GLVendor = "Unknown vendor";
+		}
+		
+		if (!GLRenderer) {
+			GLRenderer = "Unknown renderer";
+		}*/
 		
 		// Extensions
 		this._caps.standardDerivatives = (GL.getExtension('OES_standard_derivatives') != null);
@@ -238,9 +280,7 @@ import js.Browser;
 			this._caps.textureFloat = GL.getExtension('GL_ARB_texture_float');
 		}
 		#end
-		
-		trace(this._caps);
-		
+				
 		// Depth buffer
 		this.setDepthBuffer(true);
 		this.setDepthFunctionToLessOrEqual();
@@ -296,29 +336,39 @@ import js.Browser;
 	}
 
 	public function getAspectRatio(camera:Camera):Float {
-		// TODO
 		var viewport = camera.viewport;
 		return (this.getRenderWidth() * viewport.width) / (this.getRenderHeight() * viewport.height);
 	}
 
 	public function getRenderWidth():Int {
 		// TODO: Snow and Kha ...
+		if (this._currentRenderTarget != null) {
+			return Std.int(this._currentRenderTarget._width);
+		}
+		
 		return Std.int(Lib.current.stage.stageWidth);
 	}
 
 	public function getRenderHeight():Int {
 		// TODO: Snow and Kha ...
+		if (this._currentRenderTarget != null) {
+			return Std.int(this._currentRenderTarget._height);
+		}
+		
 		return Std.int(Lib.current.stage.stageHeight);
 	}
 
-	public function getRenderingCanvas():Sprite {
+	public function getRenderingCanvas(): #if (nme || openfl) Sprite #else Dynamic #end {
 		return this._renderingCanvas;
 	}
 
 	// TODO
+	#if (nme || openfl)
 	public function getRenderingCanvasClientRect():Rectangle {
-		return this._renderingCanvas.getBounds(this._renderingCanvas);
+		return Lib.current.stage.getBounds(Lib.current.stage);
+		//return this._renderingCanvas.getBounds(this._renderingCanvas);
 	}
+	#end
 
 	public function setHardwareScalingLevel(level:Int) {
 		this._hardwareScalingLevel = level;
@@ -363,7 +413,7 @@ import js.Browser;
 		this._runningLoop = false;
 	}
 
-	inline public function _renderLoop(rect:Rectangle = null) {
+	inline public function _renderLoop( #if (nme || openfl) rect:Rectangle = null #end ) {
         // Start new frame
         this.beginFrame();
         if (this._renderFunction != null) {
@@ -377,7 +427,9 @@ import js.Browser;
 	inline public function runRenderLoop(renderFunction:Dynamic) {
 		this._runningLoop = true;
 		this._renderFunction = renderFunction;
+		#if (nme || openfl)
 		this._workingContext.render = this._renderLoop;
+		#end
 	}
 
 	public function switchFullscreen(requestPointerLock:Bool) {
@@ -485,7 +537,7 @@ import js.Browser;
 		this._canvasClientRect = this._renderingCanvas.getBoundingClientRect();*/
 	}
 
-	inline public function bindFramebuffer(texture:BabylonTexture) {
+	public function bindFramebuffer(texture:BabylonTexture) {
 		this._currentRenderTarget = texture;
 		
 		GL.bindFramebuffer(GL.FRAMEBUFFER, texture._framebuffer);
@@ -858,6 +910,24 @@ import js.Browser;
 			GL.uniform1fv(uniform, new Float32Array(array));
 		}
 	}
+	
+	inline public function setArray2(uniform:GLUniformLocation, array:Array<Float>) {
+        if (uniform != null && array.length % 2 == 0) {
+			GL.uniform2fv(uniform, new Float32Array(array));
+		}
+    }
+
+    inline public function setArray3(uniform:GLUniformLocation, array:Array<Float>) {
+        if (uniform != null && array.length % 3 == 0) {			
+			GL.uniform3fv(uniform, new Float32Array(array));
+		}
+    }
+
+    inline public function setArray4(uniform:GLUniformLocation, array:Array<Float>) {
+        if (uniform != null && array.length % 4 == 0) {			
+			GL.uniform4fv(uniform, new Float32Array(array));
+		}
+    }
 
 	inline public function setMatrices(uniform:GLUniformLocation, matrices: #if html5 Float32Array #else Array<Float> #end ) {
 		if (uniform != null) {
@@ -1008,6 +1078,7 @@ import js.Browser;
 		GL.bindTexture(GL.TEXTURE_2D, null);
 	}
 	
+	#if (nme || openfl)
 	function getScaled(source:BitmapData, newWidth:Int, newHeight:Int):BitmapData {
 		var m:flash.geom.Matrix = new flash.geom.Matrix();
 		m.scale(newWidth / source.width, newHeight / source.height);
@@ -1015,6 +1086,7 @@ import js.Browser;
 		bmp.draw(source, m);
 		return bmp;
 	}
+	#end
 
 	public function createTexture(url:String, noMipmap:Bool, invertY:Bool, scene:Scene, samplingMode:Int = 3/*Texture.TRILINEAR_SAMPLINGMODE*/, onLoad:Void->Void = null, onError:Void->Void = null, buffer:Dynamic = null):BabylonTexture {
 		
@@ -1097,6 +1169,7 @@ import js.Browser;
 				callback(buffer);*/
 				
 		} else {
+			#if (nme || openfl)
 			var onload = function(img:Dynamic) {
 				prepareTexture(texture, GL, scene, img.width, img.height, invertY, noMipmap, false, function(potWidth:Int, potHeight:Int) {
 					this._workingCanvas = img;
@@ -1123,7 +1196,64 @@ import js.Browser;
 				Tools.LoadImage(url, onload, onerror, scene.database);
 			else
 				Tools.LoadImage(buffer, onload, onerror, scene.database);
+			#end
 		}
+		
+		return texture;
+	}
+	
+	public function createRawTexture(data:ArrayBufferView, width:Int, height:Int, format:Int, generateMipMaps:Bool, invertY:Bool, samplingMode:Int):BabylonTexture {
+		
+		var texture = new BabylonTexture("", GL.createTexture());
+		GL.bindTexture(GL.TEXTURE_2D, texture.data);
+		#if js
+		GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 1 : 0);
+		#end
+		
+		// Format
+		var internalFormat = GL.RGBA;
+		
+		switch (format) {
+			case Engine.TEXTUREFORMAT_ALPHA:
+				internalFormat = GL.ALPHA;
+				
+			case Engine.TEXTUREFORMAT_LUMINANCE:
+				internalFormat = GL.LUMINANCE;
+				
+			case Engine.TEXTUREFORMAT_LUMINANCE_ALPHA:
+				internalFormat = GL.LUMINANCE_ALPHA;
+				
+			case Engine.TEXTUREFORMAT_RGB:
+				internalFormat = GL.RGB;
+				
+			case Engine.TEXTUREFORMAT_RGBA:
+				internalFormat = GL.RGBA;
+				
+		}
+		
+		GL.texImage2D(GL.TEXTURE_2D, 0, internalFormat, width, height, 0, internalFormat, GL.UNSIGNED_BYTE, data);
+		
+		if (generateMipMaps) {
+			GL.generateMipmap(GL.TEXTURE_2D);
+		}
+		
+		// Filters
+		var filters = getSamplingParameters(samplingMode, generateMipMaps, GL);
+		
+		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, filters.mag);
+		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, filters.min);
+		GL.bindTexture(GL.TEXTURE_2D, null);
+		
+		this._activeTexturesCache = [];
+		texture._baseWidth = width;
+		texture._baseHeight = height;
+		texture._width = width;
+		texture._height = height;
+		texture.isReady = true;
+		texture.references = 1;
+		texture.samplingMode = samplingMode;
+		
+		this._loadedTexturesCache.push(texture);
 		
 		return texture;
 	}
@@ -1156,6 +1286,7 @@ import js.Browser;
 		return texture;
 	}
 
+	#if (nme || openfl)
 	public function updateDynamicTexture(texture:BabylonTexture, canvas:BitmapData, invertY:Int) {
         GL.bindTexture(GL.TEXTURE_2D, texture.data);
 		#if html5
@@ -1176,6 +1307,7 @@ import js.Browser;
         this._activeTexturesCache = [];
         texture.isReady = true;
     }
+	#end
 
 	public function updateVideoTexture(texture:BabylonTexture, video:Dynamic, invertY:Bool) {
 		/*GL.bindTexture(GL.TEXTURE_2D, texture);
@@ -1212,13 +1344,19 @@ import js.Browser;
 		// in the same way, generateDepthBuffer is defaulted to true
 		var generateMipMaps = false;
 		var generateDepthBuffer = true;
+		var type = Engine.TEXTURETYPE_UNSIGNED_INT;
 		var samplingMode = Texture.TRILINEAR_SAMPLINGMODE;
 		if (options != null) {
             generateMipMaps = Reflect.field(options, "generateMipMaps") != null ? options.generateMipmaps : options;
             generateDepthBuffer = Reflect.field(options, "generateDepthBuffer") != null ? options.generateDepthBuffer : true;
+			type = Reflect.field(options, "type") == null ? type : options.type;
             if (Reflect.field(options, "samplingMode") != null) {
                 samplingMode = options.samplingMode;
             }
+			if (type == Engine.TEXTURETYPE_FLOAT) {
+				// if floating point (gl.FLOAT) then force to NEAREST_SAMPLINGMODE
+				samplingMode = Texture.NEAREST_SAMPLINGMODE;
+			}
         }
 		
 		var texture = new BabylonTexture("", GL.createTexture());
@@ -1228,6 +1366,11 @@ import js.Browser;
         var height:Int = Reflect.field(size, "height") != null ? size.height : size;
 		
 		var filters = getSamplingParameters(samplingMode, generateMipMaps, GL);
+		
+		if (type == Engine.TEXTURETYPE_FLOAT && !this._caps.textureFloat) {
+			type = Engine.TEXTURETYPE_UNSIGNED_INT;
+			trace("Float textures are not supported. Render target forced to TEXTURETYPE_UNSIGNED_BYTE type");
+		}
 		
 		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, filters.mag);
 		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, filters.min);
@@ -1335,10 +1478,8 @@ import js.Browser;
 				GL.texImage2D(faces[index], 0, GL.RGBA, this._workingCanvas.width, this._workingCanvas.height, 0, GL.RGBA, GL.UNSIGNED_BYTE, cast pixelData);
 			}
 			
-			trace(extensions);
 			var imgs:Array<BitmapData> = [];
 			for (ex in extensions) {
-				trace(rootUrl + ex);
 				Tools.LoadImage(rootUrl + ex, function(bd:BitmapData) {
 					imgs.push(bd);
 				});

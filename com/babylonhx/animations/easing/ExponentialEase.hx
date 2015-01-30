@@ -5,7 +5,7 @@ package com.babylonhx.animations.easing;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.ExponentialEase') class ExponentialEase  extends EasingFunction {
+class ExponentialEase  extends EasingFunction {
 	
 	public var exponent:Float = 2;
 	
@@ -20,7 +20,7 @@ package com.babylonhx.animations.easing;
 		if (this.exponent <= 0) {
 			return gradient;
 		}
-
+		
 		return ((Math.exp(this.exponent * gradient) - 1.0) / (Math.exp(this.exponent) - 1.0));
 	}
 	

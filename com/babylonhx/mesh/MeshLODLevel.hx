@@ -5,7 +5,7 @@ package com.babylonhx.mesh;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.MeshLODLevel') class MeshLODLevel {
+class MeshLODLevel {
 	
 	public var mesh:Mesh;
 	public var distance:Float;

@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.PlayAnimationAction') class PlayAnimationAction extends Action {
+class PlayAnimationAction extends Action {
 	
 	private var _target:Dynamic;
 	public var from:Int;
@@ -21,7 +21,7 @@ package com.babylonhx.actions;
 		this.loop = loop;
 	}
 
-	override public function execute(?evt:ActionEvent):Void {
+	override public function execute(?evt:ActionEvent) {
 		var scene = this._actionManager.getScene();
 		scene.beginAnimation(this._target, this.from, this.to, this.loop);
 	}

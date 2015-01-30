@@ -5,7 +5,7 @@ package com.babylonhx.math;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.BezierCurve') class BezierCurve {
+class BezierCurve {
 
 	inline public static function interpolate(t:Float, x1:Float, y1:Float, x2:Float, y2:Float):Float {
 		// Extract X (which is equal to time here)

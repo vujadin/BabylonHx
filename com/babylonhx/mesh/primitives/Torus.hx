@@ -5,7 +5,7 @@ package com.babylonhx.mesh.primitives;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Torus') class Torus extends _Primitive {
+class Torus extends _Primitive {
 	
 	// Members
 	public var diameter:Float;

@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Condition') class Condition {
+class Condition {
 	
 	public var _actionManager:ActionManager;
 

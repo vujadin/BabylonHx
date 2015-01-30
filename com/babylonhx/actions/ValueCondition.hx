@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.ValueCondition') class ValueCondition extends Condition {
+class ValueCondition extends Condition {
 	
 	// Statics
 	private static var IsEqual:Int = 0;
@@ -23,7 +23,7 @@ package com.babylonhx.actions;
 
 	public function new(actionManager:ActionManager, target:Dynamic, propertyPath:String, value:Dynamic, operator:Int = ValueCondition.IsEqual) {
 		super(actionManager);
-
+		
 		this._target = this._getEffectiveTarget(target, this.propertyPath);
 		this._property = this._getProperty(this.propertyPath);
 		
@@ -41,7 +41,7 @@ package com.babylonhx.actions;
 				return this._target[this._property] < this.value;
 			case ValueCondition.IsEqual, ValueCondition.IsDifferent:
 				var check:Bool = false;
-
+				
 				if (this.value.equals) {
 					check = this.value.equals(this._target[this._property]);
 				} else {
@@ -49,7 +49,7 @@ package com.babylonhx.actions;
 				}
 				return this.operator == ValueCondition.IsEqual ? check : !check;
 		}
-
+		
 		return false;
 	}
 	

@@ -76,9 +76,9 @@ class _AlphaState {
 		
 		// Alpha blend
 		if (this._isAlphaBlendDirty) {
-			if (this._alphaBlend == true) {
+			if (this._alphaBlend) {
 				GL.enable(GL.BLEND);
-			} else if (this._alphaBlend == false) {
+			} else {
 				GL.disable(GL.BLEND);
 			}
 			

@@ -13,7 +13,7 @@ import com.babylonhx.mesh.Mesh;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Material') class Material {
+class Material {
 	
 	public static var TriangleFillMode:Int = 0;
 	public static var WireFrameFillMode:Int = 1;

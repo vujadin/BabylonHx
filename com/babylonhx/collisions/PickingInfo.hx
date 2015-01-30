@@ -9,7 +9,7 @@ import com.babylonhx.mesh.VertexBuffer;
 * ...
 * @author Krtolica Vujadin
 */
-@:expose('BABYLON.PickingInfo') class PickingInfo {
+class PickingInfo {
 	
 	public var hit:Bool = false;
 	public var distance:Float = 0;

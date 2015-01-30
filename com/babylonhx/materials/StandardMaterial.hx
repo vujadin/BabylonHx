@@ -21,7 +21,7 @@ import com.babylonhx.tools.Tools;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.StandardMaterial') class StandardMaterial extends Material {
+class StandardMaterial extends Material {
 	
 	// Flags used to enable or disable a type of texture for all Standard Materials
 	public static var DiffuseTextureEnabled:Bool = true;
@@ -97,7 +97,7 @@ import com.babylonhx.tools.Tools;
 	}
 
 	// Methods   
-	override public function isReady(?mesh:AbstractMesh, useInstances:Bool = false/*?useInstances:Bool*/):Bool {
+	override public function isReady(?mesh:AbstractMesh, useInstances:Bool = false):Bool {
 		if (this.checkReadyOnlyOnce) {
 			if (this._wasPreviouslyReady) {
 				return true;

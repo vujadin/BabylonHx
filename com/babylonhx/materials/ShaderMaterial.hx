@@ -22,7 +22,7 @@ typedef ShaderMaterialOptions = {
 	?samplers:Array<String>
 }
 
-@:expose('BABYLON.ShaderMaterial') class ShaderMaterial extends Material {
+class ShaderMaterial extends Material {
 	
 	private var _shaderPath:String;
 	private var _options:ShaderMaterialOptions;

@@ -9,7 +9,7 @@ import com.babylonhx.tools.SmartArray;
 * ...
 * @author Krtolica Vujadin
 */
-@:expose('BABYLON.OctreeBlock') class OctreeBlock<T> implements IOctreeContainer<T> {
+class OctreeBlock<T> implements IOctreeContainer<T> {
 	
 	public var entries:Array<T> = [];
 	public var blocks:Array<OctreeBlock<T>>;

@@ -36,6 +36,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 import com.babylonhx.postprocess.PostProcessManager;
 import com.babylonhx.postprocess.renderpipeline.PostProcessRenderPipelineManager;
 import com.babylonhx.rendering.BoundingBoxRenderer;
+import com.babylonhx.rendering.DepthRenderer;
 import com.babylonhx.rendering.OutlineRenderer;
 import com.babylonhx.rendering.RenderingManager;
 import com.babylonhx.sprites.SpriteManager;
@@ -49,7 +50,7 @@ import haxe.Timer;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Scene') class Scene {
+class Scene {
 	
 	// Statics
 	public static var FOGMODE_NONE:Int = 0;
@@ -215,6 +216,7 @@ import haxe.Timer;
 
 	private var _boundingBoxRenderer:BoundingBoxRenderer;
 	private var _outlineRenderer:OutlineRenderer;
+	private var _depthRenderer:DepthRenderer;
 
 	private var _viewMatrix:Matrix;
 	private var _projectionMatrix:Matrix;
@@ -904,6 +906,7 @@ import haxe.Timer;
 			}
 			
 			mesh._preActivate();
+			
 			if (mesh.isEnabled() && mesh.isVisible && mesh.visibility > 0 && ((mesh.layerMask & this.activeCamera.layerMask) != 0) && mesh.isInFrustum(this._frustumPlanes)) {
 				this._activeMeshes.push(mesh);
 				mesh._activate(this._renderId);
@@ -1137,7 +1140,7 @@ import haxe.Timer;
 	}
 
 	public function render() {
-		var startDate = Tools.Now();
+		//var startDate = Tools.Now();
 		this._particlesDuration = 0;
 		this._spritesDuration = 0;
 		this._activeParticles = 0;
@@ -1242,8 +1245,14 @@ import haxe.Timer;
 			}
 		}
 		
+		// Depth renderer
+		if (this._depthRenderer != null) {
+			this._renderTargets.push(this._depthRenderer.getDepthMap());
+		}
+		
 		// RenderPipeline
 		this.postProcessRenderPipelineManager.update();
+		
 		// Multi-cameras?
 		if (this.activeCameras.length > 0) {
 			var currentRenderId = this._renderId;
@@ -1283,7 +1292,26 @@ import haxe.Timer;
 		this._toBeDisposed.reset();
 		
 		//Tools.EndPerformanceCounter("Scene rendering");
-		this._lastFrameDuration = Tools.Now() - startDate;
+		//this._lastFrameDuration = Tools.Now() - startDate;
+	}
+	
+	public function enableDepthRenderer():DepthRenderer {
+		if (this._depthRenderer != null) {
+			return this._depthRenderer;
+		}
+		
+		this._depthRenderer = new DepthRenderer(this);
+		
+		return this._depthRenderer;
+	}
+
+	public function disableDepthRenderer() {
+		if (this._depthRenderer == null) {
+			return;
+		}
+		
+		this._depthRenderer.dispose();
+		this._depthRenderer = null;
 	}
 
 	public function dispose() {
@@ -1293,6 +1321,10 @@ import haxe.Timer;
 		this.skeletons = [];
 		
 		this._boundingBoxRenderer.dispose();
+		
+		if (this._depthRenderer != null) {
+			this._depthRenderer.dispose();
+		}
 		
 		// Events
 		if (this.onDispose != null) {

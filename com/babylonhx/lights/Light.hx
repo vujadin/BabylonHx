@@ -12,11 +12,11 @@ import com.babylonhx.mesh.AbstractMesh;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Light') class Light extends Node {
+class Light extends Node {
 	
 	public var diffuse:Color3 = new Color3(1.0, 1.0, 1.0);
 	public var specular:Color3 = new Color3(1.0, 1.0, 1.0);
-	public var intensity = 1.0;
+	public var intensity:Float = 1.0;
 	public var range:Float = Math.POSITIVE_INFINITY;
 	public var includedOnlyMeshes:Array<AbstractMesh> = [];
 	public var excludedMeshes:Array<AbstractMesh> = [];

@@ -10,7 +10,7 @@ import com.babylonhx.postprocess.PostProcess;
 * @author Krtolica Vujadin
 */
 
-@:expose('BABYLON.Camera') class Camera extends Node {
+class Camera extends Node {
 	
 	// Statics
 	public static var PERSPECTIVE_CAMERA:Int = 0;
@@ -41,13 +41,23 @@ import com.babylonhx.postprocess.PostProcess;
 
 	public function new(name:String, position:Vector3, scene:Scene) {
 		super(name, scene);
-
+		
 		this.position = position;
 		scene.cameras.push(this);
-
+		
 		if (scene.activeCamera == null) {
 			scene.activeCamera = this;
 		}
+		
+		#if !js
+		// UGLY HACK UNTIL "THE MASTER BUG" IS FIXED !!!!
+		var lines = com.babylonhx.mesh.Mesh.CreateLines("lines", [
+			new Vector3(scene.activeCamera.position.x - 0.1, scene.activeCamera.position.y, scene.activeCamera.position.z + 120),
+			new Vector3(scene.activeCamera.position.x + 0.1, scene.activeCamera.position.y, scene.activeCamera.position.z + 120)
+		], scene);		
+		lines.alpha = 0.0;
+		lines.parent = scene.activeCamera;
+		#end
 	}
 
 	//Cache
@@ -156,13 +166,13 @@ import com.babylonhx.postprocess.PostProcess;
 		
 	}
 
-	public function attachPostProcess(postProcess:PostProcess, insertAt:Int = -1):Int {
+	public function attachPostProcess(postProcess:PostProcess, ?insertAt:Int):Int {
 		if (!postProcess.isReusable() && this._postProcesses.indexOf(postProcess) > -1) {
 			trace("You're trying to reuse a post process not defined as reusable.");
 			return 0;
 		}
 		
-		if (insertAt < 0) {
+		if (insertAt == null || insertAt < 0) {
 			this._postProcesses.push(postProcess);
 			this._postProcessesTakenIndices.push(this._postProcesses.length - 1);
 			

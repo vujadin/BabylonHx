@@ -46,8 +46,12 @@ import com.babylonhx.mesh.primitives.Sphere;
 import com.babylonhx.mesh.primitives.Torus;
 import com.babylonhx.mesh.primitives.TorusKnot;
 import com.babylonhx.particles.ParticleSystem;
+import com.babylonhx.physics.PhysicsBodyCreationOptions;
 import com.babylonhx.tools.Tags;
 import haxe.Json;
+import haxe.Timer;
+import openfl.Lib;
+import org.msgpack.MsgPack;
 
 #if nme
 import nme.utils.ArrayBuffer;
@@ -78,7 +82,7 @@ typedef ISceneLoaderPlugin = {
 	var load:Scene->String->String->Bool;
 }
 
-@:expose('BABYLON.BabylonFileLoader') class BabylonFileLoader {
+class BabylonFileLoader {
 	
 	public static var plugin(get, never):ISceneLoaderPlugin;
 	private static function get_plugin():ISceneLoaderPlugin {
@@ -87,7 +91,14 @@ typedef ISceneLoaderPlugin = {
 	private static var _plugin:ISceneLoaderPlugin = {
 		extensions: ".babylon",
         importMesh: function(meshesNames:Dynamic, scene:Scene, data:Dynamic, rootUrl:String, meshes:Array<AbstractMesh>, particleSystems:Array<ParticleSystem>, skeletons:Array<Skeleton>):Bool {
-			var parsedData = Json.parse(data);
+			
+			var parsedData:Dynamic = null;
+			
+			if(Std.is(data, String)) {
+				parsedData = Json.parse(data);
+			} else {
+				parsedData = MsgPack.decode(data);
+			}
 						
             var loadedSkeletonsIds:Array<Int> = [];
             var loadedMaterialsIds:Array<Int> = [];
@@ -177,8 +188,17 @@ typedef ISceneLoaderPlugin = {
 			
             return true;
         },
-		load: function(scene:Scene, data:String, rootUrl:String):Bool {
-            var parsedData:Dynamic = Json.parse(data);
+		load: function(scene:Scene, data:Dynamic, rootUrl:String):Bool {
+			
+			var parsedData:Dynamic = null;
+			//#if !js var curTime = Sys.cpuTime(); #end
+            if (Std.is(data, String)) {
+				parsedData = Json.parse(data);
+			} else {
+				parsedData = MsgPack.decode(data);
+			}
+			data = null;
+			//#if !js trace("parsed in: " + (Sys.cpuTime() - curTime)); #end
 			
             // Scene
             scene.useDelayedTextureLoading = parsedData.useDelayedTextureLoading && !SceneLoader.ForceFullSceneLoadingForIncremental;
@@ -691,7 +711,7 @@ typedef ISceneLoaderPlugin = {
 
     public static function parseLight(parsedLight:Dynamic, scene:Scene):Light {
         var light:Light = null;
-		
+				
         switch (parsedLight.type) {
             case 0:
                 light = new PointLight(parsedLight.name, Vector3.FromArray(parsedLight.position), scene);
@@ -707,11 +727,13 @@ typedef ISceneLoaderPlugin = {
                 light = new HemisphericLight(parsedLight.name, Vector3.FromArray(parsedLight.direction), scene);
                 cast(light, HemisphericLight).groundColor = Color3.FromArray(parsedLight.groundColor);
 				
-        }
+        }				
 		
         light.id = parsedLight.id;
 		
-        Tags.AddTagsTo(light, parsedLight.tags);
+		if(parsedLight.tags != null) {
+			Tags.AddTagsTo(light, parsedLight.tags);
+		}
 		
         if (parsedLight.intensity != null) {
             light.intensity = parsedLight.intensity;
@@ -724,7 +746,7 @@ typedef ISceneLoaderPlugin = {
         light.diffuse = Color3.FromArray(parsedLight.diffuse);
         light.specular = Color3.FromArray(parsedLight.specular);
 		
-        if (parsedLight.excludedMeshesIds != null) {
+        if (parsedLight.excludedMeshesIds != null && parsedLight.excludedMeshesIds.length > 0) {
             light._excludedMeshesIds = parsedLight.excludedMeshesIds;
         }
 		
@@ -733,7 +755,7 @@ typedef ISceneLoaderPlugin = {
             light._waitingParentId = parsedLight.parentId;
         }
 		
-        if (parsedLight.includedOnlyMeshesIds != null) {
+        if (parsedLight.includedOnlyMeshesIds != null && parsedLight.includedOnlyMeshesIds.length > 0) {
             light._includedOnlyMeshesIds = parsedLight.includedOnlyMeshesIds;
         }
 		
@@ -1121,7 +1143,12 @@ typedef ISceneLoaderPlugin = {
                 scene.enablePhysics();
             }
 			
-            mesh.setPhysicsState({ impostor:parsedMesh.physicsImpostor, mass:parsedMesh.physicsMass, friction:parsedMesh.physicsFriction, restitution:parsedMesh.physicsRestitution });
+			var physicsOptions:PhysicsBodyCreationOptions = new PhysicsBodyCreationOptions();
+			physicsOptions.mass = parsedMesh.physicsMass;
+			physicsOptions.friction = parsedMesh.physicsFriction;
+			physicsOptions.restitution = parsedMesh.physicsRestitution;
+				
+            mesh.setPhysicsState(parsedMesh.physicsImpostor, physicsOptions);
         }
 		
         // Animations

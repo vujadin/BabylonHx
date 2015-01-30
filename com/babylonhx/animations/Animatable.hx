@@ -5,7 +5,7 @@ package com.babylonhx.animations;
 * @author Krtolica Vujadin
 */
 
-@:expose('BABYLON.Animatable') class Animatable {
+class Animatable {
 	
 	private var _localDelayOffset:Float = -1;
 	private var _pausedDelay:Float = -1;
@@ -33,16 +33,16 @@ package com.babylonhx.animations;
 		if (animations != null) {
 			this.appendAnimations(target, animations);
 		}
-
+		
 		this._scene = scene;
 		scene._activeAnimatables.push(this);
 	}
 
 	// Methods
-	public function appendAnimations(target:Dynamic, animations:Array<Animation>):Void {
+	public function appendAnimations(target:Dynamic, animations:Array<Animation>) {
 		for (index in 0...animations.length) {
 			var animation = animations[index];
-
+			
 			animation._target = target;
 			this._animations.push(animation);    
 		}            
@@ -50,13 +50,13 @@ package com.babylonhx.animations;
 
 	public function getAnimationByTargetProperty(property:String) {
 		var animations = this._animations;
-
+		
 		for (index in 0...animations.length) {
 			if (animations[index].targetProperty == property) {
 				return animations[index];
 			}
 		}
-
+		
 		return null;
 	}
 
@@ -70,11 +70,11 @@ package com.babylonhx.animations;
 
 	public function stop():Void {
 		var index = this._scene._activeAnimatables.indexOf(this);
-
+		
 		if (index > -1) {
 			this._scene._activeAnimatables.splice(index, 1);
 		}
-
+		
 		if (this.onAnimationEnd != null) {
 			this.onAnimationEnd();
 		}
@@ -87,28 +87,28 @@ package com.babylonhx.animations;
 			}
 			return true;
 		}
-
+		
 		if (this._localDelayOffset == -1) {
 			this._localDelayOffset = delay;
 		} else if (this._pausedDelay != -1) {
 			this._localDelayOffset += delay - this._pausedDelay;
 			this._pausedDelay = -1;
 		}
-
+		
 		// Animating
 		var running = false;
 		var animations = this._animations;
-
+		
 		for (index in 0...animations.length) {
 			var animation = animations[index];
 			var isRunning = animation.animate(delay - this._localDelayOffset, this.fromFrame, this.toFrame, this.loopAnimation, this.speedRatio);
 			running = running || isRunning;
 		}
-
+		
 		if (!running && this.onAnimationEnd != null) {
 			this.onAnimationEnd();
 		}
-
+		
 		return running;
 	}
 	

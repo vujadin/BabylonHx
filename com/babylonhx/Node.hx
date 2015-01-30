@@ -8,7 +8,7 @@ import com.babylonhx.animations.Animation;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Node') class Node {
+class Node {
 	
 	public var parent:Node;
 	public var name:String;
@@ -49,7 +49,7 @@ import com.babylonhx.animations.Animation;
 
 	// override it in derived class
 	public function getWorldMatrix():Matrix {
-		return Matrix.Identity();
+		return null;// Matrix.Identity();
 	}
 
 	// override it in derived class if you add new variables to the cache

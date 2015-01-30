@@ -9,7 +9,7 @@ import com.babylonhx.math.Ray;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.GroundMesh') class GroundMesh extends Mesh {
+class GroundMesh extends Mesh {
 	
 	public var generateOctree = false;
 

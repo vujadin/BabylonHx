@@ -10,7 +10,7 @@ import com.babylonhx.math.Vector3;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.PointLight') class PointLight extends Light {
+class PointLight extends Light {
 	
 	private var _worldMatrix:Matrix;
 	private var _transformedPosition:Vector3;

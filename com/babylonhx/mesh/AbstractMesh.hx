@@ -30,7 +30,7 @@ enum Space {
 	WORLD;
 }
 
-@:expose('BABYLON.AbstractMesh') class AbstractMesh extends Node implements IDisposable {
+class AbstractMesh extends Node implements IDisposable {
 	
 	// Statics
 	public static var BILLBOARDMODE_NONE:Int = 0;
@@ -41,6 +41,7 @@ enum Space {
 
 
 	// Properties
+	public var definedFacingForward:Bool = true; // orientation for POV movement & rotation
 	public var position:Vector3 = new Vector3(0, 0, 0);
 	public var rotation:Vector3 = new Vector3(0, 0, 0);
 	public var rotationQuaternion:Quaternion;
@@ -95,8 +96,7 @@ enum Space {
 	private function set_skeleton(val:Skeleton):Skeleton {
 		_skeleton = val;
 		return val;
-	}
-	
+	}	
 	
 	public var renderingGroupId:Int = 0;
 	
@@ -170,7 +170,7 @@ enum Space {
 	private var _positions:Array<Vector3>;
 	public var positions(get, set):Array<Vector3>;
 	private function get_positions():Array<Vector3> {
-		return null;
+		return _positions;
 	}
 	private function set_positions(val:Array<Vector3>):Array<Vector3> {
 		_positions = val;
@@ -343,6 +343,62 @@ enum Space {
 			this.position.y = absolutePositionY;
 			this.position.z = absolutePositionZ;
 		}
+	}
+	
+	// ================================== Point of View Movement =================================
+	/**
+	 * Perform relative position change from the point of view of behind the front of the mesh.
+	 * This is performed taking into account the meshes current rotation, so you do not have to care.
+	 * Supports definition of mesh facing forward or backward.
+	 * @param {number} amountRight
+	 * @param {number} amountUp
+	 * @param {number} amountForward
+	 */
+	public function movePOV(amountRight:Float, amountUp:Float, amountForward:Float) {
+		this.position.addInPlace(this.calcMovePOV(amountRight, amountUp, amountForward));
+	}
+	
+	/**
+	 * Calculate relative position change from the point of view of behind the front of the mesh.
+	 * This is performed taking into account the meshes current rotation, so you do not have to care.
+	 * Supports definition of mesh facing forward or backward.
+	 * @param {number} amountRight
+	 * @param {number} amountUp
+	 * @param {number} amountForward
+	 */
+	public function calcMovePOV(amountRight:Float, amountUp:Float, amountForward:Float):Vector3 {
+		var rotMatrix:Matrix = new Matrix();
+		var rotQuaternion:Quaternion = (this.rotationQuaternion != null) ? this.rotationQuaternion : Quaternion.RotationYawPitchRoll(this.rotation.y, this.rotation.x, this.rotation.z);
+		rotQuaternion.toRotationMatrix(rotMatrix);
+		
+		var translationDelta = Vector3.Zero();
+		var defForwardMult = this.definedFacingForward ? -1 : 1;
+		Vector3.TransformCoordinatesFromFloatsToRef(amountRight * defForwardMult, amountUp, amountForward * defForwardMult, rotMatrix, translationDelta);
+		return translationDelta;
+	}
+	
+	// ================================== Point of View Rotation =================================
+	/**
+	 * Perform relative rotation change from the point of view of behind the front of the mesh.
+	 * Supports definition of mesh facing forward or backward.
+	 * @param {number} flipBack
+	 * @param {number} twirlClockwise
+	 * @param {number} tiltRight
+	 */
+	public function rotatePOV(flipBack:Float, twirlClockwise:Float, tiltRight:Float) {
+		this.rotation.addInPlace(this.calcRotatePOV(flipBack, twirlClockwise, tiltRight));
+	}
+	
+	/**
+	 * Calculate relative rotation change from the point of view of behind the front of the mesh.
+	 * Supports definition of mesh facing forward or backward.
+	 * @param {number} flipBack
+	 * @param {number} twirlClockwise
+	 * @param {number} tiltRight
+	 */
+	public function calcRotatePOV(flipBack:Float, twirlClockwise:Float, tiltRight:Float):Vector3 {
+		var defForwardMult = this.definedFacingForward ? 1 : -1;
+		return new Vector3(flipBack * defForwardMult, twirlClockwise, tiltRight * defForwardMult);
 	}
 
 	public function setPivotMatrix(matrix:Matrix) {
@@ -612,24 +668,16 @@ enum Space {
 	}
 
 	// Physics
-	public function setPhysicsState(?impostor:Dynamic, ?options:PhysicsBodyCreationOptions) {
+	public function setPhysicsState(impostor:Int = PhysicsEngine.NoImpostor, ?options:PhysicsBodyCreationOptions):Dynamic {
 		var physicsEngine = this.getScene().getPhysicsEngine();
 		
 		if (physicsEngine == null) {
-			return;
+			return null;
 		}
-		
-		if (impostor.impostor != null) {
-			// Old API
-			options = impostor;
-			impostor = impostor.impostor;
-		}
-		
-		impostor = impostor != null ? impostor : PhysicsEngine.NoImpostor;
-		
+						
 		if (impostor == PhysicsEngine.NoImpostor) {
 			physicsEngine._unregisterMesh(this);
-			return;
+			return null;
 		}
 		
 		options.mass = options.mass == null ? 0 : options.mass;
@@ -641,7 +689,7 @@ enum Space {
 		this._physicsFriction = options.friction;
 		this._physicRestitution = options.restitution;
 		
-		physicsEngine._registerMesh(this, impostor, options);
+		return physicsEngine._registerMesh(this, impostor, options);
 	}
 
 	public function getPhysicsImpostor():Int {
@@ -836,7 +884,7 @@ enum Space {
 			var world = this.getWorldMatrix();
 			var worldOrigin = Vector3.TransformCoordinates(ray.origin, world);
 			var direction = ray.direction.clone();
-			direction.normalize();
+			//direction.normalize();
 			direction = direction.scale(intersectInfo.distance);
 			var worldDirection = Vector3.TransformNormal(direction, world);
 			

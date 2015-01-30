@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.StopAnimationAction') class StopAnimationAction extends Action {
+class StopAnimationAction extends Action {
 	
 	private var _target:Dynamic;
 	
@@ -15,7 +15,7 @@ package com.babylonhx.actions;
 		this._target = target;
 	}
 
-	override public function execute(?evt:ActionEvent):Void {
+	override public function execute(?evt:ActionEvent) {
 		var scene = this._actionManager.getScene();
 		scene.stopAnimation(this._target);
 	}

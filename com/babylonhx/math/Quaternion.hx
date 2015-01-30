@@ -4,7 +4,7 @@ package com.babylonhx.math;
 * ...
 * @author Krtolica Vujadin
 */
-@:expose('BABYLON.Quaternion') class Quaternion {
+class Quaternion {
 	
 	public var x:Float;
 	public var y:Float;

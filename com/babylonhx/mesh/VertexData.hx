@@ -3,6 +3,7 @@ package com.babylonhx.mesh;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector2;
+import openfl.utils.ByteArray;
 
 #if nme
 import nme.utils.UInt8Array;
@@ -19,7 +20,7 @@ import snow.utils.UInt8Array;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.VertexData') class VertexData {
+class VertexData {
 	
 	public var positions:Array<Float>;
 	public var normals:Array<Float>;
@@ -802,7 +803,7 @@ import snow.utils.UInt8Array;
 		return vertexData;
 	}
 
-	public static function CreateGroundFromHeightMap(width:Float, height:Float, subdivisions:Int, minHeight:Float, maxHeight:Float, buffer:UInt8Array, bufferWidth:Float, bufferHeight:Float):VertexData {
+	public static function CreateGroundFromHeightMap(width:Float, height:Float, subdivisions:Int, minHeight:Float, maxHeight:Float, buffer:ByteArray, bufferWidth:Float, bufferHeight:Float):VertexData {
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
 		var normals:Array<Float> = [];
@@ -818,9 +819,9 @@ import snow.utils.UInt8Array;
 				var heightMapY = Std.int((1.0 - (position.z + height / 2) / height) * (bufferHeight - 1));
 				
 				var pos = Std.int((heightMapX + heightMapY * bufferWidth) * 4);
-				var r = buffer[pos] / 255.0;
-				var g = buffer[pos + 1] / 255.0;
-				var b = buffer[pos + 2] / 255.0;
+				var r = buffer.__get(pos) / 255.0;
+				var g = buffer.__get(pos + 1) / 255.0;
+				var b = buffer.__get(pos + 2) / 255.0;
 				
 				var gradient = r * 0.3 + g * 0.59 + b * 0.11;
 				position.y = minHeight + (maxHeight - minHeight) * gradient;

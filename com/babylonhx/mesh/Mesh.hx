@@ -9,28 +9,39 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector2;
+import com.babylonhx.mesh.simplification.ISimplificationSettings;
+import com.babylonhx.mesh.simplification.ISimplifier;
+import com.babylonhx.mesh.simplification.QuadraticErrorSimplification;
+import com.babylonhx.mesh.simplification.SimplificationSettings;
+import com.babylonhx.Node;
 import com.babylonhx.mesh.LinesMesh;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.particles.ParticleSystem;
+import com.babylonhx.tools.AsyncLoop;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.materials.Material;
 import haxe.CallStack;
 import haxe.Json;
+import openfl.display.BitmapData;
 
 #if nme
 import nme.utils.Float32Array;
 import nme.utils.ArrayBuffer;
 import nme.utils.UInt8Array;
 #elseif openfl
+import openfl.Assets;
+import openfl.geom.Rectangle;
+import openfl.utils.ByteArray;
 import openfl.utils.Float32Array;
 import openfl.utils.ArrayBuffer;
 import openfl.utils.UInt8Array;
 #elseif snow
 import snow.utils.Float32Array;
+import snow.utils.UInt8Array;
+import snow.utils.UInt8Array;
 import snow.utils.ArrayBuffer;
-import snow.utils.UInt8Array;
-import snow.utils.UInt8Array;
+import snow.utils.ByteArray;
 #elseif kha
 // TODO
 #end
@@ -40,7 +51,7 @@ import snow.utils.UInt8Array;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Mesh') class Mesh extends AbstractMesh implements IGetSetVerticesData {
+class Mesh extends AbstractMesh implements IGetSetVerticesData {
 	
 	// Members
 	public var delayLoadState = Engine.DELAYLOADSTATE_NONE;
@@ -64,8 +75,48 @@ import snow.utils.UInt8Array;
 	public var _shouldGenerateFlatShading:Bool;
 	private var _preActivateId:Int = -1;
 
-	public function new(name:String, scene:Scene) {
+	public function new(name:String, scene:Scene, parent:Node = null, ?source:Mesh, doNotCloneChildren:Bool = false) {
 		super(name, scene);
+		
+		if (source != null){
+			// Geometry
+			if (source._geometry != null) {
+				source._geometry.applyToMesh(this);
+			}
+			
+			// Deep copy
+			Tools.DeepCopy(source, this, ["name", "material", "skeleton"], []);
+			
+			// Material
+			this.material = source.material;
+			
+			if (!doNotCloneChildren) {
+				// Children
+				for (index in 0...scene.meshes.length) {
+					var mesh = scene.meshes[index];
+					
+					if (mesh.parent == source) {
+						// doNotCloneChildren is always going to be False
+						var newChild = mesh.clone(name + "." + mesh.name, this, doNotCloneChildren); 
+					}
+				}
+			}
+			
+			// Particles
+			for (index in 0...scene.particleSystems.length) {
+				var system = scene.particleSystems[index];
+				
+				if (system.emitter == source) {
+					system.clone(system.name, this);
+				}
+			}
+			this.computeWorldMatrix(true);
+		}
+		
+		// Parent
+		if (parent != null) {
+			this.parent = parent;
+		}
 	}
 
 	// Methods
@@ -296,7 +347,7 @@ import snow.utils.UInt8Array;
 		this.synchronizeInstances();
 	}
 
-	public function setVerticesData(kind:String, data:Array<Float>, updatable:Bool = false/*?updatable:Bool*/, ?stride:Int) {
+	public function setVerticesData(kind:String, data:Array<Float>, updatable:Bool = false, ?stride:Int) {
 		if (this._geometry == null) {
 			var vertexData = new VertexData();
 			vertexData.set(data, kind);
@@ -309,7 +360,7 @@ import snow.utils.UInt8Array;
 		}
 	}
 
-	public function updateVerticesData(kind:String, data:Array<Float>, updateExtends:Bool = false/*?updateExtends:Bool*/, makeItUnique:Bool = false/*?makeItUnique:Bool*/) {
+	public function updateVerticesData(kind:String, data:Array<Float>, updateExtends:Bool = false, makeItUnique:Bool = false) {
 		if (this._geometry == null) {
 			return;
 		}
@@ -322,7 +373,7 @@ import snow.utils.UInt8Array;
 		}
 	}
 
-	public function updateVerticesDataDirectly(kind:String, data:Float32Array, offset:Int = 0, makeItUnique:Bool = false/*?makeItUnique:Bool*/) {
+	public function updateVerticesDataDirectly(kind:String, data:Float32Array, offset:Int = 0, makeItUnique:Bool = false) {
 		if (this._geometry == null) {
 			return;
 		}
@@ -507,7 +558,7 @@ import snow.utils.UInt8Array;
 
 	public function render(subMesh:SubMesh) {
 		var scene = this.getScene();
-		
+				
 		// Managing instances
 		var batch = this._getInstancesRenderList(subMesh._id);
 		if (batch.mustReturn) {
@@ -773,46 +824,8 @@ import snow.utils.UInt8Array;
 	}
 
 	// Clone
-	override public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false/*?doNotCloneChildren:Bool*/):Mesh {
-		var result = new Mesh(name, this.getScene());
-		
-		// Geometry
-		this._geometry.applyToMesh(result);
-		
-		// Deep copy
-		Tools.DeepCopy(this, result, ["name", "material", "skeleton"], []);
-trace("deepCopy over");
-		// Material
-		result.material = this.material;
-		
-		// Parent
-		if (newParent != null) {
-			result.parent = newParent;
-		}
-		
-		if (!doNotCloneChildren) {
-			// Children
-			for (index in 0...this.getScene().meshes.length) {
-				var mesh = this.getScene().meshes[index];
-				
-				if (mesh.parent == this) {
-					mesh.clone(mesh.name, result);
-				}
-			}
-		}
-		
-		// Particles
-		for (index in 0...this.getScene().particleSystems.length) {
-			var system = this.getScene().particleSystems[index];
-			
-			if (system.emitter == this) {
-				system.clone(system.name, result);
-			}
-		}
-		
-		result.computeWorldMatrix(true);
-		
-		return result;
+	override public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false):Mesh {
+		return new Mesh(name, this.getScene(), newParent, this, doNotCloneChildren);
 	}
 
 	// Dispose
@@ -836,9 +849,9 @@ trace("deepCopy over");
 
 	// Geometric tools
 	public function applyDisplacementMap(url:String, minHeight:Float, maxHeight:Float) {
-		/*var scene = this.getScene();
+		var scene = this.getScene();
 
-		var onload = img => {
+		/*var onload = img => {
 			// Getting height map data
 			var canvas = document.createElement("canvas");
 			var context = canvas.getContext("2d");
@@ -850,15 +863,18 @@ trace("deepCopy over");
 			context.drawImage(img, 0, 0);
 			
 			// Create VertexData from map data
-			var buffer = context.getImageData(0, 0, heightMapWidth, heightMapHeight).data;
+			var buffer = context.getImageData(0, 0, heightMapWidth, heightMapHeight).data;*/
 			
-			this.applyDisplacementMapFromBuffer(buffer, heightMapWidth, heightMapHeight, minHeight, maxHeight);
-		};
+			var bmp = Assets.getBitmapData(url);
+			var buffer = bmp.getPixels(new Rectangle(0, 0, bmp.width, bmp.height));
+						
+			this.applyDisplacementMapFromBuffer(buffer, bmp.width, bmp.height, minHeight, maxHeight);
+		//};
 		
-		Tools.LoadImage(url, onload, () => { }, scene.database);*/
+		//Tools.LoadImage(url, onload, () => { }, scene.database);
 	}
 
-	public function applyDisplacementMapFromBuffer(buffer:UInt8Array, heightMapWidth:Float, heightMapHeight:Float, minHeight:Float, maxHeight:Float) {
+	public function applyDisplacementMapFromBuffer(buffer:ByteArray, heightMapWidth:Float, heightMapHeight:Float, minHeight:Float, maxHeight:Float) {
 		if (!this.isVerticesDataPresent(VertexBuffer.PositionKind)
 			|| !this.isVerticesDataPresent(VertexBuffer.NormalKind)
 			|| !this.isVerticesDataPresent(VertexBuffer.UVKind)) {
@@ -872,9 +888,9 @@ trace("deepCopy over");
 		var position = Vector3.Zero();
 		var normal = Vector3.Zero();
 		var uv = Vector2.Zero();
-		
+				
 		var index:Int = 0;
-		while(index < position.length()) {
+		while(index < positions.length) {
 			Vector3.FromArrayToRef(positions, index, position);
 			Vector3.FromArrayToRef(normals, index, normal);
 			Vector2.FromArrayToRef(uvs, Std.int((index / 3) * 2), uv);
@@ -884,9 +900,9 @@ trace("deepCopy over");
 			var v = Std.int((Math.abs(uv.y) * heightMapHeight) % heightMapHeight);
 			
 			var pos = Std.int((u + v * heightMapWidth) * 4);
-			var r = buffer[pos] / 255.0;
-			var g = buffer[pos + 1] / 255.0;
-			var b = buffer[pos + 2] / 255.0;
+			var r = buffer.__get(pos) / 255.0;
+			var g = buffer.__get(pos + 1) / 255.0;
+			var b = buffer.__get(pos + 2) / 255.0;
 			
 			var gradient = r * 0.3 + g * 0.59 + b * 0.11;
 			
@@ -904,7 +920,6 @@ trace("deepCopy over");
 		this.updateVerticesData(VertexBuffer.PositionKind, positions);
 		this.updateVerticesData(VertexBuffer.NormalKind, normals);
 	}
-
 
 	public function convertToFlatShadedMesh() {
 		/// <summary>Update normals and vertices to get a flat shading rendering.</summary>
@@ -1011,9 +1026,67 @@ trace("deepCopy over");
 			instance._syncSubMeshes();
 		}
 	}
+	
+	/**
+	 * Simplify the mesh according to the given array of settings.
+	 * Function will return immediately and will simplify async.
+	 * @param settings a collection of simplification settings.
+	 * @param parallelProcessing should all levels calculate parallel or one after the other.
+	 * @param type the type of simplification to run.
+	 * successCallback optional success callback to be called after the simplification finished processing all settings.
+	 */
+	public function simplify(settings:Array<ISimplificationSettings>, parallelProcessing:Bool = true, type:Int = SimplificationSettings.QUADRATIC, ?successCallback:Void->Void) {
+		
+		var getSimplifier = function():ISimplifier {   
+			switch (type) {
+				case SimplificationSettings.QUADRATIC:
+					return new QuadraticErrorSimplification(this);
+				
+				default:
+					return new QuadraticErrorSimplification(this);
+			}
+		}
+		
+		if (parallelProcessing) {
+			//parallel simplifier
+			for(setting in settings) {
+				var simplifier = getSimplifier();
+				simplifier.simplify(setting, function(newMesh:Mesh) {
+					this.addLODLevel(setting.distance, newMesh);
+					//check if it is the last
+					if (setting.quality == settings[settings.length - 1].quality && successCallback != null) {
+						//all done, run the success callback.
+						successCallback();
+					}
+				});
+			};
+		} else {
+			//single simplifier.
+			var simplifier = getSimplifier();
+			
+			var runDecimation = function(setting:ISimplificationSettings, cback:Void->Void) {
+				simplifier.simplify(setting, function(newMesh:Mesh) {
+					this.addLODLevel(setting.distance, newMesh);
+					//run the next quality level
+					cback();
+				});
+			}
+			
+			AsyncLoop.Run(settings.length, function(loop:AsyncLoop) {
+				runDecimation(settings[loop.index], function() {
+					loop.executeNext();
+				});
+			}, function() {
+				//execution ended, run the success callback.
+				if (successCallback != null) {
+					successCallback();
+				}
+			});
+		}
+	}
 
 	// Statics
-	public static function CreateBox(name:String, size:Float, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):Mesh {
+	public static function CreateBox(name:String, size:Float, scene:Scene, updatable:Bool = false):Mesh {
 		var box = new Mesh(name, scene);
 		var vertexData = VertexData.CreateBox(size);
 		
@@ -1022,7 +1095,7 @@ trace("deepCopy over");
 		return box;
 	}
 
-	public static function CreateSphere(name:String, segments:Int, diameter:Float, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):Mesh {
+	public static function CreateSphere(name:String, segments:Int, diameter:Float, scene:Scene, updatable:Bool = false):Mesh {
 		var sphere = new Mesh(name, scene);
 		var vertexData = VertexData.CreateSphere(segments, diameter);
 		
@@ -1032,7 +1105,7 @@ trace("deepCopy over");
 	}
 
 	// Cylinder and cone (Code inspired by SharpDX.org)
-	public static function CreateCylinder(name:String, height:Float, diameterTop:Float, diameterBottom:Float, tessellation:Int, subdivisions:Int, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):Mesh {		
+	public static function CreateCylinder(name:String, height:Float, diameterTop:Float, diameterBottom:Float, tessellation:Int, subdivisions:Int, scene:Scene, updatable:Bool = false):Mesh {		
 		var cylinder = new Mesh(name, scene);
 		var vertexData = VertexData.CreateCylinder(height, diameterTop, diameterBottom, tessellation, subdivisions);
 		
@@ -1042,7 +1115,7 @@ trace("deepCopy over");
 	}
 
 	// Torus  (Code from SharpDX.org)
-	public static function CreateTorus(name:String, diameter:Float, thickness:Float, tessellation:Int, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):Mesh {
+	public static function CreateTorus(name:String, diameter:Float, thickness:Float, tessellation:Int, scene:Scene, updatable:Bool = false):Mesh {
 		var torus = new Mesh(name, scene);
 		var vertexData = VertexData.CreateTorus(diameter, thickness, tessellation);
 		
@@ -1051,7 +1124,7 @@ trace("deepCopy over");
 		return torus;
 	}
 
-	public static function CreateTorusKnot(name:String, radius:Float, tube:Float, radialSegments:Int, tubularSegments:Int, p:Float, q:Float, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):Mesh {
+	public static function CreateTorusKnot(name:String, radius:Float, tube:Float, radialSegments:Int, tubularSegments:Int, p:Float, q:Float, scene:Scene, updatable:Bool = false):Mesh {
 		var torusKnot = new Mesh(name, scene);
 		var vertexData = VertexData.CreateTorusKnot(radius, tube, radialSegments, tubularSegments, p, q);		
 		vertexData.applyToMesh(torusKnot, updatable);		
@@ -1059,7 +1132,7 @@ trace("deepCopy over");
 	}
 
 	// Lines
-	public static function CreateLines(name:String, points:Array<Vector3>, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):LinesMesh {
+	public static function CreateLines(name:String, points:Array<Vector3>, scene:Scene, updatable:Bool = false):LinesMesh {
 		var lines = new LinesMesh(name, scene, updatable);		
 		var vertexData = VertexData.CreateLines(points);
 		vertexData.applyToMesh(lines, updatable);
@@ -1067,14 +1140,14 @@ trace("deepCopy over");
 	}
 
 	// Plane & ground
-	public static function CreatePlane(name:String, size:Float, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):Mesh {
+	public static function CreatePlane(name:String, size:Float, scene:Scene, updatable:Bool = false):Mesh {
 		var plane = new Mesh(name, scene);
 		var vertexData = VertexData.CreatePlane(size);
 		vertexData.applyToMesh(plane, updatable);
 		return plane;
 	}
 
-	public static function CreateGround(name:String, width:Float, height:Float, subdivisions:Int, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):Mesh {
+	public static function CreateGround(name:String, width:Float, height:Float, subdivisions:Int, scene:Scene, updatable:Bool = false):Mesh {
 		var ground = new GroundMesh(name, scene);
 		ground._setReady(false);
 		ground._subdivisions = subdivisions;
@@ -1085,41 +1158,27 @@ trace("deepCopy over");
 		return ground;
 	}
 
-	public static function CreateTiledGround(name:String, xmin:Float, zmin:Float, xmax:Float, zmax:Float, subdivisions:Dynamic, precision:Dynamic, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):Mesh {
+	public static function CreateTiledGround(name:String, xmin:Float, zmin:Float, xmax:Float, zmax:Float, subdivisions:Dynamic, precision:Dynamic, scene:Scene, updatable:Bool = false):Mesh {
 		var tiledGround = new Mesh(name, scene);
 		var vertexData = VertexData.CreateTiledGround(xmin, zmin, xmax, zmax, subdivisions, precision);
 		vertexData.applyToMesh(tiledGround, updatable);
 		return tiledGround;
 	}
 
-	public static function CreateGroundFromHeightMap(name:String, url:String, width:Float, height:Float, subdivisions:Int, minHeight:Float, maxHeight:Float, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):GroundMesh {
+	public static function CreateGroundFromHeightMap(name:String, url:String, width:Float, height:Float, subdivisions:Int, minHeight:Float, maxHeight:Float, scene:Scene, updatable:Bool = false):GroundMesh {
 		var ground = new GroundMesh(name, scene);
 		ground._subdivisions = subdivisions;
 		ground._setReady(false);
 		
-		/*#if js
-		var onload = function(img) {
-			// Getting height map data
-			var canvas = document.createElement("canvas");
-			var context = canvas.getContext("2d");
-			var heightMapWidth = img.width;
-			var heightMapHeight = img.height;
-			canvas.width = heightMapWidth;
-			canvas.height = heightMapHeight;
+		var img:BitmapData = Assets.getBitmapData(url);
 			
-			context.drawImage(img, 0, 0);
-			
-			// Create VertexData from map data
-			var buffer = context.getImageData(0, 0, heightMapWidth, heightMapHeight).data;
-			var vertexData = VertexData.CreateGroundFromHeightMap(width, height, subdivisions, minHeight, maxHeight, buffer, heightMapWidth, heightMapHeight);
-			
-			vertexData.applyToMesh(ground, updatable);
-			
-			ground._setReady(true);
-		};
+		// Create VertexData from map data
+		var buffer = img.getPixels(new Rectangle(0, 0, img.width, img.height));
+		var vertexData = VertexData.CreateGroundFromHeightMap(width, height, subdivisions, minHeight, maxHeight, buffer, img.width, img.height);
 		
-		Tools.LoadImage(url, onload, function() { }, scene.database);
-		#end*/
+		vertexData.applyToMesh(ground, updatable);
+		
+		ground._setReady(true);
 		
 		return ground;
 	}

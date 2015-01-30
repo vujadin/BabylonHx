@@ -5,7 +5,7 @@ package com.babylonhx.mesh.primitives;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Cylinder') class Cylinder extends _Primitive {
+class Cylinder extends _Primitive {
 	
 	// Members
 	public var height:Float;

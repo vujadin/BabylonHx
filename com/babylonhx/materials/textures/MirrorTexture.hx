@@ -8,7 +8,7 @@ import com.babylonhx.math.Matrix;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.MirrorTexture') class MirrorTexture extends RenderTargetTexture {
+class MirrorTexture extends RenderTargetTexture {
 	
 	public var mirrorPlane = new Plane(0, 1, 0, 1);
 

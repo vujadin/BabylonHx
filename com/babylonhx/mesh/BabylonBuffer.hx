@@ -5,7 +5,7 @@ import nme.gl.GLBuffer;
 #elseif openfl
 import openfl.gl.GLBuffer;
 #elseif snow
-import snow.renderer.opengl.GLBuffer;
+import snow.render.opengl.GL;
 #elseif kha
 
 #end
@@ -15,7 +15,7 @@ import snow.renderer.opengl.GLBuffer;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.BabylonBuffer') class BabylonBuffer {
+class BabylonBuffer {
 	
 	// TODO: this will depend on backend we use (Kha, OpenFL, Luxe...)
 	public var buffer:GLBuffer;	

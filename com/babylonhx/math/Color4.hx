@@ -4,7 +4,8 @@ package com.babylonhx.math;
  * ...
  * @author Krtolica Vujadin
  */
-@:expose('BABYLON.Color4') class Color4 {
+
+class Color4 {
 	
 	public var r:Float;
 	public var g:Float;
@@ -75,13 +76,20 @@ package com.babylonhx.math;
 	public function clone():Color4 {
 		return new Color4(this.r, this.g, this.b, this.a);
 	}
+	
+	public function copyFrom(source:Color4) {
+		this.r = source.r;
+		this.g = source.g;
+		this.b = source.b;
+		this.a = source.a;
+	}
 
 	// Statics
 	public static function Lerp(left:Color4, right:Color4, amount:Float):Color4 {
 		var result = new Color4(0, 0, 0, 0);
-
+		
 		Color4.LerpToRef(left, right, amount, result);
-
+		
 		return result;
 	}
 

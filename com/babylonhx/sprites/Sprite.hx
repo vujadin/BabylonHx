@@ -10,7 +10,7 @@ import com.babylonhx.animations.Animation;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Sprite') class Sprite {
+class Sprite {
 	
 	public var name:String;
 	public var position:Vector3;

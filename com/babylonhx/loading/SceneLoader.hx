@@ -11,7 +11,7 @@ import com.babylonhx.loading.plugins.BabylonFileLoader;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.SceneLoader') class SceneLoader {
+class SceneLoader {
 	
 	// Flags
 	private static var _ForceFullSceneLoadingForIncremental:Bool = false;

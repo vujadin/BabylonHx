@@ -5,7 +5,7 @@ package com.babylonhx.tools;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.SmartArray') class SmartArray {
+class SmartArray {
 	
 	private static var _GlobalId:Int = 0;
 	
@@ -25,7 +25,7 @@ package com.babylonhx.tools;
 
 	inline public function push(value:Dynamic):Void {
 		this.data[this.length++] = value;
-		
+		//trace(value);
 		if (value.__smartArrayFlags == null) {
 			value.__smartArrayFlags = [];
 		}

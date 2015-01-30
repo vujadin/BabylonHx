@@ -4,7 +4,7 @@ package com.babylonhx.math;
  * ...
  * @author Krtolica Vujadin
  */
-@:expose('BABYLON.Viewport') class Viewport {
+class Viewport {
 	
 	public var x:Float;
 	public var y:Float;

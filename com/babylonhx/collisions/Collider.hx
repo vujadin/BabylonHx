@@ -9,7 +9,7 @@ import com.babylonhx.mesh.SubMesh;
 * ...
 * @author Krtolica Vujadin
 */
-@:expose('BABYLON.Collider') class Collider {
+class Collider {
 	
 	public var radius:Vector3 = new Vector3(1, 1, 1);
 	public var retry:Int = 0;

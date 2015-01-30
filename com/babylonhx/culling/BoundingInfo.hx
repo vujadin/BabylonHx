@@ -10,7 +10,7 @@ import com.babylonhx.math.Vector3;
 * @author Krtolica Vujadin
 */
 
-@:expose('BABYLON.BoundingInfo') class BoundingInfo {
+class BoundingInfo {
 	
 	public var boundingBox:BoundingBox;
 	public var boundingSphere:BoundingSphere;

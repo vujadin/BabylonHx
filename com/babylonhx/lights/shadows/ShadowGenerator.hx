@@ -1,6 +1,7 @@
 package com.babylonhx.lights.shadows;
 
 import com.babylonhx.Engine;
+import com.babylonhx.lights.IShadowLight;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.Material;
 import com.babylonhx.materials.textures.RenderTargetTexture;
@@ -18,7 +19,7 @@ import com.babylonhx.Scene;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.ShadowGenerator') class ShadowGenerator {
+class ShadowGenerator {
 	
 	public static var FILTER_NONE:Int = 0;
 	public static var FILTER_VARIANCESHADOWMAP:Int = 1;
@@ -46,7 +47,7 @@ import com.babylonhx.Scene;
 		return value;
 	}
 
-	private var _light:DirectionalLight;
+	private var _light:IShadowLight;
 	private var _scene:Scene;
 	private var _shadowMap:RenderTargetTexture;
 	private var _darkness:Float = 0;
@@ -62,7 +63,7 @@ import com.babylonhx.Scene;
 	private var _cachedDefines:String;
 
 	
-	public function new(mapSize:Float, light:DirectionalLight) {
+	public function new(mapSize:Float, light:IShadowLight) {
 		this._light = light;
 		this._scene = light.getScene();
 		
@@ -220,7 +221,7 @@ import com.babylonhx.Scene;
 		return this._shadowMap;
 	}
 
-	public function getLight():DirectionalLight {
+	public function getLight():IShadowLight {
 		return this._light;
 	}
 
@@ -229,8 +230,8 @@ import com.babylonhx.Scene;
 		var lightPosition = this._light.position;
 		var lightDirection = this._light.direction;
 		
-		if (this._light._computeTransformedPosition()) {
-			lightPosition = this._light._transformedPosition;
+		if (this._light.computeTransformedPosition()) {
+			lightPosition = this._light.transformedPosition;
 		}
 		
 		if (this._cachedPosition == null || this._cachedDirection == null || !lightPosition.equals(this._cachedPosition) || !lightDirection.equals(this._cachedDirection)) {

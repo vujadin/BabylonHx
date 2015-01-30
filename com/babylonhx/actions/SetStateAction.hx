@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.SetStateAction') class SetStateAction extends Action {
+class SetStateAction extends Action {
 	
 	private var _target:Dynamic;	
 	public var value:String;
@@ -16,7 +16,7 @@ package com.babylonhx.actions;
 		this._target = target;
 	}
 
-	override public function execute(?evt:ActionEvent):Void {
+	override public function execute(?evt:ActionEvent) {
 		this._target.state = this.value;
 	}
 	

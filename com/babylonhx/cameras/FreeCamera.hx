@@ -4,17 +4,29 @@ import com.babylonhx.collisions.Collider;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
+
+#if nme
+import nme.display.Sprite;
+import nme.events.KeyboardEvent;
+import nme.events.MouseEvent;
+import nme.Lib;
+#elseif openfl
 import openfl.display.Sprite;
 import openfl.events.KeyboardEvent;
 import openfl.events.MouseEvent;
 import openfl.Lib;
+#elseif snow
+
+#elseif kha
+
+#end
 
 /**
 * ...
 * @author Krtolica Vujadin
 */
 
-@:expose('BABYLON.FreeCamera') class FreeCamera extends TargetCamera {
+class FreeCamera extends TargetCamera {
 	
 	public var ellipsoid:Vector3 = new Vector3(0.5, 1, 0.5);
 	public var keysUp:Array<Int> = [38];

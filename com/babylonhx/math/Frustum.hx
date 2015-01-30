@@ -4,7 +4,7 @@ package com.babylonhx.math;
 * ...
 * @author Krtolica Vujadin
 */
-@:expose('BABYLON.Frustum') class Frustum {
+class Frustum {
 	
 	inline public static function GetPlanes(transform:Matrix):Array<Plane> {
 		var frustumPlanes:Array<Plane> = [];

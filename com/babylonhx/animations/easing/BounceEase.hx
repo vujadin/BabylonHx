@@ -5,7 +5,7 @@ package com.babylonhx.animations.easing;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.BounceEase') class BounceEase extends EasingFunction {
+class BounceEase extends EasingFunction {
 	
 	public var bounces:Float = 3.0;
 	public var bounciness:Float = 2.0;

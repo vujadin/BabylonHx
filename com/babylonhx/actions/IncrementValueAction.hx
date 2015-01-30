@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.IncrementValueAction') class IncrementValueAction extends Action {
+class IncrementValueAction extends Action {
 	
 	private var _target:Dynamic;
 	private var _property:String;
@@ -21,10 +21,10 @@ package com.babylonhx.actions;
 		this.value = value;
 	}
 
-	override public function _prepare():Void {
+	override public function _prepare() {
 		this._target = this._getEffectiveTarget(this._target, this.propertyPath);
 		this._property = this._getProperty(this.propertyPath);
-
+		
 		var isInt = Std.is(Reflect.getProperty(this._target, this._property), Int);
 		var isFloat = Std.is(Reflect.getProperty(this._target, this._property), Float);
 		if (!isInt && !isFloat) {
@@ -32,7 +32,7 @@ package com.babylonhx.actions;
 		}
 	}
 
-	override public function execute(?evt:ActionEvent):Void {
+	override public function execute(?evt:ActionEvent) {
 		var val = Reflect.getProperty(this._target, this._property);
 		Reflect.setField(this._target, this._property, val + this.value);
 	}

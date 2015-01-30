@@ -9,7 +9,7 @@ import com.babylonhx.animations.Animation;
 * @author Krtolica Vujadin
 */
 
-@:expose('BABYLON.Bone') class Bone implements IAnimatable {
+class Bone implements IAnimatable {
 	
 	public var name:String;
 	public var children:Array<Bone> = [];
@@ -29,16 +29,16 @@ import com.babylonhx.animations.Animation;
 		this._skeleton = skeleton;
 		this._matrix = matrix;
 		this._baseMatrix = matrix;
-
+		
 		skeleton.bones.push(this);
-
+		
 		if (parentBone != null) {
 			this._parent = parentBone;
 			parentBone.children.push(this);
 		} else {
 			this._parent = null;
 		}
-
+		
 		this._updateDifferenceMatrix();
 	}
 
@@ -66,12 +66,12 @@ import com.babylonhx.animations.Animation;
 	public function getAbsoluteMatrix():Matrix {
 		var matrix = this._matrix.clone();
 		var parent = this._parent;
-
+		
 		while(parent != null) {
 			matrix = matrix.multiply(parent.getLocalMatrix());
 			parent = parent.getParent();
 		}
-
+		
 		return matrix;
 	}
 
@@ -79,7 +79,7 @@ import com.babylonhx.animations.Animation;
 	public function updateMatrix(matrix:Matrix):Void {
 		this._matrix = matrix;
 		this._skeleton._markAsDirty();
-
+		
 		this._updateDifferenceMatrix();
 	}
 
@@ -89,9 +89,9 @@ import com.babylonhx.animations.Animation;
 		} else {
 			this._absoluteTransform.copyFrom(this._matrix);
 		}
-
+		
 		this._absoluteTransform.invertToRef(this._invertedAbsoluteTransform);
-
+		
 		for (index in 0...this.children.length) {
 			this.children[index]._updateDifferenceMatrix();
 		}

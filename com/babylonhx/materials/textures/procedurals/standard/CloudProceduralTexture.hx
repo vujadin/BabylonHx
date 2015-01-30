@@ -7,7 +7,7 @@ import com.babylonhx.math.Color3;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.CloudProceduralTexture') class CloudProceduralTexture extends ProceduralTexture {
+class CloudProceduralTexture extends ProceduralTexture {
 	
 	private var _skyColor:Color3 = new Color3(0.15, 0.68, 1.0);
 	private var _cloudColor:Color3 = new Color3(1, 1, 1);

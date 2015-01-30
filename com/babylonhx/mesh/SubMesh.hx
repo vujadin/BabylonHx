@@ -17,7 +17,7 @@ import com.babylonhx.tools.Tools;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.SubMesh') class SubMesh {
+class SubMesh {
 	
 	public var linesIndexCount:Int;
 

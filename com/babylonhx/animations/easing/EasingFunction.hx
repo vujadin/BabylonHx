@@ -5,7 +5,7 @@ package com.babylonhx.animations.easing;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.EasingFunction') class EasingFunction implements IEasingFunction {
+class EasingFunction implements IEasingFunction {
 	
 	//Statics
 	public static var EASINGMODE_EASEIN:Int = 0;
@@ -40,11 +40,11 @@ package com.babylonhx.animations.easing;
 			case EasingFunction.EASINGMODE_EASEOUT:
 				return (1 - this.easeInCore(1 - gradient));
 		}
-
+		
 		if (gradient >= 0.5) {
 			return (((1 - this.easeInCore((1 - gradient) * 2)) * 0.5) + 0.5);
 		}
-
+		
 		return (this.easeInCore(gradient * 2) * 0.5);
 	}
 

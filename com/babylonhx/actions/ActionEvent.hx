@@ -7,7 +7,7 @@ import com.babylonhx.mesh.AbstractMesh;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.ActionEvent') class ActionEvent {
+class ActionEvent {
 	
 	public var source:AbstractMesh;
 	public var pointerX:Float;

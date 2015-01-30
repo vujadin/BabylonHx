@@ -9,21 +9,25 @@ import com.babylonhx.math.Vector3;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.DirectionalLight') class DirectionalLight extends Light {
+class DirectionalLight extends Light implements IShadowLight {
 	
 	public var position:Vector3;
 	public var direction:Vector3;
 
 	private var _transformedDirection:Vector3;
-	public var _transformedPosition:Vector3;
+	public var transformedPosition:Vector3;
 	private var _worldMatrix:Matrix;
 	
 
 	public function new(name:String, direction:Vector3, scene:Scene) {
 		super(name, scene);
 		
-		this.position = direction.scale(-1);
 		this.direction = direction;
+		this.position = direction.scale(-1);
+	}
+	
+	override public function getAbsolutePosition():Vector3 {
+		return this.transformedPosition != null ? this.transformedPosition : this.position;
 	}
 
 	public function setDirectionToTarget(target:Vector3):Vector3 {
@@ -31,21 +35,17 @@ import com.babylonhx.math.Vector3;
 		return this.direction;
 	}
 
-	public function _computeTransformedPosition():Bool {
+	public function computeTransformedPosition():Bool {
 		if (this.parent != null && this.parent.getWorldMatrix != null) {
-			if (this._transformedPosition == null) {
-				this._transformedPosition = Vector3.Zero();
+			if (this.transformedPosition == null) {
+				this.transformedPosition = Vector3.Zero();
 			}
 			
-			Vector3.TransformCoordinatesToRef(this.position, this.parent.getWorldMatrix(), this._transformedPosition);
+			Vector3.TransformCoordinatesToRef(this.position, this.parent.getWorldMatrix(), this.transformedPosition);
 			return true;
 		}
 		
 		return false;
-	}
-	
-	override public function getAbsolutePosition():Vector3 {
-		return this._transformedPosition != null ? this._transformedPosition : this.position;
 	}
 
 	override public function transferToEffect(effect:Effect, ?directionUniformName:String, ?extra_UNUSED_PARAM:String):Void {

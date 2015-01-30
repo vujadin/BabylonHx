@@ -11,7 +11,7 @@ import com.babylonhx.tools.SmartArray;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.RenderTargetTexture') class RenderTargetTexture extends Texture {
+class RenderTargetTexture extends Texture {
 	
 	public var renderList:Array<AbstractMesh> = [];
 	public var renderParticles:Bool = true;
@@ -21,7 +21,7 @@ import com.babylonhx.tools.SmartArray;
 	public var activeCamera:Camera;
 	public var customRenderFunction:Dynamic;//SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void->Void;
 
-	private var _size:Float;
+	private var _size:Dynamic;
 	public var _generateMipMaps:Bool;
 	private var _renderingManager:RenderingManager;
 	public var _waitingRenderList:Array<String>;
@@ -30,7 +30,7 @@ import com.babylonhx.tools.SmartArray;
 	private var _refreshRate:Int = 1;
 
 	
-	public function new(name:String, size:Float, scene:Scene, ?generateMipMaps:Bool, doNotChangeAspectRatio:Bool = true) {
+	public function new(name:String, size:Dynamic, scene:Scene, ?generateMipMaps:Bool, doNotChangeAspectRatio:Bool = true, type:Int = Engine.TEXTURETYPE_UNSIGNED_INT) {
 		super(null, scene, !generateMipMaps);
 		
 		this.coordinatesMode = Texture.PROJECTION_MODE;
@@ -41,7 +41,7 @@ import com.babylonhx.tools.SmartArray;
 		this._generateMipMaps = generateMipMaps;
 		this._doNotChangeAspectRatio = doNotChangeAspectRatio;
 		
-		this._texture = scene.getEngine().createRenderTargetTexture(size, generateMipMaps);
+		this._texture = scene.getEngine().createRenderTargetTexture(size, { generateMipMaps: generateMipMaps, type: type });
 		
 		// Rendering groups
 		this._renderingManager = new RenderingManager(scene);
@@ -110,7 +110,7 @@ import com.babylonhx.tools.SmartArray;
 			this._waitingRenderList = null;
 		}
 		
-		if (this.renderList == null) {
+		if (this.renderList != null && this.renderList.length == 0) {
 			return;
 		}
 		
@@ -123,6 +123,8 @@ import com.babylonhx.tools.SmartArray;
 		engine.clear(scene.clearColor, true, true);
 		
 		this._renderingManager.reset();
+		
+		var currentRenderList = this.renderList != null ? this.renderList : scene.getActiveMeshes().data;
 		
 		for (meshIndex in 0...this.renderList.length) {
 			var mesh = this.renderList[meshIndex];

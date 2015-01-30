@@ -11,7 +11,7 @@ import com.babylonhx.math.Quaternion;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.InterpolateValueAction') class InterpolateValueAction extends Action {
+class InterpolateValueAction extends Action {
 	
 	private var _target:Dynamic;
 	private var _property:String;
@@ -22,13 +22,14 @@ import com.babylonhx.math.Quaternion;
 	public var stopOtherAnimations:Bool;
 	
 
-	public function new(triggerOptions:Dynamic, target:Dynamic, propertyPath:String, value:Dynamic, duration:Int = 1000, ?condition:Condition, ?stopOtherAnimations:Bool) {
+	public function new(triggerOptions:Dynamic, target:Dynamic, propertyPath:String, value:Dynamic, duration:Int = 1000, ?condition:Condition, stopOtherAnimations:Bool = false) {
 		super(triggerOptions, condition);
 
 		this._target = target;
 		this.propertyPath = propertyPath;
 		this.value = value;
 		this.duration = duration;
+		this.stopOtherAnimations = stopOtherAnimations;
 	}
 
 	override public function _prepare() {
@@ -47,9 +48,9 @@ import com.babylonhx.math.Quaternion;
 				value: this.value
 			}
 		];
-
+		
 		var dataType:Int = -1;
-
+		
 		if (Std.is(this.value, Int) || Std.is(this.value, Float)) {
 			dataType = Animation.ANIMATIONTYPE_FLOAT;
 		} else if (Std.is(this.value, Color3)) {
@@ -64,15 +65,15 @@ import com.babylonhx.math.Quaternion;
 			trace("InterpolateValueAction:Unsupported type (" + Type.getClassName(this.value) + ")");
 			return;
 		}
-
+		
 		var animation = new Animation("InterpolateValueAction", this._property, Std.int(100 * (1000.0 / this.duration)), dataType, Animation.ANIMATIONLOOPMODE_CONSTANT);
-
+		
 		animation.setKeys(keys);
-
+		
 		if (this.stopOtherAnimations) {
 			scene.stopAnimation(this._target);
 		}
-
+		
 		scene.beginDirectAnimation(this._target, [animation], 0, 100);
 	}
 	

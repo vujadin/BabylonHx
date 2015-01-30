@@ -12,7 +12,7 @@ import com.babylonhx.tools.Tools;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.RenderingManager') class RenderingManager {
+class RenderingManager {
 	
 	public static var MAX_RENDERINGGROUPS:Int = 4;
 

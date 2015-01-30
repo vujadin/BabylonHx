@@ -8,7 +8,7 @@ import com.babylonhx.mesh.AbstractMesh;
 * @author Krtolica Vujadin
 */
 
-@:expose('BABYLON.FollowCamera') class FollowCamera extends TargetCamera {
+class FollowCamera extends TargetCamera {
 
 	public var radius:Float = 12;
 	public var rotationOffset:Float = 0;

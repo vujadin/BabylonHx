@@ -19,7 +19,7 @@ import snow.utils.Float32Array;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Geometry') class Geometry implements IGetSetVerticesData {
+class Geometry implements IGetSetVerticesData {
 	
 	// Members
 	public var id:String;
@@ -38,7 +38,7 @@ import snow.utils.Float32Array;
 	public var _boundingInfo:BoundingInfo;
 	public var _delayLoadingFunction:Dynamic->Geometry->Void;
 
-	public function new(id:String, scene:Scene, ?vertexData:VertexData, updatable:Bool = false/*?updatable:Bool*/, ?mesh:Mesh) {
+	public function new(id:String, scene:Scene, ?vertexData:VertexData, updatable:Bool = false, ?mesh:Mesh) {
 		this.id = id;
 		this._engine = scene.getEngine();
 		this._meshes = [];
@@ -309,6 +309,9 @@ import snow.utils.Float32Array;
 				mesh._boundingInfo = new BoundingInfo(extend.minimum, extend.maximum);
 				
 				mesh._createGlobalSubMesh();
+				
+				//bounding info was just created again, world matrix should be applied again.
+                mesh._updateBoundingInfo();
 			}
 		}
 		

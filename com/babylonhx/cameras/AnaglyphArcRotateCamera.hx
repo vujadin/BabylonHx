@@ -10,7 +10,7 @@ import com.babylonhx.tools.Tools;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.AnaglyphArcRotateCamera') class AnaglyphArcRotateCamera extends ArcRotateCamera {
+class AnaglyphArcRotateCamera extends ArcRotateCamera {
 	
 	private var _eyeSpace:Float;
 	private var _leftCamera:ArcRotateCamera;

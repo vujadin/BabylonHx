@@ -10,7 +10,7 @@ import com.babylonhx.mesh.BabylonBuffer;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Layer') class Layer {
+class Layer {
 	
 	public var name:String;
 	public var texture:Texture;

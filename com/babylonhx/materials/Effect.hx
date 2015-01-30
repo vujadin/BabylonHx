@@ -28,9 +28,6 @@ import openfl.gl.GLUniformLocation;
 import snow.assets.Assets;
 import snow.assets.AssetText;
 import snow.render.opengl.GL;
-import snow.render.opengl.GLProgram;
-import snow.render.opengl.GLTexture;
-import snow.render.opengl.GLUniformLocation;
 import snow.utils.Float32Array;
 #elseif kha
 
@@ -41,12 +38,13 @@ import snow.utils.Float32Array;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Effect') class Effect {
+class Effect {
 		
 	public var name:Dynamic;
 	public var defines:String;
 	public var onCompiled:Effect->Void;
 	public var onError:Effect->String->Void;
+	public var onBind:Effect->Void;
 
 	private var _engine:Engine;
 	private var _uniformsNames:Array<String>;
@@ -73,8 +71,8 @@ import snow.utils.Float32Array;
 		this.onError = onError;
 		this.onCompiled = onCompiled;
 		
-		var vertex:String = Reflect.field(baseName, "vertex") != null ? baseName.vertex : baseName;
-        var fragment:String = Reflect.field(baseName, "fragment") != null ? baseName.fragment : baseName;
+		var vertex:String = Reflect.hasField(baseName, "vertex") ? baseName.vertex : baseName;
+        var fragment:String = Reflect.hasField(baseName, "fragment") ? baseName.fragment : baseName;
 		
         var vertexShaderUrl:String = "";
         if (vertex.charAt(0) == ".") {
@@ -144,7 +142,7 @@ import snow.utils.Float32Array;
 
 	public function getAttributeLocationByName(name:String):Int {
 		var index = this._attributesNames.indexOf(name);
-
+		
 		return this._attributes[index];
 	}
 
@@ -344,6 +342,24 @@ import snow.utils.Float32Array;
 		
 		return this;
 	}
+	
+	inline public function setArray2(uniformName:String, array:Array<Float>):Effect {
+        this._engine.setArray2(this.getUniform(uniformName), array);
+		
+        return this;
+    }
+
+    inline public function setArray3(uniformName:String, array:Array<Float>):Effect {
+        this._engine.setArray3(this.getUniform(uniformName), array);
+		
+        return this;
+    }
+
+    inline public function setArray4(uniformName:String, array:Array<Float>):Effect {
+        this._engine.setArray4(this.getUniform(uniformName), array);
+		
+        return this;
+    }
 
 	inline public function setMatrices(uniformName:String, matrices: #if html5 Float32Array #else Array<Float> #end ):Effect {
 		this._engine.setMatrices(this.getUniform(uniformName), matrices);
@@ -398,10 +414,12 @@ import snow.utils.Float32Array;
 	}
 
 	inline public function setVector3(uniformName:String, vector3:Vector3):Effect {
-		if (!(this._valueCache.exists(uniformName) && this._valueCache[uniformName][0] == vector3.x && this._valueCache[uniformName][1] == vector3.y && this._valueCache[uniformName][2] == vector3.z)) {
-			this._cacheFloat3(uniformName, vector3.x, vector3.y, vector3.z);
-			this._engine.setFloat3(this.getUniform(uniformName), vector3.x, vector3.y, vector3.z);
-		}		
+		if (this._valueCache.exists(uniformName) && this._valueCache[uniformName][0] == vector3.x && this._valueCache[uniformName][1] == vector3.y && this._valueCache[uniformName][2] == vector3.z) {
+			return this;
+		}
+		
+		this._cacheFloat3(uniformName, vector3.x, vector3.y, vector3.z);
+		this._engine.setFloat3(this.getUniform(uniformName), vector3.x, vector3.y, vector3.z);
 		
 		return this;
 	}

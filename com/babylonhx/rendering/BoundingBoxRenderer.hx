@@ -14,7 +14,7 @@ import com.babylonhx.culling.BoundingBox;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.BoundingBoxRenderer') class BoundingBoxRenderer {
+class BoundingBoxRenderer {
 	
 	public var frontColor:Color3 = new Color3(1, 1, 1);
 	public var backColor:Color3 = new Color3(0.1, 0.1, 0.1);
@@ -50,7 +50,7 @@ import com.babylonhx.culling.BoundingBox;
 		if (this.renderList.length == 0 || !this._colorShader.isReady()) {
 			return;
 		}
-
+		
 		var engine = this._scene.getEngine();
 		engine.setDepthWrite(false);
 		this._colorShader._preBind();
@@ -60,34 +60,35 @@ import com.babylonhx.culling.BoundingBox;
 			var max = boundingBox.maximum;
 			var diff = max.subtract(min);
 			var median = min.add(diff.scale(0.5));
-
+			
 			var worldMatrix = Matrix.Scaling(diff.x, diff.y, diff.z)
 				.multiply(Matrix.Translation(median.x, median.y, median.z))
 				.multiply(boundingBox.getWorldMatrix());
-
+				
 			// VBOs
 			engine.bindBuffers(this._vb.getBuffer(), this._ib, [3], 3 * 4, this._colorShader.getEffect());
-
+			
 			if (this.showBackLines) {
 				// Back
 				engine.setDepthFunctionToGreaterOrEqual();
 				this._scene.resetCachedMaterial();
 				this._colorShader.setColor4("color", this.backColor.toColor4());
 				this._colorShader.bind(worldMatrix);
-
+				
 				// Draw order
 				engine.draw(false, 0, 24);
 			}
-
+			
 			// Front
 			engine.setDepthFunctionToLess();
 			this._scene.resetCachedMaterial();
 			this._colorShader.setColor4("color", this.frontColor.toColor4());
 			this._colorShader.bind(worldMatrix);
-
+			
 			// Draw order
 			engine.draw(false, 0, 24);
 		}
+		
 		this._colorShader.unbind();
 		engine.setDepthFunctionToLessOrEqual();
 		engine.setDepthWrite(true);

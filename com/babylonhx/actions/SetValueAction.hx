@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.SetValueAction') class SetValueAction extends Action {
+class SetValueAction extends Action {
 	
 	private var _target:Dynamic;
 	private var _property:String;
@@ -24,11 +24,9 @@ package com.babylonhx.actions;
 	override public function _prepare() {
 		this._target = this._getEffectiveTarget(this._target, this.propertyPath);
 		this._property = this._getProperty(this.propertyPath);
-		trace(this._property);
 	}
 
 	override public function execute(?evt:ActionEvent) {
-		trace(this._property);
 		Reflect.setField(this._target, this._property, this.value);
 	}
 }

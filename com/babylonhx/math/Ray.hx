@@ -7,7 +7,7 @@ import com.babylonhx.culling.BoundingSphere;
 * ...
 * @author Krtolica Vujadin
 */
-@:expose('BABYLON.Ray') class Ray {
+class Ray {
 	
 	public var origin:Vector3;
 	public var direction:Vector3;

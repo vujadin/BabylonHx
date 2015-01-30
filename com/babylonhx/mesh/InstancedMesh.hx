@@ -15,7 +15,7 @@ import com.babylonhx.tools.Tools;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.InstancedMesh') class InstancedMesh extends AbstractMesh {
+class InstancedMesh extends AbstractMesh {
 	
 	private var _sourceMesh:Mesh;
 	private var _currentLOD:Mesh;
@@ -114,6 +114,11 @@ import com.babylonhx.tools.Tools;
 	
 	override public function getLOD(camera:Camera, ?boundingSphere:BoundingSphere):AbstractMesh {
 		this._currentLOD = cast this.sourceMesh.getLOD(this.getScene().activeCamera, this.getBoundingInfo().boundingSphere);
+		
+		if (this._currentLOD == this.sourceMesh) {
+            return this;
+        }
+		
 		return this._currentLOD;
 	}
 

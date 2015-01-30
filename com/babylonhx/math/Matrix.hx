@@ -1,4 +1,5 @@
 package com.babylonhx.math;
+import com.babylonhx.tools.Tools;
 
 #if openfl
 import openfl.utils.Float32Array;
@@ -13,7 +14,7 @@ import snow.utils.Float32Array;
 * @author Krtolica Vujadin
 */
 
-@:expose('BABYLON.Matrix') class Matrix {
+class Matrix {
 	
 	private static var _tempQuaternion:Quaternion = new Quaternion();
 	private static var _xAxis:Vector3 = Vector3.Zero();
@@ -240,6 +241,38 @@ import snow.utils.Float32Array;
 			this.m[8], this.m[9], this.m[10], this.m[11],
 			this.m[12], this.m[13], this.m[14], this.m[15]);
 	}
+	
+	public function decompose(scale:Vector3, rotation:Quaternion, translation:Vector3):Bool {
+		translation.x = this.m[12];
+		translation.y = this.m[13];
+		translation.z = this.m[14];
+		
+		var xs = Tools.Sign(this.m[0] * this.m[1] * this.m[2] * this.m[3]) < 0 ? -1 : 1;
+		var ys = Tools.Sign(this.m[4] * this.m[5] * this.m[6] * this.m[7]) < 0 ? -1 : 1;
+		var zs = Tools.Sign(this.m[8] * this.m[9] * this.m[10] * this.m[11]) < 0 ? -1 : 1;
+		
+		scale.x = xs * Math.sqrt(this.m[0] * this.m[0] + this.m[1] * this.m[1] + this.m[2] * this.m[2]);
+		scale.y = ys * Math.sqrt(this.m[4] * this.m[4] + this.m[5] * this.m[5] + this.m[6] * this.m[6]);
+		scale.z = zs * Math.sqrt(this.m[8] * this.m[8] + this.m[9] * this.m[9] + this.m[10] * this.m[10]);
+		
+		if (scale.x == 0 || scale.y == 0 || scale.z == 0) {
+			rotation.x = 0;
+			rotation.y = 0;
+			rotation.z = 0;
+			rotation.w = 1;
+			return false;
+		}
+		
+		var rotationMatrix = Matrix.FromValues(
+			this.m[0] / scale.x, this.m[1] / scale.x, this.m[2] / scale.x, 0,
+			this.m[4] / scale.y, this.m[5] / scale.y, this.m[6] / scale.y, 0,
+			this.m[8] / scale.z, this.m[9] / scale.z, this.m[10] / scale.z, 0,
+			0, 0, 0, 1);
+			
+		rotation.fromRotationMatrix(rotationMatrix);
+		
+		return true;
+	}
 
 	// Statics
 	inline public static function FromArray(array:Array<Float>, offset:Int = 0):Matrix {
@@ -300,6 +333,21 @@ import snow.utils.Float32Array;
 		result.m[13] = initialM42;
 		result.m[14] = initialM43;
 		result.m[15] = initialM44;
+		
+		return result;
+	}
+	
+	public static inline function Compose(scale:Vector3, rotation:Quaternion, translation:Vector3):Matrix {
+		var result = Matrix.FromValues(scale.x, 0, 0, 0,
+			0, scale.y, 0, 0,
+			0, 0, scale.z, 0,
+			0, 0, 0, 1);
+			
+		var rotationMatrix = Matrix.Identity();
+		rotation.toRotationMatrix(rotationMatrix);
+		result = result.multiply(rotationMatrix);
+		
+		result.setTranslation(translation);
 		
 		return result;
 	}

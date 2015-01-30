@@ -8,7 +8,7 @@ import com.babylonhx.mesh.SubMesh;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.RenderingGroup') class RenderingGroup {
+class RenderingGroup {
 	
 	public var index:Int;
 	

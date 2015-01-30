@@ -9,7 +9,7 @@ import nme.gl.GLTexture;
 #elseif openfl
 import openfl.gl.GLTexture;
 #elseif snow
-import snow.render.opengl.GLTexture;
+import snow.render.opengl.GL;
 #elseif kha
 
 #end
@@ -19,7 +19,7 @@ import snow.render.opengl.GLTexture;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.BaseTexture') class BaseTexture implements IAnimatable {
+class BaseTexture implements IAnimatable {
 	
 	public var name:String;
 	public var delayLoadState:Int = Engine.DELAYLOADSTATE_NONE;
@@ -81,25 +81,25 @@ import snow.render.opengl.GLTexture;
 			return { width: this._texture._width, height: this._texture._height };
 		}
 		
-		if (this._texture._size != -1) {
+		if (this._texture._size != null) {
 			return { width: this._texture._size, height: this._texture._size };
 		}
 		
-		return { width:0, height:0 };
+		return { width: 0, height: 0 };
 	}
 
 	public function getBaseSize():Dynamic {
 		if (!this.isReady())
 			return { width: 0, height: 0 };
 			
-		if (this._texture._size != -1) {
+		if (this._texture._size != null) {
 			return { width: this._texture._size, height: this._texture._size };
 		}
 		
 		return { width: this._texture._baseWidth, height: this._texture._baseHeight };
 	}
 
-	public function scale(ratio:Float):Void {
+	public function scale(ratio:Float) {
 	}
 
 	/*public var canRescale(get, never):Bool;
@@ -107,7 +107,7 @@ import snow.render.opengl.GLTexture;
 		return false;
 	}*/
 
-	public function _removeFromCache(url:String, noMipmap:Bool):Void {
+	public function _removeFromCache(url:String, noMipmap:Bool) {
 		var texturesCache:Array<BabylonTexture> = this._scene.getEngine().getLoadedTexturesCache();
 		for (index in 0...texturesCache.length) {
 			var texturesCacheEntry = texturesCache[index];
@@ -119,27 +119,30 @@ import snow.render.opengl.GLTexture;
 		}
 	}
 
-	public function _getFromCache(url:String, noMipmap:Bool):BabylonTexture {
+	public function _getFromCache(url:String, noMipmap:Bool, ?sampling:Int):BabylonTexture {
         var texturesCache:Array<BabylonTexture> = this._scene.getEngine().getLoadedTexturesCache();
         for (index in 0...texturesCache.length) {
             var texturesCacheEntry:BabylonTexture = texturesCache[index];
 			
             if (texturesCacheEntry.url == url && texturesCacheEntry.noMipmap == noMipmap) {
-                texturesCacheEntry.references++;
-                return texturesCacheEntry;
+				if(sampling == null || sampling == texturesCacheEntry.samplingMode) {
+					texturesCacheEntry.references++;
+					return texturesCacheEntry;
+				}
             }
         }
 		
         return null;
     }
 
-	public function delayLoad():Void {
+	public function delayLoad() {
 	}
 
 	public function releaseInternalTexture() {
         if (this._texture == null) {
             return;
         }
+		
         var texturesCache:Array<BabylonTexture> = this._scene.getEngine().getLoadedTexturesCache();
         this._texture.references--;
 		
@@ -157,7 +160,7 @@ import snow.render.opengl.GLTexture;
 		return null;
 	}
 
-	public function dispose():Void {
+	public function dispose() {
 		// Remove from scene
 		var index = this._scene.textures.indexOf(this);
 		

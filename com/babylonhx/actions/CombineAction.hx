@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.CombineAction') class CombineAction extends Action {
+class CombineAction extends Action {
 	
 	public var children:Array<Action> = [];
 	
@@ -14,14 +14,14 @@ package com.babylonhx.actions;
 		super(triggerOptions, condition);
 	}
 
-	override public function _prepare():Void {
+	override public function _prepare() {
 		for (index in 0...this.children.length) {
 			this.children[index]._actionManager = this._actionManager;
 			this.children[index]._prepare();
 		}
 	}
 
-	override public function execute(?evt:ActionEvent):Void {
+	override public function execute(?evt:ActionEvent) {
 		for (index in 0...this.children.length) {
 			this.children[index].execute(evt);
 		}

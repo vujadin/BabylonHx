@@ -1,6 +1,8 @@
 package com.babylonhx;
 
-#if openfl
+#if nme
+import nme.gl.GL;
+#elseif openfl
 import openfl.gl.GL;
 #elseif snow
 import snow.render.opengl.GL;
@@ -41,7 +43,7 @@ class _DepthCullingState {
 		if (this._cullFace == value) {
 			return value;
 		}
-
+		
 		this._cullFace = value;
 		this._isCullFaceDirty = true;
 		return value;
@@ -55,7 +57,7 @@ class _DepthCullingState {
 		if (this._cull == value) {
 			return value;
 		}
-
+		
 		this._cull = value;
 		this._isCullDirty = true;
 		return value;
@@ -69,7 +71,7 @@ class _DepthCullingState {
 		if (this._depthFunc == value) {
 			return value;
 		}
-
+		
 		this._depthFunc = value;
 		this._isDepthFuncDirty = true;
 		return value;
@@ -83,7 +85,7 @@ class _DepthCullingState {
 		if (this._depthMask == value) {
 			return value;
 		}
-
+		
 		this._depthMask = value;
 		this._isDepthMaskDirty = true;
 		return value;
@@ -97,7 +99,7 @@ class _DepthCullingState {
 		if (this._depthTest == value) {
 			return value;
 		}
-
+		
 		this._depthTest = value;
 		this._isDepthTestDirty = true;
 		return value;
@@ -109,7 +111,7 @@ class _DepthCullingState {
 		this._depthFunc = -1;
 		this._cull = false;
 		this._cullFace = -1;
-
+		
 		this._isDepthTestDirty = true;
 		this._isDepthMaskDirty = true;
 		this._isDepthFuncDirty = false;
@@ -124,9 +126,9 @@ class _DepthCullingState {
 		
 		// Cull
 		if (this._isCullDirty) {
-			if (this.cull == true) {
+			if (this.cull) {
 				GL.enable(GL.CULL_FACE);
-			} else if (this.cull == false) {
+			} else {
 				GL.disable(GL.CULL_FACE);
 			}
 			
@@ -147,9 +149,9 @@ class _DepthCullingState {
 		
 		// Depth test
 		if (this._isDepthTestDirty) {
-			if (this.depthTest == true) {
+			if (this.depthTest) {
 				GL.enable(GL.DEPTH_TEST);
-			} else if (this.depthTest == false) {
+			} else {
 				GL.disable(GL.DEPTH_TEST);
 			}
 			this._isDepthTestDirty = false;

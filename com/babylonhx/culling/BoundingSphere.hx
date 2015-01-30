@@ -9,7 +9,7 @@ import com.babylonhx.math.Vector3;
 * @author Krtolica Vujadin
 */
 
-@:expose('BABYLON.BoundingSphere') class BoundingSphere {
+class BoundingSphere {
 	
 	public var center:Vector3;
 	public var radius:Float;

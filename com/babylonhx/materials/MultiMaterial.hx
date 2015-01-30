@@ -7,7 +7,7 @@ import com.babylonhx.mesh.AbstractMesh;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.MultiMaterial') class MultiMaterial extends Material {
+class MultiMaterial extends Material {
 	
 	public var subMaterials:Array<Material> = [];
 	

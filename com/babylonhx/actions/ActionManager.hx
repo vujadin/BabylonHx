@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.ActionManager') class ActionManager {
+class ActionManager {
 	
 	// Statics
 	public static var NothingTrigger:Int = 0;
@@ -29,14 +29,14 @@ package com.babylonhx.actions;
 
 	public function new(scene:Scene) {
 		this._scene = scene;
-
+		
 		scene._actionManagers.push(this);
 	}
 
 	// Methods
 	public function dispose():Void {
 		var index = this._scene._actionManagers.indexOf(this);
-
+		
 		if (index > -1) {
 			this._scene._actionManagers.splice(index, 1);
 		}
@@ -49,12 +49,12 @@ package com.babylonhx.actions;
 	public function hasSpecificTriggers(triggers:Array<Int>):Bool {
 		for (index in 0...this.actions.length) {
 			var action = this.actions[index];
-
+			
 			if (triggers.indexOf(action.trigger) > -1) {
 				return true;
 			}
 		}
-
+		
 		return false;
 	}
 
@@ -62,12 +62,12 @@ package com.babylonhx.actions;
 	private function get_hasPointerTriggers():Bool {
 		for (index in 0...this.actions.length) {
 			var action = this.actions[index];
-
+			
 			if (action.trigger >= ActionManager.OnPickTrigger && action.trigger <= ActionManager.OnPointerOutTrigger) {
 				return true;
 			}
 		}
-
+		
 		return false;
 	}
 
@@ -75,12 +75,12 @@ package com.babylonhx.actions;
 	private function get_hasPickTriggers():Bool {
 		for (index in 0...this.actions.length) {
 			var action = this.actions[index];
-
+			
 			if (action.trigger >= ActionManager.OnPickTrigger && action.trigger <= ActionManager.OnCenterPickTrigger) {
 				return true;
 			}
 		}
-
+		
 		return false;
 	}
 
@@ -100,7 +100,7 @@ package com.babylonhx.actions;
 		return action;
 	}
 
-	public function processTrigger(trigger:Int, evt:ActionEvent):Void {
+	public function processTrigger(trigger:Int, evt:ActionEvent) {
 		for (index in 0...this.actions.length) {
 			var action = this.actions[index];
 			

@@ -9,9 +9,7 @@ import openfl.gl.GLTexture;
 import openfl.gl.GLFramebuffer;
 import openfl.gl.GLRenderbuffer;
 #elseif snow
-import snow.render.opengl.GLTexture;
-import snow.render.opengl.GLFramebuffer;
-import snow.render.opengl.GLRenderbuffer;
+import snow.render.opengl.GL;
 #elseif kha
 
 #end
@@ -21,21 +19,22 @@ import snow.render.opengl.GLRenderbuffer;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.BabylonTexture') class BabylonTexture {
+class BabylonTexture {
 	
 	public var data:GLTexture;
 	
-	// TODO - Are these really members of this class
 	public var _framebuffer:GLFramebuffer;
 	public var _depthBuffer:GLRenderbuffer;
 	public var generateMipMaps:Bool;	
 	public var isCube:Bool;
-	public var _size:Float;
+	public var _size:Dynamic;
 	
 	public var isReady:Bool;
 	public var noMipmap:Bool = true;
 	public var references:Int;
 	public var url:String;
+	
+	public var samplingMode:Int;
 	
 	public var _baseHeight:Int;
 	public var _baseWidth:Int;
@@ -44,6 +43,8 @@ import snow.render.opengl.GLRenderbuffer;
 	
 	public var _width:Float;	
 	public var _height:Float;
+	
+	public var __smartArrayFlags:Array<Int>;
 	
 	
 	public function new(url:String, data:GLTexture) {
@@ -55,7 +56,9 @@ import snow.render.opengl.GLRenderbuffer;
 		this.generateMipMaps = false;
 		this.isCube = false;
 		
-		this._size = 1;
+		this.samplingMode = Texture.TRILINEAR_SAMPLINGMODE;
+		
+		this._size = null;
 		this._width = 1;
 		this._height = 1;
 		this._baseHeight = 1;

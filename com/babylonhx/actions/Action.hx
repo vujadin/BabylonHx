@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Action') class Action {
+class Action {
 	
 	public var trigger:Int;
 	public var _actionManager:ActionManager;
@@ -23,7 +23,7 @@ package com.babylonhx.actions;
 		} else {
 			this.trigger = triggerOptions;
 		}
-
+		
 		this._nextActiveAction = this;
 		this._condition = condition;
 	}
@@ -40,7 +40,7 @@ package com.babylonhx.actions;
 	public function _executeCurrent(evt:ActionEvent):Void {
 		if (this._condition != null) {
 			var currentRenderId = this._actionManager.getScene().getRenderId();
-
+			
 			// We cache the current evaluation for the current frame
 			if (this._condition._evaluationId == currentRenderId) {
 				if (!this._condition._currentResult) {
@@ -48,24 +48,24 @@ package com.babylonhx.actions;
 				}
 			} else {
 				this._condition._evaluationId = currentRenderId;
-
+				
 				if (!this._condition.isValid()) {
 					this._condition._currentResult = false;
 					return;
 				}
-
+				
 				this._condition._currentResult = true;
 			}
 		}
-
+		
 		this._nextActiveAction.execute(evt);
-
+		
 		if (this._nextActiveAction._child != null) {
-
+			
 			if (this._nextActiveAction._child._actionManager == null) {
 				this._nextActiveAction._child._actionManager = this._actionManager;
 			}
-
+			
 			this._nextActiveAction = this._nextActiveAction._child;
 		} else {
 			this._nextActiveAction = this;
@@ -78,10 +78,10 @@ package com.babylonhx.actions;
 
 	public function then(action:Action):Action {
 		this._child = action;
-
+		
 		action._actionManager = this._actionManager;
 		action._prepare();
-
+		
 		return action;
 	}
 

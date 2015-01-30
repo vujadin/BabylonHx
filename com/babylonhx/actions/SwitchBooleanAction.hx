@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.SwitchBooleanAction') class SwitchBooleanAction extends Action {
+class SwitchBooleanAction extends Action {
 	
 	private var _target:Dynamic;
 	private var _property:String;
@@ -19,12 +19,12 @@ package com.babylonhx.actions;
 		this.propertyPath = propertyPath;
 	}
 
-	override public function _prepare():Void {
+	override public function _prepare() {
 		this._target = this._getEffectiveTarget(this._target, this.propertyPath);
 		this._property = this._getProperty(this.propertyPath);
 	}
 
-	override public function execute(?evt:ActionEvent):Void {
+	override public function execute(?evt:ActionEvent) {
 		this._target[this._property] = !this._target[this._property];
 	}
 	
