@@ -7,6 +7,17 @@ import flash.Lib;
 import com.babylonhx.Engine;
 import com.babylonhx.Scene;
 
+import samples.CSGDemo;
+import samples.DisplacementMap;
+import samples.Bones;
+import samples.CustomRenderTarget;
+import samples.Lines;
+import samples.PostprocessRefraction;
+import samples.Environment;
+import samples.Fog;
+import samples.LensFlares;
+import samples.LoadScene;
+import samples.Physics;
 import samples.Animations;
 import samples.BasicElements;
 import samples.BasicScene;
@@ -19,6 +30,9 @@ import samples.MeshImport;
 import samples.Particles;
 import samples.ProceduralTextures;
 import samples.RotationAndScaling;
+import samples.PolygonMesh;
+import samples.HeightMap;
+import samples.Shadows;
 
 /**
  * ...
@@ -43,7 +57,6 @@ class Main extends Sprite {
 		engine = new Engine(this, false);	
 		scene = new Scene(engine);
 		
-		//new MeshImport(scene);
 		//new BasicScene(scene);
 		//new BasicElements(scene);
 		//new RotationAndScaling(scene);
@@ -54,7 +67,22 @@ class Main extends Sprite {
 		//new Intersections(scene);
 		//new Particles(scene);
 		//new EasingFunctions(scene);
-		new ProceduralTextures(scene);
+		//new ProceduralTextures(scene);
+		//new MeshImport(scene);
+		//new LoadScene(scene);
+		//new CSGDemo(scene);
+		//new Fog(scene);
+		//new DisplacementMap(scene);
+		//new Environment(scene);
+		//new LensFlares(scene);
+		//new Physics(scene);
+		//new PolygonMesh(scene);
+		//new CustomRenderTarget(scene);
+		//new Lines(scene);
+		//new Bones(scene);
+		//new PostprocessRefraction(scene);
+		//new Shadows(scene);
+		new HeightMap(scene);
 	}
 
 	public function new() {

@@ -2,9 +2,12 @@ package samples;
 
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.lights.HemisphericLight;
+import com.babylonhx.lights.PointLight;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
+import com.babylonhx.tools.ColorTools;
+import com.babylonhx.tools.Tools;
 
 /**
  * ...
@@ -16,7 +19,8 @@ class BasicElements {
 		var camera = new ArcRotateCamera("Camera", 3 * Math.PI / 2, Math.PI / 8, 50, Vector3.Zero(), scene);
 		camera.attachControl(this, true);
 		
-		var light = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);
+		//var plight = new PointLight("pointlight", new Vector3(0, 0, 0), scene);
+		var plight = new HemisphericLight("hemi", new Vector3(0, 0, 0), scene);
 		
 		//Creation of a box
 		//(name of the box, size, scene)
@@ -43,12 +47,12 @@ class BasicElements {
 		var knot = Mesh.CreateTorusKnot("knot", 2, 0.5, 128, 64, 2, 3, scene);
 		
 		// Creation of a lines mesh
-		var lines = Mesh.CreateLines("lines", [
+		/*var lines = Mesh.CreateLines("lines", [
 			new Vector3(-10, 0, 0),
 			new Vector3(10, 0, 0),
 			new Vector3(0, 0, -10),
 			new Vector3(0, 0, 10)
-		], scene);
+		], scene);*/
 		
 		// Moving elements
 		box.position = new Vector3(-10, 0, 0);   // Using a vector
@@ -58,9 +62,21 @@ class BasicElements {
 		torus.position.x = 10;
 		knot.position.y = -10;
 		
+		var h = 0.05;
+		var color:RGB = { r: 0, g: 0, b: 0 };
 		scene.getEngine().runRenderLoop(function () {
+			
+			h = Tools.Clamp( h + 0.0025 * ( 0.5 - Math.random() ), 0.025, 0.07 );
+			
+			color = ColorTools.toRGB(cast ColorTools.hue2rgb(h, 0.95, 0.9));
+			
+			plight.diffuse.r = color.r;
+			plight.diffuse.b = color.b;
+			plight.diffuse.g = color.g;
+			plight.intensity = Tools.Clamp(plight.intensity + 0.05 * ( 0.5 - Math.random() ), 0.6, 1);
+			
             scene.render();
         });
-	}
+	}	
 	
 }

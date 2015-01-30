@@ -23,6 +23,13 @@ class Materials {
 		var camera = new ArcRotateCamera("Camera", Math.PI / 2, 1.0, 110, Vector3.Zero(), scene);
 		camera.attachControl(this, true);
 		
+		/*var lines = Mesh.CreateLines("lines", [
+			new Vector3(camera.position.x - 10, camera.position.y, camera.position.z + 120),
+			new Vector3(camera.position.x + 10, camera.position.y, camera.position.z + 120)
+		], scene);		
+		//lines.alpha = 0.01;
+		lines.parent = camera;*/
+		
 		//Creation of 6 spheres
 		var sphere1 = Mesh.CreateSphere("Sphere1", 10, 9.0, scene);
 		var sphere2 = Mesh.CreateSphere("Sphere2", 2, 9.0, scene);//Only two segments
@@ -43,11 +50,7 @@ class Materials {
 		var plane = Mesh.CreatePlane("plane", 120, scene);
 		plane.position.y = -5;
 		plane.rotation.x = Math.PI / 2;
-		
-		//Creation of a material with wireFrame
-		var materialSphere1 = new StandardMaterial("texture1", scene);
-		materialSphere1.wireframe = true;
-		
+				
 		//Creation of a red material with alpha
 		var materialSphere2 = new StandardMaterial("texture2", scene);
 		materialSphere2.diffuseColor = new Color3(1, 0, 0); //Red
@@ -81,6 +84,11 @@ class Materials {
 		materialPlane.diffuseTexture.vScale = 5.0;//Repeat 5 times on the Horizontal Axes
 		materialPlane.backFaceCulling = false;//Allways show the front and the back of an element
 		
+		//Creation of a material with wireFrame
+		var materialSphere1 = new StandardMaterial("texture1", scene);
+		materialSphere1.wireframe = true;
+		//materialSphere1.alpha = 0.9;
+		
 		//Apply the materials to meshes
 		sphere1.material = materialSphere1;
 		sphere2.material = materialSphere2;
@@ -92,7 +100,7 @@ class Materials {
 		sphere6.material = materialSphere6;
 		
 		plane.material = materialPlane;
-		
+				
 		scene.getEngine().runRenderLoop(function () {
             scene.render();
         });

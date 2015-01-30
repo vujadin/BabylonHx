@@ -29,6 +29,13 @@ class MeshImport {
 		var camera = new ArcRotateCamera("Camera", 0, 0.8, 100, Vector3.Zero(), scene);
 		camera.attachControl(this, false);
 		
+		var lines = Mesh.CreateLines("lines", [
+			new Vector3(-.1, 0, camera.position.z + 20),
+			new Vector3(.1, 0, camera.position.z + 20)
+		], scene);		
+		lines.alpha = 0.01;
+		lines.parent = camera;
+		
 		SceneLoader.RegisterPlugin(BabylonFileLoader.plugin);
 		
 		// The first parameter can be used to specify which mesh to import. Here we import all meshes
