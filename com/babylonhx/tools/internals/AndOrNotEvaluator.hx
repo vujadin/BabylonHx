@@ -21,15 +21,15 @@ package com.babylonhx.tools.internals ;
 				return AndOrNotEvaluator._HandleParenthesisContent(query, evaluateCallback);
 			});
 		}
-
+		
 		if (query == "true") {
 			return true;
 		}
-
+		
 		if (query == "false") {
 			return false;
 		}
-
+		
 		return AndOrNotEvaluator.Eval(query, evaluateCallback);
 	}
 
@@ -37,19 +37,19 @@ package com.babylonhx.tools.internals ;
 		evaluateCallback = evaluateCallback != null ? evaluateCallback : function(r:String):Bool {
 			return r == "true" ? true : false;
 		};
-
+		
 		var result:Bool = false;
 		var or = parenthesisContent.split("||");
-
+		
 		for (i in 0...or.length) {
 			var ori = AndOrNotEvaluator._SimplifyNegation(StringTools.trim(or[i]));
 			var and = ori.split("&&");
-
+			
 			if (and.length > 1) {
 				for (j in 0...and.length) { 
 					var andj = AndOrNotEvaluator._SimplifyNegation(StringTools.trim(and[j]));
 					if (andj != "true" && andj != "false") {
-
+						
 						if (andj.substring(0,1) == "!") {
 							result = !evaluateCallback(andj.substring(1));
 						}
@@ -66,16 +66,16 @@ package com.babylonhx.tools.internals ;
 					}
 				}
 			}
-
+			
 			if (result || ori == "true") { // no need to continue since 'true || ... || ...' will always return true
 				result = true;
 				break;
 			}
-
+			
 			// result equals false (or undefined)
-
+			
 			if (ori != "true" && ori != "false") {
-
+				
 				if (ori.substring(0,1) == "!") {
 					result = !evaluateCallback(ori.substring(1));
 				}
@@ -87,7 +87,7 @@ package com.babylonhx.tools.internals ;
 				result = ori == "true" ? true : false;
 			}
 		}
-
+		
 		// the whole parenthesis scope is replaced by 'true' or 'false'
 		return result ? "true" : "false";
 	}
@@ -107,16 +107,16 @@ package com.babylonhx.tools.internals ;
 			}
 			return ret;
 		});
-
+		
 		BoolString = StringTools.trim(BoolString);
-
+		
 		if (BoolString == "!true") {
 			BoolString = "false";
 		}
 		else if (BoolString == "!false") {
 			BoolString = "true";
 		}
-
+		
 		return BoolString;
 	}
 	

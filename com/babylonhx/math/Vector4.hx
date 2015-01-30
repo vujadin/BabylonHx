@@ -1,5 +1,7 @@
 package com.babylonhx.math;
+
 import openfl.utils.Float32Array;
+
 /**
 * ...
 * @author Krtolica Vujadin

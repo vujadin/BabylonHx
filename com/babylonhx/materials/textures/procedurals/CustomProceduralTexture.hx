@@ -1,16 +1,13 @@
 package com.babylonhx.materials.textures.procedurals;
 
 import com.babylonhx.tools.Tools;
-import com.babylonhx.math.Color3;
-import com.babylonhx.math.Color4;
-import com.babylonhx.math.Vector3;
-import com.babylonhx.math.Vector2;
+
 /**
  * ...
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.CustomProceduralTexture') class CustomProceduralTexture extends ProceduralTexture {
+class CustomProceduralTexture extends ProceduralTexture {
 	
 	private var _animate:Bool = true;
 	private var _time:Float = 0;
@@ -76,13 +73,13 @@ import com.babylonhx.math.Vector2;
 		}*/
 	}
 
-	override public function isReady():Bool {
+	public function isReady():Bool {
 		if (!super.isReady()) {
 			return false;
 		}
 		
-		for (name in this._textures.keys()) {
-			var texture = this._textures.get(name);
+		for (var name in this._textures) {
+			var texture = this._textures[name];
 			
 			if (!texture.isReady()) {
 				return false;
@@ -92,7 +89,7 @@ import com.babylonhx.math.Vector2;
 		return true;
 	}
 
-	override public function render(useCameraPostProcess:Bool = false) {
+	public function render(useCameraPostProcess:Bool = false) {
 		if (this._animate) {
 			this._time += this.getScene().getAnimationRatio() * 0.03;
 			this.updateShaderUniforms();
