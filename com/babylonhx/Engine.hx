@@ -394,8 +394,10 @@ import js.Browser;
 		this.applyStates();
 		
 		if(Std.is(color, Color4)) {
+
 			GL.clearColor(color.r, color.g, color.b, color.a);
 		} else {
+		
 			GL.clearColor(color.r, color.g, color.b, 1.0);
 		}
 		
@@ -763,7 +765,7 @@ import js.Browser;
 		return this.createEffect(
 			{
 				vertex: "particles",
-				fragmentElement: fragmentName
+				fragment: fragmentName
 			},
 			["position", "color", "options"],
 			["view", "projection"].concat(uniformsNames),
@@ -1106,12 +1108,11 @@ import js.Browser;
 					}
 					
 					#if html5
-					var pixelData = this._workingCanvas.getPixels(this._workingCanvas.rect).byteView;
+					var pixelData = new UInt8Array(@:privateAccess (this._workingCanvas.__image.data));
 					#else
 					var pixelData = new UInt8Array(BitmapData.getRGBAPixels(this._workingCanvas));
 					#end
-					
-					GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, this._workingCanvas.width, this._workingCanvas.height, 0, GL.RGBA, GL.UNSIGNED_BYTE, pixelData);
+					GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, this._workingCanvas.width, this._workingCanvas.height, 0, GL.RGBA, GL.UNSIGNED_BYTE, cast pixelData);
 					
 					if (onLoad != null) {
 						onLoad();
@@ -1163,7 +1164,8 @@ import js.Browser;
 		#end
 		
 		#if html5
-		var pixelData = canvas.getPixels(canvas.rect).byteView;
+		//var pixelData = canvas.getPixels(canvas.rect).byteView;
+		var pixelData = new UInt8Array(@:privateAccess (this._workingCanvas.__image.data));
 		#else
 		var pixelData = new UInt8Array(BitmapData.getRGBAPixels(canvas));
 		#end
@@ -1327,7 +1329,8 @@ import js.Browser;
 				}
 						
 				#if html5
-				var pixelData = this._workingCanvas.getPixels(this._workingCanvas.rect).byteView;
+				//var pixelData = this._workingCanvas.getPixels(this._workingCanvas.rect).byteView;
+				var pixelData = new UInt8Array(@:privateAccess (this._workingCanvas.__image.data));
 				#else
 				var pixelData = new UInt8Array(BitmapData.getRGBAPixels(this._workingCanvas));
 				#end
