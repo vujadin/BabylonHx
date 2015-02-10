@@ -15,6 +15,7 @@ import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.particles.ParticleSystem;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.materials.Material;
+import com.babylonhx.materials.textures.Texture;
 import haxe.CallStack;
 import haxe.Json;
 
@@ -26,6 +27,7 @@ import nme.utils.UInt8Array;
 import openfl.utils.Float32Array;
 import openfl.utils.ArrayBuffer;
 import openfl.utils.UInt8Array;
+import openfl.display.BitmapData;
 #elseif snow
 import snow.utils.Float32Array;
 import snow.utils.ArrayBuffer;
@@ -1097,29 +1099,28 @@ trace("deepCopy over");
 		ground._subdivisions = subdivisions;
 		ground._setReady(false);
 		
-		/*#if js
-		var onload = function(img) {
-			// Getting height map data
-			var canvas = document.createElement("canvas");
-			var context = canvas.getContext("2d");
-			var heightMapWidth = img.width;
-			var heightMapHeight = img.height;
-			canvas.width = heightMapWidth;
-			canvas.height = heightMapHeight;
-			
-			context.drawImage(img, 0, 0);
-			
-			// Create VertexData from map data
-			var buffer = context.getImageData(0, 0, heightMapWidth, heightMapHeight).data;
-			var vertexData = VertexData.CreateGroundFromHeightMap(width, height, subdivisions, minHeight, maxHeight, buffer, heightMapWidth, heightMapHeight);
-			
-			vertexData.applyToMesh(ground, updatable);
-			
-			ground._setReady(true);
-		};
-		
-		Tools.LoadImage(url, onload, function() { }, scene.database);
-		#end*/
+		ground._setReady(false);
+
+            var onload = function(img:BitmapData):Void {
+                var canvas = img;
+                var heightMapWidth = canvas.width;
+                var heightMapHeight = canvas.height;
+
+
+                #if html5
+                var buffer = canvas.getPixels(canvas.rect).byteView;
+                #else
+                var buffer = new UInt8Array(BitmapData.getRGBAPixels(canvas));
+                #end
+                //var buffer = context.getImageData(0, 0, heightMapWidth, heightMapHeight).data;
+                var vertexData = VertexData.CreateGroundFromHeightMap(width, height, subdivisions, minHeight, maxHeight, buffer, heightMapWidth, heightMapHeight);
+
+                vertexData.applyToMesh(ground, updatable);
+
+                ground._setReady(true);
+            }
+
+            Tools.LoadImage(url,onload);
 		
 		return ground;
 	}
