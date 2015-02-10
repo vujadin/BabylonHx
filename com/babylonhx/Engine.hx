@@ -746,7 +746,7 @@ import js.Browser;
 		if (this._compiledEffects.exists(name)) {
             return this._compiledEffects.get(name);
         }
-		
+
 		var effect = new Effect(baseName, attributesNames, uniformsNames, samplers, this, defines, fallbacks, onCompiled, onError);
 		effect._key = name;
 		this._compiledEffects.set(name, effect);
@@ -1102,9 +1102,13 @@ import js.Browser;
 			var onload = function(img:Dynamic) {
 				prepareTexture(texture, GL, scene, img.width, img.height, invertY, noMipmap, false, function(potWidth:Int, potHeight:Int) {
 					this._workingCanvas = img;
+					var potWidth = Tools.GetExponantOfTwo(img.width, this._caps.maxTextureSize);
+					var potHeight = Tools.GetExponantOfTwo(img.height, this._caps.maxTextureSize);
 					var isPot = (img.width == potWidth && img.height == potHeight);
+					this._workingCanvas = img;
+					
 					if (!isPot) {
-						this._workingCanvas = getScaled(img, potWidth, potHeight);
+						this._workingCanvas = getScaled(img, Std.int(potWidth/2), Std.int(potHeight/2));
 					}
 					
 					#if html5
