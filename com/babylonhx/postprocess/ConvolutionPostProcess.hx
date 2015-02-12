@@ -22,7 +22,7 @@ import  com.babylonhx.materials.Effect;
 	
 	public function new(name:String, kernel:Array<Float>, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false/*?reusable:Bool*/) {
 		super(name, "convolution", ["kernel", "screenSize"], null, ratio, camera, samplingMode, engine, reusable);
-
+		this.kernel = kernel;
 		this.onApply = function(effect:Effect) {
 			effect.setFloat2("screenSize", this.width, this.height);
 			effect.setArray("kernel", this.kernel);

@@ -107,8 +107,9 @@ class _DepthCullingState {
 		this._depthMask = true;
 		this._depthTest = true;
 		this._depthFunc = -1;
-		this._cull = false;
-		this._cullFace = -1;
+		//todo investigate this breaks postprocessing.
+		//this._cull = false;
+		//this._cullFace = -1;
 
 		this._isDepthTestDirty = true;
 		this._isDepthMaskDirty = true;
