@@ -59,9 +59,9 @@ import com.babylonhx.materials.textures.BabylonTexture;
 	}
 
 	public function _finalizeFrame(?doNotPresent:Bool, ?targetTexture:BabylonTexture):Void {
-		var postProcesses = this._scene.activeCamera._postProcesses;
+		var postProcesses:Array<PostProcess> = this._scene.activeCamera._postProcesses;
 		var postProcessesTakenIndices = this._scene.activeCamera._postProcessesTakenIndices;
-		if (postProcessesTakenIndices.length == 0 || !this._scene.postProcessesEnabled) {
+		if (postProcesses.length == 0 || !this._scene.postProcessesEnabled) {
 			return;
 		}
 
@@ -78,13 +78,12 @@ import com.babylonhx.materials.textures.BabylonTexture;
 				}
 			}
 
-			if (doNotPresent != null) {
+			if (doNotPresent) {
 				break;
 			}
-
+			
 			var pp = postProcesses[postProcessesTakenIndices[index]];
 			var effect = pp.apply();
-
 			if (effect != null) {
 				if (pp.onBeforeRender != null) {
 					pp.onBeforeRender(effect);

@@ -72,17 +72,18 @@ import snow.render.opengl.GLTexture;
 		return this._reusable;
 	}
 
-	public function activate(camera:Camera, ?sourceTexture:BabylonTexture):Void {
+	public function activate(camera:Camera, ?sourceTexture:Dynamic):Void {
 		camera = camera != null ? camera : this._camera;
 
 		var scene = camera.getScene();
 		var maxSize = camera.getEngine().getCaps().maxTextureSize;
-		var desiredWidth:Int = cast ((sourceTexture != null ? sourceTexture._width : this._engine.getRenderingCanvas().width) * this._renderRatio);
-		var desiredHeight:Int = cast ((sourceTexture != null ? sourceTexture._height : this._engine.getRenderingCanvas().height) * this._renderRatio);
 
-		desiredWidth = Tools.GetExponantOfTwo(desiredWidth, maxSize);
-		desiredHeight = Tools.GetExponantOfTwo(desiredHeight, maxSize);
+		var desiredWidth = (sourceTexture ? sourceTexture._width : this._engine.getRenderWidth()) * this._renderRatio;
+        var desiredHeight = (sourceTexture ? sourceTexture._height : this._engine.getRenderHeight()) * this._renderRatio;
+        desiredWidth = Tools.GetExponantOfTwo(Std.int(desiredWidth), maxSize);
+		desiredHeight = Tools.GetExponantOfTwo(Std.int(desiredHeight), maxSize);
 
+     
 		if (this.width != desiredWidth || this.height != desiredHeight) {
 			if (this._textures.length > 0) {
 				for (i in 0...this._textures.length) {
