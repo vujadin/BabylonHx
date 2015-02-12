@@ -7,7 +7,7 @@ import com.babylonhx.math.Vector3;
  * @author Krtolica Vujadin
  */
 
-class SetParentAction extends Action {
+@:expose('BABYLON.SetParentAction') class SetParentAction extends Action {
 	
 	private var _parent:Dynamic;
 	private var _target:Dynamic;
@@ -27,7 +27,7 @@ class SetParentAction extends Action {
 		var invertParentWorldMatrix = this._parent.getWorldMatrix().clone();
 		invertParentWorldMatrix.invert();
 		
-		this._target.position = Vector3.TransformCoordinates(this._target.position, invertParentWorldMatrix);
+		this._target.position = Vector3.TransformCoordinates(this._target.position, cast invertParentWorldMatrix);
 		
 		this._target.parent = this._parent;
 	}

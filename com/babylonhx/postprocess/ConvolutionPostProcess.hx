@@ -1,7 +1,7 @@
 package com.babylonhx.postprocess;
 
 import com.babylonhx.cameras.Camera;
-
+import  com.babylonhx.materials.Effect;
 /**
  * ...
  * @author Krtolica Vujadin
@@ -20,9 +20,11 @@ import com.babylonhx.cameras.Camera;
 	public var kernel:Array<Float>;
 	
 	
-	public function new(name:String, kernel:Array<Float>, ratio:Float, camera:Camera, ?samplingMode:Float, ?engine:Engine, reusable:Bool = false/*?reusable:Bool*/) {
+	public function new(name:String, kernel:Array<Float>, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
 		super(name, "convolution", ["kernel", "screenSize"], null, ratio, camera, samplingMode, engine, reusable);
-
+		
+		this.kernel = kernel;
+		
 		this.onApply = function(effect:Effect) {
 			effect.setFloat2("screenSize", this.width, this.height);
 			effect.setArray("kernel", this.kernel);

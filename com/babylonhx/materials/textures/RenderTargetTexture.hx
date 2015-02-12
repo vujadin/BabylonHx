@@ -118,10 +118,7 @@ class RenderTargetTexture extends Texture {
 		if (!useCameraPostProcess || !scene.postProcessManager._prepareFrame(this._texture)) {
 			engine.bindFramebuffer(this._texture);
 		}
-		
-		// Clear
-		engine.clear(scene.clearColor, true, true);
-		
+				
 		this._renderingManager.reset();
 		
 		var currentRenderList = this.renderList != null ? this.renderList : scene.getActiveMeshes().data;
@@ -147,13 +144,16 @@ class RenderTargetTexture extends Texture {
 				}
 			}
 		}
+				
+		if (this.onBeforeRender != null) {
+			this.onBeforeRender();
+		}
+		
+		// Clear
+		engine.clear(scene.clearColor, true, true);
 		
 		if (!this._doNotChangeAspectRatio) {
 			scene.updateTransformMatrix(true);
-		}
-		
-		if (this.onBeforeRender != null) {
-			this.onBeforeRender();
 		}
 		
 		// Render

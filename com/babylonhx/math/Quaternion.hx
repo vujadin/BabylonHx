@@ -35,18 +35,22 @@ class Quaternion {
 		return new Quaternion(this.x, this.y, this.z, this.w);
 	}
 
-	inline public function copyFrom(other:Quaternion) {
+	inline public function copyFrom(other:Quaternion):Quaternion {
 		this.x = other.x;
 		this.y = other.y;
 		this.z = other.z;
 		this.w = other.w;
+		
+		return this;
 	}
 
-	inline public function copyFromFloats(x:Float, y:Float, z:Float, w:Float) {
+	inline public function copyFromFloats(x:Float, y:Float, z:Float, w:Float):Quaternion {
 		this.x = x;
 		this.y = y;
 		this.z = z;
 		this.w = w;
+		
+		return this;
 	}
 
 	inline public function add(other:Quaternion):Quaternion {
@@ -78,12 +82,14 @@ class Quaternion {
 		return Math.sqrt((this.x * this.x) + (this.y * this.y) + (this.z * this.z) + (this.w * this.w));
 	}
 
-	inline public function normalize() {
+	inline public function normalize():Quaternion {
 		var length = 1.0 / this.length();
 		this.x *= length;
 		this.y *= length;
 		this.z *= length;
 		this.w *= length;
+		
+		return this;
 	}
 	
 	inline public function toEulerAngles():Vector3 {
@@ -157,55 +163,69 @@ class Quaternion {
 	}
 
 	public function fromRotationMatrix(matrix:Matrix) {
+		Quaternion.FromRotationMatrixToRef(matrix, this);
+		return this;
+	}
+
+	// Statics
+	inline public static function FromRotationMatrix(matrix:Matrix):Quaternion {
+		var result = new Quaternion();
+		Quaternion.FromRotationMatrixToRef(matrix, result);
+		return result;
+	}
+	
+	inline public static function FromRotationMatrixToRef(matrix:Matrix, result:Quaternion) {
 		var data = matrix.m;
-		var m11 = data[0], m12 = data[4], m13 = data[8];
-		var m21 = data[1], m22 = data[5], m23 = data[9];
-		var m31 = data[2], m32 = data[6], m33 = data[10];
+		var m11 = data[0];
+		var m12 = data[4];
+		var m13 = data[8];
+		var m21 = data[1];
+		var m22 = data[5];
+		var m23 = data[9];
+		var m31 = data[2];
+		var m32 = data[6];
+		var m33 = data[10];
 		var _trace = m11 + m22 + m33;
 		var s:Float = 0;
 		
 		if (_trace > 0) {
+			
 			s = 0.5 / Math.sqrt(_trace + 1.0);
 			
-			this.w = 0.25 / s;
-			this.x = (m32 - m23) * s;
-			this.y = (m13 - m31) * s;
-			this.z = (m21 - m12) * s;
+			result.w = 0.25 / s;
+			result.x = (m32 - m23) * s;
+			result.y = (m13 - m31) * s;
+			result.z = (m21 - m12) * s;
 			
-			return;
-		}
-		
-		if (m11 > m22 && m11 > m33) {
+		} else if (m11 > m22 && m11 > m33) {
+			
 			s = 2.0 * Math.sqrt(1.0 + m11 - m22 - m33);
 			
-			this.w = (m32 - m23) / s;
-			this.x = 0.25 * s;
-			this.y = (m12 + m21) / s;
-			this.z = (m13 + m31) / s;
+			result.w = (m32 - m23) / s;
+			result.x = 0.25 * s;
+			result.y = (m12 + m21) / s;
+			result.z = (m13 + m31) / s;
 			
-			return;
-		}
-		
-		if (m22 > m33) {
+		} else if (m22 > m33) {
+			
 			s = 2.0 * Math.sqrt(1.0 + m22 - m11 - m33);
 			
-			this.w = (m13 - m31) / s;
-			this.x = (m12 + m21) / s;
-			this.y = 0.25 * s;
-			this.z = (m23 + m32) / s;
+			result.w = (m13 - m31) / s;
+			result.x = (m12 + m21) / s;
+			result.y = 0.25 * s;
+			result.z = (m23 + m32) / s;
 			
-			return;
+		} else {
+			
+			s = 2.0 * Math.sqrt(1.0 + m33 - m11 - m22);
+			
+			result.w = (m21 - m12) / s;
+			result.x = (m13 + m31) / s;
+			result.y = (m23 + m32) / s;
+			result.z = 0.25 * s;
 		}
-		
-		s = 2.0 * Math.sqrt(1.0 + m33 - m11 - m22);
-		
-		this.w = (m21 - m12) / s;
-		this.x = (m13 + m31) / s;
-		this.y = (m23 + m32) / s;
-		this.z = 0.25 * s;
 	}
-
-	// Statics
+	
 	inline public static function Inverse(q:Quaternion):Quaternion {
 		return new Quaternion(-q.x, -q.y, -q.z, q.w);
 	}

@@ -13,8 +13,11 @@ import com.babylonhx.postprocess.PostProcess;
 class Camera extends Node {
 	
 	// Statics
-	public static var PERSPECTIVE_CAMERA:Int = 0;
-	public static var ORTHOGRAPHIC_CAMERA:Int = 1;
+	public static inline var PERSPECTIVE_CAMERA:Int = 0;
+	public static inline var ORTHOGRAPHIC_CAMERA:Int = 1;
+	
+	public static inline var FOVMODE_VERTICAL_FIXED:Int = 0;
+	public static inline var FOVMODE_HORIZONTAL_FIXED:Int = 1;
 
 	// Members
 	public var position:Vector3 = Vector3.Zero();
@@ -32,6 +35,7 @@ class Camera extends Node {
 	public var viewport:Viewport = new Viewport(0, 0, 1.0, 1.0);
 	public var subCameras:Array<Camera> = [];
 	public var layerMask:Int = 0xFFFFFFFF;
+	public var fovMode:Int = Camera.FOVMODE_VERTICAL_FIXED;
 
 	private var _computedViewMatrix = Matrix.Identity();
 	public var _projectionMatrix = new Matrix();
@@ -52,8 +56,8 @@ class Camera extends Node {
 		#if !js
 		// UGLY HACK UNTIL "THE MASTER BUG" IS FIXED !!!!
 		var lines = com.babylonhx.mesh.Mesh.CreateLines("lines", [
-			new Vector3(scene.activeCamera.position.x - 0.1, scene.activeCamera.position.y, scene.activeCamera.position.z + 120),
-			new Vector3(scene.activeCamera.position.x + 0.1, scene.activeCamera.position.y, scene.activeCamera.position.z + 120)
+			new Vector3(scene.activeCamera.position.x - 0.1, scene.activeCamera.position.y, scene.activeCamera.position.z + 1),
+			new Vector3(scene.activeCamera.position.x + 0.1, scene.activeCamera.position.y, scene.activeCamera.position.z + 1)
 		], scene);		
 		lines.alpha = 0.0;
 		lines.parent = scene.activeCamera;
@@ -320,7 +324,7 @@ class Camera extends Node {
 				this.minZ = 0.1;
 			}
 			
-			Matrix.PerspectiveFovLHToRef(this.fov, engine.getAspectRatio(this), this.minZ, this.maxZ, this._projectionMatrix);
+			Matrix.PerspectiveFovLHToRef(this.fov, engine.getAspectRatio(this), this.minZ, this.maxZ, this._projectionMatrix, this.fovMode);
 			return this._projectionMatrix;
 		}
 		

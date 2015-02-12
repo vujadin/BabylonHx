@@ -69,8 +69,9 @@ class Material {
 		return value;
 	}
 
-	public function new(name:String, scene:Scene, doNotAdd:Bool = false/*?doNotAdd:Bool*/) {
+	public function new(name:String, scene:Scene, doNotAdd:Bool = false) {
 		this.id = name;
+		this.name = name;
 		
 		this._scene = scene;
 		
@@ -79,7 +80,7 @@ class Material {
 		}
 	}
 
-	public function isReady(?mesh:AbstractMesh, useInstances:Bool = false/*?useInstances:Bool*/):Bool {
+	public function isReady(?mesh:AbstractMesh, useInstances:Bool = false):Bool {
 		return true;
 	}
 
@@ -128,7 +129,7 @@ class Material {
 	public function unbind():Void {
 	}
 
-	public function dispose(forceDisposeEffect:Bool = false/*?forceDisposeEffect:Bool*/) {
+	public function dispose(forceDisposeEffect:Bool = false) {
 		// Remove from scene
 		this._scene.materials.remove(this);
 		

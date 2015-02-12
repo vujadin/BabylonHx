@@ -16,6 +16,8 @@ import com.babylonhx.math.Viewport;
 import com.babylonhx.postprocess.PostProcess;
 import com.babylonhx.tools.Tools;
 import haxe.CallStack;
+import openfl.Memory;
+import openfl.utils.ByteArray;
 
 #if nme
 import nme.geom.Rectangle;
@@ -815,7 +817,7 @@ class Engine {
 		return this.createEffect(
 			{
 				vertex: "particles",
-				fragmentElement: fragmentName
+				fragment: fragmentName
 			},
 			["position", "color", "options"],
 			["view", "projection"].concat(uniformsNames),
@@ -1173,18 +1175,21 @@ class Engine {
 			var onload = function(img:Dynamic) {
 				prepareTexture(texture, GL, scene, img.width, img.height, invertY, noMipmap, false, function(potWidth:Int, potHeight:Int) {
 					this._workingCanvas = img;
+					var potWidth = Tools.GetExponantOfTwo(img.width, this._caps.maxTextureSize);
+					var potHeight = Tools.GetExponantOfTwo(img.height, this._caps.maxTextureSize);
 					var isPot = (img.width == potWidth && img.height == potHeight);
+					this._workingCanvas = img;
+					
 					if (!isPot) {
-						this._workingCanvas = getScaled(img, potWidth, potHeight);
+						this._workingCanvas = getScaled(img, Std.int(potWidth/2), Std.int(potHeight/2));
 					}
 					
 					#if html5
-					var pixelData = this._workingCanvas.getPixels(this._workingCanvas.rect).byteView;
+					var pixelData = new UInt8Array(@:privateAccess (this._workingCanvas.__image.data));
 					#else
 					var pixelData = new UInt8Array(BitmapData.getRGBAPixels(this._workingCanvas));
 					#end
-					
-					GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, this._workingCanvas.width, this._workingCanvas.height, 0, GL.RGBA, GL.UNSIGNED_BYTE, pixelData);
+					GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, this._workingCanvas.width, this._workingCanvas.height, 0, GL.RGBA, GL.UNSIGNED_BYTE, cast pixelData);
 					
 					if (onLoad != null) {
 						onLoad();
@@ -1201,7 +1206,7 @@ class Engine {
 		
 		return texture;
 	}
-	
+		
 	public function createRawTexture(data:ArrayBufferView, width:Int, height:Int, format:Int, generateMipMaps:Bool, invertY:Bool, samplingMode:Int):BabylonTexture {
 		
 		var texture = new BabylonTexture("", GL.createTexture());
@@ -1238,7 +1243,7 @@ class Engine {
 		}
 		
 		// Filters
-		var filters = getSamplingParameters(samplingMode, generateMipMaps, GL);
+		var filters = getSamplingParameters(samplingMode, generateMipMaps);
 		
 		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, filters.mag);
 		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, filters.min);
@@ -1266,7 +1271,7 @@ class Engine {
 		
 		GL.bindTexture(GL.TEXTURE_2D, texture.data);
 		
-		var filters = getSamplingParameters(samplingMode, generateMipMaps, GL);
+		var filters = getSamplingParameters(samplingMode, generateMipMaps);
 		
 		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, filters.mag);
 		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, filters.min);
@@ -1294,7 +1299,8 @@ class Engine {
 		#end
 		
 		#if html5
-		var pixelData = canvas.getPixels(canvas.rect).byteView;
+		//var pixelData = canvas.getPixels(canvas.rect).byteView;
+		var pixelData = new UInt8Array(@:privateAccess (this._workingCanvas.__image.data));
 		#else
 		var pixelData = new UInt8Array(BitmapData.getRGBAPixels(canvas));
 		#end
@@ -1365,7 +1371,7 @@ class Engine {
 		var width:Int = Reflect.field(size, "width") != null ? size.width : size;
         var height:Int = Reflect.field(size, "height") != null ? size.height : size;
 		
-		var filters = getSamplingParameters(samplingMode, generateMipMaps, GL);
+		var filters = getSamplingParameters(samplingMode, generateMipMaps);
 		
 		if (type == Engine.TEXTURETYPE_FLOAT && !this._caps.textureFloat) {
 			type = Engine.TEXTURETYPE_UNSIGNED_INT;
@@ -1376,7 +1382,7 @@ class Engine {
 		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, filters.min);
 		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_S, GL.CLAMP_TO_EDGE);
 		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_T, GL.CLAMP_TO_EDGE);
-		GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, width, height, 0, GL.RGBA, GL.UNSIGNED_BYTE, null);
+		GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, width, height, 0, GL.RGBA, getWebGLTextureType(type), null);
 		
 		var depthBuffer:GLRenderbuffer = null;
 		// Create the depth buffer
@@ -1407,6 +1413,7 @@ class Engine {
 		texture.isReady = true;
 		texture.generateMipMaps = generateMipMaps;
 		texture.references = 1;
+		texture.samplingMode = samplingMode;
 		this._activeTexturesCache = [];
 		
 		this._loadedTexturesCache.push(texture);
@@ -1470,7 +1477,8 @@ class Engine {
 				}
 						
 				#if html5
-				var pixelData = this._workingCanvas.getPixels(this._workingCanvas.rect).byteView;
+				//var pixelData = this._workingCanvas.getPixels(this._workingCanvas.rect).byteView;
+				var pixelData = new UInt8Array(@:privateAccess (this._workingCanvas.__image.data));
 				#else
 				var pixelData = new UInt8Array(BitmapData.getRGBAPixels(this._workingCanvas));
 				#end
@@ -1722,8 +1730,14 @@ class Engine {
         }
         return shader;
     }
+	
+	public static function getWebGLTextureType(type:Int):Int {
+		var textureType = (type == Engine.TEXTURETYPE_FLOAT ? GL.FLOAT : GL.UNSIGNED_BYTE);
+		
+		return textureType;
+	}
 
-    public static function getSamplingParameters(samplingMode:Int, generateMipMaps:Bool, gl:Dynamic):Dynamic {
+    public static function getSamplingParameters(samplingMode:Int, generateMipMaps:Bool):Dynamic {
         var magFilter = GL.NEAREST;
         var minFilter = GL.NEAREST;
         if (samplingMode == Texture.BILINEAR_SAMPLINGMODE) {
@@ -1760,14 +1774,18 @@ class Engine {
         var potWidth = Tools.GetExponantOfTwo(width, engine.getCaps().maxTextureSize);
         var potHeight = Tools.GetExponantOfTwo(height, engine.getCaps().maxTextureSize);
 		
+		#if !js
+		
+		#end
+		
         GL.bindTexture(GL.TEXTURE_2D, texture.data);
-		#if html5
+		#if js
         GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY == null ? 1 : (invertY ? 1 : 0));
 		#end
 		
         processFunction(Std.int(potWidth), Std.int(potHeight));
 		
-        var filters = getSamplingParameters(samplingMode, !noMipmap, GL);
+        var filters = getSamplingParameters(samplingMode, !noMipmap);
 		
         GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, filters.mag);
         GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, filters.min);

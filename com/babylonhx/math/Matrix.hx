@@ -1,4 +1,5 @@
 package com.babylonhx.math;
+import com.babylonhx.cameras.Camera;
 import com.babylonhx.tools.Tools;
 
 #if openfl
@@ -623,12 +624,26 @@ class Matrix {
 		return matrix;
 	}
 
-	public static function PerspectiveFovLHToRef(fov:Float, aspect:Float, znear:Float, zfar:Float, result:Matrix) {
+	public static function PerspectiveFovLHToRef(fov:Float, aspect:Float, znear:Float, zfar:Float, result:Matrix, ?fovMode:Int) {
 		var tan = 1.0 / (Math.tan(fov * 0.5));
 		
-		result.m[0] = tan / aspect;
+		var v_fixed:Bool = fovMode == null || (fovMode == Camera.FOVMODE_VERTICAL_FIXED);
+		var h_fixed:Bool = (fovMode == Camera.FOVMODE_HORIZONTAL_FIXED);
+		
+		if (v_fixed) {
+			result.m[0] = tan / aspect;
+		} else if (h_fixed) {
+			result.m[0] = tan;
+		}
+		
 		result.m[1] = result.m[2] = result.m[3] = 0.0;
-		result.m[5] = tan;
+		
+		if (v_fixed) { 
+			result.m[5] = tan; 
+		} else if (h_fixed) { 
+			result.m[5] = tan * aspect; 
+		}
+			
 		result.m[4] = result.m[6] = result.m[7] = 0.0;
 		result.m[8] = result.m[9] = 0.0;
 		result.m[10] = -zfar / (znear - zfar);

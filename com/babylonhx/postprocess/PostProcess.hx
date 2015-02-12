@@ -24,7 +24,7 @@ import snow.render.opengl.GL;
  * @author Krtolica Vujadin
  */
 
-class PostProcess {
+@:expose('BABYLON.PostProcess') class PostProcess {
 	
 	public var name:String;
 	
@@ -41,12 +41,12 @@ class PostProcess {
 	private var _engine:Engine;
 	private var _renderRatio:Float;
 	private var _reusable:Bool = false;
-	public var _textures:SmartArray = new SmartArray();// SmartArray<BabylonTexture> = new SmartArray<BabylonTexture>(2);
+	public var _textures:SmartArray = new SmartArray(2);// SmartArray<BabylonTexture> = new SmartArray<BabylonTexture>(2);
 	public var _currentRenderTextureInd:Int = 0;
 	private var _effect:Effect;
 	
 
-	public function new(name:String, fragmentUrl:String, parameters:Array<String>, samplers:Array<String>, ratio:Float, camera:Camera, samplingMode:Int = Texture.NEAREST_SAMPLINGMODE, ?engine:Engine, reusable:Bool = false) {
+	public function new(name:String, fragmentUrl:String, parameters:Array<String>, samplers:Array<String>, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
 		if (camera != null) {
 			this._camera = camera;
 			this._scene = camera.getScene();
@@ -58,7 +58,7 @@ class PostProcess {
 		}
 		
 		this._renderRatio = ratio;
-		this.renderTargetSamplingMode = samplingMode;
+		this.renderTargetSamplingMode = samplingMode != null ? samplingMode : Texture.NEAREST_SAMPLINGMODE;
 		this._reusable = reusable;
 		
 		samplers = samplers != null ? samplers : [];
@@ -74,22 +74,17 @@ class PostProcess {
 		return this._reusable;
 	}
 
-	public function activate(camera:Camera, ?sourceTexture:BabylonTexture) {
+	public function activate(camera:Camera, ?sourceTexture:Dynamic) {
 		camera = camera != null ? camera : this._camera;
 		
 		var scene = camera.getScene();
 		var maxSize = camera.getEngine().getCaps().maxTextureSize;
-		/*#if (nme || openfl)
-		var desiredWidth:Int = cast ((sourceTexture != null ? sourceTexture._width : Lib.current.stage.stageWidth) * this._renderRatio);
-		var desiredHeight:Int = cast ((sourceTexture != null ? sourceTexture._height : Lib.current.stage.stageHeight) * this._renderRatio);
-		#else*/
-		var desiredWidth:Int = cast ((sourceTexture != null ? sourceTexture._width : this._engine.getRenderingCanvas().width) * this._renderRatio);
-		var desiredHeight:Int = cast ((sourceTexture != null ? sourceTexture._height : this._engine.getRenderingCanvas().height) * this._renderRatio);
-		//#end
 		
-		desiredWidth = Tools.GetExponantOfTwo(desiredWidth, maxSize);
-		desiredHeight = Tools.GetExponantOfTwo(desiredHeight, maxSize);
-		
+		var desiredWidth = (sourceTexture ? sourceTexture._width : this._engine.getRenderWidth()) * this._renderRatio;
+        var desiredHeight = (sourceTexture ? sourceTexture._height : this._engine.getRenderHeight()) * this._renderRatio;
+        desiredWidth = Tools.GetExponantOfTwo(Std.int(desiredWidth), maxSize);
+		desiredHeight = Tools.GetExponantOfTwo(Std.int(desiredHeight), maxSize);
+		     
 		if (this.width != desiredWidth || this.height != desiredHeight) {
 			if (this._textures.length > 0) {
 				for (i in 0...this._textures.length) {
@@ -129,7 +124,7 @@ class PostProcess {
 		if (!this._effect.isReady()) {
 			return null;
 		}
-			
+		
 		// States
 		this._engine.enableEffect(this._effect);
 		this._engine.setState(false);
@@ -148,7 +143,7 @@ class PostProcess {
 		return this._effect;
 	}
 
-	public function dispose(camera:Camera) {
+	public function dispose(camera:Camera):Void {
 		camera = camera != null ? camera : this._camera;
 		
 		if (this._textures.length > 0) {

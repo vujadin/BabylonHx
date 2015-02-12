@@ -219,7 +219,7 @@ class Texture extends BaseTexture {
 	}
 
 	override public function clone():Texture {
-		var newTexture = new Texture(this._texture.url, this.getScene(), this._noMipmap, this._invertY);
+		var newTexture = new Texture(this._texture.url, this.getScene(), this._noMipmap, this._invertY, this._samplingMode);
 		
 		// Base texture
 		newTexture.hasAlpha = this.hasAlpha;

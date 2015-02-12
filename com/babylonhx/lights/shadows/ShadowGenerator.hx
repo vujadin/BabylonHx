@@ -21,13 +21,13 @@ import com.babylonhx.Scene;
 
 class ShadowGenerator {
 	
-	public static var FILTER_NONE:Int = 0;
-	public static var FILTER_VARIANCESHADOWMAP:Int = 1;
-	public static var FILTER_POISSONSAMPLING:Int = 2;
+	public static inline var FILTER_NONE:Int = 0;
+	public static inline var FILTER_VARIANCESHADOWMAP:Int = 1;
+	public static inline var FILTER_POISSONSAMPLING:Int = 2;
 
 
 	// Members
-	public var filter:Int = ShadowGenerator.FILTER_VARIANCESHADOWMAP;
+	public var filter:Int = ShadowGenerator.FILTER_NONE;
 
 	public var useVarianceShadowMap(get, set):Bool;
 	private function get_useVarianceShadowMap():Bool {

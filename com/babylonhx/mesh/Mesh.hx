@@ -21,6 +21,7 @@ import com.babylonhx.particles.ParticleSystem;
 import com.babylonhx.tools.AsyncLoop;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.materials.Material;
+import com.babylonhx.materials.textures.Texture;
 import haxe.CallStack;
 import haxe.Json;
 import openfl.display.BitmapData;
@@ -848,7 +849,7 @@ class Mesh extends AbstractMesh implements IGetSetVerticesData {
 	}
 
 	// Geometric tools
-	public function applyDisplacementMap(url:String, minHeight:Float, maxHeight:Float) {
+	public function applyDisplacementMap(url:String, minHeight:Float, maxHeight:Float, ?onSuccess:Mesh->Void) {
 		var scene = this.getScene();
 
 		/*var onload = img => {
@@ -869,6 +870,10 @@ class Mesh extends AbstractMesh implements IGetSetVerticesData {
 			var buffer = bmp.getPixels(new Rectangle(0, 0, bmp.width, bmp.height));
 						
 			this.applyDisplacementMapFromBuffer(buffer, bmp.width, bmp.height, minHeight, maxHeight);
+			
+			if (onSuccess != null) {
+				onSuccess(this);
+			}
 		//};
 		
 		//Tools.LoadImage(url, onload, () => { }, scene.database);
@@ -1165,20 +1170,30 @@ class Mesh extends AbstractMesh implements IGetSetVerticesData {
 		return tiledGround;
 	}
 
-	public static function CreateGroundFromHeightMap(name:String, url:String, width:Float, height:Float, subdivisions:Int, minHeight:Float, maxHeight:Float, scene:Scene, updatable:Bool = false):GroundMesh {
+	public static function CreateGroundFromHeightMap(name:String, url:String, width:Float, height:Float, subdivisions:Int, minHeight:Float, maxHeight:Float, scene:Scene, updatable:Bool = false, ?onReady:GroundMesh->Void):GroundMesh {
 		var ground = new GroundMesh(name, scene);
 		ground._subdivisions = subdivisions;
 		ground._setReady(false);
 		
-		var img:BitmapData = Assets.getBitmapData(url);
+		var onload = function(img:BitmapData):Void {
+			var canvas = img;
+			var heightMapWidth = canvas.width;
+			var heightMapHeight = canvas.height;
 			
-		// Create VertexData from map data
-		var buffer = img.getPixels(new Rectangle(0, 0, img.width, img.height));
-		var vertexData = VertexData.CreateGroundFromHeightMap(width, height, subdivisions, minHeight, maxHeight, buffer, img.width, img.height);
-		
-		vertexData.applyToMesh(ground, updatable);
-		
-		ground._setReady(true);
+			#if html5
+			var buffer = canvas.getPixels(canvas.rect).byteView;
+			#else
+			var buffer = new UInt8Array(BitmapData.getRGBAPixels(canvas));
+			#end
+			//var buffer = context.getImageData(0, 0, heightMapWidth, heightMapHeight).data;
+			var vertexData = VertexData.CreateGroundFromHeightMap(width, height, subdivisions, minHeight, maxHeight, cast buffer, heightMapWidth, heightMapHeight);
+			
+			vertexData.applyToMesh(ground, updatable);
+			
+			ground._setReady(true);
+		}
+
+		Tools.LoadImage(url,onload);
 		
 		return ground;
 	}
