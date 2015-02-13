@@ -1,5 +1,6 @@
 package com.babylonhx.bones;
 
+import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.animations.IAnimatable;
@@ -19,7 +20,7 @@ import snow.utils.Float32Array;
 * @author Krtolica Vujadin
 */
 
-@:expose('BABYLON.Skeleton') class Skeleton {
+@:expose('BABYLON.Skeleton') class Skeleton implements ISmartArrayCompatible {
 	
 	public var id:String;
 	public var name:String;

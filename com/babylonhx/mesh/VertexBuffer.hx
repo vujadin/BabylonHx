@@ -37,7 +37,7 @@ import snow.utils.Float32Array;
 	private var _strideSize:Int;
 
 	public static var count:Int = 0;
-	public function new(engine:Engine, data:Array<Float>, kind:String, updatable:Bool, postponeInternalCreation:Bool = false/*?postponeInternalCreation:Bool*/, ?stride:Int) {
+	public function new(engine:Engine, data:Array<Float>, kind:String, updatable:Bool, postponeInternalCreation:Bool = false, ?stride:Int) {
 		this._engine = engine;
 		this._updatable = updatable;
 		this._data = data;

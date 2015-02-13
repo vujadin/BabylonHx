@@ -1,5 +1,6 @@
 package com.babylonhx.culling;
 
+import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
 import com.babylonhx.math.Vector3;
@@ -9,7 +10,7 @@ import com.babylonhx.math.Vector3;
 * @author Krtolica Vujadin
 */
 
-@:expose('BABYLON.BoundingBox') class BoundingBox {
+@:expose('BABYLON.BoundingBox') class BoundingBox implements ISmartArrayCompatible {
 	
 	public var minimum:Vector3;
     public var maximum:Vector3;

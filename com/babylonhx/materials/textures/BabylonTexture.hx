@@ -1,4 +1,5 @@
 package com.babylonhx.materials.textures;
+import com.babylonhx.ISmartArrayCompatible;
 
 #if nme
 import nme.gl.GLTexture;
@@ -19,7 +20,7 @@ import snow.render.opengl.GL;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.BabylonTexture') class BabylonTexture {
+@:expose('BABYLON.BabylonTexture') class BabylonTexture implements ISmartArrayCompatible {
 	
 	public var data:GLTexture;
 	

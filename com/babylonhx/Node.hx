@@ -8,7 +8,7 @@ import com.babylonhx.animations.Animation;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Node') class Node {
+@:expose('BABYLON.Node') class Node implements ISmartArrayCompatible {
 	
 	public var parent:Node;
 	public var name:String;

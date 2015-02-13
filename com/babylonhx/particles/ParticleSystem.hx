@@ -1,5 +1,6 @@
 package com.babylonhx.particles;
 
+import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color4;
@@ -25,7 +26,7 @@ import snow.utils.Float32Array;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.ParticleSystem') class ParticleSystem implements IDisposable {
+@:expose('BABYLON.ParticleSystem') class ParticleSystem implements IDisposable implements ISmartArrayCompatible {
 	
 	// Statics
 	public static var BLENDMODE_ONEONE:Int = 0;

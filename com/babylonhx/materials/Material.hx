@@ -1,5 +1,6 @@
 package com.babylonhx.materials;
 
+import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.materials.textures.RenderTargetTexture;
 import com.babylonhx.mesh.AbstractMesh;
@@ -13,7 +14,7 @@ import com.babylonhx.mesh.Mesh;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Material') class Material {
+@:expose('BABYLON.Material') class Material implements ISmartArrayCompatible {
 	
 	public static var TriangleFillMode:Int = 0;
 	public static var WireFrameFillMode:Int = 1;
