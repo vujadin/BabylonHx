@@ -5,7 +5,7 @@ package com.babylonhx.mesh.primitives;
  * @author Krtolica Vujadin
  */
 
-class TiledGround extends _Primitive {
+@:expose('BABYLON.TiledGround') class TiledGround extends _Primitive {
 	
 	// Members
 	public var xmin:Float;

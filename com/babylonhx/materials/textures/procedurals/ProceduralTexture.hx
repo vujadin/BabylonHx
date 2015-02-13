@@ -14,7 +14,7 @@ import com.babylonhx.Scene;
  * @author Krtolica Vujadin
  */
 
-class ProceduralTexture extends Texture {
+@:expose('BABYLON.ProceduralTexture') class ProceduralTexture extends Texture {
 	
 	private var _size:Float;
 	public var _generateMipMaps:Bool;

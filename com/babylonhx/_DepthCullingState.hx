@@ -15,7 +15,7 @@ import snow.render.opengl.GL;
  * @author Krtolica Vujadin
  */
 
-class _DepthCullingState {
+@:expose('BABYLON._DepthCullingState') class _DepthCullingState {
 	
 	private var _isDepthTestDirty = false;
 	private var _isDepthMaskDirty = false;

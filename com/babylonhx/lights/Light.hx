@@ -12,7 +12,7 @@ import com.babylonhx.mesh.AbstractMesh;
  * @author Krtolica Vujadin
  */
 
-class Light extends Node {
+@:expose('BABYLON.Light') class Light extends Node {
 	
 	public var diffuse:Color3 = new Color3(1.0, 1.0, 1.0);
 	public var specular:Color3 = new Color3(1.0, 1.0, 1.0);

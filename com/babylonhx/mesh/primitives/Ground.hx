@@ -5,7 +5,7 @@ package com.babylonhx.mesh.primitives;
  * @author Krtolica Vujadin
  */
 
-class Ground extends _Primitive {
+@:expose('BABYLON.Ground') class Ground extends _Primitive {
 	
 	// Members
 	public var width:Float;

@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-class PlayAnimationAction extends Action {
+@:expose('BABYLON.PlayAnimationAction') class PlayAnimationAction extends Action {
 	
 	private var _target:Dynamic;
 	public var from:Int;

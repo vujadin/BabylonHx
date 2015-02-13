@@ -10,7 +10,7 @@ import com.babylonhx.postprocess.PostProcess;
 * @author Krtolica Vujadin
 */
 
-class Camera extends Node {
+@:expose('BABYLON.Camera') class Camera extends Node {
 	
 	// Statics
 	public static inline var PERSPECTIVE_CAMERA:Int = 0;

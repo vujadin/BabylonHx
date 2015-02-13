@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-class ActionManager {
+@:expose('BABYLON.ActionManager') class ActionManager {
 	
 	// Statics
 	public static var NothingTrigger:Int = 0;

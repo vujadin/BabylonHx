@@ -13,7 +13,7 @@ import snow.render.opengl.GL;
  * @author Krtolica Vujadin
  */
 
-class _AlphaState {
+@:expose('BABYLON._AlphaState') class _AlphaState {
 	
 	private var _isAlphaBlendDirty:Bool = false;
 	private var _isBlendFunctionParametersDirty:Bool = false;

@@ -15,7 +15,7 @@ import snow.utils.ArrayBufferView;
  * @author Krtolica Vujadin
  */
 
-class RawTexture extends Texture {
+@:expose('BABYLON.RawTexture') class RawTexture extends Texture {
 	
 	public function new(data:ArrayBufferView, width:Float, height:Float, format:Int, scene:Scene, generateMipMaps:Bool = true, invertY:Bool = false, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE) {
 		super(null, scene, !generateMipMaps, invertY);

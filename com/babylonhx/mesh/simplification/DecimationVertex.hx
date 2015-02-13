@@ -9,7 +9,7 @@ import com.babylonhx.math.Vector3;
  * @author Krtolica Vujadin
  */
 
-class DecimationVertex {
+@:expose('BABYLON.DecimationVertex') class DecimationVertex {
 	
 	public var id:Dynamic;
 	

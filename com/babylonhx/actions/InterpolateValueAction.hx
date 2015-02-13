@@ -11,7 +11,7 @@ import com.babylonhx.math.Quaternion;
  * @author Krtolica Vujadin
  */
 
-class InterpolateValueAction extends Action {
+@:expose('BABYLON.InterpolateValueAction') class InterpolateValueAction extends Action {
 	
 	private var _target:Dynamic;
 	private var _property:String;

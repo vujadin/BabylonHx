@@ -9,7 +9,7 @@ import com.babylonhx.math.Color4;
  * @author Krtolica Vujadin
  */
 
-class Particle {
+@:expose('BABYLON.Particle') class Particle {
 	
 	public var position:Vector3 = Vector3.Zero();
 	public var direction:Vector3 = Vector3.Zero();

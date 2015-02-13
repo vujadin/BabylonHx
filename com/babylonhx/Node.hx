@@ -8,7 +8,7 @@ import com.babylonhx.animations.Animation;
  * @author Krtolica Vujadin
  */
 
-class Node {
+@:expose('BABYLON.Node') class Node {
 	
 	public var parent:Node;
 	public var name:String;

@@ -15,7 +15,7 @@ import snow.render.opengl.GL;
  * @author Krtolica Vujadin
  */
 
-class BabylonBuffer {
+@:expose('BABYLON.BabylonBuffer') class BabylonBuffer {
 	
 	// TODO: this will depend on backend we use (Kha, OpenFL, Luxe...)
 	public var buffer:GLBuffer;	

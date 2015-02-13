@@ -14,12 +14,12 @@ import com.babylonhx.mesh.AbstractMesh;
 * @author Krtolica Vujadin
 */
 
-typedef BabylonFrame = {
+@:expose('BABYLON.BabylonFrame') typedef BabylonFrame = {
 	frame:Int,
 	value:Dynamic			// Vector3 or Quaternion or Matrix or Float or Color3 or Vector2
 }
 
-class Animation {
+@:expose('BABYLON.Animation') class Animation {
 	
 	public static var ANIMATIONTYPE_FLOAT:Int = 0;
 	public static var ANIMATIONTYPE_VECTOR3:Int = 1;

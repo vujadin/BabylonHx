@@ -19,7 +19,7 @@ import com.babylonhx.Scene;
  * @author Krtolica Vujadin
  */
 
-class ShadowGenerator {
+@:expose('BABYLON.ShadowGenerator') class ShadowGenerator {
 	
 	public static inline var FILTER_NONE:Int = 0;
 	public static inline var FILTER_VARIANCESHADOWMAP:Int = 1;

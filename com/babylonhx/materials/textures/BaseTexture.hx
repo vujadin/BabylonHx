@@ -19,7 +19,7 @@ import snow.render.opengl.GL;
  * @author Krtolica Vujadin
  */
 
-class BaseTexture implements IAnimatable {
+@:expose('BABYLON.BaseTexture') class BaseTexture implements IAnimatable {
 	
 	public var name:String;
 	public var delayLoadState:Int = Engine.DELAYLOADSTATE_NONE;

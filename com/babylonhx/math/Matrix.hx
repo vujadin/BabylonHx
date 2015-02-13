@@ -15,7 +15,7 @@ import snow.utils.Float32Array;
 * @author Krtolica Vujadin
 */
 
-class Matrix {
+@:expose('BABYLON.Matrix') class Matrix {
 	
 	private static var _tempQuaternion:Quaternion = new Quaternion();
 	private static var _xAxis:Vector3 = Vector3.Zero();

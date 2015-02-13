@@ -5,19 +5,19 @@ package com.babylonhx.tools;
  * @author Krtolica Vujadin
  */
 
-typedef RGB = {
+@:expose('BABYLON.RGB') typedef RGB = {
 	r:Int,
 	g:Int,
 	b:Int
 }
 
-typedef HSL = {
+@:expose('BABYLON.HSL') typedef HSL = {
 	h:Float,
 	s:Float,
 	l:Float
 }
  
-class ColorTools {
+@:expose('BABYLON.ColorTools') class ColorTools {
 
 	public static inline function toRGB(color:Int):RGB {
         return {

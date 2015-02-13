@@ -23,7 +23,7 @@ import com.babylonhx.tools.SmartArray;
  * @author Krtolica Vujadin
  */
 
-class VolumetricLightScatteringPostProcess extends PostProcess {
+@:expose('BABYLON.VolumetricLightScatteringPostProcess') class VolumetricLightScatteringPostProcess extends PostProcess {
 	
 	// Members
 	private var _godRaysPass:Effect;

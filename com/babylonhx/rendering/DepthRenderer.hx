@@ -15,7 +15,8 @@ import com.babylonhx.tools.SmartArray;
  * ...
  * @author Krtolica Vujadin
  */
-class DepthRenderer {
+
+@:expose('BABYLON.DepthRenderer') class DepthRenderer {
 	
 	private var _scene:Scene;
 	private var _depthMap:RenderTargetTexture;

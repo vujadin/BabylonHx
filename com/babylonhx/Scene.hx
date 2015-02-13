@@ -42,7 +42,6 @@ import com.babylonhx.rendering.RenderingManager;
 import com.babylonhx.sprites.SpriteManager;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.Tools;
-//import com.babylonhx.tools.Tags;
 import haxe.Timer;
 
 /**
@@ -50,7 +49,7 @@ import haxe.Timer;
  * @author Krtolica Vujadin
  */
 
-class Scene {
+@:expose('BABYLON.Scene') class Scene {
 	
 	// Statics
 	public static var FOGMODE_NONE:Int = 0;

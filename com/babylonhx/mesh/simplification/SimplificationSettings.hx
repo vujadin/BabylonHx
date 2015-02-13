@@ -4,9 +4,8 @@ package com.babylonhx.mesh.simplification;
  * ...
  * @author Krtolica Vujadin
  */
-
  
-class SimplificationSettings implements ISimplificationSettings {
+@:expose('BABYLON.SimplificationSettings') class SimplificationSettings implements ISimplificationSettings {
 	
 	public static inline var QUADRATIC:Int = 0;
 	

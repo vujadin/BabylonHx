@@ -8,7 +8,7 @@ import com.babylonhx.math.Color3;
  * @author Krtolica Vujadin
  */
 
-class LensFlare {
+@:expose('BABYLON.LensFlare') class LensFlare {
 	
 	public var size:Float;
 	public var color:Color3;

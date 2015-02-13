@@ -14,7 +14,7 @@ import com.babylonhx.mesh.AbstractMesh;
  * @author Krtolica Vujadin
  */
 
-typedef ShaderMaterialOptions = {
+@:expose('BABYLON.ShaderMaterialOptions') typedef ShaderMaterialOptions = {
 	?needAlphaBlending:Bool,
 	?needAlphaTesting:Bool,
 	?attributes:Array<String>,
@@ -22,7 +22,7 @@ typedef ShaderMaterialOptions = {
 	?samplers:Array<String>
 }
 
-class ShaderMaterial extends Material {
+@:expose('BABYLON.ShaderMaterial') class ShaderMaterial extends Material {
 	
 	private var _shaderPath:String;
 	private var _options:ShaderMaterialOptions;

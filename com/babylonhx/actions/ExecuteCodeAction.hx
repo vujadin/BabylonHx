@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-class ExecuteCodeAction extends Action {
+@:expose('BABYLON.ExecuteCodeAction') class ExecuteCodeAction extends Action {
 	
 	public var func:ActionEvent->Void;
 	

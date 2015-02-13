@@ -5,7 +5,7 @@ package com.babylonhx.postprocess.renderpipeline;
  * @author Krtolica Vujadin
  */
 
-class PostProcessRenderPipelineManager {
+@:expose('BABYLON.PostProcessRenderPipelineManager') class PostProcessRenderPipelineManager {
 	
 	private var _renderPipelines:Map<String, PostProcessRenderPipeline>;
 	

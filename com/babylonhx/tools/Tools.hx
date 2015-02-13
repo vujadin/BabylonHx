@@ -35,12 +35,12 @@ import openfl.net.URLRequest;
  * @author Krtolica Vujadin
  */
 
-typedef BabylonMinMax = {
+@:expose('BABYLON.BabylonMinMax') typedef BabylonMinMax = {
 	minimum: Vector3,
 	maximum: Vector3
 }
 
-class Tools {
+@:expose('BABYLON.Tools') class Tools {
 	
 	public static var BaseUrl:String = "";
 		

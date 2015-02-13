@@ -19,7 +19,7 @@ import snow.render.opengl.GL;
  * @author Krtolica Vujadin
  */
 
-class BabylonTexture {
+@:expose('BABYLON.BabylonTexture') class BabylonTexture {
 	
 	public var data:GLTexture;
 	

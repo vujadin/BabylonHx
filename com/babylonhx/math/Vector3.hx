@@ -16,7 +16,8 @@ import snow.utils.Float32Array;
  * ...
  * @author Krtolica Vujadin
  */
-class Vector3 {
+
+@:expose('BABYLON.Vector3') class Vector3 {
 	
 	public var x:Float;
 	public var y:Float;
@@ -179,16 +180,17 @@ class Vector3 {
 	// Methods
 	public function normalize():Vector3 {
 		var len = this.length();
-
-		if (len == 0)
+		
+		if (len == 0) {
 			return this;
-
+		}
+		
 		var num = 1.0 / len;
-
+		
 		this.x *= num;
 		this.y *= num;
 		this.z *= num;
-
+		
 		return this;
 	}
 

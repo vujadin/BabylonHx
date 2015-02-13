@@ -6,7 +6,7 @@ import com.babylonhx.math.Vector2;
  * ...
  * @author Krtolica Vujadin
  */
-class Arc {
+@:expose('BABYLON.Arc') class Arc {
 
 	public var startPoint:Vector2;
 	public var midPoint:Vector2;

@@ -12,6 +12,7 @@ import com.babylonhx.culling.octrees.Octree;
 import com.babylonhx.materials.Material;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
+import com.babylonhx.math.Axis;
 import com.babylonhx.math.Quaternion;
 import com.babylonhx.math.Ray;
 import com.babylonhx.math.Vector3;
@@ -25,12 +26,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
  * @author Krtolica Vujadin
  */
 
-enum Space {
-	LOCAL;
-	WORLD;
-}
-
-class AbstractMesh extends Node implements IDisposable {
+@:expose('BABYLON.AbstractMesh') class AbstractMesh extends Node implements IDisposable {
 	
 	// Statics
 	public static var BILLBOARDMODE_NONE:Int = 0;

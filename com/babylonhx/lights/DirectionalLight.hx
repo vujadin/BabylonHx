@@ -9,7 +9,7 @@ import com.babylonhx.math.Vector3;
  * @author Krtolica Vujadin
  */
 
-class DirectionalLight extends Light implements IShadowLight {
+@:expose('BABYLON.DirectionalLight') class DirectionalLight extends Light implements IShadowLight {
 	
 	public var position:Vector3;
 	public var direction:Vector3;

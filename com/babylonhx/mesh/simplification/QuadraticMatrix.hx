@@ -5,7 +5,7 @@ package com.babylonhx.mesh.simplification;
  * @author Krtolica Vujadin
  */
 
-class QuadraticMatrix {
+@:expose('BABYLON.QuadraticMatrix') class QuadraticMatrix {
 	
 	public var data:Array<Float>;
 

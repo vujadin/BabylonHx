@@ -4,7 +4,7 @@ package com.babylonhx.math;
  * ...
  * @author Krtolica Vujadin
  */
-class Vector2 {
+@:expose('BABYLON.Vector2') class Vector2 {
 	
 	public var x:Float;
 	public var y:Float;

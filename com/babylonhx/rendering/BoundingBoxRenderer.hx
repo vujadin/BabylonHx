@@ -14,7 +14,7 @@ import com.babylonhx.culling.BoundingBox;
  * @author Krtolica Vujadin
  */
 
-class BoundingBoxRenderer {
+@:expose('BABYLON.BoundingBoxRenderer') class BoundingBoxRenderer {
 	
 	public var frontColor:Color3 = new Color3(1, 1, 1);
 	public var backColor:Color3 = new Color3(0.1, 0.1, 0.1);

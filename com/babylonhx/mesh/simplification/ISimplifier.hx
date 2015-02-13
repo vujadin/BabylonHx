@@ -7,7 +7,8 @@ package com.babylonhx.mesh.simplification;
 /**
  * A simplifier interface for future simplification implementations.
  */
-interface ISimplifier {
+
+@:expose('BABYLON.ISimplifier') interface ISimplifier {
   
 	/**
 	 * Simplification of a given mesh according to the given settings.

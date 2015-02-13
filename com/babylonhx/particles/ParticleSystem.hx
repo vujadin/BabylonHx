@@ -25,7 +25,7 @@ import snow.utils.Float32Array;
  * @author Krtolica Vujadin
  */
 
-class ParticleSystem implements IDisposable {
+@:expose('BABYLON.ParticleSystem') class ParticleSystem implements IDisposable {
 	
 	// Statics
 	public static var BLENDMODE_ONEONE:Int = 0;
@@ -107,6 +107,7 @@ class ParticleSystem implements IDisposable {
 	private var _stopped:Bool = false;
 	private var _actualFrame:Int = 0;
 	private var _scaledUpdateSpeed:Float;
+	
 
 	public function new(name:String, capacity:Int, scene:Scene, ?customEffect:Effect) {
 		this.name = name;

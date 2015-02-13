@@ -4,7 +4,7 @@ package com.babylonhx.animations;
  * @author Krtolica Vujadin
  */
 
-interface IAnimatable {
+@:expose('BABYLON.IAnimatable') interface IAnimatable {
   
 	var animations:Array<Animation>;
 	

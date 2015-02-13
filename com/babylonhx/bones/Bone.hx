@@ -9,7 +9,7 @@ import com.babylonhx.animations.Animation;
 * @author Krtolica Vujadin
 */
 
-class Bone implements IAnimatable {
+@:expose('BABYLON.Bone') class Bone implements IAnimatable {
 	
 	public var name:String;
 	public var children:Array<Bone> = [];

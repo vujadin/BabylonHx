@@ -5,7 +5,7 @@ package com.babylonhx.animations.easing;
  * @author Krtolica Vujadin
  */
 
-class ElasticEase extends EasingFunction {
+@:expose('BABYLON.ElasticEase') class ElasticEase extends EasingFunction {
 	
 	public var oscillations:Float = 3.0;
 	public var springiness:Float = 3.0;

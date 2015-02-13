@@ -7,7 +7,7 @@ import com.babylonhx.math.Vector3;
  * @author Krtolica Vujadin
  */
 
-class DecimationTriangle {
+@:expose('BABYLON.DecimationTriangle') class DecimationTriangle {
 	
 	public var vertices:Array<Int>;
 	public var normal:Vector3;

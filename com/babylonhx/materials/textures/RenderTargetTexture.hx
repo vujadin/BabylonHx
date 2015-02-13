@@ -11,7 +11,7 @@ import com.babylonhx.tools.SmartArray;
  * @author Krtolica Vujadin
  */
 
-class RenderTargetTexture extends Texture {
+@:expose('BABYLON.RenderTargetTexture') class RenderTargetTexture extends Texture {
 	
 	public var renderList:Array<AbstractMesh> = [];
 	public var renderParticles:Bool = true;

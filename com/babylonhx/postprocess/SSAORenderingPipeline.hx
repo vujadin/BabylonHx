@@ -13,7 +13,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
  * @author Krtolica Vujadin
  */
 
-class SSAORenderingPipeline extends PostProcessRenderPipeline {
+@:expose('BABYLON.SSAORenderingPipeline') class SSAORenderingPipeline extends PostProcessRenderPipeline {
 	
 	// Members
 	public var SSAOOriginalSceneColorEffect:String = "SSAOOriginalSceneColorEffect";

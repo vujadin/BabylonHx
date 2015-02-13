@@ -9,7 +9,8 @@ import haxe.Timer;
 /**
  * An implementation of a loop for asynchronous functions.
  */
-class AsyncLoop {
+
+@:expose('BABYLON.AsyncLoop') class AsyncLoop {
 	
 	public var iterations:Int;
 	

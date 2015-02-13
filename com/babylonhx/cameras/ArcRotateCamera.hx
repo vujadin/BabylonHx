@@ -30,7 +30,7 @@ import openfl.Lib;
  * @author Krtolica Vujadin
  */
 
-class ArcRotateCamera extends Camera {
+@:expose('BABYLON.ArcRotateCamera') class ArcRotateCamera extends Camera {
 	
 	public var inertialAlphaOffset:Float = 0;
 	public var inertialBetaOffset:Float = 0;

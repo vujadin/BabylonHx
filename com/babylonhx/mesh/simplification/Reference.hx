@@ -4,7 +4,7 @@ package com.babylonhx.mesh.simplification;
  * ...
  * @author Krtolica Vujadin
  */
-class Reference {
+@:expose('BABYLON.Reference') class Reference {
 	
 	public var vertexId:Int;
 	public var triangleId:Int;

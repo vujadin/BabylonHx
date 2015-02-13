@@ -7,7 +7,7 @@ import com.babylonhx.math.Vector2;
  * @author Krtolica Vujadin
  */
 
-class Angle {
+@:expose('BABYLON.Angle') class Angle {
 	
 	public static inline var Orientation_CW:Int = 1;
 	public static inline var Orientation_CCW:Int = -1;

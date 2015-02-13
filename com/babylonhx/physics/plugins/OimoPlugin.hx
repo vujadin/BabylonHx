@@ -34,7 +34,7 @@ typedef PhysicsMesh = {
 	delta:Null<Float>
 }
 
-class OimoPlugin implements IPhysicsEnginePlugin {
+@:expose('BABYLON.OimoPlugin') class OimoPlugin implements IPhysicsEnginePlugin {
 	
 	public static inline var TO_RAD:Float = 0.017453292;// Math.PI / 180;
 	public static inline var WORLD_SCALE:Float = 100;

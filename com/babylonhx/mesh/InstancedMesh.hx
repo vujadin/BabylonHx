@@ -15,7 +15,7 @@ import com.babylonhx.tools.Tools;
  * @author Krtolica Vujadin
  */
 
-class InstancedMesh extends AbstractMesh {
+@:expose('BABYLON.InstancedMesh') class InstancedMesh extends AbstractMesh {
 	
 	private var _sourceMesh:Mesh;
 	private var _currentLOD:Mesh;

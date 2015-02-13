@@ -38,7 +38,7 @@ import snow.utils.Float32Array;
  * @author Krtolica Vujadin
  */
 
-class Effect {
+@:expose('BABYLON.Effect') class Effect {
 		
 	public var name:Dynamic;
 	public var defines:String;

@@ -77,7 +77,7 @@ import js.Browser;
  * @author Krtolica Vujadin
  */
 
-class Engine {
+@:expose('BABYLON.Engine') class Engine {
 	
 	// Const statics
 	public static inline var ALPHA_DISABLE:Int = 0;
@@ -1174,27 +1174,25 @@ class Engine {
 			#if (nme || openfl)
 			var onload = function(img:Dynamic) {
 				prepareTexture(texture, GL, scene, img.width, img.height, invertY, noMipmap, false, function(potWidth:Int, potHeight:Int) {
-					this._workingCanvas = img;
-					var potWidth = Tools.GetExponantOfTwo(img.width, this._caps.maxTextureSize);
-					var potHeight = Tools.GetExponantOfTwo(img.height, this._caps.maxTextureSize);
+					this._workingCanvas = invertY ? flipBitmapData(img) : img;
 					var isPot = (img.width == potWidth && img.height == potHeight);
-					this._workingCanvas = img;
-					
 					if (!isPot) {
-						this._workingCanvas = getScaled(img, Std.int(potWidth/2), Std.int(potHeight/2));
+						this._workingCanvas = getScaled(img, potWidth, potHeight);
 					}
 					
 					#if html5
+					//var pixelData = this._workingCanvas.getPixels(this._workingCanvas.rect).byteView;
 					var pixelData = new UInt8Array(@:privateAccess (this._workingCanvas.__image.data));
 					#else
 					var pixelData = new UInt8Array(BitmapData.getRGBAPixels(this._workingCanvas));
 					#end
-					GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, this._workingCanvas.width, this._workingCanvas.height, 0, GL.RGBA, GL.UNSIGNED_BYTE, cast pixelData);
+					
+					GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, this._workingCanvas.width, this._workingCanvas.height, 0, GL.RGBA, GL.UNSIGNED_BYTE, pixelData);
 					
 					if (onLoad != null) {
 						onLoad();
 					}
-				}, samplingMode);
+				}, samplingMode);				
 			};
 			
 			if (!Std.is(fromData, Array))
@@ -1205,6 +1203,18 @@ class Engine {
 		}
 		
 		return texture;
+	}
+	
+	function flipBitmapData(bd:BitmapData, axis:String = "y"):BitmapData {
+		var matrix:openfl.geom.Matrix = if(axis == "x") {
+		    new openfl.geom.Matrix( -1, 0, 0, 1, bd.width, 0);
+		} else {
+			new openfl.geom.Matrix( 1, 0, 0, -1, 0, bd.height);
+		}
+		
+		bd.draw(bd, matrix, null, null, null, true);
+		
+		return bd;
 	}
 		
 	public function createRawTexture(data:ArrayBufferView, width:Int, height:Int, format:Int, generateMipMaps:Bool, invertY:Bool, samplingMode:Int):BabylonTexture {

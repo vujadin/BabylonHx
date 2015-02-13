@@ -8,7 +8,7 @@ import com.babylonhx.math.Vector3;
  * @author Krtolica Vujadin
  */
 
-interface IShadowLight {
+@:expose('BABYLON.IShadowLight') interface IShadowLight {
   
 	var position:Vector3;
 	var direction: Vector3;

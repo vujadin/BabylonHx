@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-class Action {
+@:expose('BABYLON.Action') class Action {
 	
 	public var trigger:Int;
 	public var _actionManager:ActionManager;

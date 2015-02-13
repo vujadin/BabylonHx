@@ -21,7 +21,7 @@ import com.babylonhx.tools.Tools;
  * @author Krtolica Vujadin
  */
 
-class StandardMaterial extends Material {
+@:expose('BABYLON.StandardMaterial') class StandardMaterial extends Material {
 	
 	// Flags used to enable or disable a type of texture for all Standard Materials
 	public static var DiffuseTextureEnabled:Bool = true;

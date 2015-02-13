@@ -9,7 +9,7 @@ import com.babylonhx.math.Vector3;
 * @author Krtolica Vujadin
 */
 
-class BoundingBox {
+@:expose('BABYLON.BoundingBox') class BoundingBox {
 	
 	public var minimum:Vector3;
     public var maximum:Vector3;

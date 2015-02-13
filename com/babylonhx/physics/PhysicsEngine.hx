@@ -9,7 +9,7 @@ import com.babylonhx.physics.plugins.OimoPlugin;
  * @author Krtolica Vujadin
  */
 
-class PhysicsEngine {
+@:expose('BABYLON.PhysicsEngine') class PhysicsEngine {
 	
 	// Statics
 	public static inline var NoImpostor:Int = 0;

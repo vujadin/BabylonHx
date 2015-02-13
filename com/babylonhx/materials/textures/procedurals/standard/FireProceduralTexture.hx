@@ -17,6 +17,12 @@ class FireProceduralTexture extends ProceduralTexture {
 	private var _fireColors:Array<Color3> = [];
 	private var _alphaThreshold:Float = 0.5;
 	
+	public var fireColors(get, set):Array<Color3>;
+	public var time(get, set):Float;
+	public var speed(get, set):Vector2;
+	public var shift(get, set):Float;
+	public var alphaThreshold(get, set):Float;
+	
 
 	public function new(name:String, size:Float, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
 		super(name, size, "fire", scene, fallbackTexture, generateMipMaps);
@@ -82,7 +88,7 @@ class FireProceduralTexture extends ProceduralTexture {
 		new Color3(0.0, 0.2, 0.9)
 	];
 		
-	public var fireColors(get, set):Array<Color3>;
+	
 	private function get_fireColors():Array<Color3> {
 		return this._fireColors;
 	}
@@ -91,8 +97,7 @@ class FireProceduralTexture extends ProceduralTexture {
 		this.updateShaderUniforms();
 		return value;
 	}
-
-	public var time(get, set):Float;
+	
 	private function get_time():Float {
 		return this._time;
 	}
@@ -101,8 +106,7 @@ class FireProceduralTexture extends ProceduralTexture {
 		this.updateShaderUniforms();
 		return value;
 	}
-
-	public var speed(get, set):Vector2;
+	
 	private function get_speed():Vector2 {
 		return this._speed;
 	}
@@ -111,8 +115,7 @@ class FireProceduralTexture extends ProceduralTexture {
 		this.updateShaderUniforms();
 		return value;
 	}
-
-	public var shift(get, set):Float;
+	
 	private function get_shift():Float {
 		return this._shift;
 	}
@@ -121,8 +124,7 @@ class FireProceduralTexture extends ProceduralTexture {
 		this.updateShaderUniforms();
 		return value;
 	}
-
-	public var alphaThreshold(get, set):Float;
+	
 	private function get_alphaThreshold():Float {
 		return this._alphaThreshold;
 	}

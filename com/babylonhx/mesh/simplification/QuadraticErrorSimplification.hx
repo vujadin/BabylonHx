@@ -11,7 +11,7 @@ import haxe.Timer;
  * ...
  * @author Krtolica Vujadin
  */
-class QuadraticErrorSimplification implements ISimplifier {
+@:expose('BABYLON.QuadraticErrorSimplification') class QuadraticErrorSimplification implements ISimplifier {
 
 	private var triangles:Array<DecimationTriangle>;
 	private var vertices:Array<DecimationVertex>;

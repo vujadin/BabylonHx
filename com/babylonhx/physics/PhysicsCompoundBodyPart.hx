@@ -6,7 +6,7 @@ import com.babylonhx.mesh.Mesh;
  * @author Krtolica Vujadin
  */
 
-class PhysicsCompoundBodyPart {
+@:expose('BABYLON.PhysicsCompoundBodyPart') class PhysicsCompoundBodyPart {
 	
     public var mesh:Mesh;
     public var impostor:Int;

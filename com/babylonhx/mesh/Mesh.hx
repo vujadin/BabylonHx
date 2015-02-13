@@ -52,7 +52,7 @@ import snow.utils.ByteArray;
  * @author Krtolica Vujadin
  */
 
-class Mesh extends AbstractMesh implements IGetSetVerticesData {
+@:expose('BABYLON.Mesh') class Mesh extends AbstractMesh implements IGetSetVerticesData {
 	
 	// Members
 	public var delayLoadState = Engine.DELAYLOADSTATE_NONE;
@@ -1169,30 +1169,21 @@ class Mesh extends AbstractMesh implements IGetSetVerticesData {
 		vertexData.applyToMesh(tiledGround, updatable);
 		return tiledGround;
 	}
-
+	
 	public static function CreateGroundFromHeightMap(name:String, url:String, width:Float, height:Float, subdivisions:Int, minHeight:Float, maxHeight:Float, scene:Scene, updatable:Bool = false, ?onReady:GroundMesh->Void):GroundMesh {
 		var ground = new GroundMesh(name, scene);
 		ground._subdivisions = subdivisions;
 		ground._setReady(false);
 		
 		var onload = function(img:BitmapData):Void {
-			var canvas = img;
-			var heightMapWidth = canvas.width;
-			var heightMapHeight = canvas.height;
-			
-			#if html5
-			var buffer = canvas.getPixels(canvas.rect).byteView;
-			#else
-			var buffer = new UInt8Array(BitmapData.getRGBAPixels(canvas));
-			#end
-			//var buffer = context.getImageData(0, 0, heightMapWidth, heightMapHeight).data;
-			var vertexData = VertexData.CreateGroundFromHeightMap(width, height, subdivisions, minHeight, maxHeight, cast buffer, heightMapWidth, heightMapHeight);
+			var buffer = img.getPixels(new Rectangle(0, 0, img.width, img.height));			
+			var vertexData = VertexData.CreateGroundFromHeightMap(width, height, subdivisions, minHeight, maxHeight, buffer, img.width, img.height);
 			
 			vertexData.applyToMesh(ground, updatable);
 			
 			ground._setReady(true);
 		}
-
+		
 		Tools.LoadImage(url,onload);
 		
 		return ground;

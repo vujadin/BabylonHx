@@ -76,13 +76,13 @@ import snow.utils.Int32Array;
  * @author Krtolica Vujadin
  */
 
-typedef ISceneLoaderPlugin = {
+@:expose('BABYLON.ISceneLoaderPlugin') typedef ISceneLoaderPlugin = {
 	var extensions:String;
 	var importMesh:Dynamic->Scene->Dynamic->String->Array<AbstractMesh>->Array<ParticleSystem>->Array<Skeleton>->Bool;
 	var load:Scene->String->String->Bool;
 }
 
-class BabylonFileLoader {
+@:expose('BABYLON.BabylonFileLoader') class BabylonFileLoader {
 	
 	public static var plugin(get, never):ISceneLoaderPlugin;
 	private static function get_plugin():ISceneLoaderPlugin {

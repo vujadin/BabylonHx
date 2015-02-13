@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-class IncrementValueAction extends Action {
+@:expose('BABYLON.IncrementValueAction') class IncrementValueAction extends Action {
 	
 	private var _target:Dynamic;
 	private var _property:String;

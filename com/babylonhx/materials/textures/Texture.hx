@@ -8,7 +8,7 @@ import com.babylonhx.math.Vector3;
  * @author Krtolica Vujadin
  */
 
-class Texture extends BaseTexture {
+@:expose('BABYLON.Texture') class Texture extends BaseTexture {
 	
 	// Constants
 	public static inline var NEAREST_SAMPLINGMODE:Int = 1;
@@ -58,7 +58,7 @@ class Texture extends BaseTexture {
 	private var _deleteBuffer:Bool;
 
 	
-	public function new(url:String, scene:Scene, ?noMipmap:Bool, ?invertY:Bool, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, onLoad:Void->Void = null, onError:Void->Void = null, buffer:Dynamic = null, deleteBuffer:Bool = false) {
+	public function new(url:String, scene:Scene, noMipmap:Bool = false, invertY:Bool = true, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, onLoad:Void->Void = null, onError:Void->Void = null, buffer:Dynamic = null, deleteBuffer:Bool = false) {
 		super(scene);
 		
 		this.name = url;
@@ -76,7 +76,6 @@ class Texture extends BaseTexture {
 		this._texture = this._getFromCache(url, noMipmap, samplingMode);
 		
 		if (this._texture == null) {
-			trace(url);
 			if (!scene.useDelayedTextureLoading) {
 				if(url.indexOf(".") != -1) {	// protection for cube texture, url is not full path !
 					this._texture = scene.getEngine().createTexture(url, noMipmap, invertY, scene, this._samplingMode, onLoad, onError, this._buffer);

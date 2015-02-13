@@ -5,7 +5,7 @@ package com.babylonhx.mesh.primitives;
  * @author Krtolica Vujadin
  */
 
-class TorusKnot extends _Primitive {
+@:expose('BABYLON.TorusKnot') class TorusKnot extends _Primitive {
 	
 	// Members
 	public var radius:Float;
@@ -23,7 +23,7 @@ class TorusKnot extends _Primitive {
 		this.tubularSegments = tubularSegments;
 		this.p = p;
 		this.q = q;
-
+		
 		super(id, scene, this._regenerateVertexData(), canBeRegenerated, mesh);
 	}
 
@@ -34,4 +34,5 @@ class TorusKnot extends _Primitive {
 	override public function copy(id:String):Geometry {
 		return new TorusKnot(id, this.getScene(), this.radius, this.tube, this.radialSegments, this.tubularSegments, this.p, this.q, this.canBeRegenerated(), null);
 	}
+	
 }

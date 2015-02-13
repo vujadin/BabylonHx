@@ -6,7 +6,7 @@ import com.babylonhx.math.Vector2;
  * ...
  * @author Krtolica Vujadin
  */
-class Path2 {
+@:expose('BABYLON.Path2') class Path2 {
 	
 	private var _points:Array<Vector2> = [];
 	private var _length:Float = 0;
