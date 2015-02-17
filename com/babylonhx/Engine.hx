@@ -213,14 +213,22 @@ import js.Browser;
 		}*/
 		
 		#if !js
+
 		if (this._caps.s3tc == null) {
 			this._caps.s3tc = GL.getExtension('GL_EXT_texture_compression_s3tc');
 		}
-		if (this._caps.textureAnisotropicFilterExtension == null) {
+		if (this._caps.textureAnisotropicFilterExtension == null || this._caps.textureAnisotropicFilterExtension == false) {
+			
 			this._caps.textureAnisotropicFilterExtension = GL.getExtension('GL_EXT_texture_filter_anisotropic');
 		}
-		if (this._caps.maxRenderTextureSize == null) {
+		if (this._caps.maxRenderTextureSize == 0) {
 			this._caps.maxRenderTextureSize = 16384;
+		}
+		if (this._caps.maxCubemapTextureSize == 0) {
+			this._caps.maxCubemapTextureSize = 16384;
+		}
+		if (this._caps.maxTextureSize == 0) {
+			this._caps.maxTextureSize = 16384;
 		}
 		if (this._caps.textureFloat == null) {
 			this._caps.textureFloat = true;
@@ -238,7 +246,6 @@ import js.Browser;
 			this._caps.textureFloat = GL.getExtension('GL_ARB_texture_float');
 		}
 		#end
-		
 		trace(this._caps);
 		
 		// Depth buffer
