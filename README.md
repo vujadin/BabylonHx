@@ -20,7 +20,7 @@ To build for Lime run from command line:
 ***haxelib run lime run project.xml html5***
 
 You should see this in your browser when build is done:
-![Alt text](/samples/scrshot.jpg?raw=true "Basic scene")
+![Alt text](scrshot.jpg?raw=true "Basic scene")
 
 Snow binaries are located in bin_snow folder and Lime binaries are located in bin_lime folder.
 
