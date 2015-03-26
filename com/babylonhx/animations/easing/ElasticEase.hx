@@ -22,7 +22,7 @@ package com.babylonhx.animations.easing;
 		var num2:Float = 0;
 		var num3 = Math.max(0.0, this.oscillations);
 		var num = Math.max(0.0, this.springiness);
-
+		
 		if (num == 0) {
 			num2 = gradient;
 		}else {

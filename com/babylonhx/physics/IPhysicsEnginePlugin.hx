@@ -7,7 +7,7 @@ import com.babylonhx.mesh.AbstractMesh;
  * @author Krtolica Vujadin
  */
 
-interface IPhysicsEnginePlugin {
+@:expose('BABYLON.IPhysicsEnginePlugin') interface IPhysicsEnginePlugin {
 	
 	function initialize(?iterations:Int):Void;
 	function setGravity(gravity:Vector3):Void;

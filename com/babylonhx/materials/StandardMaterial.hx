@@ -1,6 +1,7 @@
 package com.babylonhx.materials;
 
 import com.babylonhx.Engine;
+import com.babylonhx.lights.shadows.ShadowGenerator;
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.materials.textures.RenderTargetTexture;
 import com.babylonhx.materials.textures.Texture;
@@ -44,7 +45,7 @@ import com.babylonhx.tools.Tools;
 	public var ambientColor:Color3 = new Color3(0, 0, 0);
 	public var diffuseColor:Color3 = new Color3(1, 1, 1);
 	public var specularColor:Color3 = new Color3(1, 1, 1);
-	public var specularPower:Int = 64;
+	public var specularPower:Float = 64;
 	public var emissiveColor:Color3 = new Color3(0, 0, 0);
 	public var useAlphaFromDiffuseTexture:Bool = false;
 	public var useSpecularOverAlpha:Bool = true;
@@ -97,10 +98,10 @@ import com.babylonhx.tools.Tools;
 	}
 
 	// Methods   
-	override public function isReady(?mesh:AbstractMesh, useInstances:Bool = false/*?useInstances:Bool*/):Bool {
+	override public function isReady(?mesh:AbstractMesh, useInstances:Bool = false):Bool {
 		if (this.checkReadyOnlyOnce) {
 			if (this._wasPreviouslyReady) {
-				return true;
+				//return true;
 			}
 		}
 		
@@ -108,13 +109,15 @@ import com.babylonhx.tools.Tools;
 		
 		if (!this.checkReadyOnEveryCall) {
 			if (this._renderId == scene.getRenderId()) {
-				return true;
+				//return true;
 			}
 		}
 		
 		var engine:Engine = scene.getEngine();
 		var defines:Array<String> = [];
 		var fallbacks:EffectFallbacks = new EffectFallbacks();
+		var needNormals:Bool = false;
+		var needUVs:Bool = false;
 		
 		// Textures
 		if (scene.texturesEnabled) {
@@ -122,6 +125,7 @@ import com.babylonhx.tools.Tools;
 				if (!this.diffuseTexture.isReady()) {
 					return false;
 				} else {
+					needUVs = true;
 					defines.push("#define DIFFUSE");
 				}
 			}
@@ -130,6 +134,7 @@ import com.babylonhx.tools.Tools;
 				if (!this.ambientTexture.isReady()) {
 					return false;
 				} else {
+					needUVs = true;
 					defines.push("#define AMBIENT");
 				}
 			}
@@ -138,6 +143,7 @@ import com.babylonhx.tools.Tools;
 				if (!this.opacityTexture.isReady()) {
 					return false;
 				} else {
+					needUVs = true;
 					defines.push("#define OPACITY");
 					
 					if (this.opacityTexture.getAlphaFromRGB) {
@@ -150,6 +156,8 @@ import com.babylonhx.tools.Tools;
 				if (!this.reflectionTexture.isReady()) {
 					return false;
 				} else {
+					needNormals = true;
+					needUVs = true;
 					defines.push("#define REFLECTION");
 					fallbacks.addFallback(0, "REFLECTION");
 				}
@@ -159,6 +167,7 @@ import com.babylonhx.tools.Tools;
 				if (!this.emissiveTexture.isReady()) {
 					return false;
 				} else {
+					needUVs = true;
 					defines.push("#define EMISSIVE");
 				}
 			}
@@ -167,6 +176,7 @@ import com.babylonhx.tools.Tools;
 				if (!this.specularTexture.isReady()) {
 					return false;
 				} else {
+					needUVs = true;
 					defines.push("#define SPECULAR");
 					fallbacks.addFallback(0, "SPECULAR");
 				}
@@ -177,6 +187,7 @@ import com.babylonhx.tools.Tools;
 			if (!this.bumpTexture.isReady()) {
 				return false;
 			} else {
+				needUVs = true;
 				defines.push("#define BUMP");
 				fallbacks.addFallback(0, "BUMP");
 			}
@@ -251,6 +262,7 @@ import com.babylonhx.tools.Tools;
 					continue;
 				}
 				
+				needNormals = true;
 				defines.push("#define LIGHT" + lightIndex);
 				
 				if (lightIndex > 0) {
@@ -283,7 +295,7 @@ import com.babylonhx.tools.Tools;
 							shadowsActivated = true;
 						}
 						
-						if (shadowGenerator.useVarianceShadowMap) {
+						if (shadowGenerator.useVarianceShadowMap || shadowGenerator.useBlurVarianceShadowMap) {
 							defines.push("#define SHADOWVSM" + lightIndex);
 							if (lightIndex > 0) {
 								fallbacks.addFallback(0, "SHADOWVSM" + lightIndex);
@@ -339,21 +351,28 @@ import com.babylonhx.tools.Tools;
 					fresnelRank++;
 				}
 				
+				needNormals = true;
 				defines.push("#define FRESNEL");
 				fallbacks.addFallback(fresnelRank - 1, "FRESNEL");
 			}
 		}
 		
 		// Attribs
-		var attribs:Array<String> = [VertexBuffer.PositionKind, VertexBuffer.NormalKind];
+		var attribs:Array<String> = [VertexBuffer.PositionKind];
 		if (mesh != null) {
-			if (mesh.isVerticesDataPresent(VertexBuffer.UVKind)) {
-				attribs.push(VertexBuffer.UVKind);
-				defines.push("#define UV1");
+			if (needNormals && mesh.isVerticesDataPresent(VertexBuffer.NormalKind)) {
+				attribs.push(VertexBuffer.NormalKind);
+				defines.push("#define NORMAL");
 			}
-			if (mesh.isVerticesDataPresent(VertexBuffer.UV2Kind)) {
-				attribs.push(VertexBuffer.UV2Kind);
-				defines.push("#define UV2");
+			if (needUVs) {
+				if (mesh.isVerticesDataPresent(VertexBuffer.UVKind)) {
+					attribs.push(VertexBuffer.UVKind);
+					defines.push("#define UV1");
+				}
+				if (mesh.isVerticesDataPresent(VertexBuffer.UV2Kind)) {
+					attribs.push(VertexBuffer.UV2Kind);
+					defines.push("#define UV2");
+				}
 			}
 			if (mesh.useVertexColors && mesh.isVerticesDataPresent(VertexBuffer.ColorKind)) {
 				attribs.push(VertexBuffer.ColorKind);
@@ -363,7 +382,7 @@ import com.babylonhx.tools.Tools;
 					defines.push("#define VERTEXALPHA");
 				}
 			}			
-			if (mesh.skeleton != null && scene.skeletonsEnabled && mesh.isVerticesDataPresent(VertexBuffer.MatricesIndicesKind) && mesh.isVerticesDataPresent(VertexBuffer.MatricesWeightsKind)) {
+			if (mesh.useBones) {
 				attribs.push(VertexBuffer.MatricesIndicesKind);
 				attribs.push(VertexBuffer.MatricesWeightsKind);
 				defines.push("#define BONES");
@@ -406,7 +425,7 @@ import com.babylonhx.tools.Tools;
 					"vDiffuseInfos", "vAmbientInfos", "vOpacityInfos", "vReflectionInfos", "vEmissiveInfos", "vSpecularInfos", "vBumpInfos",
 					"mBones",
 					"vClipPlane", "diffuseMatrix", "ambientMatrix", "opacityMatrix", "reflectionMatrix", "emissiveMatrix", "specularMatrix", "bumpMatrix",
-					"darkness0", "darkness1", "darkness2", "darkness3",
+					"shadowsInfo0", "shadowsInfo1", "shadowsInfo2", "shadowsInfo3",
 					"diffuseLeftColor", "diffuseRightColor", "opacityParts", "reflectionLeftColor", "reflectionRightColor", "emissiveLeftColor", "emissiveRightColor"
 				],
 				["diffuseSampler", "ambientSampler", "opacitySampler", "reflectionCubeSampler", "reflection2DSampler", "emissiveSampler", "specularSampler", "bumpSampler",
@@ -441,7 +460,7 @@ import com.babylonhx.tools.Tools;
 		this._effect.setMatrix("viewProjection", scene.getTransformMatrix());
 		
 		// Bones
-		if (mesh.skeleton != null && scene.skeletonsEnabled && mesh.isVerticesDataPresent(VertexBuffer.MatricesIndicesKind) && mesh.isVerticesDataPresent(VertexBuffer.MatricesWeightsKind)) {
+		if (mesh != null && mesh.useBones) {
 			this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices());
 		}
 		
@@ -510,7 +529,7 @@ import com.babylonhx.tools.Tools;
 				this._effect.setMatrix("specularMatrix", this.specularTexture.getTextureMatrix());
 			}
 			
-			if (this.bumpTexture != null && scene.getEngine().getCaps().standardDerivatives && StandardMaterial.BumpTextureEnabled) {
+			if (this.bumpTexture != null && scene.getEngine().getCaps().standardDerivatives != null && StandardMaterial.BumpTextureEnabled) {
 				this._effect.setTexture("bumpSampler", this.bumpTexture);
 				this._effect.setFloat2("vBumpInfos", this.bumpTexture.coordinatesIndex, 1.0 / this.bumpTexture.level);
 				this._effect.setMatrix("bumpMatrix", this.bumpTexture.getTextureMatrix());
@@ -582,18 +601,19 @@ import com.babylonhx.tools.Tools;
 				
 				// Shadows
 				if (scene.shadowsEnabled) {
-					var shadowGenerator = light.getShadowGenerator();
+					var shadowGenerator:ShadowGenerator = light.getShadowGenerator();
 					if (mesh.receiveShadows && shadowGenerator != null) {
 						this._effect.setMatrix("lightMatrix" + lightIndex, shadowGenerator.getTransformMatrix());
-						this._effect.setTexture("shadowSampler" + lightIndex, shadowGenerator.getShadowMap());
-						this._effect.setFloat("darkness" + lightIndex, shadowGenerator.getDarkness());
+                            this._effect.setTexture("shadowSampler" + lightIndex, shadowGenerator.getShadowMapForRendering());
+                            this._effect.setFloat3("shadowsInfo" + lightIndex, shadowGenerator.getDarkness(), shadowGenerator.getShadowMap().getSize().width, shadowGenerator.bias);
 					}
 				}
 				
 				lightIndex++;
 				
-				if (lightIndex == maxSimultaneousLights)
+				if (lightIndex == maxSimultaneousLights) {
 					break;
+				}
 			}
 		}
 		

@@ -16,8 +16,9 @@ import com.babylonhx.mesh.AbstractMesh;
 	
 	public var diffuse:Color3 = new Color3(1.0, 1.0, 1.0);
 	public var specular:Color3 = new Color3(1.0, 1.0, 1.0);
-	public var intensity = 1.0;
+	public var intensity:Float = 1.0;
 	public var range:Float = Math.POSITIVE_INFINITY;
+	public var includeOnlyWithLayerMask:Int = 0;
 	public var includedOnlyMeshes:Array<AbstractMesh> = [];
 	public var excludedMeshes:Array<AbstractMesh> = [];
 
@@ -30,7 +31,7 @@ import com.babylonhx.mesh.AbstractMesh;
 	public function new(name:String, scene:Scene) {
 		super(name, scene);
 		
-		scene.lights.push(this);
+		scene.addLight(this);
 	}
 
 	public function getShadowGenerator():ShadowGenerator {
@@ -62,6 +63,10 @@ import com.babylonhx.mesh.AbstractMesh;
 			return false;
 		}
 		
+		if (this.includeOnlyWithLayerMask != 0 && this.includeOnlyWithLayerMask != mesh.layerMask){
+            return false;
+        }
+		
 		return true;
 	}
 
@@ -90,7 +95,7 @@ import com.babylonhx.mesh.AbstractMesh;
 		}
 		
 		// Remove from scene
-		this.getScene().lights.remove(this);
+		this.getScene().removeLight(this);
 	}
 	
 }

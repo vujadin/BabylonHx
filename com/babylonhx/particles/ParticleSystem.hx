@@ -1,5 +1,6 @@
 package com.babylonhx.particles;
 
+import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color4;
@@ -9,15 +10,7 @@ import com.babylonhx.mesh.BabylonBuffer;
 import com.babylonhx.particles.Particle;
 import com.babylonhx.tools.Tools;
 
-#if nme
-import nme.utils.Float32Array;
-#elseif openfl
-import openfl.utils.Float32Array;
-#elseif snow
-import snow.utils.Float32Array;
-#elseif kha
-
-#end
+import com.babylonhx.utils.typedarray.Float32Array;
 
 
 /**
@@ -25,7 +18,7 @@ import snow.utils.Float32Array;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.ParticleSystem') class ParticleSystem implements IDisposable {
+@:expose('BABYLON.ParticleSystem') class ParticleSystem implements IDisposable implements ISmartArrayCompatible {
 	
 	// Statics
 	public static var BLENDMODE_ONEONE:Int = 0;
@@ -106,7 +99,8 @@ import snow.utils.Float32Array;
 	private var _started:Bool = false;
 	private var _stopped:Bool = false;
 	private var _actualFrame:Int = 0;
-	private var _scaledUpdateSpeed:Float;
+	public var _scaledUpdateSpeed:Float;
+	
 
 	public function new(name:String, capacity:Int, scene:Scene, ?customEffect:Effect) {
 		this.name = name;

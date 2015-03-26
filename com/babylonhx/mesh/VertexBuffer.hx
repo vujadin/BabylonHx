@@ -1,14 +1,6 @@
 package com.babylonhx.mesh;
 
-#if nme
-import nme.utils.Float32Array;
-#elseif openfl
-import openfl.utils.Float32Array;
-#elseif snow
-import snow.utils.Float32Array;
-#elseif kha
-
-#end
+import com.babylonhx.utils.typedarray.Float32Array;
 
 
 /**
@@ -25,8 +17,7 @@ import snow.utils.Float32Array;
 	public static var UV2Kind:String = "uv2";
 	public static var ColorKind:String = "color";
 	public static var MatricesIndicesKind:String = "matricesIndices";
-	public static var MatricesWeightsKind:String = "matricesWeights";
-	
+	public static var MatricesWeightsKind:String = "matricesWeights";	
 	
 	private var _mesh:Mesh;
 	private var _engine:Engine;
@@ -37,7 +28,9 @@ import snow.utils.Float32Array;
 	private var _strideSize:Int;
 
 	public static var count:Int = 0;
-	public function new(engine:Engine, data:Array<Float>, kind:String, updatable:Bool, postponeInternalCreation:Bool = false/*?postponeInternalCreation:Bool*/, ?stride:Int) {
+	
+	
+	public function new(engine:Engine, data:Array<Float>, kind:String, updatable:Bool, postponeInternalCreation:Bool = false, ?stride:Int) {
 		this._engine = engine;
 		this._updatable = updatable;
 		this._data = data;

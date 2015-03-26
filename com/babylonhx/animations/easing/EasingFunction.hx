@@ -40,11 +40,11 @@ package com.babylonhx.animations.easing;
 			case EasingFunction.EASINGMODE_EASEOUT:
 				return (1 - this.easeInCore(1 - gradient));
 		}
-
+		
 		if (gradient >= 0.5) {
 			return (((1 - this.easeInCore((1 - gradient) * 2)) * 0.5) + 0.5);
 		}
-
+		
 		return (this.easeInCore(gradient * 2) * 0.5);
 	}
 

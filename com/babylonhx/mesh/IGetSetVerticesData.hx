@@ -4,7 +4,7 @@ package com.babylonhx.mesh;
  * @author Krtolica Vujadin
  */
 
-interface IGetSetVerticesData {
+@:expose('BABYLON.IGetSetVerticesData') interface IGetSetVerticesData {
 	function isVerticesDataPresent(kind:String):Bool;
 	function getVerticesData(kind:String):Array<Float>;
 	function getIndices():Array<Int>;

@@ -15,7 +15,8 @@ import com.babylonhx.animations.Animation;
 	public var name:String;
 	public var position:Vector3;
 	public var color:Color4 = new Color4(1.0, 1.0, 1.0, 1.0);
-	public var size:Float = 1.0;
+	public var width:Float = 1.0;
+	public var height:Float = 1.0;
 	public var angle:Float = 0;
 	public var cellIndex:Int = 0;
 	public var invertU:Bool = false;
@@ -33,37 +34,48 @@ import com.babylonhx.animations.Animation;
 	private var _manager:SpriteManager;
 	private var _time:Float = 0;
 	
+	public var size(get, set):Float;
+	private function get_size():Float {
+		return this.width;
+	}
+	private function set_size(value:Float):Float {
+		this.width = value;
+		this.height = value;
+		return value;
+	}
+	
 
 	public function new(name:String, manager:SpriteManager) {
-	this.name = name;
+		this.name = name;
 		this._manager = manager;
-
+		
 		this._manager.sprites.push(this);
-
+		
 		this.position = Vector3.Zero();
 	}
 
-	public function playAnimation(from:Int, to:Int, loop:Bool, delay:Float):Void {
+	public function playAnimation(from:Int, to:Int, loop:Bool, delay:Float) {
 		this._fromIndex = from;
 		this._toIndex = to;
 		this._loopAnimation = loop;
 		this._delay = delay;
 		this._animationStarted = true;
-
+		
 		this._direction = from < to ? 1 : -1;
-
+		
 		this.cellIndex = from;
 		this._time = 0;
 	}
 
-	public function stopAnimation():Void {
+	public function stopAnimation() {
 		this._animationStarted = false;
 	}
 
-	public function _animate(deltaTime:Float):Void {
-		if (!this._animationStarted)
+	public function _animate(deltaTime:Float) {
+		if (!this._animationStarted) {
 			return;
-
+		}
+		
 		this._time += deltaTime;
 		if (this._time > this._delay) {
 			this._time = this._time % this._delay;
@@ -71,7 +83,8 @@ import com.babylonhx.animations.Animation;
 			if (this.cellIndex == this._toIndex) {
 				if (this._loopAnimation) {
 					this.cellIndex = this._fromIndex;
-				} else {
+				} 
+				else {
 					this._animationStarted = false;
 					if (this.disposeWhenFinishedAnimating) {
 						this.dispose();
@@ -81,7 +94,7 @@ import com.babylonhx.animations.Animation;
 		}
 	}
 
-	public function dispose():Void {
+	public function dispose() {
 		for (i in 0...this._manager.sprites.length) {
 			if (this._manager.sprites[i] == this) {
 				this._manager.sprites.splice(i, 1);

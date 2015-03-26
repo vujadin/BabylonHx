@@ -1,12 +1,8 @@
 package com.babylonhx.math;
 
-#if openfl
-import openfl.utils.Float32Array;
-#elseif snow
-import snow.utils.Float32Array;
-#elseif kha
-
-#end
+import com.babylonhx.cameras.Camera;
+import com.babylonhx.tools.Tools;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 /**
 * ...
@@ -79,8 +75,10 @@ import snow.utils.Float32Array;
 		return this.toArray();
 	}
 
-	public function invert() {
+	public function invert():Matrix {
 		this.invertToRef(this);
+		
+		return this;
 	}
 
 	inline public function invertToRef(other:Matrix) {
@@ -240,6 +238,38 @@ import snow.utils.Float32Array;
 			this.m[8], this.m[9], this.m[10], this.m[11],
 			this.m[12], this.m[13], this.m[14], this.m[15]);
 	}
+	
+	public function decompose(scale:Vector3, rotation:Quaternion, translation:Vector3):Bool {
+		translation.x = this.m[12];
+		translation.y = this.m[13];
+		translation.z = this.m[14];
+		
+		var xs = Tools.Sign(this.m[0] * this.m[1] * this.m[2] * this.m[3]) < 0 ? -1 : 1;
+		var ys = Tools.Sign(this.m[4] * this.m[5] * this.m[6] * this.m[7]) < 0 ? -1 : 1;
+		var zs = Tools.Sign(this.m[8] * this.m[9] * this.m[10] * this.m[11]) < 0 ? -1 : 1;
+		
+		scale.x = xs * Math.sqrt(this.m[0] * this.m[0] + this.m[1] * this.m[1] + this.m[2] * this.m[2]);
+		scale.y = ys * Math.sqrt(this.m[4] * this.m[4] + this.m[5] * this.m[5] + this.m[6] * this.m[6]);
+		scale.z = zs * Math.sqrt(this.m[8] * this.m[8] + this.m[9] * this.m[9] + this.m[10] * this.m[10]);
+		
+		if (scale.x == 0 || scale.y == 0 || scale.z == 0) {
+			rotation.x = 0;
+			rotation.y = 0;
+			rotation.z = 0;
+			rotation.w = 1;
+			return false;
+		}
+		
+		var rotationMatrix = Matrix.FromValues(
+			this.m[0] / scale.x, this.m[1] / scale.x, this.m[2] / scale.x, 0,
+			this.m[4] / scale.y, this.m[5] / scale.y, this.m[6] / scale.y, 0,
+			this.m[8] / scale.z, this.m[9] / scale.z, this.m[10] / scale.z, 0,
+			0, 0, 0, 1);
+			
+		rotation.fromRotationMatrix(rotationMatrix);
+		
+		return true;
+	}
 
 	// Statics
 	inline public static function FromArray(array:Array<Float>, offset:Int = 0):Matrix {
@@ -303,6 +333,21 @@ import snow.utils.Float32Array;
 		
 		return result;
 	}
+	
+	public static inline function Compose(scale:Vector3, rotation:Quaternion, translation:Vector3):Matrix {
+		var result = Matrix.FromValues(scale.x, 0, 0, 0,
+			0, scale.y, 0, 0,
+			0, 0, scale.z, 0,
+			0, 0, 0, 1);
+			
+		var rotationMatrix = Matrix.Identity();
+		rotation.toRotationMatrix(rotationMatrix);
+		result = result.multiply(rotationMatrix);
+		
+		result.setTranslation(translation);
+		
+		return result;
+	}
 
 	inline public static function Identity():Matrix {
 		return Matrix.FromValues(1.0, 0, 0, 0,
@@ -328,6 +373,12 @@ import snow.utils.Float32Array;
 	inline public static function RotationX(angle:Float):Matrix {
 		var result = new Matrix();
 		Matrix.RotationXToRef(angle, result);
+		return result;
+	}
+	
+	inline public static function Invert(source:Matrix):Matrix {
+		var result = new Matrix();
+		source.invertToRef(result);
 		return result;
 	}
 
@@ -575,12 +626,26 @@ import snow.utils.Float32Array;
 		return matrix;
 	}
 
-	public static function PerspectiveFovLHToRef(fov:Float, aspect:Float, znear:Float, zfar:Float, result:Matrix) {
+	public static function PerspectiveFovLHToRef(fov:Float, aspect:Float, znear:Float, zfar:Float, result:Matrix, ?fovMode:Int) {
 		var tan = 1.0 / (Math.tan(fov * 0.5));
 		
-		result.m[0] = tan / aspect;
+		var v_fixed:Bool = fovMode == null || (fovMode == Camera.FOVMODE_VERTICAL_FIXED);
+		var h_fixed:Bool = (fovMode == Camera.FOVMODE_HORIZONTAL_FIXED);
+		
+		if (v_fixed) {
+			result.m[0] = tan / aspect;
+		} else if (h_fixed) {
+			result.m[0] = tan;
+		}
+		
 		result.m[1] = result.m[2] = result.m[3] = 0.0;
-		result.m[5] = tan;
+		
+		if (v_fixed) { 
+			result.m[5] = tan; 
+		} else if (h_fixed) { 
+			result.m[5] = tan * aspect; 
+		}
+			
 		result.m[4] = result.m[6] = result.m[7] = 0.0;
 		result.m[8] = result.m[9] = 0.0;
 		result.m[10] = -zfar / (znear - zfar);

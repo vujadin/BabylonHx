@@ -25,7 +25,7 @@ package com.babylonhx.tools;
 
 	inline public function push(value:Dynamic):Void {
 		this.data[this.length++] = value;
-		
+		//trace(value);
 		if (value.__smartArrayFlags == null) {
 			value.__smartArrayFlags = [];
 		}

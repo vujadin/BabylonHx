@@ -16,7 +16,7 @@ import com.babylonhx.math.Vector3;
 // functions like `BABYLON.CSG.sphere()` can return a smooth vertex normal, but `normal`
 // is not used anywhere else. 
 // Same goes for uv, it allows to keep the original vertex uv coordinates of the 2 meshes
-@:expose('BABYLON.CSG.Vertex') class Vertex {
+class Vertex {
 	
 	public var pos:Vector3;
 	public var normal:Vector3;

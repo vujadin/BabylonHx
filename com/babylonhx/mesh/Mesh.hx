@@ -6,36 +6,33 @@ import com.babylonhx.culling.BoundingSphere;
 import com.babylonhx.Engine;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.math.Matrix;
+import com.babylonhx.math.Path3D;
 import com.babylonhx.math.Plane;
+import com.babylonhx.math.PositionNormalVertex;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector2;
+import com.babylonhx.mesh.simplification.ISimplificationSettings;
+import com.babylonhx.mesh.simplification.ISimplifier;
+import com.babylonhx.mesh.simplification.QuadraticErrorSimplification;
+import com.babylonhx.mesh.simplification.SimplificationSettings;
+import com.babylonhx.mesh.simplification.SimplificationTask;
+import com.babylonhx.Node;
 import com.babylonhx.mesh.LinesMesh;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.particles.ParticleSystem;
+import com.babylonhx.tools.AsyncLoop;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.materials.Material;
 import com.babylonhx.materials.textures.Texture;
-import haxe.CallStack;
+
 import haxe.Json;
 
-#if nme
-import nme.utils.Float32Array;
-import nme.utils.ArrayBuffer;
-import nme.utils.UInt8Array;
-#elseif openfl
-import openfl.utils.Float32Array;
-import openfl.utils.ArrayBuffer;
-import openfl.utils.UInt8Array;
-import openfl.display.BitmapData;
-#elseif snow
-import snow.utils.Float32Array;
-import snow.utils.ArrayBuffer;
-import snow.utils.UInt8Array;
-import snow.utils.UInt8Array;
-#elseif kha
-// TODO
-#end
+import com.babylonhx.utils.Image;
+import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.UInt8Array;
+import com.babylonhx.utils.typedarray.ArrayBuffer;
+
 
 /**
  * ...
@@ -44,17 +41,23 @@ import snow.utils.UInt8Array;
 
 @:expose('BABYLON.Mesh') class Mesh extends AbstractMesh implements IGetSetVerticesData {
 	
+	public static inline var FRONTSIDE:Int = 0;
+	public static inline var BACKSIDE:Int = 1;
+	public static inline var DOUBLESIDE:Int = 2;
+	public static inline var DEFAULTSIDE:Int = 0;
+	
 	// Members
 	public var delayLoadState = Engine.DELAYLOADSTATE_NONE;
 	public var instances:Array<InstancedMesh> = [];
 	public var delayLoadingFile:String;
 	public var _binaryInfo:Dynamic;
 	private var _LODLevels:Array<MeshLODLevel> = [];
+	public var onLODLevelSelection:Float->Mesh->Mesh->Void;
 
 	// Private
 	public var _geometry:Geometry;
-	private var _onBeforeRenderCallbacks:Array<Void->Void> = [];
-	private var _onAfterRenderCallbacks:Array<Void->Void> = [];
+	private var _onBeforeRenderCallbacks:Array<AbstractMesh->Void> = [];
+	private var _onAfterRenderCallbacks:Array<AbstractMesh->Void> = [];
 	public var _delayInfo:Array<String>; //ANY
 	public var _delayLoadingFunction:Dynamic->Mesh->Void;
 	public var _visibleInstances:_VisibleInstances;
@@ -66,8 +69,142 @@ import snow.utils.UInt8Array;
 	public var _shouldGenerateFlatShading:Bool;
 	private var _preActivateId:Int = -1;
 
-	public function new(name:String, scene:Scene) {
+	public function new(name:String, scene:Scene, parent:Node = null, ?source:Mesh, doNotCloneChildren:Bool = false) {
 		super(name, scene);
+		
+		if (source != null){
+			// Geometry
+			if (source._geometry != null) {
+				source._geometry.applyToMesh(this);
+			}
+			
+			// Deep copy
+			//Tools.DeepCopy(source, this, ["name", "material", "skeleton"], []);
+			_deepCopy(source, this);
+			
+			// Material
+			//this.material = source.material;
+			
+			if (!doNotCloneChildren) {
+				// Children
+				for (index in 0...scene.meshes.length) {
+					var mesh = scene.meshes[index];
+					
+					if (mesh.parent == source) {
+						// doNotCloneChildren is always going to be False
+						var newChild = mesh.clone(name + "." + mesh.name, this, doNotCloneChildren); 
+					}
+				}
+			}
+			
+			// Particles
+			for (index in 0...scene.particleSystems.length) {
+				var system = scene.particleSystems[index];
+				
+				if (system.emitter == source) {
+					system.clone(system.name, this);
+				}
+			}
+			this.computeWorldMatrix(true);
+		}
+		
+		// Parent
+		if (parent != null) {
+			this.parent = parent;
+		}
+	}
+	
+	static private function _deepCopy(source:Mesh, dest:Mesh) {
+		dest.__smartArrayFlags = source.__smartArrayFlags.copy();
+		dest._LODLevels = source._LODLevels.copy();
+		dest._absolutePosition = source._absolutePosition.clone();
+		dest._batchCache = source._batchCache;
+		dest._boundingInfo = source._boundingInfo;
+		dest._cache = source._cache;
+		dest._checkCollisions = source._checkCollisions;
+		dest._childrenFlag = source._childrenFlag;
+		dest._collider = source._collider;
+		dest._collisionsScalingMatrix = source._collisionsScalingMatrix.clone();
+		dest._collisionsTransformMatrix = source._collisionsTransformMatrix.clone();
+		dest._diffPositionForCollisions = source._diffPositionForCollisions.clone();
+		dest._geometry = source._geometry;
+		dest._instancesBufferSize = source._instancesBufferSize;
+		dest._intersectionsInProgress = source._intersectionsInProgress.copy();
+		dest._isBlocked	= source._isBlocked;
+		dest._isDirty = source._isDirty;
+		dest._isDisposed = source._isDisposed;
+		dest._isEnabled = source._isEnabled;
+		dest._isPickable = source._isPickable;
+		dest._isReady = source._isReady;
+		dest._localBillboard = source._localBillboard.clone();
+		dest._localPivotScaling = source._localPivotScaling.clone();
+		dest._localRotation = source._localRotation.clone();
+		dest._localScaling = source._localScaling.clone();
+		dest._localTranslation = source._localTranslation.clone();
+		dest._localWorld = source._localWorld;
+		dest._masterMesh = source._masterMesh;		// ??
+		dest._material = source._material;
+		dest._newPositionForCollisions = source._newPositionForCollisions.clone();
+		dest._oldPositionForCollisions = source._oldPositionForCollisions.clone();
+		dest._onAfterRenderCallbacks = source._onAfterRenderCallbacks;
+		dest._onAfterWorldMatrixUpdate = source._onAfterWorldMatrixUpdate;
+		dest._onBeforeRenderCallbacks = source._onBeforeRenderCallbacks;
+		dest._parentRenderId = source._parentRenderId;
+		dest._physicImpostor = source._physicImpostor;
+		dest._physicRestitution = source._physicRestitution;
+		dest._physicsFriction = source._physicsFriction;
+		dest._physicsMass = source._physicsMass;
+		dest._pivotMatrix = source._pivotMatrix.clone();
+		if(source._positions != null) dest._positions = source._positions.copy();
+		dest._preActivateId = source._preActivateId;
+		dest._receiveShadows = source._receiveShadows;
+		dest._renderId = source._renderId;
+		dest._renderIdForInstances = source._renderIdForInstances.copy();
+		dest._rotateYByPI = source._rotateYByPI.clone();
+		dest._savedMaterial = source._savedMaterial;
+		dest._scene = source._scene;
+		dest._shouldGenerateFlatShading = source._shouldGenerateFlatShading;
+		//dest._skeleton = source._skeleton.clone(Tools.uuid(), Tools.uuid());
+		dest._submeshesOctree = source._submeshesOctree;
+		dest._visibility = source._visibility;
+		dest._visibleInstances = source._visibleInstances;
+		dest._waitingActions = source._waitingActions;
+		dest._waitingParentId = source._waitingParentId;
+		//if(source._worldMatricesInstancesArray != null) dest._worldMatricesInstancesArray = source._worldMatricesInstancesArray.copy();
+		dest._worldMatricesInstancesBuffer = source._worldMatricesInstancesBuffer;
+		dest._worldMatrix = source._worldMatrix.clone();
+		
+				
+		dest.definedFacingForward = source.definedFacingForward;
+		dest.position = source.position.clone();
+		dest.rotation = source.rotation.clone();
+		if(source.rotationQuaternion != null) dest.rotationQuaternion = source.rotationQuaternion.clone();
+		dest.scaling = source.scaling.clone();
+		dest.billboardMode = source.billboardMode;
+		dest.alphaIndex = source.alphaIndex;
+		dest.infiniteDistance = source.infiniteDistance;
+		dest.isVisible = source.isVisible;
+		dest.showBoundingBox = source.showBoundingBox;
+		dest.showSubMeshesBoundingBox = source.showSubMeshesBoundingBox;
+		dest.onDispose = source.onDispose;
+		dest.isBlocker = source.isBlocker;
+		dest.renderingGroupId = source.renderingGroupId;
+		dest.actionManager = source.actionManager;
+		dest.renderOutline = source.renderOutline;
+		dest.outlineColor = source.outlineColor.clone();
+		dest.outlineWidth = source.outlineWidth;
+		dest.renderOverlay = source.renderOverlay;
+		dest.overlayColor = source.overlayColor.clone();
+		dest.overlayAlpha = source.overlayAlpha;
+		dest.hasVertexAlpha = source.hasVertexAlpha;
+		dest.useVertexColors = source.useVertexColors;
+		dest.applyFog = source.applyFog;
+		dest.useOctreeForRenderingSelection = source.useOctreeForRenderingSelection;
+		dest.useOctreeForPicking = source.useOctreeForPicking;
+		dest.useOctreeForCollisions = source.useOctreeForCollisions;
+		dest.layerMask = source.layerMask;
+		dest.ellipsoid = source.ellipsoid.clone();
+		dest.ellipsoidOffset = source.ellipsoidOffset.clone();
 	}
 
 	// Methods
@@ -106,6 +243,18 @@ import snow.utils.UInt8Array;
 		
 		return this;
 	}
+	
+	public function getLODLevelAtDistance(distance:Float):Mesh {
+		for (index in 0...this._LODLevels.length) {
+			var level = this._LODLevels[index];
+			
+			if (level.distance == distance) {
+				return level.mesh;
+			}
+		}
+		
+		return null;
+	}
 
 	public function removeLODLevel(mesh:Mesh):Mesh {
 		for (index in 0...this._LODLevels.length) {
@@ -129,6 +278,9 @@ import snow.utils.UInt8Array;
 		var distanceToCamera = (boundingSphere != null ? boundingSphere : this.getBoundingInfo().boundingSphere).centerWorld.subtract(camera.position).length();
 		
 		if (this._LODLevels[this._LODLevels.length - 1].distance > distanceToCamera) {
+			if (this.onLODLevelSelection != null) {
+                this.onLODLevelSelection(distanceToCamera, this, this._LODLevels[this._LODLevels.length - 1].mesh);
+            }
 			return this;
 		}
 		
@@ -140,10 +292,17 @@ import snow.utils.UInt8Array;
 					level.mesh._preActivate();
                     level.mesh._updateSubMeshesBoundingInfo(this.worldMatrixFromCache);
 				}
+				
+				if (this.onLODLevelSelection != null) {
+                    this.onLODLevelSelection(distanceToCamera, this, level.mesh);
+                }
 				return level.mesh;
 			}
 		}
 		
+		if (this.onLODLevelSelection != null) {
+            this.onLODLevelSelection(distanceToCamera, this, this);
+        }
 		return this;
 	}
 
@@ -298,7 +457,7 @@ import snow.utils.UInt8Array;
 		this.synchronizeInstances();
 	}
 
-	public function setVerticesData(kind:String, data:Array<Float>, updatable:Bool = false/*?updatable:Bool*/, ?stride:Int) {
+	public function setVerticesData(kind:String, data:Array<Float>, updatable:Bool = false, ?stride:Int) {
 		if (this._geometry == null) {
 			var vertexData = new VertexData();
 			vertexData.set(data, kind);
@@ -311,7 +470,7 @@ import snow.utils.UInt8Array;
 		}
 	}
 
-	public function updateVerticesData(kind:String, data:Array<Float>, updateExtends:Bool = false/*?updateExtends:Bool*/, makeItUnique:Bool = false/*?makeItUnique:Bool*/) {
+	public function updateVerticesData(kind:String, data:Array<Float>, updateExtends:Bool = false, makeItUnique:Bool = false) {
 		if (this._geometry == null) {
 			return;
 		}
@@ -324,7 +483,7 @@ import snow.utils.UInt8Array;
 		}
 	}
 
-	public function updateVerticesDataDirectly(kind:String, data:Float32Array, offset:Int = 0, makeItUnique:Bool = false/*?makeItUnique:Bool*/) {
+	public function updateVerticesDataDirectly(kind:String, data:Float32Array, offset:Int = 0, makeItUnique:Bool = false) {
 		if (this._geometry == null) {
 			return;
 		}
@@ -402,22 +561,22 @@ import snow.utils.UInt8Array;
 		}
 	}
 
-	public function registerBeforeRender(func:Void->Void) {
+	public function registerBeforeRender(func:AbstractMesh->Void) {
 		this._onBeforeRenderCallbacks.push(func);
 	}
 
-	public function unregisterBeforeRender(func:Void->Void) {
+	public function unregisterBeforeRender(func:AbstractMesh->Void) {
 		var index = this._onBeforeRenderCallbacks.indexOf(func);
 		if (index > -1) {
 			this._onBeforeRenderCallbacks.splice(index, 1);
 		}
 	}
 
-	public function registerAfterRender(func:Void->Void) {
+	public function registerAfterRender(func:AbstractMesh->Void) {
 		this._onAfterRenderCallbacks.push(func);
 	}
 
-	public function unregisterAfterRender(func:Void->Void) {
+	public function unregisterAfterRender(func:AbstractMesh->Void) {
 		var index = this._onAfterRenderCallbacks.indexOf(func);
 		if (index > -1) {
 			this._onAfterRenderCallbacks.splice(index, 1);
@@ -506,10 +665,44 @@ import snow.utils.UInt8Array;
 		this._draw(subMesh, fillMode, instancesCount);
 		engine.unBindInstancesBuffer(this._worldMatricesInstancesBuffer, offsetLocations);
 	}
+	
+	public function _processRendering(subMesh:SubMesh, effect:Effect, fillMode:Int, batch:_InstancesBatch, hardwareInstancedRendering:Bool,
+		onBeforeDraw:Bool->Matrix->Void) {
+		var scene = this.getScene();
+		var engine = scene.getEngine();
+
+		if (hardwareInstancedRendering) {
+			this._renderWithInstances(subMesh, fillMode, batch, effect, engine);
+		} else {
+			if (batch.renderSelf[subMesh._id]) {
+				// Draw
+				if (onBeforeDraw != null) {
+					onBeforeDraw(false, this.getWorldMatrix());
+				}
+				
+				this._draw(subMesh, fillMode);
+			}
+			
+			if (batch.visibleInstances[subMesh._id] != null) {
+				for (instanceIndex in 0...batch.visibleInstances[subMesh._id].length) {
+					var instance = batch.visibleInstances[subMesh._id][instanceIndex];
+					
+					// World
+					var world = instance.getWorldMatrix();
+					if (onBeforeDraw != null) {
+						onBeforeDraw(true, world);
+					}
+					
+					// Draw
+					this._draw(subMesh, fillMode);
+				}
+			}
+		}
+	}
 
 	public function render(subMesh:SubMesh) {
 		var scene = this.getScene();
-		
+				
 		// Managing instances
 		var batch = this._getInstancesRenderList(subMesh._id);
 		if (batch.mustReturn) {
@@ -522,7 +715,7 @@ import snow.utils.UInt8Array;
 		}
 		
 		for (callbackIndex in 0...this._onBeforeRenderCallbacks.length) {
-			this._onBeforeRenderCallbacks[callbackIndex]();
+			this._onBeforeRenderCallbacks[callbackIndex](this);
 		}
 		
 		var engine = scene.getEngine();
@@ -595,7 +788,7 @@ import snow.utils.UInt8Array;
         }
 		
 		for (callbackIndex in 0...this._onAfterRenderCallbacks.length) {
-			this._onAfterRenderCallbacks[callbackIndex]();
+			this._onAfterRenderCallbacks[callbackIndex](this);
 		}
 	}
 
@@ -650,7 +843,7 @@ import snow.utils.UInt8Array;
 			
 			scene._addPendingData(that);
 			
-			var getBinaryData = (this.delayLoadingFile.indexOf(".babylonbinarymeshdata") != -1) ? true : false;
+			var getBinaryData = (this.delayLoadingFile.indexOf(".babylonbinarymeshdata") != -1);
 			
 			/*Tools.LoadFile(this.delayLoadingFile, function(data:Dynamic) {
 			 * 
@@ -775,46 +968,8 @@ import snow.utils.UInt8Array;
 	}
 
 	// Clone
-	override public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false/*?doNotCloneChildren:Bool*/):Mesh {
-		var result = new Mesh(name, this.getScene());
-		
-		// Geometry
-		this._geometry.applyToMesh(result);
-		
-		// Deep copy
-		Tools.DeepCopy(this, result, ["name", "material", "skeleton"], []);
-trace("deepCopy over");
-		// Material
-		result.material = this.material;
-		
-		// Parent
-		if (newParent != null) {
-			result.parent = newParent;
-		}
-		
-		if (!doNotCloneChildren) {
-			// Children
-			for (index in 0...this.getScene().meshes.length) {
-				var mesh = this.getScene().meshes[index];
-				
-				if (mesh.parent == this) {
-					mesh.clone(mesh.name, result);
-				}
-			}
-		}
-		
-		// Particles
-		for (index in 0...this.getScene().particleSystems.length) {
-			var system = this.getScene().particleSystems[index];
-			
-			if (system.emitter == this) {
-				system.clone(system.name, result);
-			}
-		}
-		
-		result.computeWorldMatrix(true);
-		
-		return result;
+	override public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false):Mesh {
+		return new Mesh(name, this.getScene(), newParent, this, doNotCloneChildren);
 	}
 
 	// Dispose
@@ -837,27 +992,18 @@ trace("deepCopy over");
 	}
 
 	// Geometric tools
-	public function applyDisplacementMap(url:String, minHeight:Float, maxHeight:Float) {
-		/*var scene = this.getScene();
-
-		var onload = img => {
-			// Getting height map data
-			var canvas = document.createElement("canvas");
-			var context = canvas.getContext("2d");
-			var heightMapWidth = img.width;
-			var heightMapHeight = img.height;
-			canvas.width = heightMapWidth;
-			canvas.height = heightMapHeight;
+	public function applyDisplacementMap(url:String, minHeight:Float, maxHeight:Float, ?onSuccess:Mesh->Void) {
+		var scene = this.getScene();
+		
+		var onload = function(img:Image) {						
+			this.applyDisplacementMapFromBuffer(img.data, img.width, img.height, minHeight, maxHeight);
 			
-			context.drawImage(img, 0, 0);
-			
-			// Create VertexData from map data
-			var buffer = context.getImageData(0, 0, heightMapWidth, heightMapHeight).data;
-			
-			this.applyDisplacementMapFromBuffer(buffer, heightMapWidth, heightMapHeight, minHeight, maxHeight);
+			if (onSuccess != null) {
+				onSuccess(this);
+			}
 		};
 		
-		Tools.LoadImage(url, onload, () => { }, scene.database);*/
+		Tools.LoadImage(url, onload);
 	}
 
 	public function applyDisplacementMapFromBuffer(buffer:UInt8Array, heightMapWidth:Float, heightMapHeight:Float, minHeight:Float, maxHeight:Float) {
@@ -874,9 +1020,9 @@ trace("deepCopy over");
 		var position = Vector3.Zero();
 		var normal = Vector3.Zero();
 		var uv = Vector2.Zero();
-		
+				
 		var index:Int = 0;
-		while(index < position.length()) {
+		while(index < positions.length) {
 			Vector3.FromArrayToRef(positions, index, position);
 			Vector3.FromArrayToRef(normals, index, normal);
 			Vector2.FromArrayToRef(uvs, Std.int((index / 3) * 2), uv);
@@ -886,9 +1032,15 @@ trace("deepCopy over");
 			var v = Std.int((Math.abs(uv.y) * heightMapHeight) % heightMapHeight);
 			
 			var pos = Std.int((u + v * heightMapWidth) * 4);
+			#if !js
+			var r = buffer.__get(pos) / 255.0;
+			var g = buffer.__get(pos + 1) / 255.0;
+			var b = buffer.__get(pos + 2) / 255.0;
+			#else
 			var r = buffer[pos] / 255.0;
 			var g = buffer[pos + 1] / 255.0;
 			var b = buffer[pos + 2] / 255.0;
+			#end
 			
 			var gradient = r * 0.3 + g * 0.59 + b * 0.11;
 			
@@ -906,7 +1058,6 @@ trace("deepCopy over");
 		this.updateVerticesData(VertexBuffer.PositionKind, positions);
 		this.updateVerticesData(VertexBuffer.NormalKind, normals);
 	}
-
 
 	public function convertToFlatShadedMesh() {
 		/// <summary>Update normals and vertices to get a flat shading rendering.</summary>
@@ -1013,20 +1164,83 @@ trace("deepCopy over");
 			instance._syncSubMeshes();
 		}
 	}
+	
+	/**
+	 * Simplify the mesh according to the given array of settings.
+	 * Function will return immediately and will simplify async.
+	 * @param settings a collection of simplification settings.
+	 * @param parallelProcessing should all levels calculate parallel or one after the other.
+	 * @param type the type of simplification to run.
+	 * @param successCallback optional success callback to be called after the simplification finished processing all settings.
+	 */
+	public function simplify(settings:Array<ISimplificationSettings>, parallelProcessing:Bool = true, simplificationType:Int = SimplificationSettings.QUADRATIC, ?successCallback:Void->Void) {
+		this.getScene().simplificationQueue.addTask(new SimplificationTask(settings, simplificationType, this, successCallback, parallelProcessing));  
+	}
+	
+	/**
+	 * Optimization of the mesh's indices, in case a mesh has duplicated vertices.
+	 * The function will only reorder the indices and will not remove unused vertices to avoid problems with submeshes.
+	 * This should be used together with the simplification to avoid disappearing triangles.
+	 * @param successCallback an optional success callback to be called after the optimization finished.
+	 */
+	public function optimizeIndices(?successCallback:Mesh->Void) {
+		var indices = this.getIndices();
+		var positions = this.getVerticesData(VertexBuffer.PositionKind);
+		var vectorPositions:Array<Vector3> = [];
+		var pos:Int = 0;
+		while(pos < positions.length) {
+			vectorPositions.push(Vector3.FromArray(positions, pos));
+			pos += 3;
+		}
+		var dupes:Array<Int> = [];
+		
+		AsyncLoop.SyncAsyncForLoop(vectorPositions.length, 40, function (iteration:Int) {
+			var realPos:Int = vectorPositions.length - 1 - iteration;
+			var testedPosition:Vector3 = vectorPositions[realPos];
+			for (j in 0...realPos) {
+				var againstPosition = vectorPositions[j];
+				if (testedPosition.equals(againstPosition)) {
+					dupes[realPos] = j;
+					break;
+				}
+			}
+		}, function() {
+			for (i in 0...indices.length) {
+				indices[i] = dupes[indices[i]];// != null ? dupes[indices[i]] : indices[i];
+			}
+			
+			//indices are now reordered
+			var originalSubMeshes = this.subMeshes.slice(0);
+			this.setIndices(indices);
+			this.subMeshes = originalSubMeshes;
+			if (successCallback != null) {
+				successCallback(this);
+			}
+		});
+	}
 
 	// Statics
-	public static function CreateBox(name:String, size:Float, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):Mesh {
+	public static function CreateRibbon(name:String, pathArray:Array<Array<Vector3>>, closeArray:Bool = false, closePath:Bool = false, offset:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+		var ribbon = new Mesh(name, scene);
+		var vertexData = VertexData.CreateRibbon(pathArray, closeArray, closePath, offset, sideOrientation);
+		
+		vertexData.applyToMesh(ribbon, updatable);
+		
+		return ribbon;
+	}
+	
+	public static function CreateBox(name:String, size:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
 		var box = new Mesh(name, scene);
-		var vertexData = VertexData.CreateBox(size);
+		var vertexData = VertexData.CreateBox(size, sideOrientation);
 		
 		vertexData.applyToMesh(box, updatable);
 		
 		return box;
 	}
 
-	public static function CreateSphere(name:String, segments:Int, diameter:Float, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):Mesh {
+	public static function CreateSphere(name:String, segments:Int, diameter:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
 		var sphere = new Mesh(name, scene);
-		var vertexData = VertexData.CreateSphere(segments, diameter);
+		var vertexData = VertexData.CreateSphere(segments, diameter, sideOrientation);
 		
 		vertexData.applyToMesh(sphere, updatable);
 		
@@ -1034,9 +1248,9 @@ trace("deepCopy over");
 	}
 
 	// Cylinder and cone (Code inspired by SharpDX.org)
-	public static function CreateCylinder(name:String, height:Float, diameterTop:Float, diameterBottom:Float, tessellation:Int, subdivisions:Int, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):Mesh {		
+	public static function CreateCylinder(name:String, height:Float, diameterTop:Float, diameterBottom:Float, tessellation:Int, subdivisions:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {		
 		var cylinder = new Mesh(name, scene);
-		var vertexData = VertexData.CreateCylinder(height, diameterTop, diameterBottom, tessellation, subdivisions);
+		var vertexData = VertexData.CreateCylinder(height, diameterTop, diameterBottom, tessellation, subdivisions, sideOrientation);
 		
 		vertexData.applyToMesh(cylinder, updatable);
 		
@@ -1044,42 +1258,85 @@ trace("deepCopy over");
 	}
 
 	// Torus  (Code from SharpDX.org)
-	public static function CreateTorus(name:String, diameter:Float, thickness:Float, tessellation:Int, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):Mesh {
+	public static function CreateTorus(name:String, diameter:Float, thickness:Float, tessellation:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
 		var torus = new Mesh(name, scene);
-		var vertexData = VertexData.CreateTorus(diameter, thickness, tessellation);
+		var vertexData = VertexData.CreateTorus(diameter, thickness, tessellation, sideOrientation);
 		
 		vertexData.applyToMesh(torus, updatable);
 		
 		return torus;
 	}
 
-	public static function CreateTorusKnot(name:String, radius:Float, tube:Float, radialSegments:Int, tubularSegments:Int, p:Float, q:Float, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):Mesh {
+	public static function CreateTorusKnot(name:String, radius:Float, tube:Float, radialSegments:Int, tubularSegments:Int, p:Float, q:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
 		var torusKnot = new Mesh(name, scene);
-		var vertexData = VertexData.CreateTorusKnot(radius, tube, radialSegments, tubularSegments, p, q);		
+		var vertexData = VertexData.CreateTorusKnot(radius, tube, radialSegments, tubularSegments, p, q, sideOrientation);		
 		vertexData.applyToMesh(torusKnot, updatable);		
 		return torusKnot;
 	}
 
 	// Lines
-	public static function CreateLines(name:String, points:Array<Vector3>, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):LinesMesh {
+	public static function CreateLines(name:String, points:Array<Vector3>, scene:Scene, updatable:Bool = false):LinesMesh {
 		var lines = new LinesMesh(name, scene, updatable);		
 		var vertexData = VertexData.CreateLines(points);
 		vertexData.applyToMesh(lines, updatable);
 		return lines;
 	}
+	
+	// Extrusion
+	public static function ExtrudeShape(name:String, shape:Array<Vector3>, path:Array<Vector3>, scale:Float = 1, rotation:Float = 0, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+		var extruded = Mesh._ExtrudeShapeGeneric(name, shape, path, scale, rotation, null, null, false, false, false, scene, updatable, sideOrientation);
+		return extruded;
+	}
+
+	public static function ExtrudeShapeCustom(name:String, shape:Array<Vector3>, path:Array<Vector3>, scaleFunction, rotateFunction, ribbonCloseArray:Bool = false, ribbonClosePath:Bool = false, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+		var extrudedCustom = Mesh._ExtrudeShapeGeneric(name, shape, path, 1, 0, scaleFunction, rotateFunction, ribbonCloseArray, ribbonClosePath, true, scene, updatable, sideOrientation);
+		return extrudedCustom;
+	}
+
+	private static function _ExtrudeShapeGeneric(name:String, shape:Array<Vector3>, curve:Array<Vector3>, scale:Float, rotation:Float, scaleFunction:Float->Float->Float, rotateFunction:Float->Float->Float, rbCA:Bool, rbCP:Bool, custom:Bool, scene:Scene, updtbl:Bool, side:Int):Mesh {
+		var path3D:Path3D = new Path3D(curve);
+		var tangents:Array<Vector3> = path3D.getTangents();
+		var normals:Array<Vector3> = path3D.getNormals();
+		var binormals:Array<Vector3> = path3D.getBinormals();
+		var distances:Array<Float> = path3D.getDistances();
+		var shapePaths: Array<Array<Vector3>> = [];
+		var angle:Float = 0.0;
+		var returnScale:Float->Float->Float = function(i:Float, distance:Float):Float { return scale; };
+		var returnRotation:Float->Float->Float = function(i:Float, distance:Float):Float { return rotation; };
+		var rotate:Float->Float->Float = custom ? rotateFunction : returnRotation;
+		var scl:Float->Float->Float = custom ? scaleFunction : returnScale;
+		
+		for (i in 0...curve.length) {
+			var angleStep:Float = 0;
+			var shapePath:Array<Vector3> = [];
+			for (p in 0...shape.length) {
+				angleStep = rotate(i, distances[i]);
+				var scaleRatio:Float = scl(i, distances[i]);
+				var rotationMatrix:Matrix = Matrix.RotationAxis(tangents[i], angle);
+				var planed:Vector3 = ((tangents[i].scale(shape[p].x)).add(normals[i].scale(shape[p].y)).add(binormals[i].scale(shape[p].z)));
+				var rotated:Vector3 = Vector3.TransformCoordinates(planed, rotationMatrix).scaleInPlace(scaleRatio).add(curve[i]);
+				shapePath.push(rotated);
+			}
+			shapePaths.push(shapePath);
+			angle += angleStep;
+		}
+		
+		var extrudedGeneric = Mesh.CreateRibbon(name, shapePaths, rbCA, rbCP, 0, scene, updtbl, side);
+		return extrudedGeneric;
+	}
 
 	// Plane & ground
-	public static function CreatePlane(name:String, size:Float, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):Mesh {
+	public static function CreatePlane(name:String, size:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
 		var plane = new Mesh(name, scene);
-		var vertexData = VertexData.CreatePlane(size);
+		var vertexData = VertexData.CreatePlane(size, sideOrientation);
 		vertexData.applyToMesh(plane, updatable);
 		return plane;
 	}
 
-	public static function CreateGround(name:String, width:Float, height:Float, subdivisions:Int, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):Mesh {
+	public static function CreateGround(name:String, width:Float, height:Float, subdivisions:Int, scene:Scene, updatable:Bool = false):Mesh {
 		var ground = new GroundMesh(name, scene);
 		ground._setReady(false);
-		ground._subdivisions = subdivisions;
+		ground.subdivisions = subdivisions;
 		
 		var vertexData = VertexData.CreateGround(width, height, subdivisions);
 		vertexData.applyToMesh(ground, updatable);
@@ -1087,43 +1344,290 @@ trace("deepCopy over");
 		return ground;
 	}
 
-	public static function CreateTiledGround(name:String, xmin:Float, zmin:Float, xmax:Float, zmax:Float, subdivisions:Dynamic, precision:Dynamic, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):Mesh {
+	public static function CreateTiledGround(name:String, xmin:Float, zmin:Float, xmax:Float, zmax:Float, subdivisions:Dynamic, precision:Dynamic, scene:Scene, updatable:Bool = false):Mesh {
 		var tiledGround = new Mesh(name, scene);
 		var vertexData = VertexData.CreateTiledGround(xmin, zmin, xmax, zmax, subdivisions, precision);
 		vertexData.applyToMesh(tiledGround, updatable);
 		return tiledGround;
 	}
-
-	public static function CreateGroundFromHeightMap(name:String, url:String, width:Float, height:Float, subdivisions:Int, minHeight:Float, maxHeight:Float, scene:Scene, updatable:Bool = false/*?updatable:Bool*/):GroundMesh {
+	
+	public static function CreateGroundFromHeightMap(name:String, url:String, width:Float, height:Float, subdivisions:Int, minHeight:Float, maxHeight:Float, scene:Scene, updatable:Bool = false, ?onReady:GroundMesh->Void):GroundMesh {
 		var ground = new GroundMesh(name, scene);
-		ground._subdivisions = subdivisions;
+		ground.subdivisions = subdivisions;
 		ground._setReady(false);
 		
-		ground._setReady(false);
-
-            var onload = function(img:BitmapData):Void {
-                var canvas = img;
-                var heightMapWidth = canvas.width;
-                var heightMapHeight = canvas.height;
-
-
-                #if html5
-                var buffer = canvas.getPixels(canvas.rect).byteView;
-                #else
-                var buffer = new UInt8Array(BitmapData.getRGBAPixels(canvas));
-                #end
-                //var buffer = context.getImageData(0, 0, heightMapWidth, heightMapHeight).data;
-                var vertexData = VertexData.CreateGroundFromHeightMap(width, height, subdivisions, minHeight, maxHeight, buffer, heightMapWidth, heightMapHeight);
-
-                vertexData.applyToMesh(ground, updatable);
-
-                ground._setReady(true);
-            }
-
-            Tools.LoadImage(url,onload);
+		var onload = function(img:Image) {
+			var vertexData = VertexData.CreateGroundFromHeightMap(width, height, subdivisions, minHeight, maxHeight, img.data, img.width, img.height);
+			
+			vertexData.applyToMesh(ground, updatable);
+			
+			ground._setReady(true);
+			
+			//execute ready callback, if set
+			if (onReady != null) {
+				onReady(ground);
+			}
+		}
 		
+		Tools.LoadImage(url, onload);
+				
 		return ground;
 	}
+	
+	public static function CreateTube(name:String, path:Array<Vector3>, radius:Float, tesselation:Float, radiusFunction:Float->Float->Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+		var tube:Mesh = null;
+		var path3D:Path3D = new Path3D(path);
+		var tangents:Array<Vector3> = path3D.getTangents();
+		var normals:Array<Vector3> = path3D.getNormals();
+		var distances:Array<Float> = path3D.getDistances();
+		var pi2:Float = Math.PI * 2;
+		var step:Float = pi2 / tesselation;
+		var returnRadius:Float->Float->Float = function(i:Float, distance:Float) { 
+			return radius; 			
+		};
+		radiusFunction = radiusFunction != null ? radiusFunction : returnRadius; 
+		var circlePaths: Array<Array<Vector3>> = [];
+		var circlePath:Array<Vector3>;
+		var rad:Float;
+		var normal:Vector3;
+		var rotated:Vector3;
+		var rotationMatrix:Matrix;
+		
+		for (i in 0...path.length) {
+			rad = radiusFunction(i, distances[i]);      // current radius
+			circlePath = [];                            // current circle array
+			normal = normals[i];                        // current normal  
+			var ang:Int = 0;
+			while(ang < pi2) {
+				rotationMatrix = Matrix.RotationAxis(tangents[i], ang);
+				rotated = Vector3.TransformCoordinates(normal, rotationMatrix).scaleInPlace(rad).add(path[i]);
+				circlePath.push(rotated);
+				ang += Std.int(step);
+			}
+			circlePaths.push(circlePath);
+		}
+		
+		tube = Mesh.CreateRibbon(name, circlePaths, false, true, 0, scene, updatable, sideOrientation);
+		
+		return tube;
+	}
+	
+	// Decals
+    public static function CreateDecal(name:String, sourceMesh:AbstractMesh, position:Vector3, normal:Vector3, size:Vector3, angle:Float = 0) {
+        var indices:Array<Int> = sourceMesh.getIndices();
+        var positions:Array<Float> = sourceMesh.getVerticesData(VertexBuffer.PositionKind);
+        var normals:Array<Float> = sourceMesh.getVerticesData(VertexBuffer.NormalKind);
+		
+        // Getting correct rotation
+        if (normal == null) {
+            var target:Vector3 = new Vector3(0, 0, 1);
+            var camera:Camera = sourceMesh.getScene().activeCamera;
+            var cameraWorldTarget:Vector3 = Vector3.TransformCoordinates(target, camera.getWorldMatrix());
+			
+            normal = camera.globalPosition.subtract(cameraWorldTarget);
+        }
+		
+        var yaw:Float = -Math.atan2(normal.z, normal.x) - Math.PI / 2;
+        var len:Float = Math.sqrt(normal.x * normal.x + normal.z * normal.z);
+        var pitch:Float = Math.atan2(normal.y, len);
+		
+        // Matrix
+        var decalWorldMatrix:Matrix = Matrix.RotationYawPitchRoll(yaw, pitch, angle).multiply(Matrix.Translation(position.x, position.y, position.z));
+        var inverseDecalWorldMatrix:Matrix = Matrix.Invert(decalWorldMatrix);
+        var meshWorldMatrix:Matrix = sourceMesh.getWorldMatrix();
+        var transformMatrix:Matrix = meshWorldMatrix.multiply(inverseDecalWorldMatrix);
+		
+        var vertexData:VertexData = new VertexData();
+        vertexData.indices = [];
+        vertexData.positions = [];
+        vertexData.normals = [];
+        vertexData.uvs = [];
+		
+        var currentVertexDataIndex:Int = 0;
+		
+        var extractDecalVector3 = function(indexId:Int):PositionNormalVertex {
+            var vertexId = indices[indexId];
+            var result = new PositionNormalVertex();
+            result.position = new Vector3(positions[vertexId * 3], positions[vertexId * 3 + 1], positions[vertexId * 3 + 2]);
+			
+            // Send vector to decal local world
+            result.position = Vector3.TransformCoordinates(result.position, transformMatrix);
+			
+            // Get normal
+            result.normal = new Vector3(normals[vertexId * 3], normals[vertexId * 3 + 1], normals[vertexId * 3 + 2]);
+			
+            return result;
+        }
+        
+        // Inspired by https://github.com/mrdoob/three.js/blob/eee231960882f6f3b6113405f524956145148146/examples/js/geometries/DecalGeometry.js
+        var clip = function(vertices:Array<PositionNormalVertex>, axis:Vector3):Array<PositionNormalVertex> {
+            if (vertices.length == 0) {
+                return vertices;
+            }
+			
+            var clipSize = 0.5 * Math.abs(Vector3.Dot(size, axis));
+			
+            var clipVertices = function(v0:PositionNormalVertex, v1:PositionNormalVertex):PositionNormalVertex {
+                var clipFactor = Vector3.GetClipFactor(v0.position, v1.position, axis, clipSize);
+				
+                return new PositionNormalVertex(
+                    Vector3.Lerp(v0.position, v1.position, clipFactor),
+                    Vector3.Lerp(v0.normal, v1.normal, clipFactor)
+                );
+            }
+			
+            var result = new Array<PositionNormalVertex>();
+			
+			var v1Out:Bool = false;
+			var v2Out:Bool = false;
+			var v3Out:Bool = false;
+			var total = 0;
+			var nV1:PositionNormalVertex = null;
+			var nV2:PositionNormalVertex = null;
+			var nV3:PositionNormalVertex = null;
+			var nV4:PositionNormalVertex = null;
+			
+			var d1:Float = 0.0;
+			var d2:Float = 0.0;
+			var d3:Float = 0.0;
+			
+			var index = 0;
+			while(index < vertices.length) {				
+                d1 = Vector3.Dot(vertices[index].position, axis) - clipSize;
+                d2 = Vector3.Dot(vertices[index + 1].position, axis) - clipSize;
+                d3 = Vector3.Dot(vertices[index + 2].position, axis) - clipSize;
+				
+                v1Out = d1 > 0;
+                v2Out = d2 > 0;
+                v3Out = d3 > 0;
+				
+                total = (v1Out ? 1 : 0) + (v2Out ? 1 : 0) + (v3Out ? 1 : 0);
+                switch (total) {
+                    case 0:
+                        result.push(vertices[index]);
+                        result.push(vertices[index + 1]);
+                        result.push(vertices[index + 2]);
+                        
+                    case 1:
+                        if (v1Out) {
+                            nV1 = vertices[index + 1];
+                            nV2 = vertices[index + 2];
+                            nV3 = clipVertices(vertices[index], nV1);
+                            nV4 = clipVertices(vertices[index], nV2);
+                        }
+						
+                        if (v2Out) {
+                            nV1 = vertices[index];
+                            nV2 = vertices[index + 2];
+                            nV3 = clipVertices(vertices[index + 1], nV1);
+                            nV4 = clipVertices(vertices[index + 1], nV2);
+							
+                            result.push(nV3);
+                            result.push(nV2.clone());
+                            result.push(nV1.clone());
+							
+                            result.push(nV2.clone());
+                            result.push(nV3.clone());
+                            result.push(nV4);
+                            //break;
+                        } else {
+							if (v3Out) {
+								nV1 = vertices[index];
+								nV2 = vertices[index + 1];
+								nV3 = clipVertices(vertices[index + 2], nV1);
+								nV4 = clipVertices(vertices[index + 2], nV2);
+							}
+							
+							result.push(nV1.clone());
+							result.push(nV2.clone());
+							result.push(nV3);
+							
+							result.push(nV4);
+							result.push(nV3.clone());
+							result.push(nV2.clone());
+						}
+                        
+                    case 2:
+                        if (!v1Out) {
+                            nV1 = vertices[index].clone();
+                            nV2 = clipVertices(nV1, vertices[index + 1]);
+                            nV3 = clipVertices(nV1, vertices[index + 2]);
+                            result.push(nV1);
+                            result.push(nV2);
+                            result.push(nV3);
+                        }
+                        if (!v2Out) {
+                            nV1 = vertices[index + 1].clone();
+                            nV2 = clipVertices(nV1, vertices[index + 2]);
+                            nV3 = clipVertices(nV1, vertices[index]);
+                            result.push(nV1);
+                            result.push(nV2);
+                            result.push(nV3);
+                        }
+                        if (!v3Out) {
+                            nV1 = vertices[index + 2].clone();
+                            nV2 = clipVertices(nV1, vertices[index]);
+                            nV3 = clipVertices(nV1, vertices[index + 1]);
+                            result.push(nV1);
+                            result.push(nV2);
+                            result.push(nV3);
+                        }
+                        
+                    case 3:
+                        //
+                }
+				
+				index += 3;
+            }
+			
+            return result;
+        }
+		
+		var faceVertices:Array<PositionNormalVertex> = [];
+		var index = 0;
+		while(index < indices.length) {
+            faceVertices = [];
+			
+            faceVertices.push(extractDecalVector3(index));
+            faceVertices.push(extractDecalVector3(index + 1));
+            faceVertices.push(extractDecalVector3(index + 2));
+			
+            // Clip
+            faceVertices = clip(faceVertices, new Vector3(1, 0, 0));
+            faceVertices = clip(faceVertices, new Vector3(-1, 0, 0));
+            faceVertices = clip(faceVertices, new Vector3(0, 1, 0));
+            faceVertices = clip(faceVertices, new Vector3(0, -1, 0));
+            faceVertices = clip(faceVertices, new Vector3(0, 0, 1));
+            faceVertices = clip(faceVertices, new Vector3(0, 0, -1));
+			
+            if (faceVertices.length == 0) {
+				index += 3;
+                continue;
+            }
+              
+            // Add UVs and get back to world
+			var vertex:PositionNormalVertex = null;
+            for (vIndex in 0...faceVertices.length) {
+                vertex = faceVertices[vIndex];
+				
+                vertexData.indices.push(currentVertexDataIndex);
+                Vector3.TransformCoordinates(vertex.position, decalWorldMatrix).toArray(vertexData.positions, currentVertexDataIndex * 3);
+                vertex.normal.toArray(vertexData.normals, currentVertexDataIndex * 3);
+                vertexData.uvs.push(0.5 + vertex.position.x / size.x);
+                vertexData.uvs.push(0.5 + vertex.position.y / size.y);
+				
+                currentVertexDataIndex++;
+            }
+			
+			index += 3;
+        }
+		
+        // Return mesh
+        var decal = new Mesh(name, sourceMesh.getScene());
+        vertexData.applyToMesh(decal);
+		
+        return decal;
+    }
 
 	// Tools
 	public static function MinMax(meshes:Array<AbstractMesh>):BabylonMinMax {
@@ -1148,6 +1652,54 @@ trace("deepCopy over");
 	public static function Center(meshesOrMinMaxVector:Dynamic):Vector3 {
 		var minMaxVector:BabylonMinMax = meshesOrMinMaxVector.min != null ? meshesOrMinMaxVector : Mesh.MinMax(meshesOrMinMaxVector);
 		return Vector3.Center(minMaxVector.minimum, minMaxVector.maximum);
+	}
+	
+	public static function MergeMeshes(meshes:Array<Mesh>, disposeSource:Bool = true, allow32BitsIndices:Bool = false):Mesh {
+		var source:Mesh = meshes[0];
+		var material:Material = source.material;
+		var scene:Scene = source.getScene();
+		
+		if (!allow32BitsIndices) {
+			var totalVertices = 0;
+			
+			// Counting vertices
+			for (index in 0...meshes.length) {
+				totalVertices += meshes[index].getTotalVertices();
+				
+				if (totalVertices > 65536) {
+					trace("Cannot merge meshes because resulting mesh will have more than 65536 vertices. Please use allow32BitsIndices = true to use 32 bits indices");
+					return null;
+				}
+			}
+		}
+		
+		// Merge
+		var vertexData:VertexData = VertexData.ExtractFromMesh(source);
+		vertexData.transform(source.getWorldMatrix());
+		
+		for (index in 1...meshes.length) {
+			var otherVertexData = VertexData.ExtractFromMesh(meshes[index]);
+			otherVertexData.transform(meshes[index].getWorldMatrix());
+			
+			vertexData.merge(otherVertexData);
+		}
+		
+		var newMesh:Mesh = new Mesh(source.name + "_merged", scene);
+		
+		vertexData.applyToMesh(newMesh);
+		
+		// Setting properties
+		newMesh.material = material;
+		newMesh.checkCollisions = source.checkCollisions;
+		
+		// Cleaning
+		if (disposeSource) {
+			for (index in 0...meshes.length) {
+				meshes[index].dispose();
+			}
+		}
+		
+		return newMesh;
 	}
 	
 }

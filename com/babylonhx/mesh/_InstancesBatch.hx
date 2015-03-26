@@ -5,7 +5,7 @@ package com.babylonhx.mesh;
  * @author Krtolica Vujadin
  */
 
-class _InstancesBatch {
+@:expose('BABYLON._InstancesBatch') class _InstancesBatch {
 	
 	public var mustReturn:Bool = false;
 	public var visibleInstances:Array<Array<InstancedMesh>> = [];

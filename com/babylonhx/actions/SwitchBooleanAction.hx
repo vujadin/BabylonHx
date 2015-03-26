@@ -19,12 +19,12 @@ package com.babylonhx.actions;
 		this.propertyPath = propertyPath;
 	}
 
-	override public function _prepare():Void {
+	override public function _prepare() {
 		this._target = this._getEffectiveTarget(this._target, this.propertyPath);
 		this._property = this._getProperty(this.propertyPath);
 	}
 
-	override public function execute(?evt:ActionEvent):Void {
+	override public function execute(?evt:ActionEvent) {
 		this._target[this._property] = !this._target[this._property];
 	}
 	

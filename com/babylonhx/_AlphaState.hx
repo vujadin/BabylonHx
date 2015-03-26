@@ -1,19 +1,14 @@
 package com.babylonhx;
 
-#if openfl
-import openfl.gl.GL;
-#elseif snow
-import snow.render.opengl.GL;
-#elseif kha
+import com.babylonhx.utils.GL;
 
-#end
 
 /**
  * ...
  * @author Krtolica Vujadin
  */
 
-class _AlphaState {
+@:expose('BABYLON._AlphaState') class _AlphaState {
 	
 	private var _isAlphaBlendDirty:Bool = false;
 	private var _isBlendFunctionParametersDirty:Bool = false;
@@ -37,6 +32,10 @@ class _AlphaState {
 		this._alphaBlend = value;
 		this._isAlphaBlendDirty = true;
 		return value;
+	}
+	
+	public function new() {
+		//
 	}
 
 	public function setAlphaBlendFunctionParameters(value0:Int, value1:Int, value2:Int, value3:Int) {
@@ -76,9 +75,9 @@ class _AlphaState {
 		
 		// Alpha blend
 		if (this._isAlphaBlendDirty) {
-			if (this._alphaBlend == true) {
+			if (this._alphaBlend) {
 				GL.enable(GL.BLEND);
-			} else if (this._alphaBlend == false) {
+			} else {
 				GL.disable(GL.BLEND);
 			}
 			

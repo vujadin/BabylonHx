@@ -10,7 +10,7 @@ import com.babylonhx.math.Matrix;
 
 @:expose('BABYLON.MirrorTexture') class MirrorTexture extends RenderTargetTexture {
 	
-	public var mirrorPlane = new Plane(0, 1, 0, 1);
+	public var mirrorPlane:Plane = new Plane(0, 1, 0, 1);
 
 	private var _transformMatrix:Matrix = Matrix.Zero();
 	private var _mirrorMatrix:Matrix = Matrix.Zero();

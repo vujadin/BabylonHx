@@ -11,20 +11,20 @@ import com.babylonhx.math.Vector3;
 @:expose('BABYLON.Texture') class Texture extends BaseTexture {
 	
 	// Constants
-	public static var NEAREST_SAMPLINGMODE:Int = 1;
-	public static var BILINEAR_SAMPLINGMODE:Int = 2;
-	public static var TRILINEAR_SAMPLINGMODE:Int = 3;
+	public static inline var NEAREST_SAMPLINGMODE:Int = 1;
+	public static inline var BILINEAR_SAMPLINGMODE:Int = 2;
+	public static inline var TRILINEAR_SAMPLINGMODE:Int = 3;
 
-	public static var EXPLICIT_MODE:Int = 0;
-	public static var SPHERICAL_MODE:Int = 1;
-	public static var PLANAR_MODE:Int = 2;
-	public static var CUBIC_MODE:Int = 3;
-	public static var PROJECTION_MODE:Int = 4;
-	public static var SKYBOX_MODE:Int = 5;
+	public static inline var EXPLICIT_MODE:Int = 0;
+	public static inline var SPHERICAL_MODE:Int = 1;
+	public static inline var PLANAR_MODE:Int = 2;
+	public static inline var CUBIC_MODE:Int = 3;
+	public static inline var PROJECTION_MODE:Int = 4;
+	public static inline var SKYBOX_MODE:Int = 5;
 
-	public static var CLAMP_ADDRESSMODE:Int = 0;
-	public static var WRAP_ADDRESSMODE:Int = 1;
-	public static var MIRROR_ADDRESSMODE:Int = 2;
+	public static inline var CLAMP_ADDRESSMODE:Int = 0;
+	public static inline var WRAP_ADDRESSMODE:Int = 1;
+	public static inline var MIRROR_ADDRESSMODE:Int = 2;
 
 	// Members
 	public var url:String;
@@ -58,7 +58,7 @@ import com.babylonhx.math.Vector3;
 	private var _deleteBuffer:Bool;
 
 	
-	public function new(url:String, scene:Scene, ?noMipmap:Bool, ?invertY:Bool, samplingMode:Int = 3/*Texture.TRILINEAR_SAMPLINGMODE*/, onLoad:Void->Void = null, onError:Void->Void = null, buffer:Dynamic = null, deleteBuffer:Bool = false) {
+	public function new(url:String, scene:Scene, noMipmap:Bool = false, invertY:Bool = true, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, onLoad:Void->Void = null, onError:Void->Void = null, buffer:Dynamic = null, deleteBuffer:Bool = false) {
 		super(scene);
 		
 		this.name = url;
@@ -73,7 +73,7 @@ import com.babylonhx.math.Vector3;
 			return;
 		}
 		
-		this._texture = this._getFromCache(url, noMipmap);
+		this._texture = this._getFromCache(url, noMipmap, samplingMode);
 		
 		if (this._texture == null) {
 			if (!scene.useDelayedTextureLoading) {
@@ -95,7 +95,7 @@ import com.babylonhx.math.Vector3;
 		}
 		
 		this.delayLoadState = Engine.DELAYLOADSTATE_LOADED;
-		this._texture = this._getFromCache(this.url, this._noMipmap);
+		this._texture = this._getFromCache(this.url, this._noMipmap, this._samplingMode);
 		
 		if (this._texture == null) {
 			this._texture = this.getScene().getEngine().createTexture(this.url, this._noMipmap, this._invertY, this.getScene(), this._samplingMode, null, null, this._buffer);
@@ -104,6 +104,14 @@ import com.babylonhx.math.Vector3;
 			}
 		}
 	}
+	
+	public function updateSamplingMode(samplingMode:Int) {
+        if (this._texture == null) {
+            return;
+        }
+		
+        this.getScene().getEngine().updateTextureSamplingMode(samplingMode, this._texture);
+    }
 
 	private function _prepareRowForTextureGeneration(x:Float, y:Float, z:Float, t:Vector3) {
 		x -= this.uOffset + 0.5;
@@ -218,7 +226,7 @@ import com.babylonhx.math.Vector3;
 	}
 
 	override public function clone():Texture {
-		var newTexture = new Texture(this._texture.url, this.getScene(), this._noMipmap, this._invertY);
+		var newTexture = new Texture(this._texture.url, this.getScene(), this._noMipmap, this._invertY, this._samplingMode);
 		
 		// Base texture
 		newTexture.hasAlpha = this.hasAlpha;
@@ -238,6 +246,11 @@ import com.babylonhx.math.Vector3;
 		newTexture.wAng = this.wAng;
 		
 		return newTexture;
+	}
+	
+	// Statics
+	public static function CreateFromBase64String(data:String, name:String, scene:Scene, ?noMipmap:Bool, ?invertY:Bool, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, ?onLoad:Void->Void, ?onError:Void->Void):Texture {
+		return new Texture("data:" + name, scene, noMipmap, invertY, samplingMode, onLoad, onError, data);
 	}
 	
 }

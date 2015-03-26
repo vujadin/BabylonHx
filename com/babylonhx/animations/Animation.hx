@@ -3,6 +3,7 @@ package com.babylonhx.animations;
 import com.babylonhx.animations.easing.EasingFunction;
 import com.babylonhx.animations.easing.IEasingFunction;
 import com.babylonhx.math.Color3;
+import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Quaternion;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
@@ -13,7 +14,7 @@ import com.babylonhx.mesh.AbstractMesh;
 * @author Krtolica Vujadin
 */
 
-typedef BabylonFrame = {
+@:expose('BABYLON.BabylonFrame') typedef BabylonFrame = {
 	frame:Int,
 	value:Dynamic			// Vector3 or Quaternion or Matrix or Float or Color3 or Vector2
 }
@@ -48,10 +49,10 @@ typedef BabylonFrame = {
 	
 	
 	public static function CreateAndStartAnimation(name:String, mesh:AbstractMesh, tartgetProperty:String, framePerSecond:Int, totalFrame:Int,
-		from:Dynamic, to:Dynamic, ?loopMode:Int) {
-
+		from:Dynamic, to:Dynamic, ?loopMode:Int):Animatable {
+		
 		var dataType:Int = -1;
-
+		
 		if (Std.is(from, Float)) {
 			dataType = Animation.ANIMATIONTYPE_FLOAT;
 		} else if (Std.is(from, Quaternion)) {
@@ -63,22 +64,21 @@ typedef BabylonFrame = {
 		} else if (Std.is(from, Color3)) {
 			dataType = Animation.ANIMATIONTYPE_COLOR3;
 		}
-
+		
 		if (dataType == -1) {
-			return;
+			return null;
 		}
-
+		
 		var animation = new Animation(name, tartgetProperty, framePerSecond, dataType, loopMode);
-
+		
 		var keys:Array<BabylonFrame> = [];
 		keys.push({ frame: 0, value: from });
 		keys.push({ frame: totalFrame, value: to });
 		animation.setKeys(keys);
-
+		
 		mesh.animations.push(animation);
-
-		mesh.getScene().beginAnimation(mesh, 0, totalFrame, (animation.loopMode == 1));
-
+		
+		return mesh.getScene().beginAnimation(mesh, 0, totalFrame, (animation.loopMode == 1));
 	}
 
 	public function new(name:String, targetProperty:String, framePerSecond:Int, dataType:Int, loopMode:Int = -1) {
@@ -126,31 +126,59 @@ typedef BabylonFrame = {
 	public function color3InterpolateFunction(startValue:Color3, endValue:Color3, gradient:Float):Color3 {
 		return Color3.Lerp(startValue, endValue, gradient);
 	}
+	
+	public function matrixInterpolateFunction(startValue:Matrix, endValue:Matrix, gradient:Float):Matrix {
+		var startScale = new Vector3(0, 0, 0);
+		var startRotation = new Quaternion();
+		var startTranslation = new Vector3(0, 0, 0);
+		startValue.decompose(startScale, startRotation, startTranslation);
+		
+		var endScale = new Vector3(0, 0, 0);
+		var endRotation = new Quaternion();
+		var endTranslation = new Vector3(0, 0, 0);
+		endValue.decompose(endScale, endRotation, endTranslation);
+		
+		var resultScale = this.vector3InterpolateFunction(startScale, endScale, gradient);
+		var resultRotation = this.quaternionInterpolateFunction(startRotation, endRotation, gradient);
+		var resultTranslation = this.vector3InterpolateFunction(startTranslation, endTranslation, gradient);
+		
+		var result = Matrix.Compose(resultScale, resultRotation, resultTranslation);
+		
+		return result;
+	}
 
 	public function clone():Animation {
 		var clone = new Animation(this.name, this.targetPropertyPath.join("."), this.framePerSecond, this.dataType, this.loopMode);
-
 		clone.setKeys(this._keys);
-
+		
 		return clone;
 	}
 
-	public function setKeys(values:Array<BabylonFrame>):Void {
+	public function setKeys(values:Array<BabylonFrame>) {
 		this._keys = values.slice(0);
 		this._offsetsCache = [];// { };
 		this._highLimitsCache = [];// { };
 	}
 
 	private function _interpolate(currentFrame:Int, repeatCount:Int, loopMode:Int, ?offsetValue:Dynamic, ?highLimitValue:Dynamic):Dynamic {
-		if (loopMode == Animation.ANIMATIONLOOPMODE_CONSTANT && repeatCount > 0) {
+		if (loopMode == Animation.ANIMATIONLOOPMODE_CONSTANT && repeatCount > 0 && highLimitValue != null) {
 			return highLimitValue.clone != null ? highLimitValue.clone() : highLimitValue;
 		}
-
+		
 		this.currentFrame = currentFrame;
-
-		for (key in 0...this._keys.length - 1) {
+		
+		// Try to get a hash to find the right key
+		var startKey = Std.int(Math.max(0, Math.min(this._keys.length - 1, Math.floor(this._keys.length * (currentFrame - this._keys[0].frame) / (this._keys[this._keys.length - 1].frame - this._keys[0].frame)) - 1)));
+		
+		if (this._keys[startKey].frame >= currentFrame) {
+			while (startKey - 1 >= 0 && this._keys[startKey].frame >= currentFrame) {
+				startKey--;
+			}
+		}
+		
+		for (key in startKey...this._keys.length) {
 			// for each frame, we need the key just before the frame superior
-			if (this._keys[key + 1].frame >= currentFrame) {
+			if (this._keys[key + 1] != null && this._keys[key + 1].frame >= currentFrame) {
 				
 				var startValue:Dynamic = this._keys[key].value;
 				var endValue:Dynamic = this._keys[key + 1].value;
@@ -162,7 +190,7 @@ typedef BabylonFrame = {
                 if (this._easingFunction != null) {
                     gradient = this._easingFunction.ease(gradient);
                 }
-
+				
 				switch (this.dataType) {
 					// Float
 					case Animation.ANIMATIONTYPE_FLOAT:
@@ -183,7 +211,7 @@ typedef BabylonFrame = {
 							case Animation.ANIMATIONLOOPMODE_RELATIVE:
 								quaternion = this.quaternionInterpolateFunction(cast startValue, cast endValue, gradient).add(offsetValue.scale(repeatCount));								
 						}
-
+						
 						return quaternion;
 					// Vector3
 					case Animation.ANIMATIONTYPE_VECTOR3:
@@ -213,6 +241,9 @@ typedef BabylonFrame = {
 					case Animation.ANIMATIONTYPE_MATRIX:
 						switch (loopMode) {
 							case Animation.ANIMATIONLOOPMODE_CYCLE, Animation.ANIMATIONLOOPMODE_CONSTANT, Animation.ANIMATIONLOOPMODE_RELATIVE:
+								//return this.matrixInterpolateFunction(startValue, endValue, gradient);
+								
+							//case Animation.ANIMATIONLOOPMODE_RELATIVE:
 								return startValue;
 						}
 					default:
@@ -220,6 +251,7 @@ typedef BabylonFrame = {
 				}
 			}
 		}
+		
 		return this._keys[this._keys.length - 1].value;
 	}
 
@@ -228,7 +260,7 @@ typedef BabylonFrame = {
 			this._stopped = true;
 			return false;
 		}
-
+		
 		var returnValue = true;
 		
 		// Adding a start key at frame 0 if missing
@@ -237,10 +269,10 @@ typedef BabylonFrame = {
 				frame:0,
 				value:this._keys[0].value
 			};
-
+			
 			this._keys.unshift(newKey);
 		}
-
+		
 		// Check limits
 		if (from < this._keys[0].frame || from > this._keys[this._keys.length - 1].frame) {
 			from = this._keys[0].frame;
@@ -248,14 +280,14 @@ typedef BabylonFrame = {
 		if (to < this._keys[0].frame || to > this._keys[this._keys.length - 1].frame) {
 			to = this._keys[this._keys.length - 1].frame;
 		}
-
+		
 		// Compute ratio
 		var range = to - from;
 		var offsetValue:Dynamic = null;
 		// ratio represents the frame delta between from and to
 		var ratio = delay * (this.framePerSecond * speedRatio) / 1000.0;
 		var highLimitValue:Dynamic = null;
-
+		
 		if (ratio > range && !loop) { // If we are out of range and not looping get back to caller
 			returnValue = false;
 			highLimitValue = this._keys[this._keys.length - 1].value;
@@ -291,15 +323,15 @@ typedef BabylonFrame = {
 						default:
 							//
 					}
-
+					
 					this._highLimitsCache[keyOffset] = toValue;
 				}
-
+				
 				highLimitValue = this._highLimitsCache[keyOffset];
 				offsetValue = this._offsetsCache[keyOffset];
 			}
 		}
-
+		
 		if (offsetValue == null) {
 			switch (this.dataType) {
 				// Float
@@ -323,33 +355,33 @@ typedef BabylonFrame = {
 					offsetValue = Color3.Black();
 			}
 		}
-
+		
 		// Compute value
 		var repeatCount = Std.int(ratio / range);
 		var currentFrame = cast (returnValue ? from + ratio % range : to);
 		var currentValue = this._interpolate(currentFrame, repeatCount, this.loopMode, offsetValue, highLimitValue);
-
+		
 		// Set value
 		if (this.targetPropertyPath.length > 1) {
 			var property = Reflect.getProperty(this._target, this.targetPropertyPath[0]);
-
+			
 			for (index in 1...this.targetPropertyPath.length - 1) {
 				property = Reflect.getProperty(property, this.targetPropertyPath[index]);
 			}
-
+			
 			Reflect.setProperty(property, this.targetPropertyPath[this.targetPropertyPath.length - 1], currentValue);
 		} else {
 			Reflect.setProperty(this._target, this.targetPropertyPath[0], currentValue);
 		}
-
+		
 		if (this._target.markAsDirty != null) {
 			this._target.markAsDirty(this.targetProperty);
 		}
-
+		
 		if (!returnValue) {
 			this._stopped = true;
 		}
-
+		
 		return returnValue;
 	}
 

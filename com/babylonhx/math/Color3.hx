@@ -22,10 +22,12 @@ package com.babylonhx.math;
 	}
 
 	// Operators
-	public function toArray(array:Array<Float>, index:Int = 0):Void {
+	public function toArray(array:Array<Float>, index:Int = 0):Color3 {
 		array[index] = this.r;
 		array[index + 1] = this.g;
 		array[index + 2] = this.b;
+		
+		return this;
 	}
 
 	public function toColor4(alpha:Float = 1):Color4 {
@@ -48,10 +50,12 @@ package com.babylonhx.math;
 		return new Color3(this.r * otherColor.r, this.g * otherColor.g, this.b * otherColor.b);
 	}
 
-	public function multiplyToRef(otherColor:Color3, result:Color3):Void {
+	public function multiplyToRef(otherColor:Color3, result:Color3):Color3 {
 		result.r = this.r * otherColor.r;
 		result.g = this.g * otherColor.g;
 		result.b = this.b * otherColor.b;
+		
+		return this;
 	}
 
 	inline public function equals(otherColor:Color3):Bool {
@@ -62,50 +66,60 @@ package com.babylonhx.math;
 		return new Color3(this.r * scale, this.g * scale, this.b * scale);
 	}
 
-	inline public function scaleToRef(scale:Float, result:Color3):Void {
+	inline public function scaleToRef(scale:Float, result:Color3):Color3 {
 		result.r = this.r * scale;
 		result.g = this.g * scale;
 		result.b = this.b * scale;
+		
+		return this;
 	}
 
 	public function add(otherColor:Color3):Color3 {
 		return new Color3(this.r + otherColor.r, this.g + otherColor.g, this.b + otherColor.b);
 	}
 
-	public function addToRef(otherColor:Color3, result:Color3):Void {
+	public function addToRef(otherColor:Color3, result:Color3):Color3 {
 		result.r = this.r + otherColor.r;
 		result.g = this.g + otherColor.g;
 		result.b = this.b + otherColor.b;
+		
+		return this;
 	}
 
 	public function subtract(otherColor:Color3):Color3 {
 		return new Color3(this.r - otherColor.r, this.g - otherColor.g, this.b - otherColor.b);
 	}
 
-	public function subtractToRef(otherColor:Color3, result:Color3):Void {
+	public function subtractToRef(otherColor:Color3, result:Color3):Color3 {
 		result.r = this.r - otherColor.r;
 		result.g = this.g - otherColor.g;
 		result.b = this.b - otherColor.b;
+		
+		return this;
 	}
 
 	public function clone():Color3 {
 		return new Color3(this.r, this.g, this.b);
 	}
 
-	inline public function copyFrom(source:Color3):Void {
+	inline public function copyFrom(source:Color3):Color3 {
 		this.r = source.r;
 		this.g = source.g;
 		this.b = source.b;
+		
+		return this;
 	}
 
-	inline public function copyFromFloats(r:Float, g:Float, b:Float):Void {
+	inline public function copyFromFloats(r:Float, g:Float, b:Float):Color3 {
 		this.r = r;
 		this.g = g;
 		this.b = b;
+		
+		return this;
 	}
 
 	// Statics
-	public static function FromArray(array:Array<Float>):Color3 {
+	public static function FromArray(array:Array<Float>, offset:Int = 0):Color3 {
 		return new Color3(array[0], array[1], array[2]);
 	}
 

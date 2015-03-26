@@ -3,7 +3,9 @@ package com.babylonhx.cameras;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Viewport;
+import com.babylonhx.mesh.Mesh;
 import com.babylonhx.postprocess.PostProcess;
+import com.babylonhx.tools.SmartArray;
 
 /**
 * ...
@@ -13,8 +15,11 @@ import com.babylonhx.postprocess.PostProcess;
 @:expose('BABYLON.Camera') class Camera extends Node {
 	
 	// Statics
-	public static var PERSPECTIVE_CAMERA:Int = 0;
-	public static var ORTHOGRAPHIC_CAMERA:Int = 1;
+	public static inline var PERSPECTIVE_CAMERA:Int = 0;
+	public static inline var ORTHOGRAPHIC_CAMERA:Int = 1;
+	
+	public static inline var FOVMODE_VERTICAL_FIXED:Int = 0;
+	public static inline var FOVMODE_HORIZONTAL_FIXED:Int = 1;
 
 	// Members
 	public var position:Vector3 = Vector3.Zero();
@@ -29,26 +34,45 @@ import com.babylonhx.postprocess.PostProcess;
 	public var inertia:Float = 0.9;
 	public var mode:Int = Camera.PERSPECTIVE_CAMERA;
 	public var isIntermediate:Bool = false;
-	public var viewport:Viewport = new Viewport(0, 0, 1.0, 1.0);
+	public var viewport:Viewport = new Viewport(0, 0, 1, 1);
 	public var subCameras:Array<Camera> = [];
 	public var layerMask:Int = 0xFFFFFFFF;
+	public var fovMode:Int = Camera.FOVMODE_VERTICAL_FIXED;
 
 	private var _computedViewMatrix = Matrix.Identity();
 	public var _projectionMatrix = new Matrix();
 	private var _worldMatrix:Matrix;
 	public var _postProcesses:Array<PostProcess> = [];
-	public var _postProcessesTakenIndices:Array<Int> = [];               
+	public var _postProcessesTakenIndices:Array<Int> = [];
+	
+	public var _activeMeshes = new SmartArray(256);
+	
+	private var _globalPosition:Vector3 = Vector3.Zero();
+	public var globalPosition(get, never):Vector3;
+	
 
 	public function new(name:String, position:Vector3, scene:Scene) {
 		super(name, scene);
-
+		
 		this.position = position;
-		scene.cameras.push(this);
-
+		scene.addCamera(this);
+		
 		if (scene.activeCamera == null) {
 			scene.activeCamera = this;
 		}
 	}
+	
+	private function get_globalPosition():Vector3 {
+		return this._globalPosition;
+	}
+	
+	public function getActiveMeshes():SmartArray {
+        return this._activeMeshes;
+    }
+
+    public function isActiveMesh(mesh:Mesh):Bool {
+        return (this._activeMeshes.indexOf(mesh) != -1);
+    }
 
 	//Cache
 	override public function _initCache() {
@@ -144,11 +168,11 @@ import com.babylonhx.postprocess.PostProcess;
 	}
 
 	// Controls
-	public function attachControl(element:Dynamic, noPreventDefault:Bool = false/*?noPreventDefault:Bool*/) {
+	public function attachControl(?element:Dynamic, ?noPreventDefault:Bool) {
 		
 	}
 
-	public function detachControl(element:Dynamic) {
+	public function detachControl(?element:Dynamic) {
 		
 	}
 
@@ -156,13 +180,13 @@ import com.babylonhx.postprocess.PostProcess;
 		
 	}
 
-	public function attachPostProcess(postProcess:PostProcess, insertAt:Int = -1):Int {
+	public function attachPostProcess(postProcess:PostProcess, ?insertAt:Int):Int {
 		if (!postProcess.isReusable() && this._postProcesses.indexOf(postProcess) > -1) {
 			trace("You're trying to reuse a post process not defined as reusable.");
 			return 0;
 		}
 		
-		if (insertAt < 0) {
+		if (insertAt == null || insertAt < 0) {
 			this._postProcesses.push(postProcess);
 			this._postProcessesTakenIndices.push(this._postProcesses.length - 1);
 			
@@ -268,7 +292,8 @@ import com.babylonhx.postprocess.PostProcess;
 		
 		if (this.parent == null
 			|| this.parent.getWorldMatrix() == null
-			|| this.isSynchronized()) {
+			|| this.isSynchronized()) {				
+			this._globalPosition.copyFrom(this.position);
 			return this._computedViewMatrix;
 		}
 		
@@ -283,10 +308,12 @@ import com.babylonhx.postprocess.PostProcess;
 		this._computedViewMatrix.invert();
 		
 		this._currentRenderId = this.getScene().getRenderId();
+		this._globalPosition.copyFromFloats(this._computedViewMatrix.m[12], this._computedViewMatrix.m[13], this._computedViewMatrix.m[14]);
+		
 		return this._computedViewMatrix;
 	}
 
-	public function _computeViewMatrix(force:Bool = false/*?force:Bool*/):Matrix {
+	public function _computeViewMatrix(force:Bool = false):Matrix {
 		if (!force && this._isSynchronizedViewMatrix()) {
 			return this._computedViewMatrix;
 		}
@@ -310,7 +337,7 @@ import com.babylonhx.postprocess.PostProcess;
 				this.minZ = 0.1;
 			}
 			
-			Matrix.PerspectiveFovLHToRef(this.fov, engine.getAspectRatio(this), this.minZ, this.maxZ, this._projectionMatrix);
+			Matrix.PerspectiveFovLHToRef(this.fov, engine.getAspectRatio(this), this.minZ, this.maxZ, this._projectionMatrix, this.fovMode);
 			return this._projectionMatrix;
 		}
 		
@@ -322,8 +349,7 @@ import com.babylonhx.postprocess.PostProcess;
 
 	public function dispose() {
 		// Remove from scene
-		var index = this.getScene().cameras.indexOf(this);
-		this.getScene().cameras.splice(index, 1);
+		this.getScene().removeCamera(this);
 		
 		// Postprocesses
 		for (i in 0...this._postProcessesTakenIndices.length) {

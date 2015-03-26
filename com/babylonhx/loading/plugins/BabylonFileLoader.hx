@@ -1,5 +1,9 @@
 package com.babylonhx.loading.plugins;
 
+import com.babylonhx.actions.Action;
+import com.babylonhx.actions.ActionManager;
+import com.babylonhx.actions.Condition;
+import com.babylonhx.actions.ValueCondition;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.bones.Bone;
 import com.babylonhx.bones.Skeleton;
@@ -33,6 +37,7 @@ import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Quaternion;
+import com.babylonhx.math.Vector4;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.Geometry;
 import com.babylonhx.mesh.Mesh;
@@ -46,36 +51,30 @@ import com.babylonhx.mesh.primitives.Sphere;
 import com.babylonhx.mesh.primitives.Torus;
 import com.babylonhx.mesh.primitives.TorusKnot;
 import com.babylonhx.particles.ParticleSystem;
+import com.babylonhx.physics.PhysicsBodyCreationOptions;
 import com.babylonhx.tools.Tags;
+import com.babylonhx.actions.*;
+import haxe.io.Bytes;
+
 import haxe.Json;
+import haxe.Timer;
 
-#if nme
-import nme.utils.ArrayBuffer;
-import nme.utils.Float32Array;
-import nme.utils.Int32Array;
-#elseif openfl
-import openfl.utils.ArrayBuffer;
-import openfl.utils.Float32Array;
-import openfl.utils.Int32Array;
-#elseif snow
-import snow.utils.ArrayBuffer;
-import snow.utils.Float32Array;
-import snow.utils.Int32Array;
-#elseif kha
+import org.msgpack.MsgPack;
 
-#elseif foo3d
+import com.babylonhx.utils.typedarray.ArrayBuffer;
+import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.Int32Array;
 
-#end
 
 /**
  * ...
  * @author Krtolica Vujadin
  */
 
-typedef ISceneLoaderPlugin = {
+@:expose('BABYLON.ISceneLoaderPlugin') typedef ISceneLoaderPlugin = {
 	var extensions:String;
 	var importMesh:Dynamic->Scene->Dynamic->String->Array<AbstractMesh>->Array<ParticleSystem>->Array<Skeleton>->Bool;
-	var load:Scene->String->String->Bool;
+	var load:Scene->Dynamic->String->Bool;
 }
 
 @:expose('BABYLON.BabylonFileLoader') class BabylonFileLoader {
@@ -87,8 +86,29 @@ typedef ISceneLoaderPlugin = {
 	private static var _plugin:ISceneLoaderPlugin = {
 		extensions: ".babylon",
         importMesh: function(meshesNames:Dynamic, scene:Scene, data:Dynamic, rootUrl:String, meshes:Array<AbstractMesh>, particleSystems:Array<ParticleSystem>, skeletons:Array<Skeleton>):Bool {
-			var parsedData = Json.parse(data);
 						
+			var parsedData:Dynamic = null;
+			
+			#if js
+			if (Std.is(data, String)) {
+				parsedData = Json.parse(data);
+			} else if(Std.is(data, Bytes)) {
+				parsedData = MsgPack.decode(data);
+			} else {
+				trace("Unknown data type!");
+				return false;
+			}
+			#else
+			if(Std.is(data, String)) {
+				parsedData = Json.parse(data);
+			} else if(Std.is(data, Bytes)) {
+				parsedData = MsgPack.decode(data);
+			} else {
+				trace("Unknown data type!");
+				return false;
+			}
+			#end
+									
             var loadedSkeletonsIds:Array<Int> = [];
             var loadedMaterialsIds:Array<Int> = [];
             var hierarchyIds:Array<Int> = [];
@@ -96,7 +116,6 @@ typedef ISceneLoaderPlugin = {
 			var pdm:Array<Dynamic> = cast parsedData.meshes;
             for (index in 0...pdm.length) {
                 var parsedMesh = pdm[index];
-				
                 if (meshesNames == null || meshesNames == "" || isDescendantOf(parsedMesh, meshesNames, hierarchyIds)) {
 					if (Std.is(meshesNames, Array)) {
                         // Remove found mesh name from list.
@@ -177,9 +196,29 @@ typedef ISceneLoaderPlugin = {
 			
             return true;
         },
-		load: function(scene:Scene, data:String, rootUrl:String):Bool {
-            var parsedData:Dynamic = Json.parse(data);
-			
+		load: function(scene:Scene, data:Dynamic, rootUrl:String):Bool {
+			var parsedData:Dynamic = null;
+			#if js
+			if (Std.is(data, String)) {
+				parsedData = Json.parse(data);
+			} else if(Std.is(data, Bytes)) {
+				parsedData = MsgPack.decode(data);
+			} else {
+				trace("Unknown data type!");
+				return false;
+			}
+			#else
+			if(Std.is(data, String)) {
+				parsedData = Json.parse(data);
+			} else if(Std.is(data, Bytes)) {
+				parsedData = MsgPack.decode(data);
+			} else {
+				trace("Unknown data type!");
+				return false;
+			}
+			#end
+			data = null;
+						
             // Scene
             scene.useDelayedTextureLoading = parsedData.useDelayedTextureLoading && !SceneLoader.ForceFullSceneLoadingForIncremental;
             scene.autoClear = parsedData.autoClear;
@@ -319,7 +358,7 @@ typedef ISceneLoaderPlugin = {
                 scene.setActiveCameraByID(parsedData.activeCameraID);
             }
 			
-            // Connecting parents
+            // Browsing all the graph to connect the dots
             for (index in 0...scene.cameras.length) {
                 var camera = scene.cameras[index];
                 if (camera._waitingParentId != null) {
@@ -336,11 +375,16 @@ typedef ISceneLoaderPlugin = {
                 }
             }
 			
+			// Connect parents & children and parse actions
             for (index in 0...scene.meshes.length) {
                 var mesh = scene.meshes[index];
                 if (mesh._waitingParentId != null) {
                     mesh.parent = scene.getLastEntryByID(mesh._waitingParentId);
                     mesh._waitingParentId = null;
+                }
+				if (mesh._waitingActions != null) {
+                    parseActions(mesh._waitingActions, mesh, scene);
+                    mesh._waitingActions = null;
                 }
             }
 			
@@ -366,6 +410,11 @@ typedef ISceneLoaderPlugin = {
                     var parsedShadowGenerator = parsedData.shadowGenerators[index];
                     parseShadowGenerator(parsedShadowGenerator, scene);
                 }
+            }
+			
+			// Actions (scene)
+            if (parsedData.actions != null) {
+                parseActions(parsedData.actions, null, scene);
             }
 			
             // Finish
@@ -429,6 +478,7 @@ typedef ISceneLoaderPlugin = {
 		
         texture.name = parsedTexture.name;
         texture.hasAlpha = parsedTexture.hasAlpha;
+		texture.getAlphaFromRGB = parsedTexture.getAlphaFromRGB;
         texture.level = parsedTexture.level;
 		
         texture.coordinatesIndex = parsedTexture.coordinatesIndex;
@@ -458,7 +508,7 @@ typedef ISceneLoaderPlugin = {
 
     public static function parseSkeleton(parsedSkeleton:Dynamic, scene:Scene):Skeleton {
         var skeleton = new Skeleton(parsedSkeleton.name, parsedSkeleton.id, scene);
-		
+		try {
         for (index in 0...parsedSkeleton.bones.length) {
             var parsedBone = parsedSkeleton.bones[index];
 			
@@ -473,6 +523,9 @@ typedef ISceneLoaderPlugin = {
                 bone.animations.push(parseAnimation(parsedBone.animation));
             }
         }
+		} catch (err:Dynamic) {
+			trace(err);
+		}
 		
         return skeleton;
     }
@@ -582,7 +635,7 @@ typedef ISceneLoaderPlugin = {
         }
 		
         return multiMaterial;
-    };
+    }
 
     public static function parseLensFlareSystem(parsedLensFlareSystem:Dynamic, scene:Scene, rootUrl:String):LensFlareSystem {
         var emitter = scene.getLastEntryByID(parsedLensFlareSystem.emitterId);
@@ -641,10 +694,24 @@ typedef ISceneLoaderPlugin = {
             shadowGenerator.getShadowMap().renderList.push(mesh);
         }
 		
-        if (parsedShadowGenerator.usePoissonSampling) {
+        if (parsedShadowGenerator.usePoissonSampling != null) {
             shadowGenerator.usePoissonSampling = true;
-        } else {
-            shadowGenerator.useVarianceShadowMap = parsedShadowGenerator.useVarianceShadowMap;
+        } else if (parsedShadowGenerator.useVarianceShadowMap != null) {
+            shadowGenerator.useVarianceShadowMap = true;
+        } else if (parsedShadowGenerator.useBlurVarianceShadowMap != null) {
+            shadowGenerator.useBlurVarianceShadowMap = true;
+			
+            if (parsedShadowGenerator.blurScale != null) {
+                shadowGenerator.blurScale = parsedShadowGenerator.blurScale;
+            }
+			
+            if (parsedShadowGenerator.blurBoxOffset != null) {
+                shadowGenerator.blurBoxOffset = parsedShadowGenerator.blurBoxOffset;
+            }
+        }
+		
+        if (parsedShadowGenerator.bias != null) {
+            shadowGenerator.bias = parsedShadowGenerator.bias;
         }
 		
         return shadowGenerator;
@@ -691,7 +758,7 @@ typedef ISceneLoaderPlugin = {
 
     public static function parseLight(parsedLight:Dynamic, scene:Scene):Light {
         var light:Light = null;
-		
+				
         switch (parsedLight.type) {
             case 0:
                 light = new PointLight(parsedLight.name, Vector3.FromArray(parsedLight.position), scene);
@@ -707,11 +774,13 @@ typedef ISceneLoaderPlugin = {
                 light = new HemisphericLight(parsedLight.name, Vector3.FromArray(parsedLight.direction), scene);
                 cast(light, HemisphericLight).groundColor = Color3.FromArray(parsedLight.groundColor);
 				
-        }
+        }				
 		
         light.id = parsedLight.id;
 		
-        Tags.AddTagsTo(light, parsedLight.tags);
+		if(parsedLight.tags != null) {
+			Tags.AddTagsTo(light, parsedLight.tags);
+		}
 		
         if (parsedLight.intensity != null) {
             light.intensity = parsedLight.intensity;
@@ -724,7 +793,7 @@ typedef ISceneLoaderPlugin = {
         light.diffuse = Color3.FromArray(parsedLight.diffuse);
         light.specular = Color3.FromArray(parsedLight.specular);
 		
-        if (parsedLight.excludedMeshesIds != null) {
+        if (parsedLight.excludedMeshesIds != null && parsedLight.excludedMeshesIds.length > 0) {
             light._excludedMeshesIds = parsedLight.excludedMeshesIds;
         }
 		
@@ -733,7 +802,7 @@ typedef ISceneLoaderPlugin = {
             light._waitingParentId = parsedLight.parentId;
         }
 		
-        if (parsedLight.includedOnlyMeshesIds != null) {
+        if (parsedLight.includedOnlyMeshesIds != null && parsedLight.includedOnlyMeshesIds.length > 0) {
             light._includedOnlyMeshesIds = parsedLight.includedOnlyMeshesIds;
         }
 		
@@ -822,7 +891,12 @@ typedef ISceneLoaderPlugin = {
 		
         // Target
         if (parsedCamera.target != null) {
-            cast(camera, FreeCamera).setTarget(Vector3.FromArray(parsedCamera.target));
+			if(Std.is(camera, FreeCamera)) {
+				cast(camera, FreeCamera).setTarget(Vector3.FromArray(parsedCamera.target));
+			} else {
+				// For ArcRotateCamera
+				cast(camera, ArcRotateCamera).target = Vector3.FromArray(parsedCamera.target);
+			}
         } else {
             cast(camera, FreeCamera).rotation = Vector3.FromArray(parsedCamera.rotation);
         }
@@ -1060,6 +1134,11 @@ typedef ISceneLoaderPlugin = {
             mesh._waitingParentId = parsedMesh.parentId;
         }
 		
+		// Actions
+        if (parsedMesh.actions != null) {
+            mesh._waitingActions = parsedMesh.actions;
+        }
+		
         // Geometry
         mesh.hasVertexAlpha = parsedMesh.hasVertexAlpha;
 		
@@ -1121,7 +1200,12 @@ typedef ISceneLoaderPlugin = {
                 scene.enablePhysics();
             }
 			
-            mesh.setPhysicsState({ impostor:parsedMesh.physicsImpostor, mass:parsedMesh.physicsMass, friction:parsedMesh.physicsFriction, restitution:parsedMesh.physicsRestitution });
+			var physicsOptions:PhysicsBodyCreationOptions = new PhysicsBodyCreationOptions();
+			physicsOptions.mass = parsedMesh.physicsMass;
+			physicsOptions.friction = parsedMesh.physicsFriction;
+			physicsOptions.restitution = parsedMesh.physicsRestitution;
+				
+            mesh.setPhysicsState(parsedMesh.physicsImpostor, physicsOptions);
         }
 		
         // Animations
@@ -1173,6 +1257,194 @@ typedef ISceneLoaderPlugin = {
         }
 		
         return mesh;
+    }
+	
+	private static function parseActions(parsedActions:Dynamic, object:AbstractMesh, scene:Scene) {
+        var actionManager = new ActionManager(scene);
+        if (object == null) {
+            scene.actionManager = actionManager;
+		}
+        else {
+            object.actionManager = actionManager;
+		}
+		
+        // instanciate a new object
+        var instanciate = function(name:String, params:Array<Dynamic>):Dynamic {
+			var newInstance:Dynamic = null;
+			switch(name) {
+				case "InterpolateValueAction":
+					//newInstance = new InterpolateValueAction(params[0], params[1], params[2], params[3], params[4], params[5], params[6]);
+					newInstance = Type.createInstance(InterpolateValueAction, params);
+					//trace(Type.createInstance(InterpolateValueAction, params));
+					
+				case "PlayAnimationAction":
+					//newInstance = new PlayAnimationAction(params[0], params[1], params[2], params[3], params[4], params[5]);
+					newInstance = Type.createInstance(PlayAnimationAction, params);
+					
+				case "PlaySoundAction":
+					//newInstance = new PlaySoundAction(params[0], params[1], params[2]);
+					//newInstance = Type.createInstance(PlaySoundAction, params);
+					
+			}
+			
+            return newInstance;
+        };
+		
+        var parseParameter = function(name:String, value:String, target:Dynamic, propertyPath:String):Dynamic {
+            if (propertyPath == null) {
+                // String, boolean or float
+                var floatValue = Std.parseFloat(value);
+				
+                if (value == "true" || value == "false") {
+                    return value == "true";
+				}
+                else {
+                    return Math.isNaN(floatValue) ? value : floatValue;
+				}
+            }
+			
+            var effectiveTarget = propertyPath.split(".");
+            var values = value.split(",");
+			
+            // Get effective Target
+            for (i in 0...effectiveTarget.length) {
+                target = Reflect.field(target, effectiveTarget[i]);
+            }
+			
+            // Return appropriate value with its type
+            if (Std.is(target, Bool)) {
+                return values[0] == "true";
+			}
+			
+            if (Std.is(target, String)) {
+                return values[0];
+			}
+			
+            // Parameters with multiple values such as Vector3 etc.
+            var split:Array<Float> = [];
+            for (i in 0...values.length) {
+                split.push(Std.parseFloat(values[i]));
+			}
+			
+            if (Std.is(target, Vector3)) {
+                return Vector3.FromArray(split);
+			}
+			
+            if (Std.is(target, Vector4)) {
+                return Vector4.FromArray(split);
+			}
+			
+            if (Std.is(target, Color3)) {
+                return Color3.FromArray(split);
+			}
+			
+            if (Std.is(target, Color4)) {
+                return Color4.FromArray(split);
+			}
+			
+            return Std.parseFloat(values[0]);
+        };
+
+        // traverse graph per trigger
+        function traverse(parsedAction:Dynamic, trigger:Dynamic, condition:Condition, action:Action) {
+			if (parsedAction.detached != null && parsedAction.detached == true) {
+				return;
+			}
+            var parameters:Array<Dynamic> = [];
+            var target:Dynamic = null;
+            var propertyPath:String = "";
+			
+            // Parameters
+            if (parsedAction.type == 2) {
+                parameters.push(actionManager);
+			}
+            else {
+                parameters.push(trigger);
+			}
+			
+            for (i in 0...parsedAction.properties.length) {
+                var value:String = parsedAction.properties[i].value;
+                var name:String = parsedAction.properties[i].name;
+				var val:Dynamic = null;
+				
+                if (name == "target") {
+                    val = target = scene.getNodeByName(value);
+				}
+                else if (name == "parent") {
+                    val = scene.getNodeByName(value);
+				}
+                else if (name == "sound") {
+					// TODO
+					continue;
+                    //val = scene.getSoundByName(value);
+				}
+                else if (name != "propertyPath") {
+                    if (parsedAction.type == 2 && name == "operator") {
+                        val = Reflect.field(ValueCondition, cast value);
+					}
+                    else {
+                        val = parseParameter(name, cast value, target, name == "value" ? propertyPath : null);
+					}
+                } 
+				else {
+                    propertyPath = cast value;
+                }
+				
+                parameters.push(val);
+            }
+            parameters.push(condition);
+			
+            // If interpolate value action
+            if (parsedAction.name == "InterpolateValueAction") {
+                var param = parameters[parameters.length - 2];
+                parameters[parameters.length - 1] = param;
+                parameters[parameters.length - 2] = condition;
+            }
+			
+            // Action or condition(s)
+            var newAction:Dynamic = instanciate(parsedAction.name, parameters);
+			if(newAction != null) {
+				if (Std.is(newAction, Condition)) {
+					condition = newAction;
+					newAction = action;
+				} 
+				else {
+					condition = null;
+					if (action != null) {
+						action.then(newAction);
+					}
+					else {
+						actionManager.registerAction(newAction);
+					}
+				}
+			}
+			
+            for (i in 0...parsedAction.children.length) {
+                traverse(parsedAction.children[i], trigger, condition, newAction);
+			}
+        };
+		
+        // triggers
+        for (i in 0...parsedActions.children.length) {
+            var triggerParams:Dynamic;
+            var trigger = parsedActions.children[i];
+			
+            if (trigger.properties.length > 0) {
+                //triggerParams = { trigger: Reflect.field(ActionManager, trigger.name), parameter: scene.getMeshByName(cast(trigger.properties, Array<Dynamic>)[0].value) };
+				var param:Dynamic = cast(trigger.properties, Array<Dynamic>)[0].value;
+				var value = cast(trigger.properties, Array<Dynamic>)[0].targetType == null ? param : scene.getMeshByName(cast param);
+				triggerParams = { trigger: Reflect.field(ActionManager, trigger.name), parameter: value };
+            }
+            else {
+                triggerParams = Reflect.field(ActionManager, trigger.name);
+			}
+			
+            for (j in 0...trigger.children.length) {
+				if(!trigger.detached) {
+					traverse(cast(trigger.children, Array<Dynamic>)[j], triggerParams, null, null);
+				}
+			}
+        }
     }
 
     public static function isDescendantOf(mesh:Dynamic, _names:Dynamic, hierarchyIds:Array<Int>):Bool {
@@ -1256,7 +1528,7 @@ typedef ISceneLoaderPlugin = {
             if (geometry != null) {
                 geometry.applyToMesh(mesh);
             }
-        } else if (Std.is(parsedGeometry, ArrayBuffer)) {
+        //} else if (Std.is(parsedGeometry, ArrayBuffer)) {
             /*var binaryInfo = mesh._binaryInfo;
 			 * 
             if (binaryInfo.positionsAttrDesc != null && binaryInfo.positionsAttrDesc.count > 0) {

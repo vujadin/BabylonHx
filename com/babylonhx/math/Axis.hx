@@ -4,14 +4,10 @@ package com.babylonhx.math;
  * ...
  * @author Krtolica Vujadin
  */
-/*
-enum Space = {
-	LOCAL: 0,
-	WORLD: 1
-}*/
+
 enum Space {
-    LOCAL;
-    WORLD;
+	LOCAL;
+	WORLD;
 }
 
 @:expose('BABYLON.Axis') class Axis {

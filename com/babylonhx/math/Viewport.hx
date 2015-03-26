@@ -4,15 +4,16 @@ package com.babylonhx.math;
  * ...
  * @author Krtolica Vujadin
  */
+
 @:expose('BABYLON.Viewport') class Viewport {
 	
-	public var x:Float;
-	public var y:Float;
-	public var width:Float;
-	public var height:Float;
+	public var x:Int;
+	public var y:Int;
+	public var width:Int;
+	public var height:Int;
 	
 	
-	public function new(x:Float, y:Float, width:Float, height:Float) {
+	public function new(x:Int, y:Int, width:Int, height:Int) {
 		this.x = x;
 		this.y = y;
 		this.width = width;

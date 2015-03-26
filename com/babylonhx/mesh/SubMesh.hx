@@ -58,6 +58,7 @@ import com.babylonhx.tools.Tools;
 		
 		if (createBoundingBox) {
 			this.refreshBoundingInfo();
+			mesh.computeWorldMatrix(true);
 		}
 	}
 

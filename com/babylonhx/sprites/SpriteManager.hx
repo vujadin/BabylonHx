@@ -5,15 +5,7 @@ import com.babylonhx.mesh.BabylonBuffer;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.tools.Tools;
 
-#if nme
-import nme.utils.Float32Array;
-#elseif openfl
-import openfl.utils.Float32Array;
-#elseif snow
-import snow.utils.Float32Array;
-#elseif kha
-
-#end
+import com.babylonhx.utils.typedarray.Float32Array;
 
 
 /**
@@ -36,8 +28,8 @@ import snow.utils.Float32Array;
 
 	private var _scene:Scene;
 
-	private var _vertexDeclaration:Array<Int> = [3, 4, 4, 4];
-	private var _vertexStrideSize:Int = 15 * 4; // 15 floats per sprite (x, y, z, angle, size, offsetX, offsetY, invertU, invertV, cellIndexX, cellIndexY, color)
+	private var _vertexDeclaration:Array<Int> = [4, 4, 4, 4];
+	private var _vertexStrideSize:Int = 16 * 4; // 16 floats per sprite (x, y, z, angle, size, offsetX, offsetY, invertU, invertV, cellIndexX, cellIndexY, color)
 	private var _vertexBuffer:BabylonBuffer;
 	private var _indexBuffer:BabylonBuffer;
 	private var _vertices:Float32Array;
@@ -45,22 +37,25 @@ import snow.utils.Float32Array;
 	private var _effectFog:Effect;
 	
 
-	public function new(name:String, imgUrl:String, capacity:Int, cellSize:Float, scene:Scene, ?epsilon:Float) {
+	public function new(name:String, imgUrl:String, capacity:Int, cellSize:Float, scene:Scene, ?epsilon:Float, ?samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE) {
 		this.name = name;
 		this.cellSize = cellSize;
 		
 		this._capacity = capacity;
-		this._spriteTexture = new Texture(imgUrl, scene, true, false);
+		this._spriteTexture = new Texture(imgUrl, scene, true, false, samplingMode);
 		this._spriteTexture.wrapU = Texture.CLAMP_ADDRESSMODE;
 		this._spriteTexture.wrapV = Texture.CLAMP_ADDRESSMODE;
 		this._epsilon = epsilon == null ? 0.01 : epsilon;
+		
+		// temp fix for correct 'pixelated' appearance
+        if(samplingMode == Texture.NEAREST_SAMPLINGMODE) {
+            this._spriteTexture.anisotropicFilteringLevel = 1;
+        }
 		
 		this._scene = scene;
 		this._scene.spriteManagers.push(this);
 		
 		// VBO
-		this._vertexDeclaration = [3, 4, 4, 4];
-		this._vertexStrideSize = 15 * 4;
 		this._vertexBuffer = scene.getEngine().createDynamicVertexBuffer(capacity * this._vertexStrideSize * 4);
 		
 		var indices:Array<Int> = [];
@@ -91,35 +86,40 @@ import snow.utils.Float32Array;
 	}
 
 	private function _appendSpriteVertex(index:Int, sprite:Sprite, offsetX:Float, offsetY:Float, rowSize:Int):Void {
-		var arrayOffset = index * 15;
+		var arrayOffset = index * 16;
 		
-		if (offsetX == 0)
+		if (offsetX == 0) {
 			offsetX = this._epsilon;
-		else if (offsetX == 1)
+		}
+		else if (offsetX == 1) {
 			offsetX = 1 - this._epsilon;
+		}
 			
-		if (offsetY == 0)
+		if (offsetY == 0) {
 			offsetY = this._epsilon;
-		else if (offsetY == 1)
+		}
+		else if (offsetY == 1) {
 			offsetY = 1 - this._epsilon;
+		}
 			
 		this._vertices[arrayOffset] = sprite.position.x;
 		this._vertices[arrayOffset + 1] = sprite.position.y;
 		this._vertices[arrayOffset + 2] = sprite.position.z;
 		this._vertices[arrayOffset + 3] = sprite.angle;
-		this._vertices[arrayOffset + 4] = sprite.size;
-		this._vertices[arrayOffset + 5] = offsetX;
-		this._vertices[arrayOffset + 6] = offsetY;
-		this._vertices[arrayOffset + 7] = sprite.invertU ? 1 : 0;
-		this._vertices[arrayOffset + 8] = sprite.invertV ? 1 : 0;
+		this._vertices[arrayOffset + 4] = sprite.width;
+		this._vertices[arrayOffset + 5] = sprite.height;
+		this._vertices[arrayOffset + 6] = offsetX;
+		this._vertices[arrayOffset + 7] = offsetY;
+		this._vertices[arrayOffset + 8] = sprite.invertU ? 1 : 0;
+		this._vertices[arrayOffset + 9] = sprite.invertV ? 1 : 0;
 		var offset = Std.int(sprite.cellIndex / rowSize);
-		this._vertices[arrayOffset + 9] = sprite.cellIndex - offset * rowSize;
-		this._vertices[arrayOffset + 10] = offset;
+		this._vertices[arrayOffset + 10] = sprite.cellIndex - offset * rowSize;
+		this._vertices[arrayOffset + 11] = offset;
 		// Color
-		this._vertices[arrayOffset + 11] = sprite.color.r;
-		this._vertices[arrayOffset + 12] = sprite.color.g;
-		this._vertices[arrayOffset + 13] = sprite.color.b;
-		this._vertices[arrayOffset + 14] = sprite.color.a;
+		this._vertices[arrayOffset + 12] = sprite.color.r;
+		this._vertices[arrayOffset + 13] = sprite.color.g;
+		this._vertices[arrayOffset + 14] = sprite.color.b;
+		this._vertices[arrayOffset + 15] = sprite.color.a;
 	}
 
 	public function render():Void {

@@ -1,5 +1,6 @@
 package com.babylonhx.materials;
 
+import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.materials.textures.RenderTargetTexture;
 import com.babylonhx.mesh.AbstractMesh;
@@ -13,7 +14,7 @@ import com.babylonhx.mesh.Mesh;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Material') class Material {
+@:expose('BABYLON.Material') class Material implements ISmartArrayCompatible {
 	
 	public static var TriangleFillMode:Int = 0;
 	public static var WireFrameFillMode:Int = 1;
@@ -41,6 +42,7 @@ import com.babylonhx.mesh.Mesh;
 	private var _fillMode:Int = Material.TriangleFillMode;
 
 	public var pointSize:Float = 1.0;
+	public var zOffset:Float = 0.0;
 
 	public var wireframe(get, set):Bool;
 	private function get_wireframe():Bool {
@@ -69,8 +71,9 @@ import com.babylonhx.mesh.Mesh;
 		return value;
 	}
 
-	public function new(name:String, scene:Scene, doNotAdd:Bool = false/*?doNotAdd:Bool*/) {
+	public function new(name:String, scene:Scene, doNotAdd:Bool = false) {
 		this.id = name;
+		this.name = name;
 		
 		this._scene = scene;
 		
@@ -79,7 +82,7 @@ import com.babylonhx.mesh.Mesh;
 		}
 	}
 
-	public function isReady(?mesh:AbstractMesh, useInstances:Bool = false/*?useInstances:Bool*/):Bool {
+	public function isReady(?mesh:AbstractMesh, useInstances:Bool = false):Bool {
 		return true;
 	}
 
@@ -111,7 +114,7 @@ import com.babylonhx.mesh.Mesh;
 		var engine = this._scene.getEngine();
 		
 		engine.enableEffect(this._effect);
-		engine.setState(this.backFaceCulling);
+		engine.setState(this.backFaceCulling, cast this.zOffset);
 	}
 
 	public function bind(world:Matrix, ?mesh:Mesh) {
@@ -128,7 +131,7 @@ import com.babylonhx.mesh.Mesh;
 	public function unbind():Void {
 	}
 
-	public function dispose(forceDisposeEffect:Bool = false/*?forceDisposeEffect:Bool*/) {
+	public function dispose(forceDisposeEffect:Bool = false) {
 		// Remove from scene
 		this._scene.materials.remove(this);
 		

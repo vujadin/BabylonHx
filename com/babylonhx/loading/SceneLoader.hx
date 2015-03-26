@@ -40,18 +40,23 @@ import com.babylonhx.loading.plugins.BabylonFileLoader;
 
 	private static function _getPluginForFilename(sceneFilename:String):ISceneLoaderPlugin {
 		var dotPosition = sceneFilename.lastIndexOf(".");
-
+		
 		var queryStringPosition = sceneFilename.indexOf("?");
+		
+		if (queryStringPosition == -1) {
+            queryStringPosition = sceneFilename.length;
+        }
+		
 		var extension = sceneFilename.substring(dotPosition, queryStringPosition).toLowerCase();
-
+		
 		for (index in 0...SceneLoader._registeredPlugins.length) {
 			var plugin = SceneLoader._registeredPlugins[index];
-
+			
 			if (plugin.extensions.indexOf(extension) != -1) {
 				return plugin;
 			}
 		}
-
+		
 		return SceneLoader._registeredPlugins[SceneLoader._registeredPlugins.length - 1];
 	}
 
@@ -63,8 +68,7 @@ import com.babylonhx.loading.plugins.BabylonFileLoader;
 
 	public static function ImportMesh(meshesNames:String, rootUrl:String, sceneFilename:String, scene:Scene, ?onsuccess:Array<AbstractMesh>->Array<ParticleSystem>->Array<Skeleton>->Void, ?progressCallBack:Void->Void, ?onerror:Scene->Dynamic->Void) {
 		var manifestChecked = function() {
-			//scene.database = database;
-
+			
 			var plugin = SceneLoader._getPluginForFilename(sceneFilename);
 			
 			if (plugin == null) {
@@ -74,7 +78,7 @@ import com.babylonhx.loading.plugins.BabylonFileLoader;
 				trace("Error: " + "No plugin loaded for '" + extension + "' file type !");
 				throw("No plugin loaded for '" + extension + "' file type !");
 			}
-
+			
 			var importMeshFromData = function(data:Dynamic) {
 				var meshes:Array<AbstractMesh> = [];
 				var particleSystems:Array<ParticleSystem> = [];
@@ -85,7 +89,7 @@ import com.babylonhx.loading.plugins.BabylonFileLoader;
 						if (onerror != null) {
 							onerror(scene, 'unable to load the scene');
 						}
-
+						
 						return;
 					}
 				} catch (e:Dynamic) {
@@ -93,32 +97,28 @@ import com.babylonhx.loading.plugins.BabylonFileLoader;
 					if (onerror != null) {
 						onerror(scene, e);
 					}
-
+					
 					return;
 				}
-
-
+				
 				if (onsuccess != null) {
 					scene.importedMeshesFiles.push(rootUrl + sceneFilename);
 					onsuccess(meshes, particleSystems, skeletons);
 				}
 			};
-
+			
 			if (sceneFilename.substr(0, 5) == "data:") {
 				// Direct load
 				importMeshFromData(sceneFilename.substr(5));
 				return;
 			}
-
+			
 			Tools.LoadFile(rootUrl + sceneFilename, function(data:Dynamic) {
 				importMeshFromData(data);
-			}, progressCallBack, null);
+			});
 		};
 		
 		manifestChecked();
-
-		// Checking if a manifest file has been set for this scene and if offline mode has been requested
-		//var database = new BABYLON.Database(rootUrl + sceneFilename, manifestChecked);
 	}
 
 	/**
@@ -127,7 +127,7 @@ import com.babylonhx.loading.plugins.BabylonFileLoader;
 	* @param sceneFilename a string that defines the name of the scene file. can start with "data:" following by the stringified version of the scene
 	* @param engine is the instance of BABYLON.Engine to use to create the scene
 	*/
-	public static function Load(rootUrl:String, sceneFilename:Dynamic, engine:Engine, ?onsuccess:Scene->Void, ?progressCallBack:Dynamic, ?onerror:Scene->Void) {
+	public static function Load(rootUrl:String, sceneFilename:Dynamic, engine:Engine, ?onsuccess:Scene-> Void, ?progressCallBack:Dynamic, ?onerror:Scene-> Void) {
 		SceneLoader.Append(rootUrl, sceneFilename, new Scene(engine), onsuccess, progressCallBack, onerror);
 	}
 
@@ -139,53 +139,28 @@ import com.babylonhx.loading.plugins.BabylonFileLoader;
 	*/
 	public static function Append(rootUrl:String, sceneFilename:Dynamic, scene:Scene, ?onsuccess:Scene->Void, ?progressCallBack:Dynamic, ?onerror:Scene->Void) {
 		var plugin = SceneLoader._getPluginForFilename(sceneFilename.name != null ? sceneFilename.name : sceneFilename);
-		//var database;
-
-		/*if (SceneLoader.ShowLoadingScreen) {
-			scene.getEngine().displayLoadingUI();
-		}*/
-
+		
 		var loadSceneFromData = function(data:Dynamic) {
-			//scene.database = database;
-
 			if (!plugin.load(scene, data, rootUrl)) {
 				if (onerror != null) {
 					onerror(scene);
 				}
-
-				//scene.getEngine().hideLoadingUI();
+				
 				return;
 			}
-
+			
 			if (onsuccess != null) {
 				onsuccess(scene);
-			}
-
-			/*if (SceneLoader.ShowLoadingScreen) {
-				scene.executeWhenReady(function() {
-					scene.getEngine().hideLoadingUI();
-				});
-			} */               
+			}              
 		};
-
-		//var manifestChecked = function(success:Dynamic) {
-			Tools.LoadFile(rootUrl + sceneFilename, loadSceneFromData, progressCallBack, null);
-		//};
+		
+		Tools.LoadFile(rootUrl + sceneFilename, loadSceneFromData);
 		
 		if (sceneFilename.substr(0, 5) == "data:") {
 			// Direct load
 			loadSceneFromData(sceneFilename.substr(5));
 			return;
 		}
-
-		/*if (rootUrl.indexOf("file:") == -1) {
-			// Checking if a manifest file has been set for this scene and if offline mode has been requested
-			database = new BABYLON.Database(rootUrl + sceneFilename, manifestChecked);
-		}*/
-		// Loading file from disk via input file or drag'n'drop
-		/*else {
-			Tools.ReadFile(sceneFilename, loadSceneFromData, progressCallBack);
-		}*/
 	}
 	
 }

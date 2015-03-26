@@ -28,14 +28,19 @@ import com.babylonhx.culling.BoundingBox;
 	
 
 	public function new(scene:Scene) {
-		this._scene = scene;
-		this._colorShader = new ShaderMaterial("colorShader", scene, "color",
-			{
-				attributes:["position"],
-				uniforms:["worldViewProjection", "color"]
-			});
-
-
+		this._scene = scene;		
+	}
+	
+	private function _prepareRessources() {
+		if (this._colorShader != null) {
+			return;
+		}
+		
+		this._colorShader = new ShaderMaterial("colorShader", this._scene, "color", {
+			attributes:["position"],
+			uniforms:["worldViewProjection", "color"]
+		});
+			
 		var engine = this._scene.getEngine();
 		var boxdata = VertexData.CreateBox(1.0);
 		this._vb = new VertexBuffer(engine, boxdata.positions, VertexBuffer.PositionKind, false);
@@ -50,7 +55,13 @@ import com.babylonhx.culling.BoundingBox;
 		if (this.renderList.length == 0 || !this._colorShader.isReady()) {
 			return;
 		}
-
+		
+		this._prepareRessources();
+		
+		if (!this._colorShader.isReady()) {
+			return;
+		}
+		
 		var engine = this._scene.getEngine();
 		engine.setDepthWrite(false);
 		this._colorShader._preBind();
@@ -60,40 +71,44 @@ import com.babylonhx.culling.BoundingBox;
 			var max = boundingBox.maximum;
 			var diff = max.subtract(min);
 			var median = min.add(diff.scale(0.5));
-
+			
 			var worldMatrix = Matrix.Scaling(diff.x, diff.y, diff.z)
 				.multiply(Matrix.Translation(median.x, median.y, median.z))
 				.multiply(boundingBox.getWorldMatrix());
-
+				
 			// VBOs
 			engine.bindBuffers(this._vb.getBuffer(), this._ib, [3], 3 * 4, this._colorShader.getEffect());
-
+			
 			if (this.showBackLines) {
 				// Back
 				engine.setDepthFunctionToGreaterOrEqual();
 				this._scene.resetCachedMaterial();
 				this._colorShader.setColor4("color", this.backColor.toColor4());
 				this._colorShader.bind(worldMatrix);
-
+				
 				// Draw order
 				engine.draw(false, 0, 24);
 			}
-
+			
 			// Front
 			engine.setDepthFunctionToLess();
 			this._scene.resetCachedMaterial();
 			this._colorShader.setColor4("color", this.frontColor.toColor4());
 			this._colorShader.bind(worldMatrix);
-
+			
 			// Draw order
 			engine.draw(false, 0, 24);
 		}
+		
 		this._colorShader.unbind();
 		engine.setDepthFunctionToLessOrEqual();
 		engine.setDepthWrite(true);
 	}
 
 	public function dispose() {
+		if (this._colorShader == null) {
+			return;
+		}
 		this._colorShader.dispose();
 		this._vb.dispose();
 		this._scene.getEngine()._releaseBuffer(this._ib);

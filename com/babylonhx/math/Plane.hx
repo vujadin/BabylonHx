@@ -4,6 +4,7 @@ package com.babylonhx.math;
 * ...
 * @author Krtolica Vujadin
 */
+
 @:expose('BABYLON.Plane') class Plane {
 	
 	public var normal:Vector3;
@@ -27,15 +28,15 @@ package com.babylonhx.math;
 	inline public function normalize():Void {
 		var norm = (Math.sqrt((this.normal.x * this.normal.x) + (this.normal.y * this.normal.y) + (this.normal.z * this.normal.z)));
 		var magnitude = 0.0;
-
+		
 		if (norm != 0) {
 			magnitude = 1.0 / norm;
 		}
-
+		
 		this.normal.x *= magnitude;
 		this.normal.y *= magnitude;
 		this.normal.z *= magnitude;
-
+		
 		this.d *= magnitude;
 	}
 
@@ -45,12 +46,12 @@ package com.babylonhx.math;
 		var y = this.normal.y;
 		var z = this.normal.z;
 		var d = this.d;
-
+		
 		var normalX = (((x * transposedMatrix.m[0]) + (y * transposedMatrix.m[1])) + (z * transposedMatrix.m[2])) + (d * transposedMatrix.m[3]);
 		var normalY = (((x * transposedMatrix.m[4]) + (y * transposedMatrix.m[5])) + (z * transposedMatrix.m[6])) + (d * transposedMatrix.m[7]);
 		var normalZ = (((x * transposedMatrix.m[8]) + (y * transposedMatrix.m[9])) + (z * transposedMatrix.m[10])) + (d * transposedMatrix.m[11]);
 		var finalD = (((x * transposedMatrix.m[12]) + (y * transposedMatrix.m[13])) + (z * transposedMatrix.m[14])) + (d * transposedMatrix.m[15]);
-
+		
 		return new Plane(normalX, normalY, normalZ, finalD);
 	}
 
@@ -71,14 +72,14 @@ package com.babylonhx.math;
 		var xy = (x1 * y2) - (y1 * x2);
 		var pyth = (Math.sqrt((yz * yz) + (xz * xz) + (xy * xy)));
 		var invPyth;
-
+		
 		if (pyth != 0) {
 			invPyth = 1.0 / pyth;
 		}
 		else {
 			invPyth = 0;
 		}
-
+		
 		this.normal.x = yz * invPyth;
 		this.normal.y = xz * invPyth;
 		this.normal.z = xy * invPyth;
@@ -87,7 +88,7 @@ package com.babylonhx.math;
 
 	inline public function isFrontFacingTo(direction:Vector3, epsilon:Float):Bool {
 		var dot = Vector3.Dot(this.normal, direction);
-
+		
 		return (dot <= epsilon);
 	}
 
@@ -121,4 +122,5 @@ package com.babylonhx.math;
 		
 		return Vector3.Dot(point, normal) + d;
 	}
+	
 }

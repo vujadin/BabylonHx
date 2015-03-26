@@ -7,23 +7,8 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.Mesh;
 
-#if nme
-import nme.events.Event;
-import nme.events.KeyboardEvent;
-import nme.events.MouseEvent;
-import nme.Lib;
-#elseif openfl
-import openfl.events.Event;
-import openfl.events.KeyboardEvent;
-import openfl.events.MouseEvent;
-import openfl.Lib;
-#elseif snow
+import com.babylonhx.utils.Keycodes;
 
-#elseif kha
-
-#elseif foo3d
-
-#end
 
 /**
  * ...
@@ -42,11 +27,11 @@ import openfl.Lib;
 	public var lowerRadiusLimit:Null<Float> = null;
 	public var upperRadiusLimit:Null<Float> = null;
 	public var angularSensibility:Float = 1000.0;
-	public var wheelPrecision:Float = 3.0;
-	public var keysUp:Array<Int> = [38];
-	public var keysDown:Array<Int> = [40];
-	public var keysLeft:Array<Int> = [37];
-	public var keysRight:Array<Int> = [39];
+	public var wheelPrecision:Float = 5.0;
+	public var keysUp:Array<Int> = [Keycodes.up];
+	public var keysDown:Array<Int> = [Keycodes.down];
+	public var keysLeft:Array<Int> = [Keycodes.left];
+	public var keysRight:Array<Int> = [Keycodes.right];
 	public var zoomOnFactor:Float = 1;
 	public var targetScreenOffset:Vector2 = Vector2.Zero();
 	
@@ -55,12 +40,12 @@ import openfl.Lib;
 	private var _viewMatrix = new Matrix();
 	private var _attachedElement:Dynamic;
 
-	private var _onMouseDown:Dynamic->Void;
-	private var _onMouseUp:Dynamic->Void;
-	private var _onMouseMove:Dynamic->Void;
-	private var _wheel:Dynamic->Void;
-	private var _onKeyDown:Dynamic->Void;
-	private var _onKeyUp:Dynamic->Void;
+	private var _onMouseDown:Dynamic;
+	private var _onMouseUp:Dynamic;
+	private var _onMouseMove:Dynamic;
+	private var _wheel:Dynamic;
+	private var _onKeyDown:Dynamic;
+	private var _onKeyUp:Dynamic;
 	private var _onLostFocus:Void->Void;
 	private var _reset:Void->Void;
 
@@ -101,7 +86,7 @@ import openfl.Lib;
 		this.alpha = alpha;
 		this.beta = beta;
 		this.radius = radius;
-		this.target = target;
+		this.target = target != null ? target : Vector3.Zero();
 		
 		this.getViewMatrix();
 	}
@@ -145,7 +130,7 @@ import openfl.Lib;
 	}
 
 	// Methods
-	override public function attachControl(element:Dynamic, noPreventDefault:Bool = false/*?noPreventDefault:Bool*/) {
+	override public function attachControl(?element:Dynamic, ?noPreventDefault:Bool) {
 		var previousPosition:Dynamic = null;
 		var pointerId:Int = -1;
 		
@@ -157,27 +142,18 @@ import openfl.Lib;
 		var engine = this.getEngine();
 		
 		if (this._onMouseDown == null) {
-			this._onMouseDown = function(evt:Dynamic) {				
-				
+			this._onMouseDown = function(x:Float, y:Float, button:Int) {					
 				previousPosition = {
-					x: evt.localX,
-					y: evt.localY
+					x: x,
+					y: y
 				};
-				
-				/*if (!noPreventDefault) {
-					evt.preventDefault();
-				}*/
 			};
 			
-			this._onMouseUp = function(evt:Dynamic) {
+			this._onMouseUp = function(x:Float, y:Float, button:Int) {
 				previousPosition = null;
-				/*pointerId = null;
-				if (!noPreventDefault) {
-					evt.preventDefault();
-				}*/
 			};
 			
-			this._onMouseMove = function(evt:Dynamic) {
+			this._onMouseMove = function(x:Int, y:Int) {
 				if (previousPosition == null && !engine.isPointerLock) {
                     return;
                 }
@@ -186,70 +162,48 @@ import openfl.Lib;
                 var offsetY:Float = 0;
 				
                 if (!engine.isPointerLock) {
-                    offsetX = evt.localX - previousPosition.x;
-                    offsetY = evt.localY - previousPosition.y;
+                    offsetX = x - previousPosition.x;
+                    offsetY = y - previousPosition.y;
                 }
 				
                 this.inertialAlphaOffset -= offsetX / this.angularSensibility;
                 this.inertialBetaOffset -= offsetY / this.angularSensibility;
 				
 				previousPosition = {
-					x: evt.localX, 
-					y: evt.localY
+					x: x, 
+					y: y
                 };
-				
-				/*if (!noPreventDefault) {
-					evt.preventDefault();
-				}*/
 			};
 			
-			this._wheel = function(event:Dynamic) {
-				var delta = event.delta / 3;
+			this._wheel = function(delta:Float) {
+				var _delta = delta / wheelPrecision;
 				
-                this.inertialRadiusOffset += delta;
-				
-				/*if (event.preventDefault) {
-					if (!noPreventDefault) {
-						event.preventDefault();
-					}
-				}*/
+                this.inertialRadiusOffset += _delta;
 			};
 			
-			this._onKeyDown = function(evt:Dynamic) {
-				if (this.keysUp.indexOf(evt.keyCode) != -1 ||
-					this.keysDown.indexOf(evt.keyCode) != -1 ||
-					this.keysLeft.indexOf(evt.keyCode) != -1 ||
-					this.keysRight.indexOf(evt.keyCode) != -1) {
-					var index = this._keys.indexOf(evt.keyCode);
+			this._onKeyDown = function(keycode:Int) {
+				if (this.keysUp.indexOf(keycode) != -1 ||
+					this.keysDown.indexOf(keycode) != -1 ||
+					this.keysLeft.indexOf(keycode) != -1 ||
+					this.keysRight.indexOf(keycode) != -1) {
+					var index = this._keys.indexOf(keycode);
 					
 					if (index == -1) {
-						this._keys.push(evt.keyCode);
+						this._keys.push(keycode);
 					}
-					
-					/*if (evt.preventDefault) {
-						if (!noPreventDefault) {
-							evt.preventDefault();
-						}
-					}*/
 				}
 			};
 			
-			this._onKeyUp = function(evt:Dynamic) {
-				if (this.keysUp.indexOf(evt.keyCode) != -1 ||
-					this.keysDown.indexOf(evt.keyCode) != -1 ||
-					this.keysLeft.indexOf(evt.keyCode) != -1 ||
-					this.keysRight.indexOf(evt.keyCode) != -1) {
-					var index = this._keys.indexOf(evt.keyCode);
+			this._onKeyUp = function(keycode:Int) {
+				if (this.keysUp.indexOf(keycode) != -1 ||
+					this.keysDown.indexOf(keycode) != -1 ||
+					this.keysLeft.indexOf(keycode) != -1 ||
+					this.keysRight.indexOf(keycode) != -1) {
+					var index = this._keys.indexOf(keycode);
 					
 					if (index >= 0) {
 						this._keys.splice(index, 1);
 					}
-					
-					/*if (evt.preventDefault) {
-						if (!noPreventDefault) {
-							evt.preventDefault();
-						}
-					}*/
 				}
 			};
 			
@@ -269,26 +223,26 @@ import openfl.Lib;
 			
 		}
 		
-		Lib.current.stage.addEventListener(MouseEvent.MOUSE_DOWN, this._onMouseDown, false);
-		Lib.current.stage.addEventListener(MouseEvent.MOUSE_UP, this._onMouseUp, false);
-		Lib.current.stage.addEventListener(MouseEvent.MOUSE_WHEEL, this._wheel, false);
-		Lib.current.stage.addEventListener(KeyboardEvent.KEY_DOWN, this._onKeyDown, false);
-        Lib.current.stage.addEventListener(KeyboardEvent.KEY_UP, this._onKeyUp, false);
-		Lib.current.stage.addEventListener(MouseEvent.MOUSE_MOVE, this._onMouseMove, false);
-		
+		Engine.keyDown.push(_onKeyDown);
+		Engine.keyUp.push(_onKeyUp);
+		Engine.mouseDown.push(_onMouseDown);
+		Engine.mouseUp.push(_onMouseUp);
+		Engine.mouseMove.push(_onMouseMove);
+		Engine.mouseWheel.push(_wheel);	
 	}
 
-	override public function detachControl(element:Dynamic) {
+	override public function detachControl(?element:Dynamic) {
 		if (this._attachedElement != element) {
 			return;
 		}
 		
-		Lib.current.stage.removeEventListener(MouseEvent.MOUSE_DOWN, this._onMouseDown);
-        Lib.current.stage.removeEventListener(MouseEvent.MOUSE_UP, this._onMouseUp);
-        Lib.current.stage.removeEventListener(MouseEvent.MOUSE_MOVE, this._onMouseMove);
-        Lib.current.stage.removeEventListener(KeyboardEvent.KEY_DOWN, this._onKeyDown);
-        Lib.current.stage.removeEventListener(KeyboardEvent.KEY_UP, this._onKeyUp);
-		
+		Engine.keyDown.remove(_onKeyDown);
+		Engine.keyUp.remove(_onKeyUp);
+		Engine.mouseDown.remove(_onMouseDown);
+		Engine.mouseUp.remove(_onMouseUp);
+		Engine.mouseMove.remove(_onMouseMove);
+		Engine.mouseWheel.remove(_wheel);
+				
 		this._attachedElement = null;
 		
 		if (this._reset != null) {

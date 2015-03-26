@@ -1,14 +1,8 @@
 package com.babylonhx.mesh;
+import com.babylonhx.utils.GL;
 
-#if nme
-import nme.gl.GLBuffer;
-#elseif openfl
-import openfl.gl.GLBuffer;
-#elseif snow
-import snow.renderer.opengl.GLBuffer;
-#elseif kha
+import com.babylonhx.utils.GL.GLBuffer;
 
-#end
 
 /**
  * ...

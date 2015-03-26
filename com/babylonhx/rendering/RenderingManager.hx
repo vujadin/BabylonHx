@@ -49,7 +49,7 @@ import com.babylonhx.tools.Tools;
 	}
 
 	private function _renderSprites(index:Int) {
-		if (this._scene.spriteManagers.length == 0) {
+		if (!this._scene.spritesEnabled || this._scene.spriteManagers.length == 0) {
 			return;
 		}
 		
@@ -66,7 +66,7 @@ import com.babylonhx.tools.Tools;
 		this._scene._spritesDuration += Tools.Now() - beforeSpritessDate;
 	}
 
-	private function _clearDepthBuffer():Void {
+	private function _clearDepthBuffer() {
 		if (this._depthBufferAlreadyCleaned) {
 			return;
 		}
@@ -76,24 +76,38 @@ import com.babylonhx.tools.Tools;
 	}
 
 	public function render(customRenderFunction:SmartArray->SmartArray->SmartArray->Void, activeMeshes:Array<AbstractMesh>, renderParticles:Bool, renderSprites:Bool) {
-		for (index in 0...RenderingManager.MAX_RENDERINGGROUPS) {
+		var index:Int = 0;
+		while(index < RenderingManager.MAX_RENDERINGGROUPS) {
+		//for (index in 0...RenderingManager.MAX_RENDERINGGROUPS) {
 			this._depthBufferAlreadyCleaned = false;
 			var renderingGroup = this._renderingGroups[index];
+			var needToStepBack = false;
 			
 			if (renderingGroup != null) {
 				this._clearDepthBuffer();
 				if (!renderingGroup.render(customRenderFunction)) {
 					this._renderingGroups.splice(index, 1);
+					needToStepBack = true;
 				}
 			}
-			this._renderSprites(index);
+			
+			if(renderSprites) {
+				this._renderSprites(index);
+			}
+			
 			if (renderParticles) {
 				this._renderParticles(index, activeMeshes);
 			}
+			
+			if (needToStepBack) {
+				index--;
+			}
+			
+			++index;
 		}
 	}
 
-	public function reset():Void {
+	public function reset() {
 		for (rg in this._renderingGroups) {
 			rg.prepare();
 		}

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+	
+	<meta title="BabylonHx_Lime" package="com.babylonhx" version="1.0.0" company="Krtolica Vujadin" />
+	<app main="MainLime" file="BabylonHx_Lime" path="bin_lime" />
+	
+	<window require-shaders="true" hardware="true" depth-buffer="true" />
+	
+	<source path="src" />
+	
+	<haxelib name="lime" />
+	<haxelib name="poly2trihx" />
+	<haxelib name="msgpack-haxe" />
+	
+	<haxedef name="HXCPP_DEBUGGER" if="debug" />
+	<haxedef name="-verbose" />
+	<haxedef name="-v2" />
+	
+	<assets path="assets" exclude="*.svg" />
+	<icon path="assets/lime.svg" />
+	
+</project>

@@ -14,7 +14,7 @@ package com.babylonhx.actions;
 
 	public function new(actionManager:ActionManager, target:Dynamic, value:String) {
 		super(actionManager);
-
+		
 		this._target = target;
 		this.value = value;
 	}

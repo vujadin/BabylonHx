@@ -1,6 +1,6 @@
 package com.babylonhx.math;
 
-import openfl.utils.Float32Array;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 /**
 * ...
@@ -30,64 +30,75 @@ import openfl.utils.Float32Array;
 	// Operators
 	public function asArray():Array<Float> {
 		var result:Array<Float> = [];
-
 		this.toArray(result, 0);
-
+		
 		return result;
 	}
 
-	inline public function toArray(array:Array<Float>, index:Int = 0):Void {
+	inline public function toArray(array:Array<Float>, index:Int = 0):Vector4 {
 		array[index] = this.x;
 		array[index + 1] = this.y;
 		array[index + 2] = this.z;
 		array[index + 3] = this.w;
+		
+		return this;
 	}
 
-	inline public function addInPlace(otherVector:Vector4):Void {
+	inline public function addInPlace(otherVector:Vector4):Vector4 {
 		this.x += otherVector.x;
 		this.y += otherVector.y;
 		this.z += otherVector.z;
 		this.w += otherVector.w;
+		
+		return this;
 	}
 
 	inline public function add(otherVector:Vector4):Vector4 {
 		return new Vector4(this.x + otherVector.x, this.y + otherVector.y, this.z + otherVector.z, this.w + otherVector.w);
 	}
 
-	inline public function addToRef(otherVector:Vector4, result:Vector4):Void {
+	inline public function addToRef(otherVector:Vector4, result:Vector4):Vector4 {
 		result.x = this.x + otherVector.x;
 		result.y = this.y + otherVector.y;
 		result.z = this.z + otherVector.z;
 		result.w = this.w + otherVector.w;
+		
+		return this;
 	}
 
-	inline public function subtractInPlace(otherVector:Vector4):Void {
+	inline public function subtractInPlace(otherVector:Vector4):Vector4 {
 		this.x -= otherVector.x;
 		this.y -= otherVector.y;
 		this.z -= otherVector.z;
 		this.w -= otherVector.w;
+		
+		return this;
 	}
 
 	inline public function subtract(otherVector:Vector4):Vector4 {
 		return new Vector4(this.x - otherVector.x, this.y - otherVector.y, this.z - otherVector.z, this.w - otherVector.w);
 	}
 
-	inline public function subtractToRef(otherVector:Vector4, result:Vector4):Void {
+	inline public function subtractToRef(otherVector:Vector4, result:Vector4):Vector4 {
 		result.x = this.x - otherVector.x;
 		result.y = this.y - otherVector.y;
 		result.z = this.z - otherVector.z;
 		result.w = this.w - otherVector.w;
+		
+		return this;
 	}
 
 	inline public function subtractFromFloats(x:Float, y:Float, z:Float, w:Float):Vector4 {
 		return new Vector4(this.x - x, this.y - y, this.z - z, this.w - w);
 	}
 
-	inline public function subtractFromFloatsToRef(x:Float, y:Float, z:Float, w:Float, result:Vector4):Void {
+	inline public function subtractFromFloatsToRef(x:Float, y:Float, z:Float, w:Float, result:Vector4):Vector4 {
 		result.x = this.x - x;
 		result.y = this.y - y;
 		result.z = this.z - z;
 		result.w = this.w - w;
+		
+		return this;
 	}
 
 	inline public function negate():Vector4 {
@@ -99,6 +110,7 @@ import openfl.utils.Float32Array;
 		this.y *= scale;
 		this.z *= scale;
 		this.w *= scale;
+		
 		return this;
 	}
 
@@ -106,11 +118,13 @@ import openfl.utils.Float32Array;
 		return new Vector4(this.x * scale, this.y * scale, this.z * scale, this.w * scale);
 	}
 
-	inline public function scaleToRef(scale:Float, result:Vector4) {
+	inline public function scaleToRef(scale:Float, result:Vector4):Vector4 {
 		result.x = this.x * scale;
 		result.y = this.y * scale;
 		result.z = this.z * scale;
 		result.w = this.w * scale;
+		
+		return this;
 	}
 
 	inline public function equals(otherVector:Vector4):Bool {
@@ -128,22 +142,26 @@ import openfl.utils.Float32Array;
 		return this.x == x && this.y == y && this.z == z && this.w == w;
 	}
 
-	inline public function multiplyInPlace(otherVector:Vector4):Void {
+	inline public function multiplyInPlace(otherVector:Vector4):Vector4 {
 		this.x *= otherVector.x;
 		this.y *= otherVector.y;
 		this.z *= otherVector.z;
 		this.w *= otherVector.w;
+		
+		return this;
 	}
 
 	inline public function multiply(otherVector:Vector4):Vector4 {
 		return new Vector4(this.x * otherVector.x, this.y * otherVector.y, this.z * otherVector.z, this.w * otherVector.w);
 	}
 
-	inline public function multiplyToRef(otherVector:Vector4, result:Vector4):Void {
+	inline public function multiplyToRef(otherVector:Vector4, result:Vector4):Vector4 {
 		result.x = this.x * otherVector.x;
 		result.y = this.y * otherVector.y;
 		result.z = this.z * otherVector.z;
 		result.w = this.w * otherVector.w;
+		
+		return this;
 	}
 
 	inline public function multiplyByFloats(x:Float, y:Float, z:Float, w:Float):Vector4 {
@@ -154,25 +172,31 @@ import openfl.utils.Float32Array;
 		return new Vector4(this.x / otherVector.x, this.y / otherVector.y, this.z / otherVector.z, this.w / otherVector.w);
 	}
 
-	inline public function divideToRef(otherVector:Vector4, result:Vector4):Void {
+	inline public function divideToRef(otherVector:Vector4, result:Vector4):Vector4 {
 		result.x = this.x / otherVector.x;
 		result.y = this.y / otherVector.y;
 		result.z = this.z / otherVector.z;
 		result.w = this.w / otherVector.w;
+		
+		return this;
 	}
 
-	inline public function MinimizeInPlace(other:Vector4):Void {
+	inline public function MinimizeInPlace(other:Vector4):Vector4 {
 		if (other.x < this.x) this.x = other.x;
 		if (other.y < this.y) this.y = other.y;
 		if (other.z < this.z) this.z = other.z;
 		if (other.w < this.w) this.w = other.w;
+		
+		return this;
 	}
 
-	inline public function MaximizeInPlace(other:Vector4):Void {
+	inline public function MaximizeInPlace(other:Vector4):Vector4 {
 		if (other.x > this.x) this.x = other.x;
 		if (other.y > this.y) this.y = other.y;
 		if (other.z > this.z) this.z = other.z;
 		if (other.w > this.w) this.w = other.w;
+		
+		return this;
 	}
 
 	// Properties
@@ -187,17 +211,18 @@ import openfl.utils.Float32Array;
 	// Methods
 	public function normalize():Vector4 {
 		var len = this.length();
-
-		if (len == 0)
+		
+		if (len == 0) {
 			return this;
-
+		}
+		
 		var num = 1.0 / len;
-
+		
 		this.x *= num;
 		this.y *= num;
 		this.z *= num;
 		this.w *= num;
-
+		
 		return this;
 	}
 
@@ -205,18 +230,22 @@ import openfl.utils.Float32Array;
 		return new Vector4(this.x, this.y, this.z, this.w);
 	}
 
-	inline public function copyFrom(source:Vector4):Void {
+	inline public function copyFrom(source:Vector4):Vector4 {
 		this.x = source.x;
 		this.y = source.y;
 		this.z = source.z;
 		this.w = source.w;
+		
+		return this;
 	}
 
-	inline public function copyFromFloats(x:Float, y:Float, z:Float, w:Float):Void {
+	inline public function copyFromFloats(x:Float, y:Float, z:Float, w:Float):Vector4 {
 		this.x = x;
 		this.y = y;
 		this.z = z;
 		this.w = w;
+		
+		return this;
 	}
 
 	// Statics
@@ -224,21 +253,21 @@ import openfl.utils.Float32Array;
 		return new Vector4(array[offset], array[offset + 1], array[offset + 2], array[offset + 3]);
 	}
 
-	inline public static function FromArrayToRef(array:Array<Float>, offset:Int, result:Vector4):Void {
+	inline public static function FromArrayToRef(array:Array<Float>, offset:Int, result:Vector4) {
 		result.x = array[offset];
 		result.y = array[offset + 1];
 		result.z = array[offset + 2];
 		result.w = array[offset + 3];
 	}
 
-	inline public static function FromFloatArrayToRef(array:Float32Array, offset:Int, result:Vector4):Void {
+	inline public static function FromFloatArrayToRef(array:Float32Array, offset:Int, result:Vector4) {
 		result.x = array[offset];
 		result.y = array[offset + 1];
 		result.z = array[offset + 2];
 		result.w = array[offset + 3];
 	}
 
-	inline public static function FromFloatsToRef(x:Float, y:Float, z:Float, w:Float, result:Vector4):Void {
+	inline public static function FromFloatsToRef(x:Float, y:Float, z:Float, w:Float, result:Vector4) {
 		result.x = x;
 		result.y = y;
 		result.z = z;
@@ -255,7 +284,7 @@ import openfl.utils.Float32Array;
 		return result;
 	}
 
-	inline public static function NormalizeToRef(vector:Vector4, result:Vector4):Void {
+	inline public static function NormalizeToRef(vector:Vector4, result:Vector4) {
 		result.copyFrom(vector);
 		result.normalize();
 	}
@@ -281,7 +310,7 @@ import openfl.utils.Float32Array;
 		var y = value1.y - value2.y;
 		var z = value1.z - value2.z;
 		var w = value1.w - value2.w;
-
+		
 		return (x * x) + (y * y) + (z * z) + (w * w);
 	}
 

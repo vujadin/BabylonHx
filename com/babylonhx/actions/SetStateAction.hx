@@ -16,7 +16,7 @@ package com.babylonhx.actions;
 		this._target = target;
 	}
 
-	override public function execute(?evt:ActionEvent):Void {
+	override public function execute(?evt:ActionEvent) {
 		this._target.state = this.value;
 	}
 	

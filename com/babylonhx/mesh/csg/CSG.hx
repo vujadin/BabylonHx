@@ -250,9 +250,9 @@ import com.babylonhx.mesh.SubMesh;
 			// Sort Polygons, since subMeshes are indices range
 			polygons.sort(function(a:Polygon, b:Polygon):Int {
 				if (a.shared.meshId == b.shared.meshId) {
-					return Std.int(a.shared.subMeshId) - Std.int(b.shared.subMeshId);
+					return Std.int(a.shared.subMeshId - b.shared.subMeshId);
 				} else {
-					return Std.int(a.shared.meshId) - Std.int(b.shared.meshId);
+					return Std.int(a.shared.meshId - b.shared.meshId);
 				}
 			});
 		}
@@ -325,7 +325,6 @@ import com.babylonhx.mesh.SubMesh;
 			var materialIndexOffset:Int = 0;
 			var	materialMaxIndex:Int;
 			
-			//mesh.subMeshes.length = 0;
 			mesh.subMeshes = [];
 			
 			for (m in subMesh_dict.keys()) {

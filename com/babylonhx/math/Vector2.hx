@@ -19,9 +19,11 @@ package com.babylonhx.math;
 	}
 
 	// Operators
-	public function toArray(array:Array<Float>, index:Int = 0) {
+	public function toArray(array:Array<Float>, index:Int = 0):Vector2 {
 		array[index] = this.x;
 		array[index + 1] = this.y;
+		
+		return this;
 	}
 
 	public function asArray():Array<Float> {
@@ -32,14 +34,18 @@ package com.babylonhx.math;
 		return result;
 	}
 
-	inline public function copyFrom(source:Vector2) {
+	inline public function copyFrom(source:Vector2):Vector2 {
 		this.x = source.x;
 		this.y = source.y;
+		
+		return this;
 	}
 
-	inline public function copyFromFloats(x:Float, y:Float) {
+	inline public function copyFromFloats(x:Float, y:Float):Vector2 {
 		this.x = x;
 		this.y = y;
+		
+		return this;
 	}
 
 	inline public function add(otherVector:Vector2):Vector2 {
@@ -54,23 +60,29 @@ package com.babylonhx.math;
 		return new Vector2(this.x - otherVector.x, this.y - otherVector.y);
 	}
 
-	inline public function subtractInPlace(otherVector:Vector2) {
+	inline public function subtractInPlace(otherVector:Vector2):Vector2 {
 		this.x -= otherVector.x;
 		this.y -= otherVector.y;
+		
+		return this;
 	}
 
-	inline public function multiplyInPlace(otherVector:Vector2) {
+	inline public function multiplyInPlace(otherVector:Vector2):Vector2 {
 		this.x *= otherVector.x;
 		this.y *= otherVector.y;
+		
+		return this;
 	}
 
 	inline public function multiply(otherVector:Vector2):Vector2 {
 		return new Vector2(this.x * otherVector.x, this.y * otherVector.y);
 	}
 
-	inline public function multiplyToRef(otherVector:Vector2, result:Vector2) {
+	inline public function multiplyToRef(otherVector:Vector2, result:Vector2):Vector2 {
 		result.x = this.x * otherVector.x;
 		result.y = this.y * otherVector.y;
+		
+		return this;
 	}
 
 	inline public function multiplyByFloats(x:Float, y:Float):Vector2 {
@@ -81,9 +93,11 @@ package com.babylonhx.math;
 		return new Vector2(this.x / otherVector.x, this.y / otherVector.y);
 	}
 
-	inline public function divideToRef(otherVector:Vector2, result:Vector2) {
+	inline public function divideToRef(otherVector:Vector2, result:Vector2):Vector2 {
 		result.x = this.x / otherVector.x;
 		result.y = this.y / otherVector.y;
+		
+		return this;
 	}
 
 	inline public function negate():Vector2 {
@@ -142,9 +156,11 @@ package com.babylonhx.math;
 		return new Vector2(array[offset], array[offset + 1]);
 	}
 
-	inline public static function FromArrayToRef(array:Array<Float>, offset:Int, result:Vector2):Void {
+	inline public static function FromArrayToRef(array:Array<Float>, offset:Int, result:Vector2):Vector2 {
 		result.x = array[offset];
 		result.y = array[offset + 1];
+		
+		return result;
 	}
 
 	inline public static function CatmullRom(value1:Vector2, value2:Vector2, value3:Vector2, value4:Vector2, amount:Float):Vector2 {

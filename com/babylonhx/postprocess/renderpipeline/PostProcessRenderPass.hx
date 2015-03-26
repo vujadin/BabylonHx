@@ -22,14 +22,16 @@ import com.babylonhx.mesh.Mesh;
 
 	public function new(scene:Scene, name:String, size:Int, renderList:Array<Mesh>, beforeRender:Void->Void, afterRender:Void->Void) {
 		this._name = name;
-
+		
 		this._renderTexture = new RenderTargetTexture(name, size, scene);
 		this.setRenderList(renderList);
-
+		
 		this._renderTexture.onBeforeRender = beforeRender;
 		this._renderTexture.onAfterRender = afterRender;
-
+		
 		this._scene = scene;
+		
+		this._renderList = renderList;
 	}
 
 	// private
@@ -38,17 +40,17 @@ import com.babylonhx.mesh.Mesh;
 		if (this._refCount == 0) {
 			this._scene.customRenderTargets.push(this._renderTexture);
 		}
-
+		
 		return ++this._refCount;
 	}
 
 	public function _decRefCount():Int {
 		this._refCount--;
-
+		
 		if (this._refCount <= 0) {
 			this._scene.customRenderTargets.splice(this._scene.customRenderTargets.indexOf(this._renderTexture), 1);
 		}
-
+		
 		return this._refCount;
 	}
 

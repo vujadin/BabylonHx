@@ -15,7 +15,7 @@ package com.babylonhx.actions;
 		this.func = func;
 	}
 
-	override public function execute(?evt:ActionEvent):Void {
+	override public function execute(?evt:ActionEvent) {
 		this.func(evt);
 	}
 	

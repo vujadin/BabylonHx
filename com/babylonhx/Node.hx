@@ -8,11 +8,12 @@ import com.babylonhx.animations.Animation;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Node') class Node {
+@:expose('BABYLON.Node') class Node implements ISmartArrayCompatible {
 	
 	public var parent:Node;
 	public var name:String;
 	public var id:String;
+	public var uniqueId:Int;
 	public var state:String = "";
 
 	public var animations:Array<Animation> = [];
@@ -23,8 +24,9 @@ import com.babylonhx.animations.Animation;
 	private var _isEnabled:Bool = true;
 	private var _isReady:Bool = true;
 	public var _currentRenderId:Int = -1;
+	private var _parentRenderId:Int = -1;
 	
-	public var __smartArrayFlags:Array<Int>;
+	public var __smartArrayFlags:Array<Int> = [];
 
 	public var _waitingParentId:Null<String>;
 
@@ -49,7 +51,7 @@ import com.babylonhx.animations.Animation;
 
 	// override it in derived class
 	public function getWorldMatrix():Matrix {
-		return Matrix.Identity();
+		return null;// Matrix.Identity();
 	}
 
 	// override it in derived class if you add new variables to the cache
@@ -59,7 +61,7 @@ import com.babylonhx.animations.Animation;
 		this._cache.parent = null;
 	}
 
-	public function updateCache(force:Bool = false/*?force:Bool*/) {
+	public function updateCache(force:Bool = false) {
 		if (!force && this.isSynchronized()) {
 			return;
 		}
@@ -70,7 +72,7 @@ import com.babylonhx.animations.Animation;
 
 	// override it in derived class if you add new variables to the cache
 	// and call the parent class method if !ignoreParentClass
-	public function _updateCache(ignoreParentClass:Bool = false/*?ignoreParentClass:Bool*/) {
+	public function _updateCache(ignoreParentClass:Bool = false) {
 		
 	}
 
@@ -80,10 +82,20 @@ import com.babylonhx.animations.Animation;
 	}
 
 	public function isSynchronizedWithParent():Bool {
-		return this.parent != null ? this.parent._currentRenderId <= this._currentRenderId : true;
+		if (this.parent == null) {
+			return true;
+		}
+		
+		if (this._parentRenderId != this.parent._currentRenderId) {
+			return false;
+		}
+		
+		this._parentRenderId = this.parent._currentRenderId;
+		
+		return this.parent._currentRenderId <= this._currentRenderId && this.parent.isSynchronized();
 	}
 
-	public function isSynchronized(updateCache:Bool = false/*?updateCache:Bool*/):Bool {
+	public function isSynchronized(updateCache:Bool = false):Bool {
 		var check = this.hasNewParent();
 		check = check || !this.isSynchronizedWithParent();
 		check = check || !this._isSynchronized();
@@ -94,7 +106,7 @@ import com.babylonhx.animations.Animation;
 		return !check;
 	}
 
-	public function hasNewParent(update:Bool = false/*?update:Bool*/):Bool {
+	public function hasNewParent(update:Bool = false):Bool {
 		if (this._cache.parent == this.parent) {
 			return false;
 		}

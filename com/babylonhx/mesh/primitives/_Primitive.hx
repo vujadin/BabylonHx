@@ -5,7 +5,7 @@ package com.babylonhx.mesh.primitives;
  * @author Krtolica Vujadin
  */
 
-class _Primitive extends Geometry {
+@:expose('BABYLON._Primitive') class _Primitive extends Geometry {
 	
 	// Private 
 	private var _beingRegenerated:Bool;

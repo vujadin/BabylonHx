@@ -4,7 +4,7 @@ package com.babylonhx ;
  * @author Krtolica Vujadin
  */
 
-interface IDisposable {
+@:expose('BABYLON.IDisposable') interface IDisposable {
 	
 	function dispose(doNotRecurse:Bool = false/*?doNotRecurse:Bool*/):Void;
 	

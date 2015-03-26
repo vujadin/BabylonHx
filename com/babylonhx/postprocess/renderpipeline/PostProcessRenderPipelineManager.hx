@@ -14,71 +14,71 @@ package com.babylonhx.postprocess.renderpipeline;
 		this._renderPipelines = new Map<String, PostProcessRenderPipeline>();
 	}
 
-	public function addPipeline(renderPipeline:PostProcessRenderPipeline):Void {
+	public function addPipeline(renderPipeline:PostProcessRenderPipeline) {
 		this._renderPipelines.set(renderPipeline._name, renderPipeline);
 	}
 
-	public function attachCamerasToRenderPipeline(renderPipelineName:String, cameras:Dynamic, unique:Bool = false/*?unique:Bool*/):Void {
+	public function attachCamerasToRenderPipeline(renderPipelineName:String, cameras:Dynamic, unique:Bool = false) {
 		var renderPipeline:PostProcessRenderPipeline = this._renderPipelines[renderPipelineName];
-
+		
 		if (renderPipeline == null) {
 			return;
 		}
-
+		
 		renderPipeline._attachCameras(cameras, unique);
 	}
 
-	public function detachCamerasFromRenderPipeline(renderPipelineName:String, cameras:Dynamic):Void {
+	public function detachCamerasFromRenderPipeline(renderPipelineName:String, cameras:Dynamic) {
 		var renderPipeline:PostProcessRenderPipeline = this._renderPipelines[renderPipelineName];
-
+		
 		if (renderPipeline == null) {
 			return;
 		}
-
+		
 		renderPipeline._detachCameras(cameras);
 	}
 
-	public function enableEffectInPipeline(renderPipelineName:String, renderEffectName:String, cameras:Dynamic):Void {
+	public function enableEffectInPipeline(renderPipelineName:String, renderEffectName:String, cameras:Dynamic) {
 		var renderPipeline:PostProcessRenderPipeline = this._renderPipelines[renderPipelineName];
-
+		
 		if (renderPipeline == null) {
 			return;
 		}
-
+		
 		renderPipeline._enableEffect(renderEffectName, cameras);
 	}
 
-	public function disableEffectInPipeline(renderPipelineName:String, renderEffectName:String, cameras:Dynamic):Void {
+	public function disableEffectInPipeline(renderPipelineName:String, renderEffectName:String, cameras:Dynamic) {
 		var renderPipeline:PostProcessRenderPipeline = this._renderPipelines[renderPipelineName];
-
+		
 		if (renderPipeline == null) {
 			return;
 		}
-
+		
 		renderPipeline._disableEffect(renderEffectName, cameras);
 	}
 
-	public function enableDisplayOnlyPassInPipeline(renderPipelineName:String, passName:String, cameras:Dynamic):Void {
+	public function enableDisplayOnlyPassInPipeline(renderPipelineName:String, passName:String, cameras:Dynamic) {
 		var renderPipeline:PostProcessRenderPipeline = this._renderPipelines[renderPipelineName];
-
+		
 		if (renderPipeline == null) {
 			return;
 		}
-
+		
 		renderPipeline._enableDisplayOnlyPass(passName, cameras);
 	}
 
-	public function disableDisplayOnlyPassInPipeline(renderPipelineName:String, cameras:Dynamic):Void {
+	public function disableDisplayOnlyPassInPipeline(renderPipelineName:String, cameras:Dynamic) {
 		var renderPipeline:PostProcessRenderPipeline = this._renderPipelines[renderPipelineName];
-
+		
 		if (renderPipeline == null) {
 			return;
 		}
-
+		
 		renderPipeline._disableDisplayOnlyPass(cameras);
 	}
 
-	public function update():Void {
+	public function update() {
 		for (renderPipelineName in this._renderPipelines.keys()) {
 			this._renderPipelines[renderPipelineName]._update();
 		}

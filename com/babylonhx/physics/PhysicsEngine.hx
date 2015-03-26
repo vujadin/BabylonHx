@@ -12,16 +12,16 @@ import com.babylonhx.physics.plugins.OimoPlugin;
 @:expose('BABYLON.PhysicsEngine') class PhysicsEngine {
 	
 	// Statics
-	public static var NoImpostor:Int = 0;
-	public static var SphereImpostor:Int = 1;
-	public static var BoxImpostor:Int = 2;
-	public static var PlaneImpostor:Int = 3;
-	public static var MeshImpostor:Int = 4;
-	public static var CapsuleImpostor:Int = 5;
-	public static var ConeImpostor:Int = 6;
-	public static var CylinderImpostor:Int = 7;
-	public static var ConvexHullImpostor:Int = 8;
-	public static var Epsilon:Float = 0.001;
+	public static inline var NoImpostor:Int = 0;
+	public static inline var SphereImpostor:Int = 1;
+	public static inline var BoxImpostor:Int = 2;
+	public static inline var PlaneImpostor:Int = 3;
+	public static inline var MeshImpostor:Int = 4;
+	public static inline var CapsuleImpostor:Int = 5;
+	public static inline var ConeImpostor:Int = 6;
+	public static inline var CylinderImpostor:Int = 7;
+	public static inline var ConvexHullImpostor:Int = 8;
+	public static inline var Epsilon:Float = 0.001;
 	
 	public var gravity:Vector3;
 

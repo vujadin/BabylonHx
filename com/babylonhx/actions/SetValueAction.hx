@@ -24,11 +24,9 @@ package com.babylonhx.actions;
 	override public function _prepare() {
 		this._target = this._getEffectiveTarget(this._target, this.propertyPath);
 		this._property = this._getProperty(this.propertyPath);
-		trace(this._property);
 	}
 
 	override public function execute(?evt:ActionEvent) {
-		trace(this._property);
 		Reflect.setField(this._target, this._property, this.value);
 	}
 }

@@ -7,7 +7,7 @@ import com.babylonhx.math.Color3;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.RoadProceduralTexture') class RoadProceduralTexture extends ProceduralTexture {
+class RoadProceduralTexture extends ProceduralTexture {
 	
 	private var _roadColor:Color3 = new Color3(0.53, 0.53, 0.53);
 	

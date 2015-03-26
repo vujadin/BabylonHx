@@ -8,7 +8,7 @@ import com.babylonhx.math.Vector3;
  */
 
 // Represents a plane in 3D space.
-@:expose('BABYLON.CSG.Plane') class Plane {
+class Plane {
 	
 	static var COPLANAR:Int = 0;
 	static var FRONT:Int = 1;

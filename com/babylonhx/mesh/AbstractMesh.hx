@@ -12,6 +12,7 @@ import com.babylonhx.culling.octrees.Octree;
 import com.babylonhx.materials.Material;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
+import com.babylonhx.math.Axis;
 import com.babylonhx.math.Quaternion;
 import com.babylonhx.math.Ray;
 import com.babylonhx.math.Vector3;
@@ -25,11 +26,6 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
  * @author Krtolica Vujadin
  */
 
-enum Space {
-	LOCAL;
-	WORLD;
-}
-
 @:expose('BABYLON.AbstractMesh') class AbstractMesh extends Node implements IDisposable {
 	
 	// Statics
@@ -41,6 +37,7 @@ enum Space {
 
 
 	// Properties
+	public var definedFacingForward:Bool = true; // orientation for POV movement & rotation
 	public var position:Vector3 = new Vector3(0, 0, 0);
 	public var rotation:Vector3 = new Vector3(0, 0, 0);
 	public var rotationQuaternion:Quaternion;
@@ -61,7 +58,7 @@ enum Space {
 	public var infiniteDistance:Bool = false;
 	public var isVisible:Bool = true;
 	
-	private var _isPickable:Bool = false;
+	private var _isPickable:Bool = true;
 	public var isPickable(get, set):Bool;
 	private function get_isPickable():Bool {
 		return _isPickable;
@@ -95,8 +92,7 @@ enum Space {
 	private function set_skeleton(val:Skeleton):Skeleton {
 		_skeleton = val;
 		return val;
-	}
-	
+	}	
 	
 	public var renderingGroupId:Int = 0;
 	
@@ -135,7 +131,7 @@ enum Space {
 	public var useOctreeForPicking:Bool = true;
 	public var useOctreeForCollisions:Bool = true;
 
-	public var layerMask:Int = 0xFFFFFFFF;
+	public var layerMask:Int = 0x0FFFFFFF;
 
 	// Physics
 	public var _physicImpostor:Int = PhysicsEngine.NoImpostor;
@@ -170,11 +166,16 @@ enum Space {
 	private var _positions:Array<Vector3>;
 	public var positions(get, set):Array<Vector3>;
 	private function get_positions():Array<Vector3> {
-		return null;
+		return _positions;
 	}
 	private function set_positions(val:Array<Vector3>):Array<Vector3> {
 		_positions = val;
 		return val;
+	}
+	
+	public var useBones(get, never):Bool;
+	private function get_useBones():Bool {
+		return this.skeleton != null && this.getScene().skeletonsEnabled && this.isVerticesDataPresent(VertexBuffer.MatricesIndicesKind) && this.isVerticesDataPresent(VertexBuffer.MatricesWeightsKind);
 	}
 	
 	private var _isDirty:Bool = false;
@@ -191,10 +192,13 @@ enum Space {
 	
 	private var _onAfterWorldMatrixUpdate:Array<AbstractMesh->Void> = [];
 	
+	// Loading properties
+	public var _waitingActions:Dynamic;
+	
 
 	public function new(name:String, scene:Scene) {
 		super(name, scene);
-		scene.meshes.push(this);
+		scene.addMesh(this);
 	}
 
 	// Methods
@@ -344,6 +348,62 @@ enum Space {
 			this.position.z = absolutePositionZ;
 		}
 	}
+	
+	// ================================== Point of View Movement =================================
+	/**
+	 * Perform relative position change from the point of view of behind the front of the mesh.
+	 * This is performed taking into account the meshes current rotation, so you do not have to care.
+	 * Supports definition of mesh facing forward or backward.
+	 * @param {number} amountRight
+	 * @param {number} amountUp
+	 * @param {number} amountForward
+	 */
+	public function movePOV(amountRight:Float, amountUp:Float, amountForward:Float) {
+		this.position.addInPlace(this.calcMovePOV(amountRight, amountUp, amountForward));
+	}
+	
+	/**
+	 * Calculate relative position change from the point of view of behind the front of the mesh.
+	 * This is performed taking into account the meshes current rotation, so you do not have to care.
+	 * Supports definition of mesh facing forward or backward.
+	 * @param {number} amountRight
+	 * @param {number} amountUp
+	 * @param {number} amountForward
+	 */
+	public function calcMovePOV(amountRight:Float, amountUp:Float, amountForward:Float):Vector3 {
+		var rotMatrix:Matrix = new Matrix();
+		var rotQuaternion:Quaternion = (this.rotationQuaternion != null) ? this.rotationQuaternion : Quaternion.RotationYawPitchRoll(this.rotation.y, this.rotation.x, this.rotation.z);
+		rotQuaternion.toRotationMatrix(rotMatrix);
+		
+		var translationDelta = Vector3.Zero();
+		var defForwardMult = this.definedFacingForward ? -1 : 1;
+		Vector3.TransformCoordinatesFromFloatsToRef(amountRight * defForwardMult, amountUp, amountForward * defForwardMult, rotMatrix, translationDelta);
+		return translationDelta;
+	}
+	
+	// ================================== Point of View Rotation =================================
+	/**
+	 * Perform relative rotation change from the point of view of behind the front of the mesh.
+	 * Supports definition of mesh facing forward or backward.
+	 * @param {number} flipBack
+	 * @param {number} twirlClockwise
+	 * @param {number} tiltRight
+	 */
+	public function rotatePOV(flipBack:Float, twirlClockwise:Float, tiltRight:Float) {
+		this.rotation.addInPlace(this.calcRotatePOV(flipBack, twirlClockwise, tiltRight));
+	}
+	
+	/**
+	 * Calculate relative rotation change from the point of view of behind the front of the mesh.
+	 * Supports definition of mesh facing forward or backward.
+	 * @param {number} flipBack
+	 * @param {number} twirlClockwise
+	 * @param {number} tiltRight
+	 */
+	public function calcRotatePOV(flipBack:Float, twirlClockwise:Float, tiltRight:Float):Vector3 {
+		var defForwardMult = this.definedFacingForward ? 1 : -1;
+		return new Vector3(flipBack * defForwardMult, twirlClockwise, tiltRight * defForwardMult);
+	}
 
 	public function setPivotMatrix(matrix:Matrix) {
 		this._pivotMatrix = matrix;
@@ -456,12 +516,14 @@ enum Space {
 		// Translation
 		if (this.infiniteDistance && this.parent == null) {
 			var camera = this.getScene().activeCamera;
-			var cameraWorldMatrix = camera.getWorldMatrix();
-			
-			var cameraGlobalPosition = new Vector3(cameraWorldMatrix.m[12], cameraWorldMatrix.m[13], cameraWorldMatrix.m[14]);
-			
-			Matrix.TranslationToRef(this.position.x + cameraGlobalPosition.x, this.position.y + cameraGlobalPosition.y,
-											this.position.z + cameraGlobalPosition.z, this._localTranslation);
+			if(camera != null) {
+				var cameraWorldMatrix = camera.getWorldMatrix();
+				
+				var cameraGlobalPosition = new Vector3(cameraWorldMatrix.m[12], cameraWorldMatrix.m[13], cameraWorldMatrix.m[14]);
+				
+				Matrix.TranslationToRef(this.position.x + cameraGlobalPosition.x, this.position.y + cameraGlobalPosition.y,
+												this.position.z + cameraGlobalPosition.z, this._localTranslation);
+			}
 		} else {
 			Matrix.TranslationToRef(this.position.x, this.position.y, this.position.z, this._localTranslation);
 		}
@@ -612,24 +674,16 @@ enum Space {
 	}
 
 	// Physics
-	public function setPhysicsState(?impostor:Dynamic, ?options:PhysicsBodyCreationOptions) {
+	public function setPhysicsState(impostor:Int = PhysicsEngine.NoImpostor, ?options:PhysicsBodyCreationOptions):Dynamic {
 		var physicsEngine = this.getScene().getPhysicsEngine();
 		
 		if (physicsEngine == null) {
-			return;
+			return null;
 		}
-		
-		if (impostor.impostor != null) {
-			// Old API
-			options = impostor;
-			impostor = impostor.impostor;
-		}
-		
-		impostor = impostor != null ? impostor : PhysicsEngine.NoImpostor;
-		
+						
 		if (impostor == PhysicsEngine.NoImpostor) {
 			physicsEngine._unregisterMesh(this);
-			return;
+			return null;
 		}
 		
 		options.mass = options.mass == null ? 0 : options.mass;
@@ -641,7 +695,7 @@ enum Space {
 		this._physicsFriction = options.friction;
 		this._physicRestitution = options.restitution;
 		
-		physicsEngine._registerMesh(this, impostor, options);
+		return physicsEngine._registerMesh(this, impostor, options);
 	}
 
 	public function getPhysicsImpostor():Int {
@@ -836,7 +890,7 @@ enum Space {
 			var world = this.getWorldMatrix();
 			var worldOrigin = Vector3.TransformCoordinates(ray.origin, world);
 			var direction = ray.direction.clone();
-			direction.normalize();
+			//direction.normalize();
 			direction = direction.scale(intersectInfo.distance);
 			var worldDirection = Vector3.TransformNormal(direction, world);
 			
@@ -889,14 +943,11 @@ enum Space {
 		this.releaseSubMeshes();
 		
 		// Remove from scene
-		var index = this.getScene().meshes.indexOf(this);
-		if (index != -1) {
-			// Remove from the scene if mesh found 
-			this.getScene().meshes.splice(index, 1);
-		}
+		this.getScene().removeMesh(this);
 		
 		if (!doNotRecurse) {
 			// Particles
+			var index:Int = 0;
 			while(index < this.getScene().particleSystems.length) {
 				if (this.getScene().particleSystems[index].emitter == this) {
 					this.getScene().particleSystems[index].dispose();
@@ -921,6 +972,8 @@ enum Space {
 				}
 			}
 		}
+		
+		this._onAfterWorldMatrixUpdate = [];
 		
 		this._isDisposed = true;
 		

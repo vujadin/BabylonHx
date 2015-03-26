@@ -24,23 +24,27 @@ import com.babylonhx.mesh.VertexBuffer;
 	}
 
 	// Methods
-	public function getNormal():Vector3 {
+	public function getNormal(useWorldCoordinates:Bool = false):Vector3 {
 		if (this.pickedMesh == null || !this.pickedMesh.isVerticesDataPresent(VertexBuffer.NormalKind)) {
 			return null;
 		}
-
+		
 		var indices = this.pickedMesh.getIndices();
 		var normals = this.pickedMesh.getVerticesData(VertexBuffer.NormalKind);
-
+		
 		var normal0 = Vector3.FromArray(normals, indices[this.faceId * 3] * 3);
 		var normal1 = Vector3.FromArray(normals, indices[this.faceId * 3 + 1] * 3);
 		var normal2 = Vector3.FromArray(normals, indices[this.faceId * 3 + 2] * 3);
-
+		
 		normal0 = normal0.scale(this.bu);
 		normal1 = normal1.scale(this.bv);
 		normal2 = normal2.scale(1.0 - this.bu - this.bv);
-
-		return new Vector3(normal0.x + normal1.x + normal2.x, normal0.y + normal1.y + normal2.y, normal0.z + normal1.z + normal2.z);
+		
+		var result = new Vector3(normal0.x + normal1.x + normal2.x, normal0.y + normal1.y + normal2.y, normal0.z + normal1.z + normal2.z);
+        if (useWorldCoordinates) {
+            result = Vector3.TransformNormal(result, this.pickedMesh.getWorldMatrix());
+        }
+        return result;
 	}
 
 	public function getTextureCoordinates():Vector2 {

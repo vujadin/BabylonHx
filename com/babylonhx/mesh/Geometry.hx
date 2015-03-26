@@ -4,15 +4,8 @@ import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.tools.Tools;
 import haxe.Json;
 
-#if nme
-import nme.utils.Float32Array;
-#elseif openfl
-import openfl.utils.Float32Array;
-#elseif snow
-import snow.utils.Float32Array;
-#elseif kha
+import com.babylonhx.utils.typedarray.Float32Array;
 
-#end
 
 /**
  * ...
@@ -33,12 +26,14 @@ import snow.utils.Float32Array;
 	private var _totalVertices:Int = 0;
 	private var _indices:Array<Int> = [];
 	private var _vertexBuffers:Map<String, VertexBuffer>;
-	public var _delayInfo:Array<String>; //ANY
+	private var _isDisposed:Bool = false;
+	public var _delayInfo:Array<String> = []; //ANY
 	private var _indexBuffer:BabylonBuffer;
 	public var _boundingInfo:BoundingInfo;
 	public var _delayLoadingFunction:Dynamic->Geometry->Void;
+	
 
-	public function new(id:String, scene:Scene, ?vertexData:VertexData, updatable:Bool = false/*?updatable:Bool*/, ?mesh:Mesh) {
+	public function new(id:String, scene:Scene, ?vertexData:VertexData, updatable:Bool = false, ?mesh:Mesh) {
 		this.id = id;
 		this._engine = scene.getEngine();
 		this._meshes = [];
@@ -141,6 +136,11 @@ import snow.utils.Float32Array;
 				mesh._resetPointsArrayCache();
 				if (updateExtends) {
 					mesh._boundingInfo = new BoundingInfo(extend.minimum, extend.maximum);
+					
+					for (subIndex in 0...mesh.subMeshes.length) {
+                        var subMesh = mesh.subMeshes[subIndex];
+                        subMesh.refreshBoundingInfo();
+                    }
 				}
 			}
 		}
@@ -309,6 +309,9 @@ import snow.utils.Float32Array;
 				mesh._boundingInfo = new BoundingInfo(extend.minimum, extend.maximum);
 				
 				mesh._createGlobalSubMesh();
+				
+				//bounding info was just created again, world matrix should be applied again.
+                mesh._updateBoundingInfo();
 			}
 		}
 		
@@ -355,6 +358,10 @@ import snow.utils.Float32Array;
 			}
 		}, function() { }, scene.database);*/
 	}
+	
+	public function isDisposed():Bool {
+		return this._isDisposed;
+	}
 
 	public function dispose() {
 		var meshes = this._meshes;
@@ -390,6 +397,8 @@ import snow.utils.Float32Array;
 		if (index > -1) {
 			geometries.splice(index, 1);
 		}
+		
+		this._isDisposed = true;
 	}
 
 	public function copy(id:String):Geometry {
@@ -406,7 +415,7 @@ import snow.utils.Float32Array;
 		var stopChecking = false;
 		
 		for (kind in this._vertexBuffers.keys()) {
-			vertexData.set(this.getVerticesData(kind), kind);
+			vertexData.set(this.getVerticesData(kind).copy(), kind);
 			
 			if (!stopChecking) {
 				updatable = this.getVertexBuffer(kind).isUpdatable();

@@ -1,0 +1,27 @@
+{
+  project : {
+    name : "BabylonHx",
+    version : "1.0.0",
+    author : "Krtolica Vujadin",
+
+    app : {
+      name : "BabylonHx",
+      package : "com.babylonhx.snow",
+      main : "MainSnow",
+	  output: 'bin_snow/'
+    },
+
+    build : {
+      dependencies : {
+        "snow" : "*",
+		"poly2trihx" : "*",
+		"msgpack-haxe" : "*"
+      }
+    },
+
+    files : {
+      config : "config.json",
+      assets : "assets/"
+    }
+  }
+}

@@ -109,18 +109,27 @@ import com.babylonhx.tools.Tools;
 	}
 	
 	override public function _activate(renderId:Int) {
-		this.sourceMesh._registerInstanceForRenderId(this, renderId);
+		if (this._currentLOD != null) {
+			this.sourceMesh._registerInstanceForRenderId(this, renderId);
+		}
 	}
 	
 	override public function getLOD(camera:Camera, ?boundingSphere:BoundingSphere):AbstractMesh {
 		this._currentLOD = cast this.sourceMesh.getLOD(this.getScene().activeCamera, this.getBoundingInfo().boundingSphere);
+		
+		if (this._currentLOD == this.sourceMesh) {
+            return this;
+        }
+		
 		return this._currentLOD;
 	}
 
 	public function _syncSubMeshes() {
 		this.releaseSubMeshes();
-		for (index in 0...this._sourceMesh.subMeshes.length) {
-			this._sourceMesh.subMeshes[index].clone(this, this._sourceMesh);
+		if(this._sourceMesh.subMeshes != null) {
+			for (index in 0...this._sourceMesh.subMeshes.length) {
+				this._sourceMesh.subMeshes[index].clone(this, this._sourceMesh);
+			}
 		}
 	}
 

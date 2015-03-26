@@ -59,9 +59,9 @@ import com.babylonhx.mesh.SubMesh;
 				submesh._distanceToCamera = submesh.getBoundingInfo().boundingSphere.centerWorld.subtract(this._scene.activeCamera.position).length();
 			}
 			
-			var sortedArray = this._transparentSubMeshes.data.copy();// .slice(0, this._transparentSubMeshes.length);
+			var sortedArray = this._transparentSubMeshes.data.slice(0, this._transparentSubMeshes.length);
 			
-			sortedArray.sort(function(a:SubMesh, b:SubMesh) {
+			sortedArray.sort(function(a:SubMesh, b:SubMesh):Int {
 				// Alpha index first
 				if (a._alphaIndex > b._alphaIndex) {
 					return 1;

@@ -2,7 +2,7 @@ package com.babylonhx.postprocess;
 
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.math.Vector2;
-import  com.babylonhx.materials.Effect;
+import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.textures.Texture;
 
 /**
@@ -16,11 +16,12 @@ import com.babylonhx.materials.textures.Texture;
 	public var blurWidth:Float;
 	
 	
-	public function new(name:String, direction:Vector2, blurWidth:Float, ratio:Float, camera:Camera, samplingMode:Int = 2, ?engine:Engine, reusable:Bool = false/*?reusable:Bool*/) {
+	public function new(name:String, direction:Vector2, blurWidth:Float, ratio:Float, camera:Camera, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, ?engine:Engine, reusable:Bool = false) {
 		super(name, "blur", ["screenSize", "direction", "blurWidth"], null, ratio, camera, samplingMode, engine, reusable);
+		
 		this.direction = direction;
         this.blurWidth = blurWidth;
-        
+		
 		this.onApply = function(effect:Effect) {
 			effect.setFloat2("screenSize", this.width, this.height);
 			effect.setVector2("direction", this.direction);

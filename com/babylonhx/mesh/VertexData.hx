@@ -4,15 +4,8 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector2;
 
-#if nme
-import nme.utils.UInt8Array;
-#elseif openfl
-import openfl.utils.UInt8Array;
-#elseif snow
-import snow.utils.UInt8Array;
-#elseif kha
+import com.babylonhx.utils.typedarray.UInt8Array;
 
-#end
 
 /**
  * ...
@@ -32,7 +25,7 @@ import snow.utils.UInt8Array;
 	
 	
 	public function new() {
-		
+		// nothing to do here ...
 	}
 
 	public function set(data:Array<Float>, kind:String) {
@@ -305,8 +298,182 @@ import snow.utils.UInt8Array;
 		
 		return result;
 	}
+	
+	public static function CreateRibbon(pathArray:Array<Array<Vector3>>, closeArray:Bool = false, closePath:Bool = false, ?offset:Int, sideOrientation:Int = Mesh.DEFAULTSIDE):VertexData {
+		var defaultOffset = Math.floor(pathArray[0].length / 2);
+		offset = offset != null ? offset : defaultOffset;
+		offset = offset > defaultOffset ? defaultOffset : Math.floor(offset); // offset max allowed : defaultOffset
+		
+		var indices:Array<Int> = [];
+		var positions:Array<Float> = [];
+		var normals:Array<Float> = [];
+		var uvs:Array<Float> = [];
+		
+		var us:Array<Array<Float>> = [];        		// us[path_id] = [uDist1, uDist2, uDist3 ... ] distances between points on path path_id
+		var vs:Array<Array<Float>> = [];        		// vs[i] = [vDist1, vDist2, vDist3, ... ] distances between points i of consecutives paths from pathArray
+		var uTotalDistance:Array<Float> = []; 		// uTotalDistance[p] : total distance of path p
+		var vTotalDistance:Array<Float> = []; 		//  vTotalDistance[i] : total distance between points i of first and last path from pathArray
+		var minlg:Int = 0;          	        // minimal length among all paths from pathArray
+		var vectlg:Float = 0;
+		var dist:Float = 0;
+		var lg:Array<Int> = [];        		    // array of path lengths : nb of vertex per path
+		var idx:Array<Int> = [];       		    // array of path indexes : index of each path (first vertex) in positions array
+		
+		var p:Int = 0;							// path iterator
+		var i:Int = 0;							// point iterator
+		var j:Int = 0;							// point iterator
+		
+		// if single path in pathArray
+		if (pathArray.length < 2) {
+			var ar1:Array<Vector3> = [];
+			var ar2:Array<Vector3> = [];
+			for (i in 0...pathArray[0].length - offset) {
+				ar1.push(pathArray[0][i]);
+				ar2.push(pathArray[0][i + offset]);
+			}
+			pathArray = [ar1, ar2];
+		}
+		
+		// positions and horizontal distances (u)
+		var idc:Int = 0;
+		minlg = pathArray[0].length;
+		for (p in 0...pathArray.length) {
+			uTotalDistance[p] = 0;
+			us[p] = [0];
+			var path:Array<Vector3> = pathArray[p];
+			var l:Int = path.length;
+			minlg = (minlg < l) ? minlg : l;
+			lg[p] = l;
+			idx[p] = idc;
+			var j = 0;
+			while (j < l) {
+				positions.push(path[j].x);
+				positions.push(path[j].y);
+				positions.push(path[j].z);
+				if (j > 0) {
+					vectlg = path[j].subtract(path[j - 1]).length();
+					dist = vectlg + uTotalDistance[p];
+					us[p].push(dist);
+					uTotalDistance[p] = dist;
+				}
+				j++;
+			}
+			if (closePath) {
+				vectlg = path[0].subtract(path[j - 1]).length();
+				dist = vectlg + uTotalDistance[p];
+				uTotalDistance[p] = dist;
+			}
+			idc += l;
+		}
+		
+		// vertical distances (v)
+		for (i in 0...minlg) {
+			vTotalDistance[i] = 0;
+			vs[i] = [0];
+			var path1:Array<Vector3> = [];
+			var path2:Array<Vector3> = [];
+			for (p in 0...pathArray.length - 1) {
+				path1 = pathArray[p];
+				path2 = pathArray[p + 1];
+				vectlg = path2[i].subtract(path1[i]).length();
+				dist = vectlg + vTotalDistance[i];
+				vs[i].push(dist);
+				vTotalDistance[i] = dist;
+			}
+			if (closeArray) {
+				path1 = pathArray[p];
+				path2 = pathArray[0];
+				vectlg = path2[i].subtract(path1[i]).length();
+				dist = vectlg + vTotalDistance[i];
+				vTotalDistance[i] = dist;
+			}
+		}
+		
+		// uvs
+		var u:Float = 0;
+		var v:Float = 0;
+		for (p in 0...pathArray.length) {
+			for (i in 0...minlg) {
+				u = us[p][i] / uTotalDistance[p];
+				v = vs[i][p] / vTotalDistance[i];
+				uvs.push(u);
+				uvs.push(v);
+			}
+		}
+		
+		// indices
+		p = 0;                    					// path index
+		var pi:Int = 0;                    		    // positions array index
+		var l1:Int = lg[p] - 1;           		    // path1 length
+		var l2:Int = lg[p + 1] - 1;         	    // path2 length
+		var min:Int = (l1 < l2) ? l1 : l2;   	    // current path stop index
+		var shft:Int = idx[1] - idx[0];             // shift 
+		var path1nb:Int = closeArray ? lg.length : lg.length - 1;     // number of path1 to iterate	
+		var t1:Int = 0;								// two consecutive triangles, so 4 points : point1
+		var t2:Int = 0;								// point2
+		var t3:Int = 0;								// point3
+		var t4:Int = 0;								// point4
+		
+		while (pi <= min && p < path1nb) {       	//  stay under min and don't go over next to last path
+			// draw two triangles between path1 (p1) and path2 (p2) : (p1.pi, p2.pi, p1.pi+1) and (p2.pi+1, p1.pi+1, p2.pi) clockwise
+			t1 = pi;
+			t2 = pi + shft;
+			t3 = pi + 1;
+			t4 = pi + shft + 1;
+			
+			indices.push(pi);
+			indices.push(pi + shft);
+			indices.push(pi + 1);
+			indices.push(pi + shft + 1);
+			indices.push(pi + 1);
+			indices.push(pi + shft);
+			pi += 1;
+			if (pi == min) {                   			    // if end of one of two consecutive paths reached, go next existing path
+				if (closePath) {                          	// if closePath, add last triangles between start and end of the paths
+					indices.push(pi);
+					indices.push(pi + shft);
+					indices.push(idx[p]);
+					indices.push(idx[p] + shft);
+					indices.push(idx[p]);
+					indices.push(pi + shft);
+					t3 = idx[p];
+					t4 = idx[p] + shft;
+				}
+				p++;
+				if (p == lg.length - 1) {                  // last path of pathArray reached <=> closeArray == true
+					shft = idx[0] - idx[p];
+					l1 = lg[p] - 1;
+					l2 = lg[0] - 1;
+				}
+				else {
+					shft = idx[p + 1] - idx[p];
+					l1 = lg[p] - 1;
+					l2 = lg[p + 1] - 1;
+				}
+				
+				pi = idx[p];
+				min = (l1 < l2) ? l1 + pi : l2 + pi;
+			}
+		}
+		
+		// normals
+		VertexData.ComputeNormals(positions, indices, normals);
+		
+		// sides
+		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		
+		// Result
+		var vertexData = new VertexData();
+		
+		vertexData.indices = indices;
+		vertexData.positions = positions;
+		vertexData.normals = normals;
+		vertexData.uvs = uvs;
+		
+		return vertexData;
+	}
 
-	public static function CreateBox(size:Float = 1.0):VertexData {
+	public static function CreateBox(size:Float = 1.0, sideOrientation:Int = Mesh.DEFAULTSIDE):VertexData {
 		var normalsSource = [
 			new Vector3(0, 0, 1),
 			new Vector3(0, 0, -1),
@@ -381,6 +548,9 @@ import snow.utils.UInt8Array;
 			uvs.push(0.0);
 		}
 		
+		// sides
+		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		
 		// Result
 		var vertexData = new VertexData();
 		
@@ -392,7 +562,7 @@ import snow.utils.UInt8Array;
 		return vertexData;
 	}
 
-	public static function CreateSphere(segments:Int = 32, diameter:Float = 1):VertexData {
+	public static function CreateSphere(segments:Int = 32, diameter:Float = 1, sideOrientation:Int = Mesh.DEFAULTSIDE):VertexData {
 		
 		var radius = diameter / 2;
 		
@@ -448,6 +618,9 @@ import snow.utils.UInt8Array;
             }
 		}
 		
+		// Sides
+        VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		
 		// Result
 		var vertexData = new VertexData();
 		
@@ -459,7 +632,7 @@ import snow.utils.UInt8Array;
 		return vertexData;
 	}
 
-	public static function CreateCylinder(height:Float = 1, diameterTop:Float = 0.5, diameterBottom:Float = 1, tessellation:Int = 16, subdivisions:Int = 1):VertexData {
+	public static function CreateCylinder(height:Float = 1, diameterTop:Float = 0.5, diameterBottom:Float = 1, tessellation:Int = 16, subdivisions:Int = 1, sideOrientation:Int = Mesh.DEFAULTSIDE):VertexData {
 		var radiusTop = diameterTop / 2;
 		var radiusBottom = diameterBottom / 2;
 		
@@ -572,6 +745,9 @@ import snow.utils.UInt8Array;
 		// Normals
 		VertexData.ComputeNormals(positions, indices, normals);
 		
+		// Sides
+        VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		
 		// Result
 		var vertexData = new VertexData();
 		
@@ -583,7 +759,7 @@ import snow.utils.UInt8Array;
 		return vertexData;
 	}
 
-	public static function CreateTorus(diameter:Float = 1, thickness:Float = 0.5, tessellation:Int = 16):VertexData {
+	public static function CreateTorus(diameter:Float = 1, thickness:Float = 0.5, tessellation:Int = 16, sideOrientation:Int = Mesh.DEFAULTSIDE):VertexData {
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
 		var normals:Array<Float> = [];
@@ -633,6 +809,9 @@ import snow.utils.UInt8Array;
 				indices.push(nextI * stride + j);
 			}
 		}
+		
+		// Sides
+        VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
 		
 		// Result
 		var vertexData = new VertexData();
@@ -818,9 +997,15 @@ import snow.utils.UInt8Array;
 				var heightMapY = Std.int((1.0 - (position.z + height / 2) / height) * (bufferHeight - 1));
 				
 				var pos = Std.int((heightMapX + heightMapY * bufferWidth) * 4);
+				#if !js
+				var r = buffer.buffer.get(pos) / 255.0;
+				var g = buffer.buffer.get(pos + 1) / 255.0;
+				var b = buffer.buffer.get(pos + 2) / 255.0;  // buffer.getUInt8(...
+				#else
 				var r = buffer[pos] / 255.0;
 				var g = buffer[pos + 1] / 255.0;
 				var b = buffer[pos + 2] / 255.0;
+				#end
 				
 				var gradient = r * 0.3 + g * 0.59 + b * 0.11;
 				position.y = minHeight + (maxHeight - minHeight) * gradient;
@@ -864,7 +1049,7 @@ import snow.utils.UInt8Array;
 		return vertexData;
 	}
 
-	public static function CreatePlane(size:Float = 1):VertexData {
+	public static function CreatePlane(size:Float = 1, sideOrientation:Int = Mesh.DEFAULTSIDE):VertexData {
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
 		var normals:Array<Float> = [];
@@ -917,6 +1102,9 @@ import snow.utils.UInt8Array;
 		indices.push(2);
 		indices.push(3);
 		
+		// Sides
+        VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		
 		// Result
 		var vertexData = new VertexData();
 		
@@ -929,7 +1117,7 @@ import snow.utils.UInt8Array;
 	}
 
 	// based on http://code.google.com/p/away3d/source/browse/trunk/fp10/Away3D/src/away3d/primitives/TorusKnot.as?spec=svn2473&r=2473
-	public static function CreateTorusKnot(radius:Float = 2, tube:Float = 0.5, radialSegments:Int = 32, tubularSegments:Int = 32, p:Float = 2, q:Float = 3):VertexData {
+	public static function CreateTorusKnot(radius:Float = 2, tube:Float = 0.5, radialSegments:Int = 32, tubularSegments:Int = 32, p:Float = 2, q:Float = 3, sideOrientation:Int = Mesh.DEFAULTSIDE):VertexData {
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
 		var normals:Array<Float> = [];
@@ -996,6 +1184,9 @@ import snow.utils.UInt8Array;
 		// Normals
 		VertexData.ComputeNormals(positions, indices, normals);
 		
+		// Sides
+        VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		
 		// Result
 		var vertexData = new VertexData();
 		
@@ -1053,6 +1244,57 @@ import snow.utils.UInt8Array;
 			normals[index * 3] = normal.x;
 			normals[index * 3 + 1] = normal.y;
 			normals[index * 3 + 2] = normal.z;
+		}
+	}
+	
+	public static function _ComputeSides(sideOrientation:Int = Mesh.DEFAULTSIDE, positions:Array<Float>, indices:Array<Int>, normals:Array<Float>, uvs:Array<Float>) {
+		var li:Int = indices.length;
+		var ln:Int = normals.length;
+		
+		switch (sideOrientation) {			
+			case Mesh.FRONTSIDE:
+				// nothing changed
+				
+			case Mesh.BACKSIDE:
+				var tmp:Int = 0;
+				// indices
+				var i:Int = 0;
+				while(i < li) {
+					tmp = indices[i];
+					indices[i] = indices[i + 2];
+					indices[i + 2] = tmp;
+					i += 3;
+				}
+				// normals
+				for (n in 0...ln) {
+					normals[n] = -normals[n];
+				}
+				
+			case Mesh.DOUBLESIDE:
+				// positions 
+				var lp:Int = positions.length;
+				var l:Int = Std.int(lp / 3);
+				for (p in 0...lp) {
+					positions[lp + p] = positions[p];
+				}
+				// indices
+				var i:Int = 0;
+				while (i < li) {
+					indices[i + li] = indices[i + 2] + l;
+					indices[i + 1 + li] = indices[i + 1] + l;
+					indices[i + 2 + li] = indices[i] + l;
+					i += 3;
+				}
+				// normals
+				for (n in 0...ln) {
+					normals[ln + n] = -normals[n];
+				}
+				
+				// uvs
+				var lu:Int = uvs.length;
+				for (u in 0...lu) {
+					uvs[u + lu] = uvs[u];
+				}
 		}
 	}
 	

@@ -15,7 +15,7 @@ package com.babylonhx.actions;
 		this._target = target;
 	}
 
-	override public function execute(?evt:ActionEvent):Void {
+	override public function execute(?evt:ActionEvent) {
 		var scene = this._actionManager.getScene();
 		scene.stopAnimation(this._target);
 	}

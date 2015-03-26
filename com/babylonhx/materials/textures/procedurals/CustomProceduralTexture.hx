@@ -7,7 +7,7 @@ import com.babylonhx.tools.Tools;
  * @author Krtolica Vujadin
  */
 
-class CustomProceduralTexture extends ProceduralTexture {
+@:expose('BABYLON.CustomProceduralTexture') class CustomProceduralTexture extends ProceduralTexture {
 	
 	private var _animate:Bool = true;
 	private var _time:Float = 0;

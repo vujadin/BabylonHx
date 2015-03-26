@@ -40,7 +40,7 @@ import com.babylonhx.tools.Tools;
 	}
 
 	public function _getLockedTargetPosition():Vector3 {
-		if (!this.lockedTarget) {
+		if (this.lockedTarget == null) {
 			return null;
 		}
 		
@@ -54,7 +54,7 @@ import com.babylonhx.tools.Tools;
 		this._cache.rotation = new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY);
 	}
 
-	override public function _updateCache(ignoreParentClass:Bool = false/*?ignoreParentClass:Bool*/):Void {
+	override public function _updateCache(ignoreParentClass:Bool = false):Void {
 		if (!ignoreParentClass) {
 			super._updateCache();
 		}
@@ -64,7 +64,7 @@ import com.babylonhx.tools.Tools;
 			this._cache.lockedTarget = null;
 		}
 		else {
-			if (!this._cache.lockedTarget) {
+			if (this._cache.lockedTarget == null) {
 				this._cache.lockedTarget = lockedTargetPosition.clone();
 			}
 			else {
@@ -81,7 +81,7 @@ import com.babylonhx.tools.Tools;
 			return false;
 		}
 		
-		var lockedTargetPosition = this._getLockedTargetPosition();
+		var lockedTargetPosition:Vector3 = this._getLockedTargetPosition();
 		
 		return (this._cache.lockedTarget != null ? this._cache.lockedTarget.equals(lockedTargetPosition) : lockedTargetPosition == null)
 			&& this._cache.rotation.equals(this.rotation);
@@ -94,7 +94,7 @@ import com.babylonhx.tools.Tools;
 	}
 
 	// Target
-	public function setTarget(target:Vector3):Void {
+	public function setTarget(target:Vector3) {
 		this.upVector.normalize();
 		
 		Matrix.LookAtLHToRef(this.position, target, this.upVector, this._camMatrix);
@@ -121,11 +121,11 @@ import com.babylonhx.tools.Tools;
 		return Math.abs(this.cameraDirection.x) > 0 || Math.abs(this.cameraDirection.y) > 0 || Math.abs(this.cameraDirection.z) > 0;
 	}
 
-	public function _updatePosition():Void {
+	public function _updatePosition() {
 		this.position.addInPlace(this.cameraDirection);
 	}
 	
-	override public function _update():Void {
+	override public function _update() {
 		var needToMove = this._decideIfNeedsToMove();
 		var needToRotate = Math.abs(this.cameraRotation.x) > 0 || Math.abs(this.cameraRotation.y) > 0;
 		
@@ -141,10 +141,12 @@ import com.babylonhx.tools.Tools;
 			
 			if (!this.noRotationConstraint) {
 				var limit = (Math.PI / 2) * 0.95;
-				if (this.rotation.x > limit)
+				if (this.rotation.x > limit) {
 					this.rotation.x = limit;
-				if (this.rotation.x < -limit)
+				}
+				if (this.rotation.x < -limit) {
 					this.rotation.x = -limit;
+				}
 			}
 		}
 		

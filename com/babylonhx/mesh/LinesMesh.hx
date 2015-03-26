@@ -22,6 +22,7 @@ import com.babylonhx.math.Ray;
 
 	private var _indicesLength:Int;
 	private var _indices:Array<Int> = [];
+	
 
 	public function new(name:String, scene:Scene, updatable:Bool = false) {
 		super(name, scene);
@@ -34,17 +35,14 @@ import com.babylonhx.math.Ray;
 			});
 	}
 
-	//public var material(get, never):Material;
 	override private function get_material():Material {
 		return this._colorShader;
 	}
 
-	//public var isPickable(get, never):Bool;
 	override private function get_isPickable():Bool {
 		return false;
 	}
 
-	//public var checkCollisions(get, never):Bool;
 	override private function get_checkCollisions():Bool {
 		return false;
 	}
@@ -72,11 +70,11 @@ import com.babylonhx.math.Ray;
 		engine.draw(false, subMesh.indexStart, subMesh.indexCount);
 	}
 
-	override public function intersects(ray:Ray, fastCheck:Bool = false/*?fastCheck:Bool*/):PickingInfo {
+	override public function intersects(ray:Ray, fastCheck:Bool = false):PickingInfo {
 		return null;
 	}
 
-	override public function dispose(doNotRecurse:Bool = false/*?doNotRecurse:Bool*/) {
+	override public function dispose(doNotRecurse:Bool = false) {
 		this._colorShader.dispose();
 		
 		super.dispose(doNotRecurse);

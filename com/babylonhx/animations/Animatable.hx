@@ -33,16 +33,16 @@ package com.babylonhx.animations;
 		if (animations != null) {
 			this.appendAnimations(target, animations);
 		}
-
+		
 		this._scene = scene;
 		scene._activeAnimatables.push(this);
 	}
 
 	// Methods
-	public function appendAnimations(target:Dynamic, animations:Array<Animation>):Void {
+	public function appendAnimations(target:Dynamic, animations:Array<Animation>) {
 		for (index in 0...animations.length) {
 			var animation = animations[index];
-
+			
 			animation._target = target;
 			this._animations.push(animation);    
 		}            
@@ -50,31 +50,31 @@ package com.babylonhx.animations;
 
 	public function getAnimationByTargetProperty(property:String) {
 		var animations = this._animations;
-
+		
 		for (index in 0...animations.length) {
 			if (animations[index].targetProperty == property) {
 				return animations[index];
 			}
 		}
-
+		
 		return null;
 	}
 
-	public function pause():Void {
+	public function pause() {
 		this._paused = true;
 	}
 
-	public function restart():Void {
+	public function restart() {
 		this._paused = false;
 	}
 
-	public function stop():Void {
+	public function stop() {
 		var index = this._scene._activeAnimatables.indexOf(this);
-
+		
 		if (index > -1) {
 			this._scene._activeAnimatables.splice(index, 1);
 		}
-
+		
 		if (this.onAnimationEnd != null) {
 			this.onAnimationEnd();
 		}
@@ -87,28 +87,34 @@ package com.babylonhx.animations;
 			}
 			return true;
 		}
-
+		
 		if (this._localDelayOffset == -1) {
 			this._localDelayOffset = delay;
 		} else if (this._pausedDelay != -1) {
 			this._localDelayOffset += delay - this._pausedDelay;
 			this._pausedDelay = -1;
 		}
-
+		
 		// Animating
 		var running = false;
 		var animations = this._animations;
-
+		
 		for (index in 0...animations.length) {
 			var animation = animations[index];
 			var isRunning = animation.animate(delay - this._localDelayOffset, this.fromFrame, this.toFrame, this.loopAnimation, this.speedRatio);
 			running = running || isRunning;
 		}
-
+		
+		if (!running) {
+			// Remove from active animatables
+			var index = this._scene._activeAnimatables.indexOf(this);
+			this._scene._activeAnimatables.splice(index, 1);
+		}
+		
 		if (!running && this.onAnimationEnd != null) {
 			this.onAnimationEnd();
 		}
-
+		
 		return running;
 	}
 	

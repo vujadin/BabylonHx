@@ -1,12 +1,14 @@
 package com.babylonhx.math;
 
 import com.babylonhx.tools.Tools;
-import openfl.utils.Float32Array;
+import com.babylonhx.utils.typedarray.Float32Array;
+
 
 /**
  * ...
  * @author Krtolica Vujadin
  */
+
 @:expose('BABYLON.Vector3') class Vector3 {
 	
 	public var x:Float;
@@ -170,16 +172,17 @@ import openfl.utils.Float32Array;
 	// Methods
 	public function normalize():Vector3 {
 		var len = this.length();
-
-		if (len == 0)
+		
+		if (len == 0) {
 			return this;
-
+		}
+		
 		var num = 1.0 / len;
-
+		
 		this.x *= num;
 		this.y *= num;
 		this.z *= num;
-
+		
 		return this;
 	}
 
@@ -200,6 +203,15 @@ import openfl.utils.Float32Array;
 	}
 
 	// Statics
+	inline public static function GetClipFactor(vector0:Vector3, vector1:Vector3, axis:Vector3, size:Float):Float {
+        var d0 = Vector3.Dot(vector0, axis) - size;
+        var d1 = Vector3.Dot(vector1, axis) - size;
+		
+        var s = d0 / (d0 - d1);
+		
+        return s;
+    }
+	
 	inline public static function FromArray(array:Array<Float>, offset:Int = 0):Vector3 {
 		return new Vector3(array[offset], array[offset + 1], array[offset + 2]);
 	}
@@ -232,9 +244,9 @@ import openfl.utils.Float32Array;
 
 	inline public static function TransformCoordinates(vector:Vector3, transformation:Matrix):Vector3 {
 		var result = Vector3.Zero();
-
+		
 		Vector3.TransformCoordinatesToRef(vector, transformation, result);
-
+		
 		return result;
 	}
 
@@ -243,7 +255,7 @@ import openfl.utils.Float32Array;
 		var y = (vector.x * transformation.m[1]) + (vector.y * transformation.m[5]) + (vector.z * transformation.m[9]) + transformation.m[13];
 		var z = (vector.x * transformation.m[2]) + (vector.y * transformation.m[6]) + (vector.z * transformation.m[10]) + transformation.m[14];
 		var w = (vector.x * transformation.m[3]) + (vector.y * transformation.m[7]) + (vector.z * transformation.m[11]) + transformation.m[15];
-
+		
 		result.x = x / w;
 		result.y = y / w;
 		result.z = z / w;
@@ -254,7 +266,7 @@ import openfl.utils.Float32Array;
 		var ry = (x * transformation.m[1]) + (y * transformation.m[5]) + (z * transformation.m[9]) + transformation.m[13];
 		var rz = (x * transformation.m[2]) + (y * transformation.m[6]) + (z * transformation.m[10]) + transformation.m[14];
 		var rw = (x * transformation.m[3]) + (y * transformation.m[7]) + (z * transformation.m[11]) + transformation.m[15];
-
+		
 		result.x = rx / rw;
 		result.y = ry / rw;
 		result.z = rz / rw;
@@ -262,9 +274,9 @@ import openfl.utils.Float32Array;
 
 	inline public static function TransformNormal(vector:Vector3, transformation:Matrix):Vector3 {
 		var result = Vector3.Zero();
-
+		
 		Vector3.TransformNormalToRef(vector, transformation, result);
-
+		
 		return result;
 	}
 
@@ -283,35 +295,35 @@ import openfl.utils.Float32Array;
 	inline public static function CatmullRom(value1:Vector3, value2:Vector3, value3:Vector3, value4:Vector3, amount:Float):Vector3 {
 		var squared = amount * amount;
 		var cubed = amount * squared;
-
+		
 		var x = 0.5 * ((((2.0 * value2.x) + ((-value1.x + value3.x) * amount)) +
 			(((((2.0 * value1.x) - (5.0 * value2.x)) + (4.0 * value3.x)) - value4.x) * squared)) +
-			((((-value1.x + (3.0 * value2.x)) - (3.0 * value3.x)) + value4.x) * cubed));
-
+			(((( -value1.x + (3.0 * value2.x)) - (3.0 * value3.x)) + value4.x) * cubed));
+			
 		var y = 0.5 * ((((2.0 * value2.y) + ((-value1.y + value3.y) * amount)) +
 			(((((2.0 * value1.y) - (5.0 * value2.y)) + (4.0 * value3.y)) - value4.y) * squared)) +
-			((((-value1.y + (3.0 * value2.y)) - (3.0 * value3.y)) + value4.y) * cubed));
-
+			(((( -value1.y + (3.0 * value2.y)) - (3.0 * value3.y)) + value4.y) * cubed));
+			
 		var z = 0.5 * ((((2.0 * value2.z) + ((-value1.z + value3.z) * amount)) +
 			(((((2.0 * value1.z) - (5.0 * value2.z)) + (4.0 * value3.z)) - value4.z) * squared)) +
-			((((-value1.z + (3.0 * value2.z)) - (3.0 * value3.z)) + value4.z) * cubed));
-
+			(((( -value1.z + (3.0 * value2.z)) - (3.0 * value3.z)) + value4.z) * cubed));
+			
 		return new Vector3(x, y, z);
 	}
 
 	inline public static function Clamp(value:Vector3, min:Vector3, max:Vector3):Vector3 {
 		var x = value.x;
-		x = (x > max.x) ? max.x :x;
-		x = (x < min.x) ? min.x :x;
-
+		x = (x > max.x) ? max.x : x;
+		x = (x < min.x) ? min.x : x;
+		
 		var y = value.y;
-		y = (y > max.y) ? max.y :y;
-		y = (y < min.y) ? min.y :y;
-
+		y = (y > max.y) ? max.y : y;
+		y = (y < min.y) ? min.y : y;
+		
 		var z = value.z;
-		z = (z > max.z) ? max.z :z;
-		z = (z < min.z) ? min.z :z;
-
+		z = (z > max.z) ? max.z : z;
+		z = (z < min.z) ? min.z : z;
+		
 		return new Vector3(x, y, z);
 	}
 
@@ -322,11 +334,11 @@ import openfl.utils.Float32Array;
 		var part2 = (-2.0 * cubed) + (3.0 * squared);
 		var part3 = (cubed - (2.0 * squared)) + amount;
 		var part4 = cubed - squared;
-
+		
 		var x = (((value1.x * part1) + (value2.x * part2)) + (tangent1.x * part3)) + (tangent2.x * part4);
 		var y = (((value1.y * part1) + (value2.y * part2)) + (tangent1.y * part3)) + (tangent2.y * part4);
 		var z = (((value1.z * part1) + (value2.z * part2)) + (tangent1.z * part3)) + (tangent2.z * part4);
-
+		
 		return new Vector3(x, y, z);
 	}
 
@@ -334,7 +346,7 @@ import openfl.utils.Float32Array;
 		var x = start.x + ((end.x - start.x) * amount);
 		var y = start.y + ((end.y - start.y) * amount);
 		var z = start.z + ((end.z - start.z) * amount);
-
+		
 		return new Vector3(x, y, z);
 	}
 
@@ -344,9 +356,7 @@ import openfl.utils.Float32Array;
 
 	inline public static function Cross(left:Vector3, right:Vector3):Vector3 {
 		var result = Vector3.Zero();
-
 		Vector3.CrossToRef(left, right, result);
-
 		return result;
 	}
 
@@ -372,15 +382,15 @@ import openfl.utils.Float32Array;
 		var ch = viewport.height;
 		var cx = viewport.x;
 		var cy = viewport.y;
-
+		
 		var viewportMatrix = Matrix.FromValues(
 			cw / 2.0, 0, 0, 0,
 			0, -ch / 2.0, 0, 0,
 			0, 0, 1, 0,
 			cx + cw / 2.0, ch / 2.0 + cy, 0, 1);
-
+			
 		var finalMatrix = world.multiply(transform).multiply(viewportMatrix);
-
+		
 		return Vector3.TransformCoordinates(vector, finalMatrix);
 	}
 
@@ -391,11 +401,11 @@ import openfl.utils.Float32Array;
 		source.y = -(source.y / viewportHeight * 2 - 1);
 		var vector = Vector3.TransformCoordinates(source, matrix);
 		var num = source.x * matrix.m[3] + source.y * matrix.m[7] + source.z * matrix.m[11] + matrix.m[15];
-
+		
 		if (Tools.WithinEpsilon(num, 1.0)) {
 			vector = vector.scale(1.0 / num);
 		}
-
+		
 		return vector;
 	}
 
@@ -419,7 +429,7 @@ import openfl.utils.Float32Array;
 		var x = value1.x - value2.x;
 		var y = value1.y - value2.y;
 		var z = value1.z - value2.z;
-
+		
 		return (x * x) + (y * y) + (z * z);
 	}
 

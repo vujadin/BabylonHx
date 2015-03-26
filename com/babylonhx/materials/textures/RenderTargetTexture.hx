@@ -1,5 +1,8 @@
 package com.babylonhx.materials.textures;
 
+import com.babylonhx.Engine;
+import com.babylonhx.ISmartArrayCompatible;
+import com.babylonhx.mesh.Mesh;
 import com.babylonhx.rendering.RenderingManager;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.mesh.AbstractMesh;
@@ -18,10 +21,12 @@ import com.babylonhx.tools.SmartArray;
 	public var renderSprites:Bool = false;
 	public var onBeforeRender:Void->Void;
 	public var onAfterRender:Void->Void;
+	public var onAfterUnbind:Void->Void;
+	public var onClear:Engine->Void;
 	public var activeCamera:Camera;
 	public var customRenderFunction:Dynamic;//SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void->Void;
 
-	private var _size:Float;
+	private var _size:Dynamic;
 	public var _generateMipMaps:Bool;
 	private var _renderingManager:RenderingManager;
 	public var _waitingRenderList:Array<String>;
@@ -30,7 +35,7 @@ import com.babylonhx.tools.SmartArray;
 	private var _refreshRate:Int = 1;
 
 	
-	public function new(name:String, size:Float, scene:Scene, ?generateMipMaps:Bool, doNotChangeAspectRatio:Bool = true) {
+	public function new(name:String, size:Dynamic, scene:Scene, ?generateMipMaps:Bool, doNotChangeAspectRatio:Bool = true, type:Int = Engine.TEXTURETYPE_UNSIGNED_INT) {
 		super(null, scene, !generateMipMaps);
 		
 		this.coordinatesMode = Texture.PROJECTION_MODE;
@@ -41,7 +46,7 @@ import com.babylonhx.tools.SmartArray;
 		this._generateMipMaps = generateMipMaps;
 		this._doNotChangeAspectRatio = doNotChangeAspectRatio;
 		
-		this._texture = scene.getEngine().createRenderTargetTexture(size, generateMipMaps);
+		this._texture = scene.getEngine().createRenderTargetTexture(size, { generateMipMaps: generateMipMaps, type: type });
 		
 		// Rendering groups
 		this._renderingManager = new RenderingManager(scene);
@@ -76,6 +81,13 @@ import com.babylonhx.tools.SmartArray;
 		this._currentRefreshId++;
 		return false;
 	}
+	
+	override public function isReady():Bool {
+		if (!this.getScene().renderTargetsEnabled) {
+			return false;
+		}
+		return super.isReady();
+	}
 
 	public function getRenderSize():Float {
 		return this._size;
@@ -86,7 +98,7 @@ import com.babylonhx.tools.SmartArray;
 		return true;
 	}
 
-	override public function scale(ratio:Float):Void {
+	override public function scale(ratio:Float) {
 		var newSize = this._size * ratio;
 		this.resize(newSize, this._generateMipMaps);
 	}
@@ -96,7 +108,7 @@ import com.babylonhx.tools.SmartArray;
 		this._texture = this.getScene().getEngine().createRenderTargetTexture(size, generateMipMaps);
 	}
 
-	public function render(?useCameraPostProcess:Bool) {
+	public function render(useCameraPostProcess:Bool = false) {
 		var scene = this.getScene();
 		var engine = scene.getEngine();
 		
@@ -110,7 +122,7 @@ import com.babylonhx.tools.SmartArray;
 			this._waitingRenderList = null;
 		}
 		
-		if (this.renderList == null) {
+		if (this.renderList != null && this.renderList.length == 0) {
 			return;
 		}
 		
@@ -119,16 +131,15 @@ import com.babylonhx.tools.SmartArray;
 			engine.bindFramebuffer(this._texture);
 		}
 		
-		// Clear
-		engine.clear(scene.clearColor, true, true);
-		
 		this._renderingManager.reset();
 		
-		for (meshIndex in 0...this.renderList.length) {
-			var mesh = this.renderList[meshIndex];
+		var currentRenderList:Array<AbstractMesh> = this.renderList != null ? this.renderList : cast scene.getActiveMeshes().data;
+		
+		for (meshIndex in 0...currentRenderList.length) {
+			var mesh:Mesh = cast currentRenderList[meshIndex];
 			
 			if (mesh != null) {
-				if (!mesh.isReady() || (mesh.material != null && !mesh.material.isReady())) {
+				if (!mesh.isReady()) {
 					// Reset _currentRefreshId
 					this.resetRefreshCounter();
 					continue;
@@ -139,26 +150,37 @@ import com.babylonhx.tools.SmartArray;
 					
 					for (subIndex in 0...mesh.subMeshes.length) {
 						var subMesh = mesh.subMeshes[subIndex];
-						scene._activeVertices += subMesh.verticesCount;
+						scene._activeVertices += subMesh.indexCount;
 						this._renderingManager.dispatch(subMesh);
 					}
 				}
 			}
+		}
+				
+		if (this.onBeforeRender != null) {
+			this.onBeforeRender();
+		}
+		
+		// Clear
+		if (this.onClear != null) {
+			this.onClear(engine);
+		} else {
+			engine.clear(scene.clearColor, true, true);
 		}
 		
 		if (!this._doNotChangeAspectRatio) {
 			scene.updateTransformMatrix(true);
 		}
 		
-		if (this.onBeforeRender != null) {
-			this.onBeforeRender();
-		}
-		
 		// Render
-		this._renderingManager.render(this.customRenderFunction, this.renderList, this.renderParticles, this.renderSprites);
+		this._renderingManager.render(this.customRenderFunction, currentRenderList, this.renderParticles, this.renderSprites);
 		
 		if (useCameraPostProcess) {
 			scene.postProcessManager._finalizeFrame(false, this._texture);
+		}
+		
+		if (!this._doNotChangeAspectRatio) {
+			scene.updateTransformMatrix(true);
 		}
 		
 		if (this.onAfterRender != null) {
@@ -168,8 +190,8 @@ import com.babylonhx.tools.SmartArray;
 		// Unbind
 		engine.unBindFramebuffer(this._texture);
 		
-		if (!this._doNotChangeAspectRatio) {
-			scene.updateTransformMatrix(true);
+		if (this.onAfterUnbind != null) {
+			this.onAfterUnbind();
 		}
 	}
 
