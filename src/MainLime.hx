@@ -24,7 +24,7 @@ class MainLime extends Application {
 	}
 	
 	public override function init (context:RenderContext):Void {
-		engine = new Engine(this, false);	
+		engine = new Engine(this.window, false);	
 		scene = new Scene(engine);
 		
 		new samples.BasicScene(scene);
@@ -71,6 +71,9 @@ class MainLime extends Application {
 		//new samples.Octree(scene);
 		//new samples.SSAO(scene);						// NOT WORKING YET !!
 		//new samples.Decals(scene);
+		
+		engine.width = this.window.width;
+		engine.height = this.window.height;
 	}
 	
 	override function onMouseDown(x:Float, y:Float, button:Int) {
@@ -93,7 +96,7 @@ class MainLime extends Application {
 	
 	override function onMouseWheel(deltaX:Float, deltaY:Float) {
 		for (f in Engine.mouseWheel) {
-			f(deltaY);
+			f(deltaY / 10);
 		}
 	}
 	
