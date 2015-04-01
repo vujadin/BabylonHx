@@ -111,4 +111,13 @@ class SmartCollection {
 		}
 	}
 	
+	public function forEach(block:Dynamic->Void) {
+		var key:String;
+		for (key in this.items) {
+			if (this.items.exists(key)) {
+				block(this.items[key]);
+			}
+		}
+	}
+	
 }

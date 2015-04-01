@@ -155,6 +155,7 @@ import js.Browser;
 		this._canvasClientRect.width = 800;// canvas.width;
 		this._canvasClientRect.height = 600;// canvas.height;
 		
+		// TODO: make it for Snow also ??
 		#if lime
 		this.width = 800;
 		this.height = 600;
@@ -185,21 +186,7 @@ import js.Browser;
 		
 		// Infos
 		this._glVersion = GL.getParameter(GL.VERSION);
-		
-		/*var rendererInfo = GL.getExtension("WEBGL_debug_renderer_info");
-		if (rendererInfo != null) {
-			GLRenderer = GL.getParameter(rendererInfo.UNMASKED_RENDERER_WEBGL);
-			GLVendor = GL.getParameter(rendererInfo.UNMASKED_VENDOR_WEBGL);
-		}
-		
-		if (!GLVendor) {
-			GLVendor = "Unknown vendor";
-		}
-		
-		if (!GLRenderer) {
-			GLRenderer = "Unknown renderer";
-		}*/
-		
+				
 		// Extensions
 		try {
 			this._caps.standardDerivatives = (GL.getExtension('OES_standard_derivatives') != null);
@@ -208,43 +195,42 @@ import js.Browser;
 			this._caps.textureAnisotropicFilterExtension = GL.getExtension('EXT_texture_filter_anisotropic') || GL.getExtension('WEBKIT_EXT_texture_filter_anisotropic') || GL.getExtension('MOZ_EXT_texture_filter_anisotropic');
 			this._caps.maxAnisotropy = this._caps.textureAnisotropicFilterExtension != null ? GL.getParameter(this._caps.textureAnisotropicFilterExtension.MAX_TEXTURE_MAX_ANISOTROPY_EXT) : 0;
 			this._caps.instancedArrays = GL.getExtension('ANGLE_instanced_arrays');
-			this._caps.uintIndices = GL.getExtension('OES_element_index_uint') != null;
+			this._caps.uintIndices = GL.getExtension('OES_element_index_uint') != null;	
 		} catch (err:Dynamic) {
-			trace(err);
+			//trace(err);
 		}
-		
 		#if !js
-		if (this._caps.s3tc == null) {
-			this._caps.s3tc = GL.getExtension('GL_EXT_texture_compression_s3tc');
-		}
-		if (this._caps.textureAnisotropicFilterExtension == null || this._caps.textureAnisotropicFilterExtension == false) {
-			
-			this._caps.textureAnisotropicFilterExtension = GL.getExtension('GL_EXT_texture_filter_anisotropic');
-		}
-		if (this._caps.maxRenderTextureSize == 0) {
-			this._caps.maxRenderTextureSize = 16384;
-		}
-		if (this._caps.maxCubemapTextureSize == 0) {
-			this._caps.maxCubemapTextureSize = 16384;
-		}
-		if (this._caps.maxTextureSize == 0) {
-			this._caps.maxTextureSize = 16384;
-		}
-		if (this._caps.textureFloat == null) {
-			this._caps.textureFloat = true;
-		}
-		if (this._caps.uintIndices == null) {
-			this._caps.uintIndices = true;
-		}
-		if (this._caps.standardDerivatives == false) {
-			this._caps.standardDerivatives = true;
-		}
-		if (this._caps.maxAnisotropy == 0) {
-			this._caps.maxAnisotropy = 16;
-		}
-		if (this._caps.textureFloat == false) {
-			this._caps.textureFloat = GL.getExtension('GL_ARB_texture_float');
-		}
+			if (this._caps.s3tc == null) {
+				this._caps.s3tc = GL.getExtension('GL_EXT_texture_compression_s3tc');
+			}
+			if (this._caps.textureAnisotropicFilterExtension == null || this._caps.textureAnisotropicFilterExtension == false) {
+				
+				this._caps.textureAnisotropicFilterExtension = GL.getExtension('GL_EXT_texture_filter_anisotropic');
+			}
+			if (this._caps.maxRenderTextureSize == 0) {
+				this._caps.maxRenderTextureSize = 16384;
+			}
+			if (this._caps.maxCubemapTextureSize == 0) {
+				this._caps.maxCubemapTextureSize = 16384;
+			}
+			if (this._caps.maxTextureSize == 0) {
+				this._caps.maxTextureSize = 16384;
+			}
+			if (this._caps.textureFloat == null) {
+				this._caps.textureFloat = true;
+			}
+			if (this._caps.uintIndices == null) {
+				this._caps.uintIndices = true;
+			}
+			if (this._caps.standardDerivatives == false) {
+				this._caps.standardDerivatives = true;
+			}
+			if (this._caps.maxAnisotropy == 0) {
+				this._caps.maxAnisotropy = 16;
+			}
+			if (this._caps.textureFloat == false) {
+				this._caps.textureFloat = GL.getExtension('GL_ARB_texture_float');
+			}
 		#end
 		
 		/*for (ext in GL.getSupportedExtensions()) {
@@ -749,8 +735,8 @@ import js.Browser;
 	}
 
 	public function createShaderProgram(vertexCode:String, fragmentCode:String, defines:String):GLProgram {
-		var vertexShader = compileShader(GL, vertexCode, "vertex", defines);
-		var fragmentShader = compileShader(GL, fragmentCode, "fragment", defines);
+		var vertexShader = compileShader(vertexCode, "vertex", defines);
+		var fragmentShader = compileShader(fragmentCode, "fragment", defines);
 		
 		var shaderProgram = GL.createProgram();
 		GL.attachShader(shaderProgram, vertexShader);
@@ -1575,43 +1561,26 @@ import js.Browser;
 
 	// Dispose
 	public function dispose() {
-		/*this.hideLoadingUI();
-
+		// TODO
+		//this.hideLoadingUI();
+		
 		this.stopRenderLoop();
-
+		
 		// Release scenes
-		while (this.scenes.length) {
+		while (this.scenes.length > 0) {
 			this.scenes[0].dispose();
+			this.scenes[0] = null;
+			this.scenes.shift();
 		}
-
+		
 		// Release effects
-		for (var name in this._compiledEffects) {
+		for (name in this._compiledEffects.keys()) {
 			GL.deleteProgram(this._compiledEffects[name]._program);
 		}
-
-		// Unbind
-		for (var i in this._vertexAttribArrays) {
-			if (i > GL.VERTEX_ATTRIB_ARRAY_ENABLED || !this._vertexAttribArrays[i]) {
-				continue;
-			}
-			GL.disableVertexAttribArray(i);
-		}
-
-		// Events
-		window.removeEventListener("blur", this._onBlur);
-		window.removeEventListener("focus", this._onFocus);
-		document.removeEventListener("fullscreenchange", this._onFullscreenChange);
-		document.removeEventListener("mozfullscreenchange", this._onFullscreenChange);
-		document.removeEventListener("webkitfullscreenchange", this._onFullscreenChange);
-		document.removeEventListener("msfullscreenchange", this._onFullscreenChange);
-		document.removeEventListener("pointerlockchange", this._onPointerLockChange);
-		document.removeEventListener("mspointerlockchange", this._onPointerLockChange);
-		document.removeEventListener("mozpointerlockchange", this._onPointerLockChange);
-		document.removeEventListener("webkitpointerlockchange", this._onPointerLockChange);*/
 	}
 
 	// Statics	
-	public static function compileShader(gl:Dynamic, source:String, type:String, defines:String):GLShader {
+	public static function compileShader(source:String, type:String, defines:String):GLShader {
         var shader:GLShader = GL.createShader(type == "vertex" ? GL.VERTEX_SHADER : GL.FRAGMENT_SHADER);
 		
         GL.shaderSource(shader, (defines != null ? defines + "\n" : "") + source);

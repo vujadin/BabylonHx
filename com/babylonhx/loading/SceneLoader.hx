@@ -114,7 +114,31 @@ import com.babylonhx.loading.plugins.BabylonFileLoader;
 			}
 			
 			Tools.LoadFile(rootUrl + sceneFilename, function(data:Dynamic) {
-				importMeshFromData(data);
+				var meshes:Array<AbstractMesh> = [];
+				var particleSystems:Array<ParticleSystem> = [];
+				var skeletons:Array<Skeleton> = [];
+				
+				try {
+					if (!plugin.importMesh(meshesNames, scene, data, rootUrl, meshes, particleSystems, skeletons)) {
+						if (onerror != null) {
+							onerror(scene, 'unable to load the scene');
+						}
+						
+						return;
+					}
+				} catch (e:Dynamic) {
+					trace(e);
+					if (onerror != null) {
+						onerror(scene, e);
+					}
+					
+					return;
+				}
+				
+				if (onsuccess != null) {
+					scene.importedMeshesFiles.push(rootUrl + sceneFilename);
+					onsuccess(meshes, particleSystems, skeletons);
+				}
 			});
 		};
 		

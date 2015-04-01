@@ -39,7 +39,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _uniforms:Array<GLUniformLocation>;
 	public var _key:String;
 
+	@:allow(com.babylonhx.Engine.dispose) 
 	private var _program:GLProgram;
+	
 	private var _valueCache:Map<String, Array<Float>>;		
 	
 
@@ -177,10 +179,14 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			var index:Int = 0;
 			while(index < this._samplers.length) {
                 var sampler = this.getUniform(this._samplers[index]);
-				#if js
+				#if (snow || kha)
 				if (sampler == null) {
-				#else
-                if (cast(sampler, Int) < 0) {
+				#elseif lime
+					#if js
+					if (sampler == null) {
+					#else
+					if (cast(sampler, Int) < 0) {
+					#end
 				#end
                     this._samplers.splice(index, 1);
                     index--;

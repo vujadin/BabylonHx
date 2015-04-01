@@ -120,6 +120,8 @@ import haxe.Timer;
 
 	// Geometries
 	private var _geometries:Array<Geometry> = [];
+	public var onGeometryAdded:Geometry->Void;
+    public var onGeometryRemoved:Geometry->Void;
 
 	public var materials:Array<Material> = [];
 	public var multiMaterials:Array<MultiMaterial> = [];
@@ -817,14 +819,40 @@ import haxe.Timer;
 		}
 		
 		this._geometries.push(geometry);
+		if (this.onGeometryAdded != null) {
+			this.onGeometryAdded(geometry);
+		}
 		
 		return true;
+	}
+	
+	/**
+	 * Removes an existing geometry
+	 * @param {BABYLON.Geometry} geometry - the geometry to be removed from the scene.
+	 * @return {boolean} was the geometry removed or not
+	 */
+	public function removeGeometry(geometry:Geometry):Bool {
+		var index = this._geometries.indexOf(geometry);
+		
+		if (index > -1) {
+			this._geometries.splice(index, 1);
+			if (this.onGeometryRemoved != null) {
+				this.onGeometryRemoved(geometry);
+			}
+			return true;
+		}
+		return false;
 	}
 
 	public function getGeometries():Array<Geometry> {
 		return this._geometries;
 	}
 
+	/**
+	 * Get the first added mesh found of a given ID
+	 * @param {string} id - the id to search for
+	 * @return {BABYLON.AbstractMesh|null} the mesh found or null if not found at all.
+	 */
 	public function getMeshByID(id:String):AbstractMesh {
 		for (index in 0...this.meshes.length) {
 			if (this.meshes[index].id == id) {
@@ -835,6 +863,11 @@ import haxe.Timer;
 		return null;
 	}
 	
+	/**
+	 * Get a mesh with its auto-generated unique id
+	 * @param {number} uniqueId - the unique id to search for
+	 * @return {BABYLON.AbstractMesh|null} the mesh found or null if not found at all.
+	 */
 	public function getMeshByUniqueID(uniqueId:Int):AbstractMesh {
         for (index in 0...this.meshes.length) {
             if (this.meshes[index].uniqueId == uniqueId) {
@@ -845,6 +878,11 @@ import haxe.Timer;
         return null;
     }
 
+	/**
+	 * Get a the last added mesh found of a given ID
+	 * @param {string} id - the id to search for
+	 * @return {BABYLON.AbstractMesh|null} the mesh found or null if not found at all.
+	 */
 	public function getLastMeshByID(id:String):AbstractMesh {
 		var index:Int = this.meshes.length -1;
 		while(index >= 0) {
@@ -857,6 +895,11 @@ import haxe.Timer;
 		return null;
 	}
 
+	/**
+	 * Get a the last added node (Mesh, Camera, Light) found of a given ID
+	 * @param {string} id - the id to search for
+	 * @return {BABYLON.Node|null} the node found or null if not found at all.
+	 */
 	public function getLastEntryByID(id:String):Node {
 		var index:Int = this.meshes.length - 1;
 		while(index >= 0) {

@@ -18,6 +18,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public var id:String;
 	public var delayLoadState = Engine.DELAYLOADSTATE_NONE;
 	public var delayLoadingFile:String;
+	public var onGeometryUpdated:Geometry->String->Void;
 
 	// Private
 	private var _scene:Scene;
@@ -67,6 +68,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 
 	public function setAllVerticesData(vertexData:VertexData, updatable:Bool = false/*?updatable:Bool*/) {
 		vertexData.applyToGeometry(this, updatable);
+		this.notifyUpdate();
 	}
 
 	public function setVerticesData(kind:String, data:Array<Float>, updatable:Bool = false/*?updatable:Bool*/, ?stride:Int) {
@@ -96,6 +98,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 				mesh.computeWorldMatrix(true);
 			}
 		}
+		this.notifyUpdate();
 	}
 
 	public function updateVerticesDataDirectly(kind:String, data:Float32Array, offset:Int) {
@@ -106,6 +109,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 		
 		vertexBuffer.updateDirectly(data, offset);
+		this.notifyUpdate();
 	}
 
 	public function updateVerticesData(kind:String, data:Array<Float>, updateExtends:Bool = false/*?updateExtends:Bool*/, makeItUnique:Bool = false/*?makeItUnique:Bool*/) {
@@ -144,6 +148,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 				}
 			}
 		}
+		this.notifyUpdate();
 	}
 
 	public function getTotalVertices():Int {
@@ -202,7 +207,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return result;
 	}
 
-	public function setIndices(indices:Array<Int>) {
+	public function setIndices(indices:Array<Int>, totalVertices:Int = -1) {
 		if (this._indexBuffer != null) {
 			this._engine._releaseBuffer(this._indexBuffer);
 		}
@@ -212,12 +217,18 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			this._indexBuffer = this._engine.createIndexBuffer(this._indices);
 		}
 		
+		if (totalVertices != -1) {
+			this._totalVertices = totalVertices;
+		}
+		
 		var meshes = this._meshes;
 		var numOfMeshes = meshes.length;
 		
 		for (index in 0...numOfMeshes) {
 			meshes[index]._createGlobalSubMesh();
 		}
+		
+		this.notifyUpdate();
 	}
 
 	public function getTotalIndices():Int {
@@ -323,6 +334,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			this._indexBuffer.references = numOfMeshes;
 		}
 	}
+	
+	private function notifyUpdate(?kind:String) {
+		if (this.onGeometryUpdated != null) {
+			this.onGeometryUpdated(this, kind);
+		}
+	}
 
 	public function load(scene:Scene, ?onLoaded:Void->Void) {
 		if (this.delayLoadState == Engine.DELAYLOADSTATE_LOADING) {
@@ -391,12 +408,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		this._boundingInfo = null; // todo:.dispose()
 		
-		var geometries = this._scene.getGeometries();
-		var index = geometries.indexOf(this);
-		
-		if (index > -1) {
-			geometries.splice(index, 1);
-		}
+		this._scene.removeGeometry(this);
 		
 		this._isDisposed = true;
 	}

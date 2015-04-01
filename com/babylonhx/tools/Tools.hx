@@ -129,25 +129,27 @@ import com.babylonhx.utils.Image;
 	
 	#if snow
 	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {		
-		#if js
+		/*#if js
+		trace(path);
 		var callBackFunction = callbackFn != null ?
 			function(result:Dynamic) {
 				callbackFn(result.bytes);
 			} : function(_) { };
 			
-		var httpRequest = new XMLHttpRequest();
+		var httpRequest:XMLHttpRequest = new XMLHttpRequest();
 		httpRequest.onreadystatechange = function(_) {
 			if (httpRequest.readyState == 4) {
 				if (httpRequest.status == 200) {
 					if (callBackFunction != null) {
-						callBackFunction(httpRequest.responseText);
+						var file = httpRequest.response;
+						callBackFunction(file);
 					}
 				}
 			}
 		};
 		httpRequest.open('GET', path);
 		httpRequest.send();
-		#else
+		#else*/
 		if (type == "") {
 			if (SnowApp._snow.assets.exists(path)) {
 				if (StringTools.endsWith(path, "bbin")) {
@@ -195,10 +197,30 @@ import com.babylonhx.utils.Image;
 				trace("File '" + path + "' doesn't exist!");
 			}
 		}
-		#end
+		//#end
     }
 	#elseif lime
-	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {			
+	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {	
+		#if js
+		var callBackFunction = callbackFn != null ?
+			function(result:Dynamic) {
+				callbackFn(result);
+			} : function(_) { };
+			
+		var httpRequest:XMLHttpRequest = new XMLHttpRequest();
+		httpRequest.onreadystatechange = function(_) {
+			if (httpRequest.readyState == 4) {
+				if (httpRequest.status == 200) {
+					if (callBackFunction != null) {
+						var file = httpRequest.response;
+						callBackFunction(file);
+					}
+				}
+			}
+		};
+		httpRequest.open('GET', path);
+		httpRequest.send();
+		#else
 		if (type == "") {
 			if (lime.Assets.exists(path)) {
 				if (StringTools.endsWith(path, "bbin")) {
@@ -250,6 +272,7 @@ import com.babylonhx.utils.Image;
 				trace("File '" + path + "' doesn't exist!");
 			}
 		}
+		#end
     }
 	#elseif kha
 	
@@ -257,16 +280,16 @@ import com.babylonhx.utils.Image;
 	
 	#if snow
 	public static function LoadImage(url:String, onload:Image->Void, ?onerror:Void->Void, ?db:Dynamic) { 
-		if (SnowApp._snow.assets.exists(url)) {
-			var callbackFn = function(img:snow.assets.AssetImage) {
+		if (SnowApp._host.app.assets.exists(url)) {
+			var callbackFn = function(img:Dynamic/*snow.system.assets.AssetImage*/) {
 				var i = new Image(img.image.data, img.image.width, img.image.height);
 				onload(i);
 			};
 			#if !js			
-			var img = SnowApp._snow.assets.image(url, { onload: callbackFn });
+			var img = SnowApp._host.app.assets.image(url, { onload: callbackFn });
 			//onload(img);
 			#else
-			SnowApp._snow.assets.image(url, { onload: callbackFn });
+			SnowApp._host.app.assets.image(url, { onload: callbackFn });
 			#end
 		} else {
 			trace("Image '" + url + "' doesn't exist!");

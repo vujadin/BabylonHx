@@ -27,6 +27,6 @@ package com.babylonhx.actions;
 	}
 
 	override public function execute(?evt:ActionEvent) {
-		Reflect.setField(this._target, this._property, this.value);
+		Reflect.setProperty(this._target, this._property, this.value);
 	}
 }

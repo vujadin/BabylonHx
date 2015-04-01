@@ -10,5 +10,5 @@ package com.babylonhx.mesh;
 	function getIndices():Array<Int>;
 	function setVerticesData(kind:String, data:Array<Float>, updatable:Bool = false, ?stride:Int):Void;
 	function updateVerticesData(kind:String, data:Array<Float>, updateExtends:Bool = false, makeItUnique:Bool = false):Void;
-	function setIndices(indices:Array<Int>):Void;
+	function setIndices(indices:Array<Int>, totalVertices:Int = -1):Void;
 }

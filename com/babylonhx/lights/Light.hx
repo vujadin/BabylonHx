@@ -42,7 +42,7 @@ import com.babylonhx.mesh.AbstractMesh;
 		return Vector3.Zero();
 	}
 
-	public function transferToEffect(effect:Effect, ?uniformName0:String, ?uniformName1:String):Void {
+	public function transferToEffect(effect:Effect, ?uniformName0:String, ?uniformName1:String) {
 		// to be overriden
 	}
 
@@ -88,7 +88,7 @@ import com.babylonhx.mesh.AbstractMesh;
 		return worldMatrix;
 	}
 
-	public function dispose():Void {
+	public function dispose() {
 		if (this._shadowGenerator != null) {
 			this._shadowGenerator.dispose();
 			this._shadowGenerator = null;

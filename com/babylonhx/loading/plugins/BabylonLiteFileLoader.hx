@@ -54,6 +54,7 @@ import com.babylonhx.particles.ParticleSystem;
 import com.babylonhx.physics.PhysicsBodyCreationOptions;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.actions.*;
+import haxe.io.Bytes;
 
 import haxe.Json;
 import haxe.Timer;
@@ -63,8 +64,6 @@ import org.msgpack.MsgPack;
 import com.babylonhx.utils.typedarray.ArrayBuffer;
 import com.babylonhx.utils.typedarray.Float32Array;
 import com.babylonhx.utils.typedarray.Int32Array;
-import snow.assets.AssetBytes;
-import snow.assets.AssetText;
 
 
 /**
@@ -83,26 +82,14 @@ import snow.assets.AssetText;
         importMesh: function(meshesNames:Dynamic, scene:Scene, data:Dynamic, rootUrl:String, meshes:Array<AbstractMesh>, particleSystems:Array<ParticleSystem>, skeletons:Array<Skeleton>):Bool {
 						
 			var parsedData:Dynamic = null;
-			
-			#if js
 			if (Std.is(data, String)) {
 				parsedData = Json.parse(data);
-			} else if(Std.is(data, snow.utils.ByteArray)) {
+			} else if(Std.is(data, Bytes)) {
 				parsedData = MsgPack.decode(data);
 			} else {
 				trace("Unknown data type!");
 				return false;
 			}
-			#else
-			if(Std.is(data, AssetText)) {
-				parsedData = Json.parse(data.text);
-			} else if(Std.is(data, AssetBytes)) {
-				parsedData = MsgPack.decode(data.bytes);
-			} else {
-				trace("Unknown data type!");
-				return false;
-			}
-			#end
 									
             var loadedSkeletonsIds:Array<Int> = [];
             var loadedMaterialsIds:Array<Int> = [];
@@ -192,26 +179,17 @@ import snow.assets.AssetText;
             return true;
         },
 		load: function(scene:Scene, data:Dynamic, rootUrl:String):Bool {
+			
 			var parsedData:Dynamic = null;
-			#if js
 			if (Std.is(data, String)) {
 				parsedData = Json.parse(data);
-			} else if(Std.is(data, snow.utils.ByteArray)) {
+			} else if(Std.is(data, Bytes)) {
 				parsedData = MsgPack.decode(data);
 			} else {
 				trace("Unknown data type!");
 				return false;
 			}
-			#else
-			if(Std.is(data, AssetText)) {
-				parsedData = Json.parse(data.text);
-			} else if(Std.is(data, AssetBytes)) {
-				parsedData = MsgPack.decode(data.bytes);
-			} else {
-				trace("Unknown data type!");
-				return false;
-			}
-			#end
+			
 			data = null;
 						
             // Scene

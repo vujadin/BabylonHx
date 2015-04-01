@@ -68,6 +68,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	private var _instancesBufferSize:Int = 32 * 16 * 4; // let's start with a maximum of 32 instances
 	public var _shouldGenerateFlatShading:Bool;
 	private var _preActivateId:Int = -1;
+	private var _sideOrientation:Int = Mesh.DEFAULTSIDE;
+	public var sideOrientation(get, set):Int;
+	
 
 	public function new(name:String, scene:Scene, parent:Node = null, ?source:Mesh, doNotCloneChildren:Bool = false) {
 		super(name, scene);
@@ -379,6 +382,15 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	public function isDisposed():Bool {
 		return this._isDisposed;
 	}
+	
+	private function get_sideOrientation():Int {
+		return this._sideOrientation;
+	}
+
+	private function set_sideOrientation(value:Int):Int {
+		this._sideOrientation = value;
+		return value;
+	}
 
 	// Methods  
 	override public function _preActivate() {
@@ -495,6 +507,20 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			this.updateVerticesDataDirectly(kind, data, offset, false);
 		}
 	}
+	
+	// Mesh positions update function :
+	// updates the mesh positions according to the positionFunction returned values.
+	// The positionFunction argument must be a javascript function accepting the mesh "positions" array as parameter.
+	// This dedicated positionFunction computes new mesh positions according to the given mesh type.
+	public function updateMeshPositions(positionFunction:Dynamic) {
+		var positions = this.getVerticesData(VertexBuffer.PositionKind);
+		positionFunction(positions);
+		var indices = this.getIndices();
+		var normals = this.getVerticesData(VertexBuffer.NormalKind);
+		this.updateVerticesData(VertexBuffer.PositionKind, positions, false, false);
+		VertexData.ComputeNormals(positions, indices, normals);
+		this.updateVerticesData(VertexBuffer.NormalKind, normals, false, false);
+	}
 
 	public function makeGeometryUnique() {
 		if (this._geometry == null) {
@@ -505,7 +531,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		geometry.applyToMesh(this);
 	}
 
-	public function setIndices(indices:Array<Int>) {
+	public function setIndices(indices:Array<Int>, totalVertices:Int = -1) {
 		if (this._geometry == null) {
 			var vertexData = new VertexData();
 			vertexData.indices = indices;
@@ -1220,13 +1246,48 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	}
 
 	// Statics
-	public static function CreateRibbon(name:String, pathArray:Array<Array<Vector3>>, closeArray:Bool = false, closePath:Bool = false, offset:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		var ribbon = new Mesh(name, scene);
-		var vertexData = VertexData.CreateRibbon(pathArray, closeArray, closePath, offset, sideOrientation);
-		
-		vertexData.applyToMesh(ribbon, updatable);
-		
-		return ribbon;
+	public static function CreateRibbon(name:String, pathArray:Array<Array<Vector3>>, closeArray:Bool = false, closePath:Bool = false, offset:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE, ribbonInstance:Mesh = null):Mesh {
+		if (ribbonInstance != null) {   // existing ribbon instance update
+			// positionFunction : ribbon case
+			// only pathArray and sideOrientation parameters are taken into account for positions update
+			var positionsOfRibbon = function (pathArray:Array<Array<Vector3>>, sideOrientation:Int) {
+				var positionFunction = function (positions) {
+					var minlg = pathArray[0].length;
+					var i:Int = 0;
+					var ns = (sideOrientation == Mesh.DOUBLESIDE) ? 2 : 1;
+					for (si in 1...ns+1) {
+						for (p in 0...pathArray.length) {
+							var path = pathArray[p];
+							var l = path.length;
+							minlg = (minlg < l) ? minlg : l;
+							var j:Int = 0;
+							while (j < minlg) {
+								positions[i] = path[j].x;
+								positions[i + 1] = path[j].y;
+								positions[i + 2] = path[j].z;
+								j++;
+								i += 3;
+							}
+						}
+					}
+				};
+				return positionFunction;
+			};
+			var sideOrientation = ribbonInstance.sideOrientation;
+			var positionFunction = positionsOfRibbon(pathArray, sideOrientation);
+			ribbonInstance.updateMeshPositions(positionFunction);
+			
+			return ribbonInstance;
+		}
+		else {  // new ribbon creation
+			var ribbon = new Mesh(name, scene);
+			ribbon.sideOrientation = sideOrientation;
+			var vertexData = VertexData.CreateRibbon(pathArray, closeArray, closePath, offset, sideOrientation);
+			
+			vertexData.applyToMesh(ribbon, updatable);
+			
+			return ribbon;
+		}
 	}
 	
 	public static function CreateBox(name:String, size:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
@@ -1446,8 +1507,8 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
         var currentVertexDataIndex:Int = 0;
 		
         var extractDecalVector3 = function(indexId:Int):PositionNormalVertex {
-            var vertexId = indices[indexId];
-            var result = new PositionNormalVertex();
+            var vertexId:Int = indices[indexId];
+            var result:PositionNormalVertex = new PositionNormalVertex();
             result.position = new Vector3(positions[vertexId * 3], positions[vertexId * 3 + 1], positions[vertexId * 3 + 2]);
 			
             // Send vector to decal local world
@@ -1476,7 +1537,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
                 );
             }
 			
-            var result = new Array<PositionNormalVertex>();
+            var result:Array<PositionNormalVertex> = [];
 			
 			var v1Out:Bool = false;
 			var v2Out:Bool = false;
@@ -1502,6 +1563,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
                 v3Out = d3 > 0;
 				
                 total = (v1Out ? 1 : 0) + (v2Out ? 1 : 0) + (v3Out ? 1 : 0);
+				
                 switch (total) {
                     case 0:
                         result.push(vertices[index]);
@@ -1606,12 +1668,13 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
             }
               
             // Add UVs and get back to world
+			var localRotationMatrix = Matrix.RotationYawPitchRoll(yaw, pitch, angle);
 			var vertex:PositionNormalVertex = null;
             for (vIndex in 0...faceVertices.length) {
                 vertex = faceVertices[vIndex];
 				
                 vertexData.indices.push(currentVertexDataIndex);
-                Vector3.TransformCoordinates(vertex.position, decalWorldMatrix).toArray(vertexData.positions, currentVertexDataIndex * 3);
+                vertex.position.toArray(vertexData.positions, currentVertexDataIndex * 3);
                 vertex.normal.toArray(vertexData.normals, currentVertexDataIndex * 3);
                 vertexData.uvs.push(0.5 + vertex.position.x / size.x);
                 vertexData.uvs.push(0.5 + vertex.position.y / size.y);
@@ -1625,6 +1688,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
         // Return mesh
         var decal = new Mesh(name, sourceMesh.getScene());
         vertexData.applyToMesh(decal);
+		
+		decal.position = position.clone();
+		decal.rotation = new Vector3(pitch, yaw, angle);
 		
         return decal;
     }
