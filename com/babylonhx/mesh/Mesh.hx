@@ -71,6 +71,11 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	private var _sideOrientation:Int = Mesh.DEFAULTSIDE;
 	public var sideOrientation(get, set):Int;
 	
+	// for extrusion
+	public var path3D:Path3D;
+	public var pathArray:Array<Array<Vector3>>;
+	public var tessellation:Float;
+	
 
 	public function new(name:String, scene:Scene, parent:Node = null, ?source:Mesh, doNotCloneChildren:Bool = false) {
 		super(name, scene);
@@ -512,14 +517,16 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	// updates the mesh positions according to the positionFunction returned values.
 	// The positionFunction argument must be a javascript function accepting the mesh "positions" array as parameter.
 	// This dedicated positionFunction computes new mesh positions according to the given mesh type.
-	public function updateMeshPositions(positionFunction:Dynamic) {
+	public function updateMeshPositions(positionFunction:Dynamic, computeNormals:Bool = true) {
 		var positions = this.getVerticesData(VertexBuffer.PositionKind);
 		positionFunction(positions);
-		var indices = this.getIndices();
-		var normals = this.getVerticesData(VertexBuffer.NormalKind);
 		this.updateVerticesData(VertexBuffer.PositionKind, positions, false, false);
-		VertexData.ComputeNormals(positions, indices, normals);
-		this.updateVerticesData(VertexBuffer.NormalKind, normals, false, false);
+		if (computeNormals) {
+			var indices = this.getIndices();
+			var normals = this.getVerticesData(VertexBuffer.NormalKind);
+			VertexData.ComputeNormals(positions, indices, normals);
+			this.updateVerticesData(VertexBuffer.NormalKind, normals, false, false);
+		}
 	}
 
 	public function makeGeometryUnique() {
@@ -1246,7 +1253,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	}
 
 	// Statics
-	public static function CreateRibbon(name:String, pathArray:Array<Array<Vector3>>, closeArray:Bool = false, closePath:Bool = false, offset:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE, ribbonInstance:Mesh = null):Mesh {
+	public static function CreateRibbon(?name:String, pathArray:Array<Array<Vector3>>, ?closeArray:Bool = false, ?closePath:Bool = false, ?offset:Int, scene:Scene, ?updatable:Bool = false, ?sideOrientation:Int = Mesh.DEFAULTSIDE, ribbonInstance:Mesh = null):Mesh {
 		if (ribbonInstance != null) {   // existing ribbon instance update
 			// positionFunction : ribbon case
 			// only pathArray and sideOrientation parameters are taken into account for positions update
@@ -1336,53 +1343,99 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	}
 
 	// Lines
-	public static function CreateLines(name:String, points:Array<Vector3>, scene:Scene, updatable:Bool = false):LinesMesh {
-		var lines = new LinesMesh(name, scene, updatable);		
+	public static function CreateLines(name:String, points:Array<Vector3>, scene:Scene, updatable:Bool = false, linesInstance:LinesMesh = null):LinesMesh {
+		if (linesInstance != null) { // lines update
+			var positionsOfLines = function (points:Array<Vector3>):Dynamic {
+				var positionFunction = function (positions:Array<Float>) {
+					var i:Int = 0;
+					for(p in 0...points.length) {
+						positions[i] = points[p].x;
+						positions[i + 1] = points[p].y;
+						positions[i + 2] = points[p].z;
+						i += 3;
+					}
+				};
+				return positionFunction;
+			};
+			var positionFunction = positionsOfLines(points);
+			linesInstance.updateMeshPositions(positionFunction, false);
+			
+			return linesInstance;			
+		}
+		
+		// lines creation
+		var lines = new LinesMesh(name, scene, updatable);
 		var vertexData = VertexData.CreateLines(points);
 		vertexData.applyToMesh(lines, updatable);
+		
 		return lines;
 	}
 	
 	// Extrusion
-	public static function ExtrudeShape(name:String, shape:Array<Vector3>, path:Array<Vector3>, scale:Float = 1, rotation:Float = 0, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		var extruded = Mesh._ExtrudeShapeGeneric(name, shape, path, scale, rotation, null, null, false, false, false, scene, updatable, sideOrientation);
+	public static function ExtrudeShape(name:String, shape:Array<Vector3>, path:Array<Vector3>, scale:Float = 1, rotation:Float = 0, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE, extrudedInstance:Mesh = null):Mesh {
+		var extruded = Mesh._ExtrudeShapeGeneric(name, shape, path, scale, rotation, null, null, false, false, false, scene, updatable, sideOrientation, extrudedInstance);
 		return extruded;
 	}
 
-	public static function ExtrudeShapeCustom(name:String, shape:Array<Vector3>, path:Array<Vector3>, scaleFunction, rotateFunction, ribbonCloseArray:Bool = false, ribbonClosePath:Bool = false, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		var extrudedCustom = Mesh._ExtrudeShapeGeneric(name, shape, path, 1, 0, scaleFunction, rotateFunction, ribbonCloseArray, ribbonClosePath, true, scene, updatable, sideOrientation);
+	public static function ExtrudeShapeCustom(name:String, shape:Array<Vector3>, path:Array<Vector3>, scaleFunction, rotateFunction, ribbonCloseArray:Bool = false, ribbonClosePath:Bool = false, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE, extrudedInstance:Mesh = null):Mesh {
+		var extrudedCustom = Mesh._ExtrudeShapeGeneric(name, shape, path, null, null, scaleFunction, rotateFunction, ribbonCloseArray, ribbonClosePath, true, scene, updatable, sideOrientation, extrudedInstance);
 		return extrudedCustom;
 	}
 
-	private static function _ExtrudeShapeGeneric(name:String, shape:Array<Vector3>, curve:Array<Vector3>, scale:Float, rotation:Float, scaleFunction:Float->Float->Float, rotateFunction:Float->Float->Float, rbCA:Bool, rbCP:Bool, custom:Bool, scene:Scene, updtbl:Bool, side:Int):Mesh {
-		var path3D:Path3D = new Path3D(curve);
-		var tangents:Array<Vector3> = path3D.getTangents();
-		var normals:Array<Vector3> = path3D.getNormals();
-		var binormals:Array<Vector3> = path3D.getBinormals();
-		var distances:Array<Float> = path3D.getDistances();
-		var shapePaths: Array<Array<Vector3>> = [];
-		var angle:Float = 0.0;
-		var returnScale:Float->Float->Float = function(i:Float, distance:Float):Float { return scale; };
-		var returnRotation:Float->Float->Float = function(i:Float, distance:Float):Float { return rotation; };
-		var rotate:Float->Float->Float = custom ? rotateFunction : returnRotation;
-		var scl:Float->Float->Float = custom ? scaleFunction : returnScale;
-		
-		for (i in 0...curve.length) {
-			var angleStep:Float = 0;
-			var shapePath:Array<Vector3> = [];
-			for (p in 0...shape.length) {
-				angleStep = rotate(i, distances[i]);
-				var scaleRatio:Float = scl(i, distances[i]);
-				var rotationMatrix:Matrix = Matrix.RotationAxis(tangents[i], angle);
-				var planed:Vector3 = ((tangents[i].scale(shape[p].x)).add(normals[i].scale(shape[p].y)).add(binormals[i].scale(shape[p].z)));
-				var rotated:Vector3 = Vector3.TransformCoordinates(planed, rotationMatrix).scaleInPlace(scaleRatio).add(curve[i]);
-				shapePath.push(rotated);
+	private static function _ExtrudeShapeGeneric(name:String, shape:Array<Vector3>, curve:Array<Vector3>, ?scale:Float, ?rotation:Float, scaleFunction:Float->Float->Float, rotateFunction:Float->Float->Float, rbCA:Bool, rbCP:Bool, custom:Bool, scene:Scene, updtbl:Bool, side:Int, instance:Mesh = null):Mesh {
+		// extrusion geometry
+		var extrusionPathArray = function(shape:Array<Vector3>, curve:Array<Vector3>, path3D:Path3D, shapePaths:Array<Array<Vector3>>, scale:Float, rotation:Float, scaleFunction:Int->Float->Float, rotateFunction:Int->Float->Float, custom:Bool) {
+			var tangents:Array<Vector3> = path3D.getTangents();
+			var normals:Array<Vector3> = path3D.getNormals();
+			var binormals:Array<Vector3> = path3D.getBinormals();
+			var distances:Array<Float> = path3D.getDistances();
+			
+			var angle:Float = 0;
+			var returnScale = function(i:Int, distance:Float):Float { 
+				return scale; 
+			};
+			var returnRotation = function(i:Int, distance:Float):Float { 
+				return rotation; 
+			};
+			var rotate = custom ? rotateFunction : returnRotation;
+			var scl = custom ? scaleFunction : returnScale;
+			var index:Int = 0;
+			
+			for (i in 0...curve.length) {
+				var shapePath = new Array<Vector3>();
+				var angleStep = rotate(i, distances[i]);
+				var scaleRatio = scl(i, distances[i]);
+				for (p in 0...shape.length) {
+					var rotationMatrix = Matrix.RotationAxis(tangents[i], angle);
+					var planed = ((tangents[i].scale(shape[p].z)).add(normals[i].scale(shape[p].x)).add(binormals[i].scale(shape[p].y)));
+					var rotated = Vector3.TransformCoordinates(planed, rotationMatrix).scaleInPlace(scaleRatio).add(curve[i]);
+					shapePath.push(rotated);
+				}
+				shapePaths[index] = shapePath;
+				angle += angleStep;
+				index++;
 			}
-			shapePaths.push(shapePath);
-			angle += angleStep;
-		}
+			return shapePaths;
+		};
 		
-		var extrudedGeneric = Mesh.CreateRibbon(name, shapePaths, rbCA, rbCP, 0, scene, updtbl, side);
+		if (instance != null) { // instance update
+			
+			var path3D = instance.path3D.update(curve);
+			var pathArray = extrusionPathArray(shape, curve, instance.path3D, instance.pathArray, scale, rotation, scaleFunction, rotateFunction, custom);
+			instance = Mesh.CreateRibbon(null, pathArray, null, null, null, null, null, null, instance);
+			
+			return instance;
+		}
+		// extruded shape creation
+		
+		var path3D:Path3D = new Path3D(curve);
+		var newShapePaths:Array<Array<Vector3>> = [];
+		var pathArray = extrusionPathArray(shape, curve, path3D, newShapePaths, scale, rotation, scaleFunction, rotateFunction, custom);
+		
+		var extrudedGeneric = Mesh.CreateRibbon(name, pathArray, rbCA, rbCP, 0, scene, updtbl, side);
+		extrudedGeneric.pathArray = pathArray;
+		extrudedGeneric.path3D = path3D;
+		
 		return extrudedGeneric;
 	}
 
@@ -1435,40 +1488,56 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return ground;
 	}
 	
-	public static function CreateTube(name:String, path:Array<Vector3>, radius:Float, tesselation:Float, radiusFunction:Float->Float->Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		var tube:Mesh = null;
-		var path3D:Path3D = new Path3D(path);
-		var tangents:Array<Vector3> = path3D.getTangents();
-		var normals:Array<Vector3> = path3D.getNormals();
-		var distances:Array<Float> = path3D.getDistances();
-		var pi2:Float = Math.PI * 2;
-		var step:Float = pi2 / tesselation;
-		var returnRadius:Float->Float->Float = function(i:Float, distance:Float) { 
-			return radius; 			
-		};
-		radiusFunction = radiusFunction != null ? radiusFunction : returnRadius; 
-		var circlePaths: Array<Array<Vector3>> = [];
-		var circlePath:Array<Vector3>;
-		var rad:Float;
-		var normal:Vector3;
-		var rotated:Vector3;
-		var rotationMatrix:Matrix;
-		
-		for (i in 0...path.length) {
-			rad = radiusFunction(i, distances[i]);      // current radius
-			circlePath = [];                            // current circle array
-			normal = normals[i];                        // current normal  
-			var ang:Int = 0;
-			while(ang < pi2) {
-				rotationMatrix = Matrix.RotationAxis(tangents[i], ang);
-				rotated = Vector3.TransformCoordinates(normal, rotationMatrix).scaleInPlace(rad).add(path[i]);
-				circlePath.push(rotated);
-				ang += Std.int(step);
+	public static function CreateTube(name:String, path:Array<Vector3>, radius:Float, tessellation:Float, radiusFunction:Int->Float->Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE, tubeInstance:Mesh = null):Mesh {
+		// tube geometry
+		var tubePathArray = function (path:Array<Vector3>, path3D:Path3D, circlePaths:Array<Array<Vector3>>, radius:Float, tessellation:Float, ?radiusFunction:Int->Float->Float) {
+			var tangents = path3D.getTangents();
+			var normals = path3D.getNormals();
+			var distances = path3D.getDistances();
+			var pi2 = Math.PI * 2;
+			var step = pi2 / tessellation;
+			var returnRadius:Int->Float->Float = function(i:Int, distance:Float):Float { return radius; };
+			var radiusFunctionFinal:Int->Float->Float = radiusFunction != null ? radiusFunction : returnRadius;
+			
+			var circlePath:Array<Vector3> = [];
+			var rad:Float = 0;
+			var normal:Vector3 = Vector3.Zero();
+			var rotated:Vector3 = Vector3.Zero();
+			var rotationMatrix:Matrix;
+			var index:Int = 0;
+			for (i in 0...path.length) {
+				rad = radiusFunctionFinal(i, distances[i]); // current radius
+				circlePath = [];              				// current circle array
+				normal = normals[i];          				// current normal  
+				var ang:Float = 0.0;
+				while(ang < pi2) {
+					rotationMatrix = Matrix.RotationAxis(tangents[i], ang);
+					rotated = Vector3.TransformCoordinates(normal, rotationMatrix).scaleInPlace(rad).add(path[i]);
+					circlePath.push(rotated);
+					ang += step;
+				}
+				circlePaths[index] = circlePath;
+				index++;
 			}
-			circlePaths.push(circlePath);
+			return circlePaths;
+		};
+		
+		if (tubeInstance != null) { // tube update
+			var path3D = tubeInstance.path3D.update(path);
+			var pathArray = tubePathArray(path, path3D, tubeInstance.pathArray, radius, tubeInstance.tessellation, radiusFunction);
+			tubeInstance = Mesh.CreateRibbon(null, pathArray, null, null, null, null, null, null, tubeInstance);
+			
+			return tubeInstance;
 		}
 		
-		tube = Mesh.CreateRibbon(name, circlePaths, false, true, 0, scene, updatable, sideOrientation);
+		// tube creation
+		var path3D:Path3D = new Path3D(path);
+		var newPathArray:Array<Array<Vector3>> = [];
+		var pathArray = tubePathArray(path, path3D, newPathArray, radius, tessellation, radiusFunction);
+		var tube = Mesh.CreateRibbon(name, pathArray, false, true, 0, scene, updatable, sideOrientation);
+		tube.pathArray = pathArray;
+		tube.path3D = path3D;
+		tube.tessellation = tessellation;
 		
 		return tube;
 	}

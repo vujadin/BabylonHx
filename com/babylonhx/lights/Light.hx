@@ -21,6 +21,7 @@ import com.babylonhx.mesh.AbstractMesh;
 	public var includeOnlyWithLayerMask:Int = 0;
 	public var includedOnlyMeshes:Array<AbstractMesh> = [];
 	public var excludedMeshes:Array<AbstractMesh> = [];
+	public var excludeWithLayerMask:Int = 0;
 
 	public var _shadowGenerator:ShadowGenerator;
 	private var _parentedWorldMatrix:Matrix;
@@ -64,6 +65,10 @@ import com.babylonhx.mesh.AbstractMesh;
 		}
 		
 		if (this.includeOnlyWithLayerMask != 0 && this.includeOnlyWithLayerMask != mesh.layerMask){
+            return false;
+        }
+		
+		if (this.excludeWithLayerMask != 0 && cast(this.excludeWithLayerMask & mesh.layerMask, Bool)) {
             return false;
         }
 		

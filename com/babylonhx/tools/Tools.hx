@@ -296,14 +296,38 @@ import com.babylonhx.utils.Image;
 		}
     } 
 	#elseif lime
-	public static function LoadImage(url:String, onload:Image->Void, ?onerror:Void->Void, ?db:Dynamic) { 
+	public static function LoadImage(url:String, onload:Image-> Void, ?onerror:Void->Void, ?db:Dynamic) { 
+		#if js
+		var callBackFunction = onload != null ?
+			function(result:Dynamic) {
+				onload(result);
+			} : function(_) { };
+			
+		var httpRequest:XMLHttpRequest = new XMLHttpRequest();
+		httpRequest.onreadystatechange = function(_) {
+			if (httpRequest.readyState == 4) {
+				if (httpRequest.status == 200) {
+					if (callBackFunction != null) {
+						var file = httpRequest.response;
+						trace(url);
+						callBackFunction(file);
+					}
+				}
+			}
+		};
+		httpRequest.open('GET', url);
+		httpRequest.send();
+		#else
 		if (lime.Assets.exists(url)) {
-			var img = lime.Assets.getImage(url);// , { onload: onload } );
-			var image = new Image(img.data, img.width, img.height);
-			onload(image);			
-		} else {
+			lime.Assets.loadImage(url, function(img:lime.graphics.Image):Void {
+				var image = new Image(img.data, img.width, img.height);
+				onload(image);
+			});						
+		} 
+		else {
 			trace("Image '" + url + "' doesn't exist!");
 		}
+		#end
     }
 	#elseif kha
 	

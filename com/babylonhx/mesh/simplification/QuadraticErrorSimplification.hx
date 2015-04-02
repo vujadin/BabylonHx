@@ -42,7 +42,7 @@ import haxe.Timer;
 		this.initDecimatedMesh();
 		//iterating through the submeshes array, one after the other.
 		AsyncLoop.Run(this._mesh.subMeshes.length, function(loop:AsyncLoop) {
-			this.initWithMesh(this._mesh, loop.index, function() {
+			this.initWithMesh(loop.index, function() {
 				this.runDecimation(settings, loop.index, function() {
 					loop.executeNext();
 				});
@@ -56,9 +56,9 @@ import haxe.Timer;
 	
 	private function isTriangleOnBoundingBox(triangle:DecimationTriangle):Bool {
 		var gCount = 0;
-		for(vId in triangle.vertices) {
+		for(vertex in triangle.vertices) {
 			var count = 0;
-			var vPos = this.vertices[vId].position;
+			var vPos = vertex.position;
 			var bbox = this._mesh.getBoundingInfo().boundingBox;
 			
 			if (bbox.maximum.x - vPos.x < this.boundingBoxEpsilon || vPos.x - bbox.minimum.x > this.boundingBoxEpsilon) {
@@ -121,10 +121,8 @@ import haxe.Timer;
 							var deleted0:Array<Bool> = [];
 							var deleted1:Array<Bool> = [];
 							
-							var i0 = t.vertices[j];
-							var i1 = t.vertices[(j + 1) % 3];
-							var v0 = this.vertices[i0];
-							var v1 = this.vertices[i1];
+							var v0 = t.vertices[j];
+							var v1 = t.vertices[(j + 1) % 3];
 							
 							if (v0.isBorder != v1.isBorder) {
 								continue;
@@ -139,10 +137,10 @@ import haxe.Timer;
 							
 							var delTr:Array<DecimationTriangle> = [];
 							
-							if (this.isFlipped(v0, i1, p, deleted0, t.borderFactor, delTr)) {
+							if (this.isFlipped(v0, v1, p, deleted0, t.borderFactor, delTr)) {
 								continue;
 							}
-							if (this.isFlipped(v1, i0, p, deleted1, t.borderFactor, delTr)) {
+							if (this.isFlipped(v1, v0, p, deleted1, t.borderFactor, delTr)) {
 								continue;
 							}
 							
@@ -162,21 +160,14 @@ import haxe.Timer;
 								continue;
 							}
 							
-							v0.normal = n;
-							if (v0.uv != null) {
-								v0.uv = uv;
-							}
-							else if (v0.color != null) {
-								v0.color = color;
-							}
 							v0.q = v1.q.add(v0.q);
 							
-							v0.position = p;
+							v0.updatePosition(p);
 							
 							var tStart = this.references.length;
 							
-							deletedTriangles = this.updateTriangles(v0.id, v0, deleted0, deletedTriangles);
-							deletedTriangles = this.updateTriangles(v0.id, v1, deleted1, deletedTriangles);
+							deletedTriangles = this.updateTriangles(v0, v0, deleted0, deletedTriangles);
+							deletedTriangles = this.updateTriangles(v0, v1, deleted1, deletedTriangles);
 							
 							var tCount:Int = this.references.length - tStart;
 							
@@ -217,76 +208,88 @@ import haxe.Timer;
 		});
 	}
 
-	private function initWithMesh(mesh:Mesh, submeshIndex:Int, cback:Dynamic) {
-		if (mesh == null) {
-			return;
-		}
+	private function initWithMesh(submeshIndex:Int, callbackFn:Dynamic, optimizeMesh:Bool = false) {
 		
 		this.vertices = [];
 		this.triangles = [];
 		
-		this._mesh = mesh;
-		//It is assumed that a mesh has positions, normals and either uvs or colors.
 		var positionData = this._mesh.getVerticesData(VertexBuffer.PositionKind);
-		var normalData = this._mesh.getVerticesData(VertexBuffer.NormalKind);
-		var uvs = this._mesh.getVerticesData(VertexBuffer.UVKind);
-		var colorsData = this._mesh.getVerticesData(VertexBuffer.ColorKind);
-		var indices = mesh.getIndices();
-		var submesh = mesh.subMeshes[submeshIndex];
+		
+		var indices = this._mesh.getIndices();
+		var submesh = this._mesh.subMeshes[submeshIndex];
+		
+		var findInVertices = function(positionToSearch:Vector3):DecimationVertex {
+			if (optimizeMesh) {
+				for (ii in 0...this.vertices.length) {
+					if (this.vertices[ii].position.equals(positionToSearch)) {
+						return this.vertices[ii];
+					}
+				}
+			}
+			return null;
+		};
+		
+		var vertexReferences:Array<Int> = [];
 		
 		var vertexInit = function(i:Int) {
 			var offset = i + submesh.verticesStart;
-			var vertex = new DecimationVertex(Vector3.FromArray(positionData, i * 3), Vector3.FromArray(normalData, i * 3), null, i);
-			if (this._mesh.isVerticesDataPresent(VertexBuffer.UVKind)) {
-				vertex.uv = Vector2.FromArray(uvs, i * 2);				
-			} 
-			else if (this._mesh.isVerticesDataPresent(VertexBuffer.ColorKind)) {
-				vertex.color = Color4.FromArray(colorsData, i * 4);
+			var position = Vector3.FromArray(positionData, offset * 3);
+			
+			var vertex = findInVertices(position);
+			if (vertex == null) {
+				vertex = new DecimationVertex(position, this.vertices.length);
 			}
-			this.vertices.push(vertex);
+			vertex.originalOffsets.push(offset);
+			if (vertex.id == this.vertices.length) {
+				this.vertices.push(vertex);
+			}
+			vertexReferences.push(vertex.id);
 		};
 		
-		//var totalVertices = mesh.getTotalVertices();
 		var totalVertices = submesh.verticesCount;
-		AsyncLoop.SyncAsyncForLoop(totalVertices, this.syncIterations, vertexInit, function() {
+		AsyncLoop.SyncAsyncForLoop(totalVertices, Std.int(this.syncIterations / 4), vertexInit, function() {
 			
 			var indicesInit = function(i:Int) {
-				var pos = i * 3;
+				var offset = (submesh.indexStart / 3) + i;
+				var pos = Std.int(offset * 3);
 				var i0 = indices[pos + 0];
 				var i1 = indices[pos + 1];
 				var i2 = indices[pos + 2];
-				var triangle = new DecimationTriangle([this.vertices[i0].id, this.vertices[i1].id, this.vertices[i2].id]);
+				var v0:DecimationVertex = this.vertices[vertexReferences[i0 - submesh.verticesStart]];
+				var v1:DecimationVertex = this.vertices[vertexReferences[i1 - submesh.verticesStart]];
+				var v2:DecimationVertex = this.vertices[vertexReferences[i2 - submesh.verticesStart]];
+				var triangle = new DecimationTriangle([v0, v1, v2]);
+				triangle.originalOffset = pos;
 				this.triangles.push(triangle);
 			};
 			
 			AsyncLoop.SyncAsyncForLoop(Std.int(indices.length / 3), this.syncIterations, indicesInit, function() {
-				this.init(cback);
+				this.init(callbackFn);
 			});
 		});
 	}
 
-	private function init(cback:Dynamic) {
+	private function init(callbackFn:Dynamic) {
 		var triangleInit1 = function(i:Int) {
 			var t = this.triangles[i];
-			t.normal = Vector3.Cross(this.vertices[t.vertices[1]].position.subtract(this.vertices[t.vertices[0]].position), this.vertices[t.vertices[2]].position.subtract(this.vertices[t.vertices[0]].position)).normalize();
-			
+			t.normal = Vector3.Cross(t.vertices[1].position.subtract(t.vertices[0].position), t.vertices[2].position.subtract(t.vertices[0].position)).normalize();
 			for (j in 0...3) {
-				this.vertices[t.vertices[j]].q.addArrayInPlace(QuadraticMatrix.DataFromNumbers(t.normal.x, t.normal.y, t.normal.z, -(Vector3.Dot(t.normal, this.vertices[t.vertices[0]].position))));
+				t.vertices[j].q.addArrayInPlace(QuadraticMatrix.DataFromNumbers(t.normal.x, t.normal.y, t.normal.z, -(Vector3.Dot(t.normal, t.vertices[0].position))));
 			}
 		};
 		
-		AsyncLoop.SyncAsyncForLoop(this.triangles.length, this.syncIterations, triangleInit1, function() {			
+		AsyncLoop.SyncAsyncForLoop(this.triangles.length, this.syncIterations, triangleInit1, function() {
 			var triangleInit2 = function(i:Int) {
 				var t = this.triangles[i];
 				for (j in 0...3) {
-					t.error[j] = this.calculateError(this.vertices[t.vertices[j]], this.vertices[t.vertices[(j + 1) % 3]]);
+					t.error[j] = this.calculateError(t.vertices[j], t.vertices[(j + 1) % 3]);
 				}
-				t.error[3] = Math.min(Math.min(t.error[0], t.error[1]), t.error[2]);
+				t.error[3] = Math.min(t.error[0], t.error[1]);
+				t.error[3] = Math.min(t.error[3], t.error[2]);
 			};
-			
 			AsyncLoop.SyncAsyncForLoop(this.triangles.length, this.syncIterations, triangleInit2, function() {
 				this.initialised = true;
-				cback();
+				callbackFn();
 			});
 		});
 	}
@@ -296,79 +299,83 @@ import haxe.Timer;
 		for (i in 0...this.vertices.length) {
 			this.vertices[i].triangleCount = 0;
 		}
-		
-		var t:DecimationTriangle;
+		var t:DecimationTriangle = null;
 		for (i in 0...this.triangles.length) {
 			if (!this.triangles[i].deleted) {
 				t = this.triangles[i];
 				for (j in 0...3) {
-					this.vertices[t.vertices[j]].triangleCount = 1;
+					t.vertices[j].triangleCount = 1;
 				}
 				newTriangles.push(t);
 			}
 		}
 		
-		var newVerticesOrder:Array<Int> = [];
+		var newPositionData:Array<Float> = this._reconstructedMesh.getVerticesData(VertexBuffer.PositionKind);
+		if (newPositionData == null) {
+			newPositionData = [];
+		}
+		var newNormalData:Array<Float> = this._reconstructedMesh.getVerticesData(VertexBuffer.NormalKind);
+		if (newNormalData == null) {
+			newNormalData = [];
+		}
+		var newUVsData:Array<Float> = this._reconstructedMesh.getVerticesData(VertexBuffer.UVKind);
+		if (newUVsData == null) {
+			newUVsData = [];
+		}
+		var newColorsData:Array<Float> = this._reconstructedMesh.getVerticesData(VertexBuffer.ColorKind);
+		if (newColorsData == null) {
+			newColorsData = [];
+		}
 		
-		//compact vertices, get the IDs of the vertices used.
-		var dst:Int = 0;
+		var normalData = this._mesh.getVerticesData(VertexBuffer.NormalKind);
+		var uvs = this._mesh.getVerticesData(VertexBuffer.UVKind);
+		var colorsData = this._mesh.getVerticesData(VertexBuffer.ColorKind);
+		
+		var vertexCount:Int = 0;
 		for (i in 0...this.vertices.length) {
-			if (this.vertices[i].triangleCount > 0) {
-				this.vertices[i].triangleStart = dst;
-				this.vertices[dst].position = this.vertices[i].position;
-				this.vertices[dst].normal = this.vertices[i].normal;
-				this.vertices[dst].uv = this.vertices[i].uv;
-				this.vertices[dst].color = this.vertices[i].color;
-				newVerticesOrder.push(dst);
-				dst++;
-			}
-		}
-
-		for (i in 0...newTriangles.length) {
-			t = newTriangles[i];
-			for (j in 0...3) {
-				t.vertices[j] = this.vertices[t.vertices[j]].triangleStart;
-			}
-		}
-		this.vertices = this.vertices.slice(0, dst);
-
-		var newPositionData:Array<Float> = [];
-		var newNormalData:Array<Float> = [];
-		var newUVsData:Array<Float> = [];
-		var newColorsData:Array<Float> = [];
-		
-		for (i in 0...newVerticesOrder.length) {
-			newPositionData.push(this.vertices[i].position.x);
-			newPositionData.push(this.vertices[i].position.y);
-			newPositionData.push(this.vertices[i].position.z);
-			
-			newNormalData.push(this.vertices[i].normal.x);
-			newNormalData.push(this.vertices[i].normal.y);
-			newNormalData.push(this.vertices[i].normal.z);
-			
-			if (this.vertices[i].uv != null) {
-				newUVsData.push(this.vertices[i].uv.x);
-				newUVsData.push(this.vertices[i].uv.y);
-			} 
-			else if (this.vertices[i].color != null) {
-				newColorsData.push(this.vertices[i].color.r);
-				newColorsData.push(this.vertices[i].color.g);
-				newColorsData.push(this.vertices[i].color.b);
-				newColorsData.push(this.vertices[i].color.a);
+			var vertex = this.vertices[i];
+			vertex.id = vertexCount;
+			if (vertex.triangleCount > 0) {
+				for(originalOffset in vertex.originalOffsets) {
+					newPositionData.push(vertex.position.x);
+					newPositionData.push(vertex.position.y);
+					newPositionData.push(vertex.position.z);
+					newNormalData.push(normalData[originalOffset * 3]);
+					newNormalData.push(normalData[(originalOffset * 3) + 1]);
+					newNormalData.push(normalData[(originalOffset * 3) + 2]);
+					if (uvs != null && uvs.length > 0) {
+						newUVsData.push(uvs[(originalOffset * 2)]);
+						newUVsData.push(uvs[(originalOffset * 2) + 1]);
+					} else if (colorsData != null && colorsData.length > 0) {
+						newColorsData.push(colorsData[(originalOffset * 4)]);
+						newColorsData.push(colorsData[(originalOffset * 4) + 1]);
+						newColorsData.push(colorsData[(originalOffset * 4) + 2]);
+						newColorsData.push(colorsData[(originalOffset * 4) + 3]);
+					}
+					++vertexCount;
+				}
 			}
 		}
 		
 		var startingIndex = this._reconstructedMesh.getTotalIndices();
 		var startingVertex = this._reconstructedMesh.getTotalVertices();
 		
-		var submeshesArray:Array<SubMesh> = this._reconstructedMesh.subMeshes;
+		var submeshesArray = this._reconstructedMesh.subMeshes;
 		this._reconstructedMesh.subMeshes = [];
 		
-		var newIndicesArray:Array<Int> = this._reconstructedMesh.getIndices();
+		var newIndicesArray:Array<Int> = this._reconstructedMesh.getIndices(); //[];
+		var originalIndices = this._mesh.getIndices();
 		for (i in 0...newTriangles.length) {
-			newIndicesArray.push(newTriangles[i].vertices[0] + startingVertex);
-			newIndicesArray.push(newTriangles[i].vertices[1] + startingVertex);
-			newIndicesArray.push(newTriangles[i].vertices[2] + startingVertex);
+			var t = newTriangles[i];
+			//now get the new referencing point for each vertex
+			for(idx in [0, 1, 2]) {
+				var id = originalIndices[t.originalOffset + idx];
+				var offset = t.vertices[idx].originalOffsets.indexOf(id);
+				if (offset < 0) {
+					offset = 0;
+				}
+				newIndicesArray.push(t.vertices[idx].id + offset + startingVertex);
+			}
 		}
 		
 		//overwriting the old vertex buffers and indices.
@@ -389,7 +396,7 @@ import haxe.Timer;
 			for(submesh in submeshesArray) {
 				new SubMesh(submesh.materialIndex, submesh.verticesStart, submesh.verticesCount,/* 0, newPositionData.length/3, */submesh.indexStart, submesh.indexCount, submesh.getMesh());
 			}
-			var newSubmesh = new SubMesh(originalSubmesh.materialIndex, startingVertex, newVerticesOrder.length,/* 0, newPositionData.length / 3, */startingIndex, newTriangles.length * 3, this._reconstructedMesh);
+			var newSubmesh = new SubMesh(originalSubmesh.materialIndex, startingVertex, vertexCount,/* 0, newPositionData.length / 3, */startingIndex, newTriangles.length * 3, this._reconstructedMesh);
 		}
 	}
 	
@@ -400,46 +407,39 @@ import haxe.Timer;
 		this._reconstructedMesh.isVisible = false;
 	}
 
-	private function isFlipped(vertex1:DecimationVertex, index2:Int, point:Vector3, deletedArray:Array<Bool>, borderFactor:Float, delTr:Array<DecimationTriangle>):Bool {
+	private function isFlipped(vertex1:DecimationVertex, vertex2:DecimationVertex, point:Vector3, deletedArray:Array<Bool>, borderFactor:Float, delTr:Array<DecimationTriangle>):Bool {
 		
 		for (i in 0...vertex1.triangleCount) {
-			var t = this.triangles[this.references[vertex1.triangleStart + i].triangleId];
+			var t:DecimationTriangle = this.triangles[this.references[vertex1.triangleStart + i].triangleId];
 			if (t.deleted) {
 				continue;
 			}
 			
 			var s = this.references[vertex1.triangleStart + i].vertexId;
 			
-			var id1 = t.vertices[(s + 1) % 3];
-			var id2 = t.vertices[(s + 2) % 3];
+			var v1 = t.vertices[(s + 1) % 3];
+			var v2 = t.vertices[(s + 2) % 3];
 			
-			if ((id1 == index2 || id2 == index2) && borderFactor < 2) {
+			if ((v1 == vertex2 || v2 == vertex2)/* && !this.isTriangleOnBoundingBox(t)*/) {
 				deletedArray[i] = true;
 				delTr.push(t);
 				continue;
 			}
 			
-			var d1 = this.vertices[id1].position.subtract(point);
+			var d1 = v1.position.subtract(point);
 			d1 = d1.normalize();
-			
-			var d2 = this.vertices[id2].position.subtract(point);
+			var d2 = v2.position.subtract(point);
 			d2 = d2.normalize();
-			
-			if (Math.abs(Vector3.Dot(d1, d2)) > 0.999) {
-				return true;
-			}
-			
+			if (Math.abs(Vector3.Dot(d1, d2)) > 0.999) return true;
 			var normal = Vector3.Cross(d1, d2).normalize();
 			deletedArray[i] = false;
-			if (Vector3.Dot(normal, t.normal) < 0.2) {
-				return true;
-			}
+			if (Vector3.Dot(normal, t.normal) < 0.2) return true;
 		}
 		
 		return false;
 	}
 
-	private function updateTriangles(vertexId:Int, vertex:DecimationVertex, deletedArray:Array<Bool>, deletedTriangles:Int):Int {
+	private function updateTriangles(origVertex:DecimationVertex, vertex:DecimationVertex, deletedArray:Array<Bool>, deletedTriangles:Int):Int {
 		var newDeleted = deletedTriangles;
 		for (i in 0...vertex.triangleCount) {
 			var ref = this.references[vertex.triangleStart + i];
@@ -455,12 +455,13 @@ import haxe.Timer;
 				continue;
 			}
 			
-			t.vertices[ref.vertexId] = vertexId;
+			t.vertices[ref.vertexId] = origVertex;
 			t.isDirty = true;
-			t.error[0] = this.calculateError(this.vertices[t.vertices[0]], this.vertices[t.vertices[1]]) + (t.borderFactor / 2);
-			t.error[1] = this.calculateError(this.vertices[t.vertices[1]], this.vertices[t.vertices[2]]) + (t.borderFactor / 2);
-			t.error[2] = this.calculateError(this.vertices[t.vertices[2]], this.vertices[t.vertices[0]]) + (t.borderFactor / 2);
-			t.error[3] = Math.min(Math.min(t.error[0], t.error[1]), t.error[2]);
+			t.error[0] = this.calculateError(t.vertices[0], t.vertices[1]) + (t.borderFactor / 2);
+			t.error[1] = this.calculateError(t.vertices[1], t.vertices[2]) + (t.borderFactor / 2);
+			t.error[2] = this.calculateError(t.vertices[2], t.vertices[0]) + (t.borderFactor / 2);
+			t.error[3] = Math.min(t.error[0], t.error[1]);
+			t.error[3] = Math.min(t.error[3], t.error[2]);
 			this.references.push(ref);
 		}
 		return newDeleted;
@@ -471,22 +472,21 @@ import haxe.Timer;
 		for (i in 0...this.vertices.length) {
 			var vCount:Array<Int> = [];
 			var vId:Array<Int> = [];
-			var v:DecimationVertex = this.vertices[i];
-			
+			var v = this.vertices[i];
 			for (j in 0...v.triangleCount) {
 				var triangle = this.triangles[this.references[v.triangleStart + j].triangleId];
 				for (ii in 0...3) {
-					var ofs = 0;
-					var id = triangle.vertices[ii];
+					var ofs:Int = 0;
+					var vv = triangle.vertices[ii];
 					while (ofs < vCount.length) {
-						if (vId[ofs] == id) {
+						if (vId[ofs] == vv.id) {
 							break;
 						}
 						++ofs;
 					}
 					if (ofs == vCount.length) {
 						vCount.push(1);
-						vId.push(id);
+						vId.push(vv.id);
 					} else {
 						vCount[ofs]++;
 					}
@@ -518,19 +518,17 @@ import haxe.Timer;
 			this.vertices[i].triangleCount = 0;
 			this.vertices[i].triangleStart = 0;
 		}
-		
 		var t:DecimationTriangle = null;
 		var v:DecimationVertex = null;
-		
 		for (i in 0...this.triangles.length) {
 			t = this.triangles[i];
 			for (j in 0...3) {
-				v = this.vertices[t.vertices[j]];
+				v = t.vertices[j];
 				v.triangleCount++;
 			}
 		}
 		
-		var tStart = 0;
+		var tStart:Int = 0;
 		
 		for (i in 0...this.vertices.length) {
 			this.vertices[i].triangleStart = tStart;
@@ -542,7 +540,7 @@ import haxe.Timer;
 		for (i in 0...this.triangles.length) {
 			t = this.triangles[i];
 			for (j in 0...3) {
-				v = this.vertices[t.vertices[j]];
+				v = t.vertices[j];
 				newReferences[v.triangleStart + v.triangleCount] = new Reference(j, i);
 				v.triangleCount++;
 			}
@@ -562,11 +560,10 @@ import haxe.Timer;
 			+ 2 * q.data[5] * y * z + 2 * q.data[6] * y + q.data[7] * z * z + 2 * q.data[8] * z + q.data[9];
 	}
 
-	private function calculateError(vertex1:DecimationVertex, vertex2:DecimationVertex, ?pointResult:Vector3, ?normalResult:Vector3, ?uvResult: Vector2, ?colorResult:Color4):Float {
-		
-		var q:QuadraticMatrix = vertex1.q.add(vertex2.q);
-		var border:Bool = vertex1.isBorder && vertex2.isBorder;
-		var error:Float = 0;
+	private function calculateError(vertex1:DecimationVertex, vertex2:DecimationVertex, ?pointResult:Vector3, ?normalResult:Vector3, ?uvResult:Vector2, ?colorResult:Color4):Float {
+		var q = vertex1.q.add(vertex2.q);
+		var border = vertex1.isBorder && vertex2.isBorder;
+		var error:Float = 0.0;
 		var qDet = q.det(0, 1, 2, 1, 4, 5, 2, 5, 7);
 
 		if (qDet != 0 && !border) {
@@ -577,51 +574,29 @@ import haxe.Timer;
 			pointResult.y = 1 / qDet * (q.det(0, 2, 3, 1, 5, 6, 2, 7, 8));
 			pointResult.z = -1 / qDet * (q.det(0, 1, 3, 1, 4, 6, 2, 5, 8));
 			error = this.vertexError(q, pointResult);
-			//TODO this should be correctly calculated
-			if (normalResult != null) {
-				normalResult.copyFrom(vertex1.normal);
-				if (vertex1.uv != null)
-					uvResult.copyFrom(vertex1.uv);
-				else if (vertex1.color != null)
-					colorResult.copyFrom(vertex1.color);
-			}
-		} else {
+		} 
+		else {
 			var p3 = (vertex1.position.add(vertex2.position)).divide(new Vector3(2, 2, 2));
 			//var norm3 = (vertex1.normal.add(vertex2.normal)).divide(new Vector3(2, 2, 2)).normalize();
 			var error1 = this.vertexError(q, vertex1.position);
 			var error2 = this.vertexError(q, vertex2.position);
 			var error3 = this.vertexError(q, p3);
-			error = Math.min(Math.min(error1, error2), error3);
+			error = Math.min(error1, error2);
+			error = Math.min(error, error3);
 			if (error == error1) {
 				if (pointResult != null) {
 					pointResult.copyFrom(vertex1.position);
-					normalResult.copyFrom(vertex1.normal);
-					if (vertex1.uv != null)
-						uvResult.copyFrom(vertex1.uv);
-					else if (vertex1.color != null)
-						colorResult.copyFrom(vertex1.color);
 				}
 			} else if (error == error2) {
 				if (pointResult != null) {
 					pointResult.copyFrom(vertex2.position);
-					normalResult.copyFrom(vertex2.normal);
-					if (vertex2.uv != null)
-						uvResult.copyFrom(vertex2.uv);
-					else if (vertex2.color != null)
-						colorResult.copyFrom(vertex2.color);
 				}
 			} else {
 				if (pointResult != null) {
 					pointResult.copyFrom(p3);
-					normalResult.copyFrom(vertex1.normal);
-					if (vertex1.uv != null)
-						uvResult.copyFrom(vertex1.uv);
-					else if (vertex1.color != null)
-						colorResult.copyFrom(vertex1.color);
 				}
 			}
 		}
-		
 		return error;
 	}
 	
