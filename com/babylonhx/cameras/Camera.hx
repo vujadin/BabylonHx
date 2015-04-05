@@ -127,6 +127,10 @@ import com.babylonhx.tools.SmartArray;
 	}
 
 	// Synchronized
+	override public function isSynchronizedWithParent():Bool {
+        return false;
+    }
+	
 	override public function _isSynchronized():Bool {
 		return this._isSynchronizedViewMatrix() && this._isSynchronizedProjectionMatrix();
 	}

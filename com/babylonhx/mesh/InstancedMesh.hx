@@ -138,7 +138,8 @@ import com.babylonhx.tools.Tools;
 	}
 
 	// Clone
-	override public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false/*?doNotCloneChildren:Bool*/):InstancedMesh {
+	override public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false):InstancedMesh {
+		trace("InstancedMesh:clone()");
 		var result = this._sourceMesh.createInstance(name);
 		
 		// Deep copy

@@ -10,9 +10,7 @@ package com.babylonhx.utils;
 #if snow
 
     typedef GL                  = snow.modules.opengl.GL;
-    typedef GLActiveInfo        = snow.modules.opengl.GL.GLActiveInfo;
     typedef GLBuffer            = snow.modules.opengl.GL.GLBuffer;
-    typedef GLContextAttributes = snow.modules.opengl.GL.GLContextAttributes;
     typedef GLFramebuffer       = snow.modules.opengl.GL.GLFramebuffer;
     typedef GLProgram           = snow.modules.opengl.GL.GLProgram;
     typedef GLRenderbuffer      = snow.modules.opengl.GL.GLRenderbuffer;
@@ -23,9 +21,7 @@ package com.babylonhx.utils;
 #elseif lime
 
     typedef GL                  = lime.graphics.opengl.GL;
-    typedef GLActiveInfo        = lime.graphics.opengl.GLActiveInfo;
     typedef GLBuffer            = lime.graphics.opengl.GLBuffer;
-    typedef GLContextAttributes = lime.graphics.opengl.GLContextAttributes;
     typedef GLFramebuffer       = lime.graphics.opengl.GLFramebuffer;
     typedef GLProgram           = lime.graphics.opengl.GLProgram;
     typedef GLRenderbuffer      = lime.graphics.opengl.GLRenderbuffer;
@@ -35,14 +31,12 @@ package com.babylonhx.utils;
 
 #elseif kha
 
-	/*typedef GL					= kha.graphics4.Graphics;
-	typedef GLActiveInfo		= 
-	typedef GLBuffer			= kha
-	typedef GLContextAttributes = kha.
+	typedef GL					= kha.graphics4.Graphics;
+	typedef GLBuffer			= Dynamic;// kha.graphics4.IndexBuffer || kha.graphics4.VertexBuffer;
 	typedef GLFramebuffer       = kha.Framebuffer;
 	typedef GLProgram  			= kha.graphics4.Program;
-	typedef GLShader			= kha.graphics4.shader
-	typedef GLUniformLocation	= kha.graphics4.ConstantLocation;*/
+	typedef GLShader			= Dynamic;// kha.graphics4.FragmentShader || kha.graphics4.VertexShader;
+	typedef GLUniformLocation	= kha.graphics4.ConstantLocation;
 
 #end 
 

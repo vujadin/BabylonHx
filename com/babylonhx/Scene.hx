@@ -45,7 +45,6 @@ import com.babylonhx.rendering.RenderingManager;
 import com.babylonhx.sprites.SpriteManager;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.Tools;
-import haxe.Timer;
 
 /**
  * ...

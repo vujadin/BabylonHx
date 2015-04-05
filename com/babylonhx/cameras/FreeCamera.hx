@@ -85,12 +85,7 @@ import com.babylonhx.utils.Keycodes;
 				if (!engine.isPointerLock) {
 					offsetX = x - previousPosition.x;
 					offsetY = y - previousPosition.y;
-				} else {
-					#if js
-					untyped offsetX = evt.movementX || evt.mozMovementX || evt.webkitMovementX || evt.msMovementX || 0;
-					untyped offsetY = evt.movementY || evt.mozMovementY || evt.webkitMovementY || evt.msMovementY || 0;
-					#end
-				}
+				} 
 				
 				this.cameraRotation.y += offsetX / this.angularSensibility;
 				this.cameraRotation.x += offsetY / this.angularSensibility;

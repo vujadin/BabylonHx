@@ -196,6 +196,11 @@ import js.Browser;
 			this._caps.maxAnisotropy = this._caps.textureAnisotropicFilterExtension != null ? GL.getParameter(this._caps.textureAnisotropicFilterExtension.MAX_TEXTURE_MAX_ANISOTROPY_EXT) : 0;
 			this._caps.instancedArrays = GL.getExtension('ANGLE_instanced_arrays');
 			this._caps.uintIndices = GL.getExtension('OES_element_index_uint') != null;	
+			this._caps.highPrecisionShaderSupported = true;
+			if (GL.getShaderPrecisionFormat != null) {
+				var highp = GL.getShaderPrecisionFormat(GL.FRAGMENT_SHADER, GL.HIGH_FLOAT);
+				this._caps.highPrecisionShaderSupported = highp.precision != 0;
+			}
 		} catch (err:Dynamic) {
 			//trace(err);
 		}

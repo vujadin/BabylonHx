@@ -15,6 +15,7 @@ package com.babylonhx;
 	public var s3tc:Dynamic;
 	public var textureFloat:Null<Bool>;
 	public var textureAnisotropicFilterExtension:Dynamic;
+	public var highPrecisionShaderSupported:Bool;
 	public var maxAnisotropy:Int;
 	public var instancedArrays:Dynamic;
 	public var uintIndices:Null<Bool>;

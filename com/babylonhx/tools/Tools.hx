@@ -128,28 +128,7 @@ import com.babylonhx.utils.Image;
 	}
 	
 	#if snow
-	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {		
-		/*#if js
-		trace(path);
-		var callBackFunction = callbackFn != null ?
-			function(result:Dynamic) {
-				callbackFn(result.bytes);
-			} : function(_) { };
-			
-		var httpRequest:XMLHttpRequest = new XMLHttpRequest();
-		httpRequest.onreadystatechange = function(_) {
-			if (httpRequest.readyState == 4) {
-				if (httpRequest.status == 200) {
-					if (callBackFunction != null) {
-						var file = httpRequest.response;
-						callBackFunction(file);
-					}
-				}
-			}
-		};
-		httpRequest.open('GET', path);
-		httpRequest.send();
-		#else*/
+	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {	
 		if (type == "") {
 			if (SnowApp._snow.assets.exists(path)) {
 				if (StringTools.endsWith(path, "bbin")) {
@@ -177,7 +156,9 @@ import com.babylonhx.utils.Image;
 							function(result:Dynamic) {
 								callbackFn(result.text);
 							} : function(_) { };
-						SnowApp._snow.assets.text(path, { onload: callBackFunction } );
+						SnowApp._snow.assets.text(path, { onload: callBackFunction } );						
+						//var file = SnowApp._snow.assets.text(path);
+						//callBackFunction(file);
 						
 					case "bin":
 						var callBackFunction = callbackFn != null ?
@@ -309,7 +290,6 @@ import com.babylonhx.utils.Image;
 				if (httpRequest.status == 200) {
 					if (callBackFunction != null) {
 						var file = httpRequest.response;
-						trace(url);
 						callBackFunction(file);
 					}
 				}

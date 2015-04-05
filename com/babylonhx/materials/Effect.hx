@@ -172,6 +172,11 @@ import com.babylonhx.utils.typedarray.Float32Array;
         try {
             var engine = this._engine;
 			
+			if (!engine.getCaps().highPrecisionShaderSupported) { // Moving highp to mediump
+                vertexSourceCode = StringTools.replace(vertexSourceCode, "precision highp float", "precision mediump float");
+                fragmentSourceCode = StringTools.replace(fragmentSourceCode, "precision highp float", "precision mediump float");
+            }
+			
             this._program = engine.createShaderProgram(vertexSourceCode, fragmentSourceCode, defines);
 			
             this._uniforms = engine.getUniforms(this._program, this._uniformsNames);

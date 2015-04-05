@@ -12,7 +12,7 @@ import com.babylonhx.utils.typedarray.UInt8Array;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.VertexData') class VertexData {
+@:expose('VertexData') class VertexData {
 	
 	public var positions:Array<Float>;
 	public var normals:Array<Float>;
@@ -1106,6 +1106,62 @@ import com.babylonhx.utils.typedarray.UInt8Array;
         VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
 		
 		// Result
+		var vertexData = new VertexData();
+		
+		vertexData.indices = indices;
+		vertexData.positions = positions;
+		vertexData.normals = normals;
+		vertexData.uvs = uvs;
+		
+		return vertexData;
+	}
+	
+	public static function CreateDisc(radius:Float, tessellation:Int, sideOrientation:Int = Mesh.DEFAULTSIDE):VertexData {
+		var indices:Array<Int> = [];
+		var positions:Array<Float> = [];
+		var normals:Array<Float> = [];
+		var uvs:Array<Float> = [];
+		
+		// positions and uvs
+		positions.push(0);
+		positions.push(0);
+		positions.push(0);    // disc center first
+		uvs.push(0.5);
+		uvs.push(0.5);
+		
+		var step = Math.PI * 2 / tessellation;
+		var a:Float = 0.0;
+		while(a < Math.PI * 2) {
+			var x = Math.cos(a);
+			var y = Math.sin(a);
+			var u = (x + 1) / 2;
+			var v = (1 - y) / 2;
+			positions.push(radius * x);
+			positions.push(radius * y);
+			positions.push(0);
+			uvs.push(u);
+			uvs.push(v);
+			
+			a += step;
+		}
+		positions.push(positions[3]);
+		positions.push(positions[4]);
+		positions.push(positions[5]); // close the circle
+		uvs.push(uvs[2]);
+		uvs.push(uvs[3]);
+		
+		//indices
+		var vertexNb = Std.int(positions.length / 3);
+		for (i in 1...vertexNb-1) {
+			indices.push(i + 1);
+			indices.push(0);
+			indices.push(i);
+		}
+		
+		// result
+		VertexData.ComputeNormals(positions, indices, normals);
+		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		
 		var vertexData = new VertexData();
 		
 		vertexData.indices = indices;

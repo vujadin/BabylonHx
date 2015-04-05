@@ -1446,6 +1446,15 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		vertexData.applyToMesh(plane, updatable);
 		return plane;
 	}
+	
+	public static function CreateDisc(name:String, radius:Float, tessellation:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+        var disc = new Mesh(name, scene);
+        var vertexData = VertexData.CreateDisc(radius, tessellation, sideOrientation);
+		
+        vertexData.applyToMesh(disc, updatable);
+		
+        return disc;
+    }
 
 	public static function CreateGround(name:String, width:Float, height:Float, subdivisions:Int, scene:Scene, updatable:Bool = false):Mesh {
 		var ground = new GroundMesh(name, scene);

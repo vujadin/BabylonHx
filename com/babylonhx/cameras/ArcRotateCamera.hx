@@ -60,6 +60,8 @@ import com.babylonhx.utils.Keycodes;
 	private var _previousAlpha:Float;
 	private var _previousBeta:Float;
 	private var _previousRadius:Float;
+	
+	private var _mouseButtonPressed:Int = 0;
 
 	// Pinch
 	// value for pinch step scaling
@@ -86,7 +88,7 @@ import com.babylonhx.utils.Keycodes;
 		this.alpha = alpha;
 		this.beta = beta;
 		this.radius = radius;
-		this.target = target != null ? target : Vector3.Zero();
+		this.target = target != null ? (target.position != null ? target.position.clone() : target.clone()) : Vector3.Zero();
 		
 		this.getViewMatrix();
 	}
@@ -105,7 +107,7 @@ import com.babylonhx.utils.Keycodes;
 		this._cache.targetScreenOffset = null;
 	}
 
-	override public function _updateCache(ignoreParentClass:Bool = false/*?ignoreParentClass:Bool*/) {
+	override public function _updateCache(ignoreParentClass:Bool = false) {
 		if (!ignoreParentClass) {
 			super._updateCache();
 		}
@@ -142,7 +144,8 @@ import com.babylonhx.utils.Keycodes;
 		var engine = this.getEngine();
 		
 		if (this._onMouseDown == null) {
-			this._onMouseDown = function(x:Float, y:Float, button:Int) {					
+			this._onMouseDown = function(x:Float, y:Float, button:Int) {	
+				_mouseButtonPressed = button;
 				previousPosition = {
 					x: x,
 					y: y
@@ -166,8 +169,13 @@ import com.babylonhx.utils.Keycodes;
                     offsetY = y - previousPosition.y;
                 }
 				
-                this.inertialAlphaOffset -= offsetX / this.angularSensibility;
-                this.inertialBetaOffset -= offsetY / this.angularSensibility;
+				if(_mouseButtonPressed != 2) {
+					this.inertialAlphaOffset -= offsetX / this.angularSensibility;
+					this.inertialBetaOffset -= offsetY / this.angularSensibility;
+				} else {
+					this.target.x -= offsetX / 10;
+					this.target.y += offsetY / 10;
+				}
 				
 				previousPosition = {
 					x: x, 
@@ -230,7 +238,7 @@ import com.babylonhx.utils.Keycodes;
 		Engine.mouseMove.push(_onMouseMove);
 		Engine.mouseWheel.push(_wheel);	
 	}
-
+	
 	override public function detachControl(?element:Dynamic) {
 		if (this._attachedElement != element) {
 			return;
