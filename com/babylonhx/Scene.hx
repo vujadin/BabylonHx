@@ -187,7 +187,7 @@ import com.babylonhx.tools.Tools;
 	// Private
 	private var _engine:Engine;
 	private var _totalVertices:Int = 0;
-	public var _activeVertices:Int = 0;
+	public var _activeIndices:Int = 0;
 	public var _activeParticles:Int = 0;
 	private var _lastFrameDuration:Float = 0;
 	private var _evaluateActiveMeshesDuration:Float = 0;
@@ -306,7 +306,7 @@ import com.babylonhx.tools.Tools;
 	}
 
 	public function getActiveVertices():Int {
-		return this._activeVertices;
+		return this._activeIndices;
 	}
 
 	public function getActiveParticles():Int {
@@ -678,6 +678,23 @@ import com.babylonhx.tools.Tools;
 			// Remove from the scene if mesh found 
 			this.cameras.splice(index, 1);
 		}
+		
+		// Remove from activeCameras
+		index = this.activeCameras.indexOf(toRemove);
+		if (index != -1) {
+			// Remove from the scene if mesh found
+			this.activeCameras.splice(index, 1);
+		}
+		
+		// Reset the activeCamera
+		if (this.activeCamera == toRemove) {
+			if (this.cameras.length > 0) {
+                this.activeCamera = this.cameras[0];
+            } else {
+                this.activeCamera = null;
+            }
+		}
+		
 		if (this.onCameraRemoved != null) {
 			this.onCameraRemoved(toRemove);
 		}
@@ -1008,7 +1025,7 @@ import com.babylonhx.tools.Tools;
 				}
 				
 				// Dispatch
-				this._activeVertices += subMesh.verticesCount;
+				this._activeIndices += subMesh.verticesCount;
 				this._renderingManager.dispatch(subMesh);
 			}
 		}
@@ -1314,7 +1331,7 @@ import com.babylonhx.tools.Tools;
 		this._renderTargetsDuration = 0;
 		this._evaluateActiveMeshesDuration = 0;
 		this._totalVertices = 0;
-		this._activeVertices = 0;
+		this._activeIndices = 0;
 		this._activeBones = 0;
 		this.getEngine().resetDrawCalls();
 		this._meshesForIntersections.reset();

@@ -15,6 +15,9 @@ import com.babylonhx.tools.Tools;
  * @author Krtolica Vujadin
  */
 
+/**
+ * Creates an instance based on a source mesh.
+ */
 @:expose('BABYLON.InstancedMesh') class InstancedMesh extends AbstractMesh {
 	
 	private var _sourceMesh:Mesh;
@@ -45,22 +48,18 @@ import com.babylonhx.tools.Tools;
 	}
 
 	// Methods
-	//public var receiveShadows(get, null):Bool;
 	override private function get_receiveShadows():Bool {
 		return this._sourceMesh.receiveShadows;
 	}
 
-	//public var material(get, null):Material;
 	override private function get_material():Material {
 		return this._sourceMesh.material;
 	}
 
-	//public var visibility(get, null):Float;
 	override private function get_visibility():Float {
 		return this._sourceMesh.visibility;
 	}
 
-	//public var skeleton(get, null):Skeleton;
 	override private function get_skeleton():Skeleton {
 		return this._sourceMesh.skeleton;
 	}
@@ -86,12 +85,11 @@ import com.babylonhx.tools.Tools;
 		return this._sourceMesh.getIndices();
 	}
 
-	//public var _positions(get, null):Array<Vector3>;
 	override private function get_positions():Array<Vector3> {
 		return this._sourceMesh._positions;
 	}
 
-	public function refreshBoundingInfo() {
+	inline public function refreshBoundingInfo() {
 		var data = this._sourceMesh.getVerticesData(VertexBuffer.PositionKind);
 		
 		if (data != null) {
@@ -170,7 +168,7 @@ import com.babylonhx.tools.Tools;
 	}
 
 	// Dispose
-	override public function dispose(doNotRecurse:Bool = false/*?doNotRecurse:Bool*/) {
+	override public function dispose(doNotRecurse:Bool = false) {
 		// Remove from mesh
 		this._sourceMesh.instances.remove(this);
 		

@@ -6,7 +6,7 @@ package com.babylonhx.utils.typedarray;
 
 #if snow
 
-	typedef UInt8Array = snow.io.typedarray.Uint8Array;
+	typedef UInt8Array = snow.api.buffers.Uint8Array;
 	
 #elseif lime
 

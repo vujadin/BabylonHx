@@ -1325,13 +1325,14 @@ import com.babylonhx.utils.typedarray.Int32Array;
         };
 
         // traverse graph per trigger
-        function traverse(parsedAction:Dynamic, trigger:Dynamic, condition:Condition, action:Action) {
+        function traverse(parsedAction:Dynamic, trigger:Dynamic, condition:Condition, action:Action, combineArray:Array<Action> = null) {
 			if (parsedAction.detached != null && parsedAction.detached == true) {
 				return;
 			}
             var parameters:Array<Dynamic> = [];
             var target:Dynamic = null;
             var propertyPath:String = "";
+			var combine = parsedAction.combine != null && parsedAction.combine.length > 0;
 			
             // Parameters
             if (parsedAction.type == 2) {
@@ -1341,37 +1342,58 @@ import com.babylonhx.utils.typedarray.Int32Array;
                 parameters.push(trigger);
 			}
 			
-            for (i in 0...parsedAction.properties.length) {
-                var value:String = parsedAction.properties[i].value;
-                var name:String = parsedAction.properties[i].name;
-				var val:Dynamic = null;
-				
-                if (name == "target") {
-                    val = target = scene.getNodeByName(value);
-				}
-                else if (name == "parent") {
-                    val = scene.getNodeByName(value);
-				}
-                else if (name == "sound") {
-					// TODO
-					continue;
-                    //val = scene.getSoundByName(value);
-				}
-                else if (name != "propertyPath") {
-                    if (parsedAction.type == 2 && name == "operator") {
-                        val = Reflect.field(ValueCondition, cast value);
-					}
-                    else {
-                        val = parseParameter(name, cast value, target, name == "value" ? propertyPath : null);
-					}
-                } 
-				else {
-                    propertyPath = cast value;
+			if (combine) {
+				var actions = new Array<Action>();
+                for (j in 0...parsedAction.combine.length) {
+                    traverse(parsedAction.combine[j], ActionManager.NothingTrigger, condition, action, actions);
                 }
-				
-                parameters.push(val);
-            }
-            parameters.push(condition);
+                parameters.push(actions);
+			} 
+			else {
+				for (i in 0...parsedAction.properties.length) {
+					var value:Dynamic = parsedAction.properties[i].value;
+					var name:String = parsedAction.properties[i].name;
+					var targetType:String = parsedAction.properties[i].targetType;
+					
+					if (name == "target") {
+						if (targetType != null && targetType == "SceneProperties") {
+							value = target = scene;
+						}
+						else {
+							value = target = scene.getNodeByName(value);
+						}
+					}
+					else if (name == "parent") {
+						value = scene.getNodeByName(value);
+					}
+					else if (name == "sound") {
+						// TODO
+						continue;
+						//val = scene.getSoundByName(value);
+					}
+					else if (name != "propertyPath") {
+						if (parsedAction.type == 2 && name == "operator") {
+							// ??? TODO ???
+							value = Reflect.field(ValueCondition, cast value);
+						}
+						else {
+							value = parseParameter(name, cast value, target, name == "value" ? propertyPath : null);
+						}
+					} 
+					else {
+						propertyPath = cast value;
+					}
+					
+					parameters.push(value);
+				}
+			}
+            
+			if (combineArray == null) {
+				parameters.push(condition);
+			}
+			else {
+				parameters.push(null);
+			}
 			
             // If interpolate value action
             if (parsedAction.name == "InterpolateValueAction") {

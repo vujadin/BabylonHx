@@ -1,5 +1,6 @@
 package com.babylonhx.cameras;
 
+import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
 
@@ -31,7 +32,15 @@ import com.babylonhx.mesh.AbstractMesh;
 			return;
 		}
 			
-		var radians = this.getRadians(this.rotationOffset) + cameraTarget.rotation.y;
+		var yRotation:Float = 0;
+		if (cameraTarget.rotationQuaternion != null) {
+			var rotMatrix = new Matrix();
+			cameraTarget.rotationQuaternion.toRotationMatrix(rotMatrix);
+			yRotation = Math.atan2(rotMatrix.m[8], rotMatrix.m[10]);
+		} else {
+			yRotation = cameraTarget.rotation.y;
+		}
+		var radians:Float = this.getRadians(this.rotationOffset) + yRotation;
 		var targetX:Float = cameraTarget.position.x + Math.sin(radians) * this.radius;
 		
 		var targetZ = cameraTarget.position.z + Math.cos(radians) * this.radius;

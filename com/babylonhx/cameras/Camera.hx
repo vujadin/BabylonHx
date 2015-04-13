@@ -308,11 +308,11 @@ import com.babylonhx.tools.SmartArray;
 		this._computedViewMatrix.invertToRef(this._worldMatrix);
 		
 		this._worldMatrix.multiplyToRef(this.parent.getWorldMatrix(), this._computedViewMatrix);
+		this._globalPosition.copyFromFloats(this._computedViewMatrix.m[12], this._computedViewMatrix.m[13], this._computedViewMatrix.m[14]);
 		
 		this._computedViewMatrix.invert();
 		
 		this._currentRenderId = this.getScene().getRenderId();
-		this._globalPosition.copyFromFloats(this._computedViewMatrix.m[12], this._computedViewMatrix.m[13], this._computedViewMatrix.m[14]);
 		
 		return this._computedViewMatrix;
 	}
@@ -322,15 +322,13 @@ import com.babylonhx.tools.SmartArray;
 			return this._computedViewMatrix;
 		}
 		
-		this._computedViewMatrix = this._getViewMatrix();
-		if (this.parent == null || this.parent.getWorldMatrix() == null) {
-			this._currentRenderId = this.getScene().getRenderId();
-		}
+		this._computedViewMatrix = this._getViewMatrix();		
+		this._currentRenderId = this.getScene().getRenderId();
 		
 		return this._computedViewMatrix;
 	}
 
-	public function getProjectionMatrix(force:Bool = false/*?force:Bool*/):Matrix {
+	public function getProjectionMatrix(force:Bool = false):Matrix {
 		if (!force && this._isSynchronizedProjectionMatrix()) {
 			return this._projectionMatrix;
 		}

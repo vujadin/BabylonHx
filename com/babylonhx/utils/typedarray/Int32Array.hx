@@ -6,7 +6,7 @@ package com.babylonhx.utils.typedarray;
 
 #if snow
  
-	typedef Int32Array = snow.io.typedarray.Int32Array;
+	typedef Int32Array = snow.api.buffers.Int32Array;
 	
 #elseif lime
 

@@ -1,6 +1,7 @@
 package com.babylonhx.cameras;
 
 import com.babylonhx.collisions.Collider;
+import com.babylonhx.math.Axis;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
@@ -89,7 +90,7 @@ import com.babylonhx.utils.Keycodes;
 		this.beta = beta;
 		this.radius = radius;
 		this.target = target != null ? (target.position != null ? target.position.clone() : target.clone()) : Vector3.Zero();
-		
+				
 		this.getViewMatrix();
 	}
 
@@ -144,7 +145,7 @@ import com.babylonhx.utils.Keycodes;
 		var engine = this.getEngine();
 		
 		if (this._onMouseDown == null) {
-			this._onMouseDown = function(x:Float, y:Float, button:Int) {	
+			this._onMouseDown = function(x:Float, y:Float, button:Int) {
 				_mouseButtonPressed = button;
 				previousPosition = {
 					x: x,
@@ -171,9 +172,10 @@ import com.babylonhx.utils.Keycodes;
 				
 				if(_mouseButtonPressed != 2) {
 					this.inertialAlphaOffset -= offsetX / this.angularSensibility;
-					this.inertialBetaOffset -= offsetY / this.angularSensibility;
-				} else {
-					this.target.x -= offsetX / 10;
+					this.inertialBetaOffset -= offsetY / this.angularSensibility;					
+				} 
+				else {
+					this.target.x += offsetX / 10;
 					this.target.y += offsetY / 10;
 				}
 				
@@ -327,7 +329,7 @@ import com.babylonhx.utils.Keycodes;
 		}
 		
 		// Beta
-		this.beta = Math.acos(radiusv3.y / this.radius);
+		this.beta = Math.acos(radiusv3.y / this.radius);		
 	}
 
 	override public function _getViewMatrix():Matrix {
@@ -398,7 +400,7 @@ import com.babylonhx.utils.Keycodes;
 			distance = meshesOrMinMaxVectorAndDistance.distance;
 		}
 		
-		this.target = Mesh.Center(meshesOrMinMaxVector);
+		this.target.position = Mesh.Center(meshesOrMinMaxVector);
 		
 		this.maxZ = distance * 2;
 	}

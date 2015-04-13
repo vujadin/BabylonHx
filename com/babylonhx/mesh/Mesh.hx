@@ -87,7 +87,6 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			}
 			
 			// Deep copy
-			//Tools.DeepCopy(source, this, ["name", "material", "skeleton"], []);
 			_deepCopy(source, this);
 			
 			// Material

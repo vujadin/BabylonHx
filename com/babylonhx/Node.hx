@@ -91,7 +91,7 @@ import com.babylonhx.animations.Animation;
 			return false;
 		}
 				
-		return this.parent._currentRenderId <= this._currentRenderId && this.parent.isSynchronized();
+		return this.parent.isSynchronized();
 	}
 
 	public function isSynchronized(updateCache:Bool = false):Bool {

@@ -199,7 +199,7 @@ import js.Browser;
 			this._caps.highPrecisionShaderSupported = true;
 			if (GL.getShaderPrecisionFormat != null) {
 				var highp = GL.getShaderPrecisionFormat(GL.FRAGMENT_SHADER, GL.HIGH_FLOAT);
-				this._caps.highPrecisionShaderSupported = highp.precision != 0;
+				this._caps.highPrecisionShaderSupported = highp != null && highp.precision != 0;
 			}
 		} catch (err:Dynamic) {
 			//trace(err);
@@ -1059,14 +1059,14 @@ import js.Browser;
 				callback(buffer);*/
 				
 		} else {
-			var onload = function(img:Dynamic) {
+			var onload = function(img:Image) {
 				prepareTexture(texture, GL, scene, img.width, img.height, invertY, noMipmap, false, function(potWidth:Int, potHeight:Int) {
 					//this._workingCanvas = invertY ? flipBitmapData(img) : img;
 					/*var isPot = (img.width == potWidth && img.height == potHeight);
 					if (!isPot) {
 						this._workingCanvas = getScaled(img, potWidth, potHeight);
 					}*/
-							
+					
 					GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, potWidth, potHeight, 0, GL.RGBA, GL.UNSIGNED_BYTE, img.data);
 					
 					if (onLoad != null) {
@@ -1635,15 +1635,25 @@ import js.Browser;
         }
     }
 
-    public static function prepareTexture(texture:BabylonTexture, gl:Dynamic, scene:Scene, width:Int, height:Int, invertY:Bool, noMipmap:Bool, isCompressed:Bool, processFunction:Int->Int->Void, samplingMode:Int = 3/*Texture.TRILINEAR_SAMPLINGMODE*/) {
+    public static function prepareTexture(texture:BabylonTexture, gl:Dynamic, scene:Scene, width:Int, height:Int, invertY:Bool, noMipmap:Bool, isCompressed:Bool, processFunction:Int->Int->Void, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE) {
         var engine = scene.getEngine();
         var potWidth = Tools.GetExponantOfTwo(width, engine.getCaps().maxTextureSize);
         var potHeight = Tools.GetExponantOfTwo(height, engine.getCaps().maxTextureSize);
+				
+		if (potWidth != width || potHeight != height) {
+			throw("Texture '" + texture.url + "' is not power of two !");
+		}
 				
         GL.bindTexture(GL.TEXTURE_2D, texture.data);
 		#if js
         GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY == null ? 1 : (invertY ? 1 : 0));
 		#end
+		
+		texture._baseWidth = width;
+        texture._baseHeight = height;
+        texture._width = potWidth;
+        texture._height = potHeight;
+        texture.isReady = true;
 		
         processFunction(Std.int(potWidth), Std.int(potHeight));
 		
@@ -1658,12 +1668,8 @@ import js.Browser;
 		
         GL.bindTexture(GL.TEXTURE_2D, null);
 		
-        engine._activeTexturesCache = [];
-        texture._baseWidth = width;
-        texture._baseHeight = height;
-        texture._width = potWidth;
-        texture._height = potHeight;
-        texture.isReady = true;
+        engine._activeTexturesCache = [];        
+		texture.samplingMode = samplingMode;
         scene._removePendingData(texture);
     }
 

@@ -150,7 +150,7 @@ import com.babylonhx.tools.SmartArray;
 					
 					for (subIndex in 0...mesh.subMeshes.length) {
 						var subMesh = mesh.subMeshes[subIndex];
-						scene._activeVertices += subMesh.indexCount;
+						scene._activeIndices += subMesh.indexCount;
 						this._renderingManager.dispatch(subMesh);
 					}
 				}

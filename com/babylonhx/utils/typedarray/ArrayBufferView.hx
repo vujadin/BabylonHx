@@ -6,7 +6,7 @@ package com.babylonhx.utils.typedarray;
 
 #if snow
 
-	typedef ArrayBufferView = snow.io.typedarray.ArrayBufferView;
+	typedef ArrayBufferView = snow.api.buffers.ArrayBufferView;
 	
 #elseif lime
 
