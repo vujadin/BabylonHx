@@ -82,7 +82,8 @@ class OimoPlugin implements IPhysicsEnginePlugin {
 				var size = Math.max(this._checkWithEpsilon(radiusX), this._checkWithEpsilon(radiusY));
 				size = Math.max(size, this._checkWithEpsilon(radiusZ)) / 2;
 				
-				body = new Body({
+				body = new Body( {
+					name: options.name,
 					type: 'sphere',
 					size: [size],
 					pos: [bbox.center.x, bbox.center.y, bbox.center.z],
@@ -100,7 +101,8 @@ class OimoPlugin implements IPhysicsEnginePlugin {
 				var sizeY = this._checkWithEpsilon(box.y);
 				var sizeZ = this._checkWithEpsilon(box.z);
 				
-				body = new Body({
+				body = new Body( {
+					name: options.name,
 					type: 'box',
 					size: [sizeX, sizeY, sizeZ],
 					pos: [bbox.center.x, bbox.center.y, bbox.center.z],
@@ -110,7 +112,7 @@ class OimoPlugin implements IPhysicsEnginePlugin {
 					world: this._world
 				});
 		}
-		
+				
 		//If quaternion was set as the rotation of the object
 		if (initialRotation != null) {
 			//We have to access the rigid body's properties to set the quaternion. 
@@ -247,7 +249,7 @@ class OimoPlugin implements IPhysicsEnginePlugin {
 			if (registeredMesh.mesh == mesh || registeredMesh.mesh == mesh.parent) {
 				var body = registeredMesh.body.body;
 				mesh.computeWorldMatrix(true);
-
+				
 				var center = mesh.getBoundingInfo().boundingBox.center;
 				body.setPosition(center.x, center.y, center.z);
 				body.setRotation(mesh.rotation.x, mesh.rotation.y, mesh.rotation.z);
@@ -257,10 +259,10 @@ class OimoPlugin implements IPhysicsEnginePlugin {
 			if (registeredMesh.mesh.parent == mesh) {
 				mesh.computeWorldMatrix(true);
 				registeredMesh.mesh.computeWorldMatrix(true);
-
+				
 				var absolutePosition = registeredMesh.mesh.getAbsolutePosition();
 				var absoluteRotation = mesh.rotation;
-
+				
 				var body = registeredMesh.body.body;
 				body.setPosition(absolutePosition.x, absolutePosition.y, absolutePosition.z);
 				body.setRotation(absoluteRotation.x, absoluteRotation.y, absoluteRotation.z);
@@ -338,21 +340,19 @@ class OimoPlugin implements IPhysicsEnginePlugin {
 		return lastShape;
 	}
 
+	var m:Array<Float> = [];
 	public function runOneStep(time:Float) {
 		this._world.step(time);
 		
 		// Update the position of all registered meshes
 		var i = this._registeredMeshes.length;
-		var m:Array<Float> = [];
 		while (i-- > 0) {
-			
 			var body:RigidBody = this._registeredMeshes[i].body.body;
 			var mesh:Mesh = this._registeredMeshes[i].mesh;
 			var delta = this._registeredMeshes[i].delta;
 			
 			if (!body.sleeping) {
-				
-				if (body.shapes.next != null) {
+				if (body.shapes != null) {
 					var parentShape = this._getLastShape(body);
 					mesh.position.x = parentShape.position.x * WORLD_SCALE;
 					mesh.position.y = parentShape.position.y * WORLD_SCALE;

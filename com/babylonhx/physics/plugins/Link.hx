@@ -56,10 +56,10 @@ class Link {
 		var axe2 = obj.axe2 != null ? obj.axe2 : [1.0, 0.0, 0.0];
 		var pos1 = obj.pos1 != null ? obj.pos1 : [0.0, 0.0, 0.0];
 		var pos2 = obj.pos2 != null ? obj.pos2 : [0.0, 0.0, 0.0];
-
+		
 		pos1 = pos1.map(function(x){ return x * OimoPlugin.INV_SCALE; });
-		pos2 = pos2.map(function(x){ return x * OimoPlugin.INV_SCALE; });
-
+		pos2 = pos2.map(function(x) { return x * OimoPlugin.INV_SCALE; } );
+		
 		var min:Float;
 		var max:Float;
 		if(type == "jointDistance"){
@@ -73,11 +73,11 @@ class Link {
 			min = min * OimoPlugin.TO_RAD;
 			max = max * OimoPlugin.TO_RAD;
 		}
-
+		
 		var limit:Array<Float> = obj.limit;
 		var spring = obj.spring;
 		var motor = obj.motor;
-
+		
 		// joint setting
 		var jc:JointConfig = new JointConfig();
 		jc.allowCollision = obj.collision != null ? obj.collision : false;
@@ -99,7 +99,7 @@ class Link {
 		}*/
 		jc.body1 = obj.body1;
 		jc.body2 = obj.body2;
-
+		
 		
 		switch(type){
 			case "jointDistance": 
@@ -142,7 +142,7 @@ class Link {
 				}
 			
 		}
-
+		
 		//this.joint.name = this.name;
 		
 		// finaly add to physics world

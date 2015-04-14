@@ -674,27 +674,41 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	}
 
 	// Physics
-	public function setPhysicsState(impostor:Int = PhysicsEngine.NoImpostor, ?options:PhysicsBodyCreationOptions):Dynamic {
+	public function setPhysicsState(?impostor:Dynamic, ?options:PhysicsBodyCreationOptions):Dynamic {
 		var physicsEngine = this.getScene().getPhysicsEngine();
 		
 		if (physicsEngine == null) {
 			return null;
 		}
-						
+		
+		impostor = impostor != null ? impostor : PhysicsEngine.NoImpostor;
+		
+		if (Reflect.hasField(impostor, "impostor")) {
+			// Old API
+			options = impostor;
+			impostor = impostor.impostor;
+		}
+		
 		if (impostor == PhysicsEngine.NoImpostor) {
 			physicsEngine._unregisterMesh(this);
 			return null;
 		}
 		
-		options.mass = options.mass == null ? 0 : options.mass;
-		options.friction = options.friction == null ? 0.2 : options.friction;
-		options.restitution = options.restitution == null ? 0.2 : options.restitution;
+		if (options == null) {
+			options.mass = 0;
+			options.friction = 0.2;
+			options.restitution = 0.2;
+		} else {
+			if (options.mass == null) options.mass = 0;
+			if (options.friction == null) options.friction = 0.2;
+			if (options.restitution == null) options.restitution = 0.2;
+		}
 		
 		this._physicImpostor = impostor;
 		this._physicsMass = options.mass;
 		this._physicsFriction = options.friction;
 		this._physicRestitution = options.restitution;
-		
+				
 		return physicsEngine._registerMesh(this, impostor, options);
 	}
 
@@ -713,34 +727,44 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	public function getPhysicsRestitution():Float {
 		return this._physicRestitution;
 	}
+	
+	public function getPositionInCameraSpace(?camera:Camera):Vector3 {
+		if (camera == null) {
+			camera = this.getScene().activeCamera;
+		}
+
+		return Vector3.TransformCoordinates(this.absolutePosition, camera.getViewMatrix());
+	}
+
+	public function getDistanceToCamera(?camera:Camera):Float {
+		if (camera == null) {
+			camera = this.getScene().activeCamera;
+		}
+
+		return this.absolutePosition.subtract(camera.position).length();
+	}
 
 	public function applyImpulse(force:Vector3, contactPoint:Vector3) {
-		if (this._physicImpostor == 0) {
-			return;
-		}
-		
-		this.getScene().getPhysicsEngine()._applyImpulse(this, force, contactPoint);
+		if (this._physicImpostor != PhysicsEngine.NoImpostor) {
+			this.getScene().getPhysicsEngine()._applyImpulse(this, force, contactPoint);
+		}	
 	}
 
-	public function setPhysicsLinkWith(otherMesh:Mesh, pivot1:Vector3, pivot2:Vector3, ?options:Dynamic) {
-		if (this._physicImpostor == 0) {
-			return;
-		}
-		
-		this.getScene().getPhysicsEngine()._createLink(this, otherMesh, pivot1, pivot2, options);
+	inline public function setPhysicsLinkWith(otherMesh:Mesh, pivot1:Vector3, pivot2:Vector3, ?options:Dynamic) {
+		if (this._physicImpostor != PhysicsEngine.NoImpostor) {
+			this.getScene().getPhysicsEngine()._createLink(this, otherMesh, pivot1, pivot2, options);
+		}	
 	}
 
-	public function updatePhysicsBodyPosition() {
-		if (this._physicImpostor == 0) {
-			return;
-		}
-		
-		this.getScene().getPhysicsEngine()._updateBodyPosition(this);
+	inline public function updatePhysicsBodyPosition() {
+		if (this._physicImpostor != PhysicsEngine.NoImpostor) {
+			this.getScene().getPhysicsEngine()._updateBodyPosition(this);
+		}		
 	}
 
 
 	// Collisions
-	public function moveWithCollisions(velocity:Vector3) {
+	inline public function moveWithCollisions(velocity:Vector3) {
 		var globalPosition = this.getAbsolutePosition();
 		
 		globalPosition.subtractFromFloatsToRef(0, this.ellipsoid.y, 0, this._oldPositionForCollisions);
@@ -761,7 +785,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	* This function will create an octree to help select the right submeshes for rendering, picking and collisions
 	* Please note that you must have a decent number of submeshes to get performance improvements when using octree
 	*/
-	public function createOrUpdateSubmeshesOctree(maxCapacity:Int = 64, maxDepth:Int = 2):Octree<SubMesh> {
+	inline public function createOrUpdateSubmeshesOctree(maxCapacity:Int = 64, maxDepth:Int = 2):Octree<SubMesh> {
 		if (this._submeshesOctree == null) {
 			this._submeshesOctree = new Octree<SubMesh>(Octree.CreationFuncForSubMeshes, maxCapacity, maxDepth);
 		}
@@ -776,7 +800,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	}
 
 	// Collisions
-	public function _collideForSubMesh(subMesh:SubMesh, transformMatrix:Matrix, collider:Collider) {
+	inline public function _collideForSubMesh(subMesh:SubMesh, transformMatrix:Matrix, collider:Collider) {
 		this._generatePointsArray();
 		// Transformation
 		if (subMesh._lastColliderWorldVertices == null || !subMesh._lastColliderTransformMatrix.equals(transformMatrix)) {
@@ -793,7 +817,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 		collider._collide(subMesh, subMesh._lastColliderWorldVertices, this.getIndices(), subMesh.indexStart, subMesh.indexStart + subMesh.indexCount, subMesh.verticesStart);
 	}
 
-	public function _processCollisionsForSubMeshes(collider:Collider, transformMatrix:Matrix) {
+	inline public function _processCollisionsForSubMeshes(collider:Collider, transformMatrix:Matrix) {
 		var subMeshes:Array<SubMesh>;
 		var len:Int = 0;
 		
@@ -822,8 +846,9 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 
 	public function _checkCollision(collider:Collider) {
 		// Bounding box test
-		if (!this._boundingInfo._checkCollision(collider))
+		if (!this._boundingInfo._checkCollision(collider)) {
 			return;
+		}
 			
 		// Transformation matrix
 		Matrix.ScalingToRef(1.0 / collider.radius.x, 1.0 / collider.radius.y, 1.0 / collider.radius.z, this._collisionsScalingMatrix);

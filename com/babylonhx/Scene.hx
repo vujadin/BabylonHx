@@ -214,7 +214,7 @@ import com.babylonhx.tools.Tools;
 	private var _processedMaterials:SmartArray = new SmartArray(256);		// new SmartArray<Material>(256);
 	private var _renderTargets:SmartArray = new SmartArray(256);			// new SmartArray<RenderTargetTexture>(256);
 	public var _activeParticleSystems:SmartArray = new SmartArray(256);		// new SmartArray<ParticleSystem>(256);
-	private var _activeSkeletons:SmartArray = new SmartArray(256);			// new SmartArray<Skeleton>(32);
+	private var _activeSkeletons:SmartArray = new SmartArray(32);			// new SmartArray<Skeleton>(32);
 	private var _activeBones:Int = 0;
 
 	private var _renderingManager:RenderingManager;
