@@ -10,6 +10,7 @@ import oimohx.physics.collision.shape.SphereShape;
 import oimohx.physics.dynamics.RigidBody;
 import oimohx.physics.dynamics.World;
 
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -39,26 +40,28 @@ class Body {
 		
 		// I can sleep or not
 		var noSleep:Bool = obj.noSleep != null ? cast obj.noSleep : false;
-		
+				
 		// My start position
 		var p:Array<Float> = obj.pos != null ? cast obj.pos : [0, 0, 0];
-		p = p.map(function(x:Float) { return x * OimoPlugin.INV_SCALE; } );
+		p[0] *= World.INV_SCALE;
+		p[1] *= World.INV_SCALE;
+		p[2] *= World.INV_SCALE;
 		
 		// My size 
 		var s:Array<Float> = obj.size != null ? cast obj.size : [1, 1, 1];
-		s = s.map(function(x:Float) { return x * OimoPlugin.INV_SCALE; } );
+		s[0] *= World.INV_SCALE;
+		s[1] *= World.INV_SCALE;
+		s[2] *= World.INV_SCALE;
 		
 		// My rotation in degre
 		var rot:Array<Float> = obj.rot != null ? cast obj.rot : [0, 0, 0];
-		rot = rot.map(function(x) { return x * OimoPlugin.TO_RAD; });
+				
 		var r:Array<Float> = [];
-		for (i in 0...Std.int(rot.length / 3)) {
-			var tmp = EulerToAxis(rot[i+0], rot[i+1], rot[i+2]);
-			r.push(tmp[0]);  
-			r.push(tmp[1]); 
-			r.push(tmp[2]); 
-			r.push(tmp[3]);
-		}
+		var tmp = EulerToAxis(rot[0], rot[1], rot[2]);
+		r.push(tmp[0]);  
+		r.push(tmp[1]); 
+		r.push(tmp[2]); 
+		r.push(tmp[3]);
 		
 		// My physics setting
 		var sc:ShapeConfig = obj.sc != null ? cast obj.sc : new ShapeConfig();
@@ -77,12 +80,12 @@ class Body {
 		}
 		
 		if(obj.massPos != null){
-			obj.massPos = obj.massPos.map(function(x) { return x * OimoPlugin.INV_SCALE; });
+			obj.massPos = obj.massPos.map(function(x) { return x * World.INV_SCALE; });
 			sc.relativePosition.init(obj.massPos[0], obj.massPos[1], obj.massPos[2]);
 		}
 		
 		if(obj.massRot != null){
-			obj.massRot = obj.massRot.map(function(x) { return x * OimoPlugin.TO_RAD; });
+			obj.massRot = obj.massRot.map(function(x) { return x * World.TO_RAD; });
 			sc.relativeRotation = EulerToMatrix(obj.massRot[0], obj.massRot[1], obj.massRot[2]);
 		}
 		
@@ -120,7 +123,8 @@ class Body {
 			else {
 				this.body.allowSleep = true;
 			}
-		} else {
+		} 
+		else {
 			this.body.setupMass(0x2, false);
 		}
 		
@@ -131,10 +135,16 @@ class Body {
 		this.parent.addRigidBody(this.body);
 	}
 	
-	public function setPosition(pos:Vec3) {
-        this.body.position = pos;
+	public function setPosition(x:Float, y:Float, z:Float) {
+        this.body.position.x = x;
+		this.body.position.y = y;
+		this.body.position.z = z;
     }
 	
+	public function setRotation(rot:Vec3) {
+        this.body.setRotation(rot);
+    }
+		
     // GET
     public function getPosition():Vec3 {
         return this.body.position;

@@ -211,7 +211,7 @@ import com.babylonhx.culling.BoundingSphere;
 		return Ray.Transform(new Ray(origin, direction, length), world);
 	}
 
-	public static function Transform(ray:Ray, matrix:Matrix):Ray {
+	inline public static function Transform(ray:Ray, matrix:Matrix):Ray {
 		var newOrigin = Vector3.TransformCoordinates(ray.origin, matrix);
 		var newDirection = Vector3.TransformNormal(ray.direction, matrix);
 		

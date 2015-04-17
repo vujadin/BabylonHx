@@ -29,9 +29,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	// Operators
 	inline public function asArray():Array<Float> {
 		var result:Array<Float> = [];
-
+		
 		this.toArray(result, 0);
-
+		
 		return result;
 	}
 

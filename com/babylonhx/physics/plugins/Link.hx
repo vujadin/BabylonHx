@@ -46,10 +46,10 @@ class Link {
 		if (obj.world == null) {
 			return;
 		}
-
+		
 		// the world where i am
 		this.parent = obj.world;
-
+		
 		this.name = obj.name != null ? obj.name : '';
 		var type = obj.type != null ? obj.type : "jointHinge";
 		var axe1 = obj.axe1 != null ? obj.axe1 : [1.0, 0.0, 0.0];
@@ -57,21 +57,21 @@ class Link {
 		var pos1 = obj.pos1 != null ? obj.pos1 : [0.0, 0.0, 0.0];
 		var pos2 = obj.pos2 != null ? obj.pos2 : [0.0, 0.0, 0.0];
 		
-		pos1 = pos1.map(function(x){ return x * OimoPlugin.INV_SCALE; });
-		pos2 = pos2.map(function(x) { return x * OimoPlugin.INV_SCALE; } );
+		pos1 = pos1.map(function(x) { return x * World.INV_SCALE; });
+		pos2 = pos2.map(function(x) { return x * World.INV_SCALE; });
 		
 		var min:Float;
 		var max:Float;
 		if(type == "jointDistance"){
 			min = obj.min != null ? obj.min : 0;
 			max = obj.max != null ? obj.max : 10;
-			min = min * OimoPlugin.INV_SCALE;
-			max = max * OimoPlugin.INV_SCALE;
+			min = min * World.INV_SCALE;
+			max = max * World.INV_SCALE;
 		}else{
 			min = obj.min != null ? obj.min : 57.29578;
 			max = obj.max != null ? obj.max : 0;
-			min = min * OimoPlugin.TO_RAD;
-			max = max * OimoPlugin.TO_RAD;
+			min = min * World.TO_RAD;
+			max = max * World.TO_RAD;
 		}
 		
 		var limit:Array<Float> = obj.limit;
