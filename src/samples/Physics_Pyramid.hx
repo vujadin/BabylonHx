@@ -123,16 +123,7 @@ class Physics_Pyramid {
 				}
 			}
 		}
-		
-		Timer.delay(function() {
-			var bullet = Mesh.CreateSphere("bullet", 10, 100, scene);
-			//bullet.position = Vector3.Zero();// camera.position.clone();
-			bullet.position = new Vector3(600, 50, 600);
-			bullet.material = materialSphere;
-			bullet.setPhysicsState(PhysicsEngine.SphereImpostor, physOpt);
-			bullet.applyImpulse(new Vector3( -300, 100, -300), new Vector3(0, 0, 0));
-		}, 2500);
-				
+						
 		scene.getEngine().runRenderLoop(function () {
 			scene.render();
 		});
