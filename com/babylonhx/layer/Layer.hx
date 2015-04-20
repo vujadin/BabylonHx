@@ -4,7 +4,7 @@ import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color4;
 import com.babylonhx.mesh.BabylonBuffer;
-
+import  com.babylonhx.utils.GL;
 /**
  * ...
  * @author Krtolica Vujadin
@@ -17,7 +17,8 @@ import com.babylonhx.mesh.BabylonBuffer;
 	public var isBackground:Bool;
 	public var color:Color4;
 	public var onDispose:Void->Void;
-
+	public var vertices:Array<Float> = [];
+	public var indices:Array<Int> = [];
 	private var _scene:Scene;
 	private var _vertexDeclaration:Array<Int> = [];
 	private var _vertexStrideSize:Int = 2 * 4;
@@ -27,37 +28,36 @@ import com.babylonhx.mesh.BabylonBuffer;
 
 	public function new(name:String, imgUrl:String, scene:Scene, isBackground:Bool = true/*?isBackground:Bool*/, ?color:Color4) {
 		this.name = name;
-		this.texture = imgUrl != null ? new Texture(imgUrl, scene, true) : null;
+		this.texture = imgUrl != null ? new Texture(imgUrl, scene, false) : null;
 		this.isBackground = isBackground;
-		this.color = color == null ? new Color4(1, 1, 1, 1) : color;
+		this.color = color == null ? new Color4(0.49, 0.72, 0.9, 0.5) : color;
 		
 		this._scene = scene;
 		this._scene.layers.push(this);
 		
 		// VBO
-		var vertices:Array<Float> = [];
-		vertices.push(1);
-		vertices.push(1);
-		vertices.push(-1);
-		vertices.push(1);
-		vertices.push(-1);
-		vertices.push(-1);
-		vertices.push(1);
-		vertices.push( -1);
+		this.vertices.push(1);
+		this.vertices.push(1);
+		this.vertices.push(-1);
+		this.vertices.push(1);
+		this.vertices.push(-1);
+		this.vertices.push(-1);
+		this.vertices.push(1);
+		this.vertices.push( -1);
+		this._vertexDeclaration = [2];
+        this._vertexBuffer = scene.getEngine().createVertexBuffer(this.vertices);
 		
-		this._vertexBuffer = scene.getEngine().createVertexBuffer(vertices);
 		
 		// Indices
-		var indices:Array<Int> = [];
-		indices.push(0);
-		indices.push(1);
-		indices.push(2);
+		this.indices.push(0);
+		this.indices.push(1);
+		this.indices.push(2);
 		
-		indices.push(0);
-		indices.push(2);
-		indices.push(3);
+		this.indices.push(0);
+		this.indices.push(2);
+		this.indices.push(3);
 		
-		this._indexBuffer = scene.getEngine().createIndexBuffer(indices);
+		this._indexBuffer = scene.getEngine().createIndexBuffer(this.indices);
 		
 		// Effects
 		this._effect = this._scene.getEngine().createEffect("layer",
@@ -76,7 +76,8 @@ import com.babylonhx.mesh.BabylonBuffer;
 		// Render
 		engine.enableEffect(this._effect);
 		engine.setState(false);
-		
+
+
 		// Texture
 		this._effect.setTexture("textureSampler", this.texture);
 		this._effect.setMatrix("textureMatrix", this.texture.getTextureMatrix());

@@ -1,5 +1,5 @@
 package com.babylonhx.materials.textures;
-
+import com.babylonhx.utils.Image;
 import com.babylonhx.utils.typedarray.UInt8Array;
 
 
@@ -10,12 +10,12 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 class DynamicTexture extends Texture {
 	
 	private var _generateMipMaps:Bool;
-	private var _canvas:Array<Int> = [];
+	public var _canvas:Image;
 	
 	public var canRescale(get, never):Bool;
 	
-	public function getContext():Array<Int> {
-		return _canvas;
+	public function getContext():UInt8Array {
+		return _canvas.data;
 	}
 	
 
@@ -34,8 +34,10 @@ class DynamicTexture extends Texture {
 			this._texture = scene.getEngine().createDynamicTexture(options.width, options.height, generateMipMaps, samplingMode);
 		} else {*/
 			if (Reflect.hasField(options, "width")) {
+				this._canvas = new Image(null, options.width, options.height);
 				this._texture = scene.getEngine().createDynamicTexture(options.width, options.height, generateMipMaps, samplingMode);
 			} else {
+				this._canvas = new Image(null, options, options);
 				this._texture = scene.getEngine().createDynamicTexture(options, options, generateMipMaps, samplingMode);
 			}
 		//}
@@ -66,13 +68,14 @@ class DynamicTexture extends Texture {
 		//this._context.fillRect(0, 0, size.width, size.height);
 		for (i in 0...size.width) {
 			for (j in 0...size.height) {
-				this._canvas.push(0xffffff);
+				trace('-- todo');
+				//this._canvas.push(0xffffff);
 			}
 		}
 	}
 
 	public function update(invertY:Bool = false) {
-		//this.getScene().getEngine().updateDynamicTexture(this._texture, this._canvas, invertY);
+		this.getScene().getEngine().updateDynamicTexture(this._texture, this._canvas, invertY);
 	}
 
 	/*public drawText(text: string, x: number, y: number, font: string, color: string, clearColor: string, invertY?: boolean, update = true) {
