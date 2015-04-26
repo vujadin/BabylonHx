@@ -31,7 +31,7 @@ package com.babylonhx.mesh.primitives;
 		return VertexData.CreateTiledGround(this.xmin, this.zmin, this.xmax, this.zmax, this.subdivisions, this.precision);
 	}
 
-	override public function copy(id:string):Geometry {
+	override public function copy(id:String):Geometry {
 		return new TiledGround(id, this.getScene(), this.xmin, this.zmin, this.xmax, this.zmax, this.subdivisions, this.precision, this.canBeRegenerated(), null);
 	}
 	

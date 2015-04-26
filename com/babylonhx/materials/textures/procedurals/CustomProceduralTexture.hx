@@ -1,6 +1,10 @@
 package com.babylonhx.materials.textures.procedurals;
 
 import com.babylonhx.tools.Tools;
+import com.babylonhx.math.Color3;
+import com.babylonhx.math.Color4;
+import com.babylonhx.math.Vector2;
+import com.babylonhx.math.Vector3;
 
 /**
  * ...
@@ -73,13 +77,13 @@ import com.babylonhx.tools.Tools;
 		}*/
 	}
 
-	public function isReady():Bool {
+	override public function isReady():Bool {
 		if (!super.isReady()) {
 			return false;
 		}
 		
-		for (var name in this._textures) {
-			var texture = this._textures[name];
+		for (name in this._textures.keys()) {
+			var texture = this._textures.get(name);
 			
 			if (!texture.isReady()) {
 				return false;
@@ -89,7 +93,7 @@ import com.babylonhx.tools.Tools;
 		return true;
 	}
 
-	public function render(useCameraPostProcess:Bool = false) {
+	override public function render(useCameraPostProcess:Bool = false) {
 		if (this._animate) {
 			this._time += this.getScene().getAnimationRatio() * 0.03;
 			this.updateShaderUniforms();

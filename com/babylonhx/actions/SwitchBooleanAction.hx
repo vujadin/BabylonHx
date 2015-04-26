@@ -8,7 +8,7 @@ package com.babylonhx.actions;
 @:expose('BABYLON.SwitchBooleanAction') class SwitchBooleanAction extends Action {
 	
 	private var _target:Dynamic;
-	private var _property:String;
+	private var _property:Dynamic;
 	
 	public var propertyPath:String;
 	
