@@ -95,8 +95,6 @@ import com.babylonhx.math.Ray;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector4;
-import com.babylonhx.math.ColorMatrix;
-import com.babylonhx.math.Matrix3;
 import com.babylonhx.math.Viewport;
 import com.babylonhx.mesh.csg.CSG;
 import com.babylonhx.mesh.csg.Node;
@@ -152,17 +150,6 @@ import com.babylonhx.tools.internals.AndOrNotEvaluator;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.tools.Tools;
-import com.babylonhx.ui.Rectangle;
-import com.babylonhx.ui.Graphics;
-import com.babylonhx.utils.GL;
-import com.babylonhx.utils.Image;
-import com.babylonhx.utils.Keycodes;
-import com.babylonhx.utils.typedarray.ArrayBuffer;
-import com.babylonhx.utils.typedarray.ArrayBufferView;
-import com.babylonhx.utils.typedarray.Float32Array;
-import com.babylonhx.utils.typedarray.Int32Array;
-import com.babylonhx.utils.typedarray.Int16Array;
-import com.babylonhx.utils.typedarray.UInt8Array;
 import com.babylonhx.Engine;
 import com.babylonhx.EngineCapabilities;
 import com.babylonhx.Node;
@@ -171,7 +158,7 @@ import com.babylonhx.Scene;
 /**
  * Empty test.
  * Import all of BabylonHX classes to make sure everything compile,
- * and that all used openfl functionalities exists.
+ * and that all used lime and snow functionalities exists.
  */
 class TestImport extends haxe.unit.TestCase
 {
