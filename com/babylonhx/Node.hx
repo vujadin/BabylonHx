@@ -80,6 +80,10 @@ import com.babylonhx.animations.Animation;
 	public function _isSynchronized():Bool {
 		return true;
 	}
+	
+	public function _markSyncedWithParent() {
+        this._parentRenderId = this.parent._currentRenderId;
+    }
 
 	public function isSynchronizedWithParent():Bool {
 		if (this.parent == null) {
@@ -87,7 +91,6 @@ import com.babylonhx.animations.Animation;
 		}
 		
 		if (this._parentRenderId != this.parent._currentRenderId) {
-			this._parentRenderId = this.parent._currentRenderId;
 			return false;
 		}
 				

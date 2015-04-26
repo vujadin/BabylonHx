@@ -1,7 +1,9 @@
 package com.babylonhx.ui;
+
 import com.babylonhx.math. *;
 
-@:expose('BABYLON.Rectangle')  class Rectangle{
+@:expose('BABYLON.Rectangle') class Rectangle {
+	
 	public var bottom (get, set):Float;
 	public var bottomRight (get, set):Vector2;
 	public var height:Float;
@@ -15,170 +17,116 @@ import com.babylonhx.math. *;
 	public var y:Float;
 	
 	
-	public function new (x:Float = 0, y:Float = 0, width:Float = 0, height:Float = 0):Void {
-		
+	public function new (x:Float = 0, y:Float = 0, width:Float = 0, height:Float = 0) {		
 		this.x = x;
 		this.y = y;
 		this.width = width;
-		this.height = height;
-		
-	}
+		this.height = height;		
+	}	
 	
+	public function clone():Rectangle {		
+		return new Rectangle(x, y, width, height);		
+	}	
 	
-	public function clone ():Rectangle {
-		
-		return new Rectangle (x, y, width, height);
-		
-	}
+	public function contains(x:Float, y:Float):Bool {		
+		return x >= this.x && y >= this.y && x < right && y < bottom;		
+	}	
 	
+	public function containsPoint(point:Vector2):Bool {		
+		return contains (point.x, point.y);		
+	}	
 	
-	public function contains (x:Float, y:Float):Bool {
-		
-		return x >= this.x && y >= this.y && x < right && y < bottom;
-		
-	}
+	public function containsRect(rect:Rectangle):Bool {		
+		if (rect.width <= 0 || rect.height <= 0) {			
+			return rect.x > x && rect.y > y && rect.right < right && rect.bottom < bottom;			
+		} 
+		else {			
+			return rect.x >= x && rect.y >= y && rect.right <= right && rect.bottom <= bottom;			
+		}		
+	}	
 	
-	
-	public function containsPoint (point:Vector2):Bool {
-		
-		return contains (point.x, point.y);
-		
-	}
-	
-	
-	public function containsRect (rect:Rectangle):Bool {
-		
-		if (rect.width <= 0 || rect.height <= 0) {
-			
-			return rect.x > x && rect.y > y && rect.right < right && rect.bottom < bottom;
-			
-		} else {
-			
-			return rect.x >= x && rect.y >= y && rect.right <= right && rect.bottom <= bottom;
-			
-		}
-		
-	}
-	
-	
-	public function copyFrom (sourceRect:Rectangle):Void {
-		
+	public function copyFrom(sourceRect:Rectangle) {		
 		x = sourceRect.x;
 		y = sourceRect.y;
 		width = sourceRect.width;
-		height = sourceRect.height;
-		
+		height = sourceRect.height;		
+	}	
+	
+	public function equals(toCompare:Rectangle):Bool {		
+		return toCompare != null && x == toCompare.x && y == toCompare.y && width == toCompare.width && height == toCompare.height;		
 	}
 	
 	
-	public function equals (toCompare:Rectangle):Bool {
-		
-		return toCompare != null && x == toCompare.x && y == toCompare.y && width == toCompare.width && height == toCompare.height;
-		
-	}
+	public function inflate(dx:Float, dy:Float) {		
+		x -= dx; 
+		width += dx * 2;
+		y -= dy; 
+		height += dy * 2;		
+	}	
 	
+	public function inflatePoint(point:Vector2) {		
+		inflate(point.x, point.y);		
+	}	
 	
-	public function inflate (dx:Float, dy:Float):Void {
-		
-		x -= dx; width += dx * 2;
-		y -= dy; height += dy * 2;
-		
-	}
-	
-	
-	public function inflatePoint (point:Vector2):Void {
-		
-		inflate (point.x, point.y);
-		
-	}
-	
-	
-	public function intersection (toIntersect:Rectangle):Rectangle {
-		
+	public function intersection(toIntersect:Rectangle):Rectangle {		
 		var x0 = x < toIntersect.x ? toIntersect.x : x;
 		var x1 = right > toIntersect.right ? toIntersect.right : right;
 		
-		if (x1 <= x0) {
-			
-			return new Rectangle ();
-			
+		if (x1 <= x0) {			
+			return new Rectangle();			
 		}
 		
 		var y0 = y < toIntersect.y ? toIntersect.y : y;
 		var y1 = bottom > toIntersect.bottom ? toIntersect.bottom : bottom;
 		
-		if (y1 <= y0) {
-			
-			return new Rectangle ();
-			
+		if (y1 <= y0) {			
+			return new Rectangle();			
 		}
 		
-		return new Rectangle (x0, y0, x1 - x0, y1 - y0);
-		
-	}
+		return new Rectangle(x0, y0, x1 - x0, y1 - y0);		
+	}	
 	
-	
-	public function intersects (toIntersect:Rectangle):Bool {
-		
+	public function intersects(toIntersect:Rectangle):Bool {		
 		var x0 = x < toIntersect.x ? toIntersect.x : x;
 		var x1 = right > toIntersect.right ? toIntersect.right : right;
 		
-		if (x1 <= x0) {
-			
-			return false;
-			
+		if (x1 <= x0) {			
+			return false;			
 		}
 		
 		var y0 = y < toIntersect.y ? toIntersect.y : y;
 		var y1 = bottom > toIntersect.bottom ? toIntersect.bottom : bottom;
 		
-		return y1 > y0;
-		
-	}
+		return y1 > y0;		
+	}	
 	
+	public function isEmpty():Bool {		
+		return (width <= 0 || height <= 0);		
+	}	
 	
-	public function isEmpty ():Bool {
-		
-		return (width <= 0 || height <= 0);
-		
-	}
-	
-	
-	public function offset (dx:Float, dy:Float):Void {
-		
+	public function offset (dx:Float, dy:Float) {		
 		x += dx;
-		y += dy;
-		
-	}
+		y += dy;		
+	}	
 	
-	
-	public function offsetPoint (point:Vector2):Void {
-		
+	public function offsetPoint(point:Vector2) {		
 		x += point.x;
-		y += point.y;
-		
-	}
+		y += point.y;		
+	}	
 	
+	public function setEmpty() {		
+		x = y = width = height = 0;		
+	}	
 	
-	public function setEmpty ():Void {
-		
-		x = y = width = height = 0;
-		
-	}
-	
-	
-	public function setTo (xa:Float, ya:Float, widtha:Float, heighta:Float):Void {
-		
+	public function setTo(xa:Float, ya:Float, widtha:Float, heighta:Float) {		
 		x = xa;
 		y = ya;
 		width = widtha;
-		height = heighta;
-		
+		height = heighta;		
 	}
 	
 	
-	public function transform (m:Matrix3):Rectangle {
-		
+	public function transform(m:Matrix3):Rectangle {		
 		var tx0 = m.a * x + m.c * y;
 		var tx1 = tx0;
 		var ty0 = m.b * x + m.d * y;
@@ -187,42 +135,60 @@ import com.babylonhx.math. *;
 		var tx = m.a * (x + width) + m.c * y;
 		var ty = m.b * (x + width) + m.d * y;
 		
-		if (tx < tx0) tx0 = tx;
-		if (ty < ty0) ty0 = ty;
-		if (tx > tx1) tx1 = tx;
-		if (ty > ty1) ty1 = ty;
+		if (tx < tx0) {
+			tx0 = tx;
+		}
+		if (ty < ty0) {
+			ty0 = ty;
+		}
+		if (tx > tx1) {
+			tx1 = tx;
+		}
+		if (ty > ty1) {
+			ty1 = ty;
+		}
 		
 		tx = m.a * (x + width) + m.c * (y + height);
 		ty = m.b * (x + width) + m.d * (y + height);
 		
-		if (tx < tx0) tx0 = tx;
-		if (ty < ty0) ty0 = ty;
-		if (tx > tx1) tx1 = tx;
-		if (ty > ty1) ty1 = ty;
+		if (tx < tx0) {
+			tx0 = tx;
+		}
+		if (ty < ty0) {
+			ty0 = ty;
+		}
+		if (tx > tx1) {
+			tx1 = tx;
+		}
+		if (ty > ty1) {
+			ty1 = ty;
+		}
 		
 		tx = m.a * x + m.c * (y + height);
 		ty = m.b * x + m.d * (y + height);
 		
-		if (tx < tx0) tx0 = tx;
-		if (ty < ty0) ty0 = ty;
-		if (tx > tx1) tx1 = tx;
-		if (ty > ty1) ty1 = ty;
+		if (tx < tx0) {
+			tx0 = tx;
+		}
+		if (ty < ty0) {
+			ty0 = ty;
+		}
+		if (tx > tx1) {
+			tx1 = tx;
+		}
+		if (ty > ty1) {
+			ty1 = ty;
+		}
 		
-		return new Rectangle (tx0 + m.tx, ty0 + m.ty, tx1 - tx0, ty1 - ty0);
-		
-	}
+		return new Rectangle (tx0 + m.tx, ty0 + m.ty, tx1 - tx0, ty1 - ty0);		
+	}	
 	
-	
-	public function union (toUnion:Rectangle):Rectangle {
-		
-		if (width == 0 || height == 0) {
-			
-			return toUnion.clone ();
-			
-		} else if (toUnion.width == 0 || toUnion.height == 0) {
-			
-			return clone ();
-			
+	public function union(toUnion:Rectangle):Rectangle {		
+		if (width == 0 || height == 0) {			
+			return toUnion.clone ();			
+		} 
+		else if (toUnion.width == 0 || toUnion.height == 0) {			
+			return clone ();			
 		}
 		
 		var x0 = x > toUnion.x ? toUnion.x : x;
@@ -230,69 +196,71 @@ import com.babylonhx.math. *;
 		var y0 = y > toUnion.y ? toUnion.y : y;
 		var y1 = bottom < toUnion.bottom ? toUnion.bottom : bottom;
 		
-		return new Rectangle (x0, y0, x1 - x0, y1 - y0);
-		
+		return new Rectangle (x0, y0, x1 - x0, y1 - y0);		
 	}
 	
 	
-	public function __contract (x:Float, y:Float, width:Float, height:Float):Void {
-		
-		if (this.width == 0 && this.height == 0) {
-			
-			return;
-			
+	public function __contract(x:Float, y:Float, width:Float, height:Float) {		
+		if (this.width == 0 && this.height == 0) {			
+			return;			
 		}
 		
 		var cacheRight = right;
 		var cacheBottom = bottom;
 		
-		if (this.x < x) this.x = x;
-		if (this.y < y) this.y = y;
-		if (this.right > x + width) this.width = x + width - this.x;
-		if (this.bottom > y + height) this.height = y + height - this.y;
-		
-	}
+		if (this.x < x) {
+			this.x = x;
+		}
+		if (this.y < y) {
+			this.y = y;
+		}
+		if (this.right > x + width) {
+			this.width = x + width - this.x;
+		}
+		if (this.bottom > y + height) {
+			this.height = y + height - this.y;
+		}		
+	}	
 	
-	
-	public function __expand (x:Float, y:Float, width:Float, height:Float):Void {
-		
-		if (this.width == 0 && this.height == 0) {
-			
+	public function __expand(x:Float, y:Float, width:Float, height:Float) {		
+		if (this.width == 0 && this.height == 0) {			
 			this.x = x;
 			this.y = y;
 			this.width = width;
 			this.height = height;
-			return;
-			
+			return;			
 		}
 		
 		var cacheRight = right;
 		var cacheBottom = bottom;
 		
-		if (this.x > x) this.x = x;
-		if (this.y > y) this.y = y;
-		if (cacheRight < x + width) this.width = x + width - this.x;
-		if (cacheBottom < y + height) this.height = y + height - this.y;
-		
-	}
+		if (this.x > x) {
+			this.x = x;
+		}
+		if (this.y > y) {
+			this.y = y;
+		}
+		if (cacheRight < x + width) {
+			this.width = x + width - this.x;
+		}
+		if (cacheBottom < y + height) {
+			this.height = y + height - this.y;
+		}		
+	}		
 	
-
-		
-	
-	private function get_bottom ():Float { return y + height; }
-	private function set_bottom (b:Float):Float { height = b - y; return b; }
-	private function get_bottomRight ():Vector2 { return new Vector2 (x + width, y + height); }
-	private function set_bottomRight (p:Vector2):Vector2 { width = p.x - x; height = p.y - y; return p.clone (); }
-	private function get_left ():Float { return x; }
-	private function set_left (l:Float):Float { width -= l - x; x = l; return l; }
-	private function get_right ():Float { return x + width; }
-	private function set_right (r:Float):Float { width = r - x; return r; }
-	private function get_size ():Vector2 { return new Vector2 (width, height); }
-	private function set_size (p:Vector2):Vector2 { width = p.x; height = p.y; return p.clone (); }
-	private function get_top ():Float { return y; }
-	private function set_top (t:Float):Float { height -= t - y; y = t; return t; }
-	private function get_topLeft ():Vector2 { return new Vector2 (x, y); }
-	private function set_topLeft (p:Vector2):Vector2 { x = p.x; y = p.y; return p.clone (); }
-	
+	private function get_bottom():Float { return y + height; }
+	private function set_bottom(b:Float):Float { height = b - y; return b; }
+	private function get_bottomRight():Vector2 { return new Vector2 (x + width, y + height); }
+	private function set_bottomRight(p:Vector2):Vector2 { width = p.x - x; height = p.y - y; return p.clone (); }
+	private function get_left():Float { return x; }
+	private function set_left(l:Float):Float { width -= l - x; x = l; return l; }
+	private function get_right():Float { return x + width; }
+	private function set_right(r:Float):Float { width = r - x; return r; }
+	private function get_size():Vector2 { return new Vector2 (width, height); }
+	private function set_size(p:Vector2):Vector2 { width = p.x; height = p.y; return p.clone (); }
+	private function get_top():Float { return y; }
+	private function set_top(t:Float):Float { height -= t - y; y = t; return t; }
+	private function get_topLeft():Vector2 { return new Vector2 (x, y); }
+	private function set_topLeft(p:Vector2):Vector2 { x = p.x; y = p.y; return p.clone (); }	
 
 }

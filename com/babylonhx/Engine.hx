@@ -446,7 +446,16 @@ import js.Browser;
 		/*this._renderingCanvas.width = width;
 		this._renderingCanvas.height = height;
 		
-		this._canvasClientRect = this._renderingCanvas.getBoundingClientRect();*/
+		this._canvasClientRect = this._renderingCanvas.getBoundingClientRect();
+		
+		for (index in 0...this.scenes.length) {
+            var scene = this.scenes[index];
+			
+            for (camIndex in 0...scene.cameras.length) {
+                var cam = scene.cameras[camIndex];
+                cam._currentRenderId = 0;
+            }
+        }*/
 	}
 
 	public function bindFramebuffer(texture:BabylonTexture) {

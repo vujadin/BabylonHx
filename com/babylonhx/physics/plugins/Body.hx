@@ -214,15 +214,15 @@ class Body {
 		var sb = Math.sin(ox);
 		var mtx = new Mat33();
 		
-		mtx.e00 = ch * ca;
-		mtx.e01 = sh * sb - ch * sa * cb;
-		mtx.e02 = ch * sa * sb + sh * cb;
-		mtx.e10 = sa;
-		mtx.e11 = ca * cb;
-		mtx.e12 = -ca * sb;
-		mtx.e20 = -sh * ca;
-		mtx.e21 = sh * sa * cb + ch * sb;
-		mtx.e22 = -sh * sa * sb + ch * cb;
+		mtx.elements[0] = ch * ca;
+		mtx.elements[1] = sh * sb - ch * sa * cb;
+		mtx.elements[2] = ch * sa * sb + sh * cb;
+		mtx.elements[3] = sa;
+		mtx.elements[4] = ca * cb;
+		mtx.elements[5] = -ca * sb;
+		mtx.elements[6] = -sh * ca;
+		mtx.elements[7] = sh * sa * cb + ch * sb;
+		mtx.elements[8] = -sh * sa * sb + ch * cb;
 		return mtx;
 	}
 	

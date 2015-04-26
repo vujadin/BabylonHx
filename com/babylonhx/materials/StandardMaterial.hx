@@ -86,7 +86,7 @@ import com.babylonhx.tools.Tools;
 	}
 
 	override public function needAlphaTesting():Bool {
-		return this.diffuseTexture != null && this.diffuseTexture.hasAlpha && !this.diffuseTexture.getAlphaFromRGB;
+		return this.diffuseTexture != null && this.diffuseTexture.hasAlpha;
 	}
 
 	private function _shouldUseAlphaFromDiffuseTexture():Bool {
