@@ -26,10 +26,10 @@ before_install:
   - haxelib -notimeout install swf
   - haxelib -notimeout install lime
   - haxelib -notimeout install openfl
-  - haxelib git snow https://github.com/underscorediscovery/snow.git
-  - haxelib git oimohx https://github.com/babylonhx/OimoHx.git
-  - haxelib git msgpack https://github.com/aaulia/msgpack-haxe.git
-  - haxelib git babylonhx https://github.com/babylonhx/BabylonHx_2.0.git
+  - haxelib -notimeout git snow https://github.com/underscorediscovery/snow.git
+  - haxelib -notimeout git oimohx https://github.com/babylonhx/OimoHx.git
+  - haxelib -notimeout git msgpack https://github.com/aaulia/msgpack-haxe.git
+  - haxelib -notimeout git babylonhx https://github.com/babylonhx/BabylonHx_2.0.git
 script:
   - cd ./ci
   - haxe compile.hxml
