@@ -11,7 +11,7 @@ import haxe.ds.Vector;
 
 class Graphics {
 	
-public static function colorTransform (scene:Scene, texture:DynamicTexture, rect:Rectangle, colorMatrix:ColorMatrix):Void {
+	public static function colorTransform (scene:Scene, texture:DynamicTexture, rect:Rectangle, colorMatrix:ColorMatrix):Void {
 		
 		var data = texture._canvas.data;
 		var stride = texture._canvas.width * 4;
@@ -51,8 +51,7 @@ public static function colorTransform (scene:Scene, texture:DynamicTexture, rect
 		
 	}
 
-
-public static function fillRect (scene:Scene, texture:DynamicTexture,  rect:Rectangle, color:Int):Void {
+	public static function fillRect (scene:Scene, texture:DynamicTexture,  rect:Rectangle, color:Int):Void {
 		
 		var a = (texture._canvas.transparent) ? ((color & 0xFF000000) >>> 24) : 0xFF;
 		var r = (color & 0x00FF0000) >>> 16;

@@ -567,6 +567,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 		
 		// Parent
 		if (this.parent != null && this.parent.getWorldMatrix() != null && this.billboardMode == AbstractMesh.BILLBOARDMODE_NONE) {
+			this._markSyncedWithParent();
 			this._localWorld.multiplyToRef(this.parent.getWorldMatrix(), this._worldMatrix);
 		} else {
 			this._worldMatrix.copyFrom(this._localWorld);

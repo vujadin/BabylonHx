@@ -132,6 +132,8 @@ class OimoPlugin implements IPhysicsEnginePlugin {
 			delta: deltaPosition
 		});
 		
+		cast(mesh, Mesh).rigidBody = body.body;
+		
 		return body;
 	}
 
@@ -279,14 +281,23 @@ class OimoPlugin implements IPhysicsEnginePlugin {
 		}
 	}
 
+	var oimoForce:Vec3 = new Vec3();
+	var oimoContactPoint:Vec3 = new Vec3();
 	public function applyImpulse(mesh:AbstractMesh, force:Vector3, contactPoint:Vector3) {
 		for (index in 0...this._registeredMeshes.length) {
 			var registeredMesh = this._registeredMeshes[index];
 			if (registeredMesh.mesh == mesh || registeredMesh.mesh == mesh.parent) {
 				// Get object mass to have a behaviour similar to cannon.js
-				var mass = registeredMesh.body.body.massInfo.mass;
+				var mass = registeredMesh.body.body.mass;
+				
 				// The force is scaled with the mass of object
-				registeredMesh.body.body.applyImpulse(contactPoint.scale(World.INV_SCALE), force.scale(World.INV_SCALE * mass));
+				var tmpCP = (contactPoint.scale(World.INV_SCALE));
+				var tmpF = force.scale(World.INV_SCALE * mass);
+				oimoForce.x = tmpF.x;
+				oimoForce.y = tmpF.y;
+				oimoForce.z = tmpF.z;
+				oimoContactPoint.init(tmpCP.x, tmpCP.y, tmpCP.z);
+				registeredMesh.body.body.applyImpulse(oimoContactPoint, oimoForce);
 				return;
 			}
 		}
@@ -380,14 +391,14 @@ class OimoPlugin implements IPhysicsEnginePlugin {
 						mesh.rotationQuaternion = new Quaternion(0, 0, 0, 1);
 					}
 					mesh.rotationQuaternion.fromRotationMatrix(mtx);
-					mesh.computeWorldMatrix();*/
+					mesh.computeWorldMatrix();*/					
 					
-					var parentShape = this._getLastShape(body);
+					var parentShape = /*this._getLastShape*/(body);
 					mesh.position.x = parentShape.position.x * World.WORLD_SCALE;
 					mesh.position.y = parentShape.position.y * World.WORLD_SCALE;
 					mesh.position.z = parentShape.position.z * World.WORLD_SCALE;
-					mtx = Matrix.FromArray(body.getMatrix());
-
+					mtx = Matrix.FromArray( #if js cast #end body.getMatrix());
+					
 					if (mesh.rotationQuaternion == null) {
 						mesh.rotationQuaternion = new Quaternion(0, 0, 0, 1);
 					}
@@ -425,7 +436,7 @@ class OimoPlugin implements IPhysicsEnginePlugin {
 					Quaternion.FromRotationMatrixToRef(mtx, mesh.rotationQuaternion);
 					mesh.computeWorldMatrix();*/
 					
-					m = body.getMatrix();
+					m = #if js cast #end body.getMatrix();
 					mtx = Matrix.FromArray(m);
 					
 					// Body position

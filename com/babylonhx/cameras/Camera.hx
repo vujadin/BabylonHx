@@ -126,11 +126,7 @@ import com.babylonhx.tools.SmartArray;
 		this._update();
 	}
 
-	// Synchronized
-	override public function isSynchronizedWithParent():Bool {
-        return false;
-    }
-	
+	// Synchronized	
 	override public function _isSynchronized():Bool {
 		return this._isSynchronizedViewMatrix() && this._isSynchronizedProjectionMatrix();
 	}
@@ -291,26 +287,28 @@ import com.babylonhx.tools.SmartArray;
 		return Matrix.Identity();
 	}
 
-	public function getViewMatrix():Matrix {
+	public function getViewMatrix(force:Bool = false):Matrix {
 		this._computedViewMatrix = this._computeViewMatrix();
 		
-		if (this.parent == null
-			|| this.parent.getWorldMatrix() == null
-			|| this.isSynchronized()) {				
-			this._globalPosition.copyFrom(this.position);
+		if (!force && this._isSynchronizedViewMatrix()) {
 			return this._computedViewMatrix;
 		}
 		
-		if (this._worldMatrix == null) {
-			this._worldMatrix = Matrix.Identity();
+		if (this.parent == null || this.parent.getWorldMatrix == null) {
+			this._globalPosition.copyFrom(this.position);
+		} else {
+			if (this._worldMatrix == null) {
+				this._worldMatrix = Matrix.Identity();
+			}
+			
+			this._computedViewMatrix.invertToRef(this._worldMatrix);
+			
+			this._worldMatrix.multiplyToRef(this.parent.getWorldMatrix(), this._computedViewMatrix);
+			this._globalPosition.copyFromFloats(this._computedViewMatrix.m[12], this._computedViewMatrix.m[13], this._computedViewMatrix.m[14]);
+			
+			this._computedViewMatrix.invert();			
+			this._markSyncedWithParent();
 		}
-		
-		this._computedViewMatrix.invertToRef(this._worldMatrix);
-		
-		this._worldMatrix.multiplyToRef(this.parent.getWorldMatrix(), this._computedViewMatrix);
-		this._globalPosition.copyFromFloats(this._computedViewMatrix.m[12], this._computedViewMatrix.m[13], this._computedViewMatrix.m[14]);
-		
-		this._computedViewMatrix.invert();
 		
 		this._currentRenderId = this.getScene().getRenderId();
 		

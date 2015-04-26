@@ -71,6 +71,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	private var _sideOrientation:Int = Mesh.DEFAULTSIDE;
 	public var sideOrientation(get, set):Int;
 	
+	// exposing physics...
+	public var rigidBody:Dynamic;
+	
 	// for extrusion
 	public var path3D:Path3D;
 	public var pathArray:Array<Array<Vector3>>;
@@ -131,6 +134,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		dest._checkCollisions = source._checkCollisions;
 		dest._childrenFlag = source._childrenFlag;
 		dest._collider = source._collider;
+		dest.instances = source.instances.copy();
 		dest._collisionsScalingMatrix = source._collisionsScalingMatrix.clone();
 		dest._collisionsTransformMatrix = source._collisionsTransformMatrix.clone();
 		dest._diffPositionForCollisions = source._diffPositionForCollisions.clone();
