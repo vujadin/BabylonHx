@@ -30,7 +30,7 @@ before_install:
   - haxelib -notimeout git oimohx https://github.com/babylonhx/OimoHx.git
   - haxelib -notimeout git msgpack https://github.com/aaulia/msgpack-haxe.git
   - haxelib -notimeout git babylonhx https://github.com/babylonhx/BabylonHx_2.0.git
-  - sudo ln -s  /usr/lib/haxe/lib/oimohx/git /usr/lib/haxe/lib/babylonhx/git/oimohx
+  - sudo ln -s /usr/lib/haxe/lib/oimohx/ /usr/lib/haxe/lib/babylonhx/oimohx
 script:
   - cd ./ci
   - haxe compile.hxml
