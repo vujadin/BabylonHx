@@ -31,5 +31,5 @@ before_install:
   - haxelib git msgpack https://github.com/aaulia/msgpack-haxe.git
   - haxelib git babylonhx https://github.com/babylonhx/BabylonHx_2.0.git
 script:
-  - cd ./tests
+  - cd ./ci
   - haxe compile.hxml
