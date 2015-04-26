@@ -8,5 +8,8 @@
 --remap flash:openfl
 -lib lime
 -lib openfl
+-lib msgpack
+-lib snow
+-lib oimohx
 -lib babylonhx
 -cmd echo "----------------------------------------end testing----------------------------------------"
