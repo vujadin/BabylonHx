@@ -6,7 +6,7 @@
 --remap flash:openfl
 -lib lime
 -lib openfl
--lib msgpack-haxe
+-lib msgpack
 -lib oimohx
 -lib babylonhx
 -lib hxcpp
