@@ -1175,17 +1175,17 @@ import js.Browser;
 		return texture;
 	}
 	
-	/*public function updateDynamicTexture(texture:BabylonTexture, canvas:Array<Int>, invertY:Bool) {
+	public function updateDynamicTexture(texture:BabylonTexture, canvas:Image, invertY:Bool) {
 		GL.bindTexture(GL.TEXTURE_2D, texture.data);
 		//GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 1 : 0);
-		GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, GL.RGBA, GL.UNSIGNED_BYTE, cast canvas,);
+		GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, canvas.width, canvas.height, 0, GL.RGBA, GL.UNSIGNED_BYTE, cast canvas.data);
 		if (texture.generateMipMaps) {
 			GL.generateMipmap(GL.TEXTURE_2D);
 		}
 		GL.bindTexture(GL.TEXTURE_2D, null);
 		this._activeTexturesCache = [];
 		texture.isReady = true;
-	}*/
+	}
 	
 	public function updateTextureSamplingMode(samplingMode:Int, texture:BabylonTexture) {
 		var filters = getSamplingParameters(samplingMode, texture.generateMipMaps);

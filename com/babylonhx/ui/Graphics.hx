@@ -70,7 +70,7 @@ public static function fillRect (scene:Scene, texture:DynamicTexture,  rect:Rect
 				
 				j = i * 4;
 				
-				#if js  
+				#if (js || snow)  
 				data[j + 0] = r;
 				data[j + 1] = g;
 				data[j + 2] = b;
@@ -97,7 +97,7 @@ public static function fillRect (scene:Scene, texture:DynamicTexture,  rect:Rect
 					
 					offset = (row * stride) + (column * 4);
 					
-					#if js
+					#if (js || snow)  
 					data[offset] = r;
 					data[offset + 1] = g;
 					data[offset + 2] = b;
