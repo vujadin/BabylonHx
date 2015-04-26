@@ -9,7 +9,6 @@
 -lib msgpack
 -lib oimohx
 -lib babylonhx
--lib hxcpp
 -main TestMain
 -neko unit.n
 -cmd echo "----------------------------------------end testing----------------------------------------"
