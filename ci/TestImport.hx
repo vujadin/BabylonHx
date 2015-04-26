@@ -95,6 +95,8 @@ import com.babylonhx.math.Ray;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector4;
+import com.babylonhx.math.ColorMatrix;
+import com.babylonhx.math.Matrix3;
 import com.babylonhx.math.Viewport;
 import com.babylonhx.mesh.csg.CSG;
 import com.babylonhx.mesh.csg.Node;
