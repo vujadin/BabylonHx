@@ -3,10 +3,12 @@
 -cmd echo "| _ \/ _| | |_ \ || | / _ \ | \| __ |>  <"
 -cmd echo "|___/\__|_|_|__/\_| |_\___/_||_|_||_/_/\_\ "
 -cmd echo "                |__/"                      
--main TestMain
--neko unit.n
 --remap flash:openfl
 -lib lime
 -lib openfl
+-lib msgpack
+-lib oimohx
 -lib babylonhx
+-main TestMain
+-neko unit.n
 -cmd echo "----------------------------------------end testing----------------------------------------"

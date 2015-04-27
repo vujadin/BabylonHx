@@ -158,7 +158,7 @@ import com.babylonhx.Scene;
 /**
  * Empty test.
  * Import all of BabylonHX classes to make sure everything compile,
- * and that all used openfl functionalities exists.
+ * and that all used lime and snow functionalities exists.
  */
 class TestImport extends haxe.unit.TestCase
 {

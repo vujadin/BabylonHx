@@ -142,7 +142,7 @@ class Body {
     }
 	
 	public function setRotation(rot:Vec3) {
-        this.body.setRotation(rot);
+        this.body.setRotation(cast rot);
     }
 		
     // GET
