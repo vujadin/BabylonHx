@@ -24,6 +24,9 @@ import com.babylonhx.utils.typedarray.Int16Array;
 import com.babylonhx.utils.typedarray.ArrayBufferView;
 import com.babylonhx.utils.Image;
 
+#if openfl
+import openfl.display.OpenGLView;
+#end
 
 #if js
 import js.Browser;
@@ -142,7 +145,11 @@ import js.Browser;
 	public static var touchMove:Array<Dynamic> = [];
 	public static var keyUp:Array<Dynamic> = [];
 	public static var keyDown:Array<Dynamic> = [];
-	
+
+	#if openfl
+	public var _workingContext:OpenGLView; 
+	#end
+
 	#if lime
 	public var width:Int;
 	public var height:Int;
@@ -159,6 +166,11 @@ import js.Browser;
 		#if lime
 		this.width = 800;
 		this.height = 600;
+		#end
+
+		#if openfl
+		this._workingContext = new OpenGLView();
+		canvas.addChild(this._workingContext);
 		#end
 		
 		options = options != null ? options : {};
@@ -342,6 +354,9 @@ import js.Browser;
 	inline public function runRenderLoop(renderFunction:Dynamic) {
 		this._runningLoop = true;
 		this._renderFunction = renderFunction;
+		#if openfl
+		this._workingContext.render = this._renderLoop;
+		#end
 	}
 
 	public function switchFullscreen(requestPointerLock:Bool) {

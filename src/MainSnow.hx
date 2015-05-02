@@ -1,13 +1,11 @@
 package;
 
-import snow.Log.log;
 import snow.types.Types;
 
 import com.babylonhx.Engine;
 import com.babylonhx.Scene;
 
 
-@:log_as('app')
 class MainSnow extends snow.App {
 	
 	var engine:Engine;
@@ -129,7 +127,7 @@ class MainSnow extends snow.App {
 		}
 	}
 
-	function render(window:snow.window.Window) {
+	function render(window:snow.system.window.Window) {
 		engine._renderLoop();
 	}
 }
