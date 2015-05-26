@@ -15,7 +15,8 @@
       dependencies : {
         "snow" : "*",
 		"poly2trihx" : "*",
-		"msgpack-haxe" : "*"
+		"msgpack-haxe" : "*",
+		"oimohx" : "*"
       }
     },
 
