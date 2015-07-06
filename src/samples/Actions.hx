@@ -157,7 +157,7 @@ class Actions {
 			{ trigger: ActionManager.OnIntersectionExitTrigger, parameter: sphere }
 			, donut, "scaling", new Vector3(1, 1, 1)));
 			
-		MainSnow.mouseDown.push(scene._onPointerDown);
+		com.babylonhx.Engine.mouseDown.push(scene._onPointerDown);
 
 		// Animations
 		var alpha = 0.0;

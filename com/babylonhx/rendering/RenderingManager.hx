@@ -109,7 +109,9 @@ import com.babylonhx.tools.Tools;
 
 	public function reset() {
 		for (rg in this._renderingGroups) {
-			rg.prepare();
+			if(rg != null) {
+				rg.prepare();
+			}
 		}
 	}
 

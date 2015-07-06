@@ -4,6 +4,7 @@ import com.babylonhx.collisions.Collider;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
+import com.babylonhx.tools.Tools;
 
 import com.babylonhx.utils.Keycodes;
 
@@ -16,10 +17,19 @@ import com.babylonhx.utils.Keycodes;
 @:expose('BABYLON.FreeCamera') class FreeCamera extends TargetCamera {
 	
 	public var ellipsoid:Vector3 = new Vector3(0.5, 1, 0.5);
+	
+	#if purejs
+	public var keysUp:Array<Int> = [38, 87];
+	public var keysDown:Array<Int> = [40, 83];
+	public var keysLeft:Array<Int> = [37, 65];
+	public var keysRight:Array<Int> = [39, 68];
+	#else
 	public var keysUp:Array<Int> = [Keycodes.up, Keycodes.key_w];
 	public var keysDown:Array<Int> = [Keycodes.down, Keycodes.key_s];
 	public var keysLeft:Array<Int> = [Keycodes.left, Keycodes.key_a];
 	public var keysRight:Array<Int> = [Keycodes.right, Keycodes.key_d];
+	#end
+	
 	public var checkCollisions:Bool = false;
 	public var applyGravity:Bool = false;
 	public var angularSensibility:Float = 2000.0;
@@ -51,7 +61,7 @@ import com.babylonhx.utils.Keycodes;
 	}
 
 	// Controls
-	override public function attachControl(?element:Dynamic, ?noPreventDefault:Bool) {
+	override public function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true) {
 		var previousPosition:Dynamic = null;// { x: 0, y: 0 };
 		var engine = this.getEngine();
 		
@@ -134,19 +144,60 @@ import com.babylonhx.utils.Keycodes;
 			};
 		}
 		
+		#if purejs
+		
+		Engine.app.addEventListener(eventPrefix + "down", function(e) {
+			this._onMouseDown(e.clientX, e.clientY, e.button);
+		}, false);
+		Engine.app.addEventListener(eventPrefix + "up", function(e) {
+			this._onMouseUp(e.clientX, e.clientY, e.button);
+		}, false);
+		//Engine.app.addEventListener(eventPrefix + "out", this._onMouseUp, false);
+		Engine.app.addEventListener(eventPrefix + "move", function(e) {
+			this._onMouseMove(e.clientX, e.clientY);
+		}, false);
+		Engine.app.addEventListener("mousemove", function(e) {
+			this._onMouseMove(e.clientX, e.clientY);
+		}, false);
+		/*Engine.app.addEventListener("MSPointerDown", this._onGestureStart, false);
+		Engine.app.addEventListener("MSGestureChange", this._onGesture, false);*/
+				
+		Tools.RegisterTopRootEvents([
+			{ name: "keydown", handler: this._onKeyDown },
+			{ name: "keyup", handler: this._onKeyUp },
+			{ name: "blur", handler: this._onLostFocus }
+		]);
+		#else
 		Engine.keyDown.push(_onKeyDown);
 		Engine.keyUp.push(_onKeyUp);
 		Engine.mouseDown.push(_onMouseDown);
 		Engine.mouseUp.push(_onMouseUp);
 		Engine.mouseMove.push(_onMouseMove);
+		#end
 	}
 
 	override public function detachControl(?element:Dynamic) {	
+		#if purejs
+		Engine.app.removeEventListener(eventPrefix + "down", this._onMouseDown, false);
+		Engine.app.removeEventListener(eventPrefix + "up", this._onMouseUp, false);
+		Engine.app.removeEventListener(eventPrefix + "out", this._onMouseUp, false);
+		Engine.app.removeEventListener(eventPrefix + "move", this._onMouseMove, false);
+		Engine.app.removeEventListener("mousemove", this._onMouseMove, false);
+		/*Engine.app.addEventListener("MSPointerDown", this._onGestureStart, false);
+		Engine.app.addEventListener("MSGestureChange", this._onGesture, false);*/
+				
+		Tools.UnregisterTopRootEvents([
+			{ name: "keydown", handler: this._onKeyDown },
+			{ name: "keyup", handler: this._onKeyUp },
+			{ name: "blur", handler: this._onLostFocus }
+		]);
+		#else
 		Engine.keyDown.remove(_onKeyDown);
 		Engine.keyUp.remove(_onKeyUp);
 		Engine.mouseDown.remove(_onMouseDown);
 		Engine.mouseUp.remove(_onMouseUp);
 		Engine.mouseMove.remove(_onMouseMove);
+		#end
 		
 		if (this._reset != null) {
 			this._reset();
@@ -158,7 +209,8 @@ import com.babylonhx.utils.Keycodes;
 		
 		if (this.parent != null) {
 			globalPosition = Vector3.TransformCoordinates(this.position, this.parent.getWorldMatrix());
-		} else {
+		} 
+		else {
 			globalPosition = this.position;
 		}
 		
@@ -176,7 +228,7 @@ import com.babylonhx.utils.Keycodes;
 		}
 	}
 
-	public function _checkInputs() {
+	override public function _checkInputs() {		
 		if (this._localDirection == null) {
 			this._localDirection = Vector3.Zero();
 			this._transformedDirection = Vector3.Zero();
@@ -184,16 +236,20 @@ import com.babylonhx.utils.Keycodes;
 		
 		// Keyboard
 		for (index in 0...this._keys.length) {
+			trace(this._keys);
 			var keyCode = this._keys[index];
 			var speed = this._computeLocalCameraSpeed();
 			
 			if (this.keysLeft.indexOf(keyCode) != -1) {
-				this._localDirection.copyFromFloats(-speed, 0, 0);
-			} else if (this.keysUp.indexOf(keyCode) != -1) {
+				this._localDirection.copyFromFloats( -speed, 0, 0);
+			} 
+			else if (this.keysUp.indexOf(keyCode) != -1) {
 				this._localDirection.copyFromFloats(0, 0, speed);
-			} else if (this.keysRight.indexOf(keyCode) != -1) {
+			} 
+			else if (this.keysRight.indexOf(keyCode) != -1) {
 				this._localDirection.copyFromFloats(speed, 0, 0);
-			} else if (this.keysDown.indexOf(keyCode) != -1) {
+			} 
+			else if (this.keysDown.indexOf(keyCode) != -1) {
 				this._localDirection.copyFromFloats(0, 0, -speed);
 			}
 			

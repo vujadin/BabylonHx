@@ -1,7 +1,7 @@
 package com.babylonhx.postprocess;
 
-import com.babylonhx.mesh.BabylonBuffer;
-import com.babylonhx.materials.textures.BabylonTexture;
+import com.babylonhx.mesh.WebGLBuffer;
+import com.babylonhx.materials.textures.WebGLTexture;
 
 /**
  * ...
@@ -11,10 +11,10 @@ import com.babylonhx.materials.textures.BabylonTexture;
 @:expose('BABYLON.PostProcessManager') class PostProcessManager {
 	
 	private var _scene:Scene;
-	private var _indexBuffer:BabylonBuffer;
+	private var _indexBuffer:WebGLBuffer;
 	private var _vertexDeclaration:Array<Int> = [2];
 	private var _vertexStrideSize:Int = 2 * 4;
-	private var _vertexBuffer:BabylonBuffer;
+	private var _vertexBuffer:WebGLBuffer;
 	
 
 	public function new(scene:Scene) {
@@ -30,9 +30,9 @@ import com.babylonhx.materials.textures.BabylonTexture;
 		var vertices:Array<Float> = [];
 		vertices.push(1);
 		vertices.push(1);
-		vertices.push( -1);
+		vertices.push(-1);
 		vertices.push(1);
-		vertices.push( -1);
+		vertices.push(-1);
 		vertices.push(-1);
 		vertices.push(1);
 		vertices.push(-1);
@@ -52,7 +52,7 @@ import com.babylonhx.materials.textures.BabylonTexture;
 	}
 
 	// Methods
-	public function _prepareFrame(?sourceTexture:BabylonTexture):Bool {
+	public function _prepareFrame(?sourceTexture:WebGLTexture):Bool {
 		var postProcesses = this._scene.activeCamera._postProcesses;
 		var postProcessesTakenIndices = this._scene.activeCamera._postProcessesTakenIndices;
 		
@@ -65,9 +65,8 @@ import com.babylonhx.materials.textures.BabylonTexture;
 		return true;
 	}
 	
-	public function directRender(postProcesses:Array<PostProcess>, ?targetTexture:BabylonTexture) {
+	public function directRender(postProcesses:Array<PostProcess>, ?targetTexture:WebGLTexture) {
 		var engine = this._scene.getEngine();
-		
 		for (index in 0...postProcesses.length) {
 			if (index < postProcesses.length - 1) {
 				postProcesses[index + 1].activate(this._scene.activeCamera, targetTexture);
@@ -93,6 +92,10 @@ import com.babylonhx.materials.textures.BabylonTexture;
 				
 				// Draw order
 				engine.draw(true, 0, 6);
+				
+				if (pp.onAfterRender != null) {
+                    pp.onAfterRender(effect);
+                }
 			}
 		}
 		
@@ -101,7 +104,7 @@ import com.babylonhx.materials.textures.BabylonTexture;
 		engine.setDepthWrite(true);
 	}
 
-	public function _finalizeFrame(doNotPresent:Bool = false, ?targetTexture:BabylonTexture, ?postProcesses:Array<PostProcess>) {
+	public function _finalizeFrame(doNotPresent:Bool = false, ?targetTexture:WebGLTexture, ?postProcesses:Array<PostProcess>) {
 		if (postProcesses == null) {
 			postProcesses = this._scene.activeCamera._postProcesses;
 		}
@@ -142,6 +145,10 @@ import com.babylonhx.materials.textures.BabylonTexture;
 				
 				// Draw order
 				engine.draw(true, 0, 6);
+				
+				if (pp.onAfterRender != null) {
+                    pp.onAfterRender(effect);
+                }
 			}
 		}
 		

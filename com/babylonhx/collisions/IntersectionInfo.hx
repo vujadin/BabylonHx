@@ -7,6 +7,7 @@ package com.babylonhx.collisions;
 @:expose('BABYLON.IntersectionInfo') class IntersectionInfo {
 	
 	public var faceId:Int = 0;
+	public var subMeshId:Int = 0;
 	public var bu:Float;
 	public var bv:Float;
 	public var distance:Float;

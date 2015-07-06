@@ -31,6 +31,7 @@ class Fresnel {
 		var sphere3 = Mesh.CreateSphere("Sphere3", 32, 3, scene);
 		var sphere4 = Mesh.CreateSphere("Sphere4", 32, 3, scene);
 		var sphere5 = Mesh.CreateSphere("Sphere5", 32, 3, scene);
+		
 		var light = new PointLight("Omni0", new Vector3( -17.6, 18.8, -49.9), scene);
 		
 		camera.setPosition(new Vector3(-15, 3, 0));
@@ -41,7 +42,7 @@ class Fresnel {
 		sphere5.position.x -= 5;
 		
 		// Sphere1 material
-		material.reflectionTexture = new CubeTexture("assets/img/skybox/skybox", scene);
+		material.reflectionTexture = new CubeTexture("assets/img/skybox/TropicalSunnyDay", scene);
 		material.diffuseColor = new Color3(0, 0, 0);
 		material.emissiveColor = new Color3(0.5, 0.5, 0.5);
 		material.alpha = 0.2;
@@ -65,7 +66,7 @@ class Fresnel {
 		
 		// Sphere2 material
 		material = new StandardMaterial("kosh2", scene);
-		material.reflectionTexture = new CubeTexture("assets/img/skybox/skybox", scene);
+		material.reflectionTexture = new CubeTexture("assets/img/skybox/TropicalSunnyDay", scene);
 		material.diffuseColor = new Color3(0, 0, 0);
 		material.emissiveColor = new Color3(0.5, 0.5, 0.5);
 		material.specularPower = 32;
@@ -123,7 +124,7 @@ class Fresnel {
 		// Sphere5 material
 		material = new StandardMaterial("kosh5", scene);
 		material.diffuseColor = new Color3(0, 0, 0);
-		material.reflectionTexture = new CubeTexture("assets/img/skybox/skybox", scene);
+		material.reflectionTexture = new CubeTexture("assets/img/skybox/TropicalSunnyDay", scene);
 		material.reflectionTexture.level = 0.5;
 		material.specularPower = 64;
 		material.emissiveColor = new Color3(0.2, 0.2, 0.2);
@@ -142,22 +143,13 @@ class Fresnel {
 		var skybox = Mesh.CreateBox("skyBox", 100.0, scene);
 		var skyboxMaterial = new StandardMaterial("skyBox", scene);
 		skyboxMaterial.backFaceCulling = false;
-		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/skybox", scene);
+		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/TropicalSunnyDay", scene);
 		skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
 		skyboxMaterial.diffuseColor = new Color3(0, 0, 0);
 		skyboxMaterial.specularColor = new Color3(0, 0, 0);
 		skybox.material = skyboxMaterial;
 		skybox.infiniteDistance = true;
-		
-		// Lens flares
-		var lensFlareSystem = new LensFlareSystem("lensFlareSystem", light, scene);
-		var flare00 = new LensFlare(0.2, 0, new Color3(1, 1, 1), "assets/img/flare.png", lensFlareSystem);
-		var flare01 = new LensFlare(0.5, 0.2, new Color3(0.5, 0.5, 1), "assets/img/flare.png", lensFlareSystem);
-		var flare02 = new LensFlare(0.2, 1.0, new Color3(1, 1, 1), "assets/img/flare.png", lensFlareSystem);
-		var flare03 = new LensFlare(0.4, 0.4, new Color3(1, 0.5, 1), "assets/img/flare.png", lensFlareSystem);
-		var flare04 = new LensFlare(0.1, 0.6, new Color3(1, 1, 1), "assets/img/flare.png", lensFlareSystem);
-		var flare05 = new LensFlare(0.3, 0.8, new Color3(1, 1, 1), "assets/img/flare.png", lensFlareSystem);
-		
+				
 		// Animations
 		scene.registerBeforeRender(function() {
 			camera.alpha += 0.01 * scene.getAnimationRatio();

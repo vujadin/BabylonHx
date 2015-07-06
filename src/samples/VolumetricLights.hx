@@ -29,11 +29,15 @@ class VolumetricLights {
 		var camera = new ArcRotateCamera("Camera", -0.5, 2.2, 100, Vector3.Zero(), scene);
 		camera.attachControl(this);
 		
+		var skull:AbstractMesh = null;
+		
 		// The first parameter can be used to specify which mesh to import. Here we import all meshes
 		SceneLoader.RegisterPlugin(BabylonFileLoader.plugin);
 		SceneLoader.ImportMesh("", "assets/models/", "skull.babylon", scene, function(newMeshes:Array<AbstractMesh>, newParticles:Array<ParticleSystem>, newSkeletons:Array<Skeleton>) {
 			// Set the target of the camera to the first imported mesh
 			camera.target = newMeshes[0];
+			
+			skull = newMeshes[0];
 			
 			newMeshes[0].material = new StandardMaterial("skull", scene);
 			cast(newMeshes[0].material, StandardMaterial).emissiveColor = new Color3(0.2, 0.2, 0.2);
@@ -46,10 +50,15 @@ class VolumetricLights {
 		// position and scale
 		cast(godrays.mesh.material, StandardMaterial).diffuseTexture = new Texture("assets/img/sun.png", scene, true, false, Texture.BILINEAR_SAMPLINGMODE);
 		cast(godrays.mesh.material, StandardMaterial).diffuseTexture.hasAlpha = true;
+		//godrays.mesh.position.z -= 100;
 		godrays.mesh.position = new Vector3(-150, 150, 150);
 		godrays.mesh.scaling = new Vector3(350, 350, 350);
 		
+		skull.position = godrays.mesh.position.clone();
+		skull.position.z += 100;
+		
 		light.position = godrays.mesh.position;
+		
 		
 		scene.getEngine().runRenderLoop(function () {
             scene.render();

@@ -6,7 +6,7 @@ import com.babylonhx.mesh.Mesh;
  * ...
  * @author Krtolica Vujadin
  */
-@:expose('BABYLON.SimplificationSettings') class SimplificationTask {
+@:expose('BABYLON.SimplificationTask') class SimplificationTask {
 	
 	public var settings:Array<ISimplificationSettings>;
     public var simplificationType:Int;

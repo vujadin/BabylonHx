@@ -2,7 +2,9 @@ package samples;
 
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.lights.HemisphericLight;
+import com.babylonhx.layer.Layer;
 import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Color3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
 
@@ -13,11 +15,14 @@ import com.babylonhx.Scene;
 class RotationAndScaling {
 
 	public function new(scene:Scene) {
-		var camera = new ArcRotateCamera("Camera", Math.PI, Math.PI / 8, 150, Vector3.Zero(), scene);
+		var camera = new ArcRotateCamera("Camera", Math.PI, Math.PI / 8, 150, Vector3.Zero(), scene);		
+		camera.attachControl();
 		
-		camera.attachControl(this, true);
+		new Layer("background", "assets/img/graygrad.jpg", scene, true);
 		
 		var light = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);
+		light.diffuse = Color3.FromInt(0xf68712);
+		light.specular = Color3.FromInt(0xf1471d);
 		
 		//Creation of 3 boxes and 2 spheres
 		var box1 = Mesh.CreateBox("Box1", 6.0, scene);

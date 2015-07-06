@@ -8,6 +8,7 @@ package com.babylonhx.materials;
 @:expose('BABYLON.EffectFallbacks') class EffectFallbacks {
 	
 	private var _defines:Array<Array<String>> = [];
+	
 	private var _currentRank:Int = 32;
 	private var _maxRank:Int = -1;
 	

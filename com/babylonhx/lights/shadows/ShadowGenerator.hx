@@ -35,6 +35,7 @@ import com.babylonhx.Scene;
 	public var blurScale:Int = 2;
 	private var _blurBoxOffset:Float = 0.0;
 	private var _bias:Float = 0.00005;
+	private var _lightDirection:Vector3 = Vector3.Zero();
 
 	public var bias(get, set):Float;
 	private function get_bias():Float {
@@ -173,7 +174,7 @@ import com.babylonhx.Scene;
 					effect.setTexture("textureSampler", this._shadowMap);
 				};
 				
-				this.blurBoxOffset = 1;
+				this.blurBoxOffset = 1;				
 			}
 			
 			this._scene.postProcessManager.directRender([this._downSamplePostprocess, this._boxBlurPostprocess], this._shadowMap2.getInternalTexture());
@@ -331,18 +332,22 @@ import com.babylonhx.Scene;
 		this._currentRenderID = scene.getRenderId();
 		
 		var lightPosition = this._light.position;
-		var lightDirection = this._light.direction;
+		Vector3.NormalizeToRef(this._light.direction, this._lightDirection);
+		
+		if (Math.abs(Vector3.Dot(this._lightDirection, Vector3.Up())) == 1.0) {
+            this._lightDirection.z = 0.0000000000001; // Need to avoid perfectly perpendicular light
+        }
 		
 		if (this._light.computeTransformedPosition()) {
 			lightPosition = this._light.transformedPosition;
 		}
 		
-		if (this._light.needRefreshPerFrame() || this._cachedPosition == null || this._cachedDirection == null || !lightPosition.equals(this._cachedPosition) || !lightDirection.equals(this._cachedDirection)) {
+		if (this._light.needRefreshPerFrame() || this._cachedPosition == null || this._cachedDirection == null || !lightPosition.equals(this._cachedPosition) || !this._lightDirection.equals(this._cachedDirection)) {
 			
 			this._cachedPosition = lightPosition.clone();
-			this._cachedDirection = lightDirection.clone();
+			this._cachedDirection = this._lightDirection.clone();
 			
-			Matrix.LookAtLHToRef(lightPosition, this._light.position.add(lightDirection), Vector3.Up(), this._viewMatrix);
+			Matrix.LookAtLHToRef(lightPosition, this._light.position.add(_lightDirection), Vector3.Up(), this._viewMatrix);
 			
 			this._light.setShadowProjectionMatrix(this._projectionMatrix, this._viewMatrix, this.getShadowMap().renderList, false);
 			

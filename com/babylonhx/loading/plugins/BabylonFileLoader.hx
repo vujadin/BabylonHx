@@ -54,12 +54,10 @@ import com.babylonhx.particles.ParticleSystem;
 import com.babylonhx.physics.PhysicsBodyCreationOptions;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.actions.*;
-import haxe.io.Bytes;
 
+import haxe.io.Bytes;
 import haxe.Json;
 import haxe.Timer;
-
-import org.msgpack.MsgPack;
 
 import com.babylonhx.utils.typedarray.ArrayBuffer;
 import com.babylonhx.utils.typedarray.Float32Array;
@@ -78,7 +76,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 }
 
 @:expose('BABYLON.BabylonFileLoader') class BabylonFileLoader {
-	
+		
 	public static var plugin(get, never):ISceneLoaderPlugin;
 	private static function get_plugin():ISceneLoaderPlugin {
 		return _plugin;
@@ -91,7 +89,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			if (Std.is(data, String)) {
 				parsedData = Json.parse(data);
 			} else if(Std.is(data, Bytes)) {
-				parsedData = MsgPack.decode(data);
+				//parsedData = MsgPack.decode(data);
 			} else {
 				trace("Unknown data type!");
 				return false;
@@ -190,7 +188,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			if (Std.is(data, String)) {
 				parsedData = Json.parse(data);
 			} else if(Std.is(data, Bytes)) {
-				parsedData = MsgPack.decode(data);
+				//parsedData = MsgPack.decode(data);
 			} else {
 				trace("Unknown data type!");
 				return false;
@@ -1035,6 +1033,22 @@ import com.babylonhx.utils.typedarray.Int32Array;
                 geometry._delayInfo.push(VertexBuffer.UV2Kind);
             }
 			
+			if (parsedVertexData.hasUVs3) {
+                geometry._delayInfo.push(VertexBuffer.UV3Kind);
+            }
+			
+            if (parsedVertexData.hasUVs4) {
+                geometry._delayInfo.push(VertexBuffer.UV4Kind);
+            }
+			
+            if (parsedVertexData.hasUVs5) {
+                geometry._delayInfo.push(VertexBuffer.UV5Kind);
+            }
+			
+            if (parsedVertexData.hasUVs6) {
+                geometry._delayInfo.push(VertexBuffer.UV6Kind);
+            }
+			
             if (parsedVertexData.hasColors) {
                 geometry._delayInfo.push(VertexBuffer.ColorKind);
             }
@@ -1490,6 +1504,30 @@ import com.babylonhx.utils.typedarray.Int32Array;
         var uv2s = parsedVertexData.uv2s;
         if (uv2s != null) {
             vertexData.set(uv2s, VertexBuffer.UV2Kind);
+        }
+		
+		// uv3s
+        var uv3s = parsedVertexData.uv3s;
+        if (uv3s != null) {
+            vertexData.set(uv3s, VertexBuffer.UV3Kind);
+        }
+		
+        // uv4s
+        var uv4s = parsedVertexData.uv4s;
+        if (uv4s != null) {
+            vertexData.set(uv4s, VertexBuffer.UV4Kind);
+        }
+		
+        // uv5s
+        var uv5s = parsedVertexData.uv5s;
+        if (uv5s != null) {
+            vertexData.set(uv5s, VertexBuffer.UV5Kind);
+        }
+		
+        // uv6s
+        var uv6s = parsedVertexData.uv6s;
+        if (uv6s != null) {
+            vertexData.set(uv6s, VertexBuffer.UV6Kind);
         }
 		
         // colors

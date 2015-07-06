@@ -2,7 +2,7 @@ package com.babylonhx.postprocess;
 
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.materials.Effect;
-import com.babylonhx.materials.textures.BabylonTexture;
+import com.babylonhx.materials.textures.WebGLTexture;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color4;
 import com.babylonhx.tools.SmartArray;
@@ -22,6 +22,7 @@ import com.babylonhx.utils.GL;
 	
 	public var onApply:Effect->Void;
 	public var onBeforeRender:Effect->Void;
+	public var onAfterRender:Effect->Void;
 	public var onSizeChanged:Void->Void;
 	public var onActivate:Camera->Void;
 	public var width:Float = -1;
@@ -32,14 +33,15 @@ import com.babylonhx.utils.GL;
 	private var _camera:Camera;
 	private var _scene:Scene;
 	private var _engine:Engine;
-	private var _renderRatio:Float;
+	private var _renderRatio:Dynamic;// Float;
 	private var _reusable:Bool = false;
-	public var _textures:SmartArray = new SmartArray(2);// SmartArray<BabylonTexture> = new SmartArray<BabylonTexture>(2);
-	public var _currentRenderTextureId:Int = 0;
+	private var _textureType:Int;
+	public var _textures:SmartArray = new SmartArray(2);// SmartArray<WebGLTexture> = new SmartArray<WebGLTexture>(2);
+	public var _currentRenderTextureInd:Int = 0;
 	private var _effect:Effect;
 	
 
-	public function new(name:String, fragmentUrl:String, parameters:Array<String>, samplers:Array<String>, ratio:Float, camera:Camera, samplingMode:Int = Texture.NEAREST_SAMPLINGMODE, ?engine:Engine, reusable:Bool = false, defines:String = "") {
+	public function new(name:String, fragmentUrl:String, parameters:Array<String>, samplers:Array<String>, ratio:Dynamic, camera:Camera, samplingMode:Int = Texture.NEAREST_SAMPLINGMODE, ?engine:Engine, reusable:Bool = false, defines:String = "", textureType:Int = Engine.TEXTURETYPE_UNSIGNED_INT) {
 		if (camera != null) {
 			this._camera = camera;
 			this._scene = camera.getScene();
@@ -50,9 +52,12 @@ import com.babylonhx.utils.GL;
 			this._engine = engine;
 		}
 		
+		this.name = name;
+		
 		this._renderRatio = ratio;
 		this.renderTargetSamplingMode = samplingMode;
 		this._reusable = reusable;
+		this._textureType = textureType;
 		
 		samplers = samplers != null ? samplers : [];
 		samplers.push("textureSampler");
@@ -67,15 +72,16 @@ import com.babylonhx.utils.GL;
 		return this._reusable;
 	}
 
-	public function activate(camera:Camera, ?sourceTexture:BabylonTexture) {
+	public function activate(camera:Camera, ?sourceTexture:WebGLTexture) {
 		camera = camera != null ? camera : this._camera;
-		
+								
 		var scene = camera.getScene();
 		var maxSize = camera.getEngine().getCaps().maxTextureSize;
 		var desiredWidth = (sourceTexture != null ? sourceTexture._width : this._engine.getRenderWidth()) * this._renderRatio;
         var desiredHeight = (sourceTexture != null ? sourceTexture._height : this._engine.getRenderHeight()) * this._renderRatio;
-        desiredWidth = Tools.GetExponantOfTwo(Std.int(desiredWidth), maxSize);
-		desiredHeight = Tools.GetExponantOfTwo(Std.int(desiredHeight), maxSize);
+        
+		desiredWidth = this._renderRatio.width != null ? this._renderRatio.width : Tools.GetExponantOfTwo(Std.int(desiredWidth), maxSize);
+		desiredHeight = this._renderRatio.height != null ? this._renderRatio.height : Tools.GetExponantOfTwo(Std.int(desiredHeight), maxSize);
 				     
 		if (this.width != desiredWidth || this.height != desiredHeight) {
 			if (this._textures.length > 0) {
@@ -87,18 +93,18 @@ import com.babylonhx.utils.GL;
 			this.width = desiredWidth;
 			this.height = desiredHeight;
 			
-			this._textures.push(this._engine.createRenderTargetTexture( { width: this.width, height: this.height }, { generateMipMaps: false, generateDepthBuffer: camera._postProcesses.indexOf(this) == camera._postProcessesTakenIndices[0], samplingMode: this.renderTargetSamplingMode } ));
+			this._textures.push(this._engine.createRenderTargetTexture( { width: this.width, height: this.height }, { generateMipMaps: false, generateDepthBuffer: camera._postProcesses.indexOf(this) == camera._postProcessesTakenIndices[0], samplingMode: this.renderTargetSamplingMode, type: this._textureType } ));
 			
 			if (this._reusable) {
-				this._textures.push(this._engine.createRenderTargetTexture({ width: this.width, height: this.height }, { generateMipMaps: false, generateDepthBuffer: camera._postProcesses.indexOf(this) == camera._postProcessesTakenIndices[0], samplingMode: this.renderTargetSamplingMode }));
+				this._textures.push(this._engine.createRenderTargetTexture({ width: this.width, height: this.height }, { generateMipMaps: false, generateDepthBuffer: camera._postProcesses.indexOf(this) == camera._postProcessesTakenIndices[0], samplingMode: this.renderTargetSamplingMode, type: this._textureType }));
 			}
 			
 			if (this.onSizeChanged != null) {
 				this.onSizeChanged();
-			}
+			}			
 		}
 		
-		this._engine.bindFramebuffer(this._textures.data[this._currentRenderTextureId]);
+		this._engine.bindFramebuffer(this._textures.data[this._currentRenderTextureInd]);
 		
 		if (this.onActivate != null) {
 			this.onActivate(camera);
@@ -112,7 +118,7 @@ import com.babylonhx.utils.GL;
         }
 		
 		if (this._reusable) {
-			this._currentRenderTextureId = (this._currentRenderTextureId + 1) % 2;
+			this._currentRenderTextureInd = (this._currentRenderTextureInd + 1) % 2;
 		}
 	}
 
@@ -128,9 +134,11 @@ import com.babylonhx.utils.GL;
 		this._engine.setAlphaMode(Engine.ALPHA_DISABLE);
 		this._engine.setDepthBuffer(false);
 		this._engine.setDepthWrite(false);
-		
+				
 		// Texture
-		this._effect._bindTexture("textureSampler", this._textures.data[this._currentRenderTextureId]);
+		if(this._textures.length > 0) {		
+			this._effect._bindTexture("textureSampler", this._textures.data[this._currentRenderTextureInd]);
+		}
 		
 		// Parameters
 		if (this.onApply != null) {

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+  
+  <meta
+     title="BabylonHx_NME"
+     package="com.babylonhx"
+     version="1.0.0"
+     company="Krtolica Vujadin" 
+  />
+  
+  <app
+     file="BabylonHx_NME" 
+     main="MainNME"
+	 path="bin_nme"
+  />
+  
+  <window
+     width="800" 
+     height="600" 
+     orientation="landscape" 
+     fps="30"
+     background="0x000000"
+     require_shaders="true"
+     resizable="true"
+     hardware="true"
+	 antialiasing="0"
+  />
+  
+  <source path="src" />
+  
+  <haxelib name="nme" />
+  <haxelib name="actuate" />
+  <haxelib name="poly2trihx" />
+	
+  <assets path="Assets" rename="assets" exclude="nme.svg" />
+  <!-- <icon name="icon.svg" /> -->
+  
+</project>

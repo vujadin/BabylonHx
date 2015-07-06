@@ -8,7 +8,7 @@ import com.babylonhx.math.Vector2;
  * @author Krtolica Vujadin
  */
 
-class FireProceduralTexture extends ProceduralTexture {
+@:expose('BABYLON.FireProceduralTexture') class FireProceduralTexture extends ProceduralTexture {
 	
 	private var _time:Float = 0.0;
 	private var _speed:Vector2 = new Vector2(0.5, 0.3);

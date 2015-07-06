@@ -1,6 +1,7 @@
 package com.babylonhx.mesh;
 
 import com.babylonhx.actions.ActionManager;
+import com.babylonhx.bones.Bone;
 import com.babylonhx.bones.Skeleton;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.collisions.Collider;
@@ -15,6 +16,7 @@ import com.babylonhx.math.Plane;
 import com.babylonhx.math.Axis;
 import com.babylonhx.math.Quaternion;
 import com.babylonhx.math.Ray;
+import com.babylonhx.math.Space;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Frustum;
@@ -25,7 +27,6 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
  * ...
  * @author Krtolica Vujadin
  */
-
 @:expose('BABYLON.AbstractMesh') class AbstractMesh extends Node implements IDisposable {
 	
 	// Statics
@@ -52,11 +53,11 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	private function set_visibility(val:Float):Float {
 		_visibility = val;
 		return val;
-	}
+	}	
 	
 	public var alphaIndex:Float = Math.POSITIVE_INFINITY;
 	public var infiniteDistance:Bool = false;
-	public var isVisible:Bool = true;
+	public var isVisible:Bool = true;	
 	
 	private var _isPickable:Bool = true;
 	public var isPickable(get, set):Bool;
@@ -70,19 +71,8 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	
 	public var showBoundingBox:Bool = false;
 	public var showSubMeshesBoundingBox:Bool = false;
-	public var onDispose:Void->Void = null;
-	
-	private var _checkCollisions:Bool = false;
-	public var checkCollisions(get, set):Bool;
-	private function get_checkCollisions():Bool {
-		return _checkCollisions;
-	}
-	private function set_checkCollisions(val:Bool):Bool {
-		_checkCollisions = val;
-		return val;
-	}	
-	
-	public var isBlocker:Bool = false;
+	public var onDispose:Void->Void = null;	
+	public var isBlocker:Bool = false;	
 	
 	private var _skeleton:Skeleton;
 	public var skeleton(get, set):Skeleton;
@@ -92,9 +82,9 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	private function set_skeleton(val:Skeleton):Skeleton {
 		_skeleton = val;
 		return val;
-	}	
+	}
 	
-	public var renderingGroupId:Int = 0;
+	public var renderingGroupId:Int = 0;	
 	
 	private var _material:Material;
 	public var material(get, set):Material;
@@ -132,6 +122,8 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	public var useOctreeForCollisions:Bool = true;
 
 	public var layerMask:Int = 0x0FFFFFFF;
+	
+	public var alwaysSelectAsActiveMesh:Bool = false;
 
 	// Physics
 	public var _physicImpostor:Int = PhysicsEngine.NoImpostor;
@@ -140,12 +132,17 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	public var _physicRestitution:Float = 0;
 
 	// Collisions
+	private var _checkCollisions:Bool = false;
 	public var ellipsoid:Vector3 = new Vector3(0.5, 1, 0.5);
 	public var ellipsoidOffset:Vector3 = new Vector3(0, 0, 0);
 	private var _collider:Collider = new Collider();
 	private var _oldPositionForCollisions:Vector3 = new Vector3(0, 0, 0);
 	private var _diffPositionForCollisions:Vector3 = new Vector3(0, 0, 0);
 	private var _newPositionForCollisions:Vector3 = new Vector3(0, 0, 0);
+	public var onCollide:AbstractMesh->Void;
+	
+	// Attach to bone
+    private var _meshToBoneReferal:AbstractMesh;
 
 	// Cache
 	private var _localScaling:Matrix = Matrix.Zero();
@@ -154,12 +151,13 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	private var _localBillboard:Matrix = Matrix.Zero();
 	private var _localPivotScaling:Matrix = Matrix.Zero();
 	private var _localPivotScalingRotation:Matrix = Matrix.Zero();
+	private var _localMeshReferalTransform:Matrix;
 	private var _localWorld:Matrix = Matrix.Zero();
 	public var _worldMatrix:Matrix = Matrix.Zero();
 	private var _rotateYByPI:Matrix = Matrix.RotationY(Math.PI);
 	private var _absolutePosition:Vector3 = Vector3.Zero();
 	private var _collisionsTransformMatrix:Matrix = Matrix.Zero();
-	private var _collisionsScalingMatrix:Matrix = Matrix.Zero();
+	private var _collisionsScalingMatrix:Matrix = Matrix.Zero();	
 	
 	public var _savedMaterial:Material;
 	
@@ -192,6 +190,8 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	
 	private var _onAfterWorldMatrixUpdate:Array<AbstractMesh->Void> = [];
 	
+	private var _isWorldMatrixFrozen:Bool = false;
+	
 	// Loading properties
 	public var _waitingActions:Dynamic;
 	
@@ -199,17 +199,28 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	public function new(name:String, scene:Scene) {
 		super(name, scene);
 		scene.addMesh(this);
+		
+		// TODO: macro ...
+		#if purejs
+		untyped __js__("Object.defineProperty(this, 'visibility', { get: this.get_visibility, set: this.set_visibility })");
+		untyped __js__("Object.defineProperty(this, 'isPickable', { get: this.get_isPickable, set: this.set_isPickable })");
+		untyped __js__("Object.defineProperty(this, 'skeleton', { get: this.get_skeleton, set: this.set_skeleton })");
+		untyped __js__("Object.defineProperty(this, 'material', { get: this.get_material, set: this.set_material })");
+		untyped __js__("Object.defineProperty(this, 'receiveShadows', { get: this.get_receiveShadows, set: this.set_receiveShadows })");
+		untyped __js__("Object.defineProperty(this, 'positions', { get: this.get_positions, set: this.set_positions })");
+		untyped __js__("Object.defineProperty(this, 'useBones', { get: this.get_useBones, set: this.set_useBones })");
+		untyped __js__("Object.defineProperty(this, 'isBlocked', { get: this.get_isBlocked, set: this.set_isBlocked })");
+		untyped __js__("Object.defineProperty(this, 'worldMatrixFromCache', { get: this.get_worldMatrixFromCache })");
+		untyped __js__("Object.defineProperty(this, 'absolutePosition', { get: this.get_absolutePosition })");
+		untyped __js__("Object.defineProperty(this, 'isWorldMatrixFrozen', { get: this.get_isWorldMatrixFrozen })");
+		#end
 	}
 
 	// Methods
 	private var _isBlocked:Bool;
-	public var isBlocked(get, set):Bool;
+	public var isBlocked(get, never):Bool;
 	private function get_isBlocked():Bool {
 		return false;
-	}
-	private function set_isBlocked(val:Bool):Bool {
-		_isBlocked = val;
-		return val;
 	}
 
 	public function getLOD(camera:Camera, ?boundingSphere:BoundingSphere):AbstractMesh {
@@ -220,11 +231,11 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 		return 0;
 	}
 
-	public function getIndices():Array<Int> {
+	public function getIndices(copyWhenShared:Bool = false):Array<Int> {
 		return null;
 	}
 
-	public function getVerticesData(kind:String):Array<Float> {
+	public function getVerticesData(kind:String, copyWhenShared:Bool = false):Array<Float> {
 		return null;
 	}
 
@@ -243,7 +254,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 		
 		return this._boundingInfo;
 	}
-
+	
 	public function _preActivate() {
 		
 	}
@@ -264,15 +275,31 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 		return this._worldMatrix;
 	}
 
-	public var worldMatrixFromCache(get, null):Matrix;
+	public var worldMatrixFromCache(get, never):Matrix;
 	private function get_worldMatrixFromCache():Matrix {
 		return this._worldMatrix;
 	}
 
-	public var absolutePosition(get, null):Vector3;
+	public var absolutePosition(get, never):Vector3;
 	private function get_absolutePosition():Vector3 {
 		return this._absolutePosition;
 	}
+	
+	inline public function freezeWorldMatrix() {
+		this._isWorldMatrixFrozen = false;  // no guarantee world is not already frozen, switch off temporarily
+        this.computeWorldMatrix(true);
+        this._isWorldMatrixFrozen = true;
+    }
+
+    inline public function unfreezeWorldMatrix() {
+        this._isWorldMatrixFrozen = false;
+		this.computeWorldMatrix(true);
+    }
+	
+	public var isWorldMatrixFrozen(get, never):Bool;
+	private function get_isWorldMatrixFrozen():Bool {
+        return this._isWorldMatrixFrozen;
+    }
 
 	public function rotate(axis:Vector3, amount:Float, space:Space) {
 		if (this.rotationQuaternion == null) {
@@ -308,7 +335,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 		}
 	}
 
-	public function getAbsolutePosition():Vector3 {
+	inline public function getAbsolutePosition():Vector3 {
 		this.computeWorldMatrix();
 		return this._absolutePosition;
 	}
@@ -329,7 +356,8 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
             absolutePositionX = absolutePosition[0];
             absolutePositionY = absolutePosition[1];
             absolutePositionZ = absolutePosition[2];
-        } else {	// its Vector3
+        } 
+		else {	// its Vector3
             absolutePositionX = absolutePosition.x;
             absolutePositionY = absolutePosition.y;
             absolutePositionZ = absolutePosition.z;
@@ -342,7 +370,8 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 			var worldPosition = new Vector3(absolutePositionX, absolutePositionY, absolutePositionZ);
 			
 			this.position = Vector3.TransformCoordinates(worldPosition, invertParentWorldMatrix);
-		} else {
+		} 
+		else {
 			this.position.x = absolutePositionX;
 			this.position.y = absolutePositionY;
 			this.position.z = absolutePositionZ;
@@ -358,7 +387,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	 * @param {number} amountUp
 	 * @param {number} amountForward
 	 */
-	public function movePOV(amountRight:Float, amountUp:Float, amountForward:Float) {
+	inline public function movePOV(amountRight:Float, amountUp:Float, amountForward:Float) {
 		this.position.addInPlace(this.calcMovePOV(amountRight, amountUp, amountForward));
 	}
 	
@@ -389,7 +418,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	 * @param {number} twirlClockwise
 	 * @param {number} tiltRight
 	 */
-	public function rotatePOV(flipBack:Float, twirlClockwise:Float, tiltRight:Float) {
+	inline public function rotatePOV(flipBack:Float, twirlClockwise:Float, tiltRight:Float) {
 		this.rotation.addInPlace(this.calcRotatePOV(flipBack, twirlClockwise, tiltRight));
 	}
 	
@@ -400,17 +429,17 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	 * @param {number} twirlClockwise
 	 * @param {number} tiltRight
 	 */
-	public function calcRotatePOV(flipBack:Float, twirlClockwise:Float, tiltRight:Float):Vector3 {
+	inline public function calcRotatePOV(flipBack:Float, twirlClockwise:Float, tiltRight:Float):Vector3 {
 		var defForwardMult = this.definedFacingForward ? 1 : -1;
 		return new Vector3(flipBack * defForwardMult, twirlClockwise, tiltRight * defForwardMult);
 	}
 
-	public function setPivotMatrix(matrix:Matrix) {
+	inline public function setPivotMatrix(matrix:Matrix) {
 		this._pivotMatrix = matrix;
 		this._cache.pivotMatrixUpdated = true;
 	}
 
-	public function getPivotMatrix():Matrix {
+	inline public function getPivotMatrix():Matrix {
 		return this._pivotMatrix;
 	}
 
@@ -439,7 +468,8 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 			if (!this._cache.rotationQuaternion.equals(this.rotationQuaternion)) {
 				return false;
 			}
-		} else {
+		} 
+		else {
 			if (!this._cache.rotation.equals(this.rotation)) {
 				return false;
 			}
@@ -462,7 +492,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 		this._cache.rotationQuaternion = new Quaternion(0, 0, 0, 0);
 	}
 
-	public function markAsDirty(property:String) {
+	inline public function markAsDirty(property:String) {
 		if (property == "rotation") {
 			this.rotationQuaternion = null;
 		}
@@ -470,7 +500,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 		this._isDirty = true;
 	}
 
-	public function _updateBoundingInfo() {
+	inline public function _updateBoundingInfo() {
 		this._boundingInfo = this._boundingInfo == null ? new BoundingInfo(this.absolutePosition, this.absolutePosition) : this._boundingInfo;
 		
 		this._boundingInfo._update(this.worldMatrixFromCache);
@@ -483,14 +513,16 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 			return;
 		}
 		
-		for (subIndex in 0...this.subMeshes.length) {
-			var subMesh = this.subMeshes[subIndex];
-			
+		for (subMesh in this.subMeshes) {			
 			subMesh.updateBoundingInfo(matrix);
 		}
 	}
 
 	public function computeWorldMatrix(force:Bool = false):Matrix {
+		if (this._isWorldMatrixFrozen) {
+            return this._worldMatrix;
+        }
+		
 		if (!force && (this._currentRenderId == this.getScene().getRenderId() || this.isSynchronized(true))) {
 			return this._worldMatrix;
 		}
@@ -508,7 +540,8 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 		if (this.rotationQuaternion != null) {
 			this.rotationQuaternion.toRotationMatrix(this._localRotation);
 			this._cache.rotationQuaternion.copyFrom(this.rotationQuaternion);
-		} else {
+		} 
+		else {
 			Matrix.RotationYawPitchRollToRef(this.rotation.y, this.rotation.x, this.rotation.z, this._localRotation);
 			this._cache.rotation.copyFrom(this.rotation);
 		}
@@ -524,7 +557,8 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 				Matrix.TranslationToRef(this.position.x + cameraGlobalPosition.x, this.position.y + cameraGlobalPosition.y,
 												this.position.z + cameraGlobalPosition.z, this._localTranslation);
 			}
-		} else {
+		} 
+		else {
 			Matrix.TranslationToRef(this.position.x, this.position.y, this.position.z, this._localTranslation);
 		}
 		
@@ -544,7 +578,8 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 			
 			if ((this.billboardMode & AbstractMesh.BILLBOARDMODE_ALL) != AbstractMesh.BILLBOARDMODE_ALL) {
 				zero = this.getScene().activeCamera.position;
-			} else {
+			} 
+			else {
 				if (this.billboardMode & AbstractMesh.BILLBOARDMODE_X != 0)
 					zero.x = localPosition.x + Engine.Epsilon;
 				if (this.billboardMode & AbstractMesh.BILLBOARDMODE_Y != 0)
@@ -568,8 +603,20 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 		// Parent
 		if (this.parent != null && this.parent.getWorldMatrix() != null && this.billboardMode == AbstractMesh.BILLBOARDMODE_NONE) {
 			this._markSyncedWithParent();
-			this._localWorld.multiplyToRef(this.parent.getWorldMatrix(), this._worldMatrix);
-		} else {
+			
+			if (this._meshToBoneReferal != null) {
+				if (this._localMeshReferalTransform == null) {
+					this._localMeshReferalTransform = Matrix.Zero();
+				}
+				
+				this._localWorld.multiplyToRef(this.parent.getWorldMatrix(), this._localMeshReferalTransform);
+				this._localMeshReferalTransform.multiplyToRef(this._meshToBoneReferal.getWorldMatrix(), this._worldMatrix);
+			} 
+			else {
+				this._localWorld.multiplyToRef(this.parent.getWorldMatrix(), this._worldMatrix);
+			}
+		} 
+		else {
 			this._worldMatrix.copyFrom(this._localWorld);
 		}
 		
@@ -603,12 +650,12 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
         }
     }
 
-	public function setPositionWithLocalVector(vector3:Vector3) {
+	inline public function setPositionWithLocalVector(vector3:Vector3) {
 		this.computeWorldMatrix();		
 		this.position = Vector3.TransformNormal(vector3, this._localWorld);
 	}
 
-	public function getPositionExpressedInLocalSpace():Vector3 {
+	inline public function getPositionExpressedInLocalSpace():Vector3 {
 		this.computeWorldMatrix();
 		var invLocalWorldMatrix = this._localWorld.clone();
 		invLocalWorldMatrix.invert();
@@ -616,12 +663,12 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 		return Vector3.TransformNormal(this.position, invLocalWorldMatrix);
 	}
 
-	public function locallyTranslate(vector3:Vector3) {
+	inline public function locallyTranslate(vector3:Vector3) {
 		this.computeWorldMatrix();
 		this.position = Vector3.TransformCoordinates(vector3, this._localWorld);
 	}
 
-	public function lookAt(targetPoint:Vector3, yawCor:Float = 0, pitchCor:Float = 0, rollCor:Float = 0) {
+	inline public function lookAt(targetPoint:Vector3, yawCor:Float = 0, pitchCor:Float = 0, rollCor:Float = 0) {
 		/// <summary>Orients a mesh towards a target point. Mesh must be drawn facing user.</summary>
 		/// <param name="targetPoint" type="Vector3">The position (must be in same space as current mesh) to look at</param>
 		/// <param name="yawCor" type="Number">optional yaw (y-axis) correction in radians</param>
@@ -635,13 +682,19 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 		var pitch = Math.atan2(dv.y, len);
 		this.rotationQuaternion = Quaternion.RotationYawPitchRoll(yaw + yawCor, pitch + pitchCor, rollCor);
 	}
+	
+	public function attachToBone(bone:Bone, affectedMesh:AbstractMesh) {
+		this._meshToBoneReferal = affectedMesh;
+		this.parent = bone;
+	}
+
+	public function detachFromBone() {
+		this._meshToBoneReferal = null;
+		this.parent = null;
+	}
 
 	public function isInFrustum(frustumPlanes:Array<Plane>):Bool {
-		if (!this._boundingInfo.isInFrustum(frustumPlanes)) {
-			return false;
-		}
-		
-		return true;
+		return this._boundingInfo.isInFrustum(frustumPlanes);
 	}
 
 	public function isCompletelyInFrustum(?camera:Camera):Bool {
@@ -649,7 +702,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 			camera = this.getScene().activeCamera;
 		}
 		
-		var transformMatrix = camera.getViewMatrix().multiply(camera.getProjectionMatrix());
+		var transformMatrix = camera.getViewMatrix().multiply(camera.getProjectionMatrix(false));
 		
 		if (!this._boundingInfo.isCompletelyInFrustum(Frustum.GetPlanes(transformMatrix))) {
 			return false;
@@ -658,7 +711,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 		return true;
 	}
 
-	public function intersectsMesh(mesh:AbstractMesh, precise:Bool = false/*?precise:Bool*/):Bool {
+	public function intersectsMesh(mesh:AbstractMesh, precise:Bool = false):Bool {
 		if (this._boundingInfo == null || mesh._boundingInfo == null) {
 			return false;
 		}
@@ -713,39 +766,39 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 		return physicsEngine._registerMesh(this, impostor, options);
 	}
 
-	public function getPhysicsImpostor():Int {
+	inline public function getPhysicsImpostor():Int {
 		return this._physicImpostor;
 	}
 
-	public function getPhysicsMass():Float {
+	inline public function getPhysicsMass():Float {
 		return this._physicsMass;
 	}
 
-	public function getPhysicsFriction():Float {
+	inline public function getPhysicsFriction():Float {
 		return this._physicsFriction;
 	}
 
-	public function getPhysicsRestitution():Float {
+	inline public function getPhysicsRestitution():Float {
 		return this._physicRestitution;
 	}
 	
-	public function getPositionInCameraSpace(?camera:Camera):Vector3 {
+	inline public function getPositionInCameraSpace(?camera:Camera):Vector3 {
 		if (camera == null) {
 			camera = this.getScene().activeCamera;
 		}
-
+		
 		return Vector3.TransformCoordinates(this.absolutePosition, camera.getViewMatrix());
 	}
 
-	public function getDistanceToCamera(?camera:Camera):Float {
+	inline public function getDistanceToCamera(?camera:Camera):Float {
 		if (camera == null) {
 			camera = this.getScene().activeCamera;
 		}
-
+		
 		return this.absolutePosition.subtract(camera.position).length();
 	}
 
-	public function applyImpulse(force:Vector3, contactPoint:Vector3) {
+	inline public function applyImpulse(force:Vector3, contactPoint:Vector3) {
 		if (this._physicImpostor != PhysicsEngine.NoImpostor) {
 			this.getScene().getPhysicsEngine()._applyImpulse(this, force, contactPoint);
 		}	
@@ -765,18 +818,42 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 
 
 	// Collisions
+	public var checkCollisions(get, set):Bool;
+	private function get_checkCollisions():Bool {
+		return this._checkCollisions;
+	}
+	private function set_checkCollisions(collisionEnabled:Bool):Bool {
+		this._checkCollisions = collisionEnabled;
+		if (this.getScene().workerCollisions) {
+			this.getScene().collisionCoordinator.onMeshUpdated(this);
+		}
+		return collisionEnabled;
+	}
+	
 	inline public function moveWithCollisions(velocity:Vector3) {
-		var globalPosition = this.getAbsolutePosition();
+		var globalPosition:Vector3 = this.getAbsolutePosition();
 		
 		globalPosition.subtractFromFloatsToRef(0, this.ellipsoid.y, 0, this._oldPositionForCollisions);
 		this._oldPositionForCollisions.addInPlace(this.ellipsoidOffset);
 		this._collider.radius = this.ellipsoid;
 		
-		this.getScene()._getNewPosition(this._oldPositionForCollisions, velocity, this._collider, 3, this._newPositionForCollisions, this);
-		this._newPositionForCollisions.subtractToRef(this._oldPositionForCollisions, this._diffPositionForCollisions);
+		this.getScene().collisionCoordinator.getNewPosition(this._oldPositionForCollisions, velocity, this._collider, 3, this, this._onCollisionPositionChange, this.uniqueId);
+	}
+	
+	private function _onCollisionPositionChange(collisionId:Int, newPosition:Vector3, collidedMesh:AbstractMesh = null) {
+		//TODO move this to the collision coordinator!
+		if (this.getScene().workerCollisions) {
+			newPosition.multiplyInPlace(this._collider.radius);
+		}
+		
+		newPosition.subtractToRef(this._oldPositionForCollisions, this._diffPositionForCollisions);
 		
 		if (this._diffPositionForCollisions.length() > Engine.CollisionsEpsilon) {
 			this.position.addInPlace(this._diffPositionForCollisions);
+		}
+		
+		if (this.onCollide != null && collidedMesh != null) {
+			this.onCollide(collidedMesh);
 		}
 	}
 
@@ -814,8 +891,12 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 				subMesh._lastColliderWorldVertices.push(Vector3.TransformCoordinates(this._positions[i], transformMatrix));
 			}
 		}
+		
 		// Collide
 		collider._collide(subMesh, subMesh._lastColliderWorldVertices, this.getIndices(), subMesh.indexStart, subMesh.indexStart + subMesh.indexCount, subMesh.verticesStart);
+		if (collider.collisionFound) {
+			collider.collidedMesh = this;
+		}
 	}
 
 	inline public function _processCollisionsForSubMeshes(collider:Collider, transformMatrix:Matrix) {
@@ -829,7 +910,8 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 			
 			len = intersections.length;
 			subMeshes = cast intersections.data;
-		} else {
+		} 
+		else {
 			subMeshes = this.subMeshes;
 			len = subMeshes.length;
 		}
@@ -838,8 +920,9 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 			var subMesh = subMeshes[index];
 			
 			// Bounding test
-			if (len > 1 && !subMesh._checkCollision(collider))
+			if (len > 1 && !subMesh._checkCollision(collider)) {
 				continue;
+			}
 				
 			this._collideForSubMesh(subMesh, transformMatrix, collider);
 		}
@@ -863,7 +946,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 		return false;
 	}
 
-	public function intersects(ray:Ray, fastCheck:Bool = false/*?fastCheck:Bool*/):PickingInfo {
+	public function intersects(ray:Ray, fastCheck:Bool = false):PickingInfo {
 		var pickingInfo = new PickingInfo();
 		
 		if (this.subMeshes == null || this._boundingInfo == null || !ray.intersectsSphere(this._boundingInfo.boundingSphere) || !ray.intersectsBox(this._boundingInfo.boundingBox)) {
@@ -886,7 +969,8 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 			
 			len = intersections.length;
 			subMeshes = cast intersections.data;
-		} else {
+		} 
+		else {
 			subMeshes = this.subMeshes;
 			len = subMeshes.length;
 		}
@@ -930,6 +1014,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 			pickingInfo.bu = intersectInfo.bu;
 			pickingInfo.bv = intersectInfo.bv;
 			pickingInfo.faceId = intersectInfo.faceId;
+			pickingInfo.subMeshId = intersectInfo.subMeshId;
 			return pickingInfo;
 		}
 		
@@ -945,7 +1030,8 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 			while (this.subMeshes.length > 0) {
 				this.subMeshes[0].dispose();
 			}
-		} else {
+		} 
+		else {
 			this.subMeshes = new Array<SubMesh>();
 		}
 	}
@@ -972,7 +1058,6 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 		this.getScene().removeMesh(this);
 		
 		if (!doNotRecurse) {
-			// Particles
 			var index:Int = 0;
 			while(index < this.getScene().particleSystems.length) {
 				if (this.getScene().particleSystems[index].emitter == this) {
@@ -989,7 +1074,8 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 					objects[index].dispose();
 				}
 			}
-		} else {
+		} 
+		else {
 			for (index in 0...this.getScene().meshes.length) {
 				var obj = this.getScene().meshes[index];
 				if (obj.parent == this) {

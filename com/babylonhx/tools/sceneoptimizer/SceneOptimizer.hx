@@ -46,7 +46,7 @@ package com.babylonhx.tools.sceneoptimizer;
 		scene.executeWhenReady(function() {
 			Tools.delay(function() {
 				SceneOptimizer._CheckCurrentState(scene, options, currentPriorityLevel, onSuccess, onFailure);
-			}, options.trackerDuration);
+			}, cast options.trackerDuration);
 		});
 	}
 
@@ -59,7 +59,7 @@ package com.babylonhx.tools.sceneoptimizer;
 		scene.executeWhenReady(function() {
 			Tools.delay(function() {
 				SceneOptimizer._CheckCurrentState(scene, options, 0, onSuccess, onFailure);
-			}, options.trackerDuration);
+			}, cast options.trackerDuration);
 		});
 	}
 	

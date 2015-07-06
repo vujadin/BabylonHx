@@ -253,29 +253,28 @@ float computeShadowWithPCF(vec4 vPositionFromLight, sampler2D shadowSampler, flo
 	poissonDisk[3] = vec2(0.34495938, 0.29387760);
 
 	// Poisson Sampling
-	float biasedDepth = depth.z - bias;
-
-	if (unpack(texture2D(shadowSampler, uv + poissonDisk[0] / mapSize)) < biasedDepth) visibility -= 0.25;
-	if (unpack(texture2D(shadowSampler, uv + poissonDisk[1] / mapSize)) < biasedDepth) visibility -= 0.25;
-	if (unpack(texture2D(shadowSampler, uv + poissonDisk[2] / mapSize)) < biasedDepth) visibility -= 0.25;
-	if (unpack(texture2D(shadowSampler, uv + poissonDisk[3] / mapSize)) < biasedDepth) visibility -= 0.25;
+	if (unpack(texture2D(shadowSampler, uv + poissonDisk[0] / mapSize)) + bias  <  depth.z) visibility -= 0.25;
+	if (unpack(texture2D(shadowSampler, uv + poissonDisk[1] / mapSize)) + bias  <  depth.z) visibility -= 0.25;
+	if (unpack(texture2D(shadowSampler, uv + poissonDisk[2] / mapSize)) + bias  <  depth.z) visibility -= 0.25;
+	if (unpack(texture2D(shadowSampler, uv + poissonDisk[3] / mapSize)) + bias  <  depth.z) visibility -= 0.25;
 
 	return visibility;
 }
 
 // Thanks to http://devmaster.net/
-float linstep(float low, float high, float v) {
-	return clamp((v - low) / (high - low), 0.0, 1.0);
-}
-
-float ChebychevInequality(vec2 moments, float compare, float bias)
+float ChebychevInequality(vec2 moments, float t)
 {
-	float p = smoothstep(compare - bias, compare, moments.x);
-	float variance = max(moments.y - moments.x * moments.x, 0.02);
-	float d = compare - moments.x;
-	float p_max = linstep(0.2, 1.0, variance / (variance + d * d));
+	if (t <= moments.x)
+	{
+		return 0.0;
+	}
 
-	return clamp(max(p, p_max), 0.0, 1.0);
+	float variance = moments.y - (moments.x * moments.x);
+	variance = max(variance, 0.002);
+
+	float d = t - moments.x;
+
+	return clamp(variance / (variance + d * d) - 0.05, 0.0, 1.0);
 }
 
 float computeShadowWithVSM(vec4 vPositionFromLight, sampler2D shadowSampler, float bias)
@@ -284,7 +283,7 @@ float computeShadowWithVSM(vec4 vPositionFromLight, sampler2D shadowSampler, flo
 	depth = 0.5 * depth + vec3(0.5);
 	vec2 uv = depth.xy;
 
-	if (uv.x < 0. || uv.x > 1.0 || uv.y < 0. || uv.y > 1.0 || depth.z >= 1.0)
+	if (uv.x < 0. || uv.x > 1.0 || uv.y < 0. || uv.y > 1.0 || depth.z > 1.0)
 	{
 		return 1.0;
 	}
@@ -292,7 +291,7 @@ float computeShadowWithVSM(vec4 vPositionFromLight, sampler2D shadowSampler, flo
 	vec4 texel = texture2D(shadowSampler, uv);
 
 	vec2 moments = vec2(unpackHalf(texel.xy), unpackHalf(texel.zw));
-	return 1.0 - ChebychevInequality(moments, depth.z, bias);
+	return 1.0 - ChebychevInequality(moments, depth.z - bias);
 }
 #endif
 

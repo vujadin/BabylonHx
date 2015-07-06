@@ -54,7 +54,7 @@ import com.babylonhx.animations.Animation;
 		this.position = Vector3.Zero();
 	}
 
-	public function playAnimation(from:Int, to:Int, loop:Bool, delay:Float) {
+	inline public function playAnimation(from:Int, to:Int, loop:Bool, delay:Float) {
 		this._fromIndex = from;
 		this._toIndex = to;
 		this._loopAnimation = loop;
@@ -71,27 +71,26 @@ import com.babylonhx.animations.Animation;
 		this._animationStarted = false;
 	}
 
-	public function _animate(deltaTime:Float) {
-		if (!this._animationStarted) {
-			return;
-		}
-		
-		this._time += deltaTime;
-		if (this._time > this._delay) {
-			this._time = this._time % this._delay;
-			this.cellIndex += this._direction;
-			if (this.cellIndex == this._toIndex) {
-				if (this._loopAnimation) {
-					this.cellIndex = this._fromIndex;
-				} 
-				else {
-					this._animationStarted = false;
-					if (this.disposeWhenFinishedAnimating) {
-						this.dispose();
+	inline public function _animate(deltaTime:Float) {
+		if (this._animationStarted) {
+			this._time += deltaTime;
+			if (this._time > this._delay) {
+				this._time = this._time % this._delay;
+				this.cellIndex += this._direction;
+				if (this.cellIndex == this._toIndex) {
+					if (this._loopAnimation) {
+						this.cellIndex = this._fromIndex;
+					} 
+					else {
+						this._animationStarted = false;
+						if (this.disposeWhenFinishedAnimating) {
+							this.dispose();
+						}
 					}
 				}
 			}
-		}
+		}		
+		
 	}
 
 	public function dispose() {

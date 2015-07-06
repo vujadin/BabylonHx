@@ -16,7 +16,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public var z:Float;
 
 
-	public function new(x:Float, y:Float, z:Float) {
+	public function new(x:Float = 0, y:Float = 0, z:Float = 0) {
 		this.x = x;
 		this.y = y;
 		this.z = z;
@@ -34,17 +34,42 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		return result;
 	}
+	
+	inline public function set(x:Float = 0, y:Float = 0, z:Float = 0) {
+		this.x = x;
+		this.y = y;
+		this.z = z;
+	}
 
 	inline public function toArray(array:Array<Float>, index:Int = 0) {
 		array[index] = this.x;
 		array[index + 1] = this.y;
 		array[index + 2] = this.z;
 	}
+	
+	inline public function toQuaternion():Quaternion {
+		var result = new Quaternion(0, 0, 0, 1);
+		
+		var cosxPlusz = Math.cos((this.x + this.z) * 0.5);
+		var sinxPlusz = Math.sin((this.x + this.z) * 0.5);
+		var coszMinusx = Math.cos((this.z - this.x) * 0.5);
+		var sinzMinusx = Math.sin((this.z - this.x) * 0.5);
+		var cosy = Math.cos(this.y * 0.5);
+		var siny = Math.sin(this.y * 0.5);
+		
+		result.x = coszMinusx * siny;
+		result.y = -sinzMinusx * siny;
+		result.z = sinxPlusz * cosy;
+		result.w = cosxPlusz * cosy;
+		
+		return result;
+	}
 
-	inline public function addInPlace(otherVector:Vector3) {
+	inline public function addInPlace(otherVector:Vector3):Vector3 {
 		this.x += otherVector.x;
 		this.y += otherVector.y;
 		this.z += otherVector.z;
+		return this;
 	}
 
 	inline public function add(otherVector:Vector3):Vector3 {
@@ -57,10 +82,11 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		result.z = this.z + otherVector.z;
 	}
 
-	inline public function subtractInPlace(otherVector:Vector3) {
+	inline public function subtractInPlace(otherVector:Vector3):Vector3 {
 		this.x -= otherVector.x;
 		this.y -= otherVector.y;
 		this.z -= otherVector.z;
+		return this;
 	}
 
 	inline public function subtract(otherVector:Vector3):Vector3 {
@@ -108,10 +134,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return otherVector != null && this.x == otherVector.x && this.y == otherVector.y && this.z == otherVector.z;
 	}
 
-	inline public function equalsWithEpsilon(otherVector:Vector3):Bool {
-		return Math.abs(this.x - otherVector.x) < Engine.Epsilon &&
-			Math.abs(this.y - otherVector.y) < Engine.Epsilon &&
-			Math.abs(this.z - otherVector.z) < Engine.Epsilon;
+	inline public function equalsWithEpsilon(otherVector:Vector3, epsilon:Float = Engine.Epsilon):Bool {
+		return otherVector != null && Tools.WithinEpsilon(this.x, otherVector.x, epsilon) && Tools.WithinEpsilon(this.y, otherVector.y, epsilon) && Tools.WithinEpsilon(this.z, otherVector.z, epsilon);
 	}
 
 	inline public function equalsToFloats(x:Float, y:Float, z:Float):Bool {
@@ -222,7 +246,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		result.z = array[offset + 2];
 	}
 
-	inline public static function FromFloatArrayToRef(array: #if html5 Float32Array #else Array<Float> #end, offset:Int, result:Vector3) {
+	inline public static function FromFloatArrayToRef(array: #if (js || purejs) Float32Array #else Array<Float> #end, offset:Int, result:Vector3) {
 		result.x = array[offset];
 		result.y = array[offset + 1];
 		result.z = array[offset + 2];

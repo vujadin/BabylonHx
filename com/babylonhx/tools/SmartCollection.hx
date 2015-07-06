@@ -1,13 +1,15 @@
 package com.babylonhx.tools;
 
+import haxe.ds.ObjectMap;
+
 /**
  * ...
  * @author Krtolica Vujadin
  */
-class SmartCollection {
+@:expose('BABYLON.SmartCollection') class SmartCollection {
 
 	public var count:Int = 0;
-	public var items:Map<Dynamic, Dynamic>;
+	public var items:ObjectMap<Dynamic, Dynamic>;
 	
 	private var _keys:Array<Dynamic>;
 	private var _initialCapacity:Int;
@@ -15,15 +17,15 @@ class SmartCollection {
 	
 	public function new(capacity:Int = 10) {
 		this._initialCapacity = capacity;    
-		this.items = new Map<Dynamic, Dynamic>();
+		this.items = new ObjectMap();
 		this._keys = [];
 	}
 
 	public function add(key:Dynamic, item:Dynamic):Int {        
-		if (this.items[key] != null) {
+		if (this.items.get(key) != null) {
 			return -1;
 		}
-		this.items[key] = item;
+		this.items.set(key, item);
 		
 		//literal keys are always strings, but we keep source type of key in _keys array
 		this._keys[this.count++] = key;
@@ -35,7 +37,7 @@ class SmartCollection {
 	}
  
 	public function remove(key:Dynamic):Int {
-		if (this.items[key] == null) {
+		if (this.items.get(key) == null) {
 			return -1;
 		}
 		
@@ -44,7 +46,7 @@ class SmartCollection {
 
 	public function removeItemOfIndex(index:Int):Int {
 		if (index < this.count && index > -1) {
-			this.items[this._keys[index]] = null;
+			this.items.set(this._keys[index], null);
 			this.items.remove(this._keys[index]);
 				
 			//here, shifting by hand is better optimised than .splice
@@ -71,7 +73,10 @@ class SmartCollection {
 	}
 	
 	public function item(key:Dynamic):Dynamic {
-		return this.items[key];
+		if (key != null) {
+			return this.items.get(key);
+		}
+		return null;
 	}
 
 	public function getAllKeys():Array<Dynamic> {
@@ -97,16 +102,16 @@ class SmartCollection {
 
 	public function getItemByIndex(index:Int):Dynamic {
 		if (index < this.count && index > -1) {
-			return this.items[this._keys[index]];
+			return this.items.get(this._keys[index]);
 		}
 		
-		return undefined;
+		return null;
 	}
 
 	public function empty() {
 		if (this.count > 0) {
 			this.count = 0;
-			this.items = new Map<Dynamic, Dynamic>();
+			this.items = new ObjectMap();
 			this._keys = [];
 		}
 	}
@@ -115,7 +120,7 @@ class SmartCollection {
 		var key:String;
 		for (key in this.items) {
 			if (this.items.exists(key)) {
-				block(this.items[key]);
+				block(this.items.get(key));
 			}
 		}
 	}

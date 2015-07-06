@@ -9,12 +9,14 @@ import com.babylonhx.materials.ShadersStore;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.materials.textures.CubeTexture;
 import com.babylonhx.materials.textures.Texture;
+import com.babylonhx.layer.Layer;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.physics.PhysicsBodyCreationOptions;
 import com.babylonhx.physics.plugins.OimoPlugin;
 import com.babylonhx.Scene;
+import com.babylonhx.Engine;
 import com.babylonhx.physics.PhysicsEngine;
 
 /**
@@ -31,9 +33,11 @@ class Physics {
 		camera.maxZ = 50000;
 		
 		var light = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);
+		
+		new Layer("background", "assets/img/graygrad.jpg", scene, true);
 				
 		var mat = new StandardMaterial("ground", scene);
-		var texDiff = new Texture("assets/img/wood.jpg", scene);
+		var texDiff = new Texture("assets/img/wood2.jpg", scene);
 		texDiff.uScale = texDiff.vScale = 5;
 		mat.diffuseTexture = texDiff;
 		mat.specularColor = Color3.Black();
@@ -105,7 +109,7 @@ class Physics {
 		};
 		
 		// Initial height
-		var y = 50;
+		var y = 300;
 		
 		// all our objects
 		var objects:Array<Mesh> = [];
@@ -116,25 +120,24 @@ class Physics {
 		// Creates a random position above the ground
 		var getPosition = function(y:Float):Vector3 {
 			return new Vector3(randomNumber(-200, 200), y, randomNumber(-200, 200));
-		};
+		};		
 		
-		
-		var materialAmiga = new StandardMaterial("ball", scene);
-		materialAmiga.diffuseTexture = new Texture("assets/img/rust.jpg", scene);
-		materialAmiga.emissiveColor = new Color3(0.5, 0.5, 0.5);
-		materialAmiga.diffuseTexture.uScale = 5;
-		materialAmiga.diffuseTexture.vScale = 5;
+		var materialBall = new StandardMaterial("ball", scene);
+		materialBall.diffuseTexture = new Texture("assets/img/metal.jpg", scene);
+		materialBall.emissiveColor = new Color3(0.5, 0.5, 0.5);
+		materialBall.diffuseTexture.uScale = 5;
+		materialBall.diffuseTexture.vScale = 5;
 		
 		var materialCrate = new StandardMaterial("crate", scene);
-		materialCrate.diffuseTexture = new Texture("assets/img/crate.png", scene);
+		materialCrate.diffuseTexture = new Texture("assets/img/crate.jpg", scene);
 		
 		// Create objects
 		for (index in 0...max) {
 			
 			// SPHERES
 			var s = Mesh.CreateSphere("s", 30, randomNumber(20, 50), scene);
-			s.position = getPosition(y + 250);
-			s.material = materialAmiga;
+			s.position = getPosition(y);
+			s.material = materialBall;
 			physOpt = new PhysicsBodyCreationOptions();
 			physOpt.mass = 1;
 			physOpt.friction = 0.5;
@@ -158,19 +161,7 @@ class Physics {
 			// INCREMENT HEIGHT
 			y += 10;
 		}
-		
-		trace(objects.length);
-		
-		/*scene.registerBeforeRender(function() {
-			for(obj in objects) {
-				// If object falls
-				if (obj.position.y < -200) {
-					obj.position = getPosition(20);
-					obj.updatePhysicsBodyPosition();
-				}
-			}
-		});*/
-		
+				
 		scene.getEngine().runRenderLoop(function () {
 			scene.render();
 		});

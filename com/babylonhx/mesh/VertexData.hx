@@ -12,12 +12,16 @@ import com.babylonhx.utils.typedarray.UInt8Array;
  * @author Krtolica Vujadin
  */
 
-@:expose('VertexData') class VertexData {
+@:expose('BABYLON.VertexData') class VertexData {
 	
 	public var positions:Array<Float>;
 	public var normals:Array<Float>;
 	public var uvs:Array<Float>;
 	public var uv2s:Array<Float>;
+	public var uv3s:Array<Float>;
+	public var uv4s:Array<Float>;
+	public var uv5s:Array<Float>;
+	public var uv6s:Array<Float>;
 	public var colors:Array<Float>;
 	public var matricesIndices:Array<Float>;
 	public var matricesWeights:Array<Float>;
@@ -42,6 +46,18 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 			case VertexBuffer.UV2Kind:
 				this.uv2s = data;
 				
+			case VertexBuffer.UV3Kind:
+				this.uv3s = data;
+				
+			case VertexBuffer.UV4Kind:
+				this.uv4s = data;
+				
+			case VertexBuffer.UV5Kind:
+				this.uv5s = data;
+				
+			case VertexBuffer.UV6Kind:
+				this.uv6s = data;				
+				
 			case VertexBuffer.ColorKind:
 				this.colors = data;
 				
@@ -57,23 +73,23 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		}
 	}
 
-	public function applyToMesh(mesh:Mesh, updatable:Bool = false/*?updatable:Bool*/) {
+	public function applyToMesh(mesh:Mesh, updatable:Bool = false) {
 		this._applyTo(mesh, updatable);
 	}
 
-	public function applyToGeometry(geometry:Geometry, updatable:Bool = false/*?updatable:Bool*/) {
+	public function applyToGeometry(geometry:Geometry, updatable:Bool = false) {
 		this._applyTo(geometry, updatable);
 	}
 
-	public function updateMesh(mesh:Mesh, ?updateExtends:Bool, makeItUnique:Bool = false/*?makeItUnique:Bool*/) {
+	public function updateMesh(mesh:Mesh, ?updateExtends:Bool, makeItUnique:Bool = false) {
 		this._update(mesh);
 	}
 
-	public function updateGeometry(geometry:Geometry, ?updateExtends:Bool, makeItUnique:Bool = false/*?makeItUnique:Bool*/) {
+	public function updateGeometry(geometry:Geometry, ?updateExtends:Bool, makeItUnique:Bool = false) {
 		this._update(geometry);
 	}
 
-	private function _applyTo(meshOrGeometry:IGetSetVerticesData, updatable:Bool = false/*?updatable:Bool*/) {
+	private function _applyTo(meshOrGeometry:IGetSetVerticesData, updatable:Bool = false) {
 		if (this.positions != null) {
 			meshOrGeometry.setVerticesData(VertexBuffer.PositionKind, this.positions, updatable);
 		}
@@ -88,6 +104,22 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		
 		if (this.uv2s != null) {
 			meshOrGeometry.setVerticesData(VertexBuffer.UV2Kind, this.uv2s, updatable);
+		}
+		
+		if (this.uv3s != null) {
+			meshOrGeometry.setVerticesData(VertexBuffer.UV3Kind, this.uv3s, updatable);
+		}
+		
+		if (this.uv4s != null) {
+			meshOrGeometry.setVerticesData(VertexBuffer.UV4Kind, this.uv4s, updatable);
+		}
+		
+		if (this.uv5s != null) {
+			meshOrGeometry.setVerticesData(VertexBuffer.UV5Kind, this.uv5s, updatable);
+		}
+		
+		if (this.uv6s != null) {
+			meshOrGeometry.setVerticesData(VertexBuffer.UV6Kind, this.uv6s, updatable);
 		}
 		
 		if (this.colors != null) {
@@ -107,7 +139,7 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		}
 	}
 
-	private function _update(meshOrGeometry:IGetSetVerticesData, ?updateExtends:Bool, makeItUnique:Bool = false/*?makeItUnique:Bool*/) {
+	private function _update(meshOrGeometry:IGetSetVerticesData, ?updateExtends:Bool, makeItUnique:Bool = false) {
 		if (this.positions != null) {
 			meshOrGeometry.updateVerticesData(VertexBuffer.PositionKind, this.positions, updateExtends, makeItUnique);
 		}
@@ -122,6 +154,22 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		
 		if (this.uv2s != null) {
 			meshOrGeometry.updateVerticesData(VertexBuffer.UV2Kind, this.uv2s, updateExtends, makeItUnique);
+		}
+		
+		if (this.uv3s != null) {
+			meshOrGeometry.updateVerticesData(VertexBuffer.UV3Kind, this.uv3s, updateExtends, makeItUnique);
+		}
+		
+		if (this.uv4s != null) {
+			meshOrGeometry.updateVerticesData(VertexBuffer.UV4Kind, this.uv4s, updateExtends, makeItUnique);
+		}
+		
+		if (this.uv5s != null) {
+			meshOrGeometry.updateVerticesData(VertexBuffer.UV5Kind, this.uv5s, updateExtends, makeItUnique);
+		}
+		
+		if (this.uv6s != null) {
+			meshOrGeometry.updateVerticesData(VertexBuffer.UV6Kind, this.uv6s, updateExtends, makeItUnique);
 		}
 		
 		if (this.colors != null) {
@@ -141,9 +189,8 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		}
 	}
 
-	public function transform(matrix:Matrix) {
-		var transformed = Vector3.Zero();
-		
+	static var transformed:Vector3 = Vector3.Zero();
+	inline public function transform(matrix:Matrix) {		
 		if (this.positions != null) {
 			var position = Vector3.Zero();
 			
@@ -226,6 +273,42 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 			}
 		}
 		
+		if (other.uv3s != null) {
+			if (this.uv3s == null) {
+				this.uv3s = [];
+			}
+			for (index in 0...other.uv3s.length) {
+				this.uv3s.push(other.uv3s[index]);
+			}
+		}
+		
+		if (other.uv4s != null) {
+			if (this.uv4s == null) {
+				this.uv4s = [];
+			}
+			for (index in 0...other.uv4s.length) {
+				this.uv4s.push(other.uv4s[index]);
+			}
+		}
+		
+		if (other.uv5s != null) {
+			if (this.uv5s == null) {
+				this.uv5s = [];
+			}
+			for (index in 0...other.uv5s.length) {
+				this.uv5s.push(other.uv5s[index]);
+			}
+		}
+		
+		if (other.uv6s != null) {
+			if (this.uv6s == null) {
+				this.uv6s = [];
+			}
+			for (index in 0...other.uv6s.length) {
+				this.uv6s.push(other.uv6s[index]);
+			}
+		}
+		
 		if (other.matricesIndices != null) {
 			if (this.matricesIndices == null) {
 				this.matricesIndices = [];
@@ -255,46 +338,62 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 	}
 
 	// Statics
-	public static function ExtractFromMesh(mesh:Mesh):VertexData {
-		return VertexData._ExtractFrom(mesh);
+	public static function ExtractFromMesh(mesh:Mesh, copyWhenShared:Bool = false):VertexData {
+		return VertexData._ExtractFrom(mesh, copyWhenShared);
 	}
 
-	public static function ExtractFromGeometry(geometry:Geometry):VertexData {
-		return VertexData._ExtractFrom(geometry);
+	public static function ExtractFromGeometry(geometry:Geometry, copyWhenShared:Bool = false):VertexData {
+		return VertexData._ExtractFrom(geometry, copyWhenShared);
 	}
 
-	private static function _ExtractFrom(meshOrGeometry:IGetSetVerticesData):VertexData {
+	private static function _ExtractFrom(meshOrGeometry:IGetSetVerticesData, copyWhenShared:Bool = false):VertexData {
 		var result = new VertexData();
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.PositionKind)) {
-			result.positions = meshOrGeometry.getVerticesData(VertexBuffer.PositionKind);
+			result.positions = meshOrGeometry.getVerticesData(VertexBuffer.PositionKind, copyWhenShared);
 		}
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.NormalKind)) {
-			result.normals = meshOrGeometry.getVerticesData(VertexBuffer.NormalKind);
+			result.normals = meshOrGeometry.getVerticesData(VertexBuffer.NormalKind, copyWhenShared);
 		}
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.UVKind)) {
-			result.uvs = meshOrGeometry.getVerticesData(VertexBuffer.UVKind);
+			result.uvs = meshOrGeometry.getVerticesData(VertexBuffer.UVKind, copyWhenShared);
 		}
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.UV2Kind)) {
-			result.uv2s = meshOrGeometry.getVerticesData(VertexBuffer.UV2Kind);
+			result.uv2s = meshOrGeometry.getVerticesData(VertexBuffer.UV2Kind, copyWhenShared);
+		}
+		
+		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.UV3Kind)) {
+			result.uv3s = meshOrGeometry.getVerticesData(VertexBuffer.UV3Kind, copyWhenShared);
+		}
+		
+		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.UV4Kind)) {
+			result.uv4s = meshOrGeometry.getVerticesData(VertexBuffer.UV4Kind, copyWhenShared);
+		}
+		
+		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.UV5Kind)) {
+			result.uv5s = meshOrGeometry.getVerticesData(VertexBuffer.UV5Kind, copyWhenShared);
+		}
+		
+		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.UV6Kind)) {
+			result.uv6s = meshOrGeometry.getVerticesData(VertexBuffer.UV6Kind, copyWhenShared);
 		}
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.ColorKind)) {
-			result.colors = meshOrGeometry.getVerticesData(VertexBuffer.ColorKind);
+			result.colors = meshOrGeometry.getVerticesData(VertexBuffer.ColorKind, copyWhenShared);
 		}
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.MatricesIndicesKind)) {
-			result.matricesIndices = meshOrGeometry.getVerticesData(VertexBuffer.MatricesIndicesKind);
+			result.matricesIndices = meshOrGeometry.getVerticesData(VertexBuffer.MatricesIndicesKind, copyWhenShared);
 		}
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.MatricesWeightsKind)) {
-			result.matricesWeights = meshOrGeometry.getVerticesData(VertexBuffer.MatricesWeightsKind);
+			result.matricesWeights = meshOrGeometry.getVerticesData(VertexBuffer.MatricesWeightsKind, copyWhenShared);
 		}
 		
-		result.indices = meshOrGeometry.getIndices();
+		result.indices = meshOrGeometry.getIndices(copyWhenShared);
 		
 		return result;
 	}
@@ -311,17 +410,17 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		
 		var us:Array<Array<Float>> = [];        		// us[path_id] = [uDist1, uDist2, uDist3 ... ] distances between points on path path_id
 		var vs:Array<Array<Float>> = [];        		// vs[i] = [vDist1, vDist2, vDist3, ... ] distances between points i of consecutives paths from pathArray
-		var uTotalDistance:Array<Float> = []; 		// uTotalDistance[p] : total distance of path p
-		var vTotalDistance:Array<Float> = []; 		//  vTotalDistance[i] : total distance between points i of first and last path from pathArray
-		var minlg:Int = 0;          	        // minimal length among all paths from pathArray
+		var uTotalDistance:Array<Float> = []; 			// uTotalDistance[p] : total distance of path p
+		var vTotalDistance:Array<Float> = []; 			//  vTotalDistance[i] : total distance between points i of first and last path from pathArray
+		var minlg:Int = 0;          	        		// minimal length among all paths from pathArray
 		var vectlg:Float = 0;
 		var dist:Float = 0;
-		var lg:Array<Int> = [];        		    // array of path lengths : nb of vertex per path
-		var idx:Array<Int> = [];       		    // array of path indexes : index of each path (first vertex) in positions array
+		var lg:Array<Int> = [];        		    		// array of path lengths : nb of vertex per path
+		var idx:Array<Int> = [];       		    		// array of path indexes : index of each path (first vertex) in positions array
 		
-		var p:Int = 0;							// path iterator
-		var i:Int = 0;							// point iterator
-		var j:Int = 0;							// point iterator
+		var p:Int = 0;									// path iterator
+		var i:Int = 0;									// point iterator
+		var j:Int = 0;									// point iterator
 		
 		// if single path in pathArray
 		if (pathArray.length < 2) {
@@ -1255,51 +1354,85 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 	}
 
 	// Tools
+	/**
+	 * @param {any} - positions (number[] or Float32Array)
+	 * @param {any} - indices   (number[] or Uint16Array)
+	 * @param {any} - normals   (number[] or Float32Array)
+	 */
 	public static function ComputeNormals(positions:Array<Float>, indices:Array<Int>, normals:Array<Float>) {
-		var positionVectors:Array<Vector3> = [];
-		var facesOfVertices:Array<Array<Int>> = [];
+		var index = 0;
 		
-		var index:Int = 0;
-		while(index < positions.length) {
-			var vector3 = new Vector3(positions[index], positions[index + 1], positions[index + 2]);
-			positionVectors.push(vector3);
-			facesOfVertices.push([]);
-			index += 3;
-		}
+		// temp Vector3
+		var p1 = Vector3.Zero();
+		var p2 = Vector3.Zero();
+		var p3 = Vector3.Zero();
+		var p1p2 = Vector3.Zero();
+		var p3p2 = Vector3.Zero();
+		var faceNormal = Vector3.Zero();
 		
-		// Compute normals
-		var facesNormals:Array<Vector3> = [];
-		for (index in 0...Std.int(indices.length / 3)) {
+		var vertexNormali1 = Vector3.Zero();
+		var vertexNormali2 = Vector3.Zero();
+		var vertexNormali3 = Vector3.Zero();
+		
+		// indice triplet = 1 face
+		var nbFaces = Std.int(indices.length / 3);
+		for (index in 0...nbFaces) {
 			var i1 = indices[index * 3];
 			var i2 = indices[index * 3 + 1];
 			var i3 = indices[index * 3 + 2];
 			
-			var p1 = positionVectors[i1];
-			var p2 = positionVectors[i2];
-			var p3 = positionVectors[i3];
+			// setting the temp V3
+			Vector3.FromFloatsToRef(positions[i1 * 3], positions[i1 * 3 + 1], positions[i1 * 3 + 2] , p1);
+			Vector3.FromFloatsToRef(positions[i2 * 3], positions[i2 * 3 + 1], positions[i2 * 3 + 2] , p2);
+			Vector3.FromFloatsToRef(positions[i3 * 3], positions[i3 * 3 + 1], positions[i3 * 3 + 2] , p3);
 			
-			var p1p2 = p1.subtract(p2);
-			var p3p2 = p3.subtract(p2);
+			p1.subtractToRef(p2, p1p2);
+			p3.subtractToRef(p2, p3p2);
 			
-			facesNormals[index] = Vector3.Normalize(Vector3.Cross(p1p2, p3p2));
-			facesOfVertices[i1].push(index);
-			facesOfVertices[i2].push(index);
-			facesOfVertices[i3].push(index);
+			Vector3.CrossToRef(p1p2, p3p2, faceNormal);
+			faceNormal.normalize();
+			
+			// All intermediate results are stored in the normals array :
+			// get the normals at i1, i2 and i3 indexes
+			#if js
+			untyped normals[i1 * 3] = normals[i1 * 3] || 0.0;
+			untyped normals[i1 * 3 + 1] = normals[i1 * 3 + 1] || 0.0;
+			untyped normals[i1 * 3 + 2] = normals[i1 * 3 + 2] || 0.0;
+			untyped normals[i2 * 3] = normals[i2 * 3] || 0.0;
+			untyped normals[i2 * 3 + 1] = normals[i2 * 3 + 1] || 0.0;
+			untyped normals[i2 * 3 + 2] = normals[i2 * 3 + 2] || 0.0;
+			untyped normals[i3 * 3] = normals[i3 * 3] || 0.0;
+			untyped normals[i3 * 3 + 1] = normals[i3 * 3 + 1] || 0.0;
+			untyped normals[i3 * 3 + 2] = normals[i3 * 3 + 2] || 0.0;
+			#end
+			// make intermediate vectors3 from normals values
+			Vector3.FromFloatsToRef(normals[i1 * 3], normals[i1 * 3 + 1], normals[i1 * 3 + 2] , vertexNormali1);
+			Vector3.FromFloatsToRef(normals[i2 * 3], normals[i2 * 3 + 1], normals[i2 * 3 + 2] , vertexNormali2);
+			Vector3.FromFloatsToRef(normals[i3 * 3], normals[i3 * 3 + 1], normals[i3 * 3 + 2] , vertexNormali3);
+			// add the current face normals to these intermediate vectors3
+			vertexNormali1 = vertexNormali1.addInPlace(faceNormal);
+			vertexNormali2 = vertexNormali2.addInPlace(faceNormal);
+			vertexNormali3 = vertexNormali3.addInPlace(faceNormal);
+			// store back intermediate vectors3 into the normals array
+			normals[i1 * 3]     = vertexNormali1.x;
+			normals[i1 * 3 + 1] = vertexNormali1.y;
+			normals[i1 * 3 + 2] = vertexNormali1.z;
+			normals[i2 * 3]     = vertexNormali2.x;
+			normals[i2 * 3 + 1] = vertexNormali2.y;
+			normals[i2 * 3 + 2] = vertexNormali2.z;
+			normals[i3 * 3]     = vertexNormali3.x;
+			normals[i3 * 3 + 1] = vertexNormali3.y;
+			normals[i3 * 3 + 2] = vertexNormali3.z;
 		}
 		
-		for (index in 0...positionVectors.length) {
-			var faces = facesOfVertices[index];
-			
-			var normal = Vector3.Zero();
-			for (faceIndex in 0...faces.length) {
-				normal.addInPlace(facesNormals[faces[faceIndex]]);
-			}
-			
-			normal = Vector3.Normalize(normal.scale(1.0 / faces.length));
-			
-			normals[index * 3] = normal.x;
-			normals[index * 3 + 1] = normal.y;
-			normals[index * 3 + 2] = normal.z;
+		// last normalization
+		var len = Std.int(normals.length / 3);
+		for (index in 0...len) {
+			Vector3.FromFloatsToRef(normals[index * 3], normals[index * 3 + 1], normals[index * 3 + 2] , vertexNormali1);
+			vertexNormali1.normalize();
+			normals[index * 3]     = vertexNormali1.x;
+			normals[index * 3 + 1] = vertexNormali1.y;
+			normals[index * 3 + 2] = vertexNormali1.z;    
 		}
 	}
 	

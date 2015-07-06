@@ -118,7 +118,7 @@ import com.babylonhx.culling.BoundingSphere;
 		return true;
 	}
 
-	public function intersectsBox(box:BoundingBox):Bool {
+	inline public function intersectsBox(box:BoundingBox):Bool {
 		return this.intersectsBoxMinMax(box.minimum, box.maximum);
 	}
 

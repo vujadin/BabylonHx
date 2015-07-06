@@ -6,6 +6,7 @@ import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.lights.PointLight;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.materials.textures.Texture;
+import com.babylonhx.layer.Layer;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector3;
@@ -25,18 +26,11 @@ class Particles {
 		var camera = new ArcRotateCamera("ArcRotateCamera", 1, 0.8, 20, new Vector3(0, 0, 0), scene);
 		camera.attachControl(this, true);
 		
+		new Layer("background", "assets/img/graygrad.jpg", scene, true);
+		
 		// Fountain object
 		var fountain = Mesh.CreateBox("foutain", 1.0, scene);
-		
-		// Ground
-		var ground = Mesh.CreatePlane("ground", 50.0, scene);
-		ground.position = new Vector3(0, -10, 0);
-		ground.rotation = new Vector3(Math.PI / 2, 0, 0);
-		
-		ground.material = new StandardMaterial("groundMat", scene);
-		ground.material.backFaceCulling = false;
-		cast(ground.material, StandardMaterial).diffuseColor = new Color3(0.3, 0.3, 1);
-		
+				
 		// Create a particle system
 		var particleSystem = new ParticleSystem("particles", 2000, scene);
 		

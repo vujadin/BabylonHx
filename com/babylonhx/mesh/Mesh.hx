@@ -9,6 +9,7 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Path3D;
 import com.babylonhx.math.Plane;
 import com.babylonhx.math.PositionNormalVertex;
+import com.babylonhx.math.Quaternion;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.mesh.simplification.ISimplificationSettings;
@@ -39,12 +40,17 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Mesh') class Mesh extends AbstractMesh implements IGetSetVerticesData {
+@:expose('BABYLON.Mesh') class Mesh extends AbstractMesh implements IGetSetVerticesData implements IAnimatable {
 	
 	public static inline var FRONTSIDE:Int = 0;
 	public static inline var BACKSIDE:Int = 1;
 	public static inline var DOUBLESIDE:Int = 2;
 	public static inline var DEFAULTSIDE:Int = 0;
+	
+	public static inline var NO_CAP:Int = 0;
+    public static inline var CAP_START:Int = 1;
+    public static inline var CAP_END:Int = 2;
+    public static inline var CAP_ALL:Int = 3;
 	
 	// Members
 	public var delayLoadState = Engine.DELAYLOADSTATE_NONE;
@@ -63,13 +69,17 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	public var _visibleInstances:_VisibleInstances;
 	private var _renderIdForInstances:Array<Int> = [];
 	private var _batchCache:_InstancesBatch = new _InstancesBatch();
-	private var _worldMatricesInstancesBuffer:BabylonBuffer;
-	private var _worldMatricesInstancesArray: #if html5 Float32Array #else Array<Float> #end;
+	private var _worldMatricesInstancesBuffer:WebGLBuffer;
+	private var _worldMatricesInstancesArray: #if (js || purejs) Float32Array #else Array<Float> #end;
 	private var _instancesBufferSize:Int = 32 * 16 * 4; // let's start with a maximum of 32 instances
 	public var _shouldGenerateFlatShading:Bool;
 	private var _preActivateId:Int = -1;
 	private var _sideOrientation:Int = Mesh.DEFAULTSIDE;
 	public var sideOrientation(get, set):Int;
+	private var _areNormalsFrozen:Bool = false;
+	public var areNormalsFrozen(get, never):Bool;
+	
+	public var cap:Int = Mesh.NO_CAP;
 	
 	// exposing physics...
 	public var rigidBody:Dynamic;
@@ -77,7 +87,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	// for extrusion
 	public var path3D:Path3D;
 	public var pathArray:Array<Array<Vector3>>;
-	public var tessellation:Float;
+	public var tessellation:Int;
 	
 
 	public function new(name:String, scene:Scene, parent:Node = null, ?source:Mesh, doNotCloneChildren:Bool = false) {
@@ -89,12 +99,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 				source._geometry.applyToMesh(this);
 			}
 			
-			// Deep copy
+			// copy
 			_deepCopy(source, this);
-			
-			// Material
-			//this.material = source.material;
-			
+						
 			if (!doNotCloneChildren) {
 				// Children
 				for (index in 0...scene.meshes.length) {
@@ -166,7 +173,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		dest._physicsFriction = source._physicsFriction;
 		dest._physicsMass = source._physicsMass;
 		dest._pivotMatrix = source._pivotMatrix.clone();
-		if(source._positions != null) dest._positions = source._positions.copy();
+		if (source._positions != null) {
+			dest._positions = source._positions.copy();
+		}
 		dest._preActivateId = source._preActivateId;
 		dest._receiveShadows = source._receiveShadows;
 		dest._renderId = source._renderId;
@@ -189,7 +198,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		dest.definedFacingForward = source.definedFacingForward;
 		dest.position = source.position.clone();
 		dest.rotation = source.rotation.clone();
-		if(source.rotationQuaternion != null) dest.rotationQuaternion = source.rotationQuaternion.clone();
+		if (source.rotationQuaternion != null) {
+			dest.rotationQuaternion = source.rotationQuaternion.clone();
+		}
 		dest.scaling = source.scaling.clone();
 		dest.billboardMode = source.billboardMode;
 		dest.alphaIndex = source.alphaIndex;
@@ -229,6 +240,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			if (a.distance < b.distance) {
 				return 1;
 			}
+			
 			if (a.distance > b.distance) {
 				return -1;
 			}
@@ -324,11 +336,11 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return this._geometry.getTotalVertices();
 	}
 
-	override public function getVerticesData(kind:String):Array<Float> {
+	override public function getVerticesData(kind:String, copyWhenShared:Bool = false):Array<Float> {
 		if (this._geometry == null) {
 			return null;
 		}
-		return this._geometry.getVerticesData(kind);
+		return this._geometry.getVerticesData(kind, copyWhenShared);
 	}
 
 	public function getVertexBuffer(kind:String):VertexBuffer {
@@ -368,11 +380,11 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return this._geometry.getTotalIndices();
 	}
 
-	override public function getIndices():Array<Int> {
+	override public function getIndices(copyWhenShared:Bool = false):Array<Int> {
 		if (this._geometry == null) {
 			return [];
 		}
-		return this._geometry.getIndices();
+		return this._geometry.getIndices(copyWhenShared);
 	}
 
 	override private function get_isBlocked():Bool {
@@ -387,17 +399,37 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return super.isReady();
 	}
 
-	public function isDisposed():Bool {
+	inline public function isDisposed():Bool {
 		return this._isDisposed;
 	}
 	
-	private function get_sideOrientation():Int {
+	inline private function get_sideOrientation():Int {
 		return this._sideOrientation;
 	}
+	
+	inline private function get_areNormalsFrozen():Bool {
+		return this._areNormalsFrozen;
+	}
 
-	private function set_sideOrientation(value:Int):Int {
+	inline private function set_sideOrientation(value:Int):Int {
 		this._sideOrientation = value;
 		return value;
+	}
+	
+	/**  
+	 * This function affects parametric shapes on update only: 
+     * ribbons, tubes, etc. It has no effect at all on other shapes 
+	 **/
+	inline public function freezeNormals() {
+		this._areNormalsFrozen = true;
+	}
+	
+	/**  
+	 * This function affects parametric shapes on update only: 
+     * ribbons, tubes, etc. It has no effect at all on other shapes 
+	 **/
+	inline public function unfreezeNormals() {
+		this._areNormalsFrozen = false;
 	}
 
 	// Methods  
@@ -423,7 +455,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		this._visibleInstances.map[renderId].push(instance);
 	}
 
-	public function refreshBoundingInfo() {
+	inline public function refreshBoundingInfo() {
 		var data = this.getVerticesData(VertexBuffer.PositionKind);
 		
 		if (data != null) {
@@ -497,7 +529,8 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		
 		if (!makeItUnique) {
 			this._geometry.updateVerticesData(kind, data, updateExtends);
-		} else {
+		} 
+		else {
 			this.makeGeometryUnique();
 			this.updateVerticesData(kind, data, updateExtends, false);
 		}
@@ -510,7 +543,8 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		
 		if (!makeItUnique) {
 			this._geometry.updateVerticesDataDirectly(kind, data, offset);
-		} else {
+		} 
+		else {
 			this.makeGeometryUnique();
 			this.updateVerticesDataDirectly(kind, data, offset, false);
 		}
@@ -548,33 +582,34 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			
 			var scene = this.getScene();
 			new Geometry(Geometry.RandomId(), scene, vertexData, false, this);
-		} else {
+		} 
+		else {
 			this._geometry.setIndices(indices);
 		}
 	}
 
 	public function _bind(subMesh:SubMesh, effect:Effect, fillMode:Int) {
-		var engine = this.getScene().getEngine();
+		var engine:Engine = this.getScene().getEngine();
 		
 		// Wireframe
-		var indexToBind:BabylonBuffer = null;
+		var indexBufferToBind:WebGLBuffer = null;
 		
 		switch (fillMode) {
 			case Material.PointFillMode:
-				indexToBind = null;
+				indexBufferToBind = null;
 				
 			case Material.WireFrameFillMode:
-				indexToBind = subMesh.getLinesIndexBuffer(this.getIndices(), engine);
+				indexBufferToBind = subMesh.getLinesIndexBuffer(this.getIndices(), engine);
 				
 			case Material.TriangleFillMode:
-				indexToBind = this._geometry.getIndexBuffer();
+				indexBufferToBind = this._geometry.getIndexBuffer();
 								
 			default:
-				indexToBind = this._geometry.getIndexBuffer();
+				indexBufferToBind = this._geometry.getIndexBuffer();
 		}
 		
 		// VBOs
-		engine.bindMultiBuffers(this._geometry.getVertexBuffers(), indexToBind, effect);
+		engine.bindMultiBuffers(this._geometry.getVertexBuffers(), indexBufferToBind, effect);
 	}
 
 	public function _draw(subMesh:SubMesh, fillMode:Int, ?instancesCount:Int) {	
@@ -633,8 +668,8 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			
 			if (this._batchCache.visibleInstances[subMeshId] == null && this._visibleInstances.defaultRenderId > 0) {
 				this._batchCache.visibleInstances[subMeshId] = this._visibleInstances.map[this._visibleInstances.defaultRenderId];
-				currentRenderId = this._visibleInstances.defaultRenderId;
-				selfRenderId = this._visibleInstances.selfDefaultRenderId;
+				currentRenderId = cast Math.max(this._visibleInstances.defaultRenderId, currentRenderId);
+				selfRenderId = cast Math.max(this._visibleInstances.selfDefaultRenderId, currentRenderId);
 			}
 			
 			if (this._batchCache.visibleInstances[subMeshId] != null && this._batchCache.visibleInstances[subMeshId].length > 0) {
@@ -645,9 +680,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 				
 				if (currentRenderId != selfRenderId) {
 					this._batchCache.renderSelf[subMeshId] = false;
-				}
-				
+				}				
 			}
+			
 			this._renderIdForInstances[subMeshId] = currentRenderId;
 		}
 		
@@ -669,7 +704,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			}
 			
 			this._worldMatricesInstancesBuffer = engine.createInstancesBuffer(this._instancesBufferSize);
-			this._worldMatricesInstancesArray = #if html5 new Float32Array(Std.int(this._instancesBufferSize / 4)) #else [] #end ;
+			this._worldMatricesInstancesArray = #if (js || purejs) new Float32Array(Std.int(this._instancesBufferSize / 4)) #else [] #end ;
 		}
 		
 		var offset = 0;
@@ -697,19 +732,22 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		var offsetLocation3 = effect.getAttributeLocationByName("world3");
 		
 		var offsetLocations = [offsetLocation0, offsetLocation1, offsetLocation2, offsetLocation3];
+		
 		engine.updateAndBindInstancesBuffer(this._worldMatricesInstancesBuffer, this._worldMatricesInstancesArray, offsetLocations);
+		
 		this._draw(subMesh, fillMode, instancesCount);
+		
 		engine.unBindInstancesBuffer(this._worldMatricesInstancesBuffer, offsetLocations);
 	}
 	
-	public function _processRendering(subMesh:SubMesh, effect:Effect, fillMode:Int, batch:_InstancesBatch, hardwareInstancedRendering:Bool,
-		onBeforeDraw:Bool->Matrix->Void) {
+	public function _processRendering(subMesh:SubMesh, effect:Effect, fillMode:Int, batch:_InstancesBatch, hardwareInstancedRendering:Bool, onBeforeDraw:Bool->Matrix->Void) {
 		var scene = this.getScene();
 		var engine = scene.getEngine();
 
 		if (hardwareInstancedRendering) {
 			this._renderWithInstances(subMesh, fillMode, batch, effect, engine);
-		} else {
+		} 
+		else {
 			if (batch.renderSelf[subMesh._id]) {
 				// Draw
 				if (onBeforeDraw != null) {
@@ -741,6 +779,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 				
 		// Managing instances
 		var batch = this._getInstancesRenderList(subMesh._id);
+		
 		if (batch.mustReturn) {
 			return;
 		}
@@ -758,7 +797,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		var hardwareInstancedRendering = (engine.getCaps().instancedArrays != null) && (batch.visibleInstances[subMesh._id] != null) && (batch.visibleInstances.length > subMesh._id && batch.visibleInstances[subMesh._id] != null);
 		
 		// Material
-		var effectiveMaterial = subMesh.getMaterial();
+		var effectiveMaterial:Material = subMesh.getMaterial();
 		
 		if (effectiveMaterial == null || !effectiveMaterial.isReady(this, hardwareInstancedRendering)) {
 			return;
@@ -780,30 +819,18 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		this._bind(subMesh, effect, fillMode);
 		
 		var world = this.getWorldMatrix();
+		
 		effectiveMaterial.bind(world, this);
 		
-		// Instances rendering
-		if (hardwareInstancedRendering) {
-			this._renderWithInstances(subMesh, fillMode, batch, effect, engine);
-		} else {
-			if (batch.renderSelf[subMesh._id]) {
-				// Draw
-				this._draw(subMesh, fillMode);
-			}
-			
-			if (batch.visibleInstances[subMesh._id] != null) {
-				for (instanceIndex in 0...batch.visibleInstances[subMesh._id].length) {
-					var instance = batch.visibleInstances[subMesh._id][instanceIndex];
-					
-					// World
-					world = instance.getWorldMatrix();
+		// Draw
+		this._processRendering(subMesh, effect, fillMode, batch, hardwareInstancedRendering,
+			function(isInstance:Bool, world:Matrix) {
+				if (isInstance) {
 					effectiveMaterial.bindOnlyWorldMatrix(world);
-					
-					// Draw
-					this._draw(subMesh, fillMode);
 				}
 			}
-		}
+		);
+		
 		// Unbind
 		effectiveMaterial.unbind();
 		
@@ -828,7 +855,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 	}
 
-	public function getEmittedParticleSystems():Array<ParticleSystem> {
+	inline public function getEmittedParticleSystems():Array<ParticleSystem> {
 		var results = new Array<ParticleSystem>();
 		for (index in 0...this.getScene().particleSystems.length) {
 			var particleSystem = this.getScene().particleSystems[index];
@@ -840,7 +867,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return results;
 	}
 
-	public function getHierarchyEmittedParticleSystems():Array<ParticleSystem> {
+	inline public function getHierarchyEmittedParticleSystems():Array<ParticleSystem> {
 		var results = new Array<ParticleSystem>();
 		var descendants = this.getDescendants();
 		descendants.push(this);
@@ -855,7 +882,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return results;
 	}
 
-	public function getChildren():Array<Node> {
+	inline public function getChildren():Array<Node> {
 		var results:Array<Node> = [];
 		for (index in 0...this.getScene().meshes.length) {
 			var mesh = this.getScene().meshes[index];
@@ -929,7 +956,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 	}
 
-	public function getAnimatables():Array<Dynamic> {
+	inline public function getAnimatables():Array<Dynamic> {
 		var results:Array<Dynamic> = [];
 		
 		if (this.material != null) {
@@ -968,17 +995,36 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 		
 		data = this.getVerticesData(VertexBuffer.NormalKind);
+		temp = [];
 		index = 0;
 		while(index < data.length) {
-			Vector3.TransformNormal(Vector3.FromArray(data, index), transform).toArray(temp, index);
+			Vector3.TransformNormal(Vector3.FromArray(data, index), transform).normalize().toArray(temp, index);
 			index += 3;
 		}
 		
 		this.setVerticesData(VertexBuffer.NormalKind, temp, this.getVertexBuffer(VertexBuffer.NormalKind).isUpdatable());
+		
+		// flip faces?
+        if (transform.m[0] * transform.m[5] * transform.m[10] < 0) { 
+			this.flipFaces(); 
+		}
 	}
+	
+	// Will apply current transform to mesh and reset world matrix
+    public function bakeCurrentTransformIntoVertices() {
+        this.bakeTransformIntoVertices(this.computeWorldMatrix(true));
+        this.scaling.copyFromFloats(1, 1, 1);
+        this.position.copyFromFloats(0, 0, 0);
+        this.rotation.copyFromFloats(0, 0, 0);
+        //only if quaternion is already set
+        if(this.rotationQuaternion != null) {
+            this.rotationQuaternion = Quaternion.Identity();
+        }
+        this._worldMatrix = Matrix.Identity();
+    }
 
 	// Cache
-	public function _resetPointsArrayCache() {
+	inline public function _resetPointsArrayCache() {
 		this._positions = null;
 	}
 
@@ -1028,11 +1074,11 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	}
 
 	// Geometric tools
-	public function applyDisplacementMap(url:String, minHeight:Float, maxHeight:Float, ?onSuccess:Mesh->Void) {
+	public function applyDisplacementMap(url:String, minHeight:Float, maxHeight:Float, ?onSuccess:Mesh->Void, invert:Bool = false) {
 		var scene = this.getScene();
 		
 		var onload = function(img:Image) {						
-			this.applyDisplacementMapFromBuffer(img.data, img.width, img.height, minHeight, maxHeight);
+			this.applyDisplacementMapFromBuffer(img.data, img.width, img.height, minHeight, maxHeight, invert);
 			
 			if (onSuccess != null) {
 				onSuccess(this);
@@ -1042,7 +1088,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		Tools.LoadImage(url, onload);
 	}
 
-	public function applyDisplacementMapFromBuffer(buffer:UInt8Array, heightMapWidth:Float, heightMapHeight:Float, minHeight:Float, maxHeight:Float) {
+	public function applyDisplacementMapFromBuffer(buffer:UInt8Array, heightMapWidth:Float, heightMapHeight:Float, minHeight:Float, maxHeight:Float, invert:Bool = false) {
 		if (!this.isVerticesDataPresent(VertexBuffer.PositionKind)
 			|| !this.isVerticesDataPresent(VertexBuffer.NormalKind)
 			|| !this.isVerticesDataPresent(VertexBuffer.UVKind)) {
@@ -1068,7 +1114,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			var v = Std.int((Math.abs(uv.y) * heightMapHeight) % heightMapHeight);
 			
 			var pos = Std.int((u + v * heightMapWidth) * 4);
-			#if !js
+			#if (!js && !purejs)
 			var r = buffer.__get(pos) / 255.0;
 			var g = buffer.__get(pos + 1) / 255.0;
 			var b = buffer.__get(pos + 2) / 255.0;
@@ -1082,6 +1128,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			
 			normal.normalize();
 			normal.scaleInPlace(minHeight + (maxHeight - minHeight) * gradient);
+			if(invert) {
+				normal.scaleInPlace( -1);
+			}
 			position = position.add(normal);
 			
 			position.toArray(positions, index);
@@ -1188,13 +1237,37 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		
 		this.synchronizeInstances();
 	}
+	
+	// will inverse faces orientations, and invert normals too if specified
+	public function flipFaces(flipNormals:Bool = false) {
+		var vertex_data = VertexData.ExtractFromMesh(this);
+		
+		if (flipNormals && this.isVerticesDataPresent(VertexBuffer.NormalKind)) {
+			for (i in 0...vertex_data.normals.length) {
+				vertex_data.normals[i] *= -1;
+			}
+		}
+		
+		var temp:Int = 0;
+		var i:Int = 0;
+		while (i < vertex_data.indices.length) {
+			// reassign indices
+			temp = vertex_data.indices[i + 1];
+			vertex_data.indices[i + 1] = vertex_data.indices[i + 2];
+			vertex_data.indices[i + 2] = temp;
+			
+			i += 3;
+		}
+		
+		vertex_data.applyToMesh(this);
+	}
 
 	// Instances
 	public function createInstance(name:String):InstancedMesh {
 		return new InstancedMesh(name, this);
 	}
 
-	public function synchronizeInstances() {
+	inline public function synchronizeInstances() {
 		for (instanceIndex in 0...this.instances.length) {
 			var instance = this.instances[instanceIndex];
 			instance._syncSubMeshes();
@@ -1260,32 +1333,28 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		if (ribbonInstance != null) {   // existing ribbon instance update
 			// positionFunction : ribbon case
 			// only pathArray and sideOrientation parameters are taken into account for positions update
-			var positionsOfRibbon = function (pathArray:Array<Array<Vector3>>, sideOrientation:Int) {
-				var positionFunction = function (positions) {
-					var minlg = pathArray[0].length;
-					var i:Int = 0;
-					var ns = (sideOrientation == Mesh.DOUBLESIDE) ? 2 : 1;
-					for (si in 1...ns+1) {
-						for (p in 0...pathArray.length) {
-							var path = pathArray[p];
-							var l = path.length;
-							minlg = (minlg < l) ? minlg : l;
-							var j:Int = 0;
-							while (j < minlg) {
-								positions[i] = path[j].x;
-								positions[i + 1] = path[j].y;
-								positions[i + 2] = path[j].z;
-								j++;
-								i += 3;
-							}
+			var positionFunction = function (positions:Array<Float>) {
+				var minlg = pathArray[0].length;
+				var i:Int = 0;
+				var ns = (ribbonInstance.sideOrientation == Mesh.DOUBLESIDE) ? 2 : 1;
+				for (si in 1...ns + 1) {
+					for (p in 0...pathArray.length) {
+						var path = pathArray[p];
+						var l = path.length;
+						minlg = (minlg < l) ? minlg : l;
+						var j:Int = 0;
+						while (j < minlg) {
+							positions[i] = path[j].x;
+							positions[i + 1] = path[j].y;
+							positions[i + 2] = path[j].z;
+							j++;
+							i += 3;
 						}
 					}
-				};
-				return positionFunction;
+				}
 			};
-			var sideOrientation = ribbonInstance.sideOrientation;
-			var positionFunction = positionsOfRibbon(pathArray, sideOrientation);
-			ribbonInstance.updateMeshPositions(positionFunction);
+			var computeNormals = !(ribbonInstance.areNormalsFrozen);
+			ribbonInstance.updateMeshPositions(positionFunction, computeNormals);
 			
 			return ribbonInstance;
 		}
@@ -1299,6 +1368,15 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			return ribbon;
 		}
 	}
+	
+	public static function CreateDisc(name:String, radius:Float, tessellation:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+        var disc = new Mesh(name, scene);
+        var vertexData = VertexData.CreateDisc(radius, tessellation, sideOrientation);
+		
+        vertexData.applyToMesh(disc, updatable);
+		
+        return disc;
+    }
 	
 	public static function CreateBox(name:String, size:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
 		var box = new Mesh(name, scene);
@@ -1324,7 +1402,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		var vertexData = VertexData.CreateCylinder(height, diameterTop, diameterBottom, tessellation, subdivisions, sideOrientation);
 		
 		vertexData.applyToMesh(cylinder, updatable);
-		
+				
 		return cylinder;
 	}
 
@@ -1333,7 +1411,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		var torus = new Mesh(name, scene);
 		var vertexData = VertexData.CreateTorus(diameter, thickness, tessellation, sideOrientation);
 		
-		vertexData.applyToMesh(torus, updatable);
+		vertexData.applyToMesh(torus, updatable);		
 		
 		return torus;
 	}
@@ -1375,33 +1453,34 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	}
 	
 	// Extrusion
-	public static function ExtrudeShape(name:String, shape:Array<Vector3>, path:Array<Vector3>, scale:Float = 1, rotation:Float = 0, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE, extrudedInstance:Mesh = null):Mesh {
-		var extruded = Mesh._ExtrudeShapeGeneric(name, shape, path, scale, rotation, null, null, false, false, false, scene, updatable, sideOrientation, extrudedInstance);
+	public static function ExtrudeShape(name:String, shape:Array<Vector3>, path:Array<Vector3>, scale:Float = 1, rotation:Float = 0, cap:Int = Mesh.NO_CAP, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE, extrudedInstance:Mesh = null):Mesh {
+		var extruded = Mesh._ExtrudeShapeGeneric(name, shape, path, scale, rotation, null, null, false, false, cap, false, scene, updatable, sideOrientation, extrudedInstance);
 		return extruded;
 	}
 
-	public static function ExtrudeShapeCustom(name:String, shape:Array<Vector3>, path:Array<Vector3>, scaleFunction, rotateFunction, ribbonCloseArray:Bool = false, ribbonClosePath:Bool = false, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE, extrudedInstance:Mesh = null):Mesh {
-		var extrudedCustom = Mesh._ExtrudeShapeGeneric(name, shape, path, null, null, scaleFunction, rotateFunction, ribbonCloseArray, ribbonClosePath, true, scene, updatable, sideOrientation, extrudedInstance);
+	public static function ExtrudeShapeCustom(name:String, shape:Array<Vector3>, path:Array<Vector3>, scaleFunction:Float->Float->Float, rotationFunction:Float->Float->Float, ribbonCloseArray:Bool = false, ribbonClosePath:Bool = false, cap:Int = Mesh.NO_CAP, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE, extrudedInstance:Mesh = null):Mesh {
+		var extrudedCustom = Mesh._ExtrudeShapeGeneric(name, shape, path, null, null, scaleFunction, rotationFunction, ribbonCloseArray, ribbonClosePath, cap, true, scene, updatable, sideOrientation, extrudedInstance);
 		return extrudedCustom;
 	}
 
-	private static function _ExtrudeShapeGeneric(name:String, shape:Array<Vector3>, curve:Array<Vector3>, ?scale:Float, ?rotation:Float, scaleFunction:Float->Float->Float, rotateFunction:Float->Float->Float, rbCA:Bool, rbCP:Bool, custom:Bool, scene:Scene, updtbl:Bool, side:Int, instance:Mesh = null):Mesh {
+	private static function _ExtrudeShapeGeneric(name:String, shape:Array<Vector3>, curve:Array<Vector3>, ?scale:Float, ?rotation:Float, ?scaleFunction:Float->Float->Float, ?rotateFunction:Float->Float->Float, rbCA:Bool, rbCP:Bool, cap:Int, custom:Bool, scene:Scene, updtbl:Bool, side:Int, instance:Mesh = null):Mesh {
+		
 		// extrusion geometry
-		var extrusionPathArray = function(shape:Array<Vector3>, curve:Array<Vector3>, path3D:Path3D, shapePaths:Array<Array<Vector3>>, scale:Float, rotation:Float, scaleFunction:Int->Float->Float, rotateFunction:Int->Float->Float, custom:Bool) {
+		var extrusionPathArray = function(shape:Array<Vector3>, curve:Array<Vector3>, path3D:Path3D, shapePaths:Array<Array<Vector3>>, scale:Float, rotation:Float, scaleFunction:Int->Float->Float, rotateFunction:Int->Float->Float, cap:Int, custom:Bool = false) {
 			var tangents:Array<Vector3> = path3D.getTangents();
 			var normals:Array<Vector3> = path3D.getNormals();
 			var binormals:Array<Vector3> = path3D.getBinormals();
 			var distances:Array<Float> = path3D.getDistances();
 			
 			var angle:Float = 0;
-			var returnScale = function(i:Int, distance:Float):Float { 
+			var returnScale = function(i:Float, distance:Float):Float { 
 				return scale; 
 			};
-			var returnRotation = function(i:Int, distance:Float):Float { 
+			var returnRotation = function(i:Float, distance:Float):Float { 
 				return rotation; 
 			};
-			var rotate = custom ? rotateFunction : returnRotation;
-			var scl = custom ? scaleFunction : returnScale;
+			var rotate = rotateFunction != null ? rotateFunction : returnRotation;
+			var scl = scaleFunction != null ? scaleFunction : returnScale;
 			var index:Int = 0;
 			
 			for (i in 0...curve.length) {
@@ -1418,13 +1497,47 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 				angle += angleStep;
 				index++;
 			}
+			
+			// cap
+            var capPath = function(shapePath:Array<Vector3>):Array<Vector3> {
+                var pointCap:Array<Vector3> = [];
+                var barycenter = Vector3.Zero();
+                for (i in 0...shapePath.length) {
+                    barycenter.addInPlace(shapePath[i]);
+                }
+                barycenter.scaleInPlace(1 / shapePath.length);
+                for (i in 0...shapePath.length) {
+                    pointCap.push(barycenter);
+                }
+                return pointCap;
+            }
+			
+            switch (cap) {
+                case Mesh.NO_CAP:
+                    // nothing here...
+					
+                case Mesh.CAP_START:
+                    shapePaths.unshift(capPath(shapePaths[0]));
+                    
+                case Mesh.CAP_END:
+                    shapePaths.push(capPath(shapePaths[shapePaths.length - 1]));
+                    
+                case Mesh.CAP_ALL:
+                    shapePaths.unshift(capPath(shapePaths[0]));
+                    shapePaths.push(capPath(shapePaths[shapePaths.length - 1]));
+                    
+                default:
+                    //...
+            }
+			
 			return shapePaths;
 		};
 		
 		if (instance != null) { // instance update
 			
 			var path3D = instance.path3D.update(curve);
-			var pathArray = extrusionPathArray(shape, curve, instance.path3D, instance.pathArray, scale, rotation, scaleFunction, rotateFunction, custom);
+			var pathArray = extrusionPathArray(shape, curve, instance.path3D, instance.pathArray, scale, rotation, scaleFunction, rotateFunction, instance.cap, custom);
+			
 			instance = Mesh.CreateRibbon(null, pathArray, null, null, null, null, null, null, instance);
 			
 			return instance;
@@ -1433,13 +1546,50 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		
 		var path3D:Path3D = new Path3D(curve);
 		var newShapePaths:Array<Array<Vector3>> = [];
-		var pathArray = extrusionPathArray(shape, curve, path3D, newShapePaths, scale, rotation, scaleFunction, rotateFunction, custom);
+		cap = (cap < 0 || cap > 3) ? 0 : cap;
+		var pathArray = extrusionPathArray(shape, curve, path3D, newShapePaths, scale, rotation, scaleFunction, rotateFunction, cap, custom);
 		
 		var extrudedGeneric = Mesh.CreateRibbon(name, pathArray, rbCA, rbCP, 0, scene, updtbl, side);
 		extrudedGeneric.pathArray = pathArray;
 		extrudedGeneric.path3D = path3D;
+		extrudedGeneric.cap = cap;
 		
 		return extrudedGeneric;
+	}
+	
+	// Lathe
+	public static function CreateLathe(name:String, shape:Array<Vector3>, radius:Float = 1, tessellation:Int = 0, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+		tessellation = tessellation > 0 ? tessellation : Std.int(radius * 60);
+		var pi2 = Math.PI * 2;
+		var Y = com.babylonhx.math.Axis.Y;
+		var shapeLathe:Array<Vector3> = [];
+		
+		// first rotatable point
+		var i:Int = 0;
+		while (shape[i].x == 0) {
+			i++;
+		}
+		var pt = shape[i];
+		for (i in 0...shape.length) {
+			shapeLathe.push(shape[i].subtract(pt));
+		}
+		
+		// circle path
+		var step = pi2 / tessellation;
+		var rotated:Vector3 = null;
+		var path:Array<Vector3> = [];
+		for (i in 0...tessellation) {
+			rotated = new Vector3(Math.cos(i * step) * radius, 0, Math.sin(i * step) * radius);
+			path.push(rotated);
+		}
+		path.push(path[0]);
+		
+		// extrusion
+		var scaleFunction:Float->Float->Float = function(dummy1:Float = 0, dummy2:Float = 0):Float { return 1; };
+		var rotateFunction:Float->Float->Float = function(dummy1:Float = 0, dummy2:Float = 0):Float { return 0; };
+		var lathe = Mesh.ExtrudeShapeCustom(name, shapeLathe, path, scaleFunction, rotateFunction, true, false, Mesh.NO_CAP, scene, updatable, sideOrientation);
+		
+		return lathe;
 	}
 
 	// Plane & ground
@@ -1450,15 +1600,6 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return plane;
 	}
 	
-	public static function CreateDisc(name:String, radius:Float, tessellation:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-        var disc = new Mesh(name, scene);
-        var vertexData = VertexData.CreateDisc(radius, tessellation, sideOrientation);
-		
-        vertexData.applyToMesh(disc, updatable);
-		
-        return disc;
-    }
-
 	public static function CreateGround(name:String, width:Float, height:Float, subdivisions:Int, scene:Scene, updatable:Bool = false):Mesh {
 		var ground = new GroundMesh(name, scene);
 		ground._setReady(false);
@@ -1467,6 +1608,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		var vertexData = VertexData.CreateGround(width, height, subdivisions);
 		vertexData.applyToMesh(ground, updatable);
 		ground._setReady(true);
+		
 		return ground;
 	}
 
@@ -1474,6 +1616,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		var tiledGround = new Mesh(name, scene);
 		var vertexData = VertexData.CreateTiledGround(xmin, zmin, xmax, zmax, subdivisions, precision);
 		vertexData.applyToMesh(tiledGround, updatable);
+		
 		return tiledGround;
 	}
 	
@@ -1500,9 +1643,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return ground;
 	}
 	
-	public static function CreateTube(name:String, path:Array<Vector3>, radius:Float, tessellation:Float, radiusFunction:Int->Float->Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE, tubeInstance:Mesh = null):Mesh {
+	public static function CreateTube(name:String, path:Array<Vector3>, radius:Float, tessellation:Int, radiusFunction:Int->Float->Float, cap:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE, tubeInstance:Mesh = null):Mesh {
 		// tube geometry
-		var tubePathArray = function (path:Array<Vector3>, path3D:Path3D, circlePaths:Array<Array<Vector3>>, radius:Float, tessellation:Float, ?radiusFunction:Int->Float->Float) {
+		var tubePathArray = function (path:Array<Vector3>, path3D:Path3D, circlePaths:Array<Array<Vector3>>, radius:Float, tessellation:Int, ?radiusFunction:Int->Float->Float, cap:Int) {
 			var tangents = path3D.getTangents();
 			var normals = path3D.getNormals();
 			var distances = path3D.getDistances();
@@ -1522,21 +1665,48 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 				circlePath = [];              				// current circle array
 				normal = normals[i];          				// current normal  
 				var ang:Float = 0.0;
-				while(ang < pi2) {
-					rotationMatrix = Matrix.RotationAxis(tangents[i], ang);
+				for (t in 0...tessellation) {
+                    rotationMatrix = Matrix.RotationAxis(tangents[i], step * t);
 					rotated = Vector3.TransformCoordinates(normal, rotationMatrix).scaleInPlace(rad).add(path[i]);
 					circlePath.push(rotated);
-					ang += step;
 				}
+				circlePath.push(circlePath[0]);
 				circlePaths[index] = circlePath;
 				index++;
 			}
+			
+			// cap
+            var capPath = function(nbPoints:Int, pathIndex:Int):Array<Vector3> {
+                var pointCap:Array<Vector3> = [];
+                for(i in 0...nbPoints) {
+                    pointCap.push(path[pathIndex]); 
+                }
+                return pointCap;
+            };
+			
+            switch (cap) {
+                case Mesh.NO_CAP:
+                   
+                case Mesh.CAP_START:
+                    circlePaths.unshift(capPath(tessellation + 1, 0));
+                    
+                case Mesh.CAP_END:
+                    circlePaths.push(capPath(tessellation + 1, path.length - 1));
+                    
+                case Mesh.CAP_ALL:
+                    circlePaths.unshift(capPath(tessellation + 1, 0));
+                    circlePaths.push(capPath(tessellation + 1, path.length - 1));
+                     
+                default:
+                    //                   
+            }
+			
 			return circlePaths;
 		};
 		
 		if (tubeInstance != null) { // tube update
 			var path3D = tubeInstance.path3D.update(path);
-			var pathArray = tubePathArray(path, path3D, tubeInstance.pathArray, radius, tubeInstance.tessellation, radiusFunction);
+			var pathArray = tubePathArray(path, path3D, tubeInstance.pathArray, radius, tubeInstance.tessellation, radiusFunction, tubeInstance.cap);
 			tubeInstance = Mesh.CreateRibbon(null, pathArray, null, null, null, null, null, null, tubeInstance);
 			
 			return tubeInstance;
@@ -1545,28 +1715,39 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		// tube creation
 		var path3D:Path3D = new Path3D(path);
 		var newPathArray:Array<Array<Vector3>> = [];
-		var pathArray = tubePathArray(path, path3D, newPathArray, radius, tessellation, radiusFunction);
+		cap = (cap < 0 || cap > 3) ? 0 : cap;
+        var pathArray = tubePathArray(path, path3D, newPathArray, radius, tessellation, radiusFunction, cap);
 		var tube = Mesh.CreateRibbon(name, pathArray, false, true, 0, scene, updatable, sideOrientation);
 		tube.pathArray = pathArray;
 		tube.path3D = path3D;
 		tube.tessellation = tessellation;
+		tube.cap = cap;
 		
 		return tube;
 	}
 	
 	// Decals
+	static var CreateDecal_target:Vector3 = new Vector3(0, 0, 1);
+	static var CreateDecal_cameraWorldTarget:Vector3 = new Vector3(0, 0, 0);
+	static var decalWorldMatrix:Matrix = new Matrix();
+	static var inverseDecalWorldMatrix:Matrix = new Matrix();
+	static var CreateDecal_indices:Array<Int> = [];
+	static var CreateDecal_positions:Array<Float> = [];
+	static var CreateDecal_normals:Array<Float> = [];
+	static var CreateDecal_meshWorldMatrix:Matrix = new Matrix();
+	static var CreateDecal_transformMatrix:Matrix = new Matrix();
+	static var CreateDecal_vertexData:VertexData = new VertexData();
     public static function CreateDecal(name:String, sourceMesh:AbstractMesh, position:Vector3, normal:Vector3, size:Vector3, angle:Float = 0) {
-        var indices:Array<Int> = sourceMesh.getIndices();
-        var positions:Array<Float> = sourceMesh.getVerticesData(VertexBuffer.PositionKind);
-        var normals:Array<Float> = sourceMesh.getVerticesData(VertexBuffer.NormalKind);
+        CreateDecal_indices = sourceMesh.getIndices();
+        CreateDecal_positions = sourceMesh.getVerticesData(VertexBuffer.PositionKind);
+        CreateDecal_normals = sourceMesh.getVerticesData(VertexBuffer.NormalKind);
 		
         // Getting correct rotation
         if (normal == null) {
-            var target:Vector3 = new Vector3(0, 0, 1);
             var camera:Camera = sourceMesh.getScene().activeCamera;
-            var cameraWorldTarget:Vector3 = Vector3.TransformCoordinates(target, camera.getWorldMatrix());
+            CreateDecal_cameraWorldTarget = Vector3.TransformCoordinates(CreateDecal_target, camera.getWorldMatrix());
 			
-            normal = camera.globalPosition.subtract(cameraWorldTarget);
+            normal = camera.globalPosition.subtract(CreateDecal_cameraWorldTarget);
         }
 		
         var yaw:Float = -Math.atan2(normal.z, normal.x) - Math.PI / 2;
@@ -1574,29 +1755,28 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
         var pitch:Float = Math.atan2(normal.y, len);
 		
         // Matrix
-        var decalWorldMatrix:Matrix = Matrix.RotationYawPitchRoll(yaw, pitch, angle).multiply(Matrix.Translation(position.x, position.y, position.z));
-        var inverseDecalWorldMatrix:Matrix = Matrix.Invert(decalWorldMatrix);
-        var meshWorldMatrix:Matrix = sourceMesh.getWorldMatrix();
-        var transformMatrix:Matrix = meshWorldMatrix.multiply(inverseDecalWorldMatrix);
+        decalWorldMatrix = Matrix.RotationYawPitchRoll(yaw, pitch, angle).multiply(Matrix.Translation(position.x, position.y, position.z));
+        inverseDecalWorldMatrix = Matrix.Invert(decalWorldMatrix);
+        CreateDecal_meshWorldMatrix = sourceMesh.getWorldMatrix();
+        CreateDecal_transformMatrix = CreateDecal_meshWorldMatrix.multiply(inverseDecalWorldMatrix);
 		
-        var vertexData:VertexData = new VertexData();
-        vertexData.indices = [];
-        vertexData.positions = [];
-        vertexData.normals = [];
-        vertexData.uvs = [];
+        CreateDecal_vertexData.indices = [];
+        CreateDecal_vertexData.positions = [];
+        CreateDecal_vertexData.normals = [];
+        CreateDecal_vertexData.uvs = [];
 		
-        var currentVertexDataIndex:Int = 0;
+        var currentCreateDecal_vertexDataIndex:Int = 0;
 		
         var extractDecalVector3 = function(indexId:Int):PositionNormalVertex {
-            var vertexId:Int = indices[indexId];
+            var vertexId:Int = CreateDecal_indices[indexId];
             var result:PositionNormalVertex = new PositionNormalVertex();
-            result.position = new Vector3(positions[vertexId * 3], positions[vertexId * 3 + 1], positions[vertexId * 3 + 2]);
+            result.position = new Vector3(CreateDecal_positions[vertexId * 3], CreateDecal_positions[vertexId * 3 + 1], CreateDecal_positions[vertexId * 3 + 2]);
 			
             // Send vector to decal local world
-            result.position = Vector3.TransformCoordinates(result.position, transformMatrix);
+            result.position = Vector3.TransformCoordinates(result.position, CreateDecal_transformMatrix);
 			
             // Get normal
-            result.normal = new Vector3(normals[vertexId * 3], normals[vertexId * 3 + 1], normals[vertexId * 3 + 2]);
+            result.normal = new Vector3(CreateDecal_normals[vertexId * 3], CreateDecal_normals[vertexId * 3 + 1], CreateDecal_normals[vertexId * 3 + 2]);
 			
             return result;
         }
@@ -1728,7 +1908,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		
 		var faceVertices:Array<PositionNormalVertex> = [];
 		var index = 0;
-		while(index < indices.length) {
+		while(index < CreateDecal_indices.length) {
             faceVertices = [];
 			
             faceVertices.push(extractDecalVector3(index));
@@ -1754,13 +1934,13 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
             for (vIndex in 0...faceVertices.length) {
                 vertex = faceVertices[vIndex];
 				
-                vertexData.indices.push(currentVertexDataIndex);
-                vertex.position.toArray(vertexData.positions, currentVertexDataIndex * 3);
-                vertex.normal.toArray(vertexData.normals, currentVertexDataIndex * 3);
-                vertexData.uvs.push(0.5 + vertex.position.x / size.x);
-                vertexData.uvs.push(0.5 + vertex.position.y / size.y);
+                CreateDecal_vertexData.indices.push(currentCreateDecal_vertexDataIndex);
+                vertex.position.toArray(CreateDecal_vertexData.positions, currentCreateDecal_vertexDataIndex * 3);
+                vertex.normal.toArray(CreateDecal_vertexData.normals, currentCreateDecal_vertexDataIndex * 3);
+                CreateDecal_vertexData.uvs.push(0.5 + vertex.position.x / size.x);
+                CreateDecal_vertexData.uvs.push(0.5 + vertex.position.y / size.y);
 				
-                currentVertexDataIndex++;
+                currentCreateDecal_vertexDataIndex++;
             }
 			
 			index += 3;
@@ -1768,7 +1948,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		
         // Return mesh
         var decal = new Mesh(name, sourceMesh.getScene());
-        vertexData.applyToMesh(decal);
+        CreateDecal_vertexData.applyToMesh(decal);
 		
 		decal.position = position.clone();
 		decal.rotation = new Vector3(pitch, yaw, angle);
@@ -1801,52 +1981,70 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return Vector3.Center(minMaxVector.minimum, minMaxVector.maximum);
 	}
 	
-	public static function MergeMeshes(meshes:Array<Mesh>, disposeSource:Bool = true, allow32BitsIndices:Bool = false):Mesh {
-		var source:Mesh = meshes[0];
-		var material:Material = source.material;
-		var scene:Scene = source.getScene();
-		
+	/**
+	 * Merge the array of meshes into a single mesh for performance reasons.
+	 * @param {Array<Mesh>} meshes - The vertices source.  They should all be of the same material.  Entries can empty
+	 * @param {boolean} disposeSource - When true (default), dispose of the vertices from the source meshes
+	 * @param {boolean} allow32BitsIndices - When the sum of the vertices > 64k, this must be set to true.
+	 * @param {Mesh} meshSubclass - When set, vertices inserted into this Mesh.  Meshes can then be merged into a Mesh sub-class.
+	 */
+	public static function MergeMeshes(meshes:Array<Mesh>, disposeSource:Bool = true, allow32BitsIndices:Bool = false, ?meshSubclass:Mesh):Mesh {
 		if (!allow32BitsIndices) {
 			var totalVertices = 0;
 			
 			// Counting vertices
 			for (index in 0...meshes.length) {
-				totalVertices += meshes[index].getTotalVertices();
-				
-				if (totalVertices > 65536) {
-					trace("Cannot merge meshes because resulting mesh will have more than 65536 vertices. Please use allow32BitsIndices = true to use 32 bits indices");
-					return null;
+				if (meshes[index] != null) {
+					totalVertices += meshes[index].getTotalVertices();
+					
+					if (totalVertices > 65536) {
+						trace("Cannot merge meshes because resulting mesh will have more than 65536 vertices. Please use allow32BitsIndices = true to use 32 bits indices");
+						return null;
+					}
 				}
 			}
 		}
 		
 		// Merge
-		var vertexData:VertexData = VertexData.ExtractFromMesh(source);
-		vertexData.transform(source.getWorldMatrix());
-		
-		for (index in 1...meshes.length) {
-			var otherVertexData = VertexData.ExtractFromMesh(meshes[index]);
-			otherVertexData.transform(meshes[index].getWorldMatrix());
-			
-			vertexData.merge(otherVertexData);
+		var vertexData:VertexData = null;
+		var otherVertexData:VertexData = null;
+
+		var source:Mesh = null;
+		for (index in 0...meshes.length) {
+			if (meshes[index] != null) {
+				meshes[index].computeWorldMatrix(true);
+				otherVertexData = VertexData.ExtractFromMesh(meshes[index], true);
+				otherVertexData.transform(meshes[index].getWorldMatrix());
+				
+				if (vertexData != null) {
+					vertexData.merge(otherVertexData);
+				}
+				else {
+					vertexData = otherVertexData;
+					source = meshes[index];
+				}
+			}
 		}
 		
-		var newMesh:Mesh = new Mesh(source.name + "_merged", scene);
-		
-		vertexData.applyToMesh(newMesh);
+		if (meshSubclass == null) {
+			meshSubclass = new Mesh(source.name + "_merged", source.getScene());
+		}
+		vertexData.applyToMesh(meshSubclass);
 		
 		// Setting properties
-		newMesh.material = material;
-		newMesh.checkCollisions = source.checkCollisions;
+		meshSubclass.material = source.material;
+		meshSubclass.checkCollisions = source.checkCollisions;
 		
 		// Cleaning
 		if (disposeSource) {
 			for (index in 0...meshes.length) {
-				meshes[index].dispose();
+				if (meshes[index] != null) {
+					meshes[index].dispose();
+				}
 			}
 		}
 		
-		return newMesh;
+		return meshSubclass;
 	}
 	
 }

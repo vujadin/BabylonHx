@@ -5,6 +5,7 @@ import com.babylonhx.math.Plane;
 import com.babylonhx.math.Ray;
 import com.babylonhx.tools.SmartArray;
 
+
 /**
 * ...
 * @author Krtolica Vujadin
@@ -21,6 +22,7 @@ import com.babylonhx.tools.SmartArray;
 	private var _maxPoint:Vector3;
 	private var _boundingVectors:Array<Vector3> = [];
 	private var _creationFunc:T->OctreeBlock<T>->Void;
+	
 
 	public function new(minPoint:Vector3, maxPoint:Vector3, capacity:Int, depth:Int, maxDepth:Int, creationFunc:T->OctreeBlock<T>->Void) {
 		this._capacity = capacity;
@@ -36,19 +38,19 @@ import com.babylonhx.tools.SmartArray;
 		
 		this._boundingVectors.push(minPoint.clone());
 		this._boundingVectors[2].x = maxPoint.x;
-
+		
 		this._boundingVectors.push(minPoint.clone());
 		this._boundingVectors[3].y = maxPoint.y;
-
+		
 		this._boundingVectors.push(minPoint.clone());
 		this._boundingVectors[4].z = maxPoint.z;
-
+		
 		this._boundingVectors.push(maxPoint.clone());
 		this._boundingVectors[5].z = minPoint.z;
-
+		
 		this._boundingVectors.push(maxPoint.clone());
 		this._boundingVectors[6].x = minPoint.x;
-
+		
 		this._boundingVectors.push(maxPoint.clone());
 		this._boundingVectors[7].y = minPoint.y;
 	}
@@ -78,9 +80,9 @@ import com.babylonhx.tools.SmartArray;
 			}
 			return;
 		}
-
+		
 		this._creationFunc(entry, this);
-
+		
 		if (this.entries.length > this.capacity && this._depth < this._maxDepth) {
 			this.createInnerBlocks();
 		}
@@ -102,7 +104,7 @@ import com.babylonhx.tools.SmartArray;
 				}
 				return;
 			}
-
+			
 			if (allowDuplicate) {
 				selection.concat(this.entries);
 			} else {
@@ -120,7 +122,7 @@ import com.babylonhx.tools.SmartArray;
 				}
 				return;
 			}
-
+			
 			if (allowDuplicate) {
 				selection.concat(this.entries);
 			} else {
@@ -145,4 +147,5 @@ import com.babylonhx.tools.SmartArray;
 	public function createInnerBlocks():Void {
 		Octree._CreateBlocks(this._minPoint, this._maxPoint, this.entries, this._capacity, this._depth, this._maxDepth, this, this._creationFunc);
 	}
+	
 }

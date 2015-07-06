@@ -20,6 +20,7 @@ package com.babylonhx.actions;
 	public static var OnIntersectionExitTrigger = 9;
 	public static var OnKeyDownTrigger:Int = 10;
 	public static var OnKeyUpTrigger:Int = 11;
+	public static var OnPickUpTrigger:Int = 12;
 
 	
 	// Members
@@ -46,11 +47,33 @@ package com.babylonhx.actions;
 		return this._scene;
 	}
 
+	/**
+	 * Does this action manager handles actions of any of the given triggers
+	 * @param {number[]} triggers - the triggers to be tested
+	 * @return {boolean} whether one (or more) of the triggers is handeled 
+	 */
 	public function hasSpecificTriggers(triggers:Array<Int>):Bool {
 		for (index in 0...this.actions.length) {
 			var action = this.actions[index];
 			
 			if (triggers.indexOf(action.trigger) > -1) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Does this action manager handles actions of a given trigger
+	 * @param {number} trigger - the trigger to be tested
+	 * @return {boolean} whether the trigger is handeled 
+	 */
+	public function hasSpecificTrigger(trigger:Int):Bool {
+		for (index in 0...this.actions.length) {
+			var action = this.actions[index];
+			
+			if (action.trigger == trigger) {
 				return true;
 			}
 		}
@@ -79,6 +102,10 @@ package com.babylonhx.actions;
 			if (action.trigger >= ActionManager.OnPickTrigger && action.trigger <= ActionManager.OnCenterPickTrigger) {
 				return true;
 			}
+			
+			if (action.trigger == ActionManager.OnPickUpTrigger) {
+                return true;
+            }
 		}
 		
 		return false;

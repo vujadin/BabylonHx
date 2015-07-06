@@ -48,7 +48,7 @@ import com.babylonhx.mesh.AbstractMesh;
 	public var currentFrame:Int;
 	
 	
-	public static function CreateAndStartAnimation(name:String, mesh:AbstractMesh, tartgetProperty:String, framePerSecond:Int, totalFrame:Int,
+	public static function CreateAndStartAnimation(name:String, mesh:AbstractMesh, targetProperty:String, framePerSecond:Int, totalFrame:Int,
 		from:Dynamic, to:Dynamic, ?loopMode:Int):Animatable {
 		
 		var dataType:Int = -1;
@@ -69,7 +69,7 @@ import com.babylonhx.mesh.AbstractMesh;
 			return null;
 		}
 		
-		var animation = new Animation(name, tartgetProperty, framePerSecond, dataType, loopMode);
+		var animation = new Animation(name, targetProperty, framePerSecond, dataType, loopMode);
 		
 		var keys:Array<BabylonFrame> = [];
 		keys.push({ frame: 0, value: from });
@@ -91,60 +91,64 @@ import com.babylonhx.mesh.AbstractMesh;
 	}
 
 	// Methods   
-	public function isStopped():Bool {
+	inline public function isStopped():Bool {
 		return this._stopped;
 	}
 
-	public function getKeys():Array<BabylonFrame> {
+	inline public function getKeys():Array<BabylonFrame> {
 		return this._keys;
 	}
 	
-	public function getEasingFunction() {
+	inline public function getEasingFunction() {
         return this._easingFunction;
     }
 
-    public function setEasingFunction(easingFunction:EasingFunction) {
+    inline public function setEasingFunction(easingFunction:EasingFunction) {
         this._easingFunction = easingFunction;
 	}
 
-	public function floatInterpolateFunction(startValue:Float, endValue:Float, gradient:Float):Float {
+	inline public function floatInterpolateFunction(startValue:Float, endValue:Float, gradient:Float):Float {
 		return startValue + (endValue - startValue) * gradient;
 	}
 
-	public function quaternionInterpolateFunction(startValue:Quaternion, endValue:Quaternion, gradient:Float):Quaternion {
+	inline public function quaternionInterpolateFunction(startValue:Quaternion, endValue:Quaternion, gradient:Float):Quaternion {
 		return Quaternion.Slerp(startValue, endValue, gradient);
 	}
 
-	public function vector3InterpolateFunction(startValue:Vector3, endValue:Vector3, gradient:Float):Vector3 {
+	inline public function vector3InterpolateFunction(startValue:Vector3, endValue:Vector3, gradient:Float):Vector3 {
 		return Vector3.Lerp(startValue, endValue, gradient);
 	}
 
-	public function vector2InterpolateFunction(startValue:Vector2, endValue:Vector2, gradient:Float):Vector2 {
+	inline public function vector2InterpolateFunction(startValue:Vector2, endValue:Vector2, gradient:Float):Vector2 {
 		return Vector2.Lerp(startValue, endValue, gradient);
 	}
 
-	public function color3InterpolateFunction(startValue:Color3, endValue:Color3, gradient:Float):Color3 {
+	inline public function color3InterpolateFunction(startValue:Color3, endValue:Color3, gradient:Float):Color3 {
 		return Color3.Lerp(startValue, endValue, gradient);
 	}
 	
+	static var matrixInterpolateFunction_startScale:Vector3 = new Vector3(0, 0, 0);
+	static var matrixInterpolateFunction_startRotation:Quaternion = new Quaternion();
+	static var matrixInterpolateFunction_startTranslation:Vector3 = new Vector3(0, 0, 0);
+	static var matrixInterpolateFunction_endScale:Vector3 = new Vector3(0, 0, 0);
+	static var matrixInterpolateFunction_endRotation:Quaternion = new Quaternion();
+	static var matrixInterpolateFunction_endTranslation:Vector3 = new Vector3(0, 0, 0);
 	public function matrixInterpolateFunction(startValue:Matrix, endValue:Matrix, gradient:Float):Matrix {
-		var startScale = new Vector3(0, 0, 0);
-		var startRotation = new Quaternion();
-		var startTranslation = new Vector3(0, 0, 0);
-		startValue.decompose(startScale, startRotation, startTranslation);
+		matrixInterpolateFunction_startScale.set(0, 0, 0);
+		matrixInterpolateFunction_startRotation.set();
+		matrixInterpolateFunction_startTranslation.set(0, 0, 0);
+		startValue.decompose(matrixInterpolateFunction_startScale, matrixInterpolateFunction_startRotation, matrixInterpolateFunction_startTranslation);
 		
-		var endScale = new Vector3(0, 0, 0);
-		var endRotation = new Quaternion();
-		var endTranslation = new Vector3(0, 0, 0);
-		endValue.decompose(endScale, endRotation, endTranslation);
+		matrixInterpolateFunction_endScale.set(0, 0, 0);
+		matrixInterpolateFunction_endRotation.set();
+		matrixInterpolateFunction_endTranslation.set(0, 0, 0);
+		endValue.decompose(matrixInterpolateFunction_endScale, matrixInterpolateFunction_endRotation, matrixInterpolateFunction_endTranslation);
 		
-		var resultScale = this.vector3InterpolateFunction(startScale, endScale, gradient);
-		var resultRotation = this.quaternionInterpolateFunction(startRotation, endRotation, gradient);
-		var resultTranslation = this.vector3InterpolateFunction(startTranslation, endTranslation, gradient);
+		var resultScale = this.vector3InterpolateFunction(matrixInterpolateFunction_startScale, matrixInterpolateFunction_endScale, gradient);
+		var resultRotation = this.quaternionInterpolateFunction(matrixInterpolateFunction_startRotation, matrixInterpolateFunction_endRotation, gradient);
+		var resultTranslation = this.vector3InterpolateFunction(matrixInterpolateFunction_startTranslation, matrixInterpolateFunction_endTranslation, gradient);
 		
-		var result = Matrix.Compose(resultScale, resultRotation, resultTranslation);
-		
-		return result;
+		return Matrix.Compose(resultScale, resultRotation, resultTranslation);
 	}
 
 	public function clone():Animation {
@@ -291,7 +295,8 @@ import com.babylonhx.mesh.AbstractMesh;
 		if (ratio > range && !loop) { // If we are out of range and not looping get back to caller
 			returnValue = false;
 			highLimitValue = this._keys[this._keys.length - 1].value;
-		} else {
+		} 
+		else {
 			// Get max value if required
 			highLimitValue = 0;
 			if (this.loopMode != Animation.ANIMATIONLOOPMODE_CYCLE) {
@@ -370,7 +375,8 @@ import com.babylonhx.mesh.AbstractMesh;
 			}
 			
 			Reflect.setProperty(property, this.targetPropertyPath[this.targetPropertyPath.length - 1], currentValue);
-		} else {
+		} 
+		else {
 			Reflect.setProperty(this._target, this.targetPropertyPath[0], currentValue);
 		}
 		

@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-class StopSoundAction extends Action {
+@:expose('BABYLON.StopSoundAction') class StopSoundAction extends Action {
 	
 	private var _sound:Dynamic;
 	

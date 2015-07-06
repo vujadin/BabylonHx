@@ -87,10 +87,10 @@ import samples.Fresnel;
 			var material = scene.materials[index];
 			
 			if (Std.is(material, StandardMaterial)) {
-				serializationObject.materials.push(serializeMaterial(<StandardMaterial>material));
+				serializationObject.materials.push(serializeMaterial(cast material));
 			} 
 			else if (Std.is(material, MultiMaterial)) {
-				serializationObject.multiMaterials.push(serializeMultiMaterial(<MultiMaterial>material));
+				serializationObject.multiMaterials.push(serializeMultiMaterial(cast material));
 			}
 		}
 		
@@ -111,8 +111,8 @@ import samples.Fresnel;
 		serializationObject.geometries.planes = [];
 		serializationObject.geometries.torusKnots = [];
 		serializationObject.geometries.vertexData = [];
-
-		serializedGeometries = [];
+		
+		serializedGeometries = new Map<String, Geometry>();
 		var geometries = scene.getGeometries();
 		for (index in 0...geometries.length) {
 			var geometry = geometries[index];
@@ -150,14 +150,12 @@ import samples.Fresnel;
 		// Shadows
 		serializationObject.shadowGenerators = [];
 		for (index in 0...scene.lights.length) {
-			light = scene.lights[index];
+			var light = scene.lights[index];
 			
-			if (light.getShadowGenerator()) {
+			if (light.getShadowGenerator() != null) {
 				serializationObject.shadowGenerators.push(serializeShadowGenerator(light));
 			}
 		}
-		
-		serializedGeometries = new Map<String, Geometry>();
 		
 		return serializationObject;
 	}
@@ -691,7 +689,7 @@ import samples.Fresnel;
 		
         if (vertexData.isVerticesDataPresent(VertexBuffer.MatricesIndicesKind)) {
             serializationObject.matricesIndices = vertexData.getVerticesData(VertexBuffer.MatricesIndicesKind);
-            serializationObject.matricesIndices._isExpanded = true;
+            //serializationObject.matricesIndices._isExpanded = true; 
         }
 		
         if (vertexData.isVerticesDataPresent(VertexBuffer.MatricesWeightsKind)) {
@@ -812,7 +810,7 @@ import samples.Fresnel;
             serializationObject.geometryId = geometryId;
             if (mesh.getScene().getGeometryByID(geometryId) == null) {
                 // geometry was in the memory but not added to the scene, nevertheless it's better to serialize too be able to reload the mesh with its geometry
-                serializeGeometry(geometry, serializationScene.geometries);
+                serializeGeometry(geometry, serializationScene.getGeometries());
             }
 			
             // SubMeshes
@@ -838,7 +836,7 @@ import samples.Fresnel;
         }
 		
         // Skeleton
-        if (mesh.skeleton) {
+        if (mesh.skeleton != null) {
             serializationObject.skeletonId = mesh.skeleton.id;
         }
         // Physics

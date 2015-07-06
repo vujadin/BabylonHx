@@ -1,4 +1,5 @@
 package com.babylonhx.materials.textures;
+
 import com.babylonhx.utils.Image;
 import com.babylonhx.utils.typedarray.UInt8Array;
 
@@ -7,7 +8,7 @@ import com.babylonhx.utils.typedarray.UInt8Array;
  * ...
  * @author Krtolica Vujadin
  */
-class DynamicTexture extends Texture {
+@:expose('BABYLON.DynamicTexture') class DynamicTexture extends Texture {
 	
 	private var _generateMipMaps:Bool;
 	public var _canvas:Image;
@@ -16,6 +17,10 @@ class DynamicTexture extends Texture {
 	
 	public function getContext():UInt8Array {
 		return _canvas.data;
+	}
+	
+	public function setData(data:Array<Int>) {
+		_canvas.data = new UInt8Array(data);
 	}
 	
 

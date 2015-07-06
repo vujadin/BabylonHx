@@ -5,6 +5,7 @@ import com.babylonhx.math.Color3;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
+import haxe.Json;
 
 /**
  * ...
@@ -16,7 +17,7 @@ import com.babylonhx.math.Vector3;
 	private var _animate:Bool = true;
 	private var _time:Float = 0;
 	private var _config:Dynamic;
-	private var _texturePath:Dynamic;
+	private var _texturePath:String;
 	
 
 	public function new(name:String, texturePath:String, size:Int, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
@@ -29,10 +30,10 @@ import com.babylonhx.math.Vector3;
 	}
 
 	private function loadJson(jsonUrl:String) {
-		/*function noConfigFile() {
-			Tools.Log("No config file found in " + jsonUrl + " trying to use ShaderStore or DOM element");
+		function noConfigFile() {
+			trace("No config file found in " + jsonUrl + " trying to use ShaderStore or DOM element");
 			try {
-				this.setFragment(that._texturePath);
+				this.setFragment(this._texturePath);
 			}
 			catch (ex:Dynamic) {
 				trace("No json or ShaderStore or DOM element found for CustomProceduralTexture");
@@ -41,40 +42,22 @@ import com.babylonhx.math.Vector3;
 		}
 		
 		var configFileUrl = jsonUrl + "/config.json";
-		var xhr:XMLHttpRequest = new XMLHttpRequest();
 		
-		xhr.open("GET", configFileUrl, true);
-		xhr.addEventListener("load", () => {
-			if (xhr.status === 200 || Tools.ValidateXHRData(xhr, 1)) {
-				try {
-					this._config = JSON.parse(xhr.response);
-					
-					this.updateShaderUniforms();
-					this.updateTextures();
-					this.setFragment(this._texturePath + "/custom");
-					
-					this._animate = this._config.animate;
-					this.refreshRate = this._config.refreshrate;
-				}
-				catch (ex) {
-					noConfigFile();
-				}
+		Tools.LoadFile(configFileUrl, function(data:Dynamic) {
+			try {
+				this._config = Json.parse(data);
+				
+				this.updateShaderUniforms();
+				this.updateTextures();
+				this.setFragment(this._texturePath + "/custom");
+				
+				this._animate = this._config.animate;
+				this.refreshRate = this._config.refreshrate;
 			}
-			else {
+			catch (ex:Dynamic) {
 				noConfigFile();
 			}
-		}, false);
-		
-		xhr.addEventListener("error", event => {
-			noConfigFile();
-		}, false);
-		
-		try {
-			xhr.send();
-		}
-		catch (ex) {
-			Tools.Error("CustomProceduralTexture:Error on XHR send request.");
-		}*/
+		}, null, null, false, noConfigFile);		
 	}
 
 	override public function isReady():Bool {

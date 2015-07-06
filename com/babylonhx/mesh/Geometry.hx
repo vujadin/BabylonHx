@@ -29,7 +29,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _vertexBuffers:Map<String, VertexBuffer>;
 	private var _isDisposed:Bool = false;
 	public var _delayInfo:Array<String> = []; //ANY
-	private var _indexBuffer:BabylonBuffer;
+	private var _indexBuffer:WebGLBuffer;
 	public var _boundingInfo:BoundingInfo;
 	public var _delayLoadingFunction:Dynamic->Geometry->Void;
 	
@@ -54,24 +54,24 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 	}
 
-	public function getScene():Scene {
+	inline public function getScene():Scene {
 		return this._scene;
 	}
 
-	public function getEngine():Engine {
+	inline public function getEngine():Engine {
 		return this._engine;
 	}
 
-	public function isReady():Bool {
+	inline public function isReady():Bool {
 		return this.delayLoadState == Engine.DELAYLOADSTATE_LOADED || this.delayLoadState == Engine.DELAYLOADSTATE_NONE;
 	}
 
-	public function setAllVerticesData(vertexData:VertexData, updatable:Bool = false/*?updatable:Bool*/) {
+	public function setAllVerticesData(vertexData:VertexData, updatable:Bool = false) {
 		vertexData.applyToGeometry(this, updatable);
 		this.notifyUpdate();
 	}
 
-	public function setVerticesData(kind:String, data:Array<Float>, updatable:Bool = false/*?updatable:Bool*/, ?stride:Int) {
+	public function setVerticesData(kind:String, data:Array<Float>, updatable:Bool = false, ?stride:Int) {
 		this._vertexBuffers = this._vertexBuffers != null ? this._vertexBuffers : new Map<String, VertexBuffer>();
 		
 		if (this._vertexBuffers.exists(kind)) {
@@ -85,7 +85,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			
 			this._totalVertices = cast data.length / stride;
 			
-			var extend = Tools.ExtractMinAndMax(data, 0, this._totalVertices);
+			var extend:BabylonMinMax = Tools.ExtractMinAndMax(data, 0, this._totalVertices);
 			
 			var meshes = this._meshes;
 			var numOfMeshes = meshes.length;
@@ -101,18 +101,16 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this.notifyUpdate();
 	}
 
-	public function updateVerticesDataDirectly(kind:String, data:Float32Array, offset:Int) {
+	inline public function updateVerticesDataDirectly(kind:String, data:Float32Array, offset:Int) {
 		var vertexBuffer = this.getVertexBuffer(kind);
 		
 		if (vertexBuffer == null) {
-			return;
-		}
-		
-		vertexBuffer.updateDirectly(data, offset);
-		this.notifyUpdate();
+			vertexBuffer.updateDirectly(data, offset);
+			this.notifyUpdate();
+		}		
 	}
 
-	public function updateVerticesData(kind:String, data:Array<Float>, updateExtends:Bool = false/*?updateExtends:Bool*/, makeItUnique:Bool = false/*?makeItUnique:Bool*/) {
+	public function updateVerticesData(kind:String, data:Array<Float>, updateExtends:Bool = false, makeItUnique:Bool = false) {
 		var vertexBuffer = this.getVertexBuffer(kind);
 		
 		if (vertexBuffer == null) {
@@ -123,7 +121,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		if (kind == VertexBuffer.PositionKind) {
 			
-			var extend:Dynamic = null;
+			var extend:BabylonMinMax = null;
 			
 			var stride = vertexBuffer.getStrideSize();
 			this._totalVertices = cast data.length / stride;
@@ -159,12 +157,25 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return this._totalVertices;
 	}
 
-	public function getVerticesData(kind:String):Array<Float> {
-		var vertexBuffer = this.getVertexBuffer(kind);
+	public function getVerticesData(kind:String, copyWhenShared:Bool = false):Array<Float> {
+		var vertexBuffer:VertexBuffer = this.getVertexBuffer(kind);
 		if (vertexBuffer == null) {
 			return null;
 		}
-		return vertexBuffer.getData();
+		
+		var orig:Array<Float> = vertexBuffer.getData();
+		if (!copyWhenShared || this._meshes.length == 1){
+			return orig;
+		}
+		else {
+			var len = orig.length;
+			var copy:Array<Float> = [];
+			for (i in 0...len) {
+				copy.push(orig[i]);
+			}
+			
+			return copy;
+		}
 	}
 
 	public function getVertexBuffer(kind:String):VertexBuffer {
@@ -189,7 +200,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			}
 			return false;
 		}
-		return (this._vertexBuffers.exists(kind) && this._vertexBuffers[kind] != null);
+		return this._vertexBuffers[kind] != null;
 	}
 
 	public function getVerticesDataKinds():Array<String> {
@@ -198,7 +209,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			for (kind in this._delayInfo) {
 				result.push(kind);
 			}
-		} else {
+		} 
+		else {
 			for (kind in this._vertexBuffers.keys()) {
 				result.push(kind);
 			}
@@ -238,21 +250,34 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return this._indices.length;
 	}
 
-	public function getIndices():Array<Int> {
+	public function getIndices(copyWhenShared:Bool = false):Array<Int> {
 		if (!this.isReady()) {
 			return null;
 		}
-		return this._indices;
+		
+		var orig = this._indices;
+		if (!copyWhenShared || this._meshes.length == 1) {
+			return orig;
+		}
+		else {
+			var len = orig.length;
+			var copy:Array<Int> = [];
+			for (i in 0...len) {
+				copy.push(orig[i]);
+			}
+			
+			return copy;
+		}
 	}
 
-	public function getIndexBuffer():BabylonBuffer {
+	public function getIndexBuffer():WebGLBuffer {
 		if (!this.isReady()) {
 			return null;
 		}
 		return this._indexBuffer;
 	}
 
-	public function releaseForMesh(mesh:Mesh, shouldDispose:Bool = false/*?shouldDispose:Bool*/) {
+	public function releaseForMesh(mesh:Mesh, shouldDispose:Bool = false) {
 		var meshes = this._meshes;
 		var index = meshes.indexOf(mesh);
 		
@@ -298,7 +323,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		if (this.isReady()) {
 			this._applyToMesh(mesh);
-		} else {
+		} 
+		else {
 			mesh._boundingInfo = this._boundingInfo;
 		}
 	}

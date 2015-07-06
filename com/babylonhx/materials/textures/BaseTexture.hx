@@ -32,7 +32,7 @@ import com.babylonhx.utils.GL;
 	public var __smartArrayFlags:Array<Int>;
 
 	private var _scene:Scene;
-	public var _texture:BabylonTexture;
+	public var _texture:WebGLTexture;
 	
 
 	public function new(scene:Scene) {
@@ -52,7 +52,7 @@ import com.babylonhx.utils.GL;
 		return null;
 	}
 
-	public function getInternalTexture():BabylonTexture {
+	public function getInternalTexture():WebGLTexture {
 		return this._texture;
 	}
 
@@ -100,7 +100,7 @@ import com.babylonhx.utils.GL;
 	}*/
 
 	public function _removeFromCache(url:String, noMipmap:Bool) {
-		var texturesCache:Array<BabylonTexture> = this._scene.getEngine().getLoadedTexturesCache();
+		var texturesCache:Array<WebGLTexture> = this._scene.getEngine().getLoadedTexturesCache();
 		for (index in 0...texturesCache.length) {
 			var texturesCacheEntry = texturesCache[index];
 			
@@ -111,10 +111,10 @@ import com.babylonhx.utils.GL;
 		}
 	}
 
-	public function _getFromCache(url:String, noMipmap:Bool, ?sampling:Int):BabylonTexture {
-        var texturesCache:Array<BabylonTexture> = this._scene.getEngine().getLoadedTexturesCache();
+	public function _getFromCache(url:String, noMipmap:Bool, ?sampling:Int):WebGLTexture {
+        var texturesCache:Array<WebGLTexture> = this._scene.getEngine().getLoadedTexturesCache();
         for (index in 0...texturesCache.length) {
-            var texturesCacheEntry:BabylonTexture = texturesCache[index];
+            var texturesCacheEntry:WebGLTexture = texturesCache[index];
 			
             if (texturesCacheEntry.url == url && texturesCacheEntry.noMipmap == noMipmap) {
 				if(sampling == null || sampling == texturesCacheEntry.samplingMode) {
@@ -135,7 +135,7 @@ import com.babylonhx.utils.GL;
             return;
         }
 		
-        var texturesCache:Array<BabylonTexture> = this._scene.getEngine().getLoadedTexturesCache();
+        var texturesCache:Array<WebGLTexture> = this._scene.getEngine().getLoadedTexturesCache();
         this._texture.references--;
 		
         // Final reference ?

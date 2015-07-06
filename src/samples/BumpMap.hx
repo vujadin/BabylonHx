@@ -16,21 +16,23 @@ import com.babylonhx.Scene;
 class BumpMap {
 
 	public function new(scene:Scene) {
-		var camera = new ArcRotateCamera("Camera", 0, 0, 10, Vector3.Zero(), scene);
-		var light = new PointLight("Omni", new Vector3(20, 100, 2), scene);
-		var sphere = Mesh.CreateSphere("Sphere", 16, 3, scene);
+		var camera = new ArcRotateCamera("Camera", 0, 0, 25, Vector3.Zero(), scene);
+		camera.attachControl();
+		var light = new PointLight("Omni", new Vector3( -60, 60, 80), scene);
+		var box = Mesh.CreateBox("box", 4.0, scene);
 		var material = new StandardMaterial("kosh", scene);
-		material.bumpTexture = new Texture("assets/img/normalMap.jpg", scene);
-		material.bumpTexture.level = 1.0;
-		material.diffuseColor = new Color3(1, 0, 0);
+		material.diffuseTexture = new Texture("assets/img/DiffuseMap.jpg", scene);
+		material.bumpTexture = new Texture("assets/img/NormalMap.jpg", scene);
+		//material.bumpTexture.level = 1.0;
 		
-		sphere.material = material;
+		box.material = material;
 		
-		camera.setPosition(new Vector3(-5, 5, 0));
+		camera.setPosition(new Vector3(0, 10, 5));
 		
 		// Animations
 		scene.registerBeforeRender(function() {
-			sphere.rotation.y += 0.02;
+			//box.rotation.y += 0.01;
+			light.position = camera.position;
 		});
 		
 		scene.getEngine().runRenderLoop(function () {

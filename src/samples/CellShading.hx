@@ -4,6 +4,7 @@ import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.lights.PointLight;
 import com.babylonhx.materials.ShaderMaterial;
 import com.babylonhx.materials.textures.Texture;
+import com.babylonhx.layer.Layer;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
@@ -16,7 +17,12 @@ class CellShading {
 
 	public function new(scene:Scene) {
 		var camera = new ArcRotateCamera("Camera", 0, Math.PI / 4, 40, Vector3.Zero(), scene);
+		camera.attachControl();
+		
 		var light = new PointLight("Omni", new Vector3(20, 100, 2), scene);
+		
+		new Layer("background", "assets/img/graygrad.jpg", scene, true);
+		
 		var sphere = Mesh.CreateSphere("Sphere0", 32, 3, scene);
 		var cylinder = Mesh.CreateCylinder("Sphere1", 5, 3, 2, 32, 1, scene);
 		var torus = Mesh.CreateTorus("Sphere2", 3, 1, 32, scene);
@@ -26,7 +32,7 @@ class CellShading {
 			uniforms: ["world", "viewProjection"],
 			samplers: ["textureSampler"]
 		});
-		cellShadingMaterial.setTexture("textureSampler", new Texture("assets/img/grass.jpg", scene))
+		cellShadingMaterial.setTexture("textureSampler", new Texture("assets/img/blue.jpg", scene))
 						   .setVector3("vLightPosition", light.position)
 						   .setFloats("ToonThresholds", [0.95, 0.5, 0.2, 0.03])
 						   .setFloats("ToonBrightnessLevels", [1.0, 0.8, 0.6, 0.35, 0.01])

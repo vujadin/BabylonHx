@@ -56,7 +56,7 @@ import com.babylonhx.mesh.SubMesh;
 			for (subIndex in 0...this._transparentSubMeshes.length) {
 				submesh = this._transparentSubMeshes.data[subIndex];
 				submesh._alphaIndex = submesh.getMesh().alphaIndex;
-				submesh._distanceToCamera = submesh.getBoundingInfo().boundingSphere.centerWorld.subtract(this._scene.activeCamera.position).length();
+				submesh._distanceToCamera = submesh.getBoundingInfo().boundingSphere.centerWorld.subtract(this._scene.activeCamera.globalPosition).length();
 			}
 			
 			var sortedArray = this._transparentSubMeshes.data.slice(0, this._transparentSubMeshes.length);

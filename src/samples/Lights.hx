@@ -4,11 +4,10 @@ import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.lights.DirectionalLight;
 import com.babylonhx.lights.PointLight;
 import com.babylonhx.materials.StandardMaterial;
-import com.babylonhx.materials.textures.CubeTexture;
-import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
+import com.babylonhx.layer.Layer;
 import com.babylonhx.Scene;
 
 /**
@@ -22,6 +21,8 @@ class Lights {
 		var camera = new ArcRotateCamera("Camera", 0, 0, 10, Vector3.Zero(), scene);
 		camera.setPosition(new Vector3(-10, 10, 0));
 		camera.attachControl(this, true);
+		
+		new Layer("background", "assets/img/graygrad.jpg", scene, true);
 		
 		// Lights
 		var light0 = new PointLight("Omni0", new Vector3(0, 10, 0), scene);
@@ -68,18 +69,7 @@ class Lights {
 		
 		light3.diffuse = new Color3(1, 1, 1);
 		light3.specular = new Color3(1, 1, 1);
-		
-		// Skybox
-		var skybox = Mesh.CreateBox("skyBox", 100.0, scene);
-		var skyboxMaterial = new StandardMaterial("skyBox", scene);
-		skyboxMaterial.backFaceCulling = false;
-		skyboxMaterial.reflectionTexture = new CubeTexture("img/skybox/skybox", scene);
-		skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
-		skyboxMaterial.diffuseColor = new Color3(0, 0, 0);
-		skyboxMaterial.specularColor = new Color3(0, 0, 0);
-		skybox.material = skyboxMaterial;
-		skybox.infiniteDistance = true;
-				
+						
 		// Animations
 		var alpha = 0.0;
 		scene.beforeRender = function () {

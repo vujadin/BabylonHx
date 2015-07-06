@@ -18,7 +18,7 @@ import com.babylonhx.math.Ray;
 	public var alpha:Float = 1;
 
 	private var _colorShader:ShaderMaterial;
-	private var _ib:BabylonBuffer;
+	private var _ib:WebGLBuffer;
 
 	private var _indicesLength:Int;
 	private var _indices:Array<Int> = [];

@@ -1,7 +1,7 @@
 package com.babylonhx;
 
 import com.babylonhx.cameras.Camera;
-import com.babylonhx.materials.textures.BabylonTexture;
+import com.babylonhx.materials.textures.WebGLTexture;
 import com.babylonhx.materials.textures.VideoTexture;
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.materials.textures.Texture;
@@ -10,7 +10,7 @@ import com.babylonhx.materials.EffectFallbacks;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Matrix;
-import com.babylonhx.mesh.BabylonBuffer;
+import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.math.Viewport;
 import com.babylonhx.postprocess.PostProcess;
@@ -24,12 +24,15 @@ import com.babylonhx.utils.typedarray.Int16Array;
 import com.babylonhx.utils.typedarray.ArrayBufferView;
 import com.babylonhx.utils.Image;
 
-#if openfl
-import openfl.display.OpenGLView;
+
+#if (js || purejs)
+import js.Browser;
 #end
 
-#if js
-import js.Browser;
+#if openfl
+import openfl.display.OpenGLView;
+#elseif nme
+import nme.display.OpenGLView;
 #end
 
 /**
@@ -61,7 +64,7 @@ import js.Browser;
 	public static var Version:String = "2.0.0";
 
 	// Updatable statics so stick with vars here
-	public static var Epsilon:Float = 0.001;
+	public static inline var Epsilon:Float = 0.001;
 	public static var CollisionsEpsilon:Float = 0.001;
 	public static var ShadersRepository:String = "assets/shaders/";
 
@@ -83,7 +86,7 @@ import js.Browser;
 	private var _onFullscreenChange:Void->Void;
 	private var _onPointerLockChange:Void->Void;
 
-	private var _hardwareScalingLevel:Int;
+	private var _hardwareScalingLevel:Float;
 	private var _caps:EngineCapabilities;
 	private var _pointerLockRequested:Bool;
 	private var _alphaTest:Bool;
@@ -98,6 +101,7 @@ import js.Browser;
     }
 	
 	private var _glVersion:String;
+	private var _glExtensions:Array<String>;
     private var _glRenderer:String;
     private var _glVendor:String;
 	
@@ -116,16 +120,16 @@ import js.Browser;
 	private var _alphaMode:Int = Engine.ALPHA_DISABLE;
 
 	// Cache
-	private var _loadedTexturesCache:Array<BabylonTexture> = [];
+	private var _loadedTexturesCache:Array<WebGLTexture> = [];
 	public var _activeTexturesCache:Array<BaseTexture> =[];
 	private var _currentEffect:Effect;
 	private var _compiledEffects:Map<String, Effect> = new Map<String, Effect>();
 	private var _vertexAttribArrays:Array<Bool>;
 	private var _cachedViewport:Viewport;
 	private var _cachedVertexBuffers:Dynamic;
-	private var _cachedIndexBuffer:BabylonBuffer;
+	private var _cachedIndexBuffer:WebGLBuffer;
 	private var _cachedEffectForVertexBuffers:Effect;
-	private var _currentRenderTarget:BabylonTexture;
+	private var _currentRenderTarget:WebGLTexture;
 
 	public var _canvasClientRect:Dynamic = { x: 0, y: 0, width: 800, height: 600 };
 
@@ -145,36 +149,46 @@ import js.Browser;
 	public static var touchMove:Array<Dynamic> = [];
 	public static var keyUp:Array<Dynamic> = [];
 	public static var keyDown:Array<Dynamic> = [];
-
-	#if openfl
+	
+	#if (openfl || nme)
 	public var _workingContext:OpenGLView; 
 	#end
-
-	#if lime
+	
+	#if (lime || nme)
 	public var width:Int;
 	public var height:Int;
 	#end
-
 	
+		
 	public function new(canvas:Dynamic, antialias:Bool = false, ?options:Dynamic) {
+		trace("BabylonHx - Cross-Platform 3D Engine | " + Date.now().getFullYear() + " | www.babylonhx.com");
+		
 		Engine.app = canvas;
 		this._renderingCanvas = canvas;
 		this._canvasClientRect.width = 800;// canvas.width;
 		this._canvasClientRect.height = 600;// canvas.height;
 		
-		// TODO: make it for Snow also ??
-		#if lime
-		this.width = 800;
-		this.height = 600;
+		#if purejs
+		GL.context = cast(canvas, js.html.CanvasElement).getContextWebGL();
 		#end
-
-		#if openfl
+		
+		#if (openfl || nme)
 		this._workingContext = new OpenGLView();
 		canvas.addChild(this._workingContext);
 		#end
 		
+		// TODO: make it for Snow also ??
+		#if (lime || nme)
+		this.width = 800;
+		this.height = 600;
+		#end
+		
 		options = options != null ? options : {};
 		options.antialias = antialias;
+		
+		if (options.preserveDrawingBuffer == null) {
+            options.preserveDrawingBuffer = false;
+        }
 				
 		this._onBlur = function() {
 			this._windowIsBackground = true;
@@ -185,8 +199,11 @@ import js.Browser;
 		};
 				
 		// Viewport
-		// TODO
-		this._hardwareScalingLevel = 1;// Std.int(1.0 / (Capabilities.pixelAspectRatio));		
+		#if purejs
+		this._hardwareScalingLevel = 1.0 / (untyped Browser.window.devicePixelRatio || 1.0); 
+		#else
+		this._hardwareScalingLevel = 1;// Std.int(1.0 / (Capabilities.pixelAspectRatio));	
+		#end
         this.resize();
 		
 		// Caps
@@ -198,7 +215,8 @@ import js.Browser;
 		
 		// Infos
 		this._glVersion = GL.getParameter(GL.VERSION);
-				
+		this._glExtensions = GL.getSupportedExtensions();
+						
 		// Extensions
 		try {
 			this._caps.standardDerivatives = (GL.getExtension('OES_standard_derivatives') != null);
@@ -216,13 +234,13 @@ import js.Browser;
 		} catch (err:Dynamic) {
 			//trace(err);
 		}
-		#if !js
+		#if (!js && !purejs)
 			if (this._caps.s3tc == null) {
-				this._caps.s3tc = GL.getExtension('GL_EXT_texture_compression_s3tc');
+				this._caps.s3tc = this._glExtensions.indexOf("GL_EXT_texture_compression_s3tc") != -1;
 			}
 			if (this._caps.textureAnisotropicFilterExtension == null || this._caps.textureAnisotropicFilterExtension == false) {
 				
-				this._caps.textureAnisotropicFilterExtension = GL.getExtension('GL_EXT_texture_filter_anisotropic');
+				this._caps.textureAnisotropicFilterExtension = this._glExtensions.indexOf("GL_EXT_texture_filter_anisotropic") != -1;
 			}
 			if (this._caps.maxRenderTextureSize == 0) {
 				this._caps.maxRenderTextureSize = 16384;
@@ -232,9 +250,6 @@ import js.Browser;
 			}
 			if (this._caps.maxTextureSize == 0) {
 				this._caps.maxTextureSize = 16384;
-			}
-			if (this._caps.textureFloat == null) {
-				this._caps.textureFloat = true;
 			}
 			if (this._caps.uintIndices == null) {
 				this._caps.uintIndices = true;
@@ -246,13 +261,9 @@ import js.Browser;
 				this._caps.maxAnisotropy = 16;
 			}
 			if (this._caps.textureFloat == false) {
-				this._caps.textureFloat = GL.getExtension('GL_ARB_texture_float');
+				this._caps.textureFloat = this._glExtensions.indexOf("GL_ARB_texture_float") != -1;
 			}
-		#end
-		
-		/*for (ext in GL.getSupportedExtensions()) {
-			trace(ext);
-		}*/		
+		#end	
 				
 		// Depth buffer
 		this.setDepthBuffer(true);
@@ -265,6 +276,10 @@ import js.Browser;
 		// Pointer lock
 		this.isPointerLock = false;		
 	}
+	
+	public function getExtensions():Array<String> {
+		return this._glExtensions;
+	}
 
 	public function getAspectRatio(camera:Camera):Float {
 		var viewport = camera.viewport;
@@ -275,7 +290,7 @@ import js.Browser;
 		/*if (this._currentRenderTarget != null) {
 			return Std.int(this._currentRenderTarget._width);
 		}*/
-		#if lime
+		#if (lime || nme)
 		return width;
 		#else
 		return app.width;
@@ -286,7 +301,7 @@ import js.Browser;
 		/*if (this._currentRenderTarget != null) {
 			return Std.int(this._currentRenderTarget._height);
 		}*/
-		#if lime
+		#if (lime || nme)
 		return height;
 		#else
 		return app.height;
@@ -297,16 +312,16 @@ import js.Browser;
 		return this._renderingCanvas;
 	}
 
-	public function setHardwareScalingLevel(level:Int) {
+	public function setHardwareScalingLevel(level:Float) {
 		this._hardwareScalingLevel = level;
 		this.resize();
 	}
 
-	public function getHardwareScalingLevel():Int {
+	public function getHardwareScalingLevel():Float {
 		return this._hardwareScalingLevel;
 	}
 
-	public function getLoadedTexturesCache():Array<BabylonTexture> {
+	public function getLoadedTexturesCache():Array<WebGLTexture> {
 		return this._loadedTexturesCache;
 	}
 
@@ -340,22 +355,31 @@ import js.Browser;
 		this._runningLoop = false;
 	}
 
-	inline public function _renderLoop() {
+	public function _renderLoop(?rect:Dynamic) {
         // Start new frame
         this.beginFrame();
         if (this._renderFunction != null) {
-            this._renderFunction();			
+            this._renderFunction();
         }
 		
         // Present
         this.endFrame();
+		
+		#if purejs
+		Browser.window.requestAnimationFrame(untyped _renderLoop);
+		#end
     }
 
 	inline public function runRenderLoop(renderFunction:Dynamic) {
 		this._runningLoop = true;
 		this._renderFunction = renderFunction;
-		#if openfl
+		
+		#if (openfl || nme)
 		this._workingContext.render = this._renderLoop;
+		#end
+		
+		#if purejs
+		this._renderLoop();
 		#end
 	}
 
@@ -374,7 +398,8 @@ import js.Browser;
 		
 		if(Std.is(color, Color4)) {
 			GL.clearColor(color.r, color.g, color.b, color.a);
-		} else {
+		} 
+		else {
 			GL.clearColor(color.r, color.g, color.b, 1.0);
 		}
 		
@@ -417,7 +442,7 @@ import js.Browser;
 	}
 
 	inline public function endFrame() {
-		this.flushFramebuffer();
+		//this.flushFramebuffer();
 	}
 	
 	// FPS
@@ -454,15 +479,24 @@ import js.Browser;
     }
 
 	public function resize() {
-		//this.setSize(this._renderingCanvas.clientWidth / this._hardwareScalingLevel, this._renderingCanvas.clientHeight / this._hardwareScalingLevel);
+		#if purejs
+		var width = untyped Browser.navigator.isCocoonJS ? Browser.window.innerWidth : this._renderingCanvas.clientWidth;
+		var height = untyped Browser.navigator.isCocoonJS ? Browser.window.innerHeight : this._renderingCanvas.clientHeight;
+		
+		this.setSize(Std.int(width / this._hardwareScalingLevel), Std.int(height / this._hardwareScalingLevel));
+		#end
 	}
-
+	
+	/**
+	 * force a specific size of the canvas
+	 * @param {number} width - the new canvas' width
+	 * @param {number} height - the new canvas' height
+	 */
 	public function setSize(width:Int, height:Int) {
-		/*this._renderingCanvas.width = width;
+		#if purejs
+		this._renderingCanvas.width = width;
 		this._renderingCanvas.height = height;
-		
-		this._canvasClientRect = this._renderingCanvas.getBoundingClientRect();
-		
+				
 		for (index in 0...this.scenes.length) {
             var scene = this.scenes[index];
 			
@@ -470,10 +504,11 @@ import js.Browser;
                 var cam = scene.cameras[camIndex];
                 cam._currentRenderId = 0;
             }
-        }*/
+        }
+		#end
 	}
 
-	public function bindFramebuffer(texture:BabylonTexture) {
+	public function bindFramebuffer(texture:WebGLTexture) {
 		this._currentRenderTarget = texture;
 		
 		GL.bindFramebuffer(GL.FRAMEBUFFER, texture._framebuffer);
@@ -482,7 +517,7 @@ import js.Browser;
 		this.wipeCaches();
 	}
 
-	inline public function unBindFramebuffer(texture:BabylonTexture) {
+	inline public function unBindFramebuffer(texture:WebGLTexture) {
 		this._currentRenderTarget = null;
 		if (texture.generateMipMaps) {
 			GL.bindTexture(GL.TEXTURE_2D, texture.data);
@@ -509,32 +544,33 @@ import js.Browser;
 		this._cachedVertexBuffers = null;
 	}
 
-	inline public function createVertexBuffer(vertices:Array<Float>):BabylonBuffer {
+	inline public function createVertexBuffer(vertices:Array<Float>):WebGLBuffer {
 		var vbo = GL.createBuffer();
 		GL.bindBuffer(GL.ARRAY_BUFFER, vbo);
 		GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(vertices), GL.STATIC_DRAW);
 		this._resetVertexBufferBinding();
-		var ret = new BabylonBuffer(vbo);
+		var ret = new WebGLBuffer(vbo);
 		ret.references = 1;
 		return ret;
 	}
 
-	inline public function createDynamicVertexBuffer(capacity:Int):BabylonBuffer {
+	inline public function createDynamicVertexBuffer(capacity:Int):WebGLBuffer {
 		var vbo = GL.createBuffer();
 		GL.bindBuffer(GL.ARRAY_BUFFER, vbo);
 		GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(capacity), GL.DYNAMIC_DRAW);
 		this._resetVertexBufferBinding();
-		var ret = new BabylonBuffer(vbo);
+		var ret = new WebGLBuffer(vbo);
 		ret.references = 1;
 		return ret;
 	}
 
-	inline public function updateDynamicVertexBuffer(vertexBuffer:BabylonBuffer, vertices:Dynamic, offset:Int = 0) {
+	inline public function updateDynamicVertexBuffer(vertexBuffer:WebGLBuffer, vertices:Dynamic, offset:Int = 0) {
 		GL.bindBuffer(GL.ARRAY_BUFFER, vertexBuffer.buffer);
 		
 		if (!Std.is(vertices, Array)) {
 			GL.bufferSubData(GL.ARRAY_BUFFER, offset, vertices);
-		} else {
+		} 
+		else {
 			GL.bufferSubData(GL.ARRAY_BUFFER, offset, new Float32Array(cast vertices));
 		}
 		
@@ -546,7 +582,7 @@ import js.Browser;
 		this._cachedIndexBuffer = null;
 	}
 
-	inline public function createIndexBuffer(indices:Array<Int>):BabylonBuffer {
+	inline public function createIndexBuffer(indices:Array<Int>):WebGLBuffer {
 		var vbo = GL.createBuffer();		
 		GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, vbo);
 		
@@ -564,19 +600,20 @@ import js.Browser;
 			}
 			
 			arrayBuffer = need32Bits ? new Int32Array(indices) : new Int16Array(indices);
-		} else {
+		} 
+		else {
 			arrayBuffer = new Int16Array(indices);
 		}
 		
 		GL.bufferData(GL.ELEMENT_ARRAY_BUFFER, arrayBuffer, GL.STATIC_DRAW);
 		this._resetIndexBufferBinding();
-		var ret = new BabylonBuffer(vbo);
+		var ret = new WebGLBuffer(vbo);
 		ret.references = 1;
 		ret.is32Bits = need32Bits;
 		return ret;
 	}
 
-	inline public function bindBuffers(vertexBuffer:BabylonBuffer, indexBuffer:BabylonBuffer, vertexDeclaration:Array<Int>, vertexStrideSize:Int, effect:Effect) {
+	inline public function bindBuffers(vertexBuffer:WebGLBuffer, indexBuffer:WebGLBuffer, vertexDeclaration:Array<Int>, vertexStrideSize:Int, effect:Effect) {
 		if (this._cachedVertexBuffers != vertexBuffer || this._cachedEffectForVertexBuffers != effect) {
 			this._cachedVertexBuffers = vertexBuffer;
 			this._cachedEffectForVertexBuffers = effect;
@@ -601,7 +638,7 @@ import js.Browser;
 		}
 	}
 	
-	inline public function bindMultiBuffers(vertexBuffers:Map<String, VertexBuffer>, indexBuffer:BabylonBuffer, effect:Effect) {
+	inline public function bindMultiBuffers(vertexBuffers:Map<String, VertexBuffer>, indexBuffer:WebGLBuffer, effect:Effect) {
         if (this._cachedVertexBuffers != vertexBuffers || this._cachedEffectForVertexBuffers != effect) {
             this._cachedVertexBuffers = vertexBuffers;
             this._cachedEffectForVertexBuffers = effect;
@@ -631,7 +668,7 @@ import js.Browser;
         }
     }
 
-	inline public function _releaseBuffer(buffer:BabylonBuffer):Bool {
+	inline public function _releaseBuffer(buffer:WebGLBuffer):Bool {
 		buffer.references--;
 		
 		if (buffer.references == 0) {
@@ -642,8 +679,8 @@ import js.Browser;
 		return false;
 	}
 
-	inline public function createInstancesBuffer(capacity:Int):BabylonBuffer {
-		var buffer = new BabylonBuffer(GL.createBuffer());
+	inline public function createInstancesBuffer(capacity:Int):WebGLBuffer {
+		var buffer = new WebGLBuffer(GL.createBuffer());
 		
 		buffer.capacity = capacity;
 		
@@ -652,13 +689,13 @@ import js.Browser;
 		return buffer;
 	}
 
-	public function deleteInstancesBuffer(buffer:BabylonBuffer) {
+	public function deleteInstancesBuffer(buffer:WebGLBuffer) {
 		GL.deleteBuffer(buffer.buffer);
 		buffer = null;
 	}
 
 
-	public function updateAndBindInstancesBuffer(instancesBuffer:BabylonBuffer, data: #if html5 Float32Array #else Array<Float> #end , offsetLocations:Array<Int>) {
+	public function updateAndBindInstancesBuffer(instancesBuffer:WebGLBuffer, data: #if (js || purejs) Float32Array #else Array<Float> #end , offsetLocations:Array<Int>) {
 		GL.bindBuffer(GL.ARRAY_BUFFER, instancesBuffer.buffer);
 		GL.bufferSubData(GL.ARRAY_BUFFER, 0, cast data);
 				
@@ -670,7 +707,7 @@ import js.Browser;
 		}
 	}
 
-	public function unBindInstancesBuffer(instancesBuffer:BabylonBuffer, offsetLocations:Array<Int>) {
+	public function unBindInstancesBuffer(instancesBuffer:WebGLBuffer, offsetLocations:Array<Int>) {
 		GL.bindBuffer(GL.ARRAY_BUFFER, instancesBuffer.buffer);
 		for (index in 0...4) {
 			var offsetLocation = offsetLocations[index];
@@ -690,12 +727,13 @@ import js.Browser;
 						
 		// Render
 		var indexFormat = this._uintIndicesCurrentlySet ? GL.UNSIGNED_INT : GL.UNSIGNED_SHORT;
+		var mult:Int = this._uintIndicesCurrentlySet ? 4 : 2;
 		if (instancesCount != null) {
-			this._caps.instancedArrays.drawElementsInstancedANGLE(useTriangles ? GL.TRIANGLES : GL.LINES, indexCount, indexFormat, indexStart * 2, instancesCount);
+			this._caps.instancedArrays.drawElementsInstancedANGLE(useTriangles ? GL.TRIANGLES : GL.LINES, indexCount, indexFormat, indexStart * mult, instancesCount);
 			return;
 		}
 		
-		GL.drawElements(useTriangles ? GL.TRIANGLES : GL.LINES, indexCount, indexFormat, indexStart * 2);
+		GL.drawElements(useTriangles ? GL.TRIANGLES : GL.LINES, indexCount, indexFormat, indexStart * mult);
 		
 		this._drawCalls++;
 	}
@@ -787,7 +825,7 @@ import js.Browser;
 		return shaderProgram;
 	}
 
-	public function getUniforms(shaderProgram:GLProgram, uniformsNames:Array<String>):Array<GLUniformLocation> {
+	inline public function getUniforms(shaderProgram:GLProgram, uniformsNames:Array<String>):Array<GLUniformLocation> {
 		var results:Array<GLUniformLocation> = [];
 		
 		for (index in 0...uniformsNames.length) {
@@ -797,7 +835,7 @@ import js.Browser;
         return results;
 	}
 
-	public function getAttributes(shaderProgram:GLProgram, attributesNames:Array<String>):Array<Int> {
+	inline public function getAttributes(shaderProgram:GLProgram, attributesNames:Array<String>):Array<Int> {
         var results:Array<Int> = [];
         for (index in 0...attributesNames.length) {
             try {
@@ -871,12 +909,12 @@ import js.Browser;
 		}
     }
 
-	inline public function setMatrices(uniform:GLUniformLocation, matrices: #if html5 Float32Array #else Array<Float> #end ) {
-		GL.uniformMatrix4fv(uniform, false, #if html5 matrices #else new Float32Array(matrices) #end);
+	inline public function setMatrices(uniform:GLUniformLocation, matrices: #if (js || purejs) Float32Array #else Array<Float> #end ) {
+		GL.uniformMatrix4fv(uniform, false, #if (js || purejs) matrices #else new Float32Array(matrices) #end);
 	}
 
 	inline public function setMatrix(uniform:GLUniformLocation, matrix:Matrix) {
-		GL.uniformMatrix4fv(uniform, false, #if html5 matrix.toArray() #else new Float32Array(matrix.toArray()) #end );
+		GL.uniformMatrix4fv(uniform, false, #if (js || purejs) matrix.toArray() #else new Float32Array(matrix.toArray()) #end );
 	}
 
 	inline public function setFloat(uniform:GLUniformLocation, value:Float) {
@@ -908,31 +946,35 @@ import js.Browser;
 	}
 
 	// States
-	inline public function setState(culling:Bool, force:Bool = false) {
+	inline public function setState(culling:Bool, zOffset:Float = 0, force:Bool = false) {
 		// Culling        
 		if (this._depthCullingState.cull != culling || force) {
 			if (culling) {
 				this._depthCullingState.cullFace = this.cullBackFaces ? GL.BACK : GL.FRONT;
 				this._depthCullingState.cull = true;
-			} else {
+			} 
+			else {
 				this._depthCullingState.cull = false;
 			}
 		}
+		
+		// Z offset
+		this._depthCullingState.zOffset = zOffset;
 	}
 
-	public function setDepthBuffer(enable:Bool) {
+	inline public function setDepthBuffer(enable:Bool) {
 		this._depthCullingState.depthTest = enable;
 	}
 
-	public function getDepthWrite():Bool {
+	inline public function getDepthWrite():Bool {
 		return this._depthCullingState.depthMask;
 	}
 
-	public function setDepthWrite(enable:Bool) {
+	inline public function setDepthWrite(enable:Bool) {
 		this._depthCullingState.depthMask = enable;
 	}
 
-	public function setColorWrite(enable:Bool) {
+	inline public function setColorWrite(enable:Bool) {
 		GL.colorMask(enable, enable, enable, enable);
 	}
 
@@ -957,15 +999,15 @@ import js.Browser;
 		this._alphaMode = mode;
 	}
 	
-	public function getAlphaMode():Int {
+	inline public function getAlphaMode():Int {
         return this._alphaMode;
     }
 
-	public function setAlphaTesting(enable:Bool) {
+	inline public function setAlphaTesting(enable:Bool) {
 		this._alphaTest = enable;
 	}
 
-	public function getAlphaTesting():Bool {
+	inline public function getAlphaTesting():Bool {
 		return this._alphaTest;
 	}
 
@@ -982,7 +1024,7 @@ import js.Browser;
 		this._cachedEffectForVertexBuffers = null;
 	}
 
-	public function setSamplingMode(texture:GLTexture, samplingMode:Int) {
+	inline public function setSamplingMode(texture:GLTexture, samplingMode:Int) {
 		GL.bindTexture(GL.TEXTURE_2D, texture);
 		
 		var magFilter = GL.NEAREST;
@@ -991,7 +1033,8 @@ import js.Browser;
 		if (samplingMode == Texture.BILINEAR_SAMPLINGMODE) {
 			magFilter = GL.LINEAR;
 			minFilter = GL.LINEAR;
-		} else if (samplingMode == Texture.TRILINEAR_SAMPLINGMODE) {
+		} 
+		else if (samplingMode == Texture.TRILINEAR_SAMPLINGMODE) {
 			magFilter = GL.LINEAR;
 			minFilter = GL.LINEAR_MIPMAP_LINEAR;
 		}
@@ -1002,9 +1045,9 @@ import js.Browser;
 		GL.bindTexture(GL.TEXTURE_2D, null);
 	}
 	
-	public function createTexture(url:String, noMipmap:Bool, invertY:Bool, scene:Scene, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, onLoad:Void->Void = null, onError:Void->Void = null, buffer:Dynamic = null):BabylonTexture {
+	public function createTexture(url:String, noMipmap:Bool, invertY:Bool, scene:Scene, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, onLoad:Void->Void = null, onError:Void->Void = null, buffer:Dynamic = null):WebGLTexture {
 		
-		var texture = new BabylonTexture(url, GL.createTexture());
+		var texture = new WebGLTexture(url, GL.createTexture());
 		
 		var extension:String = "";
 		var fromData:Dynamic = null;
@@ -1012,8 +1055,9 @@ import js.Browser;
 			fromData = true;
 		}
 		
-		if (fromData == null)
+		if (fromData == null) {
 			extension = url.substr(url.length - 4, 4).toLowerCase();
+		}
 		else {
 			var oldUrl = url;
 			fromData = oldUrl.split(':');
@@ -1028,9 +1072,10 @@ import js.Browser;
 		texture.url = url;
 		texture.noMipmap = noMipmap;
 		texture.references = 1;
+		texture.samplingMode = samplingMode;
 		this._loadedTexturesCache.push(texture);
 		
-		var onerror = function() {
+		var onerror = function(e:Dynamic) {
 			scene._removePendingData(texture);
 			
 			if (onError != null) {
@@ -1084,13 +1129,7 @@ import js.Browser;
 				
 		} else {
 			var onload = function(img:Image) {
-				prepareTexture(texture, GL, scene, img.width, img.height, invertY, noMipmap, false, function(potWidth:Int, potHeight:Int) {
-					//this._workingCanvas = invertY ? flipBitmapData(img) : img;
-					/*var isPot = (img.width == potWidth && img.height == potHeight);
-					if (!isPot) {
-						this._workingCanvas = getScaled(img, potWidth, potHeight);
-					}*/
-					
+				prepareTexture(texture, GL, scene, img.width, img.height, invertY, noMipmap, false, function(potWidth:Int, potHeight:Int) {	
 					GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, potWidth, potHeight, 0, GL.RGBA, GL.UNSIGNED_BYTE, img.data);
 					
 					if (onLoad != null) {
@@ -1099,10 +1138,12 @@ import js.Browser;
 				}, samplingMode);				
 			};
 			
-			if (!Std.is(fromData, Array))
+			if (!Std.is(fromData, Array)) {
 				Tools.LoadImage(url, onload, onerror, scene.database);
-			else
+			}
+			else {
 				Tools.LoadImage(buffer, onload, onerror, scene.database);
+			}
 		}
 		
 		return texture;
@@ -1120,13 +1161,13 @@ import js.Browser;
 		return bd;
 	}*/
 		
-	public function createRawTexture(data:ArrayBufferView, width:Int, height:Int, format:Int, generateMipMaps:Bool, invertY:Bool, samplingMode:Int):BabylonTexture {
+	public function createRawTexture(data:ArrayBufferView, width:Int, height:Int, format:Int, generateMipMaps:Bool, invertY:Bool, samplingMode:Int):WebGLTexture {
 		
-		var texture = new BabylonTexture("", GL.createTexture());
+		var texture = new WebGLTexture("", GL.createTexture());
 		GL.bindTexture(GL.TEXTURE_2D, texture.data);
-		#if js
+		/*#if js
 		GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 1 : 0);
-		#end
+		#end*/
 		
 		// Format
 		var internalFormat = GL.RGBA;
@@ -1176,8 +1217,8 @@ import js.Browser;
 		return texture;
 	}
 
-	public function createDynamicTexture(width:Int, height:Int, generateMipMaps:Bool, samplingMode:Int):BabylonTexture {
-		var texture = new BabylonTexture("", GL.createTexture());
+	public function createDynamicTexture(width:Int, height:Int, generateMipMaps:Bool, samplingMode:Int):WebGLTexture {
+		var texture = new WebGLTexture("", GL.createTexture());
 		
 		width = Tools.GetExponantOfTwo(width, this._caps.maxTextureSize);
 		height = Tools.GetExponantOfTwo(height, this._caps.maxTextureSize);
@@ -1199,7 +1240,7 @@ import js.Browser;
 		return texture;
 	}
 	
-	public function updateDynamicTexture(texture:BabylonTexture, canvas:Image, invertY:Bool) {
+	inline public function updateDynamicTexture(texture:WebGLTexture, canvas:Image, invertY:Bool) {
 		GL.bindTexture(GL.TEXTURE_2D, texture.data);
 		//GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 1 : 0);
 		GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, canvas.width, canvas.height, 0, GL.RGBA, GL.UNSIGNED_BYTE, cast canvas.data);
@@ -1211,7 +1252,7 @@ import js.Browser;
 		texture.isReady = true;
 	}
 	
-	public function updateTextureSamplingMode(samplingMode:Int, texture:BabylonTexture) {
+	inline public function updateTextureSamplingMode(samplingMode:Int, texture:WebGLTexture) {
 		var filters = getSamplingParameters(samplingMode, texture.generateMipMaps);
 		
 		GL.bindTexture(GL.TEXTURE_2D, texture.data);
@@ -1220,8 +1261,39 @@ import js.Browser;
 		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, filters.min);
 		GL.bindTexture(GL.TEXTURE_2D, null);
 	}
+	
+	inline public function updateRawTexture(texture:WebGLTexture, data:ArrayBufferView, format:Int, size:Dynamic, invertY:Bool = false) {
+		var internalFormat = GL.RGBA;
+		switch (format) {
+			case Engine.TEXTUREFORMAT_ALPHA:
+				internalFormat = GL.ALPHA;
+				
+			case Engine.TEXTUREFORMAT_LUMINANCE:
+				internalFormat = GL.LUMINANCE;
+				
+			case Engine.TEXTUREFORMAT_LUMINANCE_ALPHA:
+				internalFormat = GL.LUMINANCE_ALPHA;
+				
+			case Engine.TEXTUREFORMAT_RGB:
+				internalFormat = GL.RGB;
+				
+			case Engine.TEXTUREFORMAT_RGBA:
+				internalFormat = GL.RGBA;
+				
+		}
+		
+		GL.bindTexture(GL.TEXTURE_2D, texture.data);
+		//GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 1 : 0);           
+		GL.texImage2D(GL.TEXTURE_2D, 0, internalFormat, size.width, size.height, 0, internalFormat, GL.UNSIGNED_BYTE, data);
+		if (texture.generateMipMaps) {
+			GL.generateMipmap(GL.TEXTURE_2D);
+		}
+		GL.bindTexture(GL.TEXTURE_2D, null);
+		this._activeTexturesCache = [];
+		texture.isReady = true;
+	}
 
-	public function updateVideoTexture(texture:BabylonTexture, video:Dynamic, invertY:Bool) {
+	public function updateVideoTexture(texture:WebGLTexture, video:Dynamic, invertY:Bool) {
 		/*GL.bindTexture(GL.TEXTURE_2D, texture);
 		GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 0 :1); // Video are upside down by default
 
@@ -1250,7 +1322,7 @@ import js.Browser;
 		texture.isReady = true;*/
 	}
 
-	public function createRenderTargetTexture(size:Dynamic, options:Dynamic):BabylonTexture {
+	public function createRenderTargetTexture(size:Dynamic, options:Dynamic):WebGLTexture {
 		// old version had a "generateMipMaps" arg instead of options.
 		// if options.generateMipMaps is undefined, consider that options itself if the generateMipmaps value
 		// in the same way, generateDepthBuffer is defaulted to true
@@ -1271,7 +1343,7 @@ import js.Browser;
 			}
         }
 		
-		var texture = new BabylonTexture("", GL.createTexture());
+		var texture = new WebGLTexture("", GL.createTexture());
 		GL.bindTexture(GL.TEXTURE_2D, texture.data);
 		
 		var width:Int = size.width != null ? size.width : size;
@@ -1327,8 +1399,8 @@ import js.Browser;
 		return texture;
 	}
 
-	public function createCubeTexture(rootUrl:String, scene:Scene, extensions:Array<String> = null, noMipmap:Bool = false):BabylonTexture {
-		var texture = new BabylonTexture(rootUrl, GL.createTexture());
+	public function createCubeTexture(rootUrl:String, scene:Scene, extensions:Array<String> = null, noMipmap:Bool = false):WebGLTexture {
+		var texture = new WebGLTexture(rootUrl, GL.createTexture());
 		texture.isCube = true;
 		texture.url = rootUrl;
 		texture.references = 1;
@@ -1365,7 +1437,8 @@ import js.Browser;
 				texture._height = info.height;
 				texture.isReady = true;
 			}, null, null, true);*/
-		} else {
+		} 
+		else {
 			
 			var faces = [
 				GL.TEXTURE_CUBE_MAP_POSITIVE_X, GL.TEXTURE_CUBE_MAP_POSITIVE_Y, GL.TEXTURE_CUBE_MAP_POSITIVE_Z,
@@ -1389,9 +1462,9 @@ import js.Browser;
 				
 				GL.bindTexture(GL.TEXTURE_CUBE_MAP, texture.data);
 				
-				#if js
+				/*#if js
 				GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, 0);
-				#end
+				#end*/
 					
 				for (index in 0...faces.length) {
 					_setTex(imgs[index], index);
@@ -1434,7 +1507,7 @@ import js.Browser;
 		return texture;
 	}
 
-	public function _releaseTexture(texture:BabylonTexture) {
+	public function _releaseTexture(texture:WebGLTexture) {
 		if (texture._framebuffer != null) {
 			GL.deleteFramebuffer(texture._framebuffer);
 		}
@@ -1461,11 +1534,11 @@ import js.Browser;
 		texture = null;
 	}
 	
-	function getGLTexture(channel:Int):Int {
+	inline function getGLTexture(channel:Int):Int {
 		return GL.TEXTURE0 + channel;
 	}
 
-	public function bindSamplers(effect:Effect) {
+	inline public function bindSamplers(effect:Effect) {
 		GL.useProgram(effect.getProgram());
 		var samplers = effect.getSamplers();
 		for (index in 0...samplers.length) {
@@ -1475,16 +1548,17 @@ import js.Browser;
 		this._currentEffect = null;
 	}
 
-
-	public function _bindTexture(channel:Int, texture:BabylonTexture) {
+	inline public function _bindTexture(channel:Int, texture:WebGLTexture) {
 		GL.activeTexture(getGLTexture(channel));
 		GL.bindTexture(GL.TEXTURE_2D, texture.data);
 		
 		this._activeTexturesCache[channel] = null;
 	}
 
-	public function setTextureFromPostProcess(channel:Int, postProcess:PostProcess) {
-		this._bindTexture(channel, postProcess._textures.data[postProcess._currentRenderTextureId]);
+	inline public function setTextureFromPostProcess(channel:Int, postProcess:PostProcess) {
+		if(postProcess._textures.length > 0) {
+			this._bindTexture(channel, postProcess._textures.data[postProcess._currentRenderTextureInd]);
+		}
 	}
 
 	public function setTexture(channel:Int, texture:BaseTexture) {
@@ -1507,7 +1581,8 @@ import js.Browser;
 			/*if (cast(texture, VideoTexture).update()) {
 				this._activeTexturesCache[channel] = null;
 			}*/
-		} else if (texture.delayLoadState == Engine.DELAYLOADSTATE_NOTLOADED) { // Delay loading
+		} 
+		else if (texture.delayLoadState == Engine.DELAYLOADSTATE_NOTLOADED) { // Delay loading
 			texture.delayLoad();
 			return;
 		}
@@ -1535,7 +1610,8 @@ import js.Browser;
 			GL.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_WRAP_T, GL.CLAMP_TO_EDGE);
 			
 			this._setAnisotropicLevel(GL.TEXTURE_CUBE_MAP, texture);
-		} else {
+		} 
+		else {
 			GL.bindTexture(GL.TEXTURE_2D, internalTexture.data);
 			
 			if (internalTexture._cachedWrapU != texture.wrapU) {
@@ -1582,8 +1658,8 @@ import js.Browser;
 		}
 	}
 
-	public function readPixels(x:Int, y:Int, width:Int, height:Int): #if html5 UInt8Array #else Array<Int> #end {
-		var data = #if html5 new UInt8Array(height * width * 4) #else [] #end ;
+	inline public function readPixels(x:Int, y:Int, width:Int, height:Int): #if (js || purejs) UInt8Array #else Array<Int> #end {
+		var data = #if (js || purejs) new UInt8Array(height * width * 4) #else [] #end ;
 		GL.readPixels(0, 0, width, height, GL.RGBA, GL.UNSIGNED_BYTE, cast data);
 		return data;
 	}
@@ -1634,21 +1710,26 @@ import js.Browser;
             magFilter = GL.LINEAR;
             if (generateMipMaps) {
                 minFilter = GL.LINEAR_MIPMAP_NEAREST;
-            } else {
+            } 
+			else {
                 minFilter = GL.LINEAR;
             }
-        } else if (samplingMode == Texture.TRILINEAR_SAMPLINGMODE) {
+        } 
+		else if (samplingMode == Texture.TRILINEAR_SAMPLINGMODE) {
             magFilter = GL.LINEAR;
             if (generateMipMaps) {
                 minFilter = GL.LINEAR_MIPMAP_LINEAR;
-            } else {
+            } 
+			else {
                 minFilter = GL.LINEAR;
             }
-        } else if (samplingMode == Texture.NEAREST_SAMPLINGMODE) {
+        } 
+		else if (samplingMode == Texture.NEAREST_SAMPLINGMODE) {
             magFilter = GL.NEAREST;
             if (generateMipMaps) {
                 minFilter = GL.NEAREST_MIPMAP_LINEAR;
-            } else {
+            } 
+			else {
                 minFilter = GL.NEAREST;
             }
         }
@@ -1659,19 +1740,19 @@ import js.Browser;
         }
     }
 
-    public static function prepareTexture(texture:BabylonTexture, gl:Dynamic, scene:Scene, width:Int, height:Int, invertY:Bool, noMipmap:Bool, isCompressed:Bool, processFunction:Int->Int->Void, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE) {
+    public static function prepareTexture(texture:WebGLTexture, gl:Dynamic, scene:Scene, width:Int, height:Int, invertY:Bool, noMipmap:Bool, isCompressed:Bool, processFunction:Int->Int->Void, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE) {
         var engine = scene.getEngine();
         var potWidth = Tools.GetExponantOfTwo(width, engine.getCaps().maxTextureSize);
         var potHeight = Tools.GetExponantOfTwo(height, engine.getCaps().maxTextureSize);
 				
 		if (potWidth != width || potHeight != height) {
-			throw("Texture '" + texture.url + "' is not power of two !");
+			trace("Texture '" + texture.url + "' is not power of two !");
 		}
 				
         GL.bindTexture(GL.TEXTURE_2D, texture.data);
-		#if js
+		/*#if js
         GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY == null ? 1 : (invertY ? 1 : 0));
-		#end
+		#end*/
 		
 		texture._baseWidth = width;
         texture._baseHeight = height;
@@ -1692,8 +1773,7 @@ import js.Browser;
 		
         GL.bindTexture(GL.TEXTURE_2D, null);
 		
-        engine._activeTexturesCache = [];        
-		texture.samplingMode = samplingMode;
+        engine._activeTexturesCache = [];        		
         scene._removePendingData(texture);
     }
 
@@ -1727,4 +1807,23 @@ import js.Browser;
             partialLoad(rootUrl + extensions[index], index, loadedImages, scene, onfinish);
         }*/
     }
+	
+	#if purejs
+	// Statics
+	public static function isSupported():Bool {
+		try {
+			// Avoid creating an unsized context for CocoonJS, since size determined on first creation.  Is not resizable
+			if (untyped Browser.navigator.isCocoonJS) {
+				return true;
+			}
+			var tempcanvas = Browser.document.createElement("canvas");
+			var gl = untyped tempcanvas.getContext("webgl") || tempcanvas.getContext("experimental-webgl");
+			
+			return gl != null && untyped !!window.WebGLRenderingContext;
+		} 
+		catch (e:Dynamic) {
+			return false;
+		}
+	}
+	#end
 }

@@ -6,6 +6,7 @@ import com.babylonhx.lights.DirectionalLight;
 import com.babylonhx.lights.PointLight;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.materials.textures.Texture;
+import com.babylonhx.materials.textures.DynamicTexture;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
@@ -33,13 +34,15 @@ class Collisions {
 		ground.material.backFaceCulling = false;
 		ground.position = new Vector3(5, -10, -15);
 		ground.rotation = new Vector3(Math.PI / 2, 0, 0);
-		
+				
 		//Simple crate
 		var box = Mesh.CreateBox("crate", 2, scene);
 		box.material = new StandardMaterial("Mat", scene);
 		cast(box.material, StandardMaterial).diffuseTexture = new Texture("assets/img/crate.png", scene);
 		cast(box.material, StandardMaterial).diffuseTexture.hasAlpha = true;
 		box.position = new Vector3(5, -9, -10);
+		
+		camera.setTarget(box.position);
 		
 		//Set gravity for the scene (G force like, on Y-axis)
 		scene.gravity = new Vector3(0, -0.9, 0);
@@ -57,7 +60,7 @@ class Collisions {
 		//finally, say which mesh will be collisionable
 		ground.checkCollisions = true;
 		box.checkCollisions = true;
-		
+				
 		scene.getEngine().runRenderLoop(function () {
             scene.render();
         });

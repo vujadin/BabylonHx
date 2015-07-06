@@ -6,7 +6,7 @@ import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
-import com.babylonhx.mesh.BabylonBuffer;
+import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.particles.Particle;
 import com.babylonhx.tools.Tools;
 
@@ -78,8 +78,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _vertexStrideSize:Int = 11 * 4; // 11 floats per particle (x, y, z, r, g, b, a, angle, size, offsetX, offsetY)
 	private var _stockParticles:Array<Particle> = [];
 	private var _newPartsExcess:Int = 0;
-	private var _vertexBuffer:BabylonBuffer;
-	private var _indexBuffer:BabylonBuffer;
+	private var _vertexBuffer:WebGLBuffer;
+	private var _indexBuffer:WebGLBuffer;
 	#if html5
 	public var _vertices:Float32Array;
 	#else
@@ -184,15 +184,15 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 	}
 
-	public function getCapacity():Int {
+	inline public function getCapacity():Int {
 		return this._capacity;
 	}
 
-	public function isAlive():Bool {
+	inline public function isAlive():Bool {
 		return this._alive;
 	}
 
-	public function isStarted():Bool {
+	inline public function isStarted():Bool {
 		return this._started;
 	}
 
@@ -353,10 +353,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 		
 		// Update VBO
-		var offset = 0;
+		var offset:Int = 0;
 		for (index in 0...this.particles.length) {
 			var particle = this.particles[index];
-
+			
 			this._appendParticleVertex(offset++, particle, 0, 0);
 			this._appendParticleVertex(offset++, particle, 1, 0);
 			this._appendParticleVertex(offset++, particle, 1, 1);
@@ -399,7 +399,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		// Draw order
 		if (this.blendMode == ParticleSystem.BLENDMODE_ONEONE) {
 			engine.setAlphaMode(Engine.ALPHA_ADD);
-		} else {
+		} 
+		else {
 			engine.setAlphaMode(Engine.ALPHA_COMBINE);
 		}
 		
@@ -413,7 +414,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return this.particles.length;
 	}
 
-	public function dispose(doNotRecurse:Bool = false/*?doNotRecurse:Bool*/):Void {
+	inline public function dispose(doNotRecurse:Bool = false/*?doNotRecurse:Bool*/):Void {
 		if (this._vertexBuffer != null) {
 			this._scene.getEngine()._releaseBuffer(this._vertexBuffer);
 			this._vertexBuffer = null;

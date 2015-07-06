@@ -7,7 +7,7 @@ import com.babylonhx.math.Vector3;
  * ...
  * @author Krtolica Vujadin
  */
-class TouchCamera extends FreeCamera {
+@:expose('BABYLON.TouchCamera') class TouchCamera extends FreeCamera {
 
 	private var _offsetX:Float = Math.NEGATIVE_INFINITY;
 	private var _offsetY:Float = Math.NEGATIVE_INFINITY;
@@ -25,12 +25,11 @@ class TouchCamera extends FreeCamera {
 		this.angularSensibility = 200000.0;
 	}
 
-	override public function attachControl(?canvas:Dynamic, ?noPreventDefault:Bool) {
+	override public function attachControl(?canvas:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true) {
 		var previousPosition:Dynamic = null;// { x: 0, y: 0 };
 		
 		if (this._onPointerDown == null) {
 			this._onPointerDown = function(x:Float, y:Float, touch_id:Int, timestamp:Float) {
-				trace(touch_id);
 				this._pointerPressed.push(touch_id);
 				
 				if (this._pointerPressed.length != 1) {
@@ -61,7 +60,6 @@ class TouchCamera extends FreeCamera {
 			};
 			
 			this._onPointerMove = function(x:Float, y:Float, dx:Float, dy:Float, touch_id:Int, timestamp:Float) {
-				trace(x + ", " + y);
 				if (previousPosition == null) {
 					return;
 				}
@@ -94,20 +92,22 @@ class TouchCamera extends FreeCamera {
 	}
 
 	override public function _checkInputs() {
-		if (this._offsetX == Math.NEGATIVE_INFINITY) {
-			return;
-		}
-		this.cameraRotation.y += this._offsetX / this.angularSensibility;
-		
-		if (this._pointerPressed.length > 1) {
-			this.cameraRotation.x += -this._offsetY / this.angularSensibility;
-		} else {
-			var speed = this._computeLocalCameraSpeed();
-			var direction = new Vector3(0, 0, speed * this._offsetY / this.moveSensibility);
+		if (this._offsetX != Math.NEGATIVE_INFINITY) {
+			this.cameraRotation.y += this._offsetX / this.angularSensibility;
 			
-			Matrix.RotationYawPitchRollToRef(this.rotation.y, this.rotation.x, 0, this._cameraRotationMatrix);
-			this.cameraDirection.addInPlace(Vector3.TransformCoordinates(direction, this._cameraRotationMatrix));
+			if (this._pointerPressed.length > 1) {
+				this.cameraRotation.x += -this._offsetY / this.angularSensibility;
+			} 
+			else {
+				var speed = this._computeLocalCameraSpeed();
+				var direction = new Vector3(0, 0, speed * this._offsetY / this.moveSensibility);
+				
+				Matrix.RotationYawPitchRollToRef(this.rotation.y, this.rotation.x, 0, this._cameraRotationMatrix);
+				this.cameraDirection.addInPlace(Vector3.TransformCoordinates(direction, this._cameraRotationMatrix));
+			}
 		}
+		
+		super._checkInputs();
 	}
 	
 }

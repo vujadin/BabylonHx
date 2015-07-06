@@ -11,17 +11,21 @@ import com.babylonhx.utils.typedarray.Float32Array;
 @:expose('BABYLON.VertexBuffer') class VertexBuffer {
 	
 	// Enums
-	public static var PositionKind:String = "position";
-	public static var NormalKind:String = "normal";
-	public static var UVKind:String = "uv";
-	public static var UV2Kind:String = "uv2";
-	public static var ColorKind:String = "color";
-	public static var MatricesIndicesKind:String = "matricesIndices";
-	public static var MatricesWeightsKind:String = "matricesWeights";	
+	public static inline var PositionKind:String = "position";
+	public static inline var NormalKind:String = "normal";
+	public static inline var UVKind:String = "uv";
+	public static inline var UV2Kind:String = "uv2";
+	public static inline var UV3Kind:String = "uv3";
+    public static inline var UV4Kind:String = "uv4";
+    public static inline var UV5Kind:String = "uv5";
+    public static inline var UV6Kind:String = "uv6";
+	public static inline var ColorKind:String = "color";
+	public static inline var MatricesIndicesKind:String = "matricesIndices";
+	public static inline var MatricesWeightsKind:String = "matricesWeights";	
 	
 	private var _mesh:Mesh;
 	private var _engine:Engine;
-	public var _buffer:BabylonBuffer;
+	public var _buffer:WebGLBuffer;
 	private var _data:Array<Float>;
 	private var _updatable:Bool;
 	private var _kind:String;
@@ -54,10 +58,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			case VertexBuffer.NormalKind:
 				this._strideSize = 3;
 				
-			case VertexBuffer.UVKind:
-				this._strideSize = 2;
-				
-			case VertexBuffer.UV2Kind:
+			case VertexBuffer.UVKind, VertexBuffer.UV2Kind, VertexBuffer.UV3Kind, 
+				 VertexBuffer.UV4Kind, VertexBuffer.UV5Kind, VertexBuffer.UV6Kind:
 				this._strideSize = 2;
 				
 			case VertexBuffer.ColorKind:
@@ -73,19 +75,19 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	// Properties
-	public function isUpdatable():Bool {
+	inline public function isUpdatable():Bool {
 		return this._updatable;
 	}
 
-	public function getData():Array<Float> {
+	inline public function getData():Array<Float> {
 		return this._data;
 	}
 
-	public function getBuffer():BabylonBuffer {
+	inline public function getBuffer():WebGLBuffer {
 		return this._buffer;
 	}
 
-	public function getStrideSize():Int {
+	inline public function getStrideSize():Int {
 		return this._strideSize;
 	}
 
@@ -100,7 +102,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		if (this._buffer == null) { // create buffer
 			if (this._updatable) {
 				this._buffer = this._engine.createDynamicVertexBuffer(data.length * 4);
-			} else {
+			} 
+			else {
 				this._buffer = this._engine.createVertexBuffer(data);
 			}
 		}
@@ -111,28 +114,25 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 	}
 
-	public function update(data:Array<Float>) {
+	inline public function update(data:Array<Float>) {
 		this.create(data);
 	}
 
-	public function updateDirectly(data:Float32Array, offset:Int) {
-		if (this._buffer == null) {
-			return;
-		}
-		
-		if (this._updatable) { // update buffer
-			this._engine.updateDynamicVertexBuffer(this._buffer, data, offset);
-			this._data = null;
-		}
+	inline public function updateDirectly(data:Float32Array, offset:Int) {
+		if (this._buffer != null) {
+			if (this._updatable) { // update buffer
+				this._engine.updateDynamicVertexBuffer(this._buffer, data, offset);
+				this._data = null;
+			}
+		}		
 	}
 
-	public function dispose() {
-		if (this._buffer == null) {
-			return;
-		}
-		if (this._engine._releaseBuffer(this._buffer)) {
-			this._buffer = null;
-		}
+	inline public function dispose() {
+		if (this._buffer != null) {
+			if (this._engine._releaseBuffer(this._buffer)) {
+				this._buffer = null;
+			}
+		}		
 	}	
 	
 }

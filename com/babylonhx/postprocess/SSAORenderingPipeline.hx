@@ -67,10 +67,10 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 	/**
 	* Related to area, used to interpolate SSAO samples (second interpolate function input) based on the occlusion difference of each pixel
 	* Must not be equal to area and inferior to area.
-	* Default value is 0.0003
+	* Default value is 0.0002
 	* @type {number}
 	*/
-	public var fallOff:Float = 0.0003;
+	public var fallOff:Float = 0.0002;
 
 	private var _scene:Scene = null;
 	private var _depthTexture:RenderTargetTexture = null;
@@ -89,7 +89,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 	 * @constructor
 	 * @param {string} name - The rendering pipeline name
 	 * @param {BABYLON.Scene} scene - The scene linked to this pipeline
-	 * @param {number} ratio - The size of the postprocesses Can be a number shared between passes or an object for more precision: { ssaoRatio: 0.5, combineRatio: 1.0 }
+	 * @param {any} ratio - The size of the postprocesses. Can be a number shared between passes or an object for more precision: { ssaoRatio: 0.5, combineRatio: 1.0 }
 	 * @param {BABYLON.Camera[]} cameras - The array of cameras that the rendering pipeline will be attached to
 	 */
 	public function new(name:String, scene:Scene, ratio:Dynamic, ?cameras:Array<Camera>) {
@@ -104,11 +104,11 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 		var ssaoRatio = Reflect.hasField(ratio, "ssaoRatio") ? ratio.ssaoRatio : ratio;
 		var combineRatio = Reflect.hasField(ratio, "combineRatio") ? ratio.combineRatio : ratio;
 		
-		this._originalColorPostProcess = new PassPostProcess("SSAOOriginalSceneColor", 1.0, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false);
+		this._originalColorPostProcess = new PassPostProcess("SSAOOriginalSceneColor", combineRatio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false);
 		this._createSSAOPostProcess(ratio);
-		this._blurHPostProcess = new BlurPostProcess("SSAOBlurH", new Vector2(1.0, 0.0), 2.0, ssaoRatio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false);
-		this._blurVPostProcess = new BlurPostProcess("SSAOBlurV", new Vector2(0.0, 1.0), 2.0, ssaoRatio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false);
-		this._createSSAOCombinePostProcess();
+		this._blurHPostProcess = new BlurPostProcess("SSAOBlurH", new Vector2(2.0, 0.0), 2.0, ssaoRatio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false);
+		this._blurVPostProcess = new BlurPostProcess("SSAOBlurV", new Vector2(0.0, 2.0), 2.0, ssaoRatio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false);
+		this._createSSAOCombinePostProcess(combineRatio);
 		
 		// Set up pipeline
 		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), this.SSAOOriginalSceneColorEffect, function() { return this._originalColorPostProcess; }, true));
@@ -119,7 +119,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 		
 		// Finish
 		scene.postProcessRenderPipelineManager.addPipeline(this);
-		if (cameras != null && cameras.length > 0) {
+		if (cameras != null) {
             scene.postProcessRenderPipelineManager.attachCamerasToRenderPipeline(name, cameras);
 		}
 	}
@@ -208,9 +208,9 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 		return this._ssaoPostProcess;
 	}
 
-	private function _createSSAOCombinePostProcess():PostProcess {
+	private function _createSSAOCombinePostProcess(ratio:Float):PostProcess {
 		this._ssaoCombinePostProcess = new PostProcess("ssaoCombine", "ssaoCombine", [], ["originalColor"],
-													   1.0, null, Texture.BILINEAR_SAMPLINGMODE,
+													   ratio, null, Texture.BILINEAR_SAMPLINGMODE,
 													   this._scene.getEngine(), false);
 													   
 		this._ssaoCombinePostProcess.onApply = function(effect:Effect) {
@@ -221,10 +221,9 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 	}
 
 	private function _createRandomTexture() {
-		// TODO
-		/*var size = 512;
+		var size = 512;
 		
-		this._randomTexture = new DynamicTexture("SSAORandomTexture", size, this._scene, false, Texture.BILINEAR_SAMPLINGMODE);
+		this._randomTexture = new DynamicTexture("SSAORandomTexture", { width: size, height: size }, this._scene, false, Texture.BILINEAR_SAMPLINGMODE);
 		this._randomTexture.wrapU = Texture.WRAP_ADDRESSMODE;
 		this._randomTexture.wrapV = Texture.WRAP_ADDRESSMODE;
 		
@@ -234,20 +233,21 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 			return Math.random() * (max - min) + min;
 		}
 		
-		for (x in 0...size) {
-			for (y in 0...size) {
-				var randVector = Vector3.Zero();
-				
-				randVector.x = randVector.y = randVector.z = Math.floor(rand(0.0, 1.0) * 255);
-                //randVector.y = Math.floor(rand(0.0, 1.0) * 255);
-                //randVector.z = Math.floor(rand(0.0, 1.0) * 255);
-				
-				context.fillStyle = 'rgb(' + randVector.x + ', ' + randVector.y + ', ' + randVector.z + ')';
-				context.fillRect(x, y, 1, 1);
-			}
+		var colorX:Int = 0;
+		var colorY:Int = 0;
+		var colorZ:Int = 0;
+		var totalPixelsCount = size * size * 4;
+		var i:Int = 0;
+		while (i < totalPixelsCount) {
+			context[i] = Math.floor(rand(0.0, 1.0) * 255);
+			context[i + 1] = Math.floor(rand(0.0, 1.0) * 255);
+			context[i + 2] = Math.floor(rand(0.0, 1.0) * 255);
+			context[i + 3] = 255;
+			
+			i += 4;
 		}
 		
-		this._randomTexture.update(false);*/
+		this._randomTexture.update(false);
 	}
 	
 }

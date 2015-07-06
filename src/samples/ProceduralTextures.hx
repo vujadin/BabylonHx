@@ -35,10 +35,10 @@ class ProceduralTextures {
 			bosquetbawl.position = new Vector3(x, y + 1, z);
 			bosquetbawl.material = grassMaterial;
 			
-			#if !android
+			//#if !android
 			shadowGenerator.getShadowMap().renderList.push(bosquet);
 			shadowGenerator.getShadowMap().renderList.push(bosquetbawl);
-			#end
+			//#end
 		}
 		
 		var CreateTree = function (name:String, x:Float, y:Float, z:Float, scene:Scene, shadowGenerator:ShadowGenerator, woodMaterial:Material, grassMaterial:Material) {
@@ -50,10 +50,10 @@ class ProceduralTextures {
 			leafs.position = new Vector3(x, y + 5.0, z);
 			leafs.material = grassMaterial;
 			
-			#if !android
+			//#if !android
 			shadowGenerator.getShadowMap().renderList.push(trunk);
 			shadowGenerator.getShadowMap().renderList.push(leafs);
-			#end
+			//#end
 		}
 		
 		var createFontain = function (name:String, x:Float, y:Float, z:Float, scene:Scene, shadowGenerator:ShadowGenerator, marbleMaterial:Material, fireMaterial:Material) {
@@ -74,11 +74,11 @@ class ProceduralTextures {
 			fontainSculptur2.material = fireMaterial;
 			fontainSculptur2.rotate(new Vector3(1.0, 0.0, 0.0), Math.PI / 2.0, Space.LOCAL);
 			
-			#if !android
+			//#if !android
 			shadowGenerator.getShadowMap().renderList.push(torus);
 			shadowGenerator.getShadowMap().renderList.push(fontainSculptur1);
 			shadowGenerator.getShadowMap().renderList.push(fontainSculptur2);
-			#end
+			//#end
 		}
 		
 		var createTorch = function (name:String, x:Float, y:Float, z:Float, scene:Scene, shadowGenerator:ShadowGenerator, brickMaterial:Material, woodMaterial:Material, grassMaterial:Material) {
@@ -97,11 +97,11 @@ class ProceduralTextures {
 			leafs2.position = new Vector3(x, y + 2, z);
 			leafs2.material = grassMaterial;
 			
-			#if !android
+			//#if !android
 			shadowGenerator.getShadowMap().renderList.push(torchwood);
 			shadowGenerator.getShadowMap().renderList.push(leafs2);
 			shadowGenerator.getShadowMap().renderList.push(brickblock);
-			#end
+			//#end
 		}
 		
 		//Ok, enough helpers, let the building start 
@@ -160,9 +160,9 @@ class ProceduralTextures {
 		
 		//Applying some shadows
 		var shadowGenerator = new ShadowGenerator(1024, light);
-		#if !android
+		//#if !android
 		square.receiveShadows = true;
-		#end
+		//#end
 		
 		//Creating 4 bosquets
 		CreateBosquet("b1", -9, 1, 9, scene, shadowGenerator, woodMaterial, grassMaterial);
@@ -179,9 +179,9 @@ class ProceduralTextures {
 		var customProcTextmacadam = new RoadProceduralTexture("customtext", 512, scene);
 		customMaterialmacadam.diffuseTexture = customProcTextmacadam;
 		macadam.material = customMaterialmacadam;
-		#if !android
+		//#if !android
 		macadam.receiveShadows = true;
-		#end
+		//#end
 		
 		//Creating a fontain
 		createFontain("fontain", 20, 0.25, 0, scene, shadowGenerator, marbleMaterial, fireMaterial);

@@ -6,13 +6,20 @@ import com.babylonhx.math.Viewport;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.postprocess.PostProcess;
 import com.babylonhx.tools.SmartArray;
+import com.babylonhx.tools.Tools;
+import com.babylonhx.postprocess.AnaglyphPostProcess;
+import com.babylonhx.postprocess.StereoscopicInterlacePostProcess;
+import com.babylonhx.postprocess.VRDistortionCorrectionPostProcess;
+import com.babylonhx.postprocess.PassPostProcess;
+import com.babylonhx.materials.Effect;
+import com.babylonhx.animations.IAnimatable;
 
 /**
 * ...
 * @author Krtolica Vujadin
 */
 
-@:expose('BABYLON.Camera') class Camera extends Node {
+@:expose('BABYLON.Camera') class Camera extends Node implements IAnimatable {
 	
 	// Statics
 	public static inline var PERSPECTIVE_CAMERA:Int = 0;
@@ -20,6 +27,13 @@ import com.babylonhx.tools.SmartArray;
 	
 	public static inline var FOVMODE_VERTICAL_FIXED:Int = 0;
 	public static inline var FOVMODE_HORIZONTAL_FIXED:Int = 1;
+	
+	public static inline var RIG_MODE_NONE:Int = 0;
+	public static inline var RIG_MODE_STEREOSCOPIC_ANAGLYPH:Int = 10;
+	public static inline var RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_PARALLEL:Int = 11;
+	public static inline var RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED:Int = 12;
+	public static inline var RIG_MODE_STEREOSCOPIC_OVERUNDER:Int = 13;
+	public static inline var RIG_MODE_VR:Int = 20;
 
 	// Members
 	public var position:Vector3 = Vector3.Zero();
@@ -38,7 +52,13 @@ import com.babylonhx.tools.SmartArray;
 	public var subCameras:Array<Camera> = [];
 	public var layerMask:Int = 0xFFFFFFFF;
 	public var fovMode:Int = Camera.FOVMODE_VERTICAL_FIXED;
+	
+	// Camera rig members
+	public var cameraRigMode:Int = Camera.RIG_MODE_NONE;
+	public var _cameraRigParams:Dynamic;
+	public var _rigCameras:Array<Camera> = [];
 
+	// Cache
 	private var _computedViewMatrix = Matrix.Identity();
 	public var _projectionMatrix = new Matrix();
 	private var _worldMatrix:Matrix;
@@ -50,6 +70,13 @@ import com.babylonhx.tools.SmartArray;
 	private var _globalPosition:Vector3 = Vector3.Zero();
 	public var globalPosition(get, never):Vector3;
 	
+	public var getProjectionMatrix:Bool->Matrix;
+	public var _getViewMatrix:Void->Matrix;
+	
+	#if purejs
+	private var eventPrefix:String = "mouse";
+	#end
+	
 
 	public function new(name:String, position:Vector3, scene:Scene) {
 		super(name, scene);
@@ -60,6 +87,13 @@ import com.babylonhx.tools.SmartArray;
 		if (scene.activeCamera == null) {
 			scene.activeCamera = this;
 		}
+		
+		this.getProjectionMatrix = getProjectionMatrix_default;
+		this._getViewMatrix = _getViewMatrix_default;
+		
+		#if purejs
+		eventPrefix = Tools.GetPointerPrefix();
+		#end
 	}
 	
 	private function get_globalPosition():Vector3 {
@@ -168,7 +202,7 @@ import com.babylonhx.tools.SmartArray;
 	}
 
 	// Controls
-	public function attachControl(?element:Dynamic, ?noPreventDefault:Bool) {
+	public function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true) {
 		
 	}
 
@@ -177,7 +211,14 @@ import com.babylonhx.tools.SmartArray;
 	}
 
 	public function _update() {
-		
+		if (this.cameraRigMode != Camera.RIG_MODE_NONE) {
+			this._updateRigCameras();
+		}
+		this._checkInputs();
+	}
+	
+	public function _checkInputs() {
+    
 	}
 
 	public function attachPostProcess(postProcess:PostProcess, ?insertAt:Int):Int {
@@ -283,12 +324,12 @@ import com.babylonhx.tools.SmartArray;
 		return this._worldMatrix;
 	}
 
-	public function _getViewMatrix():Matrix {
+	public function _getViewMatrix_default():Matrix {
 		return Matrix.Identity();
 	}
 
 	public function getViewMatrix(force:Bool = false):Matrix {
-		this._computedViewMatrix = this._computeViewMatrix();
+		this._computedViewMatrix = this._computeViewMatrix(force);
 		
 		if (!force && this._isSynchronizedViewMatrix()) {
 			return this._computedViewMatrix;
@@ -296,7 +337,8 @@ import com.babylonhx.tools.SmartArray;
 		
 		if (this.parent == null || this.parent.getWorldMatrix == null) {
 			this._globalPosition.copyFrom(this.position);
-		} else {
+		} 
+		else {
 			if (this._worldMatrix == null) {
 				this._worldMatrix = Matrix.Identity();
 			}
@@ -326,7 +368,7 @@ import com.babylonhx.tools.SmartArray;
 		return this._computedViewMatrix;
 	}
 
-	public function getProjectionMatrix(force:Bool = false):Matrix {
+	public function getProjectionMatrix_default(force:Bool = false):Matrix {
 		if (!force && this._isSynchronizedProjectionMatrix()) {
 			return this._projectionMatrix;
 		}
@@ -354,6 +396,124 @@ import com.babylonhx.tools.SmartArray;
 		// Postprocesses
 		for (i in 0...this._postProcessesTakenIndices.length) {
 			this._postProcesses[this._postProcessesTakenIndices[i]].dispose(this);
+		}
+	}
+	
+	// ---- Camera rigs section ----
+	public function setCameraRigMode(mode:Int, rigParams:Dynamic) {
+		while (this._rigCameras.length > 0) {
+			this._rigCameras.pop().dispose();
+		}
+		this.cameraRigMode = mode;
+		this._cameraRigParams = { };
+
+		switch (this.cameraRigMode) {
+			case Camera.RIG_MODE_STEREOSCOPIC_ANAGLYPH, 
+				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_PARALLEL, 
+				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED, 
+				 Camera.RIG_MODE_STEREOSCOPIC_OVERUNDER:
+					 
+				this._cameraRigParams.interaxialDistance = rigParams.interaxialDistance != null ? rigParams.interaxialDistance : 0.0637;
+				//we have to implement stereo camera calcultating left and right viewpoints from interaxialDistance and target, 
+				//not from a given angle as it is now, but until that complete code rewriting provisional stereoHalfAngle value is introduced
+				this._cameraRigParams.stereoHalfAngle = Tools.ToRadians(this._cameraRigParams.interaxialDistance / 0.0637);
+				
+				this._rigCameras.push(this.createRigCamera(this.name + "_L", 0));
+				this._rigCameras.push(this.createRigCamera(this.name + "_R", 1));
+		}
+		
+		var postProcesses:Array<PostProcess> = [];
+		
+		switch (this.cameraRigMode) {
+			case Camera.RIG_MODE_STEREOSCOPIC_ANAGLYPH:
+				postProcesses.push(new PassPostProcess(this.name + "_passthru", 1.0, this._rigCameras[0]));
+				this._rigCameras[0].isIntermediate = true;
+				
+				postProcesses.push(new AnaglyphPostProcess(this.name + "_anaglyph", 1.0, this._rigCameras[1]));
+				postProcesses[1].onApply = function(effect:Effect) {
+					effect.setTextureFromPostProcess("leftSampler", postProcesses[0]);
+				};
+				
+			case Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_PARALLEL,
+				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED,
+				 Camera.RIG_MODE_STEREOSCOPIC_OVERUNDER:
+				var isStereoscopicHoriz = (this.cameraRigMode == Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_PARALLEL || this.cameraRigMode == Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED);
+				var firstCamIndex = (this.cameraRigMode == Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED) ? 1 : 0;
+				var secondCamIndex = 1 - firstCamIndex;
+				
+				postProcesses.push(new PassPostProcess(this.name + "_passthru", 1.0, this._rigCameras[firstCamIndex]));
+				this._rigCameras[firstCamIndex].isIntermediate = true;
+				
+				postProcesses.push(new StereoscopicInterlacePostProcess(this.name + "_stereoInterlace", this._rigCameras[secondCamIndex], postProcesses[0], isStereoscopicHoriz));	
+				
+			case Camera.RIG_MODE_VR:
+				this._rigCameras.push(this.createRigCamera(this.name + "_L", 0));
+				this._rigCameras.push(this.createRigCamera(this.name + "_R", 1));
+				
+				var metrics = rigParams.vrCameraMetrics != null ? rigParams.vrCameraMetrics : VRCameraMetrics.GetDefault();
+				this._rigCameras[0]._cameraRigParams.vrMetrics = metrics;
+				this._rigCameras[0].viewport = new Viewport(0, 0, 0.5, 1.0);
+				this._rigCameras[0]._cameraRigParams.vrWorkMatrix = new Matrix();
+				
+				this._rigCameras[0]._cameraRigParams.vrHMatrix = metrics.leftHMatrix;
+				this._rigCameras[0]._cameraRigParams.vrPreViewMatrix = metrics.leftPreViewMatrix;
+				this._rigCameras[0].getProjectionMatrix = this._rigCameras[0]._getVRProjectionMatrix;
+				
+				if (metrics.compensateDistorsion) {
+					postProcesses.push(new VRDistortionCorrectionPostProcess("VR_Distort_Compensation_Left", this._rigCameras[0], false, metrics));
+				}
+				
+				this._rigCameras[1]._cameraRigParams.vrMetrics = this._rigCameras[0]._cameraRigParams.vrMetrics;
+				this._rigCameras[1].viewport = new Viewport(0.5, 0, 0.5, 1.0);
+				this._rigCameras[1]._cameraRigParams.vrWorkMatrix = new Matrix();
+				this._rigCameras[1]._cameraRigParams.vrHMatrix = metrics.rightHMatrix;
+				this._rigCameras[1]._cameraRigParams.vrPreViewMatrix = metrics.rightPreViewMatrix;
+				
+				this._rigCameras[1].getProjectionMatrix = this._rigCameras[1]._getVRProjectionMatrix;
+				
+				if (metrics.compensateDistorsion) {
+					postProcesses.push(new VRDistortionCorrectionPostProcess("VR_Distort_Compensation_Right", this._rigCameras[1], true, metrics));
+				}
+		}
+		
+		this._update();
+	}
+
+	private function _getVRProjectionMatrix(force:Bool = false):Matrix {
+		Matrix.PerspectiveFovLHToRef(this._cameraRigParams.vrMetrics.aspectRatioFov, this._cameraRigParams.vrMetrics.aspectRatio, this.minZ, this.maxZ, this._cameraRigParams.vrWorkMatrix);
+		this._cameraRigParams.vrWorkMatrix.multiplyToRef(this._cameraRigParams.vrHMatrix, this._projectionMatrix);
+		return this._projectionMatrix;
+	}
+
+	public function setCameraRigParameter(name:String, value:Dynamic) {
+		// VK TODO
+		//this._cameraRigParams[name] = value;
+		//provisionnally:
+		if (name == "interaxialDistance") {
+			this._cameraRigParams.stereoHalfAngle = Tools.ToRadians(value / 0.0637);
+		}
+	}
+	
+	/**
+	 * May needs to be overridden by children so sub has required properties to be copied
+	 */
+	public function createRigCamera(name:String, cameraIndex:Int):Camera {
+		return null;
+	}
+	
+	/**
+	 * May needs to be overridden by children
+	 */
+	public function _updateRigCameras() {
+		for (i in 0...this._rigCameras.length) {
+			this._rigCameras[i].minZ = this.minZ;
+			this._rigCameras[i].maxZ = this.maxZ;
+			this._rigCameras[i].fov = this.fov;
+		}
+		
+		// only update viewport when ANAGLYPH
+		if (this.cameraRigMode == Camera.RIG_MODE_STEREOSCOPIC_ANAGLYPH) {
+			this._rigCameras[0].viewport = this._rigCameras[1].viewport = this.viewport;
 		}
 	}
 	

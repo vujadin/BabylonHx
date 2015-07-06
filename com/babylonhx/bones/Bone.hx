@@ -9,11 +9,9 @@ import com.babylonhx.animations.Animation;
 * @author Krtolica Vujadin
 */
 
-@:expose('BABYLON.Bone') class Bone implements IAnimatable {
+@:expose('BABYLON.Bone') class Bone extends Node implements IAnimatable {
 	
-	public var name:String;
 	public var children:Array<Bone> = [];
-	public var animations:Array<Animation> = [];
 
 	private var _skeleton:Skeleton;
 	private var _matrix:Matrix;
@@ -25,7 +23,8 @@ import com.babylonhx.animations.Animation;
 
 	
 	public function new(name:String, skeleton:Skeleton, parentBone:Bone = null, matrix:Matrix) {
-		this.name = name;
+		super(name, skeleton.getScene());
+		
 		this._skeleton = skeleton;
 		this._matrix = matrix;
 		this._baseMatrix = matrix;
@@ -35,7 +34,8 @@ import com.babylonhx.animations.Animation;
 		if (parentBone != null) {
 			this._parent = parentBone;
 			parentBone.children.push(this);
-		} else {
+		} 
+		else {
 			this._parent = null;
 		}
 		
@@ -43,27 +43,27 @@ import com.babylonhx.animations.Animation;
 	}
 
 	// Members
-	public function getParent():Bone {
+	inline public function getParent():Bone {
 		return this._parent;
 	}
 
-	public function getLocalMatrix():Matrix {
+	inline public function getLocalMatrix():Matrix {
 		return this._matrix;
 	}
 
-	public function getBaseMatrix():Matrix {
+	inline public function getBaseMatrix():Matrix {
 		return this._baseMatrix;
 	}
 
-	public function getWorldMatrix():Matrix {
+	override public function getWorldMatrix():Matrix {
 		return this._worldTransform;
 	}
 
-	public function getInvertedAbsoluteTransform():Matrix {
+	inline public function getInvertedAbsoluteTransform():Matrix {
 		return this._invertedAbsoluteTransform;
 	}
 
-	public function getAbsoluteMatrix():Matrix {
+	inline public function getAbsoluteMatrix():Matrix {
 		var matrix = this._matrix.clone();
 		var parent = this._parent;
 		
@@ -76,17 +76,18 @@ import com.babylonhx.animations.Animation;
 	}
 
 	// Methods
-	public function updateMatrix(matrix:Matrix):Void {
+	inline public function updateMatrix(matrix:Matrix) {
 		this._matrix = matrix;
 		this._skeleton._markAsDirty();
 		
 		this._updateDifferenceMatrix();
 	}
 
-	private function _updateDifferenceMatrix():Void {
+	inline private function _updateDifferenceMatrix() {
 		if (this._parent != null) {
 			this._matrix.multiplyToRef(this._parent._absoluteTransform, this._absoluteTransform);
-		} else {
+		} 
+		else {
 			this._absoluteTransform.copyFrom(this._matrix);
 		}
 		
@@ -97,7 +98,8 @@ import com.babylonhx.animations.Animation;
 		}
 	}
 
-	public function markAsDirty():Void {
+	inline public function markAsDirty() {
+		this._currentRenderId++;
 		this._skeleton._markAsDirty();
 	}
 	

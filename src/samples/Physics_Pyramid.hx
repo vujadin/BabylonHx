@@ -1,6 +1,7 @@
 package samples;
 
 import com.babylonhx.cameras.ArcRotateCamera;
+import com.babylonhx.Engine;
 import com.babylonhx.lights.DirectionalLight;
 import com.babylonhx.lights.HemisphericLight;
 import com.babylonhx.lights.shadows.ShadowGenerator;
@@ -14,9 +15,12 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.physics.PhysicsBodyCreationOptions;
 import com.babylonhx.physics.plugins.OimoPlugin;
+import com.babylonhx.physics.plugins.CannonPlugin;
+
 import com.babylonhx.Scene;
 import com.babylonhx.physics.PhysicsEngine;
 import haxe.Timer;
+
 import oimohx.physics.dynamics.World;
 
 /**
@@ -24,20 +28,20 @@ import oimohx.physics.dynamics.World;
  * @author Krtolica Vujadin
  */
 class Physics_Pyramid {
+	
+	var lastKey:Int = 0;
 
 	public function new(scene:Scene) {
 				
-		scene.enablePhysics(new Vector3(0, -9, 0), new OimoPlugin());
+		scene.enablePhysics(new Vector3(0, -290, 0), new CannonPlugin());
 						
-		/** CAMERA **/
 		var camera = new ArcRotateCamera("Camera", 0.95, 1.4, 1800, new Vector3(0, 150, 0), scene);
 		camera.attachControl(this);
 		camera.maxZ = 50000;
 		
 		var light = new HemisphericLight("hemi", new Vector3(0, 1, 5), scene);
 		
-		// Skybox
-		var skybox = Mesh.CreateBox("skyBox", 10000.0, scene);
+		var skybox = Mesh.CreateBox("skyBox", 50000.0, scene);
 		var skyboxMaterial = new StandardMaterial("skyBox", scene);
 		skyboxMaterial.backFaceCulling = false;
 		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/TropicalSunnyDay", scene);
@@ -48,7 +52,7 @@ class Physics_Pyramid {
 		skybox.infiniteDistance = true;
 				
 		var mat = new StandardMaterial("ground", scene);
-		var texDiff = new Texture("assets/img/ground.jpg", scene);
+		var texDiff = new Texture("assets/img/grass.jpg", scene);
 		mat.diffuseTexture = texDiff;
 		mat.specularColor = Color3.Black();
 		
@@ -89,16 +93,18 @@ class Physics_Pyramid {
 		s.position.z = -1000;
 		s.material = materialSphere;
 		physOpt = new PhysicsBodyCreationOptions();
-		physOpt.mass = 5;
+		physOpt.mass = 125;
 		physOpt.friction = 0.5;
 		physOpt.restitution = 0.5;
 		s.setPhysicsState(PhysicsEngine.SphereImpostor, physOpt);
+		
+		camera.target = s;
 						
 		physOpt.mass = 1;
 		physOpt.friction = 0.4;
 		physOpt.restitution = 0.2;
 		
-		var height = 20;
+		var height = 12;
 		var depth = 1;
 		var sx = 60;
 		var sy = 40;
@@ -107,22 +113,63 @@ class Physics_Pyramid {
 		var py:Float = 0;
 		var pz:Float = 0;
 
-		for (i in 0...height) {
-			for (j in i...height) {
-				for (k in 0...depth) {
-					px = (j - i * 0.5 - (height - 1) * 0.5) * (sx * 1.05);
-					py = i * (sy + 0.01) + sy * 0.6;
-					pz = (k - (sz - 1) * 0.5) + (k * sz);
-					
-					var box = Mesh.CreateBox("b" + (j + i), sz, scene);
-					box.material = materialBox;
-					box.scaling.y = 0.667;
-					
-					box.position = new Vector3(px, py, pz);
-					box.setPhysicsState(PhysicsEngine.BoxImpostor, physOpt);
+		//com.babylonhx.tools.Tools.delay(function() {
+			for (i in 0...height) {
+				for (j in i...height) {
+					for (k in 0...depth) {
+						px = (j - i * 0.5 - (height - 1) * 0.5) * (sx * 1.05);
+						py = i * (sy + 0.01) + sy * 0.6;
+						pz = (k - (sz - 1) * 0.5) + (k * sz);
+						
+						var box = Mesh.CreateBox("b" + (j + i), sz, scene);
+						box.material = materialBox;
+						box.scaling.y = 0.667;
+						
+						box.position = new Vector3(px, i * (sz * 0.667), pz);
+						box.setPhysicsState(PhysicsEngine.BoxImpostor, physOpt);
+					}
 				}
 			}
+		//}, 1000);
+				
+		function moveBall(key:Int) {
+			switch(key) {
+				case 119:	// w
+					if(lastKey != key) {
+						lastKey = key;
+						//s.rigidBody.linearVelocity.scaleEqual(0.8);
+						s.rigidBody.angularVelocity.scaleEqual(0.8);
+					}
+					s.applyImpulse(new Vector3(0, 0, -15), s.position);
+					
+				case 100: 	// d
+					if(lastKey != key) {						
+						lastKey = key;
+						//s.rigidBody.linearVelocity.scaleEqual(0.6);
+						s.rigidBody.angularVelocity.scaleEqual(0.8);
+					}
+					s.applyImpulse(new Vector3( -15, 0, 0), s.position);
+					
+				case 115:	// s
+					if(lastKey != key) {						
+						lastKey = key;
+						//s.rigidBody.linearVelocity.scaleEqual(0.8);
+						s.rigidBody.angularVelocity.scaleEqual(0.8);
+					}
+					s.applyImpulse(new Vector3(0, 0, 15), s.position);
+					
+				case 97:	// a
+					if(lastKey != key) {						
+						lastKey = key;
+						//s.rigidBody.linearVelocity.scaleEqual(0.8);
+						s.rigidBody.angularVelocity.scaleEqual(0.8);
+					}
+					s.applyImpulse(new Vector3(15, 0, 0), s.position);
+					
+			}
 		}
+		
+		Engine.keyDown.push(moveBall);
 						
 		scene.getEngine().runRenderLoop(function () {
 			scene.render();

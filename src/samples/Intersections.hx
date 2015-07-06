@@ -2,6 +2,7 @@ package samples;
 
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.materials.StandardMaterial;
+import com.babylonhx.layer.Layer;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
@@ -16,6 +17,8 @@ class Intersections {
 	public function new(scene:Scene) {
 		var camera = new ArcRotateCamera("Camera", 1, 0.8, 70, new Vector3(5, 0, 0), scene);
 		camera.attachControl(this, true);
+		
+		new Layer("background", "assets/img/graygrad.jpg", scene, true);
 		
 		// Material
 		var matPlan = new StandardMaterial("matPlan1", scene);
@@ -66,29 +69,32 @@ class Intersections {
 		balloon1.position = new Vector3(6, 5, 0);
 		balloon2.position = new Vector3(-6, 5, 0);
 		balloon3.position = new Vector3( -30, 5, 0);
-		
+				
 		//Animation
 		var alpha = Math.PI;
 		scene.registerBeforeRender(function () {
 			
 			//Balloon 1 intersection -- Precise = false
-			if (balloon1.intersectsMesh(plan1, false)) {
+			if (balloon1.intersectsMesh(plan1, true)) {
 				cast(balloon1.material, StandardMaterial).emissiveColor = new Color3(1, 0, 0);
-			} else {
+			} 
+			else {
 				cast(balloon1.material, StandardMaterial).emissiveColor = new Color3(1, 1, 1);
 			}
 			
 			//Balloon 2 intersection -- Precise = true
-			if (balloon2.intersectsMesh(plan2, true)) {
+			if (balloon2.intersectsMesh(plan2, false)) {
 				cast(balloon2.material, StandardMaterial).emissiveColor = new Color3(1, 0, 0);
-			} else {
+			} 
+			else {
 				cast(balloon2.material, StandardMaterial).emissiveColor = new Color3(1, 1, 1);
 			}
 			
 			//balloon 3 intersection on single point
 			if (balloon3.intersectsPoint(pointToIntersect)) {
 				cast(balloon3.material, StandardMaterial).emissiveColor = new Color3(1, 0, 0);
-			} else {
+			} 
+			else {
 				cast(balloon3.material, StandardMaterial).emissiveColor = new Color3(1, 1, 1);
 			}
 			

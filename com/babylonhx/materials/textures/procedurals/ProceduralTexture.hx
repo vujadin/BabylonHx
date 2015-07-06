@@ -6,7 +6,7 @@ import com.babylonhx.math.Color4;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
-import com.babylonhx.mesh.BabylonBuffer;
+import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.Scene;
 
 /**
@@ -22,8 +22,8 @@ import com.babylonhx.Scene;
 	private var _currentRefreshId:Int = -1;
 	private var _refreshRate:Int = 1;
 
-	private var _vertexBuffer:BabylonBuffer;
-	private var _indexBuffer:BabylonBuffer;
+	private var _vertexBuffer:WebGLBuffer;
+	private var _indexBuffer:WebGLBuffer;
 	private var _effect:Effect;
 
 	private var _vertexDeclaration:Array<Int> = [2];

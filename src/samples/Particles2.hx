@@ -3,6 +3,7 @@ package samples;
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.materials.ShadersStore;
 import com.babylonhx.materials.textures.Texture;
+import com.babylonhx.layer.Layer;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
@@ -17,10 +18,13 @@ class Particles2 {
 
 	public function new(scene:Scene) {
 		var camera = new ArcRotateCamera("Camera", 0, 0, 10, Vector3.Zero(), scene);
+		camera.attachControl();
 		camera.setPosition(new Vector3(-5, 5, 0));
 		camera.lowerBetaLimit = 0.1;
 		camera.upperBetaLimit = (Math.PI / 2) * 0.95;
 		camera.lowerRadiusLimit = 5;
+		
+		new Layer("background", "assets/img/graygrad.jpg", scene, true);
 		
 		// Emitters
 		var emitter0 = Mesh.CreateBox("emitter0", 0.1, scene);
