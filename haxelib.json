@@ -5,7 +5,6 @@
     "description": "BabylonHx is ultra-portable lightweight 3D engine. It is a port of an excellent BabylonJs 3D engine to Haxe programming language.",
     "releasenote": "",
     "version": "0.9",
-
     "contributors": [ "vujadin" ],
     "tags": [ "cpp", "html5", "web", "webgl", "snow", "lime", "openfl", "nme", "opengl", "android", "ios", "mac", "windows", "linux", "native" ],
     "dependencies": { "poly2trihx" : "" }
