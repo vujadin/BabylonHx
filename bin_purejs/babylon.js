@@ -234,7 +234,7 @@ var com_babylonhx_Engine = $hx_exports.BABYLON.Engine = function(canvas,antialia
 	this.isPointerLock = false;
 	this.isFullscreen = false;
 	var _g = this;
-	console.log("BabylonHx | " + new Date().getFullYear() + " | www.babylonhx.com");
+	console.log("BabylonHx - Cross-Platform 3D Engine | " + new Date().getFullYear() + " | www.babylonhx.com");
 	com_babylonhx_Engine.app = canvas;
 	this._renderingCanvas = canvas;
 	this._canvasClientRect.width = 800;
@@ -5842,13 +5842,15 @@ com_babylonhx_cameras_FreeCamera.prototype = $extend(com_babylonhx_cameras_Targe
 				_g.cameraRotation.x += offsetY / _g.angularSensibility;
 				previousPosition = { x : x2, y : y2};
 			};
-			this._onKeyDown = function(keyCode) {
+			this._onKeyDown = function(evt) {
+				var keyCode = evt.keyCode;
 				if(HxOverrides.indexOf(_g.keysUp,keyCode,0) != -1 || HxOverrides.indexOf(_g.keysDown,keyCode,0) != -1 || HxOverrides.indexOf(_g.keysLeft,keyCode,0) != -1 || HxOverrides.indexOf(_g.keysRight,keyCode,0) != -1) {
 					var index = HxOverrides.indexOf(_g._keys,keyCode,0);
 					if(index == -1) _g._keys.push(keyCode);
 				}
 			};
-			this._onKeyUp = function(keyCode1) {
+			this._onKeyUp = function(evt1) {
+				var keyCode1 = evt1.keyCode;
 				if(HxOverrides.indexOf(_g.keysUp,keyCode1,0) != -1 || HxOverrides.indexOf(_g.keysDown,keyCode1,0) != -1 || HxOverrides.indexOf(_g.keysLeft,keyCode1,0) != -1 || HxOverrides.indexOf(_g.keysRight,keyCode1,0) != -1) {
 					var index1 = HxOverrides.indexOf(_g._keys,keyCode1,0);
 					if(index1 >= 0) _g._keys.splice(index1,1);
@@ -5908,7 +5910,6 @@ com_babylonhx_cameras_FreeCamera.prototype = $extend(com_babylonhx_cameras_Targe
 		var _g = this._keys.length;
 		while(_g1 < _g) {
 			var index = _g1++;
-			console.log(this._keys);
 			var keyCode = this._keys[index];
 			var speed = this._computeLocalCameraSpeed();
 			if(HxOverrides.indexOf(this.keysLeft,keyCode,0) != -1) this._localDirection.copyFromFloats(-speed,0,0); else if(HxOverrides.indexOf(this.keysUp,keyCode,0) != -1) this._localDirection.copyFromFloats(0,0,speed); else if(HxOverrides.indexOf(this.keysRight,keyCode,0) != -1) this._localDirection.copyFromFloats(speed,0,0); else if(HxOverrides.indexOf(this.keysDown,keyCode,0) != -1) this._localDirection.copyFromFloats(0,0,-speed);
@@ -6708,9 +6709,9 @@ com_babylonhx_collisions_PickingInfo.prototype = {
 		var uv0 = com_babylonhx_math_Vector2.FromArray(uvs,indices[this.faceId * 3] * 2);
 		var uv1 = com_babylonhx_math_Vector2.FromArray(uvs,indices[this.faceId * 3 + 1] * 2);
 		var uv2 = com_babylonhx_math_Vector2.FromArray(uvs,indices[this.faceId * 3 + 2] * 2);
-		uv0 = uv0.scale(this.bu);
-		uv1 = uv1.scale(this.bv);
-		uv2 = uv2.scale(1.0 - this.bu - this.bv);
+		uv0 = uv0.scale(1.0 - this.bu - this.bv);
+		uv1 = uv1.scale(this.bu);
+		uv2 = uv2.scale(this.bv);
 		return new com_babylonhx_math_Vector2(uv0.x + uv1.x + uv2.x,uv0.y + uv1.y + uv2.y);
 	}
 	,__class__: com_babylonhx_collisions_PickingInfo
@@ -8311,13 +8312,14 @@ com_babylonhx_materials_Material.prototype = {
 };
 var com_babylonhx_materials_StandardMaterial = $hx_exports.BABYLON.StandardMaterial = function(name,scene) {
 	this.maxSimultaneousLights = 4;
+	this._cachedDefines = new com_babylonhx_materials_StandardMaterialDefines();
+	this._defines = new com_babylonhx_materials_StandardMaterialDefines();
 	this._renderId = -1;
 	this._scaledSpecular = new com_babylonhx_math_Color3();
 	this._scaledDiffuse = new com_babylonhx_math_Color3();
 	this._globalAmbientColor = new com_babylonhx_math_Color3(0,0,0);
 	this._worldViewProjectionMatrix = com_babylonhx_math_Matrix.FromValues(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
 	this._renderTargets = new com_babylonhx_tools_SmartArray(16);
-	this._cachedDefines = null;
 	this.fogEnabled = true;
 	this.useSpecularOverAlpha = true;
 	this.useAlphaFromDiffuseTexture = false;
@@ -8335,6 +8337,7 @@ var com_babylonhx_materials_StandardMaterial = $hx_exports.BABYLON.StandardMater
 	this.diffuseTexture = null;
 	var _g = this;
 	com_babylonhx_materials_Material.call(this,name,scene);
+	this._cachedDefines.BonesPerMesh = -1;
 	this.getRenderTargetTextures = function() {
 		_g._renderTargets.reset();
 		if(_g.reflectionTexture != null && _g.reflectionTexture.isRenderTarget) _g._renderTargets.push(_g.reflectionTexture);
@@ -8363,14 +8366,14 @@ com_babylonhx_materials_StandardMaterial.prototype = $extend(com_babylonhx_mater
 	,opacityFresnelParameters: null
 	,reflectionFresnelParameters: null
 	,emissiveFresnelParameters: null
-	,_cachedDefines: null
 	,_renderTargets: null
 	,_worldViewProjectionMatrix: null
 	,_globalAmbientColor: null
 	,_scaledDiffuse: null
 	,_scaledSpecular: null
 	,_renderId: null
-	,_specularTermEnabled: null
+	,_defines: null
+	,_cachedDefines: null
 	,maxSimultaneousLights: null
 	,needAlphaBlending: function() {
 		return this.alpha < 1.0 || this.opacityTexture != null || this._shouldUseAlphaFromDiffuseTexture() || this.opacityFresnelParameters != null && this.opacityFresnelParameters.isEnabled;
@@ -8394,74 +8397,100 @@ com_babylonhx_materials_StandardMaterial.prototype = $extend(com_babylonhx_mater
 			if(this._renderId == scene._renderId) return true;
 		}
 		var engine = scene._engine;
-		com_babylonhx_materials_StandardMaterial.defines = [];
-		var fallbacks = new com_babylonhx_materials_EffectFallbacks();
 		var needNormals = false;
 		var needUVs = false;
+		this._defines.reset();
 		if(scene.texturesEnabled) {
 			if(this.diffuseTexture != null && com_babylonhx_materials_StandardMaterial.DiffuseTextureEnabled) {
 				if(!this.diffuseTexture.isReady()) return false; else {
 					needUVs = true;
-					com_babylonhx_materials_StandardMaterial.defines.push("#define DIFFUSE");
+					{
+						this._defines.defines.set("DIFFUSE",true);
+						true;
+					}
 				}
 			}
 			if(this.ambientTexture != null && com_babylonhx_materials_StandardMaterial.AmbientTextureEnabled) {
 				if(!this.ambientTexture.isReady()) return false; else {
 					needUVs = true;
-					com_babylonhx_materials_StandardMaterial.defines.push("#define AMBIENT");
+					{
+						this._defines.defines.set("AMBIENT",true);
+						true;
+					}
 				}
 			}
 			if(this.opacityTexture != null && com_babylonhx_materials_StandardMaterial.OpacityTextureEnabled) {
 				if(!this.opacityTexture.isReady()) return false; else {
 					needUVs = true;
-					com_babylonhx_materials_StandardMaterial.defines.push("#define OPACITY");
-					if(this.opacityTexture.getAlphaFromRGB) com_babylonhx_materials_StandardMaterial.defines.push("#define OPACITYRGB");
+					{
+						this._defines.defines.set("OPACITY",true);
+						true;
+					}
+					if(this.opacityTexture.getAlphaFromRGB) {
+						this._defines.defines.set("OPACITYRGB",true);
+						true;
+					}
 				}
 			}
 			if(this.reflectionTexture != null && com_babylonhx_materials_StandardMaterial.ReflectionTextureEnabled) {
 				if(!this.reflectionTexture.isReady()) return false; else {
 					needNormals = true;
 					needUVs = true;
-					com_babylonhx_materials_StandardMaterial.defines.push("#define REFLECTION");
-					fallbacks.addFallback(0,"REFLECTION");
+					{
+						this._defines.defines.set("REFLECTION",true);
+						true;
+					}
 				}
 			}
 			if(this.emissiveTexture != null && com_babylonhx_materials_StandardMaterial.EmissiveTextureEnabled) {
 				if(!this.emissiveTexture.isReady()) return false; else {
 					needUVs = true;
-					com_babylonhx_materials_StandardMaterial.defines.push("#define EMISSIVE");
+					{
+						this._defines.defines.set("EMISSIVE",true);
+						true;
+					}
 				}
 			}
 			if(this.specularTexture != null && com_babylonhx_materials_StandardMaterial.SpecularTextureEnabled) {
 				if(!this.specularTexture.isReady()) return false; else {
 					needUVs = true;
-					com_babylonhx_materials_StandardMaterial.defines.push("#define SPECULAR");
-					fallbacks.addFallback(0,"SPECULAR");
+					{
+						this._defines.defines.set("SPECULAR",true);
+						true;
+					}
 				}
 			}
 		}
 		if(scene._engine.getCaps().standardDerivatives == true && this.bumpTexture != null && com_babylonhx_materials_StandardMaterial.BumpTextureEnabled) {
 			if(!this.bumpTexture.isReady()) return false; else {
 				needUVs = true;
-				com_babylonhx_materials_StandardMaterial.defines.push("#define BUMP");
-				fallbacks.addFallback(0,"BUMP");
+				{
+					this._defines.defines.set("BUMP",true);
+					true;
+				}
 			}
 		}
-		if(this.useSpecularOverAlpha) {
-			com_babylonhx_materials_StandardMaterial.defines.push("#define SPECULAROVERALPHA");
-			fallbacks.addFallback(0,"SPECULAROVERALPHA");
+		if(scene.clipPlane != null) {
+			this._defines.defines.set("CLIPPLANE",true);
+			true;
 		}
-		if(scene.clipPlane != null) com_babylonhx_materials_StandardMaterial.defines.push("#define CLIPPLANE");
-		if(engine._alphaTest) com_babylonhx_materials_StandardMaterial.defines.push("#define ALPHATEST");
-		if(this._shouldUseAlphaFromDiffuseTexture()) com_babylonhx_materials_StandardMaterial.defines.push("#define ALPHAFROMDIFFUSE");
-		if(this.get_pointsCloud() || scene.forcePointsCloud) com_babylonhx_materials_StandardMaterial.defines.push("#define POINTSIZE");
+		if(engine._alphaTest) {
+			this._defines.defines.set("ALPHATEST",true);
+			true;
+		}
+		if(this._shouldUseAlphaFromDiffuseTexture()) {
+			this._defines.defines.set("ALPHAFROMDIFFUSE",true);
+			true;
+		}
+		if(this.get_pointsCloud() || scene.forcePointsCloud) {
+			this._defines.defines.set("POINTSIZE",true);
+			true;
+		}
 		if(scene.fogEnabled && mesh != null && mesh.applyFog && scene.fogMode != com_babylonhx_Scene.FOGMODE_NONE && this.fogEnabled) {
-			com_babylonhx_materials_StandardMaterial.defines.push("#define FOG");
-			fallbacks.addFallback(1,"FOG");
+			this._defines.defines.set("FOG",true);
+			true;
 		}
-		var shadowsActivated = false;
 		var lightIndex = 0;
-		this._specularTermEnabled = false;
 		if(scene.lightsEnabled) {
 			var _g1 = 0;
 			var _g = scene.lights.length;
@@ -8491,35 +8520,38 @@ com_babylonhx_materials_StandardMaterial.prototype = $extend(com_babylonhx_mater
 				}
 				if(!light.canAffectMesh(mesh)) continue;
 				needNormals = true;
-				com_babylonhx_materials_StandardMaterial.defines.push("#define LIGHT" + lightIndex);
-				if(lightIndex > 0) fallbacks.addFallback(lightIndex,"LIGHT" + lightIndex);
+				{
+					this._defines.defines.set("LIGHT" + lightIndex,true);
+					true;
+				}
 				var type = "";
-				if(js_Boot.__instanceof(light,com_babylonhx_lights_SpotLight)) type = "#define SPOTLIGHT" + lightIndex; else if(js_Boot.__instanceof(light,com_babylonhx_lights_HemisphericLight)) type = "#define HEMILIGHT" + lightIndex; else type = "#define POINTDIRLIGHT" + lightIndex;
-				com_babylonhx_materials_StandardMaterial.defines.push(type);
-				if(lightIndex > 0) fallbacks.addFallback(lightIndex,StringTools.replace(type,"#define ",""));
+				if(js_Boot.__instanceof(light,com_babylonhx_lights_SpotLight)) type = "SPOTLIGHT" + lightIndex; else if(js_Boot.__instanceof(light,com_babylonhx_lights_HemisphericLight)) type = "HEMILIGHT" + lightIndex; else type = "POINTDIRLIGHT" + lightIndex;
+				{
+					this._defines.defines.set(type,true);
+					true;
+				}
 				if(!light.specular.equalsFloats(0,0,0)) {
-					if(!this._specularTermEnabled) {
-						this._specularTermEnabled = true;
-						com_babylonhx_materials_StandardMaterial.defines.push("#define SPECULARTERM");
-						fallbacks.addFallback(0,"SPECULARTERM");
-					}
+					this._defines.defines.set("SPECULARTERM",true);
+					true;
 				}
 				if(scene.shadowsEnabled) {
 					var shadowGenerator = light.getShadowGenerator();
 					if(mesh != null && mesh.get_receiveShadows() && shadowGenerator != null) {
-						com_babylonhx_materials_StandardMaterial.defines.push("#define SHADOW" + lightIndex);
-						fallbacks.addFallback(0,"SHADOW" + lightIndex);
-						if(!shadowsActivated) {
-							com_babylonhx_materials_StandardMaterial.defines.push("#define SHADOWS");
-							shadowsActivated = true;
+						{
+							this._defines.defines.set("SHADOW" + lightIndex,true);
+							true;
+						}
+						{
+							this._defines.defines.set("SHADOWS",true);
+							true;
 						}
 						if(shadowGenerator.get_useVarianceShadowMap() || shadowGenerator.get_useBlurVarianceShadowMap()) {
-							com_babylonhx_materials_StandardMaterial.defines.push("#define SHADOWVSM" + lightIndex);
-							if(lightIndex > 0) fallbacks.addFallback(0,"SHADOWVSM" + lightIndex);
+							this._defines.defines.set("SHADOWVSM" + lightIndex,true);
+							true;
 						}
 						if(shadowGenerator.get_usePoissonSampling()) {
-							com_babylonhx_materials_StandardMaterial.defines.push("#define SHADOWPCF" + lightIndex);
-							if(lightIndex > 0) fallbacks.addFallback(0,"SHADOWPCF" + lightIndex);
+							this._defines.defines.set("SHADOWPCF" + lightIndex,true);
+							true;
 						}
 					}
 				}
@@ -8529,75 +8561,118 @@ com_babylonhx_materials_StandardMaterial.prototype = $extend(com_babylonhx_mater
 		}
 		if(com_babylonhx_materials_StandardMaterial.FresnelEnabled) {
 			if(this.diffuseFresnelParameters != null && this.diffuseFresnelParameters.isEnabled || this.opacityFresnelParameters != null && this.opacityFresnelParameters.isEnabled || this.emissiveFresnelParameters != null && this.emissiveFresnelParameters.isEnabled || this.reflectionFresnelParameters != null && this.reflectionFresnelParameters.isEnabled) {
-				var fresnelRank = 1;
 				if(this.diffuseFresnelParameters != null && this.diffuseFresnelParameters.isEnabled) {
-					com_babylonhx_materials_StandardMaterial.defines.push("#define DIFFUSEFRESNEL");
-					fallbacks.addFallback(fresnelRank,"DIFFUSEFRESNEL");
-					fresnelRank++;
+					this._defines.defines.set("DIFFUSEFRESNEL",true);
+					true;
 				}
 				if(this.opacityFresnelParameters != null && this.opacityFresnelParameters.isEnabled) {
-					com_babylonhx_materials_StandardMaterial.defines.push("#define OPACITYFRESNEL");
-					fallbacks.addFallback(fresnelRank,"OPACITYFRESNEL");
-					fresnelRank++;
+					this._defines.defines.set("OPACITYFRESNEL",true);
+					true;
 				}
 				if(this.reflectionFresnelParameters != null && this.reflectionFresnelParameters.isEnabled) {
-					com_babylonhx_materials_StandardMaterial.defines.push("#define REFLECTIONFRESNEL");
-					fallbacks.addFallback(fresnelRank,"REFLECTIONFRESNEL");
-					fresnelRank++;
+					this._defines.defines.set("REFLECTIONFRESNEL",true);
+					true;
 				}
 				if(this.emissiveFresnelParameters != null && this.emissiveFresnelParameters.isEnabled) {
-					com_babylonhx_materials_StandardMaterial.defines.push("#define EMISSIVEFRESNEL");
-					fallbacks.addFallback(fresnelRank,"EMISSIVEFRESNEL");
-					fresnelRank++;
+					this._defines.defines.set("EMISSIVEFRESNEL",true);
+					true;
 				}
 				needNormals = true;
-				com_babylonhx_materials_StandardMaterial.defines.push("#define FRESNEL");
-				fallbacks.addFallback(fresnelRank - 1,"FRESNEL");
+				{
+					this._defines.defines.set("FRESNEL",true);
+					true;
+				}
 			}
 		}
-		var attribs = ["position"];
+		if(this._defines.defines.get("SPECULARTERM") && this.useSpecularOverAlpha) {
+			this._defines.defines.set("SPECULAROVERALPHA",true);
+			true;
+		}
 		if(mesh != null) {
 			if(needNormals && mesh.isVerticesDataPresent("normal")) {
-				attribs.push("normal");
-				com_babylonhx_materials_StandardMaterial.defines.push("#define NORMAL");
+				this._defines.defines.set("NORMAL",true);
+				true;
 			}
 			if(needUVs) {
 				if(mesh.isVerticesDataPresent("uv")) {
-					attribs.push("uv");
-					com_babylonhx_materials_StandardMaterial.defines.push("#define UV1");
+					this._defines.defines.set("UV1",true);
+					true;
 				}
 				if(mesh.isVerticesDataPresent("uv2")) {
-					attribs.push("uv2");
-					com_babylonhx_materials_StandardMaterial.defines.push("#define UV2");
+					this._defines.defines.set("UV2",true);
+					true;
 				}
 			}
 			if(mesh.useVertexColors && mesh.isVerticesDataPresent("color")) {
-				attribs.push("color");
-				com_babylonhx_materials_StandardMaterial.defines.push("#define VERTEXCOLOR");
-				if(mesh.hasVertexAlpha) com_babylonhx_materials_StandardMaterial.defines.push("#define VERTEXALPHA");
+				{
+					this._defines.defines.set("VERTEXCOLOR",true);
+					true;
+				}
+				if(mesh.hasVertexAlpha) {
+					this._defines.defines.set("VERTEXALPHA",true);
+					true;
+				}
 			}
 			if(mesh.get_useBones()) {
-				attribs.push("matricesIndices");
-				attribs.push("matricesWeights");
-				com_babylonhx_materials_StandardMaterial.defines.push("#define BONES");
-				com_babylonhx_materials_StandardMaterial.defines.push("#define BonesPerMesh " + (mesh.get_skeleton().bones.length + 1));
-				com_babylonhx_materials_StandardMaterial.defines.push("#define BONES4");
-				fallbacks.addFallback(0,"BONES4");
+				{
+					this._defines.defines.set("BONES",true);
+					true;
+				}
+				this._defines.BonesPerMesh = mesh.get_skeleton().bones.length + 1;
+				{
+					this._defines.defines.set("BONES4",true);
+					true;
+				}
 			}
 			if(useInstances) {
-				com_babylonhx_materials_StandardMaterial.defines.push("#define INSTANCES");
+				this._defines.defines.set("INSTANCES",true);
+				true;
+			}
+		}
+		if(!this._defines.isEqual(this._cachedDefines)) {
+			this._defines.cloneTo(this._cachedDefines);
+			scene._cachedMaterial = null;
+			var fallbacks = new com_babylonhx_materials_EffectFallbacks();
+			if(this._defines.defines.get("REFLECTION")) fallbacks.addFallback(0,"REFLECTION");
+			if(this._defines.defines.get("SPECULAR")) fallbacks.addFallback(0,"SPECULAR");
+			if(this._defines.defines.get("BUMP")) fallbacks.addFallback(0,"BUMP");
+			if(this._defines.defines.get("SPECULAROVERALPHA")) fallbacks.addFallback(0,"SPECULAROVERALPHA");
+			if(this._defines.defines.get("FOG")) fallbacks.addFallback(1,"FOG");
+			var _g11 = 0;
+			var _g4 = this.maxSimultaneousLights;
+			while(_g11 < _g4) {
+				var lightIndex1 = _g11++;
+				if(!this._defines.defines.get("LIGHT" + lightIndex1)) continue;
+				if(lightIndex1 > 0) fallbacks.addFallback(lightIndex1,"LIGHT" + lightIndex1);
+				if(this._defines.defines.get("SHADOW" + lightIndex1)) fallbacks.addFallback(0,"SHADOW" + lightIndex1);
+				if(this._defines.defines.get("SHADOWPCF" + lightIndex1)) fallbacks.addFallback(0,"SHADOWPCF" + lightIndex1);
+				if(this._defines.defines.get("SHADOWVSM" + lightIndex1)) fallbacks.addFallback(0,"SHADOWVSM" + lightIndex1);
+			}
+			if(this._defines.defines.get("SPECULARTERM")) fallbacks.addFallback(0,"SPECULARTERM");
+			if(this._defines.defines.get("DIFFUSEFRESNEL")) fallbacks.addFallback(1,"DIFFUSEFRESNEL");
+			if(this._defines.defines.get("OPACITYFRESNEL")) fallbacks.addFallback(2,"OPACITYFRESNEL");
+			if(this._defines.defines.get("REFLECTIONFRESNEL")) fallbacks.addFallback(3,"REFLECTIONFRESNEL");
+			if(this._defines.defines.get("EMISSIVEFRESNEL")) fallbacks.addFallback(4,"EMISSIVEFRESNEL");
+			if(this._defines.defines.get("FRESNEL")) fallbacks.addFallback(4,"FRESNEL");
+			if(this._defines.defines.get("BONES4")) fallbacks.addFallback(0,"BONES4");
+			var attribs = ["position"];
+			if(this._defines.defines.get("NORMAL")) attribs.push("normal");
+			if(this._defines.defines.get("UV1")) attribs.push("uv");
+			if(this._defines.defines.get("UV2")) attribs.push("uv2");
+			if(this._defines.defines.get("VERTEXCOLOR")) attribs.push("color");
+			if(this._defines.defines.get("BONES")) {
+				attribs.push("matricesIndices");
+				attribs.push("matricesWeights");
+			}
+			if(this._defines.defines.get("INSTANCES")) {
 				attribs.push("world0");
 				attribs.push("world1");
 				attribs.push("world2");
 				attribs.push("world3");
 			}
-		}
-		var join = com_babylonhx_materials_StandardMaterial.defines.join("\n");
-		if(this._cachedDefines != join) {
-			this._cachedDefines = join;
-			scene._cachedMaterial = null;
 			var shaderName = "default";
-			if(scene._engine.getCaps().standardDerivatives == false) shaderName = "legacydefault";
+			if(!scene._engine.getCaps().standardDerivatives) shaderName = "legacydefault";
+			var join = this._defines.toString();
 			this._effect = scene._engine.createEffect(shaderName,attribs,["world","view","viewProjection","vEyePosition","vLightsType","vAmbientColor","vDiffuseColor","vSpecularColor","vEmissiveColor","vLightData0","vLightDiffuse0","vLightSpecular0","vLightDirection0","vLightGround0","lightMatrix0","vLightData1","vLightDiffuse1","vLightSpecular1","vLightDirection1","vLightGround1","lightMatrix1","vLightData2","vLightDiffuse2","vLightSpecular2","vLightDirection2","vLightGround2","lightMatrix2","vLightData3","vLightDiffuse3","vLightSpecular3","vLightDirection3","vLightGround3","lightMatrix3","vFogInfos","vFogColor","pointSize","vDiffuseInfos","vAmbientInfos","vOpacityInfos","vReflectionInfos","vEmissiveInfos","vSpecularInfos","vBumpInfos","mBones","vClipPlane","diffuseMatrix","ambientMatrix","opacityMatrix","reflectionMatrix","emissiveMatrix","specularMatrix","bumpMatrix","shadowsInfo0","shadowsInfo1","shadowsInfo2","shadowsInfo3","diffuseLeftColor","diffuseRightColor","opacityParts","reflectionLeftColor","reflectionRightColor","emissiveLeftColor","emissiveRightColor"],["diffuseSampler","ambientSampler","opacitySampler","reflectionCubeSampler","reflection2DSampler","emissiveSampler","specularSampler","bumpSampler","shadowSampler0","shadowSampler1","shadowSampler2","shadowSampler3"],join,fallbacks,this.onCompiled,this.onError);
 		}
 		if(!this._effect._isReady) return false;
@@ -8678,7 +8753,7 @@ com_babylonhx_materials_StandardMaterial.prototype = $extend(com_babylonhx_mater
 			this._scaledSpecular.b = this.specularColor.b * Math.min(1,Math.max(0,1.0 - this.emissiveColor.b));
 			this._effect.setVector3("vEyePosition",scene.activeCamera.position);
 			this._effect.setColor3("vAmbientColor",this._globalAmbientColor);
-			if(this._specularTermEnabled) this._effect.setColor4("vSpecularColor",this._scaledSpecular,this.specularPower);
+			if(this._defines.defines.get("SPECULARTERM")) this._effect.setColor4("vSpecularColor",this._scaledSpecular,this.specularPower);
 			this._effect.setColor3("vEmissiveColor",this.emissiveColor);
 		}
 		this._scaledDiffuse.r = this.diffuseColor.r * Math.min(1,Math.max(0,1.0 - this.emissiveColor.r));
@@ -8697,7 +8772,7 @@ com_babylonhx_materials_StandardMaterial.prototype = $extend(com_babylonhx_mater
 				if(js_Boot.__instanceof(light,com_babylonhx_lights_PointLight)) light.transferToEffect(this._effect,"vLightData" + lightIndex); else if(js_Boot.__instanceof(light,com_babylonhx_lights_DirectionalLight)) light.transferToEffect(this._effect,"vLightData" + lightIndex); else if(js_Boot.__instanceof(light,com_babylonhx_lights_SpotLight)) light.transferToEffect(this._effect,"vLightData" + lightIndex,"vLightDirection" + lightIndex); else if(js_Boot.__instanceof(light,com_babylonhx_lights_HemisphericLight)) light.transferToEffect(this._effect,"vLightData" + lightIndex,"vLightGround" + lightIndex);
 				light.diffuse.scaleToRef(light.intensity,this._scaledDiffuse);
 				this._effect.setColor4("vLightDiffuse" + lightIndex,this._scaledDiffuse,light.range);
-				if(this._specularTermEnabled) {
+				if(this._defines.defines.get("SPECULARTERM")) {
 					light.specular.scaleToRef(light.intensity,this._scaledSpecular);
 					this._effect.setColor3("vLightSpecular" + lightIndex,this._scaledSpecular);
 				}
@@ -10009,15 +10084,7 @@ com_babylonhx_math_Matrix.ReflectionToRef = function(plane,result) {
 com_babylonhx_math_Matrix.prototype = {
 	m: null
 	,toString: function() {
-		var ret = "[";
-		var _g = 0;
-		var _g1 = this.m;
-		while(_g < _g1.length) {
-			var el = _g1[_g];
-			++_g;
-			ret += el + ", ";
-		}
-		return ret + "]";
+		return Std.string(this.m) + "";
 	}
 	,isIdentity: function() {
 		if(this.m[0] != 1.0 || this.m[5] != 1.0 || this.m[10] != 1.0 || this.m[15] != 1.0) return false;
@@ -17153,6 +17220,283 @@ com_babylonhx_materials_ShaderMaterial.prototype = $extend(com_babylonhx_materia
 });
 var com_babylonhx_materials_ShadersStore = $hx_exports.BABYLON.ShadersStore = function() { };
 com_babylonhx_materials_ShadersStore.__name__ = ["com","babylonhx","materials","ShadersStore"];
+var com_babylonhx_materials_StandardMaterialDefines = function() {
+	this.BonesPerMesh = 0;
+	this.defines = new haxe_ds_StringMap();
+	{
+		this.defines.set("DIFFUSE",false);
+		false;
+	}
+	{
+		this.defines.set("AMBIENT",false);
+		false;
+	}
+	{
+		this.defines.set("OPACITY",false);
+		false;
+	}
+	{
+		this.defines.set("OPACITYRGB",false);
+		false;
+	}
+	{
+		this.defines.set("REFLECTION",false);
+		false;
+	}
+	{
+		this.defines.set("EMISSIVE",false);
+		false;
+	}
+	{
+		this.defines.set("SPECULAR",false);
+		false;
+	}
+	{
+		this.defines.set("BUMP",false);
+		false;
+	}
+	{
+		this.defines.set("SPECULAROVERALPHA",false);
+		false;
+	}
+	{
+		this.defines.set("CLIPPLANE",false);
+		false;
+	}
+	{
+		this.defines.set("ALPHATEST",false);
+		false;
+	}
+	{
+		this.defines.set("ALPHAFROMDIFFUSE",false);
+		false;
+	}
+	{
+		this.defines.set("POINTSIZE",false);
+		false;
+	}
+	{
+		this.defines.set("FOG",false);
+		false;
+	}
+	{
+		this.defines.set("LIGHT0",false);
+		false;
+	}
+	{
+		this.defines.set("LIGHT1",false);
+		false;
+	}
+	{
+		this.defines.set("LIGHT2",false);
+		false;
+	}
+	{
+		this.defines.set("LIGHT3",false);
+		false;
+	}
+	{
+		this.defines.set("SPOTLIGHT0",false);
+		false;
+	}
+	{
+		this.defines.set("SPOTLIGHT1",false);
+		false;
+	}
+	{
+		this.defines.set("SPOTLIGHT2",false);
+		false;
+	}
+	{
+		this.defines.set("SPOTLIGHT3",false);
+		false;
+	}
+	{
+		this.defines.set("HEMILIGHT0",false);
+		false;
+	}
+	{
+		this.defines.set("HEMILIGHT1",false);
+		false;
+	}
+	{
+		this.defines.set("HEMILIGHT2",false);
+		false;
+	}
+	{
+		this.defines.set("HEMILIGHT3",false);
+		false;
+	}
+	{
+		this.defines.set("POINTDIRLIGHT0",false);
+		false;
+	}
+	{
+		this.defines.set("POINTDIRLIGHT1",false);
+		false;
+	}
+	{
+		this.defines.set("POINTDIRLIGHT2",false);
+		false;
+	}
+	{
+		this.defines.set("POINTDIRLIGHT3",false);
+		false;
+	}
+	{
+		this.defines.set("SPECULARTERM",false);
+		false;
+	}
+	{
+		this.defines.set("SHADOW0",false);
+		false;
+	}
+	{
+		this.defines.set("SHADOW1",false);
+		false;
+	}
+	{
+		this.defines.set("SHADOW2",false);
+		false;
+	}
+	{
+		this.defines.set("SHADOW3",false);
+		false;
+	}
+	{
+		this.defines.set("SHADOWS",false);
+		false;
+	}
+	{
+		this.defines.set("SHADOWVSM0",false);
+		false;
+	}
+	{
+		this.defines.set("SHADOWVSM1",false);
+		false;
+	}
+	{
+		this.defines.set("SHADOWVSM2",false);
+		false;
+	}
+	{
+		this.defines.set("SHADOWVSM3",false);
+		false;
+	}
+	{
+		this.defines.set("SHADOWPCF0",false);
+		false;
+	}
+	{
+		this.defines.set("SHADOWPCF1",false);
+		false;
+	}
+	{
+		this.defines.set("SHADOWPCF2",false);
+		false;
+	}
+	{
+		this.defines.set("SHADOWPCF3",false);
+		false;
+	}
+	{
+		this.defines.set("DIFFUSEFRESNEL",false);
+		false;
+	}
+	{
+		this.defines.set("OPACITYFRESNEL",false);
+		false;
+	}
+	{
+		this.defines.set("REFLECTIONFRESNEL",false);
+		false;
+	}
+	{
+		this.defines.set("EMISSIVEFRESNEL",false);
+		false;
+	}
+	{
+		this.defines.set("FRESNEL",false);
+		false;
+	}
+	{
+		this.defines.set("NORMAL",false);
+		false;
+	}
+	{
+		this.defines.set("UV1",false);
+		false;
+	}
+	{
+		this.defines.set("UV2",false);
+		false;
+	}
+	{
+		this.defines.set("VERTEXCOLOR",false);
+		false;
+	}
+	{
+		this.defines.set("VERTEXALPHA",false);
+		false;
+	}
+	{
+		this.defines.set("BONES",false);
+		false;
+	}
+	{
+		this.defines.set("BONES4",false);
+		false;
+	}
+	{
+		this.defines.set("INSTANCES",false);
+		false;
+	}
+	this.BonesPerMesh = 0;
+};
+com_babylonhx_materials_StandardMaterialDefines.__name__ = ["com","babylonhx","materials","StandardMaterialDefines"];
+com_babylonhx_materials_StandardMaterialDefines.prototype = {
+	defines: null
+	,BonesPerMesh: null
+	,isEqual: function(other) {
+		var $it0 = this.defines.keys();
+		while( $it0.hasNext() ) {
+			var prop = $it0.next();
+			if(this.defines.get(prop) != other.defines.get(prop)) return false;
+		}
+		return true;
+	}
+	,cloneTo: function(other) {
+		var $it0 = this.defines.keys();
+		while( $it0.hasNext() ) {
+			var prop = $it0.next();
+			var v = this.defines.get(prop);
+			other.defines.set(prop,v);
+			v;
+		}
+	}
+	,reset: function() {
+		var $it0 = this.defines.keys();
+		while( $it0.hasNext() ) {
+			var prop = $it0.next();
+			{
+				this.defines.set(prop,false);
+				false;
+			}
+		}
+		this.BonesPerMesh = 0;
+	}
+	,toString: function() {
+		var result = "";
+		var $it0 = this.defines.keys();
+		while( $it0.hasNext() ) {
+			var prop = $it0.next();
+			if(this.defines.get(prop) == true) result += "#define " + prop + "\n";
+		}
+		if(this.BonesPerMesh > 0) result += "#define BonesPerMesh " + this.BonesPerMesh + "\n";
+		return result;
+	}
+	,__class__: com_babylonhx_materials_StandardMaterialDefines
+};
 var com_babylonhx_materials_textures_DynamicTexture = $hx_exports.BABYLON.DynamicTexture = function(name,options,scene,generateMipMaps,samplingMode) {
 	if(samplingMode == null) samplingMode = 3;
 	com_babylonhx_materials_textures_Texture.call(this,null,scene,!generateMipMaps);
@@ -18781,7 +19125,7 @@ com_babylonhx_math_Ray.prototype = {
 	}
 	,__class__: com_babylonhx_math_Ray
 };
-var com_babylonhx_math_Space = $hx_exports.BABYLON.Space = { __ename__ : true, __constructs__ : ["LOCAL","GLOBAL"] };
+var com_babylonhx_math_Space = { __ename__ : true, __constructs__ : ["LOCAL","GLOBAL"] };
 com_babylonhx_math_Space.LOCAL = ["LOCAL",0];
 com_babylonhx_math_Space.LOCAL.toString = $estr;
 com_babylonhx_math_Space.LOCAL.__enum__ = com_babylonhx_math_Space;

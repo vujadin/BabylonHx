@@ -56,20 +56,23 @@ import com.babylonhx.tools.Tools;
 	public var reflectionFresnelParameters:FresnelParameters;
 	public var emissiveFresnelParameters:FresnelParameters;
 
-	private var _cachedDefines:String = null;
 	private var _renderTargets:SmartArray = new SmartArray(16);// SmartArray<RenderTargetTexture>
 	private var _worldViewProjectionMatrix:Matrix = Matrix.Zero();
 	private var _globalAmbientColor:Color3 = new Color3(0, 0, 0);
 	private var _scaledDiffuse:Color3 = new Color3();
 	private var _scaledSpecular:Color3 = new Color3();
 	private var _renderId:Int = -1;
-	private var _specularTermEnabled:Bool;
+		
+	private var _defines:StandardMaterialDefines = new StandardMaterialDefines();
+	private var _cachedDefines:StandardMaterialDefines = new StandardMaterialDefines();
 	
 	private var maxSimultaneousLights:Int = 4;
 	
 
 	public function new(name:String, scene:Scene) {
 		super(name, scene);
+		
+		this._cachedDefines.BonesPerMesh = -1;
 		
 		this.getRenderTargetTextures = function():SmartArray/*SmartArray<RenderTargetTexture>*/ {
 			this._renderTargets.reset();
@@ -99,7 +102,6 @@ import com.babylonhx.tools.Tools;
 	}
 
 	// Methods   
-	public static var defines:Array<String>;
 	override public function isReady(?mesh:AbstractMesh, useInstances:Bool = false):Bool {
 		if (this.checkReadyOnlyOnce) {
 			if (this._wasPreviouslyReady) {
@@ -116,10 +118,10 @@ import com.babylonhx.tools.Tools;
 		}
 		
 		var engine:Engine = scene.getEngine();
-		defines = [];
-		var fallbacks:EffectFallbacks = new EffectFallbacks();
 		var needNormals:Bool = false;
 		var needUVs:Bool = false;
+		
+		this._defines.reset();
 		
 		// Textures
 		if (scene.texturesEnabled) {
@@ -129,7 +131,7 @@ import com.babylonhx.tools.Tools;
 				} 
 				else {
 					needUVs = true;
-					defines.push("#define DIFFUSE");
+					this._defines.defines["DIFFUSE"] = true;
 				}
 			}
 			
@@ -139,7 +141,7 @@ import com.babylonhx.tools.Tools;
 				} 
 				else {
 					needUVs = true;
-					defines.push("#define AMBIENT");
+					this._defines.defines["AMBIENT"] = true;
 				}
 			}
 			
@@ -149,10 +151,10 @@ import com.babylonhx.tools.Tools;
 				} 
 				else {
 					needUVs = true;
-					defines.push("#define OPACITY");
+					this._defines.defines["OPACITY"] = true;
 					
 					if (this.opacityTexture.getAlphaFromRGB) {
-						defines.push("#define OPACITYRGB");
+						this._defines.defines["OPACITYRGB"] = true;
 					}
 				}
 			}
@@ -164,8 +166,7 @@ import com.babylonhx.tools.Tools;
 				else {
 					needNormals = true;
 					needUVs = true;
-					defines.push("#define REFLECTION");
-					fallbacks.addFallback(0, "REFLECTION");
+					this._defines.defines["REFLECTION"] = true;
 				}
 			}
 			
@@ -175,7 +176,7 @@ import com.babylonhx.tools.Tools;
 				} 
 				else {
 					needUVs = true;
-					defines.push("#define EMISSIVE");
+					this._defines.defines["EMISSIVE"] = true;
 				}
 			}
 			
@@ -185,8 +186,7 @@ import com.babylonhx.tools.Tools;
 				} 
 				else {
 					needUVs = true;
-					defines.push("#define SPECULAR");
-					fallbacks.addFallback(0, "SPECULAR");
+					this._defines.defines["SPECULAR"] = true;
 				}
 			}
 		}
@@ -197,43 +197,34 @@ import com.babylonhx.tools.Tools;
 			} 
 			else {
 				needUVs = true;
-				defines.push("#define BUMP");
-				fallbacks.addFallback(0, "BUMP");
+				this._defines.defines["BUMP"] = true;
 			}
 		}
 		
 		// Effect
-		if (this.useSpecularOverAlpha) {
-			defines.push("#define SPECULAROVERALPHA");
-			fallbacks.addFallback(0, "SPECULAROVERALPHA");
-		}
-		
 		if (scene.clipPlane != null) {
-			defines.push("#define CLIPPLANE");
+			this._defines.defines["CLIPPLANE"] = true;
 		}
 		
 		if (engine.getAlphaTesting()) {
-			defines.push("#define ALPHATEST");
+			this._defines.defines["ALPHATEST"] = true;
 		}
 		
 		if (this._shouldUseAlphaFromDiffuseTexture()) {
-			defines.push("#define ALPHAFROMDIFFUSE");
+			this._defines.defines["ALPHAFROMDIFFUSE"] = true;
 		}
 		
 		// Point size
 		if (this.pointsCloud || scene.forcePointsCloud) {
-			defines.push("#define POINTSIZE");
+			this._defines.defines["POINTSIZE"] = true;
 		}
 		
 		// Fog
 		if (scene.fogEnabled && mesh != null && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
-			defines.push("#define FOG");
-			fallbacks.addFallback(1, "FOG");
+			this._defines.defines["FOG"] = true;
 		}
 		
-		var shadowsActivated:Bool = false;
 		var lightIndex:Int = 0;
-		this._specularTermEnabled = false;
 		if (scene.lightsEnabled) {
 			for (index in 0...scene.lights.length) {
 				var light = scene.lights[index];
@@ -273,61 +264,40 @@ import com.babylonhx.tools.Tools;
 				}
 				
 				needNormals = true;
-				defines.push("#define LIGHT" + lightIndex);
-				
-				if (lightIndex > 0) {
-					fallbacks.addFallback(lightIndex, "LIGHT" + lightIndex);
-				}
+				this._defines.defines["LIGHT" + lightIndex] = true;
 				
 				var type:String = "";
 				if (Std.is(light, SpotLight)) {
-					type = "#define SPOTLIGHT" + lightIndex;
+					type = "SPOTLIGHT" + lightIndex;
 				} 
 				else if (Std.is(light, HemisphericLight)) {
-					type = "#define HEMILIGHT" + lightIndex;
+					type = "HEMILIGHT" + lightIndex;
 				} 
 				else {
-					type = "#define POINTDIRLIGHT" + lightIndex;
+					type = "POINTDIRLIGHT" + lightIndex;
 				}
 				
-				defines.push(type);
-				if (lightIndex > 0) {
-					fallbacks.addFallback(lightIndex, StringTools.replace(type, "#define ", ""));
-				}
+				this._defines.defines[type] = true;
 				
 				// Specular
-                if (!light.specular.equalsFloats(0, 0, 0)) {
-                    if (!this._specularTermEnabled) {
-                        this._specularTermEnabled = true;
-                        defines.push("#define SPECULARTERM");
-                        fallbacks.addFallback(0, "SPECULARTERM");
-                    }
-                }
+				if (!light.specular.equalsFloats(0, 0, 0)) {
+					this._defines.defines["SPECULARTERM"] = true;
+				}
 				
 				// Shadows
 				if (scene.shadowsEnabled) {
 					var shadowGenerator = light.getShadowGenerator();
 					if (mesh != null && mesh.receiveShadows && shadowGenerator != null) {
-						defines.push("#define SHADOW" + lightIndex);
-						fallbacks.addFallback(0, "SHADOW" + lightIndex);
+						this._defines.defines["SHADOW" + lightIndex] = true;
 						
-						if (!shadowsActivated) {
-							defines.push("#define SHADOWS");
-							shadowsActivated = true;
-						}
+						this._defines.defines["SHADOWS"] = true;
 						
 						if (shadowGenerator.useVarianceShadowMap || shadowGenerator.useBlurVarianceShadowMap) {
-							defines.push("#define SHADOWVSM" + lightIndex);
-							if (lightIndex > 0) {
-								fallbacks.addFallback(0, "SHADOWVSM" + lightIndex);
-							}
+							this._defines.defines["SHADOWVSM" + lightIndex] = true;
 						}
 						
 						if (shadowGenerator.usePoissonSampling) {
-							defines.push("#define SHADOWPCF" + lightIndex);
-							if (lightIndex > 0) {
-								fallbacks.addFallback(0, "SHADOWPCF" + lightIndex);
-							}
+							this._defines.defines["SHADOWPCF" + lightIndex] = true;
 						}
 					}
 				}
@@ -338,103 +308,186 @@ import com.babylonhx.tools.Tools;
 				}
 			}
 		}
-		
-		if(StandardMaterial.FresnelEnabled) {
+
+		if (StandardMaterial.FresnelEnabled) {
 			// Fresnel
 			if (this.diffuseFresnelParameters != null && this.diffuseFresnelParameters.isEnabled ||
 				this.opacityFresnelParameters != null && this.opacityFresnelParameters.isEnabled ||
 				this.emissiveFresnelParameters != null && this.emissiveFresnelParameters.isEnabled ||
 				this.reflectionFresnelParameters != null && this.reflectionFresnelParameters.isEnabled) {
 					
-				var fresnelRank:Int = 1;
-				
 				if (this.diffuseFresnelParameters != null && this.diffuseFresnelParameters.isEnabled) {
-					defines.push("#define DIFFUSEFRESNEL");
-					fallbacks.addFallback(fresnelRank, "DIFFUSEFRESNEL");
-					fresnelRank++;
+					this._defines.defines["DIFFUSEFRESNEL"] = true;
 				}
 				
 				if (this.opacityFresnelParameters != null && this.opacityFresnelParameters.isEnabled) {
-					defines.push("#define OPACITYFRESNEL");
-					fallbacks.addFallback(fresnelRank, "OPACITYFRESNEL");
-					fresnelRank++;
+					this._defines.defines["OPACITYFRESNEL"] = true;
 				}
 				
 				if (this.reflectionFresnelParameters != null && this.reflectionFresnelParameters.isEnabled) {
-					defines.push("#define REFLECTIONFRESNEL");
-					fallbacks.addFallback(fresnelRank, "REFLECTIONFRESNEL");
-					fresnelRank++;
+					this._defines.defines["REFLECTIONFRESNEL"] = true;
 				}
 				
 				if (this.emissiveFresnelParameters != null && this.emissiveFresnelParameters.isEnabled) {
-					defines.push("#define EMISSIVEFRESNEL");
-					fallbacks.addFallback(fresnelRank, "EMISSIVEFRESNEL");
-					fresnelRank++;
+					this._defines.defines["EMISSIVEFRESNEL"] = true;
 				}
 				
 				needNormals = true;
-				defines.push("#define FRESNEL");
-				fallbacks.addFallback(fresnelRank - 1, "FRESNEL");
+				this._defines.defines["FRESNEL"] = true;
 			}
 		}
 		
+		if (this._defines.defines["SPECULARTERM"] && this.useSpecularOverAlpha) {
+			this._defines.defines["SPECULAROVERALPHA"] = true;
+		}
+		
 		// Attribs
-		var attribs:Array<String> = [VertexBuffer.PositionKind];
 		if (mesh != null) {
 			if (needNormals && mesh.isVerticesDataPresent(VertexBuffer.NormalKind)) {
-				attribs.push(VertexBuffer.NormalKind);
-				defines.push("#define NORMAL");
+				this._defines.defines["NORMAL"] = true;
 			}
 			if (needUVs) {
 				if (mesh.isVerticesDataPresent(VertexBuffer.UVKind)) {
-					attribs.push(VertexBuffer.UVKind);
-					defines.push("#define UV1");
+					this._defines.defines["UV1"] = true;
 				}
 				if (mesh.isVerticesDataPresent(VertexBuffer.UV2Kind)) {
-					attribs.push(VertexBuffer.UV2Kind);
-					defines.push("#define UV2");
+					this._defines.defines["UV2"] = true;
 				}
 			}
 			if (mesh.useVertexColors && mesh.isVerticesDataPresent(VertexBuffer.ColorKind)) {
-				attribs.push(VertexBuffer.ColorKind);
-				defines.push("#define VERTEXCOLOR");
+				this._defines.defines["VERTEXCOLOR"] = true;
 				
 				if (mesh.hasVertexAlpha) {
-					defines.push("#define VERTEXALPHA");
+					this._defines.defines["VERTEXALPHA"] = true;
 				}
-			}			
+			}
 			if (mesh.useBones) {
-				attribs.push(VertexBuffer.MatricesIndicesKind);
-				attribs.push(VertexBuffer.MatricesWeightsKind);
-				defines.push("#define BONES");
-				defines.push("#define BonesPerMesh " + (mesh.skeleton.bones.length + 1));
-				defines.push("#define BONES4");
-				fallbacks.addFallback(0, "BONES4");
+				this._defines.defines["BONES"] = true;
+				this._defines.BonesPerMesh = (mesh.skeleton.bones.length + 1);
+				this._defines.defines["BONES4"] = true;
 			}
 			
 			// Instances
 			if (useInstances) {
-				defines.push("#define INSTANCES");
+				this._defines.defines["INSTANCES"] = true;
+			}
+		}
+		
+		// Get correct effect      
+		if (!this._defines.isEqual(this._cachedDefines)) {
+			this._defines.cloneTo(this._cachedDefines);
+			
+			scene.resetCachedMaterial();
+			
+			// Fallbacks
+			var fallbacks = new EffectFallbacks();
+			if (this._defines.defines["REFLECTION"]) {
+				fallbacks.addFallback(0, "REFLECTION");
+			}
+			
+			if (this._defines.defines["SPECULAR"]) {
+				fallbacks.addFallback(0, "SPECULAR");
+			}
+			
+			if (this._defines.defines["BUMP"]) {
+				fallbacks.addFallback(0, "BUMP");
+			}
+			
+			if (this._defines.defines["SPECULAROVERALPHA"]) {
+				fallbacks.addFallback(0, "SPECULAROVERALPHA");
+			}
+			
+			if (this._defines.defines["FOG"]) {
+				fallbacks.addFallback(1, "FOG");
+			}
+			
+			for (lightIndex in 0...maxSimultaneousLights) {
+				if (!this._defines.defines["LIGHT" + lightIndex]) {
+					continue;
+				}
+				
+				if (lightIndex > 0) {
+					fallbacks.addFallback(lightIndex, "LIGHT" + lightIndex);
+				}
+				
+				if (this._defines.defines["SHADOW" + lightIndex]) {
+					fallbacks.addFallback(0, "SHADOW" + lightIndex);
+				}
+				
+				if (this._defines.defines["SHADOWPCF" + lightIndex]) {
+					fallbacks.addFallback(0, "SHADOWPCF" + lightIndex);
+				}
+				
+				if (this._defines.defines["SHADOWVSM" + lightIndex]) {
+					fallbacks.addFallback(0, "SHADOWVSM" + lightIndex);
+				}
+			}
+			
+			if (this._defines.defines["SPECULARTERM"]) {
+				fallbacks.addFallback(0, "SPECULARTERM");
+			}
+			
+			if (this._defines.defines["DIFFUSEFRESNEL"]) {
+				fallbacks.addFallback(1, "DIFFUSEFRESNEL");
+			}
+			
+			if (this._defines.defines["OPACITYFRESNEL"]) {
+				fallbacks.addFallback(2, "OPACITYFRESNEL");
+			}
+			
+			if (this._defines.defines["REFLECTIONFRESNEL"]) {
+				fallbacks.addFallback(3, "REFLECTIONFRESNEL");
+			}
+			
+			if (this._defines.defines["EMISSIVEFRESNEL"]) {
+				fallbacks.addFallback(4, "EMISSIVEFRESNEL");
+			}
+			
+			if (this._defines.defines["FRESNEL"]) {
+				fallbacks.addFallback(4, "FRESNEL");
+			}
+			
+			if (this._defines.defines["BONES4"]) {
+				fallbacks.addFallback(0, "BONES4");
+			}
+			
+			//Attributes
+			var attribs:Array<String> = [VertexBuffer.PositionKind];
+			
+			if (this._defines.defines["NORMAL"]) {
+				attribs.push(VertexBuffer.NormalKind);
+			}
+			
+			if (this._defines.defines["UV1"]) {
+				attribs.push(VertexBuffer.UVKind);
+			}
+			
+			if (this._defines.defines["UV2"]) {
+				attribs.push(VertexBuffer.UV2Kind);
+			}
+			
+			if (this._defines.defines["VERTEXCOLOR"]) {
+				attribs.push(VertexBuffer.ColorKind);
+			}
+			
+			if (this._defines.defines["BONES"]) {
+				attribs.push(VertexBuffer.MatricesIndicesKind);
+				attribs.push(VertexBuffer.MatricesWeightsKind);
+			}
+			
+			if (this._defines.defines["INSTANCES"]) {
 				attribs.push("world0");
 				attribs.push("world1");
 				attribs.push("world2");
 				attribs.push("world3");
 			}
-		}
-		
-		// Get correct effect      
-		var join:String = defines.join("\n");
-		if (this._cachedDefines != join) {
-			this._cachedDefines = join;
-			
-			scene.resetCachedMaterial();
 			
 			// Legacy browser patch
-			var shaderName = "default";
-			if (scene.getEngine().getCaps().standardDerivatives == false) {
+			var shaderName:String = "default";
+			if (!scene.getEngine().getCaps().standardDerivatives) {
 				shaderName = "legacydefault";
 			}
-			
+			var join = this._defines.toString();
 			this._effect = scene.getEngine().createEffect(shaderName,
 				attribs,
 				["world", "view", "viewProjection", "vEyePosition", "vLightsType", "vAmbientColor", "vDiffuseColor", "vSpecularColor", "vEmissiveColor",
@@ -449,7 +502,8 @@ import com.babylonhx.tools.Tools;
 					"shadowsInfo0", "shadowsInfo1", "shadowsInfo2", "shadowsInfo3",
 					"diffuseLeftColor", "diffuseRightColor", "opacityParts", "reflectionLeftColor", "reflectionRightColor", "emissiveLeftColor", "emissiveRightColor"
 				],
-				["diffuseSampler", "ambientSampler", "opacitySampler", "reflectionCubeSampler", "reflection2DSampler", "emissiveSampler", "specularSampler", "bumpSampler", "shadowSampler0", "shadowSampler1", "shadowSampler2", "shadowSampler3"
+				["diffuseSampler", "ambientSampler", "opacitySampler", "reflectionCubeSampler", "reflection2DSampler", "emissiveSampler", "specularSampler", "bumpSampler",
+					"shadowSampler0", "shadowSampler1", "shadowSampler2", "shadowSampler3"
 				],
 				join, fallbacks, this.onCompiled, this.onError);
 		}
@@ -459,7 +513,6 @@ import com.babylonhx.tools.Tools;
 		
 		this._renderId = scene.getRenderId();
 		this._wasPreviouslyReady = true;
-		
 		return true;
 	}
 	
@@ -584,7 +637,8 @@ import com.babylonhx.tools.Tools;
 			
 			this._effect.setVector3("vEyePosition", scene.activeCamera.position);
 			this._effect.setColor3("vAmbientColor", this._globalAmbientColor);
-			if (this._specularTermEnabled) {
+			
+			if (this._defines.defines["SPECULARTERM"]) {
 				this._effect.setColor4("vSpecularColor", this._scaledSpecular, this.specularPower);
 			}
 			this._effect.setColor3("vEmissiveColor", this.emissiveColor);
@@ -629,7 +683,7 @@ import com.babylonhx.tools.Tools;
 				
 				light.diffuse.scaleToRef(light.intensity, this._scaledDiffuse);
 				this._effect.setColor4("vLightDiffuse" + lightIndex, this._scaledDiffuse, light.range);
-				if (this._specularTermEnabled) {
+				if (this._defines.defines["SPECULARTERM"]) {
 					light.specular.scaleToRef(light.intensity, this._scaledSpecular);
 					this._effect.setColor3("vLightSpecular" + lightIndex, this._scaledSpecular);
 				}
@@ -639,8 +693,8 @@ import com.babylonhx.tools.Tools;
 					var shadowGenerator:ShadowGenerator = light.getShadowGenerator();
 					if (mesh.receiveShadows && shadowGenerator != null) {
 						this._effect.setMatrix("lightMatrix" + lightIndex, shadowGenerator.getTransformMatrix());
-                            this._effect.setTexture("shadowSampler" + lightIndex, shadowGenerator.getShadowMapForRendering());
-                            this._effect.setFloat3("shadowsInfo" + lightIndex, shadowGenerator.getDarkness(), shadowGenerator.getShadowMap().getSize().width, shadowGenerator.bias);
+						this._effect.setTexture("shadowSampler" + lightIndex, shadowGenerator.getShadowMapForRendering());
+						this._effect.setFloat3("shadowsInfo" + lightIndex, shadowGenerator.getDarkness(), shadowGenerator.getShadowMap().getSize().width, shadowGenerator.bias);
 					}
 				}
 				

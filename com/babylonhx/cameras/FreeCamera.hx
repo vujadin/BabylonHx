@@ -18,17 +18,21 @@ import com.babylonhx.utils.Keycodes;
 	
 	public var ellipsoid:Vector3 = new Vector3(0.5, 1, 0.5);
 	
-	#if purejs
+#if purejs
+
 	public var keysUp:Array<Int> = [38, 87];
 	public var keysDown:Array<Int> = [40, 83];
 	public var keysLeft:Array<Int> = [37, 65];
 	public var keysRight:Array<Int> = [39, 68];
-	#else
+	
+#else
+
 	public var keysUp:Array<Int> = [Keycodes.up, Keycodes.key_w];
 	public var keysDown:Array<Int> = [Keycodes.down, Keycodes.key_s];
 	public var keysLeft:Array<Int> = [Keycodes.left, Keycodes.key_a];
 	public var keysRight:Array<Int> = [Keycodes.right, Keycodes.key_d];
-	#end
+	
+#end
 	
 	public var checkCollisions:Bool = false;
 	public var applyGravity:Bool = false;
@@ -106,6 +110,38 @@ import com.babylonhx.utils.Keycodes;
 				};				
 			};
 			
+		#if purejs
+			
+			this._onKeyDown = function(evt:Dynamic) {
+				var keyCode = evt.keyCode;
+				if (this.keysUp.indexOf(keyCode) != -1 ||
+					this.keysDown.indexOf(keyCode) != -1 ||
+					this.keysLeft.indexOf(keyCode) != -1 ||
+					this.keysRight.indexOf(keyCode) != -1) {
+					var index = this._keys.indexOf(keyCode);
+					
+					if (index == -1) {
+						this._keys.push(keyCode);
+					}
+				}
+			};
+			
+			this._onKeyUp = function(evt:Dynamic) {
+				var keyCode = evt.keyCode;
+				if (this.keysUp.indexOf(keyCode) != -1 ||
+					this.keysDown.indexOf(keyCode) != -1 ||
+					this.keysLeft.indexOf(keyCode) != -1 ||
+					this.keysRight.indexOf(keyCode) != -1) {
+					var index = this._keys.indexOf(keyCode);
+					
+					if (index >= 0) {
+						this._keys.splice(index, 1);
+					}
+				}
+			};
+			
+		#else
+			
 			this._onKeyDown = function(keyCode:Int) {
 				if (this.keysUp.indexOf(keyCode) != -1 ||
 					this.keysDown.indexOf(keyCode) != -1 ||
@@ -132,6 +168,8 @@ import com.babylonhx.utils.Keycodes;
 				}
 			};
 			
+		#end
+			
 			this._onLostFocus = function() {
 				this._keys = [];
 			};
@@ -144,7 +182,7 @@ import com.babylonhx.utils.Keycodes;
 			};
 		}
 		
-		#if purejs
+	#if purejs
 		
 		Engine.app.addEventListener(eventPrefix + "down", function(e) {
 			this._onMouseDown(e.clientX, e.clientY, e.button);
@@ -167,17 +205,21 @@ import com.babylonhx.utils.Keycodes;
 			{ name: "keyup", handler: this._onKeyUp },
 			{ name: "blur", handler: this._onLostFocus }
 		]);
-		#else
+		
+	#else
+	
 		Engine.keyDown.push(_onKeyDown);
 		Engine.keyUp.push(_onKeyUp);
 		Engine.mouseDown.push(_onMouseDown);
 		Engine.mouseUp.push(_onMouseUp);
 		Engine.mouseMove.push(_onMouseMove);
-		#end
+		
+	#end
 	}
 
 	override public function detachControl(?element:Dynamic) {	
-		#if purejs
+	#if purejs
+	
 		Engine.app.removeEventListener(eventPrefix + "down", this._onMouseDown, false);
 		Engine.app.removeEventListener(eventPrefix + "up", this._onMouseUp, false);
 		Engine.app.removeEventListener(eventPrefix + "out", this._onMouseUp, false);
@@ -191,13 +233,16 @@ import com.babylonhx.utils.Keycodes;
 			{ name: "keyup", handler: this._onKeyUp },
 			{ name: "blur", handler: this._onLostFocus }
 		]);
-		#else
+		
+	#else
+	
 		Engine.keyDown.remove(_onKeyDown);
 		Engine.keyUp.remove(_onKeyUp);
 		Engine.mouseDown.remove(_onMouseDown);
 		Engine.mouseUp.remove(_onMouseUp);
 		Engine.mouseMove.remove(_onMouseMove);
-		#end
+		
+	#end
 		
 		if (this._reset != null) {
 			this._reset();
@@ -236,7 +281,6 @@ import com.babylonhx.utils.Keycodes;
 		
 		// Keyboard
 		for (index in 0...this._keys.length) {
-			trace(this._keys);
 			var keyCode = this._keys[index];
 			var speed = this._computeLocalCameraSpeed();
 			
