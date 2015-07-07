@@ -77,7 +77,8 @@ import com.babylonhx.utils.GL;
 		if (this._isAlphaBlendDirty) {
 			if (this._alphaBlend) {
 				GL.enable(GL.BLEND);
-			} else {
+			} 
+			else {
 				GL.disable(GL.BLEND);
 			}
 			

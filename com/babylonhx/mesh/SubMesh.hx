@@ -24,7 +24,7 @@ import com.babylonhx.tools.Tools;
 	private var _mesh:AbstractMesh;
 	private var _renderingMesh:Mesh;
 	private var _boundingInfo:BoundingInfo;
-	private var _linesIndexBuffer:BabylonBuffer;
+	private var _linesIndexBuffer:WebGLBuffer;
 	public var _lastColliderWorldVertices:Array<Vector3>;
 	public var _trianglePlanes:Array<Plane>;
 	public var _lastColliderTransformMatrix:Matrix;
@@ -62,15 +62,15 @@ import com.babylonhx.tools.Tools;
 		}
 	}
 
-	public function getBoundingInfo():BoundingInfo {
+	inline public function getBoundingInfo():BoundingInfo {
 		return this._boundingInfo;
 	}
 
-	public function getMesh():AbstractMesh {
+	inline public function getMesh():AbstractMesh {
 		return this._mesh;
 	}
 
-	public function getRenderingMesh():Mesh {
+	inline public function getRenderingMesh():Mesh {
 		return this._renderingMesh;
 	}
 
@@ -112,18 +112,18 @@ import com.babylonhx.tools.Tools;
 		this._boundingInfo = new BoundingInfo(extend.minimum, extend.maximum);
 	}
 
-	public function _checkCollision(collider:Collider):Bool {
+	inline public function _checkCollision(collider:Collider):Bool {
 		return this._boundingInfo._checkCollision(collider);
 	}
 
-	public function updateBoundingInfo(world:Matrix) {
+	inline public function updateBoundingInfo(world:Matrix) {
 		if (this._boundingInfo == null) {
 			this.refreshBoundingInfo();
 		}
 		this._boundingInfo._update(world);
 	}
 
-	public function isInFrustum(frustumPlanes:Array<Plane>):Bool {
+	inline public function isInFrustum(frustumPlanes:Array<Plane>):Bool {
 		return this._boundingInfo.isInFrustum(frustumPlanes);
 	}
 
@@ -131,7 +131,7 @@ import com.babylonhx.tools.Tools;
 		this._renderingMesh.render(this);
 	}
 
-	inline public function getLinesIndexBuffer(indices:Array<Int>, engine:Engine):BabylonBuffer {
+	inline public function getLinesIndexBuffer(indices:Array<Int>, engine:Engine):WebGLBuffer {
 		if (this._linesIndexBuffer == null) {
 			var linesIndices:Array<Int> = [];
 			
@@ -153,11 +153,11 @@ import com.babylonhx.tools.Tools;
 		return this._linesIndexBuffer;
 	}
 
-	public function canIntersects(ray:Ray):Bool {
+	inline public function canIntersects(ray:Ray):Bool {
 		return ray.intersectsBox(this._boundingInfo.boundingBox);
 	}
 
-	inline public function intersects(ray:Ray, positions:Array<Vector3>, indices:Array<Int>, fastCheck:Bool = false/*?fastCheck:Bool*/):IntersectionInfo {
+	inline public function intersects(ray:Ray, positions:Array<Vector3>, indices:Array<Int>, fastCheck:Bool = false):IntersectionInfo {
 		var intersectInfo:IntersectionInfo = null;
 		
 		// Triangles test

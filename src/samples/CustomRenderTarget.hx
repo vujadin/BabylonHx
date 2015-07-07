@@ -68,7 +68,7 @@ class CustomRenderTarget {
 		
 		// Plane
 		var plane = Mesh.CreatePlane("map", 10, scene);
-		plane.billboardMode = AbstractMesh.BILLBOARDMODE_ALL;
+		plane.billboardMode = 1;
 		plane.scaling.y = 1.0 / scene.getEngine().getAspectRatio(scene.activeCamera);
 		
 		// Render target

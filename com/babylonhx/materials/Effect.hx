@@ -1,7 +1,7 @@
 package com.babylonhx.materials;
 
 import com.babylonhx.Engine;
-import com.babylonhx.materials.textures.BabylonTexture;
+import com.babylonhx.materials.textures.WebGLTexture;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Color3;
@@ -103,45 +103,45 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	// Properties
-	public function isReady():Bool {
+	inline public function isReady():Bool {
 		return this._isReady;
 	}
 
-	public function getProgram():GLProgram {
+	inline public function getProgram():GLProgram {
 		return this._program;
 	}
 
-	public function getAttributesNames():Array<String> {
+	inline public function getAttributesNames():Array<String> {
 		return this._attributesNames;
 	}
 
-	public function getAttributeLocation(index:Int):Int {
+	inline public function getAttributeLocation(index:Int):Int {
 		return this._attributes[index];
 	}
 
-	public function getAttributeLocationByName(name:String):Int {
+	inline public function getAttributeLocationByName(name:String):Int {
 		var index = this._attributesNames.indexOf(name);
 		
 		return this._attributes[index];
 	}
 
-	public function getAttributesCount():Int {
+	inline public function getAttributesCount():Int {
 		return this._attributes.length;
 	}
 
-	public function getUniformIndex(uniformName:String):Int {
+	inline public function getUniformIndex(uniformName:String):Int {
 		return this._uniformsNames.indexOf(uniformName);
 	}
 
-	public function getUniform(uniformName:String):GLUniformLocation {
+	inline public function getUniform(uniformName:String):GLUniformLocation {
 		return this._uniforms[this._uniformsNames.indexOf(uniformName)];
 	}
 
-	public function getSamplers():Array<String> {
+	inline public function getSamplers():Array<String> {
 		return this._samplers;
 	}
 
-	public function getCompilationError():String {
+	inline public function getCompilationError():String {
 		return this._compilationError;
 	}
 
@@ -181,12 +181,13 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			
             this._uniforms = engine.getUniforms(this._program, this._uniformsNames);
             this._attributes = engine.getAttributes(this._program, attributesNames);
+			
 			var index:Int = 0;
 			while(index < this._samplers.length) {
                 var sampler = this.getUniform(this._samplers[index]);
-				#if (snow || kha)
+				#if (snow || kha || purejs)
 				if (sampler == null) {
-				#elseif lime
+				#elseif (lime || nme)
 					#if js
 					if (sampler == null) {
 					#else
@@ -238,15 +239,15 @@ import com.babylonhx.utils.typedarray.Float32Array;
         }
     }
 
-	public function _bindTexture(channel:String, texture:BabylonTexture) {
+	inline public function _bindTexture(channel:String, texture:WebGLTexture) {
 		this._engine._bindTexture(this._samplers.indexOf(channel), texture);
 	}
 
-	public function setTexture(channel:String, texture:BaseTexture) {
+	inline public function setTexture(channel:String, texture:BaseTexture) {
 		this._engine.setTexture(this._samplers.indexOf(channel), texture);
 	}
 
-	public function setTextureFromPostProcess(channel:String, postProcess:PostProcess) {
+	inline public function setTextureFromPostProcess(channel:String, postProcess:PostProcess) {
 		this._engine.setTextureFromPostProcess(this._samplers.indexOf(channel), postProcess);
 	}
 
@@ -263,7 +264,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	inline public function _cacheFloat2(uniformName:String, x:Float, y:Float) {
 		if (!this._valueCache.exists(uniformName)) {
 			this._valueCache[uniformName] = [x, y];
-		} else {		
+		} 
+		else {		
 			this._valueCache[uniformName][0] = x;
 			this._valueCache[uniformName][1] = y;
 		}
@@ -272,7 +274,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	inline public function _cacheFloat3(uniformName:String, x:Float, y:Float, z:Float) {
 		if (!this._valueCache.exists(uniformName)) {
 			this._valueCache[uniformName] = [x, y, z];
-		} else {		
+		} 
+		else {		
 			this._valueCache[uniformName][0] = x;
 			this._valueCache[uniformName][1] = y;
 			this._valueCache[uniformName][2] = z;
@@ -282,7 +285,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	inline public function _cacheFloat4(uniformName:String, x:Float, y:Float, z:Float, w:Float) {
 		if (!this._valueCache.exists(uniformName)) {
 			this._valueCache[uniformName] = [x, y, z, w];
-		} else {		
+		} 
+		else {		
 			this._valueCache[uniformName][0] = x;
 			this._valueCache[uniformName][1] = y;
 			this._valueCache[uniformName][2] = z;
@@ -314,7 +318,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
         return this;
     }
 
-	inline public function setMatrices(uniformName:String, matrices: #if html5 Float32Array #else Array<Float> #end ):Effect {
+	inline public function setMatrices(uniformName:String, matrices: #if (js || purejs) Float32Array #else Array<Float> #end ):Effect {
 		this._engine.setMatrices(this.getUniform(uniformName), matrices);
 		
 		return this;
@@ -386,7 +390,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return this;
 	}
 
-	public function setFloat4(uniformName:String, x:Float, y:Float, z:Float, w:Float):Effect {
+	inline public function setFloat4(uniformName:String, x:Float, y:Float, z:Float, w:Float):Effect {
 		if (!(this._valueCache.exists(uniformName) && this._valueCache[uniformName][0] == x && this._valueCache[uniformName][1] == y && this._valueCache[uniformName][2] == z && this._valueCache[uniformName][3] == w)) {
 			this._cacheFloat4(uniformName, x, y, z, w);
 			this._engine.setFloat4(this.getUniform(uniformName), x, y, z, w);

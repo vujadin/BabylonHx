@@ -1,19 +1,29 @@
 package com.babylonhx.tools;
 
-#if js
+#if (js || purejs)
+import js.Browser;
 import js.html.Element;
 import js.html.XMLHttpRequest;
+import js.html.XMLHttpRequestResponseType;
 #end
 
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.AbstractMesh;
+import com.babylonhx.utils.Image;
+import com.babylonhx.utils.typedarray.UInt8Array;
+
 import haxe.crypto.Base64;
 import haxe.Json;
 import haxe.Timer;
 
-import com.babylonhx.utils.Image;
+
+#if lime
+typedef Assets = lime.Assets;
+#elseif nme
+typedef Assets = nme.Assets;
+#end
 
 
 /**
@@ -32,7 +42,7 @@ import com.babylonhx.utils.Image;
 		
 	@:noCompletion private static var __startTime:Float = Timer.stamp();
 
-	public static function GetExponantOfTwo(value:Int, max:Int):Int {
+	inline public static function GetExponantOfTwo(value:Int, max:Int):Int {
 		var count = 1;
 		
 		do {
@@ -55,11 +65,11 @@ import com.babylonhx.utils.Image;
 		return path.substring(index + 1);
 	}
 
-	public static function ToDegrees(angle:Float):Float {
+	inline public static function ToDegrees(angle:Float):Float {
 		return angle * 180 / Math.PI;
 	}
 
-	public static function ToRadians(angle:Float):Float {
+	inline public static function ToRadians(angle:Float):Float {
 		return angle * Math.PI / 180;
 	}
 	
@@ -67,7 +77,7 @@ import com.babylonhx.utils.Image;
 	public static function delay( f : Void -> Void, time_ms : Int ) {
 		#if snow
 		var t = new snow.api.Timer(time_ms);
-		#elseif lime
+		#elseif (lime || nme || purejs)
 		var t = new haxe.Timer(time_ms);
 		#elseif kha
 		
@@ -117,7 +127,6 @@ import com.babylonhx.utils.Image;
 			return null;
 			
 		if(Reflect.hasField(obj, "get")) {
-		//if (Std.is(obj, Map)) {
 			var ret:Array<Dynamic> = [];
 			for (key in cast(obj, Map<Dynamic, Dynamic>).keys()) {
 				ret.push(obj.get(key));
@@ -128,7 +137,153 @@ import com.babylonhx.utils.Image;
 		return Std.is(obj, Array) ? obj : [obj];
 	}
 	
-	#if snow
+	// Misc.
+	#if purejs
+	public static function GetPointerPrefix():String {
+		var eventPrefix = "pointer";
+		
+		// Check if hand.js is referenced or if the browser natively supports pointer events
+		if (untyped !Browser.navigator.pointerEnabled) {
+			eventPrefix = "mouse";
+		}
+		
+		return eventPrefix;
+	}
+	
+	public static function RegisterTopRootEvents(events:Array<Dynamic>) {
+		for (event in events) {
+			Browser.window.addEventListener(event.name, event.handler, false);
+			
+			try {
+				if (Browser.window.parent != null) {
+					Browser.window.parent.addEventListener(event.name, event.handler, false);
+				}
+			} catch (e:Dynamic) {
+				// Silently fails...
+			}
+		}
+	}
+
+	public static function UnregisterTopRootEvents(events:Array<Dynamic>) {
+		for (event in events) {
+			Browser.window.removeEventListener(event.name, event.handler);
+			
+			try {
+				if (Browser.window.parent != null) {
+					Browser.window.parent.removeEventListener(event.name, event.handler);
+				}
+			} catch (e:Dynamic) {
+				// Silently fails...
+			}
+		}
+	}
+	#end
+	
+	// External files
+	public static function CleanUrl(url:String):String {
+		var regex = ~/#/mg;
+		url = regex.replace(url, "%23");
+		return url;
+	}
+	
+	#if purejs
+	public static function LoadFile(url:String, callbackFn:Dynamic->Void, ?progressCallBack:Dynamic->Void, ?database:Dynamic, useArrayBuffer:Bool = false, ?onError:Void->Void) {
+		url = Tools.CleanUrl(url);
+		
+		var noIndexedDB = function() {
+			var request = new XMLHttpRequest();
+			var loadUrl = Tools.BaseUrl + url;
+			request.open('GET', loadUrl, true);
+			
+			if (useArrayBuffer) {
+				request.responseType = XMLHttpRequestResponseType.ARRAYBUFFER;
+			}
+			
+			request.onprogress = progressCallBack;
+			
+			request.onreadystatechange = function(e) {
+				if (request.readyState == 4) {
+					if (request.status == 200/* || Tools.ValidateXHRData(request, !useArrayBuffer ? 1 : 6)*/) {
+						callbackFn(!useArrayBuffer ? request.responseText : request.response);
+					} 
+					else { // Failed
+						if (onError != null) {
+							onError();
+						} 
+						else {
+							throw("Error status: " + request.status + " - Unable to load " + loadUrl);
+						}
+					}
+				}
+			};
+			
+			request.send(null);
+		};
+		
+		var loadFromIndexedDB = function() {
+			database.loadFileFromDB(url, callbackFn, progressCallBack, noIndexedDB, useArrayBuffer);
+		};
+		
+		if (url.indexOf("file:") != -1) {
+			var fileName = url.substring(5);
+			//Tools.ReadFile(FilesInput.FilesToLoad[fileName], callback, progressCallBack, true);
+		}
+		else {
+			// Caching all files
+			if (database != null && database.enableSceneOffline) {
+				database.openAsync(loadFromIndexedDB, noIndexedDB);
+			}
+			else {
+				noIndexedDB();
+			}
+		}
+	}
+	
+	// XHR response validator for local file scenario
+	public static function ValidateXHRData(xhr:XMLHttpRequest, dataType:Int = 7):Bool {
+		// 1 for text (.babylon, manifest and shaders), 2 for TGA, 4 for DDS, 7 for all
+		
+		/*try {
+			if (dataType & 1) {
+				if (xhr.responseText && xhr.responseText.length > 0) {
+					return true;
+				}
+				else if (dataType == 1) {
+					return false;
+				}
+			}
+			
+			if (dataType & 2) {
+				// Check header width and height since there is no "TGA" magic number
+				var tgaHeader = Internals.TGATools.GetTGAHeader(xhr.response);
+				
+				if (tgaHeader.width && tgaHeader.height && tgaHeader.width > 0 && tgaHeader.height > 0) {
+					return true;
+				} 
+				else if (dataType == 2) {
+					return false;
+				}
+			}
+			
+			if (dataType & 4) {
+				// Check for the "DDS" magic number
+				var ddsHeader = new UInt8Array(xhr.response, 0, 3);
+				
+				if (ddsHeader[0] == 68 && ddsHeader[1] == 68 && ddsHeader[2] == 83) {
+					return true;
+				} 
+				else {
+					return false;
+				}
+			}
+			
+		} catch (e) {
+			// Global protection
+		}*/
+		
+		return false;
+	}
+	#elseif snow
 	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {	
 		if (type == "") {
 			if (SnowApp._snow.assets.listed(path)) {
@@ -198,38 +353,21 @@ import com.babylonhx.utils.Image;
 				trace("File '" + path + "' doesn't exist!");
 			}
 		}
-		//#end
     }
-	#elseif lime
-	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {	
-		#if js
-		var callBackFunction = callbackFn != null ?
-			function(result:Dynamic) {
-				callbackFn(result);
-			} : function(_) { };
-			
-		var httpRequest:XMLHttpRequest = new XMLHttpRequest();
-		httpRequest.onreadystatechange = function(_) {
-			if (httpRequest.readyState == 4) {
-				if (httpRequest.status == 200) {
-					if (callBackFunction != null) {
-						var file = httpRequest.response;
-						callBackFunction(file);
-					}
-				}
-			}
-		};
-		httpRequest.open('GET', path);
-		httpRequest.send();
-		#else
+	#elseif (lime || nme)
+	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {			
 		if (type == "") {
-			if (lime.Assets.exists(path)) {
+			#if lime
+			if (Assets.exists(path)) {
+			#else // nme
+			if (Assets.info.exists(path)) {
+			#end
 				if (StringTools.endsWith(path, "bbin")) {
 					var callBackFunction = callbackFn != null ?
 						function(result:Dynamic) {
 							callbackFn(result);
 						} : function(_) { };
-					var data = lime.Assets.getBytes(path);// , { onload: callBackFunction } );	
+					var data = Assets.getBytes(path);
 					callBackFunction(data);
 				} 
 				else {
@@ -237,50 +375,133 @@ import com.babylonhx.utils.Image;
 						function(result:Dynamic) {
 							callbackFn(result);
 						} : function(_) { };
-					var data = lime.Assets.getText(path);// , { onload: callBackFunction } );
+					var data = Assets.getText(path);
 					callBackFunction(data);
 				}
 			} else {
 				trace("File '" + path + "' doesn't exist!");
 			}
 		} else {
-			if(lime.Assets.exists(path)) {
+			#if lime
+			if (Assets.exists(path)) {
+			#else // nme
+			if (Assets.info.exists(path)) {
+			#end
 				switch(type) {
 					case "text":
-					var callBackFunction = callbackFn != null ?
-						function(result:Dynamic) {
-							callbackFn(result);
-						} : function(_) { };
-					var data = lime.Assets.getText(path);// , { onload: callBackFunction } );
-					callBackFunction(data);
+						var callBackFunction = callbackFn != null ?
+							function(result:Dynamic) {
+								callbackFn(result);
+							} : function(_) { };
+						var data = Assets.getText(path);
+						callBackFunction(data);
 						
 					case "bin":
 						var callBackFunction = callbackFn != null ?
 							function(result:Dynamic) {
 								callbackFn(result);
 							} : function(_) { };
-						var data = lime.Assets.getBytes(path);// , { onload: callBackFunction } );	
+						var data = Assets.getBytes(path);	
 						callBackFunction(data);
 						
 					case "img":
-						var img = lime.Assets.getImage(path);// , { onload: onload } );
+						#if lime
+						var img = Assets.getImage(path);
 						var image = new Image(img.data, img.width, img.height);
 						if (callbackFn != null) {
 							callbackFn(image);
 						}
+						#elseif nme
+						var img = Assets.getBitmapData(path);
+						var image = new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height);
+						if (callbackFn != null) {
+							callbackFn(image);
+						}
+						#end
 				}
 			} else {
 				trace("File '" + path + "' doesn't exist!");
 			}
 		}
-		#end
     }
 	#elseif kha
 	
 	#end
 	
-	#if snow
-	public static function LoadImage(url:String, onload:Image->Void, ?onerror:Void->Void, ?db:Dynamic) { 
+	
+	#if purejs
+	public static function LoadImage(url:String, ?callbackFn:Dynamic->Void, ?onerror:Dynamic->Void, ?db:Dynamic):Dynamic {
+		url = Tools.CleanUrl(url);
+		
+		var img = new js.html.Image();
+		
+		if (url.substr(0, 5) != "data:") {
+			img.crossOrigin = 'anonymous';
+		}
+		
+		img.onload = function(e) {
+			var canvas:js.html.CanvasElement = Browser.document.createCanvasElement();
+			canvas.width = img.width;
+			canvas.height = img.height;
+			var ctx:js.html.CanvasRenderingContext2D = canvas.getContext2d();
+			ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
+			var imgData = ctx.getImageData(0, 0, img.width, img.height).data;
+			
+			// ugly hack ...
+			var normalArray:Dynamic = null;
+			untyped normalArray = Array.prototype.slice.call(imgData);
+			
+			if (callbackFn != null) {
+				callbackFn(new Image(new UInt8Array(normalArray), img.width, img.height));
+			}			
+		};
+		
+		/*img.onerror = err => {
+			onerror(img, err);
+		};*/
+		
+		/*var noIndexedDB = function() {
+			img.src = url;
+		};
+		
+		var loadFromIndexedDB = function() {
+			database.loadImageFromDB(url, img);
+		};
+		
+		//ANY database to do!
+		if (database && database.enableTexturesOffline && Database.IsUASupportingBlobStorage) {
+			database.openAsync(loadFromIndexedDB, noIndexedDB);
+		}
+		else {
+			if (url.indexOf("file:") === -1) {
+				noIndexedDB();
+			}
+			else {
+				try {
+					var textureName = url.substring(5);
+					var blobURL;
+					try {
+						blobURL = URL.createObjectURL(FilesInput.FilesTextures[textureName], { oneTimeOnly: true });
+					}
+					catch (ex) {
+						// Chrome doesn't support oneTimeOnly parameter
+						blobURL = URL.createObjectURL(FilesInput.FilesTextures[textureName]);
+					}
+					img.src = blobURL;
+				}
+				catch (e) {
+					Tools.Log("Error while trying to load texture: " + textureName);
+					img.src = null;
+				}
+			}
+		}*/
+		
+		img.src = url;
+		
+		return img;
+	}	
+	#elseif snow
+	public static function LoadImage(url:String, onload:Image->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
 		if (SnowApp._host.app.assets.listed(url)) {
 			var callBackFunction = function(img:Dynamic) {
 				var i = new Image(img.image.pixels, img.image.width, img.image.height);
@@ -296,32 +517,25 @@ import com.babylonhx.utils.Image;
 			trace("Image '" + url + "' doesn't exist!");
 		}
     } 
-	#elseif lime
-	public static function LoadImage(url:String, onload:Image-> Void, ?onerror:Void->Void, ?db:Dynamic) { 
-		#if js
-		var callBackFunction = onload != null ?
-			function(canvas:Dynamic) {
-				var i = lime.graphics.Image.fromCanvas(canvas);
-				var babylonImg = new Image(i.data, i.width, i.height);
-				onload(babylonImg);
-			} : function(_) { };
-			
-		var htmlImg = js.Browser.document.createImageElement();
-		htmlImg.src = url;
-		htmlImg.onload = function(e:Dynamic) {
-			var canvas = js.Browser.document.createCanvasElement();
-			var ctx = canvas.getContext2d();	
-			canvas.width = e.target.width;
-			canvas.height = e.target.height;
-			ctx.drawImage(e.target, 0, 0, e.target.width, e.target.height);
-			callBackFunction(canvas);
-		};
-		#else
-		if (lime.Assets.exists(url)) {
-			lime.Assets.loadImage(url, function(img:lime.graphics.Image):Void {
+	#elseif (lime || nme)
+	public static function LoadImage(url:String, onload:Image-> Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
+		#if (lime && js)
+		var img = Assets.getImage(url);
+		onload(new Image(img.data, img.width, img.height));
+		#elseif lime
+		if (Assets.exists(url)) {
+			Assets.loadImage(url, function(img:lime.graphics.Image):Void {
 				var image = new Image(img.data, img.width, img.height);
 				onload(image);
 			});						
+		} 
+		else {
+			trace("Image '" + url + "' doesn't exist!");
+		}
+		#elseif nme
+		if (Assets.info.exists(url)) {
+			var img = Assets.getBitmapData(url); 
+			onload(new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height));					
 		} 
 		else {
 			trace("Image '" + url + "' doesn't exist!");
@@ -333,11 +547,11 @@ import com.babylonhx.utils.Image;
 	#end
 
 	// Misc. 
-	public static function Clamp(value:Float, min:Float = 0, max:Float = 1):Float {
+	inline public static function Clamp(value:Float, min:Float = 0, max:Float = 1):Float {
 		return Math.min(max, Math.max(min, value));
 	}  
 	
-	public static function Clamp2(x:Float, a:Float, b:Float):Float {
+	inline public static function Clamp2(x:Float, a:Float, b:Float):Float {
 		return (x < a) ? a : ((x > b) ? b : x);
 	}
 	
@@ -367,14 +581,14 @@ import com.babylonhx.utils.Image;
 		}
 	}
 
-	public static function CheckExtends(v:Vector3, min:Vector3, max:Vector3) {
+	inline public static function CheckExtends(v:Vector3, min:Vector3, max:Vector3) {
 		if (v.x < min.x)
 			min.x = v.x;
 		if (v.y < min.y)
 			min.y = v.y;
 		if (v.z < min.z)
 			min.z = v.z;
-
+			
 		if (v.x > max.x)
 			max.x = v.x;
 		if (v.y > max.y)
@@ -584,11 +798,11 @@ import com.babylonhx.utils.Image;
 		return true;
 	}
 
-	public static function Now():Float {
+	inline public static function Now():Float {
 		return getTimer();
 	}
 	
-	private static function getTimer():Int {		
+	inline private static function getTimer():Int {		
 		#if flash
 		return flash.Lib.getTimer ();
 		#else

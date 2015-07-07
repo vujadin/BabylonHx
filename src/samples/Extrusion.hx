@@ -2,6 +2,11 @@ package samples;
 
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.lights.HemisphericLight;
+import com.babylonhx.math.Axis;
+import com.babylonhx.mesh.polygonmesh.Polygon;
+import com.babylonhx.materials.StandardMaterial;
+import com.babylonhx.layer.Layer;
+import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
@@ -13,56 +18,68 @@ import com.babylonhx.Scene;
 class Extrusion {
 
 	public function new(scene:Scene) {
-		var camera = new ArcRotateCamera("Camera", 3 * Math.PI / 2, Math.PI / 8, 50, Vector3.Zero(), scene);
+		var camera = new ArcRotateCamera("Camera", 3 * Math.PI / 2, 0.8, 80, Vector3.Zero(), scene);
 		camera.attachControl(this, true);
 								
-		// This creates a light, aiming 0,1,0 - to the sky (non-mesh)
 		var light = new HemisphericLight("light1", new Vector3(0, 1, 0), scene);
-		light.intensity = 0.7;
-				
-		// curve
-		var curvePoints = function(l:Float, t:Float):Array<Vector3> {
-			var path:Array<Vector3> = [];
-			var step = l / t;
-			var i = -l / 2;
-			while(i <= l/2) {
-				path.push(new Vector3(12 * Math.sin(i / 10), i, 0));
-				i += step;
-			}
-			return path;
-		};
-		var curve = curvePoints(40, 200);
-	  
+		light.diffuse = Color3.FromInt(0xf68712);
+		
+		new Layer("background", "assets/img/graygrad.jpg", scene, true);
+					  
 		// 2D shape
-		var shape = [
-			new Vector3(0, 1, -1),  
-			new Vector3(0 , 1, 0),
-			new Vector3(0 , 0.6, 0.3),
-			new Vector3(0 , 0.8, 0.8),
-			new Vector3(0 , 0.3, 0.6),
-			new Vector3(0 , 0, 1),
-			new Vector3(0, -1, 1)
-		];
-		
-		// custom scale function
-		var myScaling = function(i:Float, distance:Float):Float {
-			var scale = Math.cos(distance / 40) * 4;
-			return scale;
+		var poly = Polygon.StartingAt(-10, -10)
+			.addLineTo(10, -10)
+			.addLineTo(10, -5)
+			.addArcTo(17, 0, 10, 5)
+			.addLineTo(10, 10)
+			.addLineTo(5, 10)
+			.addArcTo(0, 0, -5, 10)
+			.addLineTo(-10, 10)
+			.close();
+			
+		var shape:Array<Vector3> = [];
+		for (p in poly.getPoints()) {
+			shape.push(new Vector3(p.x, p.y, 0));
+		}
+				
+		var createLathe = function(shape:Array<Vector3>, radius:Float = 1, tessellation:Int = 40) {
+			var pi2:Float = Math.PI * 2;
+			var Y:Vector3 = Axis.Y;
+			var shapeLathe:Array<Vector3> = [];
+			var  i:Int = 0;
+			while (shape[i].x == 0) {
+				i++;
+			}
+			var pt = shape[i];        // first rotatable point
+			
+			for (i in 0...shape.length) {
+				shapeLathe.push(shape[i].subtract(pt));
+			}
+			// circle path
+			var step:Float = pi2 / tessellation;
+			var rotated:Vector3 = null;
+			var path:Array<Vector3> = [];
+			for (i in 0...tessellation) {
+				rotated = new Vector3(Math.cos(i * step) * radius, 0, Math.sin(i * step) * radius);
+				path.push(rotated);
+			}
+			// extusion
+			var scaleFunction = function(i:Float, distance:Float):Float { return 1; };
+			var rotateFunction = function(i:Float, distance:Float):Float { return 0; };
+			var lathe = Mesh.ExtrudeShapeCustom("lathe", shapeLathe, path, scaleFunction, rotateFunction, true, false, 0, scene);
+			return lathe;
 		};
 		
-		// custom rotation function
-		var myRotation = function(i:Float, distance:Float):Float {
-			var rotation = distance / 300 * Math.PI / 2;
-			return rotation;
-		};
-		
-		var extr = Mesh.ExtrudeShapeCustom("extr", shape, curve, myScaling, myRotation, false, false, scene);
-		extr.material = scene.defaultMaterial;
-		extr.material.backFaceCulling = false;
-		
+		var mat = new StandardMaterial("mat", scene);
+				
+		var lathe = createLathe(shape, 1, 40);
+		lathe.translate(new Vector3(0, 1, 0), -4, Space.LOCAL);
+		lathe.material = mat;
+		lathe.material.backFaceCulling = false;
+				
 		scene.getEngine().runRenderLoop(function () {
             scene.render();
         });
 	}
-	
+		
 }

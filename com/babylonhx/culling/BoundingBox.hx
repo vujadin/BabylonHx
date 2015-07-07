@@ -71,7 +71,7 @@ import com.babylonhx.math.Vector3;
 	}
 
 	// Methods
-	public function getWorldMatrix():Matrix {
+	inline public function getWorldMatrix():Matrix {
 		return this._worldMatrix;
 	}
 
@@ -109,16 +109,16 @@ import com.babylonhx.math.Vector3;
 		this._worldMatrix = world;
 	}
 
-	public function isInFrustum(frustumPlanes:Array<Plane>):Bool {
+	inline public function isInFrustum(frustumPlanes:Array<Plane>):Bool {
 		return BoundingBox.IsInFrustum(this.vectorsWorld, frustumPlanes);
 	}
 
-	public function isCompletelyInFrustum(frustumPlanes:Array<Plane>):Bool {
+	inline public function isCompletelyInFrustum(frustumPlanes:Array<Plane>):Bool {
 		return BoundingBox.IsCompletelyInFrustum(this.vectorsWorld, frustumPlanes);
 	}
 
 	public function intersectsPoint(point:Vector3):Bool {
-		var delta = Engine.Epsilon;
+		var delta = -Engine.Epsilon;
 		
 		if (this.maximumWorld.x - point.x < delta || delta > point.x - this.minimumWorld.x)
 			return false;
@@ -132,7 +132,7 @@ import com.babylonhx.math.Vector3;
 		return true;
 	}
 
-	public function intersectsSphere(sphere:BoundingSphere):Bool {
+	inline public function intersectsSphere(sphere:BoundingSphere):Bool {
 		return BoundingBox.IntersectsSphere(this.minimumWorld, this.maximumWorld, sphere.centerWorld, sphere.radiusWorld);
 	}
 
@@ -163,9 +163,10 @@ import com.babylonhx.math.Vector3;
 		return true;
 	}
 
-	public static function IntersectsSphere(minPoint:Vector3, maxPoint:Vector3, sphereCenter:Vector3, sphereRadius:Float):Bool {
-		var vector = Vector3.Clamp(sphereCenter, minPoint, maxPoint);
-		var num = Vector3.DistanceSquared(sphereCenter, vector);
+	static var IntersectsSphere_vector:Vector3 = new Vector3();
+	inline public static function IntersectsSphere(minPoint:Vector3, maxPoint:Vector3, sphereCenter:Vector3, sphereRadius:Float):Bool {
+		IntersectsSphere_vector = Vector3.Clamp(sphereCenter, minPoint, maxPoint);
+		var num = Vector3.DistanceSquared(sphereCenter, IntersectsSphere_vector);
 		return (num <= (sphereRadius * sphereRadius));
 	}
 
@@ -187,7 +188,8 @@ import com.babylonhx.math.Vector3;
 			for (i in 0...8) {
 				if (frustumPlanes[p].dotCoordinate(boundingVectors[i]) < 0) {
 					--inCount;
-				} else {
+				} 
+				else {
 					break;
 				}
 			}

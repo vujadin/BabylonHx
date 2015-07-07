@@ -41,4 +41,15 @@ import com.babylonhx.mesh.AbstractMesh;
 		return true;
 	}
 	
+	public function clone(name:String):MultiMaterial {
+		var newMultiMaterial = new MultiMaterial(name, this.getScene());
+		
+		for (index in 0...this.subMaterials.length) {
+			var subMaterial = this.subMaterials[index];
+			newMultiMaterial.subMaterials.push(subMaterial);
+		}
+		
+		return newMultiMaterial;
+	}
+	
 }

@@ -19,7 +19,7 @@ import com.babylonhx.mesh.AbstractMesh;
 	public var transformedPosition:Vector3;
 	private var _worldMatrix:Matrix;
 	
-	public var shadowOrthoScale:Float = 1.1;
+	public var shadowOrthoScale:Float = 0.1;
 	
 
 	public function new(name:String, direction:Vector3, scene:Scene) {

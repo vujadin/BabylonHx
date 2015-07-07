@@ -26,6 +26,13 @@ package com.babylonhx.math;
 	inline public function asArray():Array<Float> {
 		return [this.x, this.y, this.z, this.w];
 	}
+	
+	inline public function set(x:Float = 0, y:Float = 0, z:Float = 0, w:Float = 1) {
+		this.x = x;
+		this.y = y;
+		this.z = z;
+		this.w = w;
+	}
 
 	inline public function equals(otherQuaternion:Quaternion):Bool {
 		return otherQuaternion != null && this.x == otherQuaternion.x && this.y == otherQuaternion.y && this.z == otherQuaternion.z && this.w == otherQuaternion.w;
@@ -162,7 +169,7 @@ package com.babylonhx.math;
 		result.m[15] = 1.0;
 	}
 
-	public function fromRotationMatrix(matrix:Matrix) {
+	inline public function fromRotationMatrix(matrix:Matrix) {
 		Quaternion.FromRotationMatrixToRef(matrix, this);
 		return this;
 	}
@@ -228,6 +235,10 @@ package com.babylonhx.math;
 	
 	inline public static function Inverse(q:Quaternion):Quaternion {
 		return new Quaternion(-q.x, -q.y, -q.z, q.w);
+	}
+	
+	inline public static function Identity():Quaternion {
+		return new Quaternion(0, 0, 0, 1);
 	}
 
 	inline public static function RotationAxis(axis:Vector3, angle:Float):Quaternion {

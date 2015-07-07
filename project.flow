@@ -14,8 +14,7 @@
     build : {
       dependencies : {
         "snow" : "*",
-		"poly2trihx" : "*",
-		"msgpack-haxe" : "*"
+		"poly2trihx" : "*"
       }
     },
 

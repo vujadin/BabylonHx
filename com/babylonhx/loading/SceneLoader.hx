@@ -36,7 +36,7 @@ import com.babylonhx.loading.plugins.BabylonFileLoader;
 	}
 
 	// Members
-	private static var _registeredPlugins:Array<ISceneLoaderPlugin> = [];
+	private static var _registeredPlugins:Array<ISceneLoaderPlugin> = [BabylonFileLoader.plugin];
 
 	private static function _getPluginForFilename(sceneFilename:String):ISceneLoaderPlugin {
 		var dotPosition = sceneFilename.lastIndexOf(".");

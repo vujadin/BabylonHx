@@ -1,4 +1,5 @@
 package com.babylonhx.tools;
+
 import haxe.Timer;
 
 /**
@@ -22,7 +23,7 @@ import haxe.Timer;
 	
 
 	/**
-	 * Constroctor.
+	 * Constructor.
 	 * @param iterations the number of iterations.
 	 * @param _fn the function to run each iteration
 	 * @param _successCallback the callback that will be called upon succesful execution

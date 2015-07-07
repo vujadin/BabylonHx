@@ -136,13 +136,11 @@ class Body {
 	}
 	
 	public function setPosition(x:Float, y:Float, z:Float) {
-        this.body.position.x = x;
-		this.body.position.y = y;
-		this.body.position.z = z;
+        this.body.setPosition(new Vec3(x, y, z));
     }
 	
 	public function setRotation(rot:Vec3) {
-        this.body.setRotation(cast rot);
+        this.body.setRotation(rot);
     }
 		
     // GET
@@ -156,9 +154,7 @@ class Body {
 	
     // RESET
     public function resetPosition(x:Float, y:Float, z:Float) {
-        this.body.position.x = x; 
-		this.body.position.y = y;
-		this.body.position.z = z;
+        this.body.resetPosition(x, y, z);
     }
 	
     // force wakeup

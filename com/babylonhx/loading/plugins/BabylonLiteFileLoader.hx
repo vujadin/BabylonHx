@@ -59,8 +59,6 @@ import haxe.io.Bytes;
 import haxe.Json;
 import haxe.Timer;
 
-import org.msgpack.MsgPack;
-
 import com.babylonhx.utils.typedarray.ArrayBuffer;
 import com.babylonhx.utils.typedarray.Float32Array;
 import com.babylonhx.utils.typedarray.Int32Array;

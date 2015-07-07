@@ -2,6 +2,7 @@ package samples;
 
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.Engine;
+import com.babylonhx.layer.Layer;
 import com.babylonhx.loading.SceneLoader;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.postprocess.SSAORenderingPipeline;
@@ -16,6 +17,8 @@ class SSAO {
 
 	public function new(scene:Scene) {
 		var camera = new ArcRotateCamera("Camera", -2.5, 1.0, 200, new Vector3(0, 0, 0), scene);
+		
+		new Layer("background", "assets/img/graygrad.jpg", scene, true);
 		
 		SceneLoader.RegisterPlugin(BabylonFileLoader.plugin);
 		
@@ -43,11 +46,11 @@ class SSAO {
 					scene.postProcessRenderPipelineManager.attachCamerasToRenderPipeline("ssaopipeline", camera);
 					scene.postProcessRenderPipelineManager.enableEffectInPipeline("ssaopipeline", ssao.SSAOCombineRenderEffect, camera);
 				}
-					// draw without SSAO when pressed "2"
+				// draw without SSAO when pressed "2"
 				else if (keyCode == 50) {
 					scene.postProcessRenderPipelineManager.detachCamerasFromRenderPipeline("ssaopipeline", camera);
 				}
-					// draw only SSAO when pressed "3"
+				// draw only SSAO when pressed "3"
 				else if (keyCode == 51) {
 					scene.postProcessRenderPipelineManager.attachCamerasToRenderPipeline("ssaopipeline", camera);
 					scene.postProcessRenderPipelineManager.disableEffectInPipeline("ssaopipeline", ssao.SSAOCombineRenderEffect, camera);

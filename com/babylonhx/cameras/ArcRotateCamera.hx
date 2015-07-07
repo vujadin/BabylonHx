@@ -7,7 +7,7 @@ import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.Mesh;
-
+import com.babylonhx.tools.Tools;
 import com.babylonhx.utils.Keycodes;
 
 
@@ -16,7 +16,7 @@ import com.babylonhx.utils.Keycodes;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.ArcRotateCamera') class ArcRotateCamera extends Camera {
+@:expose('BABYLON.ArcRotateCamera') class ArcRotateCamera extends TargetCamera {
 	
 	public var inertialAlphaOffset:Float = 0;
 	public var inertialBetaOffset:Float = 0;
@@ -28,27 +28,52 @@ import com.babylonhx.utils.Keycodes;
 	public var lowerRadiusLimit:Null<Float> = null;
 	public var upperRadiusLimit:Null<Float> = null;
 	public var angularSensibility:Float = 1000.0;
-	public var wheelPrecision:Float = 5.0;
+	public var wheelPrecision:Float = 3.0;
+	public var pinchPrecision:Float = 2.0;
+	public var panningSensibility:Float = 0.1;
+	
+	#if purejs
+	public var keysUp:Array<Int> = [38];
+	public var keysDown:Array<Int> = [40];
+	public var keysLeft:Array<Int> = [37];
+	public var keysRight:Array<Int> = [39];
+	#else
 	public var keysUp:Array<Int> = [Keycodes.up];
 	public var keysDown:Array<Int> = [Keycodes.down];
 	public var keysLeft:Array<Int> = [Keycodes.left];
 	public var keysRight:Array<Int> = [Keycodes.right];
+	#end
+	
 	public var zoomOnFactor:Float = 1;
 	public var targetScreenOffset:Vector2 = Vector2.Zero();
+	public var pinchInwards:Bool = true;
+	public var allowUpsideDown:Bool = true;
 	
 	
 	private var _keys:Array<Int> = [];
-	private var _viewMatrix = new Matrix();
+	//public var _viewMatrix = new Matrix();
 	private var _attachedElement:Dynamic;
 
-	private var _onMouseDown:Dynamic;
-	private var _onMouseUp:Dynamic;
-	private var _onMouseMove:Dynamic;
+	private var _onContextMenu:Dynamic;
+	private var _onPointerDown:Dynamic;
+	private var _onPointerUp:Dynamic;
+	private var _onPointerMove:Dynamic;
 	private var _wheel:Dynamic;
+	private var _onMouseMove:Dynamic;
 	private var _onKeyDown:Dynamic;
 	private var _onKeyUp:Dynamic;
 	private var _onLostFocus:Void->Void;
-	private var _reset:Void->Void;
+	//public var _reset:Void->Void;
+	private var _onGestureStart:Dynamic;
+	private var _onGesture:Dynamic;
+    private var _MSGestureHandler:Dynamic;
+	
+	// Panning
+	private var _localDirection:Vector3;
+	private var _transformedDirection:Vector3;
+	private var _isRightClick:Bool = false;
+	private var _isCtrlPushed:Bool = false;
+	private var _lastPanningPosition:Vector2 = new Vector2(0, 0);
 
 	// Collisions
 	public var onCollide:AbstractMesh->Void;
@@ -61,22 +86,9 @@ import com.babylonhx.utils.Keycodes;
 	private var _previousAlpha:Float;
 	private var _previousBeta:Float;
 	private var _previousRadius:Float;
-	
-	private var _mouseButtonPressed:Int = 0;
-
-	// Pinch
-	// value for pinch step scaling
-	// set to 20 by default
-	public var pinchPrecision:Float = 20;
-	// Event for pinch
-	private var _touchStart:Dynamic->Void;
-	private var _touchMove:Dynamic->Void;
-	private var _touchEnd:Dynamic->Void;
-	// Method for pinch
-	private var _pinchStart:Dynamic->Void;
-	private var _pinchMove:Dynamic->Void;
-	private var _pinchEnd:Dynamic->Void;
-	
+	//due to async collision inspection
+	private var _collisionTriggered:Bool;
+		
 	public var alpha:Float;
 	public var beta:Float;
 	public var radius:Float;
@@ -91,7 +103,7 @@ import com.babylonhx.utils.Keycodes;
 		this.radius = radius;
 		this.target = target != null ? (target.position != null ? target.position.clone() : target.clone()) : Vector3.Zero();
 				
-		this.getViewMatrix();
+		this.getViewMatrix();	
 	}
 
 	public function _getTargetPosition():Vector3 {
@@ -133,9 +145,15 @@ import com.babylonhx.utils.Keycodes;
 	}
 
 	// Methods
-	override public function attachControl(?element:Dynamic, ?noPreventDefault:Bool) {
+	override public function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true) {
+		#if purejs
+		var cacheSoloPointer:Dynamic; // cache pointer object for better perf on camera rotation
+		var previousPinchDistance:Float = 0.0;
+		var pointers:com.babylonhx.tools.SmartCollection = new com.babylonhx.tools.SmartCollection();
+		#else
 		var previousPosition:Dynamic = null;
 		var pointerId:Int = -1;
+		#end
 		
 		if (this._attachedElement != null) {
 			return;
@@ -144,18 +162,151 @@ import com.babylonhx.utils.Keycodes;
 		
 		var engine = this.getEngine();
 		
-		if (this._onMouseDown == null) {
-			this._onMouseDown = function(x:Float, y:Float, button:Int) {
-				_mouseButtonPressed = button;
+		if (this._onPointerDown == null) {
+			
+		#if purejs
+			this._onPointerDown = function(evt:Dynamic) {
+				// Manage panning
+				this._isRightClick = evt.button == 2 ? true : false;
+				this._lastPanningPosition.x = evt.clientX;
+				this._lastPanningPosition.y = evt.clientY;
+				
+				// manage pointers
+				var _dummy = { dummy: 'dummy' };
+				pointers.add(evt.pointerId != null ? evt.pointerId : _dummy, { x: evt.clientX, y: evt.clientY, type: evt.pointerType });
+				cacheSoloPointer = pointers.item(evt.pointerId != null ? evt.pointerId : _dummy);
+				if (!noPreventDefault) {
+					evt.preventDefault();
+				}
+			};
+			
+			this._onPointerUp = function(evt:Dynamic) {
+				cacheSoloPointer = null;
+				previousPinchDistance = 0;
+				
+				//would be better to use pointers.remove(evt.pointerId) for multitouch gestures, 
+				//but emptying completly pointers collection is required to fix a bug on iPhone : 
+				//when changing orientation while pinching camera, one pointer stay pressed forever if we don't release all pointers  
+				//will be ok to put back pointers.remove(evt.pointerId); when iPhone bug corrected
+				pointers.empty();
+								   
+				if (!noPreventDefault) {
+					evt.preventDefault();
+				}
+			};
+			
+			this._onContextMenu = function(evt:Dynamic) {
+				evt.preventDefault();
+			};
+			
+			this._onPointerMove = function(evt:Dynamic) {
+				if (!noPreventDefault) {
+					evt.preventDefault();
+				}
+				
+				switch (pointers.count) {
+					
+					case 1: //normal camera rotation
+						if ((this._isCtrlPushed && useCtrlForPanning) || (!useCtrlForPanning && this._isRightClick)) {
+							if (this._localDirection == null) {
+								this._localDirection = Vector3.Zero();
+								this._transformedDirection = Vector3.Zero();
+							}
+							
+							var diffx = (evt.clientX - this._lastPanningPosition.x) * this.panningSensibility;
+							var diffy = (evt.clientY - this._lastPanningPosition.y) * this.panningSensibility;
+							
+							this._localDirection.copyFromFloats(-diffx, diffy, 0);
+							this._viewMatrix.invertToRef(this._cameraTransformMatrix);
+							Vector3.TransformNormalToRef(this._localDirection, this._cameraTransformMatrix, this._transformedDirection);
+							this.target.addInPlace(this._transformedDirection);
+							
+							this._lastPanningPosition.x = evt.clientX;
+							this._lastPanningPosition.y = evt.clientY;
+						} 
+						else {
+							var offsetX = evt.clientX - cacheSoloPointer.x;
+							var offsetY = evt.clientY - cacheSoloPointer.y;
+							this.inertialAlphaOffset -= offsetX / this.angularSensibility;
+							this.inertialBetaOffset -= offsetY / this.angularSensibility;
+							cacheSoloPointer.x = evt.clientX;
+							cacheSoloPointer.y = evt.clientY;
+						}
+						
+					case 2: //pinch
+						//if (noPreventDefault) { evt.preventDefault(); } //if pinch gesture, could be usefull to force preventDefault to avoid html page scroll/zoom in some mobile browsers
+						pointers.item(evt.pointerId).x = evt.clientX;
+						pointers.item(evt.pointerId).y = evt.clientY;
+						var direction = this.pinchInwards ? 1 : -1;
+						var distX = pointers.getItemByIndex(0).x - pointers.getItemByIndex(1).x;
+						var distY = pointers.getItemByIndex(0).y - pointers.getItemByIndex(1).y;
+						var pinchSquaredDistance = (distX * distX) + (distY * distY);
+						if (previousPinchDistance == 0) {
+							previousPinchDistance = pinchSquaredDistance;
+							return;
+						}
+						
+						if (pinchSquaredDistance != previousPinchDistance) {
+							this.inertialRadiusOffset += (pinchSquaredDistance - previousPinchDistance) / (this.pinchPrecision * this.wheelPrecision * this.angularSensibility * direction);
+							previousPinchDistance = pinchSquaredDistance;
+						}
+						
+					default:
+						if (pointers.item(evt.pointerId) != null) {
+							pointers.item(evt.pointerId).x = evt.clientX;
+							pointers.item(evt.pointerId).y = evt.clientY;
+						}
+				}
+			};
+			
+			this._onMouseMove = function(evt:Dynamic) {
+				if (!engine.isPointerLock) {
+					return;
+				}
+				
+				var offsetX = untyped evt.movementX || evt.mozMovementX || evt.webkitMovementX || evt.msMovementX || 0;
+				var offsetY = untyped evt.movementY || evt.mozMovementY || evt.webkitMovementY || evt.msMovementY || 0;
+				
+				this.inertialAlphaOffset -= offsetX / this.angularSensibility;
+				this.inertialBetaOffset -= offsetY / this.angularSensibility;
+				
+				if (!noPreventDefault) {
+					evt.preventDefault();
+				}
+			};
+			
+			this._wheel = function(event:Dynamic) {
+				var delta = 0.0;
+				if (event.wheelDelta != null) {
+					delta = event.wheelDelta / (this.wheelPrecision * 40);
+				} 
+				else if (event.detail != null) {
+					delta = -event.detail / this.wheelPrecision;
+				}
+				
+				if (delta != 0.0) {
+					this.inertialRadiusOffset += delta;
+				}
+				
+				if (event.preventDefault != null) {
+					if (!noPreventDefault) {
+						event.preventDefault();
+					}
+				}
+			};
+			
+		#else
+			
+			this._onPointerDown = function(x:Float, y:Float, button:Int) {
 				previousPosition = {
 					x: x,
 					y: y
 				};
 			};
 			
-			this._onMouseUp = function(x:Float, y:Float, button:Int) {
+			this._onPointerUp = function(x:Float, y:Float, button:Int) {
 				previousPosition = null;
-			};
+			};	
 			
 			this._onMouseMove = function(x:Int, y:Int) {
 				if (previousPosition == null && !engine.isPointerLock) {
@@ -170,14 +321,8 @@ import com.babylonhx.utils.Keycodes;
                     offsetY = y - previousPosition.y;
                 }
 				
-				if(_mouseButtonPressed != 2) {
-					this.inertialAlphaOffset -= offsetX / this.angularSensibility;
-					this.inertialBetaOffset -= offsetY / this.angularSensibility;					
-				} 
-				else {
-					this.target.x += offsetX / 10;
-					this.target.y += offsetY / 10;
-				}
+				this.inertialAlphaOffset -= offsetX / this.angularSensibility;
+				this.inertialBetaOffset -= offsetY / this.angularSensibility;	
 				
 				previousPosition = {
 					x: x, 
@@ -188,8 +333,14 @@ import com.babylonhx.utils.Keycodes;
 			this._wheel = function(delta:Float) {
 				var _delta = delta / wheelPrecision;
 				
+			#if !js
                 this.inertialRadiusOffset += _delta;
+			#else
+				this.inertialRadiusOffset += _delta / 20;
+			#end
 			};
+			
+		#end			
 			
 			this._onKeyDown = function(keycode:Int) {
 				if (this.keysUp.indexOf(keycode) != -1 ||
@@ -200,7 +351,7 @@ import com.babylonhx.utils.Keycodes;
 					
 					if (index == -1) {
 						this._keys.push(keycode);
-					}
+					}					
 				}
 			};
 			
@@ -213,32 +364,67 @@ import com.babylonhx.utils.Keycodes;
 					
 					if (index >= 0) {
 						this._keys.splice(index, 1);
-					}
+					}					
 				}
 			};
 			
 			this._onLostFocus = function() {
-				this._keys = [];
+				this._keys = [];				
+				
+			#if purejs
+				pointers.empty();
+				previousPinchDistance = 0;
+				cacheSoloPointer = null;
+			#else
 				pointerId = 0;
+			#end
 			};
 			
 			this._reset = function() {
 				this._keys = [];
 				this.inertialAlphaOffset = 0;
 				this.inertialBetaOffset = 0;
-				this.inertialRadiusOffset = 0;
+				this.inertialRadiusOffset = 0;				
+				
+			#if purejs
+				pointers.empty();
+				previousPinchDistance = 0;
+				cacheSoloPointer = null;
+			#else
 				previousPosition = null;
 				pointerId = 0;
+			#end
 			};
 			
 		}
 		
+		#if purejs
+		if (!useCtrlForPanning) {
+			Engine.app.addEventListener("contextmenu", this._onContextMenu, false);
+		}
+		Engine.app.addEventListener(eventPrefix + "down", this._onPointerDown, false);
+		Engine.app.addEventListener(eventPrefix + "up", this._onPointerUp, false);
+		Engine.app.addEventListener(eventPrefix + "out", this._onPointerUp, false);
+		Engine.app.addEventListener(eventPrefix + "move", this._onPointerMove, false);
+		Engine.app.addEventListener("mousemove", this._onMouseMove, false);
+		/*Engine.app.addEventListener("MSPointerDown", this._onGestureStart, false);
+		Engine.app.addEventListener("MSGestureChange", this._onGesture, false);*/
+		Engine.app.addEventListener('mousewheel', this._wheel, false);
+		Engine.app.addEventListener('DOMMouseScroll', this._wheel, false);
+				
+		Tools.RegisterTopRootEvents([
+			{ name: "keydown", handler: this._onKeyDown },
+			{ name: "keyup", handler: this._onKeyUp },
+			{ name: "blur", handler: this._onLostFocus }
+		]);
+		#else
 		Engine.keyDown.push(_onKeyDown);
 		Engine.keyUp.push(_onKeyUp);
-		Engine.mouseDown.push(_onMouseDown);
-		Engine.mouseUp.push(_onMouseUp);
+		Engine.mouseDown.push(_onPointerDown);
+		Engine.mouseUp.push(_onPointerUp);
 		Engine.mouseMove.push(_onMouseMove);
 		Engine.mouseWheel.push(_wheel);	
+		#end
 	}
 	
 	override public function detachControl(?element:Dynamic) {
@@ -246,12 +432,31 @@ import com.babylonhx.utils.Keycodes;
 			return;
 		}
 		
+		#if purejs
+		Engine.app.removeEventListener("contextmenu", this._onContextMenu, false);
+		Engine.app.removeEventListener(eventPrefix + "down", this._onPointerDown, false);
+		Engine.app.removeEventListener(eventPrefix + "up", this._onPointerUp, false);
+		Engine.app.removeEventListener(eventPrefix + "out", this._onPointerUp, false);
+		Engine.app.removeEventListener(eventPrefix + "move", this._onPointerMove, false);
+		Engine.app.removeEventListener("mousemove", this._onMouseMove, false);
+		/*Engine.app.addEventListener("MSPointerDown", this._onGestureStart, false);
+		Engine.app.addEventListener("MSGestureChange", this._onGesture, false);*/
+		Engine.app.removeEventListener('mousewheel', this._wheel, false);
+		Engine.app.removeEventListener('DOMMouseScroll', this._wheel, false);
+				
+		Tools.UnregisterTopRootEvents([
+			{ name: "keydown", handler: this._onKeyDown },
+			{ name: "keyup", handler: this._onKeyUp },
+			{ name: "blur", handler: this._onLostFocus }
+		]);
+		#else
 		Engine.keyDown.remove(_onKeyDown);
 		Engine.keyUp.remove(_onKeyUp);
-		Engine.mouseDown.remove(_onMouseDown);
-		Engine.mouseUp.remove(_onMouseUp);
+		Engine.mouseDown.remove(_onPointerDown);
+		Engine.mouseUp.remove(_onPointerUp);
 		Engine.mouseMove.remove(_onMouseMove);
 		Engine.mouseWheel.remove(_wheel);
+		#end
 				
 		this._attachedElement = null;
 		
@@ -332,7 +537,7 @@ import com.babylonhx.utils.Keycodes;
 		this.beta = Math.acos(radiusv3.y / this.radius);		
 	}
 
-	override public function _getViewMatrix():Matrix {
+	override public function _getViewMatrix_default():Matrix {
 		// Compute
 		var cosa = Math.cos(this.alpha);
 		var sina = Math.sin(this.alpha);
@@ -375,7 +580,7 @@ import com.babylonhx.utils.Keycodes;
 		return this._viewMatrix;
 	}
 
-	public function zoomOn(?meshes:Array<AbstractMesh>) {
+	public function zoomOn(?meshes:Array<AbstractMesh>, doNotUpdateMaxZ:Bool = false) {
 		meshes = meshes != null ? meshes : this.getScene().meshes;
 		
 		var minMaxVector = Mesh.MinMax(meshes);
@@ -383,10 +588,10 @@ import com.babylonhx.utils.Keycodes;
 		
 		this.radius = distance * this.zoomOnFactor;
 		
-		this.focusOn({ min: minMaxVector.minimum, max: minMaxVector.maximum, distance: distance });
+		this.focusOn({ min: minMaxVector.minimum, max: minMaxVector.maximum, distance: distance }, doNotUpdateMaxZ);
 	}
 
-	public function focusOn(meshesOrMinMaxVectorAndDistance:Dynamic) {
+	public function focusOn(meshesOrMinMaxVectorAndDistance:Dynamic, doNotUpdateMaxZ:Bool = false) {
 		var meshesOrMinMaxVector:Dynamic = null;
 		var distance:Float = 0;
 		
@@ -402,7 +607,9 @@ import com.babylonhx.utils.Keycodes;
 		
 		this.target.position = Mesh.Center(meshesOrMinMaxVector);
 		
-		this.maxZ = distance * 2;
+		if (!doNotUpdateMaxZ) {
+            this.maxZ = distance * 2;
+        }
 	}
 	
 }

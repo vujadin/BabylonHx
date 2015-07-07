@@ -21,7 +21,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 
 	private var _scene:Scene;
 	private var _isDirty:Bool = true;
-	private var _transformMatrices: #if html5 Float32Array #else Array<Float> #end ;
+	private var _transformMatrices: #if (js || purejs) Float32Array #else Array<Float> #end ;
 	private var _animatables:Array<IAnimatable>;
 	private var _identity:Matrix = Matrix.Identity();
 	
@@ -44,22 +44,26 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	// Members
-	public function getTransformMatrices(): #if html5 Float32Array #else Array<Float> #end {
+	inline public function getTransformMatrices(): #if (js || purejs) Float32Array #else Array<Float> #end {
 		return this._transformMatrices;
+	}
+	
+	public function getScene():Scene {
+		return this._scene;
 	}
 
 	// Methods
-	public function _markAsDirty():Void {
+	inline public function _markAsDirty():Void {
 		this._isDirty = true;
 	}
 
-	public function prepare():Void {
+	public function prepare() {
 		if (!this._isDirty) {
 			return;
 		}
 		
 		if (this._transformMatrices == null || this._transformMatrices.length != 16 * (this.bones.length + 1)) {
-			this._transformMatrices = #if html5 new Float32Array(16 * (this.bones.length + 1)) #else [] #end ;
+			this._transformMatrices = #if (js || purejs) new Float32Array(16 * (this.bones.length + 1)) #else [] #end ;
 		}
 		
 		for (index in 0...this.bones.length) {

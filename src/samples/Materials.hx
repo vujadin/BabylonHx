@@ -2,8 +2,10 @@ package samples;
 
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.lights.PointLight;
+import com.babylonhx.lights.DirectionalLight;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.materials.textures.Texture;
+import com.babylonhx.layer.Layer;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
@@ -19,9 +21,11 @@ class Materials {
 		//Create a light
 		var light = new PointLight("Omni", new Vector3( -60, 60, 80), scene);
 		
+		new Layer("background", "assets/img/graygrad.jpg", scene, true);
+		
 		//Create an Arc Rotate Camera - aimed negative z this time
-		var camera = new ArcRotateCamera("Camera", Math.PI / 2, 1.0, 110, Vector3.Zero(), scene);
-		camera.attachControl(this, true);
+		var camera = new ArcRotateCamera("Camera", Math.PI / 2, 1.0, 110, new Vector3(0, 5, 0), scene);
+		camera.attachControl();
 				
 		//Creation of 6 spheres
 		var sphere1 = Mesh.CreateSphere("Sphere1", 10, 9.0, scene);

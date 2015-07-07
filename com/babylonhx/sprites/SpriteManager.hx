@@ -1,7 +1,7 @@
 package com.babylonhx.sprites;
 
 import com.babylonhx.materials.Effect;
-import com.babylonhx.mesh.BabylonBuffer;
+import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.tools.Tools;
 
@@ -30,8 +30,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 
 	private var _vertexDeclaration:Array<Int> = [4, 4, 4, 4];
 	private var _vertexStrideSize:Int = 16 * 4; // 16 floats per sprite (x, y, z, angle, size, offsetX, offsetY, invertU, invertV, cellIndexX, cellIndexY, color)
-	private var _vertexBuffer:BabylonBuffer;
-	private var _indexBuffer:BabylonBuffer;
+	private var _vertexBuffer:WebGLBuffer;
+	private var _indexBuffer:WebGLBuffer;
 	private var _vertices:Float32Array;
 	private var _effectBase:Effect;
 	private var _effectFog:Effect;

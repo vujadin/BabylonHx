@@ -52,7 +52,7 @@ import com.babylonhx.mesh.Mesh;
 		this._fillMode = (value ? Material.WireFrameFillMode : Material.TriangleFillMode);
 		return value;
 	}
-
+	
 	public var pointsCloud(get, set):Bool;
 	private function get_pointsCloud():Bool {
 		return this._fillMode == Material.PointFillMode;
@@ -80,6 +80,13 @@ import com.babylonhx.mesh.Mesh;
 		if (!doNotAdd) {
 			scene.materials.push(this);
 		}
+		
+		// TODO: macro ...
+		#if purejs
+		untyped __js__("Object.defineProperty(this, 'wireframe', { get: this.get_wireframe, set: this.set_wireframe })");
+		untyped __js__("Object.defineProperty(this, 'fillMode', { get: this.get_fillMode, set: this.set_fillMode })");
+		untyped __js__("Object.defineProperty(this, 'pointsCloud', { get: this.get_pointsCloud, set: this.set_pointsCloud })");
+		#end
 	}
 
 	public function isReady(?mesh:AbstractMesh, useInstances:Bool = false):Bool {
@@ -114,7 +121,7 @@ import com.babylonhx.mesh.Mesh;
 		var engine = this._scene.getEngine();
 		
 		engine.enableEffect(this._effect);
-		engine.setState(this.backFaceCulling, cast this.zOffset);
+		engine.setState(this.backFaceCulling, this.zOffset);
 	}
 
 	public function bind(world:Matrix, ?mesh:Mesh) {

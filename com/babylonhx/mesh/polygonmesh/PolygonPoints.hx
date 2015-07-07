@@ -3,6 +3,7 @@ package com.babylonhx.mesh.polygonmesh;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.tools.Tools;
 
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -20,7 +21,7 @@ import com.babylonhx.tools.Tools;
 		var result:Array<IndexedPoint> = [];
 		
 		for (point in originalPoints) {
-			if (result.length == 0 || !(Tools.WithinEpsilon(point.x, result[0].x, 0.00001) && Tools.WithinEpsilon(point.y, result[0].y, 0.00001))) {
+			if (result.length == 0 || !point.equalsWithEpsilon(cast result[0])) {
 				var newPoint = new IndexedPoint(point, this.elements.length);
 				result.push(newPoint);
 				this.elements.push(newPoint);

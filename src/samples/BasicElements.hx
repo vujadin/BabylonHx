@@ -2,7 +2,8 @@ package samples;
 
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.lights.HemisphericLight;
-import com.babylonhx.lights.PointLight;
+import com.babylonhx.layer.Layer;
+import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
@@ -19,8 +20,10 @@ class BasicElements {
 		var camera = new ArcRotateCamera("Camera", 3 * Math.PI / 2, Math.PI / 8, 50, Vector3.Zero(), scene);
 		camera.attachControl(this, true);
 		
-		//var plight = new PointLight("pointlight", new Vector3(0, 0, 0), scene);
-		var plight = new HemisphericLight("hemi", new Vector3(0, 0, 0), scene);
+		var light = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);
+		light.diffuse = Color3.FromInt(0xf68712);
+		
+		new Layer("background", "assets/img/graygrad.jpg", scene, true);
 		
 		//Creation of a box
 		//(name of the box, size, scene)
@@ -54,31 +57,36 @@ class BasicElements {
 			new Vector3(0, 0, 10)
 		], scene);
 		
-		//var tube = Mesh.CreateTube("tube", [Vector3.Zero(), new Vector3(5, 4, 7), new Vector3(12, 14, 9)], 5, 5, null, scene);
+		// Creation of a ribbon
+		// let's first create many paths along a maths exponential function as an example 
+		var exponentialPath = function (p:Int):Array<Vector3> {
+			var path:Array<Vector3> = [];
+			for (i in -10...10) {
+				path.push(new Vector3(p, i, Math.sin(p / 3) * 5 * Math.exp(-(i - p) * (i - p) / 60) + i / 3));
+			}
+			return path;
+		};
+		// let's populate arrayOfPaths with all these different paths
+		var arrayOfPaths:Array<Array<Vector3>> = [];
+		for (p in 0...20) {
+			arrayOfPaths[p] = exponentialPath(p);
+		}
+		
+		// (name, array of paths, closeArray, closePath, offset, scene)
+		var ribbon = Mesh.CreateRibbon("ribbon", arrayOfPaths, false, false, 0, scene);
 		
 		// Moving elements
-		box.position = new Vector3(-10, 0, 0);     // Using a vector
-		sphere.position = new Vector3(0, 10, 0);   // Using a vector
-		plan.position.z = 10;                      // Using a single coordinate component
+		box.position = new Vector3(-10, 0, 0);   // Using a vector
+		sphere.position = new Vector3(0, 10, 0); // Using a vector
+		plan.position.z = 10;                            // Using a single coordinate component
 		cylinder.position.z = -10;
 		torus.position.x = 10;
 		knot.position.y = -10;
+		ribbon.position = new Vector3( -10, -10, 20);
 		
-		var h = 0.05;
-		var color:RGB = { r: 0, g: 0, b: 0 };
 		scene.getEngine().runRenderLoop(function () {
-			
-			h = Tools.Clamp(h + 0.0025 * (0.5 - Math.random()), 0.025, 0.07);
-			
-			color = ColorTools.toRGB(cast ColorTools.hue2rgb(h, 0.95, 0.9));
-			
-			plight.diffuse.r = color.r;
-			plight.diffuse.b = color.b;
-			plight.diffuse.g = color.g;
-			plight.intensity = Tools.Clamp(plight.intensity + 0.05 * (0.5 - Math.random()), 0.6, 1);
-			
-            scene.render();
-        });
-	}	
+			scene.render();
+		});
+	}
 	
 }

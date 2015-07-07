@@ -5,7 +5,7 @@ import com.babylonhx.math.Ray;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Viewport;
-import com.babylonhx.mesh.BabylonBuffer;
+import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.mesh.Mesh;
 
 /**
@@ -24,8 +24,8 @@ import com.babylonhx.mesh.Mesh;
 	private var _emitter:Dynamic;
 	private var _vertexDeclaration:Array<Int>;
 	private var _vertexStrideSize:Int;				// 2 * 4;
-	private var _vertexBuffer:BabylonBuffer;
-	private var _indexBuffer:BabylonBuffer;
+	private var _vertexBuffer:WebGLBuffer;
+	private var _indexBuffer:WebGLBuffer;
 	private var _effect:Effect;
 	private var _positionX:Float;
 	private var _positionY:Float;

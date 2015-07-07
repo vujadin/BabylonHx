@@ -3,7 +3,7 @@ package com.babylonhx.rendering;
 import com.babylonhx.materials.ShaderMaterial;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Matrix;
-import com.babylonhx.mesh.BabylonBuffer;
+import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.VertexData;
 import com.babylonhx.tools.SmartArray;
@@ -24,7 +24,7 @@ import com.babylonhx.culling.BoundingBox;
 	private var _scene:Scene;
 	private var _colorShader:ShaderMaterial;
 	private var _vb:VertexBuffer;
-	private var _ib:BabylonBuffer;
+	private var _ib:WebGLBuffer;
 	
 
 	public function new(scene:Scene) {

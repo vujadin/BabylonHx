@@ -30,6 +30,8 @@ import com.babylonhx.math.Frustum;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.Geometry;
 import com.babylonhx.mesh.Mesh;
+import com.babylonhx.collisions.ICollisionCoordinator;
+import com.babylonhx.collisions.CollisionCoordinatorLegacy;
 import com.babylonhx.mesh.simplification.SimplificationQueue;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.particles.ParticleSystem;
@@ -81,6 +83,8 @@ import com.babylonhx.tools.Tools;
 	public var _onPointerMove:Dynamic;	// MouseEvent->Void
 	public var _onPointerDown:Dynamic;	// MouseEvent->Void
 	public var onPointerDown:Dynamic;   // MouseEvent->PickingInfo->Void
+	public var _onPointerUp:Dynamic;	// MouseEvent->Void
+	public var onPointerUp:Dynamic;		// MouseEvent->PickingInfo->Void
 	public var cameraToUseForPointers:Camera = null; // Define this parameter if you are using multiple cameras and you want to specify which one should be used for pointer position
 	private var _pointerX:Int;
 	private var _pointerY:Int;
@@ -151,6 +155,27 @@ import com.babylonhx.tools.Tools;
 	
 	// Collisions
 	public var collisionsEnabled:Bool = true;
+	
+	private var _workerCollisions:Bool = false;
+	public var workerCollisions(get, set):Bool;
+	private function set_workerCollisions(enabled:Bool):Bool {		
+		this._workerCollisions = enabled;
+		if (this.collisionCoordinator != null) {
+			this.collisionCoordinator.destroy();
+		}
+		
+		//this.collisionCoordinator = enabled ? new CollisionCoordinatorWorker() : new CollisionCoordinatorLegacy();
+		this.collisionCoordinator = new CollisionCoordinatorLegacy();  // for now ...
+		
+		this.collisionCoordinator.init(this);
+		
+		return enabled;
+	}
+	private function get_workerCollisions():Bool {
+		return this._workerCollisions;
+	}
+	
+	public var collisionCoordinator:ICollisionCoordinator;
 	public var gravity:Vector3 = new Vector3(0, -9.0, 0);
 
 	// Postprocesses
@@ -267,6 +292,13 @@ import com.babylonhx.tools.Tools;
 		
 		//simplification queue
 		this.simplificationQueue = new SimplificationQueue();
+		
+		// TODO: macro ...
+		#if purejs
+		untyped __js__("Object.defineProperty(this, 'meshUnderPointer', { get: this.get_meshUnderPointer })");
+		untyped __js__("Object.defineProperty(this, 'pointerX', { get: this.get_pointerX })");
+		untyped __js__("Object.defineProperty(this, 'pointerY', { get: this.get_pointerY })");
+		#end
 	}
 
 	// Properties 
@@ -289,84 +321,84 @@ import com.babylonhx.tools.Tools;
         return this._cachedMaterial;
     }
 
-	public function getBoundingBoxRenderer():BoundingBoxRenderer {
+	inline public function getBoundingBoxRenderer():BoundingBoxRenderer {
 		return this._boundingBoxRenderer;
 	}
 
-	public function getOutlineRenderer():OutlineRenderer {
+	inline public function getOutlineRenderer():OutlineRenderer {
 		return this._outlineRenderer;
 	}
 
-	public function getEngine():Engine {
+	inline public function getEngine():Engine {
 		return this._engine;
 	}
 
-	public function getTotalVertices():Int {
+	inline public function getTotalVertices():Int {
 		return this._totalVertices;
 	}
 
-	public function getActiveVertices():Int {
+	inline public function getActiveVertices():Int {
 		return this._activeIndices;
 	}
 
-	public function getActiveParticles():Int {
+	inline public function getActiveParticles():Int {
 		return this._activeParticles;
 	}
 	
-	public function getActiveBones():Int {
+	inline public function getActiveBones():Int {
         return this._activeBones;
     }
 
 	// Stats
-	public function getLastFrameDuration():Float {
+	inline public function getLastFrameDuration():Float {
 		return this._lastFrameDuration;
 	}
 
-	public function getEvaluateActiveMeshesDuration():Float {
+	inline public function getEvaluateActiveMeshesDuration():Float {
 		return this._evaluateActiveMeshesDuration;
 	}
 
-	public function getActiveMeshes():SmartArray { //SmartArray<Mesh> {
+	inline public function getActiveMeshes():SmartArray { //SmartArray<Mesh> {
 		return this._activeMeshes;
 	}
 
-	public function getRenderTargetsDuration():Float {
+	inline public function getRenderTargetsDuration():Float {
 		return this._renderTargetsDuration;
 	}
 
-	public function getRenderDuration():Float {
+	inline public function getRenderDuration():Float {
 		return this._renderDuration;
 	}
 
-	public function getParticlesDuration():Float {
+	inline public function getParticlesDuration():Float {
 		return this._particlesDuration;
 	}
 
-	public function getSpritesDuration():Float {
+	inline public function getSpritesDuration():Float {
 		return this._spritesDuration;
 	}
 
-	public function getAnimationRatio():Float {
+	inline public function getAnimationRatio():Float {
 		return this._animationRatio;
 	}
 
-	public function getRenderId():Int {
+	inline public function getRenderId():Int {
 		return this._renderId;
 	}
 	
-	public function incrementRenderId() {
+	inline public function incrementRenderId() {
 		this._renderId++;
 	}
 
-	private function _updatePointerPosition(x:Int, y:Int) {
+	inline private function _updatePointerPosition(x:Int, y:Int) {
 		/*var canvasRect = this._engine.getRenderingCanvasClientRect();*/
 		
 		this._pointerX = x;// evt.clientX - canvasRect.left;
 		this._pointerY = y;// evt.clientY - canvasRect.top;
 		
 		if (this.cameraToUseForPointers != null) {
-			this._pointerX = this._pointerX - this.cameraToUseForPointers.viewport.x * this._engine.getRenderWidth();
-			this._pointerY = this._pointerY - this.cameraToUseForPointers.viewport.y * this._engine.getRenderHeight();
+			this._pointerX = this._pointerX - Std.int(this.cameraToUseForPointers.viewport.x) * this._engine.getRenderWidth();
+			this._pointerY = this._pointerY - Std.int(this.cameraToUseForPointers.viewport.y) * this._engine.getRenderHeight();
 		}
 	}
 
@@ -431,6 +463,30 @@ import com.babylonhx.tools.Tools;
 			}
 		};
 		
+		this._onPointerUp = function(x:Int, y:Int, button:Int) {
+			var predicate = null;
+			
+			if (this.onPointerUp == null) {
+				predicate = function(mesh:AbstractMesh):Bool {
+					return mesh.isPickable && mesh.isVisible && mesh.isReady() && mesh.actionManager != null && mesh.actionManager.hasSpecificTrigger(ActionManager.OnPickUpTrigger);
+				};
+			}
+			
+			this._updatePointerPosition(x, y);
+			
+			var pickResult:PickingInfo = this.pick(this._pointerX, this._pointerY, predicate, false, this.cameraToUseForPointers);
+			
+			if (pickResult.hit) {
+				if (pickResult.pickedMesh.actionManager != null) {
+					pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnPickUpTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
+				}
+			}
+			
+			if (this.onPointerUp != null) {
+				this.onPointerUp(x, y, button, pickResult);
+			}
+		};
+		
 		this._onKeyDown = function(keycode:Int) {
 			if (this.actionManager != null) {
 				this.actionManager.processTrigger(ActionManager.OnKeyDownTrigger, ActionEvent.CreateNewFromScene(this, keycode));
@@ -444,6 +500,7 @@ import com.babylonhx.tools.Tools;
 		};
 		
 		Engine.mouseDown.push(this._onPointerDown);
+		Engine.mouseUp.push(this._onPointerUp);
 		Engine.mouseMove.push(this._onPointerMove);
 				
 		Engine.keyDown.push(this._onKeyDown);
@@ -452,6 +509,7 @@ import com.babylonhx.tools.Tools;
 
 	public function detachControl() {
 		Engine.mouseDown.remove(this._onPointerDown);
+		Engine.mouseUp.remove(this._onPointerUp);
 		Engine.mouseMove.remove(this._onPointerMove);
 				
 		Engine.keyDown.remove(this._onKeyDown);
@@ -491,7 +549,7 @@ import com.babylonhx.tools.Tools;
 		return true;
 	}
 
-	public function resetCachedMaterial() {
+	inline public function resetCachedMaterial() {
         this._cachedMaterial = null;
     }
 	
@@ -619,19 +677,19 @@ import com.babylonhx.tools.Tools;
 	}
 
 	// Matrix
-	public function getViewMatrix():Matrix {
+	inline public function getViewMatrix():Matrix {
 		return this._viewMatrix;
 	}
 
-	public function getProjectionMatrix():Matrix {
+	inline public function getProjectionMatrix():Matrix {
 		return this._projectionMatrix;
 	}
 
-	public function getTransformMatrix():Matrix {
+	inline public function getTransformMatrix():Matrix {
 		return this._transformMatrix;
 	}
 
-	public function setTransformMatrix(view:Matrix, projection:Matrix) {
+	inline public function setTransformMatrix(view:Matrix, projection:Matrix) {
 		this._viewMatrix = view;
 		this._projectionMatrix = projection;
 		
@@ -1002,12 +1060,12 @@ import com.babylonhx.tools.Tools;
 		return null;
 	}
 
-	public function isActiveMesh(mesh:Mesh):Bool {
+	inline public function isActiveMesh(mesh:Mesh):Bool {
 		return (this._activeMeshes.indexOf(mesh) != -1);
 	}
 
-	private function _evaluateSubMesh(subMesh:SubMesh, mesh:AbstractMesh) {
-		if (mesh.subMeshes.length == 1 || subMesh.isInFrustum(this._frustumPlanes)) {
+	inline private function _evaluateSubMesh(subMesh:SubMesh, mesh:AbstractMesh) {
+		if (mesh.alwaysSelectAsActiveMesh || mesh.subMeshes.length == 1 || subMesh.isInFrustum(this._frustumPlanes)) {
 			var material = subMesh.getMaterial();
 			
 			if (mesh.showSubMeshesBoundingBox) {
@@ -1031,7 +1089,7 @@ import com.babylonhx.tools.Tools;
 		}
 	}
 
-	private function _evaluateActiveMeshes() {
+	inline private function _evaluateActiveMeshes() {
 		this.activeCamera._activeMeshes.reset();
 		this._activeMeshes.reset();
 		this._renderingManager.reset();
@@ -1042,7 +1100,8 @@ import com.babylonhx.tools.Tools;
 		
 		if (this._frustumPlanes == null) {
 			this._frustumPlanes = Frustum.GetPlanes(this._transformMatrix);
-		} else {
+		} 
+		else {
 			Frustum.GetPlanesToRef(this._transformMatrix, this._frustumPlanes);
 		}
 		
@@ -1054,7 +1113,8 @@ import com.babylonhx.tools.Tools;
 			var selection = this._selectionOctree.select(this._frustumPlanes);
 			meshes = cast selection.data;
 			len = selection.length;
-		} else { // Full scene traversal
+		} 
+		else { // Full scene traversal
 			len = this.meshes.length;
 			meshes = this.meshes;
 		}
@@ -1068,7 +1128,7 @@ import com.babylonhx.tools.Tools;
 			
 			this._totalVertices += mesh.getTotalVertices();
 			
-			if (!mesh.isReady()) {
+			if (!mesh.isReady() || !mesh.isEnabled()) {
 				continue;
 			}
 			
@@ -1088,7 +1148,7 @@ import com.babylonhx.tools.Tools;
 			
 			mesh._preActivate();
 						
-			if (mesh.isEnabled() && mesh.isVisible && mesh.visibility > 0 && ((mesh.layerMask & this.activeCamera.layerMask) != 0) && mesh.isInFrustum(this._frustumPlanes)) {
+			if (mesh.alwaysSelectAsActiveMesh || mesh.isVisible && mesh.visibility > 0 && ((mesh.layerMask & this.activeCamera.layerMask) != 0) && mesh.isInFrustum(this._frustumPlanes)) {
 				this._activeMeshes.push(mesh);
 				this.activeCamera._activeMeshes.push(mesh);
 				mesh._activate(this._renderId);
@@ -1149,7 +1209,7 @@ import com.babylonhx.tools.Tools;
 		}
 	}
 
-	public function updateTransformMatrix(force:Bool = false) {
+	inline public function updateTransformMatrix(force:Bool = false) {
 		this.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(force));
 	}
 
@@ -1285,7 +1345,7 @@ import com.babylonhx.tools.Tools;
 		}
 		
 		this.activeCamera = camera;
-		this.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix());
+		this.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(false));
 		
 		// Update camera
 		this.activeCamera._updateFromScene();
@@ -1660,7 +1720,7 @@ import com.babylonhx.tools.Tools;
 		};
 	}
 		
-	public function createOrUpdateSelectionOctree(maxCapacity:Int = 64, maxDepth:Int = 2):Octree<AbstractMesh> {
+	inline public function createOrUpdateSelectionOctree(maxCapacity:Int = 64, maxDepth:Int = 2):Octree<AbstractMesh> {
 		if (this._selectionOctree == null) {
 			this._selectionOctree = new Octree<AbstractMesh>(Octree.CreationFuncForMeshes, maxCapacity, maxDepth);
 		}
@@ -1691,7 +1751,7 @@ import com.babylonhx.tools.Tools;
 		// Moving coordinates to local viewport world
 		x = x / this._engine.getHardwareScalingLevel() - viewport.x;
 		y = y / this._engine.getHardwareScalingLevel() - (this._engine.getRenderHeight() - viewport.y - viewport.height);
-		return Ray.CreateNew(x, y, viewport.width, viewport.height, world != null ? world : Matrix.Identity(), camera.getViewMatrix(), camera.getProjectionMatrix());
+		return Ray.CreateNew(x, y, viewport.width, viewport.height, world != null ? world : Matrix.Identity(), camera.getViewMatrix(), camera.getProjectionMatrix(false));
 		//       return Ray.CreateNew(x / window.devicePixelRatio, y / window.devicePixelRatio, viewport.width, viewport.height, world ? world :Matrix.Identity(), camera.getViewMatrix(), camera.getProjectionMatrix());
 	}
 
@@ -1731,7 +1791,7 @@ import com.babylonhx.tools.Tools;
 		return pickingInfo != null ? pickingInfo : new PickingInfo();
 	}
 
-	public function pick(x:Float, y:Float, ?predicate:AbstractMesh->Bool, fastCheck:Bool = false/*?fastCheck:Bool*/, ?camera:Camera):PickingInfo {
+	inline public function pick(x:Float, y:Float, ?predicate:AbstractMesh->Bool, fastCheck:Bool = false/*?fastCheck:Bool*/, ?camera:Camera):PickingInfo {
 		/// <summary>Launch a ray to try to pick a mesh in the scene</summary>
 		/// <param name="x">X position on screen</param>
 		/// <param name="y">Y position on screen</param>
@@ -1766,12 +1826,12 @@ import com.babylonhx.tools.Tools;
 		}
 	}
 
-	public function getPointerOverMesh():AbstractMesh {
+	inline public function getPointerOverMesh():AbstractMesh {
 		return this._pointerOverMesh;
 	}
 
 	// Physics
-	public function getPhysicsEngine():PhysicsEngine {
+	inline public function getPhysicsEngine():PhysicsEngine {
 		return this._physicsEngine;
 	}
 
@@ -1801,7 +1861,7 @@ import com.babylonhx.tools.Tools;
 		this._physicsEngine = null;
 	}
 
-	public function isPhysicsEnabled():Bool {
+	inline public function isPhysicsEnabled():Bool {
 		return this._physicsEngine != null;
 	}
 

@@ -25,6 +25,8 @@ import com.babylonhx.tools.Tools;
 	public var _camMatrix:Matrix = Matrix.Zero();
 	public var _cameraTransformMatrix:Matrix = Matrix.Zero();
 	public var _cameraRotationMatrix:Matrix = Matrix.Zero();
+	private var _rigCamTransformMatrix:Matrix;
+	
 	public var _referencePoint:Vector3 = new Vector3(0, 0, 1);
 	public var _transformedReferencePoint:Vector3 = Vector3.Zero();
 	public var _lookAtTemp:Matrix = Matrix.Zero();
@@ -178,7 +180,7 @@ import com.babylonhx.tools.Tools;
 		}
 	}
 	
-	override public function _getViewMatrix():Matrix {
+	override public function _getViewMatrix_default():Matrix {
 		if (this.lockedTarget == null) {
 			// Compute
 			if (this.upVector.x != 0 || this.upVector.y != 1.0 || this.upVector.z != 0) {
@@ -188,7 +190,8 @@ import com.babylonhx.tools.Tools;
 				this._lookAtTemp.multiplyToRef(this._cameraRotationMatrix, this._tempMatrix);
 				this._lookAtTemp.invert();
 				this._tempMatrix.multiplyToRef(this._lookAtTemp, this._cameraRotationMatrix);
-			} else {
+			} 
+			else {
 				Matrix.RotationYawPitchRollToRef(this.rotation.y, this.rotation.x, this.rotation.z, this._cameraRotationMatrix);
 			}
 			
@@ -196,12 +199,94 @@ import com.babylonhx.tools.Tools;
 			
 			// Computing target and final matrix
 			this.position.addToRef(this._transformedReferencePoint, this._currentTarget);
-		} else {
+		} 
+		else {
 			this._currentTarget.copyFrom(this._getLockedTargetPosition());
 		}
 		
 		Matrix.LookAtLHToRef(this.position, this._currentTarget, this.upVector, this._viewMatrix);
 		return this._viewMatrix;
+	}
+	
+	public function _getVRViewMatrix():Matrix {
+		Matrix.RotationYawPitchRollToRef(this.rotation.y, this.rotation.x, this.rotation.z, this._cameraRotationMatrix);
+		
+		Vector3.TransformCoordinatesToRef(this._referencePoint, this._cameraRotationMatrix, this._transformedReferencePoint);
+		Vector3.TransformNormalToRef(this.upVector, this._cameraRotationMatrix, this._cameraRigParams.vrActualUp);
+		
+		// Computing target and final matrix
+		this.position.addToRef(this._transformedReferencePoint, this._currentTarget);
+		
+		Matrix.LookAtLHToRef(this.position, this._currentTarget, this._cameraRigParams.vrActualUp, this._cameraRigParams.vrWorkMatrix);
+		
+		this._cameraRigParams.vrWorkMatrix.multiplyToRef(this._cameraRigParams.vrPreViewMatrix, this._viewMatrix);
+		return this._viewMatrix;
+	}
+	
+	/**
+	 * @override
+	 * Override Camera.createRigCamera
+	 */
+	override public function createRigCamera(name:String, cameraIndex:Int):Camera {
+		if (this.cameraRigMode != Camera.RIG_MODE_NONE) {
+			var rigCamera = new TargetCamera(name, this.position.clone(), this.getScene());
+			if (this.cameraRigMode == Camera.RIG_MODE_VR) {
+				rigCamera._cameraRigParams = { };
+				rigCamera._cameraRigParams.vrActualUp = new Vector3(0, 0, 0);
+				rigCamera._getViewMatrix = rigCamera._getVRViewMatrix;
+			}
+			
+			return rigCamera;
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * @override
+	 * Override Camera._updateRigCameras
+	 */
+	override public function _updateRigCameras() {
+		switch (this.cameraRigMode) {
+			case Camera.RIG_MODE_STEREOSCOPIC_ANAGLYPH,
+				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_PARALLEL,
+				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED,
+				 Camera.RIG_MODE_STEREOSCOPIC_OVERUNDER,
+				 Camera.RIG_MODE_VR:
+				var camLeft:TargetCamera = cast this._rigCameras[0];
+				var camRight:TargetCamera = cast this._rigCameras[1];
+				
+				if (this.cameraRigMode == Camera.RIG_MODE_VR) {
+					camLeft.rotation.x = camRight.rotation.x = this.rotation.x;
+					camLeft.rotation.y = camRight.rotation.y = this.rotation.y;
+					camLeft.rotation.z = camRight.rotation.z = this.rotation.z;
+					
+					camLeft.position.copyFrom(this.position);
+					camRight.position.copyFrom(this.position);
+				} 
+				else {
+					//provisionnaly using _cameraRigParams.stereoHalfAngle instead of calculations based on _cameraRigParams.interaxialDistance:
+					this._getRigCamPosition(-this._cameraRigParams.stereoHalfAngle, camLeft.position);
+					this._getRigCamPosition(this._cameraRigParams.stereoHalfAngle, camRight.position);
+					
+					camLeft.setTarget(this.getTarget());
+					camRight.setTarget(this.getTarget());
+				}
+		}
+		
+		super._updateRigCameras();
+	}
+
+	private function _getRigCamPosition(halfSpace:Float, result:Vector3) {
+		if (this._rigCamTransformMatrix == null) {
+			this._rigCamTransformMatrix = new Matrix();
+		}
+		var target = this.getTarget();
+		Matrix.Translation( -target.x, -target.y, -target.z).multiplyToRef(Matrix.RotationY(halfSpace), this._rigCamTransformMatrix);
+		
+		this._rigCamTransformMatrix = this._rigCamTransformMatrix.multiply(Matrix.Translation(target.x, target.y, target.z));
+		
+		Vector3.TransformCoordinatesToRef(this.position, this._rigCamTransformMatrix, result);
 	}
 	
 }

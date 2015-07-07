@@ -8,7 +8,7 @@ import org.poly2tri.Point;
  * ...
  * @author Krtolica Vujadin
  */
-@:expose('BABYLON.IndexedPoint') class Polygon {
+@:expose('BABYLON.Polygon') class Polygon {
 
 	static public inline function Rectangle(xmin:Float, ymin:Float, xmax:Float, ymax:Float):Array<Vector2> {
 		return [
@@ -33,9 +33,10 @@ import org.poly2tri.Point;
 		return result;
 	}
 
-	static public inline function Parse(input:String):Array<Vector2> {
-		var regx = ~/[^-+eE\.\d]+/i;
-		var floats = regx.split(input).map(function(val):Float { return Std.parseFloat(val); }).filter(function(val):Bool { return !Math.isNaN(val); });
+	static public inline function Parse(input:String, separator:String = " "):Array<Vector2> {
+		//var regx = ~/[^-+eE\.\d]+/i;
+		//var floats = regx.split(input).map(Std.parseFloat).filter(function(val):Bool { return !Math.isNaN(val); } );
+		var floats = input.split(separator).map(Std.parseFloat);
 		var i:Int = 0;
 		var result:Array<Vector2> = [];
 		while(i < (floats.length & 0x7FFFFFFE)) {

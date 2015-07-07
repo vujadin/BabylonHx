@@ -1,12 +1,14 @@
 package;
 
 import lime.app.Application;
+import lime.Assets;
 import lime.ui.KeyCode;
 import lime.ui.KeyModifier;
 import lime.graphics.RenderContext;
 
 import com.babylonhx.Engine;
 import com.babylonhx.Scene;
+
 
 /**
  * ...
@@ -20,15 +22,16 @@ class MainLime extends Application {
 	
 	
 	public function new() {
-		super();		
+		super();	
 	}
 	
 	public override function init (context:RenderContext):Void {
 		engine = new Engine(this.window, false);	
 		scene = new Scene(engine);
-		
-		new samples.BasicScene(scene);
+				
+		//new samples.BasicScene(scene);
 		//new samples.BasicElements(scene);
+		//new samples.CandleLight(scene);
 		//new samples.RotationAndScaling(scene);
 		//new samples.Materials(scene);
 		//new samples.Lights(scene);
@@ -45,32 +48,50 @@ class MainLime extends Application {
 		//new samples.DisplacementMap(scene);
 		//new samples.Environment(scene);
 		//new samples.LensFlares(scene);
+		//new samples.PhysicsCannon(scene);
 		//new samples.Physics(scene);
-		//new samples.PolygonMesh(scene);
+		//new samples.Physics2(scene);
+		//new samples.Physics_Pyramid(scene);
+		//new samples.PhysicsSimple(scene);
+		//new samples.PolygonMesh1(scene);
+		//new samples.PolygonMesh2(scene);
+		//new samples.PolygonMesh3(scene);
 		//new samples.CustomRenderTarget(scene);
 		//new samples.Lines(scene);
-		//new samples.Bones(scene);
-		//new samples.PostprocessRefraction(scene);
+		//new samples.Lines2(scene);
+		//new samples.Bones(scene);		
 		//new samples.Shadows(scene);
+		//new samples.Shadows2(scene);
 		//new samples.HeightMap(scene);
 		//new samples.LoadObjFile(scene);
+		//new samples.LoadStlFile(scene);
+		//new samples.LoadPlyFile(scene);
 		//new samples.LOD(scene);
 		//new samples.Instances(scene);
-		//new samples.Fresnel(scene);
-		//new samples.PostprocessConvolution(scene);
+		new samples.Instances2(scene);
+		//new samples.Fresnel(scene);		
 		//new samples.VolumetricLights(scene);
 		//new samples.CellShading(scene);
 		//new samples.Particles(scene);
 		//new samples.Particles2(scene);
+		//new samples.Particles3(scene);
 		//new samples.Extrusion(scene);
 		//new samples.Sprites(scene);
 		//new samples.PostprocessBloom(scene);
+		//new samples.PostprocessRefraction(scene);
+		//new samples.PostprocessConvolution(scene);
+		//new samples.GodRays(scene);
+		//new samples.DepthOfField(scene);
 		//new samples.Actions(scene);
-		//new samples.Picking(scene);
-		//new samples.Particles3(scene);
+		//new samples.Picking(scene);		
 		//new samples.Octree(scene);
-		//new samples.SSAO(scene);						// NOT WORKING YET !!
+		//new samples.SSAO(scene);						
 		//new samples.Decals(scene);
+		//new samples.InstancedBones(scene);				
+		//new samples.AdvancedShadows(scene);
+		//new samples.Ribbons(scene);
+		//new samples.SoftShadows(scene);		
+		//new samples.BabylonHxWebsiteScene(scene);
 		
 		engine.width = this.window.width;
 		engine.height = this.window.height;
@@ -78,7 +99,7 @@ class MainLime extends Application {
 	
 	override function onMouseDown(x:Float, y:Float, button:Int) {
 		for(f in Engine.mouseDown) {
-			f(x, y);
+			f(x, y, button);
 		}
 	}
 	
@@ -96,7 +117,7 @@ class MainLime extends Application {
 	
 	override function onMouseWheel(deltaX:Float, deltaY:Float) {
 		for (f in Engine.mouseWheel) {
-			f(deltaY / 10);
+			f(deltaY / 2);
 		}
 	}
 	

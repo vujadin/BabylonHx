@@ -4,6 +4,7 @@ import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.Material;
 import com.babylonhx.materials.textures.RenderTargetTexture;
 import com.babylonhx.materials.textures.Texture;
+import com.babylonhx.math.Color4;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.mesh._InstancesBatch;
 import com.babylonhx.mesh.Mesh;
@@ -42,6 +43,11 @@ import com.babylonhx.tools.SmartArray;
 		this._depthMap.refreshRate = 1;
 		this._depthMap.renderParticles = false;
 		this._depthMap.renderList = null;
+		
+		// set default depth value to 1.0 (far away)
+		this._depthMap.onClear = function(engine:Engine) {
+			engine.clear(new Color4(1.0, 1.0, 1.0, 1.0), true, true);
+		}
 		
 		// Custom render function
 		var renderSubMesh = function(subMesh:SubMesh) {
@@ -151,12 +157,12 @@ import com.babylonhx.tools.SmartArray;
 		return this._effect.isReady();
 	}
 
-	public function getDepthMap():RenderTargetTexture {
+	inline public function getDepthMap():RenderTargetTexture {
 		return this._depthMap;
 	}
 
 	// Methods
-	public function dispose() {
+	inline public function dispose() {
 		this._depthMap.dispose();
 	}
 	

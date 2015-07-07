@@ -19,7 +19,7 @@ package com.babylonhx.tools.sceneoptimizer;
 	public static function LowDegradationAllowed(?targetFrameRate:Float):SceneOptimizerOptions {
 		var result = new SceneOptimizerOptions(targetFrameRate);
 		
-		var priority:int = 0;
+		var priority:Int = 0;
 		result.optimizations.push(new MergeMeshesOptimization(priority));
 		result.optimizations.push(new ShadowsOptimization(priority));
 		result.optimizations.push(new LensFlaresOptimization(priority));

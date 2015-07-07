@@ -24,7 +24,7 @@ import com.babylonhx.mesh.Mesh;
 			return false;
 		}
 		
-		if (mesh.skeleton || mesh.hasLODLevels) {
+		if (mesh.skeleton != null || mesh.hasLODLevels != null) {
 			return false;
 		}
 		
@@ -47,7 +47,8 @@ import com.babylonhx.mesh.Mesh;
 			currentPool.push(cast current);
 			
 			// Find compatible meshes
-			for (subIndex in index + 1...globalLength) {
+			var subIndex:Int = index + 1;
+			while (subIndex < globalLength) {			
 				var otherMesh = globalPool[subIndex];
 				
 				if (!this._canBeMerged(otherMesh)) {

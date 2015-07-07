@@ -1,5 +1,7 @@
 package;
 
+import samples.InstancedBones;
+import snow.system.window.Window;
 import snow.types.Types;
 
 import com.babylonhx.Engine;
@@ -21,7 +23,7 @@ class MainSnow extends snow.App {
 		engine = new Engine(SnowApp._snow.window);
 		scene = new Scene(engine);
 		
-		new samples.BasicScene(scene);
+		//new samples.BasicScene(scene);
 		//new samples.BasicElements(scene);
 		//new samples.RotationAndScaling(scene);
 		//new samples.Materials(scene);
@@ -33,13 +35,16 @@ class MainSnow extends snow.App {
 		//new samples.EasingFunctions(scene);
 		//new samples.ProceduralTextures(scene);
 		//new samples.MeshImport(scene);
-		//new samples.LoadScene(scene);
+		new samples.LoadScene(scene);
 		//new samples.CSGDemo(scene);
 		//new samples.Fog(scene);
 		//new samples.DisplacementMap(scene);
 		//new samples.Environment(scene);
 		//new samples.LensFlares(scene);
+		//new samples.PhysicsCannon(scene);
 		//new samples.Physics(scene);
+		//new samples.Physics_Pyramid(scene);
+		//new samples.PhysicsSimple(scene);
 		//new samples.PolygonMesh(scene);
 		//new samples.CustomRenderTarget(scene);
 		//new samples.Lines(scene);
@@ -65,6 +70,9 @@ class MainSnow extends snow.App {
 		//new samples.Octree(scene);
 		//new samples.SSAO(scene);						// NOT WORKING YET !!
 		//new samples.Decals(scene);
+		//new samples.InstancedBones(scene);
+		//new samples.GodRaysSkull(scene);
+		//new samples.Instances2(scene);
 		
 		app.window.onrender = render;
 	}
@@ -127,7 +135,7 @@ class MainSnow extends snow.App {
 		}
 	}
 
-	function render(window:snow.system.window.Window) {
+	function render(window:Window) {
 		engine._renderLoop();
 	}
 }

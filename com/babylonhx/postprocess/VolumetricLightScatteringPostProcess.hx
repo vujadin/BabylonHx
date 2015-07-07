@@ -46,32 +46,57 @@ import com.babylonhx.tools.SmartArray;
 	/**
 	* The internal mesh used by the post-process
 	*/
-	public var mesh:Mesh;
+	public var mesh:Mesh;	
+	/**
+	* Set to true to use the diffuseColor instead of the diffuseTexture
+	* @type {boolean}
+	*/
+	public var useDiffuseColor:Bool = false;
 	
 	/**
     * Array containing the excluded meshes not rendered in the internal pass
     */
     public var excludedMeshes:Array<AbstractMesh> = [];
 
+	/**
+	* Controls the overall intensity of the post-process
+	* @type {number}
+	*/
     public var exposure = 0.3;
+	/**
+	* Dissipates each sample's contribution in range [0, 1]
+	* @type {number}
+	*/
     public var decay = 0.96815;
+	/**
+	* Controls the overall intensity of each sample
+	* @type {number}
+	*/
     public var weight = 0.58767;
+	/**
+	* Controls the density of each sample
+	* @type {number}
+	*/
     public var density = 0.926;
 	
 
 	/**
 	 * @constructor
 	 * @param {string} name - The post-process name
-	 * @param {number} ratio - The size of the postprocesses (0.5 means that your postprocess will have a width = canvas.width 0.5 and a height = canvas.height 0.5)
+	 * @param {any} ratio - The size of the post-process and/or internal pass (0.5 means that your postprocess will have a width = canvas.width 0.5 and a height = canvas.height 0.5)
 	 * @param {BABYLON.Camera} camera - The camera that the post-process will be attached to
 	 * @param {BABYLON.Mesh} mesh - The mesh used to create the light scattering
+	 * @param {number} samples - The post-process quality, default 100
 	 * @param {number} samplingMode - The post-process filtering mode
 	 * @param {BABYLON.Engine} engine - The babylon engine
 	 * @param {boolean} reusable - If the post-process is reusable
+	 * @param {BABYLON.Scene} scene - The constructor needs a scene reference to initialize internal components. If "camera" is null "scene" must be provided
 	 */
-	public function new(name:String, ratio:Dynamic, camera:Camera, ?mesh:Mesh, samples:Int = 100, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, ?engine:Engine, ?reusable:Bool) {
+	public function new(name:String, ratio:Dynamic, ?camera:Camera, ?mesh:Mesh, samples:Int = 100, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, ?engine:Engine, ?reusable:Bool, ?scene:Scene) {
 		super(name, "volumetricLightScattering", ["decay", "exposure", "weight", "meshPositionOnScreen", "density"], ["lightScatteringSampler"], ratio.postProcessRatio != null ? ratio.postProcessRatio : ratio, camera, samplingMode, engine, reusable, "#define NUM_SAMPLES " + samples);
-		var scene = camera.getScene();
+		if(camera != null) {
+			scene = camera.getScene();
+		} 
 		
 		this._viewPort = new Viewport(0, 0, 1, 1).toGlobal(scene.getEngine());
 		
@@ -103,14 +128,24 @@ import com.babylonhx.tools.SmartArray;
 		
 		// Render this.mesh as default
 		if (mesh == this.mesh) {
-			defines.push("#define BASIC_RENDER");
+			if (this.useDiffuseColor) {
+				defines.push("#define DIFFUSE_COLOR_RENDER");
+			} 
+			else if (material != null) {
+				if (cast(material, StandardMaterial).diffuseTexture != null) {
+					defines.push("#define BASIC_RENDER");
+				} 
+				else {
+					defines.push("#define DIFFUSE_COLOR_RENDER");
+				}
+			}
 			defines.push("#define NEED_UV");
 			needUV = true;
 		}
 		
 		// Alpha test
 		if (material != null) {
-			if (material.needAlphaTesting() || mesh == this.mesh) {
+			if (material.needAlphaTesting()) {
 				defines.push("#define ALPHATEST");
 			}
 			
@@ -159,7 +194,7 @@ import com.babylonhx.tools.SmartArray;
 			this._volumetricLightScatteringPass = mesh.getScene().getEngine().createEffect(
 				{ vertex: "depth", fragment: "volumetricLightScatteringPass" },
 				attribs,
-				["world", "mBones", "viewProjection", "diffuseMatrix", "opacityLevel"],
+				["world", "mBones", "viewProjection", "diffuseMatrix", "opacityLevel", "color"],
 				["diffuseSampler", "opacitySampler"], join);
 		}
 		
@@ -216,7 +251,7 @@ import com.babylonhx.tools.SmartArray;
 	private function _createPass(scene:Scene, ratio:Float) {
 		var engine = scene.getEngine();
 		
-		this._volumetricLightScatteringRTT = new RenderTargetTexture("volumetricLightScatteringMap", { width: engine.getRenderWidth(), height: engine.getRenderHeight() }, scene, false, true, Engine.TEXTURETYPE_UNSIGNED_INT);
+		this._volumetricLightScatteringRTT = new RenderTargetTexture("volumetricLightScatteringMap", { width: engine.getRenderWidth() * ratio, height: engine.getRenderHeight() * ratio }, scene, false, true, Engine.TEXTURETYPE_UNSIGNED_INT);
 		this._volumetricLightScatteringRTT.wrapU = Texture.CLAMP_ADDRESSMODE;
 		this._volumetricLightScatteringRTT.wrapV = Texture.CLAMP_ADDRESSMODE;
 		this._volumetricLightScatteringRTT.renderList = null;
@@ -255,13 +290,19 @@ import com.babylonhx.tools.SmartArray;
 				// Alpha test
 				if (material != null && (mesh == this.mesh || material.needAlphaTesting() || cast(material, StandardMaterial).opacityTexture != null)) {
 					var alphaTexture = material.getAlphaTestTexture();
-					this._volumetricLightScatteringPass.setTexture("diffuseSampler", alphaTexture);
-					if (this.mesh.material != null && alphaTexture != null) {
-						this._volumetricLightScatteringPass.setMatrix("diffuseMatrix", alphaTexture.getTextureMatrix());
+					
+					if ((this.useDiffuseColor && alphaTexture == null) && mesh == this.mesh) {
+						this._volumetricLightScatteringPass.setColor3("color", cast(material, StandardMaterial).diffuseColor);
+					} 
+					if (material.needAlphaTesting() || (mesh == this.mesh && alphaTexture != null && !this.useDiffuseColor)) {
+						this._volumetricLightScatteringPass.setTexture("diffuseSampler", alphaTexture);
+						if (alphaTexture != null) {
+							this._volumetricLightScatteringPass.setMatrix("diffuseMatrix", alphaTexture.getTextureMatrix());
+						}
 					}
 					
 					if (cast(material, StandardMaterial).opacityTexture != null) {
-                        this._volumetricLightScatteringPass.setTexture("opacitySampler", cast(material, StandardMaterial).opacityTexture);
+						this._volumetricLightScatteringPass.setTexture("opacitySampler", cast(material, StandardMaterial).opacityTexture);
 						this._volumetricLightScatteringPass.setFloat("opacityLevel", cast(material, StandardMaterial).opacityTexture.level);
 					}
 				}
@@ -277,22 +318,16 @@ import com.babylonhx.tools.SmartArray;
 		};
 		
 		// Render target texture callbacks
-		var savedSceneClearColor:Color4 = new Color4(0.0, 0.0, 0.0, 1.0);
-		var sceneClearColor:Color4 = new Color4(0.0, 0.0, 0.0, 1.0);
+		var savedSceneClearColor:Color3 = new Color3(0.0, 0.0, 0.0);
+		var sceneClearColor:Color3 = new Color3(0.0, 0.0, 0.0);
 		
 		this._volumetricLightScatteringRTT.onBeforeRender = function() {
-			savedSceneClearColor.r = scene.clearColor.r;
-			savedSceneClearColor.g = scene.clearColor.g;
-			savedSceneClearColor.b = scene.clearColor.b;
-			scene.clearColor.r = sceneClearColor.r;
-			scene.clearColor.g = sceneClearColor.g;
-			scene.clearColor.b = sceneClearColor.b;
+			savedSceneClearColor = scene.clearColor;
+			scene.clearColor = sceneClearColor;
 		};
 		
 		this._volumetricLightScatteringRTT.onAfterRender = function() {
-			scene.clearColor.r = savedSceneClearColor.r;
-			scene.clearColor.g = savedSceneClearColor.g;
-			scene.clearColor.b = savedSceneClearColor.b;
+			scene.clearColor = savedSceneClearColor;
 		};
 		
 		this._volumetricLightScatteringRTT.customRenderFunction = function(opaqueSubMeshes:SmartArray, alphaTestSubMeshes:SmartArray, transparentSubMeshes:SmartArray) {
@@ -370,7 +405,7 @@ import com.babylonhx.tools.SmartArray;
 	*/
 	public static function CreateDefaultMesh(name:String, scene:Scene):Mesh {
 		var mesh = Mesh.CreatePlane(name, 1, scene);
-		mesh.billboardMode = AbstractMesh.BILLBOARDMODE_ALL;
+		mesh.billboardMode = AbstractMesh.BILLBOARDMODE_Z;
 		mesh.material = new StandardMaterial(name + "Material", scene);
 		
 		return mesh;

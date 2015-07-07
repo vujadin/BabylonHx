@@ -17,19 +17,19 @@
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
     <class path="C:\HaxeToolkit\haxe\lib\snow\git" />
-    <class path="C:\HaxeToolkit\haxe\lib\poly2trihx\0,1,4" />
-    <class path="C:\HaxeToolkit\haxe\lib\msgpack-haxe\1,14,1" />
+    <class path="C:\HaxeToolkit\haxe-3.2.0\lib\poly2trihx\0,1,4" />
+    <class path="C:\HaxeToolkit\haxe-3.2.0\lib\hxcpp\3,2,102" />
     <class path="src" />
-    <class path="bin_snow\web.build\haxe" />
+    <class path="bin_snow\windows.build\haxe" />
   </classpaths>
   <!-- Build options -->
   <build>
-    <option directives="no-compilation&#xA;web&#xA;arch-web&#xA;source-map-content&#xA;debug&#xA;hxcpp_static_std&#xA;snow_web&#xA;snow_audio_howlerjs&#xA;snow&#xA;poly2trihx&#xA;msgpack-haxe" />
+    <option directives="no-compilation&#xA;windows&#xA;arch-32&#xA;desktop&#xA;hxcpp_static_std&#xA;snow_native&#xA;snow_module_input_sdl&#xA;snow_module_audio_openal&#xA;snow_module_windowing_sdl&#xA;snow&#xA;poly2trihx&#xA;hxcpp" />
     <option flashStrict="False" />
     <option noInlineOnDebug="False" />
     <option mainClass="SnowApp" />
     <option enabledebug="False" />
-    <option additional="-debug" />
+    <option additional="--macro snow.system.module.Module.set(&quot;Audio&quot;,&quot;snow.core.native.audio.Audio&quot;)&#xA;--macro snow.system.module.Module.set(&quot;IO&quot;,&quot;snow.core.native.io.IO&quot;)&#xA;--macro snow.system.module.Module.set(&quot;Input&quot;,&quot;snow.core.native.input.Input&quot;)&#xA;--macro snow.system.module.Module.set(&quot;Windowing&quot;,&quot;snow.core.native.window.Windowing&quot;)&#xA;--macro snow.system.module.Module.set(&quot;Assets&quot;,&quot;snow.core.native.assets.Assets&quot;)&#xA;--macro snow.system.module.Module.set(&quot;Input&quot;,&quot;snow.modules.sdl.Input&quot;)&#xA;--macro snow.system.module.Module.set(&quot;Windowing&quot;,&quot;snow.modules.sdl.Windowing&quot;)&#xA;--macro snow.system.module.Module.set(&quot;Audio&quot;,&quot;snow.modules.openal.Audio&quot;)" />
   </build>
   <!-- haxelib libraries -->
   <haxelib>
@@ -38,6 +38,7 @@
   <!-- Class files to compile (other referenced classes will automatically be included) -->
   <compileTargets>
     <compile path="src\Main.hx" />
+    <compile path="src\MainSnow.hx" />
   </compileTargets>
   <!-- Paths to exclude from the Project Explorer tree -->
   <hiddenPaths>

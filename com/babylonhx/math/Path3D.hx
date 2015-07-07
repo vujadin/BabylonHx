@@ -16,9 +16,11 @@ package com.babylonhx.math;
 	private var _binormals:Array<Vector3> = [];
 	
 
-	public function new(path:Array<Vector3>) {
-		this._curve = path.copy();   // copy array  
-		this._compute(); 
+	public function new(path:Array<Vector3>, ?firstNormal:Vector3) {
+		for (p in 0...path.length) {
+            this._curve[p] = path[p].clone(); // hard copy
+        }  
+		this._compute(firstNormal); 
 	}
 
 	public function getCurve():Array<Vector3> {
@@ -41,31 +43,33 @@ package com.babylonhx.math;
 		return this._distances;
 	}
 	
-	public function update(path:Array<Vector3>):Path3D {
-		for(i in 0...path.length) {
-			this._curve[i] = path[i];
+	public function update(path:Array<Vector3>, ?firstNormal:Vector3):Path3D {
+		for(p in 0...path.length) {
+			this._curve[p].x = path[p].x;
+			this._curve[p].y = path[p].y;
+			this._curve[p].z = path[p].z;
 		}
-		this._compute();
+		this._compute(firstNormal);
 		return this;
 	}
 	
 	// private function compute() : computes tangents, normals and binormals
-	private function _compute() {
+	private function _compute(?firstNormal:Vector3) {
 		var l = this._curve.length;
 		
 		// first and last tangents
-		this._tangents[0] = this._curve[1].subtract(this._curve[0]);
+		this._tangents[0] = this._getFirstNonNullVector(0);
 		this._tangents[0].normalize();
 		this._tangents[l - 1] = this._curve[l - 1].subtract(this._curve[l - 2]);
 		this._tangents[l - 1].normalize();
 		
 		// normals and binormals at first point : arbitrary vector with _normalVector()
 		var tg0 = this._tangents[0];
-		var pp0 = this._normalVector(this._curve[0], tg0);
+		var pp0 = this._normalVector(this._curve[0], tg0, firstNormal);
 		this._normals[0] = pp0;
 		this._normals[0].normalize();
 		this._binormals[0] = Vector3.Cross(tg0, this._normals[0]);
-		this._normals[0].normalize();
+		this._binormals[0].normalize();
 		this._distances[0] = 0;
 		
 		// normals and binormals : next points
@@ -77,9 +81,9 @@ package com.babylonhx.math;
 		
 		for (i in 1...l) {
 			// tangents
-			prev = this._curve[i].subtract(this._curve[i - 1]);
+			prev = this._getLastNonNullVector(i);
 			if (i < l - 1) {
-				cur = this._curve[i + 1].subtract(this._curve[i]);
+				cur = this._getFirstNonNullVector(i);
 				this._tangents[i] = prev.add(cur);
 				this._tangents[i].normalize();
 			}
@@ -97,22 +101,55 @@ package com.babylonhx.math;
 		}
 	}
 
-	// private function normalVector(v0, vt) :
+	// private function getFirstNonNullVector(index)
+	// returns the first non null vector from index : curve[index + N].subtract(curve[index])
+	private function _getFirstNonNullVector(index:Int):Vector3 {
+		var i = 1;
+		var nNVector:Vector3 = this._curve[index + i].subtract(this._curve[index]);
+		while (nNVector.length() == 0 && index + i + 1 < this._curve.length) {
+			i++;
+			nNVector = this._curve[index + i].subtract(this._curve[index]);
+		}
+		return nNVector;
+	}
+
+	// private function getLastNonNullVector(index)
+	// returns the last non null vector from index : curve[index].subtract(curve[index - N])
+	private function _getLastNonNullVector(index:Int):Vector3 {
+		var i = 1;
+		var nLVector: Vector3 = this._curve[index].subtract(this._curve[index - i]);
+		while (nLVector.length() == 0 && index > i + 1) {
+			i++;
+			nLVector = this._curve[index].subtract(this._curve[index - i]);
+		}
+		return nLVector;
+	}
+
+	// private function normalVector(v0, vt, va) :
 	// returns an arbitrary point in the plane defined by the point v0 and the vector vt orthogonal to this plane
-	private function _normalVector(v0:Vector3, vt:Vector3):Vector3 {
-		var point:Vector3 = Vector3.Zero(); 
-		if (vt.x != 1) {     // search for a point in the plane
-			point = new Vector3(1, 0, 0);   
+	// if va is passed, it returns the va projection on the plane orthogonal to vt at the point v0
+	private function _normalVector(v0:Vector3, vt:Vector3, va:Vector3 = null):Vector3 {
+		var normal0:Vector3 = Vector3.Zero();
+		if (va == null) {
+			var point:Vector3 = Vector3.Zero();
+			if (vt.y != 1) {     // search for a point in the plane
+				point = new Vector3(0, -1, 0);
+			}
+			else if (vt.x != 1) {
+				point = new Vector3(1, 0, 0);
+			}
+			else if (vt.z != 1) {
+				point = new Vector3(0, 0, 1);
+			}
+			normal0 = Vector3.Cross(vt, point);
 		}
-		else if (vt.y != 1) {
-			point = new Vector3(0, 1, 0);  
+		else {
+			normal0 = Vector3.Cross(vt, va);
+			Vector3.CrossToRef(normal0, vt, normal0);
+			//normal0 = Vector3.Cross(normal0, vt);
 		}
-		else if (vt.z != 1) {
-			point = new Vector3(0, 0, 1);  
-		}
-		var normal0:Vector3 = Vector3.Cross(vt, point);
-		normal0.normalize();
-		return normal0;        
+		normal0.normalize();       
+		return normal0;
 	}
 	
 }

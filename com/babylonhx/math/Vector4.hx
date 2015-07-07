@@ -1,6 +1,7 @@
 package com.babylonhx.math;
 
 import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.tools.Tools;
 
 /**
 * ...
@@ -28,7 +29,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	// Operators
-	public function asArray():Array<Float> {
+	inline public function asArray():Array<Float> {
 		var result:Array<Float> = [];
 		this.toArray(result, 0);
 		
@@ -131,11 +132,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return (otherVector != null && this.x == otherVector.x && this.y == otherVector.y && this.z == otherVector.z && this.w == otherVector.w);
 	}
 
-	inline public function equalsWithEpsilon(otherVector:Vector4):Bool {
-		return Math.abs(this.x - otherVector.x) < Engine.Epsilon &&
-			Math.abs(this.y - otherVector.y) < Engine.Epsilon &&
-			Math.abs(this.z - otherVector.z) < Engine.Epsilon &&
-			Math.abs(this.w - otherVector.w) < Engine.Epsilon;
+	inline public function equalsWithEpsilon(otherVector:Vector4, epsilon:Float = Engine.Epsilon):Bool {
+		return otherVector != null  
+		&& Tools.WithinEpsilon(this.x, otherVector.x, epsilon) 
+		&& Tools.WithinEpsilon(this.y, otherVector.y, epsilon) 
+		&& Tools.WithinEpsilon(this.z, otherVector.z, epsilon)
+		&& Tools.WithinEpsilon(this.w, otherVector.w, epsilon);
 	}
 
 	inline public function equalsToFloats(x:Float, y:Float, z:Float, w:Float):Bool {

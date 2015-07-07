@@ -23,7 +23,7 @@ import com.babylonhx.Scene;
 		for (index in 0...scene.textures.length) {
 			var texture = scene.textures[index];
 			
-			if (!texture.canRescale) {
+			if (Reflect.getProperty(texture, "canRescale") != true) {
 				continue;
 			}
 			

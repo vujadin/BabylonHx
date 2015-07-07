@@ -3,8 +3,9 @@ package com.babylonhx.layer;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color4;
-import com.babylonhx.mesh.BabylonBuffer;
-import  com.babylonhx.utils.GL;
+import com.babylonhx.mesh.WebGLBuffer;
+import com.babylonhx.utils.GL;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -17,20 +18,22 @@ import  com.babylonhx.utils.GL;
 	public var isBackground:Bool;
 	public var color:Color4;
 	public var onDispose:Void->Void;
+	
 	public var vertices:Array<Float> = [];
 	public var indices:Array<Int> = [];
+	
 	private var _scene:Scene;
 	private var _vertexDeclaration:Array<Int> = [];
 	private var _vertexStrideSize:Int = 2 * 4;
-	private var _vertexBuffer:BabylonBuffer;
-	private var _indexBuffer:BabylonBuffer;
+	private var _vertexBuffer:WebGLBuffer;
+	private var _indexBuffer:WebGLBuffer;
 	private var _effect:Effect;
 
-	public function new(name:String, imgUrl:String, scene:Scene, isBackground:Bool = true/*?isBackground:Bool*/, ?color:Color4) {
+	public function new(name:String, imgUrl:String, scene:Scene, isBackground:Bool = true, ?color:Color4) {
 		this.name = name;
 		this.texture = imgUrl != null ? new Texture(imgUrl, scene, false) : null;
 		this.isBackground = isBackground;
-		this.color = color == null ? new Color4(0.49, 0.72, 0.9, 0.5) : color;
+		this.color = color == null ? new Color4(1, 1, 1, 1) : color;
 		
 		this._scene = scene;
 		this._scene.layers.push(this);
@@ -68,8 +71,9 @@ import  com.babylonhx.utils.GL;
 
 	public function render() {
 		// Check
-		if (!this._effect.isReady() || this.texture == null || !this.texture.isReady())
+		if (!this._effect.isReady() || this.texture == null || !this.texture.isReady()) {
 			return;
+		}
 			
 		var engine = this._scene.getEngine();
 		

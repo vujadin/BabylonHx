@@ -261,7 +261,7 @@ class OimoPlugin implements IPhysicsEnginePlugin {
 				mesh.computeWorldMatrix(true);
 				
 				var center = mesh.getBoundingInfo().boundingBox.center;
-				body.setPosition(center.x, center.y, center.z);
+				body.resetPosition(center.x, center.y, center.z);
 				//body.setRotation(mesh.rotation.x, mesh.rotation.y, mesh.rotation.z);
 				return;
 			}

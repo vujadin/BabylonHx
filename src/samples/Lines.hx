@@ -7,6 +7,7 @@ import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
+import com.babylonhx.layer.Layer;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.Scene;
 
@@ -23,38 +24,52 @@ class Lines {
 		camera.maxZ = 20000;		
 		camera.lowerRadiusLimit = 150;
 		
-		scene.clearColor = new Color3(0, 0, 0);
-				
+		new Layer("background", "assets/img/graygrad.jpg", scene, true);
+						
 		// Create a whirlpool
-		var points = [];
+		var points:Array<Vector3> = generateLorenz(20000);
+				
+		var lorenz = Mesh.CreateLines("whirlpool", points, scene, true);
+		lorenz.color = Color3.Red();
 		
-		var radius = 0.5;
-		var angle = 0.0;
-		for (index in 0...1000) {
-			points.push(new Vector3(radius * Math.cos(angle), 0, radius * Math.sin(angle)));
-			radius += 0.3;
-			angle += 0.1;
-		}
-		
-		var whirlpool = Mesh.CreateLines("whirlpool", points, scene, true);
-		whirlpool.color = new Color3(1, 1, 1);
-		
-		var positionData = whirlpool.getVerticesData(VertexBuffer.PositionKind);
-		var heightRange = 10;
-		var alpha = 0.0;
 		scene.registerBeforeRender(function() {
-			for (index in 0...1000) {
-				positionData[index * 3 + 1] = heightRange * Math.sin(alpha + index * 0.1);
-			}
-			
-			whirlpool.updateVerticesData(VertexBuffer.PositionKind, positionData);
-			
-			alpha += 0.05 * scene.getAnimationRatio();
+			lorenz.rotation.y += 0.01 * scene.getAnimationRatio();
 		});
 		
 		scene.getEngine().runRenderLoop(function () {
             scene.render();
         });
+	}
+	
+	function generateLorenz(pointsNum:Int):Array<Vector3> {
+		var points:Array<Vector3> = [];
+		
+		var r = 3;
+		var o = 15;
+		var b = 1;
+		var x0 = 0.1;
+		var y0 = 0.1;
+		var z0 = 0.1;
+		var x1 = x0;
+		var y1 = y0;
+		var z1 = z0;
+		var interval = 0.02;
+		var zoom = 10;
+				
+		for(i in 0...pointsNum) {
+			x1 = x0 + ( y0 - x0 ) * r * interval;
+			y1 = y0 + ( x0 * ( o - z0 ) - y0 ) * interval;
+			z1 = z0 + (( x0 * y0 ) - (b * z0) ) * interval;    
+			
+			// z1-o -> centered
+			points.push(new Vector3(x1 * zoom, y1 * zoom, (z1 - o) * zoom));   
+			
+			x0 = x1;
+			y0 = y1;
+			z0 = z1;
+		}
+		
+		return points;
 	}
 	
 }

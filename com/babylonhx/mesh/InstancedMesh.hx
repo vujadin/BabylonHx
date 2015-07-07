@@ -8,6 +8,7 @@ import com.babylonhx.materials.Material;
 import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.culling.BoundingSphere;
 import com.babylonhx.tools.Tools;
+import com.babylonhx.animations.IAnimatable;
 
 
 /**
@@ -18,7 +19,7 @@ import com.babylonhx.tools.Tools;
 /**
  * Creates an instance based on a source mesh.
  */
-@:expose('BABYLON.InstancedMesh') class InstancedMesh extends AbstractMesh {
+@:expose('BABYLON.InstancedMesh') class InstancedMesh extends AbstractMesh implements IAnimatable {
 	
 	private var _sourceMesh:Mesh;
 	private var _currentLOD:Mesh;
@@ -73,16 +74,16 @@ import com.babylonhx.tools.Tools;
 		return this._sourceMesh;
 	}
 
-	override public function getVerticesData(kind:String):Array<Float> {
-		return this._sourceMesh.getVerticesData(kind);
+	override public function getVerticesData(kind:String, copyWhenShared:Bool = false):Array<Float> {
+		return this._sourceMesh.getVerticesData(kind, copyWhenShared);
 	}
 
 	override public function isVerticesDataPresent(kind:String):Bool {
 		return this._sourceMesh.isVerticesDataPresent(kind);
 	}
 
-	override public function getIndices():Array<Int> {
-		return this._sourceMesh.getIndices();
+	override public function getIndices(copyWhenShared:Bool = false):Array<Int> {
+		return this._sourceMesh.getIndices(copyWhenShared);
 	}
 
 	override private function get_positions():Array<Vector3> {
@@ -122,7 +123,7 @@ import com.babylonhx.tools.Tools;
 		return this._currentLOD;
 	}
 
-	public function _syncSubMeshes() {
+	inline public function _syncSubMeshes() {
 		this.releaseSubMeshes();
 		if(this._sourceMesh.subMeshes != null) {
 			for (index in 0...this._sourceMesh.subMeshes.length) {

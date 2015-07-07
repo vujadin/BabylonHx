@@ -18,13 +18,13 @@ class Ribbon extends _Primitive {
 	public var side:Int;
 
 	
-	public function new(id: string, scene: Scene, pathArray:Array<Array<Vector3>>, closeArray:Bool, closePath:Bool, offset:Int, canBeRegenerated:Bool = false, ?mesh:Mesh, side:Int = Mesh.DEFAULTSIDE) {
+	public function new(id:String, scene: Scene, pathArray:Array<Array<Vector3>>, closeArray:Bool, closePath:Bool, offset:Int, canBeRegenerated:Bool = false, ?mesh:Mesh, side:Int = Mesh.DEFAULTSIDE) {
 		this.pathArray = pathArray;
 		this.closeArray = closeArray;
 		this.closePath = closePath;
 		this.offset = offset;
 		this.side = side;
-
+		
 		super(id, scene, this._regenerateVertexData(), canBeRegenerated, mesh);
 	}
 
@@ -32,7 +32,7 @@ class Ribbon extends _Primitive {
 		return VertexData.CreateRibbon(this.pathArray, this.closeArray, this.closePath, this.offset, this.side);
 	}
 
-	override public functioncopy(id:String):Geometry {
+	override public function copy(id:String):Geometry {
 		return new Ribbon(id, this.getScene(), this.pathArray, this.closeArray, this.closePath, this.offset, this.canBeRegenerated(), null, this.side);
 	}
 	

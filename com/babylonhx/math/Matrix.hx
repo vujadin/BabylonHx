@@ -16,7 +16,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private static var _yAxis:Vector3 = Vector3.Zero();
 	private static var _zAxis:Vector3 = Vector3.Zero();
 
-	#if html5
+	#if (js || html5 || purejs)
 	public var m:Float32Array;
 	#else
 	public var m:Array<Float>;	
@@ -24,7 +24,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	
 	
 	public function new() {
-		#if html5
+		#if (js || html5 || purejs)
 		m = new Float32Array(16);
 		#else
 		m = [];
@@ -32,11 +32,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 	
 	public function toString():String {
-		var ret = "[";
+		/*var ret = "[";
 		for (el in m) {
 			ret += el + ", ";
 		}
-		return ret + "]";
+		return ret + "]";*/
+		return m + "";
 	}
 
 	// Properties
@@ -67,11 +68,11 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	// Methods
-	public function toArray(): #if html5 Float32Array #else Array<Float> #end {
+	public function toArray(): #if (js || html5 || purejs) Float32Array #else Array<Float> #end {
 		return this.m;
 	}
 
-	public function asArray(): #if html5 Float32Array #else Array<Float> #end {
+	public function asArray(): #if (js || html5 || purejs) Float32Array #else Array<Float> #end {
 		return this.toArray();
 	}
 
@@ -158,7 +159,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 	}
 
-	inline public function copyToArray(array: #if html5 Float32Array #else Array<Float> #end, offset:Int = 0) {
+	inline public function copyToArray(array: #if (js || html5 || purejs) Float32Array #else Array<Float> #end, offset:Int = 0) {
 		for (index in 0...16) {
 			array[offset + index] = this.m[index];
 		}
@@ -168,7 +169,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this.multiplyToArray(other, result.m, 0);
 	}
 
-	inline public function multiplyToArray(other:Matrix, result: #if html5 Float32Array #else Array<Float> #end, offset:Int) {		
+	inline public function multiplyToArray(other:Matrix, result: #if (js || html5 || purejs) Float32Array #else Array<Float> #end, offset:Int) {		
 		result[offset] = this.m[0] * other.m[0] + this.m[1] * other.m[4] + this.m[2] * other.m[8] + this.m[3] * other.m[12];
 		result[offset + 1] = this.m[0] * other.m[1] + this.m[1] * other.m[5] + this.m[2] * other.m[9] + this.m[3] * other.m[13];
 		result[offset + 2] = this.m[0] * other.m[2] + this.m[1] * other.m[6] + this.m[2] * other.m[10] + this.m[3] * other.m[14];
@@ -277,7 +278,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		initialM21:Float, initialM22:Float, initialM23:Float, initialM24:Float,
 		initialM31:Float, initialM32:Float, initialM33:Float, initialM34:Float,
 		initialM41:Float, initialM42:Float, initialM43:Float, initialM44:Float):Matrix {
-
+			
 		var result = new Matrix();
 		
 		result.m[0] = initialM11;

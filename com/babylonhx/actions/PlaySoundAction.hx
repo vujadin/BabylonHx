@@ -5,7 +5,7 @@ package com.babylonhx.actions;
  * @author Krtolica Vujadin
  */
 
-class PlaySoundAction extends Action {
+@:expose('BABYLON.PlaySoundAction') class PlaySoundAction extends Action {
 	
 	private var _sound:Dynamic;
 	

@@ -41,11 +41,11 @@ import com.babylonhx.animations.Animation;
 		this._initCache();
 	}
 	
-	public function getScene():Scene {
+	inline public function getScene():Scene {
 		return this._scene;
 	}
 
-	public function getEngine():Engine {
+	inline public function getEngine():Engine {
 		return this._scene.getEngine();
 	}
 
@@ -81,7 +81,7 @@ import com.babylonhx.animations.Animation;
 		return true;
 	}
 	
-	public function _markSyncedWithParent() {
+	inline public function _markSyncedWithParent() {
         this._parentRenderId = this.parent._currentRenderId;
     }
 
@@ -97,7 +97,7 @@ import com.babylonhx.animations.Animation;
 		return this.parent.isSynchronized();
 	}
 
-	public function isSynchronized(updateCache:Bool = false):Bool {
+	inline public function isSynchronized(updateCache:Bool = false):Bool {
 		var check = this.hasNewParent();
 		check = check || !this.isSynchronizedWithParent();
 		check = check || !this._isSynchronized();
@@ -136,7 +136,7 @@ import com.babylonhx.animations.Animation;
 		return true;
 	}
 
-	public function setEnabled(value:Bool) {
+	inline public function setEnabled(value:Bool) {
 		this._isEnabled = value;
 	}
 
@@ -151,7 +151,7 @@ import com.babylonhx.animations.Animation;
 		return false;
 	}
 
-	public function _getDescendants(list:Array<Node>, results:Array<Node>) {
+	inline public function _getDescendants(list:Array<Node>, results:Array<Node>) {
 		for (index in 0...list.length) {
 			var item = list[index];
 			if (item.isDescendantOf(this)) {
@@ -160,7 +160,7 @@ import com.babylonhx.animations.Animation;
 		}
 	}
 
-	public function getDescendants():Array<Node> {
+	inline public function getDescendants():Array<Node> {
 		var results:Array<Node> = [];
 		this._getDescendants(cast this._scene.meshes, results);
 		this._getDescendants(cast this._scene.lights, results);

@@ -48,7 +48,7 @@ class Shadows {
 		// Ground
 		var ground = Mesh.CreateGroundFromHeightMap("ground", "assets/img/heightMap.png", 100, 100, 100, 0, 10, scene, false);
 		var groundMaterial = new StandardMaterial("ground", scene);
-		groundMaterial.diffuseTexture = new Texture("assets/img/grass.jpg", scene);
+		groundMaterial.diffuseTexture = new Texture("assets/img/ground.jpg", scene);
 		groundMaterial.diffuseTexture.uScale = 6;
 		groundMaterial.diffuseTexture.vScale = 6;
 		groundMaterial.specularColor = new Color3(0, 0, 0);
