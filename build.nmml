@@ -32,7 +32,7 @@
   <haxelib name="actuate" />
   <haxelib name="poly2trihx" />
 	
-  <assets path="Assets" rename="assets" exclude="nme.svg" />
+  <assets path="assets" exclude="nme.svg" />
   <!-- <icon name="icon.svg" /> -->
   
 </project>
