@@ -519,10 +519,7 @@ typedef Assets = nme.Assets;
     } 
 	#elseif (lime || nme)
 	public static function LoadImage(url:String, onload:Image-> Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
-		#if (lime && js)
-		var img = Assets.getImage(url);
-		onload(new Image(img.data, img.width, img.height));
-		#elseif lime
+		#if lime
 		if (Assets.exists(url)) {
 			Assets.loadImage(url, function(img:lime.graphics.Image):Void {
 				var image = new Image(img.data, img.width, img.height);
