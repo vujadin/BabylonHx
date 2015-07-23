@@ -44,7 +44,7 @@ class MainLime extends Application {
 		//new samples.MeshImport(scene);
 		//new samples.LoadScene(scene);
 		//new samples.CSGDemo(scene);
-		//new samples.Fog(scene);
+		new samples.Fog(scene);
 		//new samples.DisplacementMap(scene);
 		//new samples.Environment(scene);
 		//new samples.LensFlares(scene);
@@ -68,7 +68,7 @@ class MainLime extends Application {
 		//new samples.LoadPlyFile(scene);
 		//new samples.LOD(scene);
 		//new samples.Instances(scene);
-		new samples.Instances2(scene);
+		//new samples.Instances2(scene);
 		//new samples.Fresnel(scene);		
 		//new samples.VolumetricLights(scene);
 		//new samples.CellShading(scene);
