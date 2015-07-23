@@ -66,9 +66,9 @@ class MainNME extends Sprite {
 		//new samples.EasingFunctions(scene);
 		//new samples.ProceduralTextures(scene);
 		//new samples.MeshImport(scene);
-		new samples.LoadScene(scene);
+		//new samples.LoadScene(scene);
 		//new samples.CSGDemo(scene);
-		//new samples.Fog(scene);
+		new samples.Fog(scene);
 		//new samples.DisplacementMap(scene);
 		//new samples.Environment(scene);
 		//new samples.LensFlares(scene);
