@@ -58,13 +58,13 @@ class MainJS {
 		//new samples.BumpMap(scene);
 		//new samples.Animations(scene);
 		//new samples.Collisions(scene);
-		new samples.Intersections(scene);
+		//new samples.Intersections(scene);
 		//new samples.EasingFunctions(scene);
 		//new samples.ProceduralTextures(scene);
 		//new samples.MeshImport(scene);
 		//new samples.LoadScene(scene);
 		//new samples.CSGDemo(scene);
-		//new samples.Fog(scene);
+		new samples.Fog(scene);
 		//new samples.DisplacementMap(scene);
 		//new samples.Environment(scene);
 		//new samples.LensFlares(scene);

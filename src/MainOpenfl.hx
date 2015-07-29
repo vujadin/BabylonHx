@@ -47,7 +47,7 @@ class MainOpenfl extends Application {
 		scene = new Scene(engine);
 		engine.width = this.window.width;
 		engine.height = this.window.height;
-		new samples.PostprocessBloom(scene);
+		new samples.Fog(scene);
         createSquares();
 
 	}
