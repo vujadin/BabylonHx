@@ -227,10 +227,10 @@ import com.babylonhx.animations.IAnimatable;
 			return 0;
 		}
 		
+
 		if (insertAt == null || insertAt < 0) {
 			this._postProcesses.push(postProcess);
 			this._postProcessesTakenIndices.push(this._postProcesses.length - 1);
-			
 			return this._postProcesses.length - 1;
 		}
 		
@@ -271,7 +271,6 @@ import com.babylonhx.animations.IAnimatable;
 		var result = insertAt + add;
 		
 		this._postProcesses[result] = postProcess;
-		
 		return result;
 	}
 
@@ -475,7 +474,6 @@ import com.babylonhx.animations.IAnimatable;
 					postProcesses.push(new VRDistortionCorrectionPostProcess("VR_Distort_Compensation_Right", this._rigCameras[1], true, metrics));
 				}
 		}
-		
 		this._update();
 	}
 
