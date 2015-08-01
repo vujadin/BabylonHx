@@ -15,12 +15,18 @@ import com.babylonhx.cameras.VRCameraMetrics;
         public var _cacheQuaternion:Quaternion = new Quaternion();
         public var _cacheRotation:Vector3 = Vector3.Zero();
         public var _vrEnabled:Bool = false;
-        private var _getWebVRDevices:Dynamic;
+
 
         public function new(name: String, position: Vector3, scene: Scene, compensateDistorsion:Bool = true) {
             super(name, position, scene);
+            
+            
+            var metrics = VRCameraMetrics.GetDefault();
+            metrics.compensateDistorsion = compensateDistorsion;
+            this.setCameraRigMode(Camera.RIG_MODE_VR, { vrCameraMetrics: metrics });
+        }
 
-            this._getWebVRDevices =  function(devices: Array<Dynamic>){
+        private function _getWebVRDevices(devices: Array<Dynamic>){
                 var size = devices.length;
                 var i = 0;
 
@@ -47,13 +53,6 @@ import com.babylonhx.cameras.VRCameraMetrics;
 
                 this._vrEnabled = this._sensorDevice && this._hmdDevice ? true : false;
             }
-            
-            var metrics = VRCameraMetrics.GetDefault();
-            metrics.compensateDistorsion = compensateDistorsion;
-            this.setCameraRigMode(Camera.RIG_MODE_VR, { vrCameraMetrics: metrics });
-
-            this._getWebVRDevices = this._getWebVRDevices.bind(this);
-        }
 
       
 
@@ -80,6 +79,7 @@ import com.babylonhx.cameras.VRCameraMetrics;
             else if (nav.mozGetVRDevices) {
                 nav.mozGetVRDevices(this._getWebVRDevices);
             }
+
         }
 
         override public function detachControl(?element: Dynamic): Void {
