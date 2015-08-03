@@ -27,9 +27,9 @@ import js.Browser;
 
         public function _onOrientationEvent(evt:Dynamic): Void {
    
-            this._alpha += evt.alpha|0;
-            this._beta += evt.beta|0;
-            this._gamma += evt.gamma|0;
+            this._alpha = untyped __js__("+evt.alpha | 0;");
+            this._beta = untyped __js__("+evt.beta | 0;");
+            this._gamma = untyped __js__("+evt.gamma | 0;");
 
             if (this._gamma < 0) {
                 this._gamma = 90 + this._gamma;
@@ -51,6 +51,6 @@ import js.Browser;
 
         public override function detachControl(?element:Dynamic): Void {
             super.detachControl(element);
-            untyped window.removeEventListener("deviceorientation", this._deviceOrientationHandler);
+            untyped window.removeEventListener("deviceorientation", this._onOrientationEvent);
         }
 }
