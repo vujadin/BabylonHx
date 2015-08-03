@@ -178,6 +178,7 @@ import com.babylonhx.tools.Tools;
 			}
 			this.cameraRotation.scaleInPlace(this.inertia);
 		}
+		super._update();
 	}
 	
 	override public function _getViewMatrix_default():Matrix {
@@ -276,6 +277,7 @@ import com.babylonhx.tools.Tools;
 		
 		super._updateRigCameras();
 	}
+
 
 	private function _getRigCamPosition(halfSpace:Float, result:Vector3) {
 		if (this._rigCamTransformMatrix == null) {

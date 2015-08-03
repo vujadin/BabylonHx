@@ -22,11 +22,11 @@ import js.Browser;
             metrics.compensateDistorsion = compensateDistorsion;
             this.setCameraRigMode(Camera.RIG_MODE_VR, { vrCameraMetrics: metrics });
 
-            this._deviceOrientationHandler = this._onOrientationEvent.bind(this);
+            //this._deviceOrientationHandler = this._onOrientationEvent.bind(this);
         }
 
         public function _onOrientationEvent(evt:Dynamic): Void {
-            trace(' _onOrientationEvent');
+   
             this._alpha += evt.alpha|0;
             this._beta += evt.beta|0;
             this._gamma += evt.gamma|0;
@@ -46,11 +46,11 @@ import js.Browser;
 
         public override function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true): Void {
             super.attachControl(element, noPreventDefault);
-            Browser.window.addEventListener("deviceorientation", this._deviceOrientationHandler);
+            untyped window.addEventListener("deviceorientation", this._onOrientationEvent);
         }
 
         public override function detachControl(?element:Dynamic): Void {
             super.detachControl(element);
-            Browser.window.removeEventListener("deviceorientation", this._deviceOrientationHandler);
+            untyped window.removeEventListener("deviceorientation", this._deviceOrientationHandler);
         }
 }
