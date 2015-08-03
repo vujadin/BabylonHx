@@ -301,6 +301,11 @@ import com.babylonhx.utils.Keycodes;
 			Vector3.TransformNormalToRef(this._localDirection, this._cameraTransformMatrix, this._transformedDirection);
 			this.cameraDirection.addInPlace(this._transformedDirection);
 		}
+		super._checkInputs();
+	}
+
+	override public function _updateRigCameras(){
+		super._updateRigCameras();
 	}
 
 	override public function _decideIfNeedsToMove():Bool {
