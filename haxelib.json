@@ -2,7 +2,7 @@
     "name": "BabylonHx",
     "license": "Apache License 2.0",
     "url": "https://github.com/vujadin/BabylonHx",
-    "description": "BabylonHx is ultra-portable lightweight 3D engine. It is a port of an excellent BabylonJs 3D engine to Haxe programming language.",
+    "description": "BabylonHx is an ultra-portable lightweight 3D engine. It is a port of the excellent BabylonJS 3D engine to the Haxe programming language.",
     "releasenote": "",
     "version": "0.9",
     "contributors": [ "vujadin" ],
