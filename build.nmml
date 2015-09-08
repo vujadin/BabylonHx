@@ -31,6 +31,7 @@
   <haxelib name="nme" />
   <haxelib name="actuate" />
   <haxelib name="poly2trihx" />
+  <haxelib name="oimohx" />
 	
   <assets path="assets" exclude="nme.svg" />
   <!-- <icon name="icon.svg" /> -->
