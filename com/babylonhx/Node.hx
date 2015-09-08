@@ -53,7 +53,7 @@ import com.babylonhx.animations.Animation;
 	public function getWorldMatrix():Matrix {
 		return null;// Matrix.Identity();
 	}
-
+	
 	// override it in derived class if you add new variables to the cache
 	// and call the parent class method
 	public function _initCache() {

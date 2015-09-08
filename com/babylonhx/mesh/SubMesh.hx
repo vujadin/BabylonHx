@@ -127,8 +127,8 @@ import com.babylonhx.tools.Tools;
 		return this._boundingInfo.isInFrustum(frustumPlanes);
 	}
 
-	public function render() {
-		this._renderingMesh.render(this);
+	public function render(enableAlphaMode:Bool) {
+		this._renderingMesh.render(this, enableAlphaMode);
 	}
 
 	inline public function getLinesIndexBuffer(indices:Array<Int>, engine:Engine):WebGLBuffer {

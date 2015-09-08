@@ -67,8 +67,8 @@ import com.babylonhx.mesh.AbstractMesh;
 		this.setTarget(cameraTarget.position);
 	}
 
-	override public function _update():Void {
-		super._update();
+	override public function _checkInputs() {
+		super._checkInputs();
 		this.follow(this.target);
 	}
 	

@@ -115,7 +115,7 @@ import com.babylonhx.tools.Tools;
 		this.rotation.z = -Math.acos(Vector3.Dot(new Vector3(0, 1.0, 0), this.upVector));
 	}
 
-	public function getTarget():Vector3 {
+	override public function getTarget():Vector3 {
 		return this._currentTarget;
 	}
 

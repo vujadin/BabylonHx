@@ -9,6 +9,7 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.AbstractMesh;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 /**
  * ...
@@ -35,6 +36,8 @@ import com.babylonhx.mesh.AbstractMesh;
 	private var _vectors2:Map<String, Vector2> = new Map<String, Vector2>();
 	private var _vectors3:Map<String, Vector3> = new Map<String, Vector3>();
 	private var _matrices:Map<String, Matrix> = new Map<String, Matrix>();
+	private var _matrices3x3:Map<String, Float32Array> = new Map<String, Float32Array>();
+	private var _matrices2x2:Map<String, Float32Array> = new Map<String, Float32Array>();
 	private var _cachedWorldViewMatrix:Matrix = new Matrix();
 	private var _renderId:Int;
 	
@@ -123,6 +126,20 @@ import com.babylonhx.mesh.AbstractMesh;
 		
 		return this;
 	}
+	
+	inline public function setMatrix3x3(name:String, value:Float32Array):ShaderMaterial {
+		this._checkUniform(name);
+		this._matrices3x3[name] = value;
+		
+		return this;
+	}
+
+	inline public function setMatrix2x2(name:String, value:Float32Array):ShaderMaterial {
+		this._checkUniform(name);
+		this._matrices2x2[name] = value;
+		
+		return this;
+	}
 
 	override public function isReady(?mesh:AbstractMesh, useInstances:Bool = false):Bool {
 		var scene:Scene = this.getScene();
@@ -141,7 +158,7 @@ import com.babylonhx.mesh.AbstractMesh;
 			defines.push("#define INSTANCES");
 		}
 		// Bones
-		if (mesh != null && mesh.useBones) {
+		if (mesh != null && mesh.useBones && mesh.computeBonesUsingShaders) {
 			defines.push("#define BONES");
 			defines.push("#define BonesPerMesh " + (mesh.skeleton.bones.length + 1));
 			defines.push("#define BONES4");
@@ -209,8 +226,8 @@ import com.babylonhx.mesh.AbstractMesh;
 			}
 			
 			// Bones
-			if (mesh != null && mesh.useBones) {
-                this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices());
+			if (mesh != null && mesh.useBones && mesh.computeBonesUsingShaders) {
+				this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices());
             }
 			
 			// Texture
@@ -253,12 +270,22 @@ import com.babylonhx.mesh.AbstractMesh;
 			for (name in this._matrices.keys()) {
 				this._effect.setMatrix(name, this._matrices[name]);
 			}
+			
+			// Matrix 3x3
+			for (name in this._matrices3x3.keys()) {
+				this._effect.setMatrix3x3(name, this._matrices3x3[name]);
+			}
+			
+			// Matrix 2x2
+			for (name in this._matrices2x2.keys()) {
+				this._effect.setMatrix2x2(name, this._matrices2x2[name]);
+			}
 		}
 		
 		super.bind(world, null);
 	}
 
-	override public function dispose(forceDisposeEffect:Bool = false/*?forceDisposeEffect:Bool*/) {
+	override public function dispose(forceDisposeEffect:Bool = false) {
 		for (name in this._textures.keys()) {
 			this._textures[name].dispose();
 		}

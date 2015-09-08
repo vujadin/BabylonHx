@@ -68,15 +68,15 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	// Methods
-	public function toArray(): #if (js || html5 || purejs) Float32Array #else Array<Float> #end {
+	inline public function toArray(): #if (js || html5 || purejs) Float32Array #else Array<Float> #end {
 		return this.m;
 	}
 
-	public function asArray(): #if (js || html5 || purejs) Float32Array #else Array<Float> #end {
+	inline public function asArray(): #if (js || html5 || purejs) Float32Array #else Array<Float> #end {
 		return this.toArray();
 	}
 
-	public function invert():Matrix {
+	inline public function invert():Matrix {
 		this.invertToRef(this);
 		
 		return this;
@@ -140,6 +140,37 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		other.m[11] = -(((l1 * l35) - (l2 * l37)) + (l4 * l39)) * l27;
 		other.m[15] = (((l1 * l36) - (l2 * l38)) + (l3 * l39)) * l27;
 	}
+	
+	inline public function reset():Matrix {
+        for (index in 0...16) {
+            this.m[index] = 0;
+        }
+		
+        return this;
+    }
+
+    inline public function add(other:Matrix):Matrix {
+        var result = new Matrix();
+        this.addToRef(other, result);
+		
+        return result;
+    }
+
+    inline public function addToRef(other:Matrix, result:Matrix):Matrix {
+        for (index in 0...16) {
+            result.m[index] = this.m[index] + other.m[index];
+        }
+		
+        return this;
+    }
+
+    inline public function addToSelf(other:Matrix):Matrix {
+        for (index in 0...16) {
+            this.m[index] += other.m[index];
+        }
+		
+        return this;
+    }
 
 	inline public function setTranslation(vector3:Vector3) {
 		this.m[12] = vector3.x;
@@ -250,6 +281,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			result.m[index] = array[index + offset];
 		}
 	}
+	
+	inline public static function FromFloat32ArrayToRefScaled(array:Float32Array, offset:Int, scale:Float, result:Matrix) {
+        for (index in 0...16) {
+            result.m[index] = array[index + offset] * scale;
+        }
+    }
 
 	public static function FromValuesToRef(initialM11:Float, initialM12:Float, initialM13:Float, initialM14:Float,
 		initialM21:Float, initialM22:Float, initialM23:Float, initialM24:Float,
@@ -633,6 +670,21 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			cx + cw / 2.0, ch / 2.0 + cy, zmin, 1);
 			
 		return world.multiply(view).multiply(projection).multiply(viewportMatrix);
+	}
+	
+	inline public static function GetAsMatrix2x2(matrix:Matrix):Float32Array {
+		return new Float32Array([
+			matrix.m[0], matrix.m[1],
+			matrix.m[4], matrix.m[5]
+		]);
+	}
+
+	inline public static function GetAsMatrix3x3(matrix:Matrix):Float32Array {
+		return new Float32Array([
+			matrix.m[0], matrix.m[1], matrix.m[2],
+			matrix.m[4], matrix.m[5], matrix.m[6],
+			matrix.m[8], matrix.m[9], matrix.m[10]
+		]);
 	}
 
 	inline public static function Transpose(matrix:Matrix):Matrix {

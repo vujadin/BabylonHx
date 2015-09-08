@@ -7,5 +7,5 @@ package com.babylonhx.math;
 
 @:expose('BABYLON.Space') enum Space {
 	LOCAL;
-	GLOBAL;
+	WORLD;
 }

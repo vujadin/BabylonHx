@@ -19,9 +19,11 @@ import com.babylonhx.math.Ray;
 import com.babylonhx.math.Space;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Color3;
+import com.babylonhx.math.Color4;
 import com.babylonhx.math.Frustum;
 import com.babylonhx.physics.PhysicsEngine;
 import com.babylonhx.physics.PhysicsBodyCreationOptions;
+import com.babylonhx.rendering.EdgesRenderer;
 
 /**
  * ...
@@ -116,6 +118,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	public var hasVertexAlpha:Bool = false;
 	public var useVertexColors:Bool = true;
 	public var applyFog:Bool = true;
+	public var computeBonesUsingShaders:Bool = true;
 
 	public var useOctreeForRenderingSelection:Bool = true;
 	public var useOctreeForPicking:Bool = true;
@@ -143,6 +146,11 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	
 	// Attach to bone
     private var _meshToBoneReferal:AbstractMesh;
+	
+	// Edges
+	public var edgesWidth:Float = 1;
+    public var edgesColor:Color4 = new Color4(1, 0, 0, 1);
+	public var _edgesRenderer:EdgesRenderer;
 
 	// Cache
 	private var _localScaling:Matrix = Matrix.Zero();
@@ -160,7 +168,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	private var _collisionsScalingMatrix:Matrix = Matrix.Zero();	
 	
 	public var _savedMaterial:Material;
-	
+		
 	private var _positions:Array<Vector3>;
 	public var positions(get, set):Array<Vector3>;
 	private function get_positions():Array<Vector3> {
@@ -194,6 +202,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	
 	// Loading properties
 	public var _waitingActions:Dynamic;
+	public var _waitingFreezeWorldMatrix:Bool;
 	
 
 	public function new(name:String, scene:Scene) {
@@ -217,6 +226,18 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 	}
 
 	// Methods
+	public function disableEdgesRendering() {
+        if (this._edgesRenderer != null) {
+            this._edgesRenderer.dispose();
+            this._edgesRenderer = null;
+        }
+    }
+    public function enableEdgesRendering(epsilon:Float = 0.95) {
+        this.disableEdgesRendering();
+		
+        this._edgesRenderer = new EdgesRenderer(this, epsilon);
+    }
+	
 	private var _isBlocked:Bool;
 	public var isBlocked(get, never):Bool;
 	private function get_isBlocked():Bool {
@@ -302,6 +323,8 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
     }
 
 	public function rotate(axis:Vector3, amount:Float, space:Space) {
+		axis.normalize();
+		
 		if (this.rotationQuaternion == null) {
 			this.rotationQuaternion = Quaternion.RotationYawPitchRoll(this.rotation.y, this.rotation.x, this.rotation.z);
 			this.rotation = Vector3.Zero();
@@ -572,7 +595,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 			var zero = this.getScene().activeCamera.globalPosition.clone();
 			
 			if (this.parent != null && Reflect.hasField(this.parent, "position")) {
-				localPosition.addInPlace(Reflect.field(this.parent, "position"));
+				localPosition.addInPlace(untyped this.parent.position);
 				Matrix.TranslationToRef(localPosition.x, localPosition.y, localPosition.z, this._localTranslation);
 			}
 			
@@ -580,12 +603,15 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 				zero = this.getScene().activeCamera.position;
 			} 
 			else {
-				if (this.billboardMode & AbstractMesh.BILLBOARDMODE_X != 0)
+				if (this.billboardMode & AbstractMesh.BILLBOARDMODE_X != 0) {
 					zero.x = localPosition.x + Engine.Epsilon;
-				if (this.billboardMode & AbstractMesh.BILLBOARDMODE_Y != 0)
+				}
+				if (this.billboardMode & AbstractMesh.BILLBOARDMODE_Y != 0) {
 					zero.y = localPosition.y + 0.001;
-				if (this.billboardMode & AbstractMesh.BILLBOARDMODE_Z != 0)
+				}
+				if (this.billboardMode & AbstractMesh.BILLBOARDMODE_Z != 0) {
 					zero.z = localPosition.z + 0.001;
+				}
 			}
 			
 			Matrix.LookAtLHToRef(localPosition, zero, Vector3.Up(), this._localBillboard);
@@ -668,14 +694,13 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 		this.position = Vector3.TransformCoordinates(vector3, this._localWorld);
 	}
 
-	inline public function lookAt(targetPoint:Vector3, yawCor:Float = 0, pitchCor:Float = 0, rollCor:Float = 0) {
-		/// <summary>Orients a mesh towards a target point. Mesh must be drawn facing user.</summary>
-		/// <param name="targetPoint" type="Vector3">The position (must be in same space as current mesh) to look at</param>
-		/// <param name="yawCor" type="Number">optional yaw (y-axis) correction in radians</param>
-		/// <param name="pitchCor" type="Number">optional pitch (x-axis) correction in radians</param>
-		/// <param name="rollCor" type="Number">optional roll (z-axis) correction in radians</param>
-		/// <returns>Mesh oriented towards targetMesh</returns>
-		
+	/// <summary>Orients a mesh towards a target point. Mesh must be drawn facing user.</summary>
+	/// <param name="targetPoint" type="Vector3">The position (must be in same space as current mesh) to look at</param>
+	/// <param name="yawCor" type="Number">optional yaw (y-axis) correction in radians</param>
+	/// <param name="pitchCor" type="Number">optional pitch (x-axis) correction in radians</param>
+	/// <param name="rollCor" type="Number">optional roll (z-axis) correction in radians</param>
+	/// <returns>Mesh oriented towards targetMesh</returns>
+	inline public function lookAt(targetPoint:Vector3, yawCor:Float = 0, pitchCor:Float = 0, rollCor:Float = 0) {		
 		var dv = targetPoint.subtract(this.position);
 		var yaw = -Math.atan2(dv.z, dv.x) - Math.PI / 2;
 		var len = Math.sqrt(dv.x * dv.x + dv.z * dv.z);
@@ -752,7 +777,8 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 			options.mass = 0;
 			options.friction = 0.2;
 			options.restitution = 0.2;
-		} else {
+		} 
+		else {
 			if (options.mass == null) options.mass = 0;
 			if (options.friction == null) options.friction = 0.2;
 			if (options.restitution == null) options.restitution = 0.2;
@@ -1000,7 +1026,6 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 			var world = this.getWorldMatrix();
 			var worldOrigin = Vector3.TransformCoordinates(ray.origin, world);
 			var direction = ray.direction.clone();
-			//direction.normalize();
 			direction = direction.scale(intersectInfo.distance);
 			var worldDirection = Vector3.TransformNormal(direction, world);
 			

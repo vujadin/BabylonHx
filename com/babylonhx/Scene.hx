@@ -66,7 +66,7 @@ import com.babylonhx.tools.Tools;
 
 	// Members
 	public var autoClear:Bool = true;
-	public var clearColor:Color3 = new Color3(0.2, 0.2, 0.3);
+	public var clearColor:Color3 = new Color3(0.2, 0.2, 0.2);
 	public var ambientColor:Color3 = new Color3(0, 0, 0);
 	public var beforeRender:Void->Void;
 	public var afterRender:Void->Void;
@@ -97,7 +97,7 @@ import com.babylonhx.tools.Tools;
 	// Fog
 	public var fogEnabled:Bool = true;
 	public var fogMode:Int = Scene.FOGMODE_NONE;
-	public var fogColor:Color3 = new Color3(0.2, 0.2, 0.3);
+	public var fogColor:Color3 = new Color3(0.2, 0.2, 0.2);
 	public var fogDensity:Float = 0.1;
 	public var fogStart:Float = 0;
 	public var fogEnd:Float = 1000.0;
@@ -175,6 +175,11 @@ import com.babylonhx.tools.Tools;
 		return this._workerCollisions;
 	}
 	
+	public var SelectionOctree(get, never):Octree<AbstractMesh>;
+	private function get_SelectionOctree():Octree<AbstractMesh> {
+		return this._selectionOctree;
+	}
+	
 	public var collisionCoordinator:ICollisionCoordinator;
 	public var gravity:Vector3 = new Vector3(0, -9.0, 0);
 
@@ -240,6 +245,7 @@ import com.babylonhx.tools.Tools;
 	private var _renderTargets:SmartArray = new SmartArray(256);			// new SmartArray<RenderTargetTexture>(256);
 	public var _activeParticleSystems:SmartArray = new SmartArray(256);		// new SmartArray<ParticleSystem>(256);
 	private var _activeSkeletons:SmartArray = new SmartArray(32);			// new SmartArray<Skeleton>(32);
+	private var _softwareSkinnedMeshes:SmartArray = new SmartArray(32);		// new SmartArray<Mesh>(32);
 	private var _activeBones:Int = 0;
 
 	private var _renderingManager:RenderingManager;
@@ -253,6 +259,7 @@ import com.babylonhx.tools.Tools;
 	private var _scaledPosition:Vector3 = Vector3.Zero();
 	private var _scaledVelocity:Vector3 = Vector3.Zero();
 
+	private var _edgesRenderers:SmartArray = new SmartArray(16);// new SmartArray<EdgesRenderer>(16);
 	private var _boundingBoxRenderer:BoundingBoxRenderer;
 	private var _outlineRenderer:OutlineRenderer;
 	private var _depthRenderer:DepthRenderer;
@@ -410,7 +417,7 @@ import com.babylonhx.tools.Tools;
 			this._updatePointerPosition(x, y);
 			
 			var pickResult:PickingInfo = this.pick(this._pointerX, this._pointerY,
-				function(mesh:AbstractMesh):Bool { return mesh.isPickable && mesh.isVisible && mesh.isReady() && mesh.actionManager != null && mesh.actionManager.hasPointerTriggers; },
+				function(mesh:AbstractMesh):Bool { return mesh.isPickable && mesh.isVisible && mesh.isReady(); },
 				false,
 				this.cameraToUseForPointers);
 				
@@ -816,6 +823,16 @@ import com.babylonhx.tools.Tools;
 		
 		return null;
 	}
+	
+	public function getLensFlareSystemByName(name:String):LensFlareSystem {
+		for (index in 0...this.lensFlareSystems.length) {
+			if (this.lensFlareSystems[index].name == name) {
+				return this.lensFlareSystems[index];
+			}
+		}
+		
+		return null;
+	}
 
 	public function getCameraByID(id:String):Camera {
 		for (index in 0...this.cameras.length) {
@@ -1002,6 +1019,22 @@ import com.babylonhx.tools.Tools;
 		return null;
 	}
 	
+	public function getNodeByID(id:String):Node {
+		var mesh = this.getMeshByID(id);
+		
+		if (mesh != null) {
+			return mesh;
+		}
+		
+		var light = this.getLightByID(id);
+		
+		if (light != null) {
+			return light;
+		}
+		
+		return this.getCameraByID(id);
+	}
+	
 	public function getNodeByName(name:String):Node {
 		var mesh = this.getMeshByName(name);
 		
@@ -1096,7 +1129,9 @@ import com.babylonhx.tools.Tools;
 		this._processedMaterials.reset();
 		this._activeParticleSystems.reset();
 		this._activeSkeletons.reset();
+		this._softwareSkinnedMeshes.reset();
 		this._boundingBoxRenderer.reset();
+		this._edgesRenderers.reset();
 		
 		if (this._frustumPlanes == null) {
 			this._frustumPlanes = Frustum.GetPlanes(this._transformMatrix);
@@ -1181,11 +1216,19 @@ import com.babylonhx.tools.Tools;
 	private function _activeMesh(mesh:AbstractMesh) {
 		if (mesh.skeleton != null && this.skeletonsEnabled) {
 			this._activeSkeletons.pushNoDuplicate(mesh.skeleton);
+			
+			if (!mesh.computeBonesUsingShaders) {
+                this._softwareSkinnedMeshes.pushNoDuplicate(mesh);
+            }
 		}
 		
 		if (mesh.showBoundingBox || this.forceShowBoundingBoxes) {
 			this._boundingBoxRenderer.renderList.push(mesh.getBoundingInfo().boundingBox);
-		}   
+		} 
+		
+		if (mesh._edgesRenderer != null) {
+            this._edgesRenderers.push(mesh._edgesRenderer);
+        }
         
 		if (mesh != null && mesh.subMeshes != null) {
 			// Submeshes Octrees
@@ -1244,9 +1287,16 @@ import com.babylonhx.tools.Tools;
 		// Skeletons
 		for (skeletonIndex in 0...this._activeSkeletons.length) {
 			var skeleton = this._activeSkeletons.data[skeletonIndex];			
+			
 			skeleton.prepare();			
-			//this._activeBones += skeleton.bones.length;
 		}
+		
+		// Software skinning
+        for (softwareSkinnedMeshIndex in 0...this._softwareSkinnedMeshes.length) {
+            var mesh = this._softwareSkinnedMeshes.data[softwareSkinnedMeshIndex];
+			
+            mesh.applySkeleton(mesh.skeleton);
+        }
 		
 		// Render targets
 		var beforeRenderTargetDate = Tools.Now();
@@ -1265,8 +1315,9 @@ import com.babylonhx.tools.Tools;
 		}
 		
 		if (this._renderTargets.length > 0) { // Restore back buffer
-			engine.restoreDefaultFramebuffer();
-		}
+            engine.restoreDefaultFramebuffer();
+        }
+		
 		this._renderTargetsDuration += Tools.Now() - beforeRenderTargetDate;
 		
 		// Prepare Frame
@@ -1293,6 +1344,11 @@ import com.babylonhx.tools.Tools;
 		
 		// Bounding boxes
 		this._boundingBoxRenderer.render();
+		
+		// Edges
+        for (edgesRendererIndex in 0...this._edgesRenderers.length) {
+            this._edgesRenderers.data[edgesRendererIndex].render();
+        }
 		
 		// Lens flares
 		if (this.lensFlaresEnabled) {
@@ -1334,7 +1390,7 @@ import com.babylonhx.tools.Tools;
 	}
 
 	private function _processSubCameras(camera:Camera) {
-		if (camera.subCameras.length == 0) {
+		if (camera.cameraRigMode == Camera.RIG_MODE_NONE) {
 			this._renderForCamera(camera);
 			return;
 		}

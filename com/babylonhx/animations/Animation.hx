@@ -49,19 +49,23 @@ import com.babylonhx.mesh.AbstractMesh;
 	
 	
 	public static function CreateAndStartAnimation(name:String, mesh:AbstractMesh, targetProperty:String, framePerSecond:Int, totalFrame:Int,
-		from:Dynamic, to:Dynamic, ?loopMode:Int):Animatable {
+		from:Dynamic, to:Dynamic, ?loopMode:Int, ?easingFunction:EasingFunction):Animatable {
 		
 		var dataType:Int = -1;
 		
 		if (Std.is(from, Float)) {
 			dataType = Animation.ANIMATIONTYPE_FLOAT;
-		} else if (Std.is(from, Quaternion)) {
+		} 
+		else if (Std.is(from, Quaternion)) {
 			dataType = Animation.ANIMATIONTYPE_QUATERNION;
-		} else if (Std.is(from, Vector3)) {
+		} 
+		else if (Std.is(from, Vector3)) {
 			dataType = Animation.ANIMATIONTYPE_VECTOR3;
-		} else if (Std.is(from, Vector2)) {
+		} 
+		else if (Std.is(from, Vector2)) {
 			dataType = Animation.ANIMATIONTYPE_VECTOR2;
-		} else if (Std.is(from, Color3)) {
+		} 
+		else if (Std.is(from, Color3)) {
 			dataType = Animation.ANIMATIONTYPE_COLOR3;
 		}
 		
@@ -75,6 +79,10 @@ import com.babylonhx.mesh.AbstractMesh;
 		keys.push({ frame: 0, value: from });
 		keys.push({ frame: totalFrame, value: to });
 		animation.setKeys(keys);
+		
+		if (easingFunction != null) {
+            animation.setEasingFunction(easingFunction);
+        }
 		
 		mesh.animations.push(animation);
 		
@@ -90,7 +98,14 @@ import com.babylonhx.mesh.AbstractMesh;
 		this.loopMode = loopMode == -1 ? Animation.ANIMATIONLOOPMODE_CYCLE : loopMode;
 	}
 
-	// Methods   
+	// Methods 
+	
+	public function reset() {
+		this._offsetsCache = [];
+		this._highLimitsCache = [];
+		this.currentFrame = 0;
+	}
+	
 	inline public function isStopped():Bool {
 		return this._stopped;
 	}

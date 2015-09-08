@@ -8,6 +8,8 @@ import com.babylonhx.mesh.Mesh;
  * @author Krtolica Vujadin
  */
 @:expose('BABYLON.MergeMeshesOptimization') class MergeMeshesOptimization extends SceneOptimization {
+	
+	public static var UpdateSelectionTree:Bool = false;
 
 	private function _canBeMerged(abstractMesh:AbstractMesh):Bool {
 		if (!Std.is(abstractMesh, Mesh)) {
@@ -31,7 +33,7 @@ import com.babylonhx.mesh.Mesh;
 		return true;
 	}
 	
-	override public function apply(scene:Scene):Bool {
+	override public function apply(scene:Scene, updateSelectionTree:Bool = false):Bool {
 		var globalPool:Array<AbstractMesh> = scene.meshes.slice(0);
 		var globalLength:Int = globalPool.length;
 		
@@ -77,6 +79,10 @@ import com.babylonhx.mesh.Mesh;
 			
 			// Merge meshes
 			Mesh.MergeMeshes(currentPool);
+		}		
+		
+		if (updateSelectionTree || MergeMeshesOptimization.UpdateSelectionTree) {
+			scene.createOrUpdateSelectionOctree();
 		}
 		
 		return true;

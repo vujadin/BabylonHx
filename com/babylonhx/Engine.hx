@@ -46,6 +46,10 @@ import nme.display.OpenGLView;
 	public static inline var ALPHA_DISABLE:Int = 0;
 	public static inline var ALPHA_ADD:Int = 1;
 	public static inline var ALPHA_COMBINE:Int = 2;
+	public static inline var ALPHA_SUBTRACT:Int = 3;
+	public static inline var ALPHA_MULTIPLY:Int = 4;
+	public static inline var ALPHA_MAXIMIZED:Int = 5;
+	public static inline var ALPHA_ONEONE:Int = 6;
 
 	public static inline var DELAYLOADSTATE_NONE:Int = 0;
 	public static inline var DELAYLOADSTATE_LOADED:Int = 1;
@@ -130,12 +134,14 @@ import nme.display.OpenGLView;
 	private var _cachedIndexBuffer:WebGLBuffer;
 	private var _cachedEffectForVertexBuffers:Effect;
 	private var _currentRenderTarget:WebGLTexture;
+	private var _uintIndicesCurrentlySet:Bool = false;
 
 	public var _canvasClientRect:Dynamic = { x: 0, y: 0, width: 800, height: 600 };
 
-	private var _uintIndicesCurrentlySet:Bool = false;
-
 	private var _workingCanvas:Image;
+	#if (openfl || nme)
+	public var _workingContext:OpenGLView; 
+	#end
 	
 	public static var app:Dynamic;
 	
@@ -150,11 +156,7 @@ import nme.display.OpenGLView;
 	public static var keyUp:Array<Dynamic> = [];
 	public static var keyDown:Array<Dynamic> = [];
 	
-	#if (openfl || nme)
-	public var _workingContext:OpenGLView; 
-	#end
-	
-	#if (lime || nme)
+	#if (lime || nme || purejs)
 	public var width:Int;
 	public var height:Int;
 	#end
@@ -287,10 +289,11 @@ import nme.display.OpenGLView;
 	}
 
 	public function getRenderWidth():Int {
+		// TODO
 		/*if (this._currentRenderTarget != null) {
 			return Std.int(this._currentRenderTarget._width);
 		}*/
-		#if (lime || nme)
+		#if (lime || nme || purejs)
 		return width;
 		#else
 		return app.width;
@@ -301,7 +304,7 @@ import nme.display.OpenGLView;
 		/*if (this._currentRenderTarget != null) {
 			return Std.int(this._currentRenderTarget._height);
 		}*/
-		#if (lime || nme)
+		#if (lime || nme || purejs)
 		return height;
 		#else
 		return app.height;
@@ -350,9 +353,21 @@ import nme.display.OpenGLView;
 		this._depthCullingState.depthFunc = GL.LEQUAL;
 	}
 
-	public function stopRenderLoop() {
-		this._renderFunction = null;
-		this._runningLoop = false;
+	/**
+	 * stop executing a render loop function and remove it from the execution array
+	 * @param {Function} [renderFunction] the function to be removed. If not provided all functions will be removed.
+	 */
+	public function stopRenderLoop(?renderFunction:Void->Void) {
+		if (renderFunction == null) {
+			this._activeRenderLoops = [];
+			return;
+		}
+		
+		var index = this._activeRenderLoops.indexOf(renderFunction);
+		
+		if (index >= 0) {
+			this._activeRenderLoops.splice(index, 1);
+		}
 	}
 
 	public function _renderLoop(?rect:Dynamic) {
@@ -419,6 +434,12 @@ import nme.display.OpenGLView;
 		GL.clear(mode);
 	}
 
+	/**
+	 * Set the WebGL's viewport
+	 * @param {BABYLON.Viewport} viewport - the viewport element to be used.
+	 * @param {number} [requiredWidth] - the width required for rendering. If not provided the rendering canvas' width is used.
+	 * @param {number} [requiredHeight] - the height required for rendering. If not provided the rendering canvas' height is used.
+	 */
 	inline public function setViewport(viewport:Viewport, requiredWidth:Float = 0, requiredHeight:Float = 0) {
 		var width = requiredWidth == 0 ? getRenderWidth() : requiredWidth;
         var height = requiredHeight == 0 ? getRenderHeight() : requiredHeight;
@@ -442,7 +463,7 @@ import nme.display.OpenGLView;
 	}
 
 	inline public function endFrame() {
-		//this.flushFramebuffer();
+		this.flushFramebuffer();
 	}
 	
 	// FPS
@@ -478,6 +499,13 @@ import nme.display.OpenGLView;
         }
     }
 
+	/**
+	 * resize the view according to the canvas' size.
+	 * @example
+	 *   window.addEventListener("resize", function () {
+	 *      engine.resize();
+	 *   });
+	 */
 	public function resize() {
 		#if purejs
 		var width = untyped Browser.navigator.isCocoonJS ? Browser.window.innerWidth : this._renderingCanvas.clientWidth;
@@ -519,22 +547,26 @@ import nme.display.OpenGLView;
 
 	inline public function unBindFramebuffer(texture:WebGLTexture) {
 		this._currentRenderTarget = null;
+		
 		if (texture.generateMipMaps) {
 			GL.bindTexture(GL.TEXTURE_2D, texture.data);
 			GL.generateMipmap(GL.TEXTURE_2D);
 			GL.bindTexture(GL.TEXTURE_2D, null);
 		}
-		
+			
 		GL.bindFramebuffer(GL.FRAMEBUFFER, null);
 	}
 
-	public function flushFramebuffer() {
-		//GL.flush();
+	inline public function flushFramebuffer() {
+		GL.flush();
 	}
 
 	inline public function restoreDefaultFramebuffer() {
+		this._currentRenderTarget = null;
 		GL.bindFramebuffer(GL.FRAMEBUFFER, null);
+		
 		this.setViewport(this._cachedViewport);
+		
 		this.wipeCaches();
 	}
 
@@ -571,7 +603,11 @@ import nme.display.OpenGLView;
 			GL.bufferSubData(GL.ARRAY_BUFFER, offset, vertices);
 		} 
 		else {
-			GL.bufferSubData(GL.ARRAY_BUFFER, offset, new Float32Array(cast vertices));
+			#if purejs
+			GL.bufferSubData(GL.ARRAY_BUFFER, offset, new Float32Array(vertices));
+			#else
+			GL.bufferSubData(GL.ARRAY_BUFFER, offset, new Float32Array(cast(vertices, Array<Dynamic>)));
+			#end
 		}
 		
 		this._resetVertexBufferBinding();
@@ -721,26 +757,28 @@ import nme.display.OpenGLView;
 		this._alphaState.apply();
 	}
 
-	public function draw(useTriangles:Bool, indexStart:Int, indexCount:Int, ?instancesCount:Int) {
+	public function draw(useTriangles:Bool, indexStart:Int, indexCount:Int, instancesCount:Int = -1) {
 		// Apply states
 		this.applyStates();
+		
+		this._drawCalls++;
 						
 		// Render
 		var indexFormat = this._uintIndicesCurrentlySet ? GL.UNSIGNED_INT : GL.UNSIGNED_SHORT;
 		var mult:Int = this._uintIndicesCurrentlySet ? 4 : 2;
-		if (instancesCount != null) {
+		if (instancesCount > -1) {
 			this._caps.instancedArrays.drawElementsInstancedANGLE(useTriangles ? GL.TRIANGLES : GL.LINES, indexCount, indexFormat, indexStart * mult, instancesCount);
 			return;
 		}
 		
-		GL.drawElements(useTriangles ? GL.TRIANGLES : GL.LINES, indexCount, indexFormat, indexStart * mult);
-		
-		this._drawCalls++;
+		GL.drawElements(useTriangles ? GL.TRIANGLES : GL.LINES, indexCount, indexFormat, indexStart * mult);		
 	}
 
 	public function drawPointClouds(verticesStart:Int, verticesCount:Int, instancesCount:Int = -1) {
 		// Apply states
 		this.applyStates();
+		
+		this._drawCalls++;
 		
 		if (instancesCount > -1) {
 			this._caps.instancedArrays.drawArraysInstancedANGLE(GL.POINTS, verticesStart, verticesCount, instancesCount);
@@ -748,8 +786,6 @@ import nme.display.OpenGLView;
 		}
 		
 		GL.drawArrays(GL.POINTS, verticesStart, verticesCount);
-		
-		this._drawCalls++;
 	}
 
 	// Shaders
@@ -765,7 +801,7 @@ import nme.display.OpenGLView;
 	public function createEffect(baseName:Dynamic, attributesNames:Array<String>, uniformsNames:Array<String>, samplers:Array<String>, defines:String, ?fallbacks:EffectFallbacks, ?onCompiled:Effect->Void, ?onError:Effect->String->Void):Effect {
 		var vertex = baseName.vertexElement != null ? baseName.vertexElement : (baseName.vertex != null ? baseName.vertex : baseName);
 		var fragment = baseName.fragmentElement != null ? baseName.fragmentElement : (baseName.fragment != null ? baseName.fragment : baseName);
-				
+						
 		var name = vertex + "+" + fragment + "@" + defines;
 		if (this._compiledEffects.exists(name)) {
             return this._compiledEffects.get(name);
@@ -825,22 +861,31 @@ import nme.display.OpenGLView;
 		return shaderProgram;
 	}
 
-	inline public function getUniforms(shaderProgram:GLProgram, uniformsNames:Array<String>):Array<GLUniformLocation> {
-		var results:Array<GLUniformLocation> = [];
-		
-		for (index in 0...uniformsNames.length) {
-            results.push(GL.getUniformLocation(shaderProgram, uniformsNames[index]));
-        }
+	inline public function getUniforms(shaderProgram:GLProgram, uniformsNames:Array<String>):Map<String, GLUniformLocation> {
+		var results:Map<String, GLUniformLocation> = new Map();
+				
+		for (name in uniformsNames) {
+			var uniform = GL.getUniformLocation(shaderProgram, name);
+			#if (purejs || js || html5 || web || snow)
+			if (uniform != null) {
+			#else 
+			if (uniform != -1) {
+			#end
+				results.set(name, uniform);
+			}
+		}
 		
         return results;
 	}
 
 	inline public function getAttributes(shaderProgram:GLProgram, attributesNames:Array<String>):Array<Int> {
         var results:Array<Int> = [];
+		
         for (index in 0...attributesNames.length) {
             try {
 				results.push(GL.getAttribLocation(shaderProgram, attributesNames[index]));
-            } catch (e:Dynamic) {
+            } 
+			catch (e:Dynamic) {
 				trace("getAttributes() -> ERROR: " + e);
                 results.push(-1);
             }
@@ -913,8 +958,16 @@ import nme.display.OpenGLView;
 		GL.uniformMatrix4fv(uniform, false, #if (js || purejs) matrices #else new Float32Array(matrices) #end);
 	}
 
-	inline public function setMatrix(uniform:GLUniformLocation, matrix:Matrix) {
-		GL.uniformMatrix4fv(uniform, false, #if (js || purejs) matrix.toArray() #else new Float32Array(matrix.toArray()) #end );
+	inline public function setMatrix(uniform:GLUniformLocation, matrix:Matrix) {	
+		GL.uniformMatrix4fv(uniform, false, #if (js || purejs) matrix.m #else new Float32Array(matrix.toArray()) #end );
+	}
+	
+	inline public function setMatrix3x3(uniform:GLUniformLocation, matrix:Float32Array) {
+		GL.uniformMatrix3fv(uniform, false, matrix);
+	}
+
+	inline public function setMatrix2x2(uniform:GLUniformLocation, matrix:Float32Array) {
+		GL.uniformMatrix2fv(uniform, false, matrix);
 	}
 
 	inline public function setFloat(uniform:GLUniformLocation, value:Float) {
@@ -979,6 +1032,10 @@ import nme.display.OpenGLView;
 	}
 
 	inline public function setAlphaMode(mode:Int) {
+		if (this._alphaMode == mode) {
+            return;
+        }
+		
 		switch (mode) {
 			case Engine.ALPHA_DISABLE:
 				this.setDepthWrite(true);
@@ -989,9 +1046,29 @@ import nme.display.OpenGLView;
 				this._alphaState.setAlphaBlendFunctionParameters(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE);
 				this._alphaState.alphaBlend = true;
 				
-			case Engine.ALPHA_ADD:
+			case Engine.ALPHA_ONEONE:
 				this.setDepthWrite(false);
 				this._alphaState.setAlphaBlendFunctionParameters(GL.ONE, GL.ONE, GL.ZERO, GL.ONE);
+				this._alphaState.alphaBlend = true;
+				
+			case Engine.ALPHA_ADD:
+				this.setDepthWrite(false);
+				this._alphaState.setAlphaBlendFunctionParameters(GL.SRC_ALPHA, GL.ONE, GL.ZERO, GL.ONE);
+				this._alphaState.alphaBlend = true;
+				
+			case Engine.ALPHA_SUBTRACT:
+				this.setDepthWrite(false);
+				this._alphaState.setAlphaBlendFunctionParameters(GL.ZERO, GL.ONE_MINUS_SRC_COLOR, GL.ONE, GL.ONE);
+				this._alphaState.alphaBlend = true;
+				
+			case Engine.ALPHA_MULTIPLY:
+				this.setDepthWrite(false);
+				this._alphaState.setAlphaBlendFunctionParameters(GL.DST_COLOR, GL.ZERO, GL.ONE, GL.ONE);
+				this._alphaState.alphaBlend = true;
+				
+			case Engine.ALPHA_MAXIMIZED:
+				this.setDepthWrite(false);
+				this._alphaState.setAlphaBlendFunctionParameters(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_COLOR, GL.ONE, GL.ONE);
 				this._alphaState.alphaBlend = true;
 				
 		}
@@ -1024,8 +1101,8 @@ import nme.display.OpenGLView;
 		this._cachedEffectForVertexBuffers = null;
 	}
 
-	inline public function setSamplingMode(texture:GLTexture, samplingMode:Int) {
-		GL.bindTexture(GL.TEXTURE_2D, texture);
+	inline public function setSamplingMode(texture:WebGLTexture, samplingMode:Int) {
+		GL.bindTexture(GL.TEXTURE_2D, texture.data);
 		
 		var magFilter = GL.NEAREST;
 		var minFilter = GL.NEAREST;
@@ -1043,6 +1120,8 @@ import nme.display.OpenGLView;
 		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, minFilter);
 		
 		GL.bindTexture(GL.TEXTURE_2D, null);
+		
+		texture.samplingMode = samplingMode;
 	}
 	
 	public function createTexture(url:String, noMipmap:Bool, invertY:Bool, scene:Scene, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, onLoad:Void->Void = null, onError:Void->Void = null, buffer:Dynamic = null):WebGLTexture {
@@ -1164,14 +1243,31 @@ import nme.display.OpenGLView;
 	public function createRawTexture(data:ArrayBufferView, width:Int, height:Int, format:Int, generateMipMaps:Bool, invertY:Bool, samplingMode:Int):WebGLTexture {
 		
 		var texture = new WebGLTexture("", GL.createTexture());
+		texture._baseWidth = width;
+		texture._baseHeight = height;
+		texture._width = width;
+		texture._height = height;
+		texture.references = 1;
+		
+		this.updateRawTexture(texture, data, format, invertY);
 		GL.bindTexture(GL.TEXTURE_2D, texture.data);
-		/*#if js
-		GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 1 : 0);
-		#end*/
 		
-		// Format
+		// Filters
+		var filters = getSamplingParameters(samplingMode, generateMipMaps);
+		
+		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, filters.mag);
+		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, filters.min);
+		GL.bindTexture(GL.TEXTURE_2D, null);
+		
+		texture.samplingMode = samplingMode;
+		
+		this._loadedTexturesCache.push(texture);
+		
+		return texture;
+	}
+	
+	inline public function updateRawTexture(texture:WebGLTexture, data:ArrayBufferView, format:Int, invertY:Bool = false) {
 		var internalFormat = GL.RGBA;
-		
 		switch (format) {
 			case Engine.TEXTUREFORMAT_ALPHA:
 				internalFormat = GL.ALPHA;
@@ -1190,31 +1286,15 @@ import nme.display.OpenGLView;
 				
 		}
 		
-		GL.texImage2D(GL.TEXTURE_2D, 0, internalFormat, width, height, 0, internalFormat, GL.UNSIGNED_BYTE, data);
-		
-		if (generateMipMaps) {
+		GL.bindTexture(GL.TEXTURE_2D, texture.data);
+		//GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 1 : 0);           
+		GL.texImage2D(GL.TEXTURE_2D, 0, internalFormat, texture._width, texture._height, 0, internalFormat, GL.UNSIGNED_BYTE, data);
+		if (texture.generateMipMaps) {
 			GL.generateMipmap(GL.TEXTURE_2D);
 		}
-		
-		// Filters
-		var filters = getSamplingParameters(samplingMode, generateMipMaps);
-		
-		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, filters.mag);
-		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, filters.min);
 		GL.bindTexture(GL.TEXTURE_2D, null);
-		
 		this._activeTexturesCache = [];
-		texture._baseWidth = width;
-		texture._baseHeight = height;
-		texture._width = width;
-		texture._height = height;
 		texture.isReady = true;
-		texture.references = 1;
-		texture.samplingMode = samplingMode;
-		
-		this._loadedTexturesCache.push(texture);
-		
-		return texture;
 	}
 
 	public function createDynamicTexture(width:Int, height:Int, generateMipMaps:Bool, samplingMode:Int):WebGLTexture {
@@ -1260,37 +1340,6 @@ import nme.display.OpenGLView;
 		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, filters.mag);
 		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, filters.min);
 		GL.bindTexture(GL.TEXTURE_2D, null);
-	}
-	
-	inline public function updateRawTexture(texture:WebGLTexture, data:ArrayBufferView, format:Int, size:Dynamic, invertY:Bool = false) {
-		var internalFormat = GL.RGBA;
-		switch (format) {
-			case Engine.TEXTUREFORMAT_ALPHA:
-				internalFormat = GL.ALPHA;
-				
-			case Engine.TEXTUREFORMAT_LUMINANCE:
-				internalFormat = GL.LUMINANCE;
-				
-			case Engine.TEXTUREFORMAT_LUMINANCE_ALPHA:
-				internalFormat = GL.LUMINANCE_ALPHA;
-				
-			case Engine.TEXTUREFORMAT_RGB:
-				internalFormat = GL.RGB;
-				
-			case Engine.TEXTUREFORMAT_RGBA:
-				internalFormat = GL.RGBA;
-				
-		}
-		
-		GL.bindTexture(GL.TEXTURE_2D, texture.data);
-		//GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 1 : 0);           
-		GL.texImage2D(GL.TEXTURE_2D, 0, internalFormat, size.width, size.height, 0, internalFormat, GL.UNSIGNED_BYTE, data);
-		if (texture.generateMipMaps) {
-			GL.generateMipmap(GL.TEXTURE_2D);
-		}
-		GL.bindTexture(GL.TEXTURE_2D, null);
-		this._activeTexturesCache = [];
-		texture.isReady = true;
 	}
 
 	public function updateVideoTexture(texture:WebGLTexture, video:Dynamic, invertY:Bool) {
@@ -1660,7 +1709,7 @@ import nme.display.OpenGLView;
 
 	inline public function readPixels(x:Int, y:Int, width:Int, height:Int): #if (js || purejs) UInt8Array #else Array<Int> #end {
 		var data = #if (js || purejs) new UInt8Array(height * width * 4) #else [] #end ;
-		GL.readPixels(0, 0, width, height, GL.RGBA, GL.UNSIGNED_BYTE, cast data);
+		GL.readPixels(x, y, width, height, GL.RGBA, GL.UNSIGNED_BYTE, cast data);
 		return data;
 	}
 
@@ -1687,7 +1736,7 @@ import nme.display.OpenGLView;
 	// Statics	
 	public static function compileShader(source:String, type:String, defines:String):GLShader {
         var shader:GLShader = GL.createShader(type == "vertex" ? GL.VERTEX_SHADER : GL.FRAGMENT_SHADER);
-		
+				
         GL.shaderSource(shader, (defines != null ? defines + "\n" : "") + source);
         GL.compileShader(shader);
 

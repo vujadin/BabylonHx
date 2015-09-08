@@ -112,7 +112,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
                     if (Reflect.hasField(parsedMesh, "materialId")) {
                         var materialFound = (loadedMaterialsIds.indexOf(parsedMesh.materialId) != -1);
 						
-                        if (!materialFound) {
+                        if (!materialFound && parsedData.multiMaterials != null) {
 							var pdmm:Array<Dynamic> = cast parsedData.multiMaterials;
                             for (multimatIndex in 0...pdmm.length) {
                                 var parsedMultiMaterial = pdmm[multimatIndex];
@@ -183,7 +183,6 @@ import com.babylonhx.utils.typedarray.Int32Array;
             return true;
         },
 		load: function(scene:Scene, data:Dynamic, rootUrl:String):Bool {
-			
 			var parsedData:Dynamic = null;
 			if (Std.is(data, String)) {
 				parsedData = Json.parse(data);

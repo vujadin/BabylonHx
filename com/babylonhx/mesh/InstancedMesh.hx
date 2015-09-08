@@ -141,8 +141,8 @@ import com.babylonhx.animations.IAnimatable;
 		trace("InstancedMesh:clone()");
 		var result = this._sourceMesh.createInstance(name);
 		
-		// Deep copy
-		Tools.DeepCopy(this, result, ["name"], []);
+		// TODO: Deep copy
+		//Tools.DeepCopy(this, result, ["name"], []);
 		
 		// Bounding info
 		this.refreshBoundingInfo();

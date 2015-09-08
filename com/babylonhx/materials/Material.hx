@@ -33,6 +33,8 @@ import com.babylonhx.mesh.Mesh;
 	public var onDispose:Void->Void;
 	public var onBind:Material->Void;
 	public var getRenderTargetTextures:Void->SmartArray; // SmartArray<RenderTargetTexture>;
+	public var alphaMode:Int = Engine.ALPHA_COMBINE;
+	public var disableDepthWrite:Bool = false;
 	
 	public var __smartArrayFlags:Array<Int>;
 
@@ -70,6 +72,10 @@ import com.babylonhx.mesh.Mesh;
 		this._fillMode = value;
 		return value;
 	}
+	
+	private var _cachedDepthWriteState:Bool;
+	
+	
 
 	public function new(name:String, scene:Scene, doNotAdd:Bool = false) {
 		this.id = name;
@@ -130,12 +136,22 @@ import com.babylonhx.mesh.Mesh;
         if (this.onBind != null) {
             this.onBind(this);
         }
+		
+		if (this.disableDepthWrite) {
+            var engine = this._scene.getEngine();
+            this._cachedDepthWriteState = engine.getDepthWrite();
+            engine.setDepthWrite(false);
+        }
 	}
 
 	public function bindOnlyWorldMatrix(world:Matrix) {
 	}
 
 	public function unbind():Void {
+		if (this.disableDepthWrite) {
+            var engine = this._scene.getEngine();
+            engine.setDepthWrite(this._cachedDepthWriteState);
+        }
 	}
 
 	public function dispose(forceDisposeEffect:Bool = false) {

@@ -171,7 +171,7 @@ import com.babylonhx.tools.SmartArray;
 		}
 		
 		// Bones
-		if (mesh.useBones) {
+		if (mesh.useBones && mesh.computeBonesUsingShaders) {
 			attribs.push(VertexBuffer.MatricesIndicesKind);
 			attribs.push(VertexBuffer.MatricesWeightsKind);
 			defines.push("#define BONES");

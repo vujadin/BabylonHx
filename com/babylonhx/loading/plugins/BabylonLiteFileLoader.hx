@@ -83,7 +83,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			if (Std.is(data, String)) {
 				parsedData = Json.parse(data);
 			} else if(Std.is(data, Bytes)) {
-				parsedData = MsgPack.decode(data);
+				//parsedData = MsgPack.decode(data);
 			} else {
 				trace("Unknown data type!");
 				return false;
@@ -182,7 +182,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			if (Std.is(data, String)) {
 				parsedData = Json.parse(data);
 			} else if(Std.is(data, Bytes)) {
-				parsedData = MsgPack.decode(data);
+				//parsedData = MsgPack.decode(data);
 			} else {
 				trace("Unknown data type!");
 				return false;

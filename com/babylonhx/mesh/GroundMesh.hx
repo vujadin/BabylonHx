@@ -11,28 +11,20 @@ import com.babylonhx.math.Ray;
 
 @:expose('BABYLON.GroundMesh') class GroundMesh extends Mesh {
 	
-	public var generateOctree = false;
+	public var generateOctree:Bool = false;
 
-	private var _worldInverse = new Matrix();
-	private var _subdivisions:Int;
+	private var _worldInverse:Matrix = new Matrix();
+	public var _subdivisions:Int;
 	
-	public var subdivisions(get, set):Int;
-	private function get_subdivisions():Int {
-		return _subdivisions;
-	}
-	private function set_subdivisions(value:Int):Int {
-		_subdivisions = value;
-		return _subdivisions;
-	}
-
 	
 	public function new(name:String, scene:Scene) {
 		super(name, scene);
 	}
 
-	public function optimize(chunksCount:Float):Void {
+	public function optimize(chunksCount:Int, octreeBlocksSize:Int = 32) {
+		this._subdivisions = chunksCount;
 		this.subdivide(this._subdivisions);
-		this.createOrUpdateSubmeshesOctree(32);
+		this.createOrUpdateSubmeshesOctree(octreeBlocksSize);
 	}
 
 	public function getHeightAtCoordinates(x:Float, z:Float):Float {

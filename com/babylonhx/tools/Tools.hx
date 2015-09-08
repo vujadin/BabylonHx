@@ -41,6 +41,18 @@ typedef Assets = nme.Assets;
 	public static var BaseUrl:String = "";
 		
 	@:noCompletion private static var __startTime:Float = Timer.stamp();
+	
+	
+	public static function ToHex(i:Int):String {
+		var str:String = StringTools.hex(i, 16); 
+		
+		if (i <= 15) {
+			var ret:String = "0" + str;
+			return ret.toUpperCase();
+		}
+		
+		return str.toUpperCase();
+	}
 
 	inline public static function GetExponantOfTwo(value:Int, max:Int):Int {
 		var count = 1;
@@ -54,6 +66,10 @@ typedef Assets = nme.Assets;
 		}
 		
 		return count;
+	}
+	
+	inline public static function Lerp(v0:Float, v1:Float, t:Float):Float {
+		return (1 - t) * v0 + t * v1;
 	}
 
 	public static function GetFilename(path:String):String {
@@ -73,8 +89,8 @@ typedef Assets = nme.Assets;
 		return angle * Math.PI / 180;
 	}
 	
-	// moved here as build gives an error that haxe.Timer has no delay method...
-	public static function delay( f : Void -> Void, time_ms : Int ) {
+	// Snow build gives an error that haxe.Timer has no delay method...
+	public static function delay(f:Void->Void, time_ms:Int) {
 		#if snow
 		var t = new snow.api.Timer(time_ms);
 		#elseif (lime || nme || purejs)
@@ -284,6 +300,82 @@ typedef Assets = nme.Assets;
 		return false;
 	}
 	#elseif snow
+	
+	#if luxe
+	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {	
+		if (type == "") {
+			if (Luxe.core.app.assets.listed(path)) {
+				if (StringTools.endsWith(path, "bbin")) {
+					var callBackFunction = callbackFn != null ?
+						function(result:Dynamic) {
+							callbackFn(result.bytes);
+						} : function(_) { };
+					Luxe.core.app.assets.bytes(path).then(
+						function(asset:Dynamic) {
+							callBackFunction(asset);
+						}
+					);
+				} 
+				else {
+					var callBackFunction = callbackFn != null ?
+						function(result:Dynamic) {
+							callbackFn(result.text);
+						} : function(_) { };
+					Luxe.core.app.assets.text(path).then(
+						function(asset:Dynamic) {
+							callBackFunction(asset);
+						}
+					);
+				}
+			} 
+			else {
+				trace("File '" + path + "' doesn't exist!");
+			}
+		} 
+		else {
+			if(Luxe.core.app.assets.listed(path)) {
+				switch(type) {
+					case "text":
+						var callBackFunction = callbackFn != null ?
+							function(result:Dynamic) {
+								callbackFn(result.text);
+							} : function(_) { };
+						Luxe.core.app.assets.text(path).then(
+							function(asset:Dynamic) {
+								callBackFunction(asset);
+							}
+						);					
+						
+					case "bin":
+						var callBackFunction = callbackFn != null ?
+							function(result:Dynamic) {
+								callbackFn(result.bytes);
+							} : function(_) { };
+						Luxe.core.app.assets.bytes(path).then(
+							function(asset:Dynamic) {
+								callBackFunction(asset);
+							}
+						);
+						
+					case "img":
+						var callBackFunction = callbackFn != null ?
+							function(img:Dynamic) {
+								var i = new Image(img.image.pixels, img.image.width, img.image.height);
+								callbackFn(i);
+							} : function(_) { };
+						Luxe.core.app.assets.image(path).then(
+							function(asset:Dynamic) {
+								callBackFunction(asset);
+							}
+						);
+				}
+			} 
+			else {
+				trace("File '" + path + "' doesn't exist!");
+			}
+		}
+    }
+	#else // snow
 	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {	
 		if (type == "") {
 			if (SnowApp._snow.assets.listed(path)) {
@@ -349,11 +441,14 @@ typedef Assets = nme.Assets;
 							}
 						);
 				}
-			} else {
+			} 
+			else {
 				trace("File '" + path + "' doesn't exist!");
 			}
 		}
     }
+	#end // if luxe
+	
 	#elseif (lime || nme)
 	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {			
 		if (type == "") {
@@ -378,10 +473,12 @@ typedef Assets = nme.Assets;
 					var data = Assets.getText(path);
 					callBackFunction(data);
 				}
-			} else {
+			} 
+			else {
 				trace("File '" + path + "' doesn't exist!");
 			}
-		} else {
+		} 
+		else {
 			#if lime
 			if (Assets.exists(path)) {
 			#else // nme
@@ -419,7 +516,8 @@ typedef Assets = nme.Assets;
 						}
 						#end
 				}
-			} else {
+			} 
+			else {
 				trace("File '" + path + "' doesn't exist!");
 			}
 		}
@@ -501,6 +599,26 @@ typedef Assets = nme.Assets;
 		return img;
 	}	
 	#elseif snow
+	
+	#if luxe
+	public static function LoadImage(url:String, onload:Image->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
+		if (Luxe.core.app.assets.listed(url)) {
+			var callBackFunction = function(img:Dynamic) {
+				var i = new Image(img.image.pixels, img.image.width, img.image.height);
+				onload(i);
+			};
+			
+			Luxe.core.app.assets.image(url).then(
+				function(asset:Dynamic) {
+					callBackFunction(asset);
+				}
+			);
+		} 
+		else {
+			trace("Image '" + url + "' doesn't exist!");
+		}
+    } 
+	#else
 	public static function LoadImage(url:String, onload:Image->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
 		if (SnowApp._host.app.assets.listed(url)) {
 			var callBackFunction = function(img:Dynamic) {
@@ -513,18 +631,22 @@ typedef Assets = nme.Assets;
 					callBackFunction(asset);
 				}
 			);
-		} else {
+		} 
+		else {
 			trace("Image '" + url + "' doesn't exist!");
 		}
     } 
+	#end
+	
 	#elseif (lime || nme)
 	public static function LoadImage(url:String, onload:Image-> Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
-		#if (lime && js)
+		#if (lime && html5)
 		var img = Assets.getImage(url);
 		onload(new Image(img.data, img.width, img.height));
 		#elseif lime
 		if (Assets.exists(url)) {
-			Assets.loadImage(url, function(img:lime.graphics.Image):Void {
+			var future = Assets.loadImage(url);
+			future.onComplete(function(img:lime.graphics.Image):Void {
 				var image = new Image(img.data, img.width, img.height);
 				onload(image);
 			});						
@@ -535,7 +657,7 @@ typedef Assets = nme.Assets;
 		#elseif nme
 		if (Assets.info.exists(url)) {
 			var img = Assets.getBitmapData(url); 
-			onload(new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height));					
+			onload(new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height));			
 		} 
 		else {
 			trace("Image '" + url + "' doesn't exist!");
@@ -601,193 +723,23 @@ typedef Assets = nme.Assets;
 		var num = a - b;
 		return -epsilon <= num && num <= epsilon;
 	}
-	
-	public static function DeepCopy(source:Dynamic, destination:Dynamic, ?doNotCopyList:Array<String>, ?mustCopyList:Array<String>) {
-		var sourceFields = Type.getInstanceFields(source);
-		for (prop in sourceFields) {
-			if (prop.charAt(0) == "_" && (mustCopyList == null || mustCopyList.indexOf(prop) == -1)) {
-				continue;
-			}
-
-			if (doNotCopyList != null && doNotCopyList.indexOf(prop) != -1) {
-				continue;
-			}
-			var sourceValue = Reflect.getProperty(source, prop);
-
-			if (Reflect.isFunction(sourceValue)) {
-				continue;
-			}
-			
-			Reflect.setField(destination, prop, dcopy(sourceValue));
-
-			/*if (Reflect.isObject(sourceValue)) {
-				if (Std.is(sourceValue, Array)) {
-					Reflect.setField(destination, prop, new Array<Dynamic>());
-
-					if (sourceValue.length > 0) {
-						var sv = cast(sourceValue, Array<Dynamic>);
-						if (Reflect.isObject(sv[0])) {
-							for (index in 0...sv.length) {
-								var clonedValue = cloneValue(sv[index], destination);
-
-								if (cast(Reflect.getProperty(destination, prop), Array<Dynamic>).indexOf(clonedValue) == -1) { // Test if auto inject was not done
-									cast(Reflect.getProperty(destination, prop), Array<Dynamic>).push(clonedValue);
-								}
-							}
-						} else {
-							Reflect.setField(destination, prop, sv.slice(0));
-						}
-					}
-				} else {
-					Reflect.setField(destination, prop, cloneValue(sourceValue, destination));
-				}
-			} else {
-				Reflect.setField(destination, prop, sourceValue);
-			}*/
-		}
-	}
-	
-	/*public static function copy<T>(v:T):T { 
-		if (!Reflect.isObject(v)) { // simple type 
-			return v; 
-		}
-		else if (Std.is(v, String)) { // string
-			return v;
-		}
-		else if(Std.is( v, Array )) { // array 
-			var result = Type.createInstance(Type.getClass(v), []); 
-			untyped { 
-				for( ii in 0...v.length ) {
-					result.push(copy(v[ii]));
-				}
-			} 
-			return result;
-		}
-		else if(Std.is(v, Map)) { // hashmap
-			var result = Type.createInstance(Type.getClass(v), []);
-			untyped {
-				var keys : Iterator<String> = v.keys();
-				for( key in keys ) {
-					result.set(key, copy(v.get(key)));
-				}
-			} 
-			return result;
-		}
-		else if(Std.is( v, IntHash )) { // integer-indexed hashmap
-			var result = Type.createInstance(Type.getClass(v), []);
-			untyped {
-				var keys : Iterator<Int> = v.keys();
-				for( key in keys ) {
-					result.set(key, copy(v.get(key)));
-				}
-			} 
-			return result;
-		}
-		else if(Std.is( v, List )) { // list
-			//List would be copied just fine without this special case, but I want to avoid going recursive
-			var result = Type.createInstance(Type.getClass(v), []);
-			untyped {
-				var iter:Iterator<Dynamic> = v.iterator();
-				for(ii in iter) {
-					result.add(ii);
-				}
-			} 
-			return result; 
-		}
-		else if(Type.getClass(v) == null) { // anonymous object 
-			var obj : Dynamic = {}; 
-			for( ff in Reflect.fields(v) ) { 
-				Reflect.setField(obj, ff, copy(Reflect.field(v, ff))); 
-			}
-			return obj; 
-		} 
-		else { // class 
-			var obj = Type.createEmptyInstance(Type.getClass(v)); 
-			for(ff in Reflect.fields(v)) {
-				Reflect.setField(obj, ff, copy(Reflect.field(v, ff))); 
-			}
-			return obj; 
-		} 
-		return null; 
-	}*/
-	
-	public static function dcopy<T>(v:T):T {
-		if(Std.is(v, Array)) { // array 		 
-			var r = Type.createInstance(Type.getClass(v), []); 
-			untyped 
-			{ 
-				for( ii in 0...v.length ) 
-				r.push(dcopy(v[ii])); 
-			} 
-			return r; 
-		} 
-		else if(Type.getClass(v) == null) { // anonymous object 
-			var obj : Dynamic = {}; 
-			for(ff in Reflect.fields(v)) {
-				Reflect.setField(obj, ff, dcopy(Reflect.field(v, ff))); 
-			}
-			return obj; 
-		} 
-		else { // class 
-			var obj = Type.createEmptyInstance(Type.getClass(v)); 
-			for(ff in Reflect.fields(v)) {
-				Reflect.setField(obj, ff, dcopy(Reflect.field(v, ff))); 
-			}
-			return obj; 
-		}
-		
-		return null;
-	}
-	
-	/** 
-		deep copy of anything 
-	**/ 
-	public static function deepCopy<T>(v:T):T { 
-		if (!Reflect.isObject(v)) {  // simple type 		
-		  return v; 
-		} 
-		else if(Std.is(v, Array)) { // array 		 
-			var r = Type.createInstance(Type.getClass(v), []); 
-			untyped 
-			{ 
-				for( ii in 0...v.length ) 
-				r.push(deepCopy(v[ii])); 
-			} 
-			return r; 
-		} 
-		else if(Type.getClass(v) == null) { // anonymous object 
-			var obj : Dynamic = {}; 
-			for(ff in Reflect.fields(v)) {
-				Reflect.setField(obj, ff, deepCopy(Reflect.field(v, ff))); 
-			}
-			return obj; 
-		} 
-		else { // class 
-			var obj = Type.createEmptyInstance(Type.getClass(v)); 
-			for(ff in Reflect.fields(v)) {
-				Reflect.setField(obj, ff, deepCopy(Reflect.field(v, ff))); 
-			}
-			return obj; 
-		}
-		
-		return null; 
-	} 
 		
 	public static function cloneValue(source:Dynamic, destinationObject:Dynamic):Dynamic {
         if (source == null)
             return null;
-
+			
         if (Std.is(source, Mesh)) {
             return null;
         }
-
+		
         if (Std.is(source, SubMesh)) {
             return cast(source, SubMesh).clone(cast(destinationObject, AbstractMesh));
-        } else if (Reflect.hasField(source, "clone")) {
+        } 
+		else if (Reflect.hasField(source, "clone")) {
             return source.clone();// Reflect.callMethod(source, "clone", []);
         }
         return null;
-    };
+    }
 
 	public static function IsEmpty(obj:Dynamic):Bool {
 		if(Std.is(obj, Array)) {
@@ -830,6 +782,10 @@ typedef Assets = nme.Assets;
 	
 	public static inline function randomInt(from:Int, to:Int):Int {
 		return from + Math.floor(((to - from + 1) * Math.random()));
+	}
+	
+	public static inline function randomFloat(from:Float, to:Float):Float {
+		return from + ((to - from + 1) * Math.random());
 	}
 	
 }

@@ -9,6 +9,8 @@ class StandardMaterialDefines {
 	public var defines:Map<String, Bool> = new Map<String, Bool>();
 	public var BonesPerMesh:Int = 0;
 	
+	private var _keys:Array<String> = [];
+		
 	
 	public function new() {
 		defines["DIFFUSE"] = false;
@@ -68,12 +70,17 @@ class StandardMaterialDefines {
 		defines["BONES"] = false;
 		defines["BONES4"] = false;
 		defines["INSTANCES"] = false;
+		defines["GLOSSINESS"] = false;
 		
 		BonesPerMesh = 0;
+		
+		for (key in defines.keys()) {
+			_keys.push(key);
+		}
 	}
 
 	public function isEqual(other:StandardMaterialDefines):Bool {
-		for (prop in this.defines.keys()) {
+		for (prop in this._keys) {
 			if (this.defines[prop] != other.defines[prop]) {
 				return false;
 			}
@@ -83,13 +90,14 @@ class StandardMaterialDefines {
 	}
 
 	public function cloneTo(other:StandardMaterialDefines) {
-		for (prop in this.defines.keys()) {
+		for (prop in this._keys) {
 			other.defines[prop] = this.defines[prop];
 		}
+		other.BonesPerMesh = this.BonesPerMesh;
 	}
 
 	public function reset() {
-		for (prop in this.defines.keys()) {
+		for (prop in this._keys) {
 			this.defines[prop] = false;
 		}
 		
@@ -98,7 +106,7 @@ class StandardMaterialDefines {
 
 	public function toString():String {
 		var result = "";
-		for (prop in this.defines.keys()) {
+		for (prop in this._keys) {
 			if (this.defines[prop] == true) {
 				result += "#define " + prop + "\n";
 			}

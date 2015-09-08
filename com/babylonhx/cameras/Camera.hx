@@ -388,10 +388,24 @@ import com.babylonhx.animations.IAnimatable;
 		Matrix.OrthoOffCenterLHToRef(this.orthoLeft == null ? -halfWidth : this.orthoLeft, this.orthoRight == null ? halfWidth : this.orthoRight, this.orthoBottom == null ? -halfHeight : this.orthoBottom, this.orthoTop == null ? halfHeight : this.orthoTop, this.minZ, this.maxZ, this._projectionMatrix);
 		return this._projectionMatrix;
 	}
+	
+	public function getTarget():Vector3 {
+		return Vector3.Zero();
+	}
+	
+	public function getFrontPosition(num:Float):Vector3 {
+		var dir = this.getTarget().subtract(this.position);
+		dir.normalize();
+		dir.scaleInPlace(num);		
+		return this.position.add(dir);
+	}
 
 	public function dispose() {
 		// Remove from scene
 		this.getScene().removeCamera(this);
+		while (this._rigCameras.length > 0) {
+			this._rigCameras.pop().dispose();
+		}
 		
 		// Postprocesses
 		for (i in 0...this._postProcessesTakenIndices.length) {

@@ -4,7 +4,6 @@ import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.animations.IAnimatable;
-
 import com.babylonhx.utils.typedarray.Float32Array;
 
 
@@ -21,7 +20,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 
 	private var _scene:Scene;
 	private var _isDirty:Bool = true;
-	private var _transformMatrices: #if (js || purejs) Float32Array #else Array<Float> #end ;
+	private var _transformMatrices: #if (js || purejs || web || html5) Float32Array #else Array<Float> #end ;
 	private var _animatables:Array<IAnimatable>;
 	private var _identity:Matrix = Matrix.Identity();
 	
@@ -44,7 +43,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	// Members
-	inline public function getTransformMatrices(): #if (js || purejs) Float32Array #else Array<Float> #end {
+	inline public function getTransformMatrices(): #if (js || purejs || web || html5) Float32Array #else Array<Float> #end {
 		return this._transformMatrices;
 	}
 	
@@ -63,7 +62,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 		
 		if (this._transformMatrices == null || this._transformMatrices.length != 16 * (this.bones.length + 1)) {
-			this._transformMatrices = #if (js || purejs) new Float32Array(16 * (this.bones.length + 1)) #else [] #end ;
+			this._transformMatrices = #if (js || html5 || purejs) new Float32Array(16 * (this.bones.length + 1)) #else [] #end ;
 		}
 		
 		for (index in 0...this.bones.length) {

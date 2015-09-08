@@ -4,7 +4,10 @@ import com.babylonhx.materials.Material;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
+import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.SubMesh;
+import com.babylonhx.mesh.VertexBuffer;
+import com.babylonhx.Scene;
 
 /**
  * ...

@@ -43,7 +43,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		// vertexData
 		if (vertexData != null) {
 			this.setAllVerticesData(vertexData, updatable);
-		} else {
+		} 
+		else {
 			this._totalVertices = 0;
 			this._indices = [];
 		}
@@ -104,7 +105,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	inline public function updateVerticesDataDirectly(kind:String, data:Float32Array, offset:Int) {
 		var vertexBuffer = this.getVertexBuffer(kind);
 		
-		if (vertexBuffer == null) {
+		if (vertexBuffer != null) {
 			vertexBuffer.updateDirectly(data, offset);
 			this.notifyUpdate();
 		}		

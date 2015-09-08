@@ -36,8 +36,11 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _compilationError:String = "";
 	private var _attributesNames:Array<String>;
 	private var _attributes:Array<Int>;
-	private var _uniforms:Array<GLUniformLocation>;
+	private var _uniforms:Map<String, GLUniformLocation>;
 	public var _key:String;
+	
+	var tempVert:String;
+	var tempFrag:String;
 
 	@:allow(com.babylonhx.Engine.dispose) 
 	private var _program:GLProgram;
@@ -52,7 +55,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._uniformsNames = uniformsNames.concat(samplers);
 		this._samplers = samplers;
 		this._attributesNames = attributesNames;
-						
+								
 		this.onError = onError;
 		this.onCompiled = onCompiled;
 		
@@ -62,13 +65,16 @@ import com.babylonhx.utils.typedarray.Float32Array;
         var vertexShaderUrl:String = "";
         if (vertex.charAt(0) == ".") {
             vertexShaderUrl = vertex;
-        } else {
+        } 
+		else {
             vertexShaderUrl = Engine.ShadersRepository + vertex;
         }
+		
         var fragmentShaderUrl:String = "";
         if (fragment.charAt(0) == ".") {
             fragmentShaderUrl = fragment;
-        } else {
+        } 
+		else {
             fragmentShaderUrl = Engine.ShadersRepository + fragment;
         }
 		
@@ -83,7 +89,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			if (ShadersStore.Shaders.exists(fragment + ".fragment")) {
 				_fragmentCode = ShadersStore.Shaders.get(fragment + ".fragment");
 				prepareEffect(_fragmentCode);
-			} else {
+			} 
+			else {
 				Tools.LoadFile(fragmentShaderUrl + ".fragment.fx", function(content:String) {
 					_fragmentCode = content;
 					prepareEffect(_fragmentCode);
@@ -94,7 +101,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
         if (ShadersStore.Shaders.exists(vertex + ".vertex")) {
             _vertexCode = ShadersStore.Shaders.get(vertex + ".vertex");
 			getFragmentCode();
-        } else {
+        } 
+		else {
 			Tools.LoadFile(vertexShaderUrl + ".vertex.fx", function(content:String) {
 				_vertexCode = content;				
 				getFragmentCode();
@@ -134,7 +142,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	inline public function getUniform(uniformName:String):GLUniformLocation {
-		return this._uniforms[this._uniformsNames.indexOf(uniformName)];
+		return this._uniforms[uniformName];
 	}
 
 	inline public function getSamplers():Array<String> {
@@ -168,7 +176,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		Tools.LoadFile("assets/shaders/" + fragment + ".fragment.fx", callbackFn, "text");
     }
 	
-	private function _prepareEffect(vertexSourceCode:String, fragmentSourceCode:String, attributesNames:Array<String>, defines:String, ?fallbacks:EffectFallbacks) {
+	private function _prepareEffect(vertexSourceCode:String, fragmentSourceCode:String, attributesNames:Array<String>, defines:String, ?fallbacks:EffectFallbacks) {		
         try {
             var engine = this._engine;
 			
@@ -177,26 +185,25 @@ import com.babylonhx.utils.typedarray.Float32Array;
                 fragmentSourceCode = StringTools.replace(fragmentSourceCode, "precision highp float", "precision mediump float");
             }
 			
+			this.tempVert = defines + vertexSourceCode;
+			this.tempFrag = defines + fragmentSourceCode;
+						
             this._program = engine.createShaderProgram(vertexSourceCode, fragmentSourceCode, defines);
 			
             this._uniforms = engine.getUniforms(this._program, this._uniformsNames);
             this._attributes = engine.getAttributes(this._program, attributesNames);
 			
 			var index:Int = 0;
-			while(index < this._samplers.length) {
-                var sampler = this.getUniform(this._samplers[index]);
-				#if (snow || kha || purejs)
+			while (index < this._samplers.length) {				
+                var sampler = this.getUniform(this._samplers[index]);				
+				#if (js || purejs || html5 || web || snow || nme)
 				if (sampler == null) {
-				#elseif (lime || nme)
-					#if js
-					if (sampler == null) {
-					#else
-					if (cast(sampler, Int) < 0) {
-					#end
+				#else
+				if (cast(sampler, Int) < 0) {
 				#end
-                    this._samplers.splice(index, 1);
-                    index--;
-                }
+					this._samplers.splice(index, 1);
+					index--;
+				}
 				
 				index++;
             }
@@ -211,7 +218,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			
         } catch (e:Dynamic) {
 			trace(e);
-			#if js
+			#if (js || purejs)
 			// Is it a problem with precision?
 			if (e.message.indexOf("highp") != -1) {
 				vertexSourceCode = StringTools.replace(vertexSourceCode, "precision highp float", "precision mediump float");
@@ -333,6 +340,18 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		return this;
 	}
+	
+	inline public function setMatrix3x3(uniformName:String, matrix:Float32Array):Effect {
+        this._engine.setMatrix3x3(this.getUniform(uniformName), matrix);
+		
+        return this;
+    }
+
+    inline public function setMatrix2x2(uniformname:String, matrix:Float32Array):Effect {
+        this._engine.setMatrix2x2(this.getUniform(uniformname), matrix);
+		
+        return this;
+    }
 
 	inline public function setFloat(uniformName:String, value:Float):Effect {
 		if (!(this._valueCache.exists(uniformName) && this._valueCache[uniformName][0] == value)) {
