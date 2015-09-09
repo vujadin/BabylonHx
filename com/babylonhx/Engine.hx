@@ -156,7 +156,7 @@ import nme.display.OpenGLView;
 	public static var keyUp:Array<Dynamic> = [];
 	public static var keyDown:Array<Dynamic> = [];
 	
-	#if (lime || nme || purejs)
+	#if (lime || openfl || nme || purejs)
 	public var width:Int;
 	public var height:Int;
 	#end
@@ -180,7 +180,7 @@ import nme.display.OpenGLView;
 		#end
 		
 		// TODO: make it for Snow also ??
-		#if (lime || nme)
+		#if (lime || openfl || nme)
 		this.width = 800;
 		this.height = 600;
 		#end
@@ -293,7 +293,7 @@ import nme.display.OpenGLView;
 		/*if (this._currentRenderTarget != null) {
 			return Std.int(this._currentRenderTarget._width);
 		}*/
-		#if (lime || nme || purejs)
+		#if (lime || openfl || nme || purejs)
 		return width;
 		#else
 		return app.width;
@@ -304,7 +304,7 @@ import nme.display.OpenGLView;
 		/*if (this._currentRenderTarget != null) {
 			return Std.int(this._currentRenderTarget._height);
 		}*/
-		#if (lime || nme || purejs)
+		#if (lime || openfl || nme || purejs)
 		return height;
 		#else
 		return app.height;

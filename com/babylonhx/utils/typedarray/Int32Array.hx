@@ -16,6 +16,10 @@ package com.babylonhx.utils.typedarray;
 
 	typedef Int32Array = lime.utils.Int32Array;
 	
+#elseif openfl
+
+	typedef Int32Array = openfl.utils.Int32Array;	
+	
 #elseif nme
 
 	typedef Int32Array = nme.utils.Int32Array;
