@@ -889,6 +889,17 @@ package com.babylonhx.utils;
     typedef GLShader            = lime.graphics.opengl.GLShader;
     typedef GLTexture           = lime.graphics.opengl.GLTexture;
     typedef GLUniformLocation   = lime.graphics.opengl.GLUniformLocation;
+
+#elseif openfl
+
+    typedef GL                  = openfl.gl.GL;
+    typedef GLBuffer            = openfl.gl.GLBuffer;
+    typedef GLFramebuffer       = openfl.gl.GLFramebuffer;
+    typedef GLProgram           = openfl.gl.GLProgram;
+    typedef GLRenderbuffer      = openfl.gl.GLRenderbuffer;
+    typedef GLShader            = openfl.gl.GLShader;
+    typedef GLTexture           = openfl.gl.GLTexture;
+    typedef GLUniformLocation   = openfl.gl.GLUniformLocation;	
 	
 #elseif nme
 

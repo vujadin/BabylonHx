@@ -16,6 +16,10 @@ package com.babylonhx.utils.typedarray;
 
 	typedef ArrayBuffer = lime.utils.ArrayBuffer;
 	
+#elseif openfl
+
+	typedef ArrayBuffer = openfl.utils.ArrayBuffer;	
+	
 #elseif nme
 
 	typedef ArrayBuffer = nme.utils.ArrayBuffer;

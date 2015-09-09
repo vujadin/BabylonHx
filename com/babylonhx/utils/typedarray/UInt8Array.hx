@@ -15,6 +15,10 @@ package com.babylonhx.utils.typedarray;
 #elseif lime
 
 	typedef UInt8Array = lime.utils.UInt8Array;
+
+#elseif openfl
+
+	typedef UInt8Array = openfl.utils.UInt8Array;	
 	
 #elseif nme
 

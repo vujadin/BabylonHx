@@ -21,6 +21,8 @@ import haxe.Timer;
 
 #if lime
 typedef Assets = lime.Assets;
+#elseif openfl
+typedef Assets = openfl.Assets;
 #elseif nme
 typedef Assets = nme.Assets;
 #end
@@ -93,7 +95,7 @@ typedef Assets = nme.Assets;
 	public static function delay(f:Void->Void, time_ms:Int) {
 		#if snow
 		var t = new snow.api.Timer(time_ms);
-		#elseif (lime || nme || purejs)
+		#elseif (lime || openfl || nme || purejs)
 		var t = new haxe.Timer(time_ms);
 		#elseif kha
 		
@@ -449,10 +451,10 @@ typedef Assets = nme.Assets;
     }
 	#end // if luxe
 	
-	#elseif (lime || nme)
+	#elseif (lime || openfl || nme)
 	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {			
 		if (type == "") {
-			#if lime
+			#if (lime || openfl)
 			if (Assets.exists(path)) {
 			#else // nme
 			if (Assets.info.exists(path)) {
@@ -479,7 +481,7 @@ typedef Assets = nme.Assets;
 			}
 		} 
 		else {
-			#if lime
+			#if (lime || openfl)
 			if (Assets.exists(path)) {
 			#else // nme
 			if (Assets.info.exists(path)) {
@@ -502,7 +504,7 @@ typedef Assets = nme.Assets;
 						callBackFunction(data);
 						
 					case "img":
-						#if lime
+						#if (lime || openfl)
 						var img = Assets.getImage(path);
 						var image = new Image(img.data, img.width, img.height);
 						if (callbackFn != null) {
@@ -638,12 +640,12 @@ typedef Assets = nme.Assets;
     } 
 	#end
 	
-	#elseif (lime || nme)
+	#elseif (lime || openfl || nme)
 	public static function LoadImage(url:String, onload:Image-> Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
-		#if (lime && html5)
+		#if ((lime || openfl) && html5)
 		var img = Assets.getImage(url);
 		onload(new Image(img.data, img.width, img.height));
-		#elseif lime
+		#elseif (lime || openfl)
 		if (Assets.exists(url)) {
 			var future = Assets.loadImage(url);
 			future.onComplete(function(img:lime.graphics.Image):Void {

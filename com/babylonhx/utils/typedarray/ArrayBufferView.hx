@@ -16,6 +16,10 @@ package com.babylonhx.utils.typedarray;
 
 	typedef ArrayBufferView = lime.utils.ArrayBufferView;
 	
+#elseif openfl
+
+	typedef ArrayBufferView = openfl.utils.ArrayBufferView;	
+	
 #elseif nme
 
 	typedef ArrayBufferView = nme.utils.ArrayBufferView;
