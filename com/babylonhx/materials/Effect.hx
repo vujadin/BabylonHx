@@ -198,8 +198,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
                 var sampler = this.getUniform(this._samplers[index]);				
 				#if (js || purejs || html5 || web || snow || nme)
 				if (sampler == null) {
-				#else
-				if (cast(sampler, Int) < 0) {
+				#else // openfl/lime
+				if ( #if legacy sampler != null && #end cast(sampler, Int) < 0) {
 				#end
 					this._samplers.splice(index, 1);
 					index--;

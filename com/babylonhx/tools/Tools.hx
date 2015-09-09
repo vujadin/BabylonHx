@@ -306,7 +306,7 @@ typedef Assets = nme.Assets;
 	#if luxe
 	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {	
 		if (type == "") {
-			if (Luxe.core.app.assets.listed(path)) {
+			//if (Luxe.core.app.assets.listed(path)) {
 				if (StringTools.endsWith(path, "bbin")) {
 					var callBackFunction = callbackFn != null ?
 						function(result:Dynamic) {
@@ -329,13 +329,13 @@ typedef Assets = nme.Assets;
 						}
 					);
 				}
-			} 
-			else {
-				trace("File '" + path + "' doesn't exist!");
-			}
+			//} 
+			//else {
+			//	trace("File '" + path + "' doesn't exist!");
+			//}
 		} 
 		else {
-			if(Luxe.core.app.assets.listed(path)) {
+			//if(Luxe.core.app.assets.listed(path)) {
 				switch(type) {
 					case "text":
 						var callBackFunction = callbackFn != null ?
@@ -371,16 +371,16 @@ typedef Assets = nme.Assets;
 							}
 						);
 				}
-			} 
-			else {
-				trace("File '" + path + "' doesn't exist!");
-			}
+			//} 
+			//else {
+			//	trace("File '" + path + "' doesn't exist!");
+			//}
 		}
     }
 	#else // snow
 	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {	
 		if (type == "") {
-			if (SnowApp._snow.assets.listed(path)) {
+			//if (SnowApp._snow.assets.listed(path)) {
 				if (StringTools.endsWith(path, "bbin")) {
 					var callBackFunction = callbackFn != null ?
 						function(result:Dynamic) {
@@ -403,11 +403,11 @@ typedef Assets = nme.Assets;
 						}
 					);
 				}
-			} else {
-				trace("File '" + path + "' doesn't exist!");
-			}
+			//} else {
+			//	trace("File '" + path + "' doesn't exist!");
+			//}
 		} else {
-			if(SnowApp._snow.assets.listed(path)) {
+			//if(SnowApp._snow.assets.listed(path)) {
 				switch(type) {
 					case "text":
 						var callBackFunction = callbackFn != null ?
@@ -443,10 +443,10 @@ typedef Assets = nme.Assets;
 							}
 						);
 				}
-			} 
-			else {
-				trace("File '" + path + "' doesn't exist!");
-			}
+			//} 
+			//else {
+			//	trace("File '" + path + "' doesn't exist!");
+			//}
 		}
     }
 	#end // if luxe
@@ -504,9 +504,15 @@ typedef Assets = nme.Assets;
 						callBackFunction(data);
 						
 					case "img":
-						#if (lime || openfl)
+						#if lime
 						var img = Assets.getImage(path);
 						var image = new Image(img.data, img.width, img.height);
+						if (callbackFn != null) {
+							callbackFn(image);
+						}
+						#elseif openfl
+						var img = Assets.getBitmapData(path);
+						var image = new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height);
 						if (callbackFn != null) {
 							callbackFn(image);
 						}
@@ -604,7 +610,7 @@ typedef Assets = nme.Assets;
 	
 	#if luxe
 	public static function LoadImage(url:String, onload:Image->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
-		if (Luxe.core.app.assets.listed(url)) {
+		//if (Luxe.core.app.assets.listed(url)) {
 			var callBackFunction = function(img:Dynamic) {
 				var i = new Image(img.image.pixels, img.image.width, img.image.height);
 				onload(i);
@@ -615,14 +621,14 @@ typedef Assets = nme.Assets;
 					callBackFunction(asset);
 				}
 			);
-		} 
-		else {
-			trace("Image '" + url + "' doesn't exist!");
-		}
+		//} 
+		//else {
+		//	trace("Image '" + url + "' doesn't exist!");
+		//}
     } 
 	#else
 	public static function LoadImage(url:String, onload:Image->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
-		if (SnowApp._host.app.assets.listed(url)) {
+		//if (SnowApp._host.app.assets.listed(url)) {
 			var callBackFunction = function(img:Dynamic) {
 				var i = new Image(img.image.pixels, img.image.width, img.image.height);
 				onload(i);
@@ -633,10 +639,10 @@ typedef Assets = nme.Assets;
 					callBackFunction(asset);
 				}
 			);
-		} 
-		else {
-			trace("Image '" + url + "' doesn't exist!");
-		}
+		//} 
+		//else {
+		//	trace("Image '" + url + "' doesn't exist!");
+		//}
     } 
 	#end
 	
@@ -645,13 +651,21 @@ typedef Assets = nme.Assets;
 		#if ((lime || openfl) && html5)
 		var img = Assets.getImage(url);
 		onload(new Image(img.data, img.width, img.height));
-		#elseif (lime || openfl)
+		#elseif lime
 		if (Assets.exists(url)) {
 			var future = Assets.loadImage(url);
 			future.onComplete(function(img:lime.graphics.Image):Void {
 				var image = new Image(img.data, img.width, img.height);
 				onload(image);
 			});						
+		} 
+		else {
+			trace("Image '" + url + "' doesn't exist!");
+		}
+		#elseif openfl
+		if (Assets.exists(url)) {
+			var img = Assets.getBitmapData(url); 
+			onload(new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height));			
 		} 
 		else {
 			trace("Image '" + url + "' doesn't exist!");
