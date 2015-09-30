@@ -10,7 +10,7 @@ import com.babylonhx.mesh.AbstractMesh;
  */
 class ArcFollowCamera extends TargetCamera {
 	
-	private _cartesianCoordinates:Vector3 = Vector3.Zero();
+	private var _cartesianCoordinates:Vector3 = Vector3.Zero();
 	
 	public var alpha:Float;
 	public var beta:Float;
@@ -20,6 +20,12 @@ class ArcFollowCamera extends TargetCamera {
 
 	public function new(name:String, alpha:Float, beta:Float, radius:Float, target:AbstractMesh, scene:Scene) {
 		super(name, Vector3.Zero(), scene);
+		
+		this.alpha = alpha;
+		this.beta = beta;
+		this.radius = radius;
+		this.target = target;
+		
 		this.follow();
 	}
 	
@@ -32,7 +38,7 @@ class ArcFollowCamera extends TargetCamera {
 		this.setTarget(this.target.position);
 	}
 
-	public function _checkInputs() {
+	override public function _checkInputs() {
 		super._checkInputs();
 		this.follow();
 	}

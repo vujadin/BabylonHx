@@ -70,8 +70,10 @@ import com.babylonhx.animations.IAnimatable;
 	private var _globalPosition:Vector3 = Vector3.Zero();
 	public var globalPosition(get, never):Vector3;
 	
-	public var getProjectionMatrix:Bool->Matrix;
+	// VK: do not delete these !!!
 	public var _getViewMatrix:Void->Matrix;
+	public var getProjectionMatrix:Bool->Matrix;
+	
 	
 	#if purejs
 	private var eventPrefix:String = "mouse";
@@ -389,17 +391,6 @@ import com.babylonhx.animations.IAnimatable;
 		return this._projectionMatrix;
 	}
 	
-	public function getTarget():Vector3 {
-		return Vector3.Zero();
-	}
-	
-	public function getFrontPosition(num:Float):Vector3 {
-		var dir = this.getTarget().subtract(this.position);
-		dir.normalize();
-		dir.scaleInPlace(num);		
-		return this.position.add(dir);
-	}
-
 	public function dispose() {
 		// Remove from scene
 		this.getScene().removeCamera(this);
@@ -509,14 +500,14 @@ import com.babylonhx.animations.IAnimatable;
 	}
 	
 	/**
-	 * May needs to be overridden by children so sub has required properties to be copied
+	 * Maybe needs to be overridden by children so sub has required properties to be copied
 	 */
 	public function createRigCamera(name:String, cameraIndex:Int):Camera {
 		return null;
 	}
 	
 	/**
-	 * May needs to be overridden by children
+	 * Maybe needs to be overridden by children
 	 */
 	public function _updateRigCameras() {
 		for (i in 0...this._rigCameras.length) {

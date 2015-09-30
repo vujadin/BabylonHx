@@ -52,8 +52,9 @@ import com.babylonhx.math.Vector3;
 		
 		var distance = Math.sqrt((x * x) + (y * y) + (z * z));
 		
-		if (Math.abs(this.radiusWorld - distance) < Engine.Epsilon)
+		if (Math.abs(this.radiusWorld - distance) < Engine.Epsilon) {
 			return false;
+		}
 			
 		return true;
 	}
@@ -66,8 +67,9 @@ import com.babylonhx.math.Vector3;
 		
 		var distance = Math.sqrt((x * x) + (y * y) + (z * z));
 		
-		if (sphere0.radiusWorld + sphere1.radiusWorld < distance)
+		if (sphere0.radiusWorld + sphere1.radiusWorld < distance) {
 			return false;
+		}
 			
 		return true;
 	}

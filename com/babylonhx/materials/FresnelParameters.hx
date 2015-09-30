@@ -19,4 +19,16 @@ import com.babylonhx.math.Color3;
 		
 	}
 	
+	public function clone():FresnelParameters {
+		var newFresnelParameters = new FresnelParameters();
+		
+		newFresnelParameters.isEnabled = this.isEnabled;
+		newFresnelParameters.leftColor = this.leftColor;
+		newFresnelParameters.rightColor = this.rightColor;
+		newFresnelParameters.bias = this.bias;
+		newFresnelParameters.power = this.power;
+		
+		return newFresnelParameters;
+	}
+	
 }

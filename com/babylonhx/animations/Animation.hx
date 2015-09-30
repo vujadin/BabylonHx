@@ -383,16 +383,56 @@ import com.babylonhx.mesh.AbstractMesh;
 		
 		// Set value
 		if (this.targetPropertyPath.length > 1) {
-			var property = Reflect.getProperty(this._target, this.targetPropertyPath[0]);
+			var property:Dynamic = null;
+			switch(this.targetPropertyPath[0]) {
+				case "scaling":
+					property = untyped this._target.scaling;
+					
+				case "position":
+					property = untyped this._target.position;
+					
+				case "rotation":
+					property = untyped this._target.rotation;
+					
+				default: 
+					property = Reflect.getProperty(this._target, this.targetPropertyPath[0]);
+			}			
 			
 			for (index in 1...this.targetPropertyPath.length - 1) {
 				property = Reflect.getProperty(property, this.targetPropertyPath[index]);
 			}
 			
-			Reflect.setProperty(property, this.targetPropertyPath[this.targetPropertyPath.length - 1], currentValue);
+			switch(this.targetPropertyPath[this.targetPropertyPath.length - 1]) {					
+				case "x":
+					untyped property.x = currentValue;
+					
+				case "y":
+					untyped property.y = currentValue;
+					
+				case "z":
+					untyped property.z = currentValue;
+					
+				default:
+					Reflect.setProperty(property, this.targetPropertyPath[this.targetPropertyPath.length - 1], currentValue);
+			}			
 		} 
 		else {
-			Reflect.setProperty(this._target, this.targetPropertyPath[0], currentValue);
+			switch(this.targetPropertyPath[0]) {
+				case "_matrix":
+					untyped this._target._matrix = currentValue;
+					
+				case "rotation":
+					untyped this._target.rotation = currentValue;
+					
+				case "position":
+					untyped this._target.position = currentValue;
+					
+				case "scaling":
+					untyped this._target.scaling = currentValue;
+									
+				default:
+					Reflect.setProperty(this._target, this.targetPropertyPath[0], currentValue);
+			}
 		}
 		
 		if (this._target.markAsDirty != null) {

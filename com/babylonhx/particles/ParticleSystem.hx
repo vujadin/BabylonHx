@@ -49,6 +49,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public var maxAngularSpeed:Float = 0;
 
 	public var particleTexture:Texture;
+	
+	public var layerMask:Int = 0x0FFFFFFF;
 
 	public var onDispose:Void->Void;
 	public var updateFunction:Array<Particle>->Void;

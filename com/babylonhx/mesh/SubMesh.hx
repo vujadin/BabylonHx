@@ -106,7 +106,8 @@ import com.babylonhx.tools.Tools;
 		
 		if (this.indexStart == 0 && this.indexCount == indices.length) {
 			extend = Tools.ExtractMinAndMax(data, this.verticesStart, this.verticesCount);
-		} else {
+		} 
+		else {
 			extend = Tools.ExtractMinAndMaxIndexed(data, indices, this.indexStart, this.indexCount);
 		}
 		this._boundingInfo = new BoundingInfo(extend.minimum, extend.maximum);
@@ -127,7 +128,7 @@ import com.babylonhx.tools.Tools;
 		return this._boundingInfo.isInFrustum(frustumPlanes);
 	}
 
-	public function render(enableAlphaMode:Bool) {
+	inline public function render(enableAlphaMode:Bool) {
 		this._renderingMesh.render(this, enableAlphaMode);
 	}
 
@@ -159,29 +160,31 @@ import com.babylonhx.tools.Tools;
 
 	inline public function intersects(ray:Ray, positions:Array<Vector3>, indices:Array<Int>, fastCheck:Bool = false):IntersectionInfo {
 		var intersectInfo:IntersectionInfo = null;
-		
-		// Triangles test
-		var index:Int = this.indexStart;
-		while (index < this.indexStart + this.indexCount) {
-			var p0 = positions[indices[index]];
-			var p1 = positions[indices[index + 1]];
-			var p2 = positions[indices[index + 2]];
-			
-			var currentIntersectInfo = ray.intersectsTriangle(p0, p1, p2);
-			
-			if (currentIntersectInfo != null) {
-				if(currentIntersectInfo.distance < 0 ) continue;
-				if (fastCheck || intersectInfo == null || currentIntersectInfo.distance < intersectInfo.distance) {
-					intersectInfo = currentIntersectInfo;
-					intersectInfo.faceId = Std.int(index / 3);
-					
-					if (fastCheck) {
-						break;
+		trace("submesh: intersects");
+		if (positions != null && indices != null) {		
+			// Triangles test
+			var index:Int = this.indexStart;
+			while (index < this.indexStart + this.indexCount) {
+				var p0 = positions[indices[index]];
+				var p1 = positions[indices[index + 1]];
+				var p2 = positions[indices[index + 2]];
+				
+				var currentIntersectInfo = ray.intersectsTriangle(p0, p1, p2);
+				
+				if (currentIntersectInfo != null) {
+					if(currentIntersectInfo.distance < 0 ) continue;
+					if (fastCheck || intersectInfo == null || currentIntersectInfo.distance < intersectInfo.distance) {
+						intersectInfo = currentIntersectInfo;
+						intersectInfo.faceId = Std.int(index / 3);
+						
+						if (fastCheck) {
+							break;
+						}
 					}
 				}
+				
+				index += 3;
 			}
-			
-			index += 3;
 		}
 		
 		return intersectInfo;

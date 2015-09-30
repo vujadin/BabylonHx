@@ -71,6 +71,9 @@ class StandardMaterialDefines {
 		defines["BONES4"] = false;
 		defines["INSTANCES"] = false;
 		defines["GLOSSINESS"] = false;
+		defines["ROUGHNESS"] = false;
+		defines["EMISSIVEASILLUMINATION"] = false;
+		defines["REFLECTIONFRESNELFROMSPECULAR"] = false;
 		
 		BonesPerMesh = 0;
 		
@@ -79,14 +82,17 @@ class StandardMaterialDefines {
 		}
 	}
 
-	public function isEqual(other:StandardMaterialDefines):Bool {
+	var ret:Bool = true;
+	inline public function isEqual(other:StandardMaterialDefines):Bool {
+		ret = true;
 		for (prop in this._keys) {
 			if (this.defines[prop] != other.defines[prop]) {
-				return false;
+				ret = false;
+				break;
 			}
 		}
 		
-		return true;
+		return ret;
 	}
 
 	public function cloneTo(other:StandardMaterialDefines) {

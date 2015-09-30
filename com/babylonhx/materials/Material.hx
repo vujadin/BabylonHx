@@ -19,6 +19,9 @@ import com.babylonhx.mesh.Mesh;
 	public static var TriangleFillMode:Int = 0;
 	public static var WireFrameFillMode:Int = 1;
 	public static var PointFillMode:Int = 2;
+	
+	public static var ClockWiseSideOrientation:Int = 0;
+	public static var CounterClockWiseSideOrientation:Int = 1;
 
 
 	public var id:String;
@@ -28,6 +31,7 @@ import com.babylonhx.mesh.Mesh;
 	public var state:String = "";
 	public var alpha:Float = 1.0;
 	public var backFaceCulling:Bool = true;
+	public var sideOrientation:Int = Material.CounterClockWiseSideOrientation;
 	public var onCompiled:Effect->Void;
 	public var onError:Effect->String->Void;
 	public var onDispose:Void->Void;
@@ -35,6 +39,7 @@ import com.babylonhx.mesh.Mesh;
 	public var getRenderTargetTextures:Void->SmartArray; // SmartArray<RenderTargetTexture>;
 	public var alphaMode:Int = Engine.ALPHA_COMBINE;
 	public var disableDepthWrite:Bool = false;
+	public var fogEnabled:Bool = false;
 	
 	public var __smartArrayFlags:Array<Int>;
 
@@ -42,6 +47,7 @@ import com.babylonhx.mesh.Mesh;
 	public var _wasPreviouslyReady:Bool = false;
 	private var _scene:Scene;
 	private var _fillMode:Int = Material.TriangleFillMode;
+	private var _cachedDepthWriteState:Bool;
 
 	public var pointSize:Float = 1.0;
 	public var zOffset:Float = 0.0;
@@ -72,10 +78,7 @@ import com.babylonhx.mesh.Mesh;
 		this._fillMode = value;
 		return value;
 	}
-	
-	private var _cachedDepthWriteState:Bool;
-	
-	
+		
 
 	public function new(name:String, scene:Scene, doNotAdd:Bool = false) {
 		this.id = name;
@@ -127,7 +130,7 @@ import com.babylonhx.mesh.Mesh;
 		var engine = this._scene.getEngine();
 		
 		engine.enableEffect(this._effect);
-		engine.setState(this.backFaceCulling, this.zOffset);
+		engine.setState(this.backFaceCulling, this.zOffset, false, this.sideOrientation == Material.ClockWiseSideOrientation);
 	}
 
 	public function bind(world:Matrix, ?mesh:Mesh) {
@@ -153,6 +156,10 @@ import com.babylonhx.mesh.Mesh;
             engine.setDepthWrite(this._cachedDepthWriteState);
         }
 	}
+	
+	public function clone(name:String):Material {
+		return null;
+	}
 
 	public function dispose(forceDisposeEffect:Bool = false) {
 		// Remove from scene
@@ -168,6 +175,23 @@ import com.babylonhx.mesh.Mesh;
 		if (this.onDispose != null) {
 			this.onDispose();
 		}
+	}
+	
+	public function copyTo(other:Material) {
+		other.checkReadyOnlyOnce = this.checkReadyOnlyOnce;
+		other.checkReadyOnEveryCall = this.checkReadyOnEveryCall;
+		other.alpha = this.alpha;
+		other.fillMode = this.fillMode;
+		other.backFaceCulling = this.backFaceCulling;
+		other.wireframe = this.wireframe;
+		other.fogEnabled = this.fogEnabled;
+		other.wireframe = this.wireframe;
+		other.zOffset = this.zOffset;
+		other.alphaMode = this.alphaMode;
+		other.sideOrientation = this.sideOrientation;
+		other.disableDepthWrite = this.disableDepthWrite;
+		other.pointSize = this.pointSize;
+		other.pointsCloud = this.pointsCloud;
 	}
 	
 }

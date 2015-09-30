@@ -44,13 +44,15 @@ class EdgesRenderer implements ISmartArrayCompatible {
 	private var _vb1:VertexBuffer;
 	private var _ib:WebGLBuffer;
 	private var _buffers:Map<String, VertexBuffer> = new Map();
+	private var _checkVerticesInsteadOfIndices:Bool = false;
 	
 	public var __smartArrayFlags:Array<Int>;
 	
 
 	// Beware when you use this class with complex objects as the adjacencies computation can be really long
-	public function new(source:AbstractMesh, epsilon:Float = 0.95) {
+	public function new(source:AbstractMesh, epsilon:Float = 0.95, checkVerticesInsteadOfIndices:Bool = false) {
 		this._source = source;
+		this._checkVerticesInsteadOfIndices = checkVerticesInsteadOfIndices;
 		
 		this._epsilon = epsilon;
 		
@@ -91,6 +93,22 @@ class EdgesRenderer implements ISmartArrayCompatible {
 		}
 		
 		if (pa == p2 && pb == p0 || pa == p0 && pb == p2) {
+			return 2;
+		}
+		
+		return -1;
+	}
+	
+	private function _processEdgeForAdjacenciesWithVertices(pa:Vector3, pb:Vector3, p0:Vector3, p1:Vector3, p2:Vector3):Int {
+		if (pa.equalsWithEpsilon(p0) && pb.equalsWithEpsilon(p1) || pa.equalsWithEpsilon(p1) && pb.equalsWithEpsilon(p0)) {
+			return 0;
+		}
+		
+		if (pa.equalsWithEpsilon(p1) && pb.equalsWithEpsilon(p2) || pa.equalsWithEpsilon(p2) && pb.equalsWithEpsilon(p1)) {
+			return 1;
+		}
+		
+		if (pa.equalsWithEpsilon(p2) && pb.equalsWithEpsilon(p0) || pa.equalsWithEpsilon(p0) && pb.equalsWithEpsilon(p2)) {
 			return 2;
 		}
 		
@@ -222,13 +240,28 @@ class EdgesRenderer implements ISmartArrayCompatible {
 					
 					switch (edgeIndex) {
 						case 0:
-							otherEdgeIndex = this._processEdgeForAdjacencies(indices[index * 3], indices[index * 3 + 1], otherP0, otherP1, otherP2);
+							if (this._checkVerticesInsteadOfIndices) {
+								otherEdgeIndex = this._processEdgeForAdjacenciesWithVertices(faceAdjacencies.p0, faceAdjacencies.p1, otherFaceAdjacencies.p0, otherFaceAdjacencies.p1, otherFaceAdjacencies.p2);
+							} 
+							else {
+								otherEdgeIndex = this._processEdgeForAdjacencies(indices[index * 3], indices[index * 3 + 1], otherP0, otherP1, otherP2);
+							}
 							
 						case 1:
-							otherEdgeIndex = this._processEdgeForAdjacencies(indices[index * 3 + 1], indices[index * 3 + 2], otherP0, otherP1, otherP2);
+							if (this._checkVerticesInsteadOfIndices) {
+								otherEdgeIndex = this._processEdgeForAdjacenciesWithVertices(faceAdjacencies.p1, faceAdjacencies.p2, otherFaceAdjacencies.p0, otherFaceAdjacencies.p1, otherFaceAdjacencies.p2);
+							} 
+							else {
+								otherEdgeIndex = this._processEdgeForAdjacencies(indices[index * 3 + 1], indices[index * 3 + 2], otherP0, otherP1, otherP2);
+							}
 							
 						case 2:
-							otherEdgeIndex = this._processEdgeForAdjacencies(indices[index * 3 + 2], indices[index * 3], otherP0, otherP1, otherP2);
+							if (this._checkVerticesInsteadOfIndices) {
+								otherEdgeIndex = this._processEdgeForAdjacenciesWithVertices(faceAdjacencies.p2, faceAdjacencies.p0, otherFaceAdjacencies.p0, otherFaceAdjacencies.p1, otherFaceAdjacencies.p2);
+							} 
+							else {
+								otherEdgeIndex = this._processEdgeForAdjacencies(indices[index * 3 + 2], indices[index * 3], otherP0, otherP1, otherP2);
+							}
 							
 					}
 					

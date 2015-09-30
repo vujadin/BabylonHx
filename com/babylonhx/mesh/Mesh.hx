@@ -99,6 +99,16 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	private var _idx:Array<Int>;
 	
 
+	/**
+	  * @constructor
+	  * @param {string} name - The value used by scene.getMeshByName() to do a lookup.
+	  * @param {Scene} scene - The scene to add this mesh to.
+	  * @param {Node} parent - The parent of this mesh, if it has one
+	  * @param {Mesh} source - An optional Mesh from which geometry is shared, cloned.
+	  * @param {boolean} doNotCloneChildren - When cloning, skip cloning child meshes of source, default False.
+	  *                  When false, achieved by calling a clone(), also passing False.
+	  *                  This will make creation of children, recursive.
+	  */
 	public function new(name:String, scene:Scene, parent:Node = null, ?source:Mesh, doNotCloneChildren:Bool = false) {
 		super(name, scene);
 		
@@ -110,6 +120,13 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			
 			// copy
 			_deepCopy(source, this);
+			
+			this.id = name + "." + source.id;
+			
+			if (source != null) {
+				// Material
+                this.material = source.material;
+			}
 						
 			if (!doNotCloneChildren) {
 				// Children
@@ -170,7 +187,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		dest._localTranslation = source._localTranslation.clone();
 		dest._localWorld = source._localWorld;
 		dest._masterMesh = source._masterMesh;		// ??
-		dest._material = source._material;
+		//dest._material = source._material;
 		dest._newPositionForCollisions = source._newPositionForCollisions.clone();
 		dest._oldPositionForCollisions = source._oldPositionForCollisions.clone();
 		dest._onAfterRenderCallbacks = source._onAfterRenderCallbacks;
@@ -1451,13 +1468,13 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
         return disc;
     }
 	
-	public static function CreateBox(name:String, size:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+	public static function CreateBox(name:String, options:Dynamic, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
 		var box = new Mesh(name, scene);
-		var vertexData = VertexData.CreateBox(size, sideOrientation);
+		var vertexData = VertexData.CreateBox(options, sideOrientation);
 		
 		if (scene.isPhysicsEnabled()) {
 			box.physicsDim = { };
-			box.physicsDim.size = size;
+			box.physicsDim.size = options;
 		}
 		
 		vertexData.applyToMesh(box, updatable);
@@ -1465,18 +1482,34 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return box;
 	}
 	
-	public static function CreateSphere(name:String, segments:Int, diameter:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		var sphere = new Mesh(name, scene);
-		var vertexData = VertexData.CreateSphere(segments, diameter, sideOrientation);
-		
-		if (scene.isPhysicsEnabled()) {
-			sphere.physicsDim = { };
-			sphere.physicsDim.diameter = diameter / 2;
+	public static function CreateSphere(name:String, options:Dynamic, diameterOrScene:Dynamic, ?scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+		if (Std.is(diameterOrScene, Scene)) {
+			scene = diameterOrScene;
+			updatable = options.updatable;
+		} 
+		else {
+			var segments = options;
+			
+			options = {
+				segments: segments,
+				diameterX: diameterOrScene,
+				diameterY: diameterOrScene,
+				diameterZ: diameterOrScene,
+				sideOrientation: sideOrientation
+			}
 		}
+		
+		var sphere = new Mesh(name, scene);
+		var vertexData = VertexData.CreateSphere(options);
 		
 		vertexData.applyToMesh(sphere, updatable);
 		
-		return sphere;
+		if (scene.isPhysicsEnabled()) {
+			sphere.physicsDim = { };
+			sphere.physicsDim.diameter = options.diameterX / 2;
+		}
+		
+		return sphere;		
 	}
 
 	// Cylinder and cone (Code inspired by SharpDX.org)
@@ -1572,30 +1605,86 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	// Lines
 	public static function CreateLines(name:String, points:Array<Vector3>, scene:Scene, updatable:Bool = false, linesInstance:LinesMesh = null):LinesMesh {
 		if (linesInstance != null) { // lines update
-			var positionsOfLines = function (points:Array<Vector3>):Dynamic {
-				var positionFunction = function (positions:Array<Float>) {
-					var i:Int = 0;
-					for(p in 0...points.length) {
-						positions[i] = points[p].x;
-						positions[i + 1] = points[p].y;
-						positions[i + 2] = points[p].z;
-						i += 3;
-					}
-				};
-				return positionFunction;
+			var positionFunction = function (positions:Array<Float>) {
+				var i:Int = 0;
+				for(p in 0...points.length) {
+					positions[i] = points[p].x;
+					positions[i + 1] = points[p].y;
+					positions[i + 2] = points[p].z;
+					i += 3;
+				}
 			};
-			var positionFunction = positionsOfLines(points);
 			linesInstance.updateMeshPositions(positionFunction, false);
 			
 			return linesInstance;			
 		}
 		
 		// lines creation
-		var lines = new LinesMesh(name, scene, updatable);
+		var lines = new LinesMesh(name, scene);
 		var vertexData = VertexData.CreateLines(points);
 		vertexData.applyToMesh(lines, updatable);
 		
 		return lines;
+	}
+	
+	// Dashed Lines
+    public static function CreateDashedLines(name:String, points:Array<Vector3>, ?dashSize:Float, ?gapSize:Float, ?dashNb:Float, scene:Scene, ?updatable:Bool = false, linesInstance:LinesMesh = null):LinesMesh {
+		if (linesInstance != null) {  //  dashed lines update
+			var positionFunction = function(positions:Array<Float>) {
+				var curvect:Vector3 = Vector3.Zero();
+				var nbSeg:Float = positions.length / 6;
+				var lg:Float = 0;
+				var nb:Int = 0;
+				var shft:Float = 0;
+				var dashshft:Float = 0;
+				var curshft:Float = 0;
+				var p:Int = 0;
+				var i:Int = 0;
+				var j:Int = 0;
+				for (i in 0...points.length - 1) {
+					points[i + 1].subtractToRef(points[i], curvect);
+					lg += curvect.length();
+				}
+				shft = lg / nbSeg;
+				dashshft = linesInstance.dashSize * shft / (linesInstance.dashSize + linesInstance.gapSize);
+				while (i < points.length - 1) {
+					points[i + 1].subtractToRef(points[i], curvect);
+					nb = Math.floor(curvect.length() / shft);
+					curvect.normalize();
+					j = 0;
+					while (j < nb && p < positions.length) {
+						curshft = shft * j;
+						positions[p] = points[i].x + curshft * curvect.x;
+						positions[p + 1] = points[i].y + curshft * curvect.y;
+						positions[p + 2] = points[i].z + curshft * curvect.z;
+						positions[p + 3] = points[i].x + (curshft + dashshft) * curvect.x;
+						positions[p + 4] = points[i].y + (curshft + dashshft) * curvect.y;
+						positions[p + 5] = points[i].z + (curshft + dashshft) * curvect.z;
+						p += 6;
+						j++;
+					}
+					++i;
+				}
+				while (p < positions.length) {
+					positions[p] = points[i].x;
+					positions[p + 1] = points[i].y;
+					positions[p + 2] = points[i].z;
+					p += 3;
+				}
+			};
+			linesInstance.updateMeshPositions(positionFunction, false);
+			
+			return linesInstance;
+		}
+		
+		// dashed lines creation
+		var dashedLines = new LinesMesh(name, scene);
+		var vertexData = VertexData.CreateDashedLines(points, dashSize, gapSize, dashNb);
+		vertexData.applyToMesh(dashedLines, updatable);
+		dashedLines.dashSize = dashSize;
+		dashedLines.gapSize = gapSize;
+		
+		return dashedLines;
 	}
 	
 	// Extrusion

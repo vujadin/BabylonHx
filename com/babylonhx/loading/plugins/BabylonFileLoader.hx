@@ -88,24 +88,78 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			var parsedData:Dynamic = null;
 			if (Std.is(data, String)) {
 				parsedData = Json.parse(data);
-			} else if(Std.is(data, Bytes)) {
+			} 
+			else if(Std.is(data, Bytes)) {
 				//parsedData = MsgPack.decode(data);
-			} else {
+			} 
+			else {
 				trace("Unknown data type!");
 				return false;
 			}
-									
+				
             var loadedSkeletonsIds:Array<Int> = [];
-            var loadedMaterialsIds:Array<Int> = [];
+            var loadedMaterialsIds:Array<String> = [];
             var hierarchyIds:Array<Int> = [];
 			
 			var pdm:Array<Dynamic> = cast parsedData.meshes;
             for (index in 0...pdm.length) {
                 var parsedMesh = pdm[index];
+				
                 if (meshesNames == null || meshesNames == "" || isDescendantOf(parsedMesh, meshesNames, hierarchyIds)) {
 					if (Std.is(meshesNames, Array)) {
                         // Remove found mesh name from list.
                         meshesNames.splice(meshesNames.indexOf(parsedMesh.name), 1);
+                    }
+					
+					//Geometry?
+                    if (parsedMesh.geometryId != null) {
+                        //does the file contain geometries?
+                        if (parsedData.geometries != null) {
+                            //find the correct geometry and add it to the scene
+                            var found:Bool = false;
+                            for (geometryType in ["boxes", "spheres", "cylinders", "toruses", "grounds", "planes", "torusKnots", "vertexData"]) {
+                                if (found || Reflect.getProperty(parsedData.geometries, geometryType) == null || !(Std.is(Reflect.getProperty(parsedData.geometries, geometryType), Array))) {
+                                    continue;
+                                } 
+								else {
+									var geomData:Array<Dynamic> = cast Reflect.getProperty(parsedData.geometries, geometryType);
+									for (parsedGeometryData in geomData) {
+                                        if (parsedGeometryData.id == parsedMesh.geometryId) {
+                                            switch (geometryType) {
+                                                case "boxes":
+                                                    parseBox(parsedGeometryData, scene);
+                                                    
+                                                case "spheres":
+                                                    parseSphere(parsedGeometryData, scene);
+                                                    
+                                                case "cylinders":
+                                                    parseCylinder(parsedGeometryData, scene);
+                                                    
+                                                case "toruses":
+                                                    parseTorus(parsedGeometryData, scene);
+                                                    
+                                                case "grounds":
+                                                    parseGround(parsedGeometryData, scene);
+                                                    
+                                                case "planes":
+                                                    parsePlane(parsedGeometryData, scene);
+                                                    
+                                                case "torusKnots":
+                                                    parseTorusKnot(parsedGeometryData, scene);
+                                                    
+                                                case "vertexData":
+                                                    parseVertexData(parsedGeometryData, scene, rootUrl);
+                                                    
+                                            }
+                                            found = true;
+                                        }
+                                    }
+                                }
+                            }
+                            if (!found) {
+								trace("Geometry not found for mesh " + parsedMesh.id);
+                            }
+                        }
                     }
 					
                     // Material ?
@@ -119,7 +173,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
                                 if (parsedMultiMaterial.id == parsedMesh.materialId) {
 									var pdmmm:Array<Dynamic> = cast parsedMultiMaterial.materials;
                                     for (matIndex in 0...pdmmm.length) {
-                                        var subMatId:Int = pdmmm[matIndex];
+                                        var subMatId = pdmmm[matIndex];
                                         loadedMaterialsIds.push(subMatId);
                                         parseMaterialById(Std.string(subMatId), parsedData, scene, rootUrl);
                                     }
@@ -137,7 +191,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
                             parseMaterialById(cast parsedMesh.materialId, parsedData, scene, rootUrl);
                         }
                     }
-					
+										
                     // Skeleton ?
                     if (parsedMesh.skeletonId > -1 && scene.skeletons != null) {
                         var skeletonAlreadyLoaded = (loadedSkeletonsIds.indexOf(parsedMesh.skeletonId) > -1);
@@ -186,9 +240,11 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			var parsedData:Dynamic = null;
 			if (Std.is(data, String)) {
 				parsedData = Json.parse(data);
-			} else if(Std.is(data, Bytes)) {
+			} 
+			else if(Std.is(data, Bytes)) {
 				//parsedData = MsgPack.decode(data);
-			} else {
+			} 
+			else {
 				trace("Unknown data type!");
 				return false;
 			}
@@ -420,35 +476,41 @@ import com.babylonhx.utils.typedarray.Int32Array;
     }
 
     public static function loadCubeTexture(rootUrl:String, parsedTexture:Dynamic, scene:Scene):CubeTexture {
-        var texture = new CubeTexture(rootUrl + parsedTexture.name, scene);
+		var texture:CubeTexture = null;
 		
-        texture.name = parsedTexture.name;
-        texture.hasAlpha = parsedTexture.hasAlpha;
-        texture.level = parsedTexture.level;
-        texture.coordinatesMode = parsedTexture.coordinatesMode;
+		if ((parsedTexture.name != null || parsedTexture.extensions != null) && parsedTexture.isRenderTarget == false) {
+			texture = new CubeTexture(rootUrl + parsedTexture.name, scene, parsedTexture.extensions);
+			
+			texture.name = parsedTexture.name;
+			texture.hasAlpha = parsedTexture.hasAlpha;
+			texture.level = parsedTexture.level;
+			texture.coordinatesMode = parsedTexture.coordinatesMode;
+		}
 		
         return texture;
     }
 
-	public static function loadTexture(rootUrl:String, parsedTexture:Dynamic, scene:Scene):Dynamic {
-        if (parsedTexture.name != null && parsedTexture.isRenderTarget == true) {
-            return null;
-        }
-		
+	public static function loadTexture(rootUrl:String, parsedTexture:Dynamic, scene:Scene):Dynamic {		
         if (parsedTexture.isCube != null && parsedTexture.isCube == true) {
             return loadCubeTexture(rootUrl, parsedTexture, scene);
+        }
+		
+		if (parsedTexture.name == null && parsedTexture.isRenderTarget == false) {
+            return null;
         }
 		
         var texture:Texture = null;
 		
         if (parsedTexture.mirrorPlane != null) {
-            texture = new MirrorTexture(parsedTexture.name, parsedTexture.renderTargetSize, scene, true);
+            texture = new MirrorTexture(parsedTexture.name, parsedTexture.renderTargetSize, scene);
             cast(texture, MirrorTexture)._waitingRenderList = parsedTexture.renderList;
             cast(texture, MirrorTexture).mirrorPlane = Plane.FromArray(parsedTexture.mirrorPlane);
-        } else if (parsedTexture.isRenderTarget) {
-            texture = new RenderTargetTexture(parsedTexture.name, parsedTexture.renderTargetSize, scene, true);
+        } 
+		else if (parsedTexture.isRenderTarget) {
+            texture = new RenderTargetTexture(parsedTexture.name, parsedTexture.renderTargetSize, scene);
             cast(texture, RenderTargetTexture)._waitingRenderList = parsedTexture.renderList;
-        } else {
+        } 
+		else {
             texture = new Texture(rootUrl + parsedTexture.name, scene);
         }
 		
@@ -485,20 +547,20 @@ import com.babylonhx.utils.typedarray.Int32Array;
     public static function parseSkeleton(parsedSkeleton:Dynamic, scene:Scene):Skeleton {
         var skeleton = new Skeleton(parsedSkeleton.name, parsedSkeleton.id, scene);
 		try {
-        for (index in 0...parsedSkeleton.bones.length) {
-            var parsedBone = parsedSkeleton.bones[index];
-			
-            var parentBone = null;
-            if (parsedBone.parentBoneIndex > -1) {
-                parentBone = skeleton.bones[parsedBone.parentBoneIndex];
-            }
-			
-            var bone = new Bone(parsedBone.name, skeleton, parentBone, Matrix.FromArray(parsedBone.matrix));
-			
-            if (parsedBone.animation != null) {
-                bone.animations.push(parseAnimation(parsedBone.animation));
-            }
-        }
+			for (index in 0...parsedSkeleton.bones.length) {
+				var parsedBone = parsedSkeleton.bones[index];
+				
+				var parentBone = null;
+				if (parsedBone.parentBoneIndex > -1) {
+					parentBone = skeleton.bones[parsedBone.parentBoneIndex];
+				}
+				
+				var bone = new Bone(parsedBone.name, skeleton, parentBone, Matrix.FromArray(parsedBone.matrix));
+				
+				if (parsedBone.animation != null) {
+					bone.animations.push(parseAnimation(parsedBone.animation));
+				}
+			}
 		} catch (err:Dynamic) {
 			trace(err);
 		}
@@ -526,10 +588,16 @@ import com.babylonhx.utils.typedarray.Int32Array;
         material.specularColor = Color3.FromArray(parsedMaterial.specular);
         material.specularPower = parsedMaterial.specularPower;
         material.emissiveColor = Color3.FromArray(parsedMaterial.emissive);
+		material.useReflectionFresnelFromSpecular = parsedMaterial.useReflectionFresnelFromSpecular;
+        material.useEmissiveAsIllumination = parsedMaterial.useEmissiveAsIllumination;
 		
         material.alpha = parsedMaterial.alpha;
 		
         material.id = parsedMaterial.id;
+		
+		if (parsedMaterial.disableDepthWrite != null) {
+            material.disableDepthWrite = parsedMaterial.disableDepthWrite;
+        }
 		
         Tags.AddTagsTo(material, parsedMaterial.tags);
         material.backFaceCulling = parsedMaterial.backFaceCulling;
@@ -585,6 +653,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
     public static function parseMaterialById(id:String, parsedData:Dynamic, scene:Scene, rootUrl:String):Material {
         for (index in 0...parsedData.materials.length) {
             var parsedMaterial = parsedData.materials[index];
+			
             if (parsedMaterial.id == id) {
                 return parseMaterial(parsedMaterial, scene, rootUrl);
             }
@@ -672,9 +741,11 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		
         if (parsedShadowGenerator.usePoissonSampling != null) {
             shadowGenerator.usePoissonSampling = true;
-        } else if (parsedShadowGenerator.useVarianceShadowMap != null) {
+        } 
+		else if (parsedShadowGenerator.useVarianceShadowMap != null) {
             shadowGenerator.useVarianceShadowMap = true;
-        } else if (parsedShadowGenerator.useBlurVarianceShadowMap != null) {
+        } 
+		else if (parsedShadowGenerator.useBlurVarianceShadowMap != null) {
             shadowGenerator.useBlurVarianceShadowMap = true;
 			
             if (parsedShadowGenerator.blurScale != null) {
@@ -809,18 +880,22 @@ import com.babylonhx.utils.typedarray.Int32Array;
             if (parsedCamera.type == "AnaglyphArcRotateCamera") {
                 var eye_space = parsedCamera.eye_space;
                 camera = new AnaglyphArcRotateCamera(parsedCamera.name, alpha, beta, radius, lockedTargetMesh, eye_space, scene);
-            } else {
+            } 
+			else {
                 camera = new ArcRotateCamera(parsedCamera.name, alpha, beta, radius, lockedTargetMesh, scene);
             }
 			
-        } else if (parsedCamera.type == "AnaglyphFreeCamera") {
+        } 
+		else if (parsedCamera.type == "AnaglyphFreeCamera") {
             var eye_space = parsedCamera.eye_space;
             camera = new AnaglyphFreeCamera(parsedCamera.name, position, eye_space, scene);
 			
-        } else if (parsedCamera.type == "DeviceOrientationCamera") {
+        } 
+		else if (parsedCamera.type == "DeviceOrientationCamera") {
             //camera = new DeviceOrientationCamera(parsedCamera.name, position, scene);
 			
-        } else if (parsedCamera.type == "FollowCamera") {
+        } 
+		else if (parsedCamera.type == "FollowCamera") {
             camera = new FollowCamera(parsedCamera.name, position, scene);
             cast(camera, FollowCamera).heightOffset = parsedCamera.heightOffset;
             cast(camera, FollowCamera).radius = parsedCamera.radius;
@@ -846,7 +921,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
         } else if (parsedCamera.type == "VRDeviceOrientationCamera") {
             camera = new VRDeviceOrientationCamera(parsedCamera.name, position, scene);*/
 
-        } else {
+        } 
+		else {
             // Free Camera is the default value
             camera = new FreeCamera(parsedCamera.name, position, scene);
         }
@@ -869,11 +945,13 @@ import com.babylonhx.utils.typedarray.Int32Array;
         if (parsedCamera.target != null) {
 			if(Std.is(camera, FreeCamera)) {
 				cast(camera, FreeCamera).setTarget(Vector3.FromArray(parsedCamera.target));
-			} else {
+			} 
+			else {
 				// For ArcRotateCamera
 				cast(camera, ArcRotateCamera).target = Vector3.FromArray(parsedCamera.target);
 			}
-        } else {
+        } 
+		else {
             cast(camera, FreeCamera).rotation = Vector3.FromArray(parsedCamera.rotation);
         }
 		
@@ -906,7 +984,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
         // Layer Mask
         if (parsedCamera.layerMask != null) {
             camera.layerMask = Std.int(Math.abs(Std.int(parsedCamera.layerMask)));
-        } else {
+        } 
+		else {
             camera.layerMask = 0xFFFFFFFF;
         }
 		
@@ -1061,7 +1140,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
             }
 			
             geometry._delayLoadingFunction = importVertexData;
-        } else {
+        } 
+		else {
             importVertexData(parsedVertexData, geometry);
         }
 		
@@ -1080,7 +1160,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		
         if (parsedMesh.rotationQuaternion != null) {
             mesh.rotationQuaternion = Quaternion.FromArray(parsedMesh.rotationQuaternion);
-        } else if (parsedMesh.rotation != null) {
+        } 
+		else if (parsedMesh.rotation != null) {
             mesh.rotation = Vector3.FromArray(parsedMesh.rotation);
         }
 		
@@ -1088,7 +1169,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		
         if (parsedMesh.localMatrix != null) {
             mesh.setPivotMatrix(Matrix.FromArray(parsedMesh.localMatrix));
-        } else if (parsedMesh.pivotMatrix != null) {
+        } 
+		else if (parsedMesh.pivotMatrix != null) {
             mesh.setPivotMatrix(Matrix.FromArray(parsedMesh.pivotMatrix));
         }
 		
@@ -1170,14 +1252,16 @@ import com.babylonhx.utils.typedarray.Int32Array;
                 mesh._checkDelayState();
             }
 			
-        } else {
+        } 
+		else {
             importGeometry(parsedMesh, mesh);
         }
 		
         // Material
         if (parsedMesh.materialId != null) {
             mesh.setMaterialByID(parsedMesh.materialId);
-        } else {
+        } 
+		else {
             mesh.material = null;
         }
 		
@@ -1215,7 +1299,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
         // Layer Mask
         if (parsedMesh.layerMask != null) {
             mesh.layerMask = Std.int(Math.abs(parsedMesh.layerMask));
-        } else {
+        } 
+		else {
             mesh.layerMask = 0xFFFFFFFF;
         }
 		
@@ -1231,7 +1316,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 				
                 if (parsedInstance.rotationQuaternion != null) {
                     instance.rotationQuaternion = Quaternion.FromArray(parsedInstance.rotationQuaternion);
-                } else if (parsedInstance.rotation != null) {
+                } 
+				else if (parsedInstance.rotation != null) {
                     instance.rotation = Vector3.FromArray(parsedInstance.rotation);
                 }
 				

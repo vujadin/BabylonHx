@@ -267,6 +267,8 @@ package com.babylonhx.math;
 		var result = new Quaternion();
 		var sin = Math.sin(angle / 2);
 		
+		axis.normalize();
+		
 		result.w = Math.cos(angle / 2);
 		result.x = axis.x * sin;
 		result.y = axis.y * sin;

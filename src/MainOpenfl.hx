@@ -1,201 +1,176 @@
 package;
 
-import lime.app.Application;
-import lime.ui.KeyCode;
-import lime.ui.KeyModifier;
-import lime.app.Config;
-import lime.math.Vector2;
-import lime.graphics.RenderContext;
 import openfl.display.Stage;
 import openfl.display.Sprite;
 import openfl.events.Event;
+import openfl.events.MouseEvent;
+import openfl.events.KeyboardEvent;
+import openfl.events.TouchEvent;
+import openfl.display.OpenGLView;
+import openfl.Lib;
+import openfl.display.FPS;
+
 import com.babylonhx.Engine;
 import com.babylonhx.Scene;
+import com.babylonhx.math.Vector3;
+import com.babylonhx.utils.Keycodes;
+
+import flixel.FlxGame;
+import flixel.FlxState;
+
+import com.babylonhx.bones.Skeleton;
+import com.babylonhx.materials.StandardMaterial;
+import com.babylonhx.mesh.Mesh;
+import com.babylonhx.mesh.AbstractMesh;
+import com.babylonhx.particles.ParticleSystem;
+import com.babylonhx.loading.SceneLoader;
+import com.babylonhx.loading.plugins.BabylonFileLoader;
 
 /**
  * ...
  * @author Krtolica Vujadin
- * openFL is dependent upon this currently
- * https://github.com/openfl/openfl/pull/641 
  */
 
-class MainOpenfl extends Application {
+class MainOpenFL extends Sprite {
 	
 	var scene:Scene;
 	var engine:Engine;
-	private var targetPoint:Vector2;
-	private var moveDown:Bool;
-	private var moveLeft:Bool;
-	private var moveRight:Bool;
-	private var moveUp:Bool;
-	private var square:Sprite;
-	private var _stage:Stage;
-	private var _stageFL:Stage;
-	private var _babylonSprite:Sprite;
-	private var _context:RenderContext;
-
-
-	public override function create (config:Config):Void {
-		
-		super.create (config);
-		_stage = new Stage (config.width, config.height, 0xFFFFFFFF);
-		_stage.addEventListener(Event.RESIZE, resize);
-		addModule(_stage);
-		_babylonSprite = new Sprite();
-		_stage.addChild(_babylonSprite);
-		engine = new Engine(_babylonSprite, false);	
-		scene = new Scene(engine);
-		engine.width = this.window.width;
-		engine.height = this.window.height;
-		new samples.Fog(scene);
-        createSquares();
-
-	}
-
-	public function resize(e){
-		engine.width = this.window.width;
-		engine.height = this.window.height;
-	}
+	
+	// taken from HaxeFlixel example
+	var gameWidth:Int = 640; // Width of the game in pixels (might be less / more in actual pixels depending on your zoom).
+	var gameHeight:Int = 480; // Height of the game in pixels (might be less / more in actual pixels depending on your zoom).
+	var initialState:Class<FlxState> = PlayState; // The FlxState the game starts with.
+	var zoom:Float = -1; // If -1, zoom is automatically calculated to fit the window dimensions.
+	var framerate:Int = 60; // How many frames per second the game should run at.
+	var skipSplash:Bool = false; // Whether to skip the flixel splash screen that appears in release mode.
+	var startFullscreen:Bool = false; // Whether to start the game in fullscreen on desktop targets
 	
 	public function new() {
-		super();		
-	}
-
-	public function createSquares(){
-		square = new Sprite ();
-		var fpsContainer = new Sprite ();
-
-		var fill = new Sprite ();
-		fill.graphics.beginFill (0xBFFF00);
-		fill.graphics.drawRect (0, 0, 100, 100);
-		fill.x = -50;
-		fill.y = -50;
-		square.addChild (fill);
+		super();
+				
+		Lib.current.stage.addChild(this);
 		
-		square.x = window.width / 2;
-		square.y = window.height / 2;
-
-		_stage.addChild (square);
-
-	}
-	
-	public override function onKeyDown (key:KeyCode, modifier:KeyModifier):Void {
+		engine = new Engine(this, false);	
+		scene = new Scene(engine);
 		
-		switch (key) {
-			
-			case LEFT: moveLeft = true;
-			case RIGHT: moveRight = true;
-			case UP: moveUp = true;
-			case DOWN: moveDown = true;
-			default:
-			
+		engine.width = Lib.current.stage.stageWidth;
+		engine.height = Lib.current.stage.stageHeight;
+		
+		Lib.current.stage.addEventListener(Event.RESIZE, resize);
+		Lib.current.stage.addEventListener(Event.ENTER_FRAME, update);
+		
+		#if desktop
+		Lib.current.stage.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+		Lib.current.stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+		Lib.current.stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+		Lib.current.stage.addEventListener(MouseEvent.MOUSE_WHEEL, onMouseWheel);
+		Lib.current.stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+		Lib.current.stage.addEventListener(KeyboardEvent.KEY_UP, onKeyUp);
+		#elseif mobile
+		Lib.current.stage.addEventListener(TouchEvent.TOUCH_BEGIN, onTouchStart);
+		Lib.current.stage.addEventListener(TouchEvent.TOUCH_END, onTouchEnd);
+		Lib.current.stage.addEventListener(TouchEvent.TOUCH_MOVE, onTouchMove);
+		#end
+				
+		// hack to show 2D on top of 3D
+		var ground = Mesh.CreateGround("ground1", 0.1, 0.1, 1, scene, false);
+		ground.enableEdgesRendering();
+		
+		// this part is needed for android
+		var lines = Mesh.CreateLines("lines", [
+			new Vector3(-0.1, 0, 0),
+			new Vector3(0.1, 0, 0)
+		], scene);
+		lines.alpha = 0.01;
+		// end of hack
+		
+		createDemo();
+	}
+		
+	private function setupGame():Void {
+		var stageWidth:Int = Lib.current.stage.stageWidth;
+		var stageHeight:Int = Lib.current.stage.stageHeight;
+		
+		if (zoom == -1) {
+			var ratioX:Float = stageWidth / gameWidth;
+			var ratioY:Float = stageHeight / gameHeight;
+			zoom = Math.min(ratioX, ratioY);
+			gameWidth = Math.ceil(stageWidth / zoom);
+			gameHeight = Math.ceil(stageHeight / zoom);
 		}
 		
+		Lib.current.stage.addChild(new FlxGame(gameWidth, gameHeight, initialState, zoom, framerate, framerate, skipSplash, startFullscreen));
 	}
 	
-	
-	public override function onKeyUp (key:KeyCode, modifier:KeyModifier):Void {
+	function createDemo() {
+		new samples.BasicScene(scene);
 		
-		switch (key) {
-			
-			case LEFT: moveLeft = false;
-			case RIGHT: moveRight = false;
-			case UP: moveUp = false;
-			case DOWN: moveDown = false;
-			default:
-			
-		};
-		
+		setupGame();
+				
+		Lib.current.stage.addChild(new openfl.display.FPS(10, 10, 0xffffff));
 	}
 	
+	function resize(e){
+		engine.width = Lib.current.stage.stageWidth;
+		engine.height = Lib.current.stage.stageHeight;
+	}
 	
-	public override function onMouseDown (x:Float, y:Float, button:Int):Void {
-		
-		if (targetPoint == null) {
-			
-			targetPoint = new Vector2 ();
-			
+	function onKeyDown(e:KeyboardEvent) {
+		for(f in Engine.keyDown) {
+			f(e.charCode);
+		}		
+	}	
+	
+	function onKeyUp(e:KeyboardEvent) {
+		for(f in Engine.keyUp) {
+			f(e.charCode);
 		}
-		
-		targetPoint.x = x;
-		targetPoint.y = y;
-		
-	}
+	}	
 	
-	
-	public override function onMouseMove (x:Float, y:Float):Void {
-		
-		if (targetPoint != null) {
-			
-			targetPoint.x = x;
-			targetPoint.y = y;
-			
+	function onMouseDown(e:MouseEvent) {
+		for(f in Engine.mouseDown) {
+			f(e.localX, e.localY, 0);
 		}
-		
-	}
+	}	
 	
-	
-	public override function onMouseUp (x:Float, y:Float, button:Int):Void {
-		
-		targetPoint = null;
-		
-	}
-	
-	
-	public override function onTouchEnd (x:Float, y:Float, id:Int):Void {
-		
-		targetPoint = null;
-		
-	}
-	
-	
-	public override function onTouchMove (x:Float, y:Float, button:Int):Void {
-		
-		if (targetPoint != null) {
-			
-			targetPoint.x = x;
-			targetPoint.y = y;
-			
+	function onMouseMove(e:MouseEvent) {
+		for(f in Engine.mouseMove) {
+			f(e.localX, e.localY);
 		}
-		
-	}
+	}	
 	
-	
-	public override function onTouchStart (x:Float, y:Float, id:Int):Void {
-		
-		if (targetPoint == null) {
-			
-			targetPoint = new Vector2 ();
-			
+	function onMouseUp(e:MouseEvent) {
+		for(f in Engine.mouseUp) {
+			f(e.localX, e.localY, 0);
 		}
-		
-		targetPoint.x = x;
-		targetPoint.y = y;
-		
 	}
 	
-
-
-	public override function update (deltaTime:Int):Void {
-		if(engine != null) 
+	function onMouseWheel(e:MouseEvent) {
+		for (f in Engine.mouseWheel) {
+			f(e.delta);
+		}
+	}
+	
+	function onTouchStart(e:TouchEvent) {
+		for(f in Engine.touchDown) {
+			f(e.localX, e.localY, 0);
+		}
+	}
+	
+	function onTouchEnd(e:TouchEvent) {		
+		for(f in Engine.touchUp) {
+			f(e.localX, e.localY, 0);
+		}
+	}	
+	
+	function onTouchMove(e:TouchEvent) {
+		for(f in Engine.touchMove) {
+			f(e.localX, e.localY);
+		}		
+	}
+	
+	function update(e) {
 		engine._renderLoop();
-
-
-		if (moveLeft) square.x -= (0.6 * deltaTime);
-		if (moveRight) square.x += (0.6 * deltaTime);
-		if (moveUp) square.y -= (0.6 * deltaTime);
-		if (moveDown) square.y += (0.6 * deltaTime);
-		
-		if (targetPoint != null) {
-			
-			square.x += (targetPoint.x - square.x) * (deltaTime / 300);
-			square.y += (targetPoint.y - square.y) * (deltaTime / 300);
-			
-		}
-		
-		
-		
 	}
-
 	
 }

@@ -21,7 +21,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	?needAlphaTesting:Bool,
 	?attributes:Array<String>,
 	?uniforms:Array<String>,
-	?samplers:Array<String>
+	?samplers:Array<String>,
+	?defines:Array<String>
 }
 
 @:expose('BABYLON.ShaderMaterial') class ShaderMaterial extends Material {
@@ -51,6 +52,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		options.attributes = options.attributes != null ? options.attributes : ["position", "normal", "uv"];
 		options.uniforms = options.uniforms != null ? options.uniforms : ["worldViewProjection"];
 		options.samplers = options.samplers != null ? options.samplers : [];
+		options.defines = options.defines != null ? options.defines : [];
 		
 		this._options = options;
 	}
@@ -157,6 +159,11 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		if (useInstances) {
 			defines.push("#define INSTANCES");
 		}
+		
+		for (index in 0...this._options.defines.length) {
+            defines.push(this._options.defines[index]);
+        }
+		
 		// Bones
 		if (mesh != null && mesh.useBones && mesh.computeBonesUsingShaders) {
 			defines.push("#define BONES");

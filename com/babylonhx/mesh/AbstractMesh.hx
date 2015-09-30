@@ -61,7 +61,7 @@ import com.babylonhx.rendering.EdgesRenderer;
 	public var infiniteDistance:Bool = false;
 	public var isVisible:Bool = true;	
 	
-	private var _isPickable:Bool = true;
+	private var _isPickable:Bool = false;
 	public var isPickable(get, set):Bool;
 	private function get_isPickable():Bool {
 		return _isPickable;
@@ -232,10 +232,10 @@ import com.babylonhx.rendering.EdgesRenderer;
             this._edgesRenderer = null;
         }
     }
-    public function enableEdgesRendering(epsilon:Float = 0.95) {
+    public function enableEdgesRendering(epsilon:Float = 0.95, checkVerticesInsteadOfIndices:Bool = false) {
         this.disableEdgesRendering();
 		
-        this._edgesRenderer = new EdgesRenderer(this, epsilon);
+        this._edgesRenderer = new EdgesRenderer(this, epsilon, checkVerticesInsteadOfIndices);
     }
 	
 	private var _isBlocked:Bool;

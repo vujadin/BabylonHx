@@ -37,7 +37,8 @@ import com.babylonhx.mesh.AbstractMesh;
 			var rotMatrix = new Matrix();
 			cameraTarget.rotationQuaternion.toRotationMatrix(rotMatrix);
 			yRotation = Math.atan2(rotMatrix.m[8], rotMatrix.m[10]);
-		} else {
+		} 
+		else {
 			yRotation = cameraTarget.rotation.y;
 		}
 		var radians:Float = this.getRadians(this.rotationOffset) + yRotation;

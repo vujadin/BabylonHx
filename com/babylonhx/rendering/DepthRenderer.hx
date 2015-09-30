@@ -157,12 +157,12 @@ import com.babylonhx.tools.SmartArray;
 		return this._effect.isReady();
 	}
 
-	inline public function getDepthMap():RenderTargetTexture {
+	public function getDepthMap():RenderTargetTexture {
 		return this._depthMap;
 	}
 
 	// Methods
-	inline public function dispose() {
+	public function dispose() {
 		this._depthMap.dispose();
 	}
 	

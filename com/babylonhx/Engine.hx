@@ -999,11 +999,15 @@ import nme.display.OpenGLView;
 	}
 
 	// States
-	inline public function setState(culling:Bool, zOffset:Float = 0, force:Bool = false) {
+	inline public function setState(culling:Bool, zOffset:Float = 0, force:Bool = false, reverseSide:Bool = false) {
 		// Culling        
-		if (this._depthCullingState.cull != culling || force) {
+		var showSide = reverseSide ? GL.FRONT : GL.BACK;
+		var hideSide = reverseSide ? GL.BACK : GL.FRONT;
+		var cullFace = this.cullBackFaces ? showSide : hideSide;
+			
+		if (this._depthCullingState.cull != culling || force || this._depthCullingState.cullFace != cullFace) {
 			if (culling) {
-				this._depthCullingState.cullFace = this.cullBackFaces ? GL.BACK : GL.FRONT;
+				this._depthCullingState.cullFace = cullFace;
 				this._depthCullingState.cull = true;
 			} 
 			else {
@@ -1240,7 +1244,7 @@ import nme.display.OpenGLView;
 		return bd;
 	}*/
 		
-	public function createRawTexture(data:ArrayBufferView, width:Int, height:Int, format:Int, generateMipMaps:Bool, invertY:Bool, samplingMode:Int):WebGLTexture {
+	public function createRawTexture(data:ArrayBufferView, width:Int, height:Int, format:Int, generateMipMaps:Bool, invertY:Bool, samplingMode:Int, compression:String = ""):WebGLTexture {
 		
 		var texture = new WebGLTexture("", GL.createTexture());
 		texture._baseWidth = width;
@@ -1249,7 +1253,7 @@ import nme.display.OpenGLView;
 		texture._height = height;
 		texture.references = 1;
 		
-		this.updateRawTexture(texture, data, format, invertY);
+		this.updateRawTexture(texture, data, format, invertY, compression);
 		GL.bindTexture(GL.TEXTURE_2D, texture.data);
 		
 		// Filters
@@ -1266,7 +1270,7 @@ import nme.display.OpenGLView;
 		return texture;
 	}
 	
-	inline public function updateRawTexture(texture:WebGLTexture, data:ArrayBufferView, format:Int, invertY:Bool = false) {
+	inline public function updateRawTexture(texture:WebGLTexture, data:ArrayBufferView, format:Int, invertY:Bool = false, compression:String = "") {
 		var internalFormat = GL.RGBA;
 		switch (format) {
 			case Engine.TEXTUREFORMAT_ALPHA:
@@ -1288,7 +1292,15 @@ import nme.display.OpenGLView;
 		
 		GL.bindTexture(GL.TEXTURE_2D, texture.data);
 		//GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 1 : 0);           
-		GL.texImage2D(GL.TEXTURE_2D, 0, internalFormat, texture._width, texture._height, 0, internalFormat, GL.UNSIGNED_BYTE, data);
+		//GL.texImage2D(GL.TEXTURE_2D, 0, internalFormat, texture._width, texture._height, 0, internalFormat, GL.UNSIGNED_BYTE, data);
+		
+		if (compression != "") {
+            GL.compressedTexImage2D(GL.TEXTURE_2D, 0, Reflect.getProperty(this.getCaps().s3tc, compression), texture._width, texture._height, 0, data);
+        } 
+		else {
+            GL.texImage2D(GL.TEXTURE_2D, 0, internalFormat, texture._width, texture._height, 0, internalFormat, GL.UNSIGNED_BYTE, data);
+        }
+		
 		if (texture.generateMipMaps) {
 			GL.generateMipmap(GL.TEXTURE_2D);
 		}

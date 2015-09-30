@@ -25,6 +25,7 @@ import com.babylonhx.mesh.SubMesh;
 		this.index = index;
 	}
 
+	var submesh:SubMesh = null;
 	public function render(customRenderFunction:SmartArray->SmartArray->SmartArray->Void):Bool {
 		if (customRenderFunction != null) {
 			customRenderFunction(this._opaqueSubMeshes, this._alphaTestSubMeshes, this._transparentSubMeshes);
@@ -36,8 +37,7 @@ import com.babylonhx.mesh.SubMesh;
 		}
 		
 		var engine = this._scene.getEngine();
-		// Opaque
-		var submesh:SubMesh = null;
+		// Opaque		
 		for (subIndex in 0...this._opaqueSubMeshes.length) {
 			submesh = this._opaqueSubMeshes.data[subIndex];
 			submesh.render(false);

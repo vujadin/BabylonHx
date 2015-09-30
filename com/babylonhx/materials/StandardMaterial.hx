@@ -33,6 +33,7 @@ import com.babylonhx.tools.Tools;
 	public static var SpecularTextureEnabled:Bool = true;
 	public static var BumpTextureEnabled:Bool = true;
 	public static var FresnelEnabled:Bool = true;
+	public static var LightmapEnabled:Bool = true;
 	
 	public var diffuseTexture:Texture = null;
 	public var ambientTexture:Texture = null;
@@ -41,6 +42,7 @@ import com.babylonhx.tools.Tools;
 	public var emissiveTexture:Texture = null;
 	public var specularTexture:Texture = null;
 	public var bumpTexture:Texture = null;
+	public var lightmapTexture:Texture = null;
 
 	public var ambientColor:Color3 = new Color3(0, 0, 0);
 	public var diffuseColor:Color3 = new Color3(1, 1, 1);
@@ -48,8 +50,13 @@ import com.babylonhx.tools.Tools;
 	public var specularPower:Float = 64;
 	public var emissiveColor:Color3 = new Color3(0, 0, 0);
 	public var useAlphaFromDiffuseTexture:Bool = false;
-	public var useSpecularOverAlpha:Bool = true;
-	public var fogEnabled:Bool = true;	
+	public var useEmissiveAsIllumination:Bool = false;
+	public var useReflectionFresnelFromSpecular:Bool = false;
+	public var useSpecularOverAlpha:Bool = true;	
+	
+	public var roughness:Float = 0;
+	
+	public var lightmapThreshold:Float = 0;
 
 	public var diffuseFresnelParameters:FresnelParameters;
 	public var opacityFresnelParameters:FresnelParameters;
@@ -169,6 +176,10 @@ import com.babylonhx.tools.Tools;
 					needNormals = true;
 					needUVs = true;
 					this._defines.defines["REFLECTION"] = true;
+					
+					if (this.roughness > 0) {
+						this._defines.defines["ROUGHNESS"] = true;
+					}
 				}
 			}
 			
@@ -179,6 +190,16 @@ import com.babylonhx.tools.Tools;
 				else {
 					needUVs = true;
 					this._defines.defines["EMISSIVE"] = true;
+				}
+			}
+			
+			if (this.lightmapTexture != null && StandardMaterial.LightmapEnabled) {
+				if (!this.lightmapTexture.isReady()) {
+					return false;
+				} 
+				else {
+					needUVs = true;
+					this._defines.defines["LIGHTMAP"] = true;
 				}
 			}
 			
@@ -215,6 +236,14 @@ import com.babylonhx.tools.Tools;
 		
 		if (this._shouldUseAlphaFromDiffuseTexture()) {
 			this._defines.defines["ALPHAFROMDIFFUSE"] = true;
+		}
+		
+		if (this.useEmissiveAsIllumination) {
+			this._defines.defines["EMISSIVEASILLUMINATION"] = true;
+		}
+		
+		if (this.useReflectionFresnelFromSpecular) {
+			this._defines.defines["REFLECTIONFRESNELFROMSPECULAR"] = true;
 		}
 		
 		// Point size
@@ -503,7 +532,8 @@ import com.babylonhx.tools.Tools;
 					"mBones",
 					"vClipPlane", "diffuseMatrix", "ambientMatrix", "opacityMatrix", "reflectionMatrix", "emissiveMatrix", "specularMatrix", "bumpMatrix",
 					"shadowsInfo0", "shadowsInfo1", "shadowsInfo2", "shadowsInfo3",
-					"diffuseLeftColor", "diffuseRightColor", "opacityParts", "reflectionLeftColor", "reflectionRightColor", "emissiveLeftColor", "emissiveRightColor"
+					"diffuseLeftColor", "diffuseRightColor", "opacityParts", "reflectionLeftColor", "reflectionRightColor", "emissiveLeftColor", "emissiveRightColor",
+					"roughness"
 				],
 				["diffuseSampler", "ambientSampler", "opacitySampler", "reflectionCubeSampler", "reflection2DSampler", "emissiveSampler", "specularSampler", "bumpSampler",
 					"shadowSampler0", "shadowSampler1", "shadowSampler2", "shadowSampler3"
@@ -592,6 +622,9 @@ import com.babylonhx.tools.Tools;
 			if (this.reflectionTexture != null && StandardMaterial.ReflectionTextureEnabled) {
 				if (this.reflectionTexture.isCube) {
 					this._effect.setTexture("reflectionCubeSampler", this.reflectionTexture);
+					if (this._defines.defines["ROUGHNESS"]) {
+                        this._effect.setFloat("roughness", this.roughness);
+                    }
 				} 
 				else {
 					this._effect.setTexture("reflection2DSampler", this.reflectionTexture);
@@ -606,6 +639,13 @@ import com.babylonhx.tools.Tools;
 				
 				this._effect.setFloat2("vEmissiveInfos", this.emissiveTexture.coordinatesIndex, this.emissiveTexture.level);
 				this._effect.setMatrix("emissiveMatrix", this.emissiveTexture.getTextureMatrix());
+			}
+			
+			if (this.lightmapTexture != null && StandardMaterial.LightmapEnabled) {
+				this._effect.setTexture("lightmapSampler", this.lightmapTexture);
+				
+				this._effect.setFloat3("vLightmapInfos", this.lightmapTexture.coordinatesIndex, this.lightmapTexture.level, this.lightmapThreshold);
+				this._effect.setMatrix("lightmapMatrix", this.lightmapTexture.getTextureMatrix());
 			}
 			
 			if (this.specularTexture != null && StandardMaterial.SpecularTextureEnabled) {
@@ -792,14 +832,11 @@ import com.babylonhx.tools.Tools;
 		super.dispose(forceDisposeEffect);
 	}
 
-	public function clone(name:String):StandardMaterial {
+	override public function clone(name:String):StandardMaterial {
 		var newStandardMaterial = new StandardMaterial(name, this.getScene());
 		
-		// Base material
-		newStandardMaterial.checkReadyOnEveryCall = this.checkReadyOnEveryCall;
-		newStandardMaterial.alpha = this.alpha;
-		newStandardMaterial.fillMode = this.fillMode;
-		newStandardMaterial.backFaceCulling = this.backFaceCulling;
+		// Base material		
+		this.copyTo(newStandardMaterial);
 		
 		// Standard material
 		if (this.diffuseTexture != null) {
@@ -823,12 +860,28 @@ import com.babylonhx.tools.Tools;
 		if (this.bumpTexture != null) {
 			newStandardMaterial.bumpTexture = this.bumpTexture.clone();
 		}
+		if (this.lightmapTexture != null) {
+            newStandardMaterial.bumpTexture = this.bumpTexture.clone();
+            newStandardMaterial.lightmapTexture = this.lightmapTexture.clone();
+            newStandardMaterial.lightmapThreshold = this.lightmapThreshold;
+        }
 		
 		newStandardMaterial.ambientColor = this.ambientColor.clone();
 		newStandardMaterial.diffuseColor = this.diffuseColor.clone();
 		newStandardMaterial.specularColor = this.specularColor.clone();
 		newStandardMaterial.specularPower = this.specularPower;
 		newStandardMaterial.emissiveColor = this.emissiveColor.clone();
+		newStandardMaterial.useAlphaFromDiffuseTexture = this.useAlphaFromDiffuseTexture;
+        newStandardMaterial.useEmissiveAsIllumination = this.useEmissiveAsIllumination;
+        newStandardMaterial.useGlossinessFromSpecularMapAlpha = this.useGlossinessFromSpecularMapAlpha;
+        newStandardMaterial.useReflectionFresnelFromSpecular = this.useReflectionFresnelFromSpecular;
+        newStandardMaterial.useSpecularOverAlpha = this.useSpecularOverAlpha;
+        newStandardMaterial.roughness = this.roughness;
+		
+        newStandardMaterial.diffuseFresnelParameters = this.diffuseFresnelParameters.clone();
+        newStandardMaterial.emissiveFresnelParameters = this.emissiveFresnelParameters.clone();
+        newStandardMaterial.reflectionFresnelParameters = this.reflectionFresnelParameters.clone();
+        newStandardMaterial.opacityFresnelParameters = this.opacityFresnelParameters.clone();
 		
 		return newStandardMaterial;
 	}

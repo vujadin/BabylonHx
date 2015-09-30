@@ -1122,6 +1122,8 @@ import com.babylonhx.tools.Tools;
 		}
 	}
 
+	var _activeMeshes_:Array<Mesh> = [];
+	var _activeMesh_:Mesh = null;
 	inline private function _evaluateActiveMeshes() {
 		this.activeCamera._activeMeshes.reset();
 		this._activeMeshes.reset();
@@ -1141,59 +1143,59 @@ import com.babylonhx.tools.Tools;
 		}
 		
 		// Meshes
-		var meshes:Array<AbstractMesh> = null;
+		_activeMeshes_ = null;
 		var len:Int = -1;
 		
 		if (this._selectionOctree != null) { // Octree
 			var selection = this._selectionOctree.select(this._frustumPlanes);
-			meshes = cast selection.data;
+			_activeMeshes_ = cast selection.data;
 			len = selection.length;
 		} 
 		else { // Full scene traversal
 			len = this.meshes.length;
-			meshes = this.meshes;
+			_activeMeshes_ = cast this.meshes;
 		}
 				
 		for (meshIndex in 0...len) {
-			var mesh = meshes[meshIndex];
+			_activeMesh_ = _activeMeshes_[meshIndex];
 			
-			if (mesh.isBlocked) {
+			if (_activeMesh_.isBlocked) {
 				continue;
 			}
 			
-			this._totalVertices += mesh.getTotalVertices();
+			this._totalVertices += _activeMesh_.getTotalVertices();
 			
-			if (!mesh.isReady() || !mesh.isEnabled()) {
+			if (!_activeMesh_.isReady() || !_activeMesh_.isEnabled()) {
 				continue;
 			}
 			
-			mesh.computeWorldMatrix();
+			_activeMesh_.computeWorldMatrix();
 			
 			// Intersections
-			if (mesh.actionManager != null && mesh.actionManager.hasSpecificTriggers([ActionManager.OnIntersectionEnterTrigger, ActionManager.OnIntersectionExitTrigger])) {
-				this._meshesForIntersections.pushNoDuplicate(mesh);
+			if (_activeMesh_.actionManager != null && _activeMesh_.actionManager.hasSpecificTriggers([ActionManager.OnIntersectionEnterTrigger, ActionManager.OnIntersectionExitTrigger])) {
+				this._meshesForIntersections.pushNoDuplicate(_activeMesh_);
 			}
 			
 			// Switch to current LOD
-			var meshLOD = mesh.getLOD(this.activeCamera);
+			var meshLOD = _activeMesh_.getLOD(this.activeCamera);
 			
 			if (meshLOD == null) {
 				continue;
 			}
 			
-			mesh._preActivate();
+			_activeMesh_._preActivate();
 						
-			if (mesh.alwaysSelectAsActiveMesh || mesh.isVisible && mesh.visibility > 0 && ((mesh.layerMask & this.activeCamera.layerMask) != 0) && mesh.isInFrustum(this._frustumPlanes)) {
-				this._activeMeshes.push(mesh);
-				this.activeCamera._activeMeshes.push(mesh);
-				mesh._activate(this._renderId);
+			if (_activeMesh_.alwaysSelectAsActiveMesh || _activeMesh_.isVisible && _activeMesh_.visibility > 0 && ((_activeMesh_.layerMask & this.activeCamera.layerMask) != 0) && _activeMesh_.isInFrustum(this._frustumPlanes)) {
+				this._activeMeshes.push(_activeMesh_);
+				this.activeCamera._activeMeshes.push(_activeMesh_);
+				_activeMesh_._activate(this._renderId);
 								
 				this._activeMesh(meshLOD);
 			}
 		}
 		
 		// Particle systems
-		var beforeParticlesDate = Tools.Now();
+		//var beforeParticlesDate = Tools.Now();
 		if (this.particlesEnabled) {
 			//Tools.StartPerformanceCounter("Particles", this.particleSystems.length > 0);
 			for (particleIndex in 0...this.particleSystems.length) {
@@ -1210,7 +1212,7 @@ import com.babylonhx.tools.Tools;
 			}
 			//Tools.EndPerformanceCounter("Particles", this.particleSystems.length > 0);
 		}
-		this._particlesDuration += Tools.Now() - beforeParticlesDate;
+		//this._particlesDuration += Tools.Now() - beforeParticlesDate;
 	}
 
 	private function _activeMesh(mesh:AbstractMesh) {
@@ -1354,7 +1356,10 @@ import com.babylonhx.tools.Tools;
 		if (this.lensFlaresEnabled) {
 			//Tools.StartPerformanceCounter("Lens flares", this.lensFlareSystems.length > 0);
 			for (lensFlareSystemIndex in 0...this.lensFlareSystems.length) {
-				this.lensFlareSystems[lensFlareSystemIndex].render();
+				var lensFlareSystem = this.lensFlareSystems[lensFlareSystemIndex];
+				if ((camera.layerMask & lensFlareSystem.layerMask) != 0) {
+					lensFlareSystem.render();
+				}
 			}
 			//Tools.EndPerformanceCounter("Lens flares", this.lensFlareSystems.length > 0);
 		}
@@ -1463,16 +1468,7 @@ import com.babylonhx.tools.Tools;
 		//Simplification Queue
 		if (!this.simplificationQueue.running) {
 			this.simplificationQueue.executeNext();
-		}
-		
-		// Before render
-		if (this.beforeRender != null) {
-			this.beforeRender();
-		}
-		
-		for (callback in this._onBeforeRenderCallbacks) {
-			callback();
-		}
+		}		
 		
 		// Animations
 		var deltaTime = Math.max(Scene.MinDeltaTime, Math.min(this._engine.getDeltaTime(), Scene.MaxDeltaTime));
@@ -1486,8 +1482,17 @@ import com.babylonhx.tools.Tools;
 			//Tools.EndPerformanceCounter("Physics");
 		}
 		
+		// Before render
+		if (this.beforeRender != null) {
+			this.beforeRender();
+		}
+		
+		for (callback in this._onBeforeRenderCallbacks) {
+			callback();
+		}
+		
 		// Customs render targets
-		var beforeRenderTargetDate = Tools.Now();
+		//var beforeRenderTargetDate = Tools.Now();
 		var engine = this.getEngine();
 		var currentActiveCamera = this.activeCamera;
 		if (this.renderTargetsEnabled) {
@@ -1520,7 +1525,7 @@ import com.babylonhx.tools.Tools;
 		if (this.customRenderTargets.length > 0) { // Restore back buffer
 			engine.restoreDefaultFramebuffer();
 		}
-		this._renderTargetsDuration += Tools.Now() - beforeRenderTargetDate;
+		//this._renderTargetsDuration += Tools.Now() - beforeRenderTargetDate;
 		this.activeCamera = currentActiveCamera;
 		
 		// Procedural textures
@@ -1565,7 +1570,8 @@ import com.babylonhx.tools.Tools;
 				this._renderId = currentRenderId;
 				this._processSubCameras(this.activeCameras[cameraIndex]);
 			}
-		} else {
+		} 
+		else {
 			if (this.activeCamera == null) {
 				throw("No camera defined");
 			}

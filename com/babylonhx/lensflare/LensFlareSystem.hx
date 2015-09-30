@@ -19,6 +19,7 @@ import com.babylonhx.mesh.Mesh;
 	public var lensFlares:Array<LensFlare> = new Array<LensFlare>();
 	public var borderLimit:Float = 300;
 	public var meshesSelectionPredicate:Mesh->Bool;
+	public var layerMask:Int = 0x0FFFFFFF;
 
 	private var _scene:Scene;
 	private var _emitter:Dynamic;
