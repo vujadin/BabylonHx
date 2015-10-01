@@ -31,8 +31,8 @@ import com.babylonhx.utils.GL;
 	public var _baseWidth:Int;
 	public var _cachedWrapU:Int;
 	public var _cachedWrapV:Int;	
-	public var _width:Float;	
-	public var _height:Float;
+	public var _width:Int;	
+	public var _height:Int;
 	public var _cachedCoordinatesMode:Int;
 	public var _isDisabled:Bool;
 	

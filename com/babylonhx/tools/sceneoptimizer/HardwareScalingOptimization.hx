@@ -18,7 +18,7 @@ import com.babylonhx.Scene;
 		this.maximumScale = maximumScale;
 	}
 	
-	override public function apply(scene:Scene):Bool {
+	override public function apply(scene:Scene, updateSelectionTree:Bool = false):Bool {
 		this._currentScale++;
 		
 		scene.getEngine().setHardwareScalingLevel(this._currentScale);

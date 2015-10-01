@@ -16,6 +16,10 @@ package com.babylonhx.utils.typedarray;
 
 	typedef Float32Array = lime.utils.Float32Array;
 	
+#elseif openfl
+
+	typedef Float32Array = openfl.utils.Float32Array;	
+	
 #elseif nme
 
 	typedef Float32Array = nme.utils.Float32Array;

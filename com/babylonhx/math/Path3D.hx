@@ -1,5 +1,7 @@
 package com.babylonhx.math;
 
+import com.babylonhx.tools.Tools;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -14,12 +16,20 @@ package com.babylonhx.math;
 	private var _tangents:Array<Vector3> = [];
 	private var _normals:Array<Vector3> = [];
 	private var _binormals:Array<Vector3> = [];
+	private var _raw:Bool = false;
 	
 
-	public function new(path:Array<Vector3>, ?firstNormal:Vector3) {
+	/** 
+    * new Path3D(path, normal, raw) 
+    * path : an array of Vector3, the curve axis of the Path3D
+    * normal (optional) : Vector3, the first wanted normal to the curve. Ex (0, 1, 0) for a vertical normal.
+    * raw (optional, default false) : boolean, if true the returned Path3D isn't normalized. Useful to depict path acceleration or speed.
+    */
+	public function new(path:Array<Vector3>, ?firstNormal:Vector3, ?raw:Bool = false) {
 		for (p in 0...path.length) {
             this._curve[p] = path[p].clone(); // hard copy
         }  
+		this._raw = raw;
 		this._compute(firstNormal); 
 	}
 
@@ -59,17 +69,25 @@ package com.babylonhx.math;
 		
 		// first and last tangents
 		this._tangents[0] = this._getFirstNonNullVector(0);
-		this._tangents[0].normalize();
+		if (!this._raw) {
+			this._tangents[0].normalize();
+		}
 		this._tangents[l - 1] = this._curve[l - 1].subtract(this._curve[l - 2]);
-		this._tangents[l - 1].normalize();
+		if (!this._raw) {
+			this._tangents[l - 1].normalize();
+		}
 		
 		// normals and binormals at first point : arbitrary vector with _normalVector()
 		var tg0 = this._tangents[0];
 		var pp0 = this._normalVector(this._curve[0], tg0, firstNormal);
 		this._normals[0] = pp0;
-		this._normals[0].normalize();
+		if (!this._raw) {
+			this._normals[0].normalize();
+		}
 		this._binormals[0] = Vector3.Cross(tg0, this._normals[0]);
-		this._binormals[0].normalize();
+		if (!this._raw) {
+			this._binormals[0].normalize();
+		}
 		this._distances[0] = 0;
 		
 		// normals and binormals : next points
@@ -95,9 +113,13 @@ package com.babylonhx.math;
 			prevNorm = this._normals[i - 1];
 			prevBinor = this._binormals[i - 1];
 			this._normals[i] = Vector3.Cross(prevBinor, curTang);
-			this._normals[i].normalize();
+			if (!this._raw) {
+				this._normals[i].normalize();
+			}
 			this._binormals[i] = Vector3.Cross(curTang, this._normals[i]);
-			this._binormals[i].normalize();
+			if (!this._raw) {
+				this._binormals[i].normalize();
+			}
 		}
 	}
 
@@ -132,13 +154,13 @@ package com.babylonhx.math;
 		var normal0:Vector3 = Vector3.Zero();
 		if (va == null) {
 			var point:Vector3 = Vector3.Zero();
-			if (vt.y != 1) {     // search for a point in the plane
+			if (!Tools.WithinEpsilon(vt.y, 1, Engine.Epsilon)) {     // search for a point in the plane
 				point = new Vector3(0, -1, 0);
 			}
-			else if (vt.x != 1) {
+			else if (!Tools.WithinEpsilon(vt.x, 1, Engine.Epsilon)) {
 				point = new Vector3(1, 0, 0);
 			}
-			else if (vt.z != 1) {
+			else if (!Tools.WithinEpsilon(vt.z, 1, Engine.Epsilon)) {
 				point = new Vector3(0, 0, 1);
 			}
 			normal0 = Vector3.Cross(vt, point);

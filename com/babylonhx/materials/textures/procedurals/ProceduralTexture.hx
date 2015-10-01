@@ -18,6 +18,7 @@ import com.babylonhx.Scene;
 	
 	private var _size:Float;
 	public var _generateMipMaps:Bool;
+	public var isEnabled:Bool = true;
 	private var _doNotChangeAspectRatio:Bool;
 	private var _currentRefreshId:Int = -1;
 	private var _refreshRate:Int = 1;
@@ -134,7 +135,7 @@ import com.babylonhx.Scene;
 		return this._effect.isReady();
 	}
 
-	public function resetRefreshCounter() {
+	inline public function resetRefreshCounter() {
 		this._currentRefreshId = -1;
 	}
 
@@ -154,7 +155,7 @@ import com.babylonhx.Scene;
 	}
 
 	public function _shouldRender():Bool {
-		if (!this.isReady() || this._texture == null) {
+		if (!this.isEnabled || !this.isReady() || this._texture == null) {
 			return false;
 		} 
 		

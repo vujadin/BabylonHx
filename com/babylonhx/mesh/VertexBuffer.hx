@@ -42,7 +42,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		if (!postponeInternalCreation) { // by default
 			this.create();
 		}
-				
+			
 		this._kind = kind;
 		
 		if (stride != null) {
@@ -92,11 +92,11 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	// Methods
-	public function create(?data:Array<Float>) {
+	public function create(?data:Array<Float>) {		
 		if (data == null && this._buffer != null) {
 			return; // nothing to do
 		}
-		
+				
 		data = data != null ? data : this._data;
 		
 		if (this._buffer == null) { // create buffer
@@ -118,12 +118,14 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this.create(data);
 	}
 
-	inline public function updateDirectly(data:Float32Array, offset:Int) {
-		if (this._buffer != null) {
-			if (this._updatable) { // update buffer
-				this._engine.updateDynamicVertexBuffer(this._buffer, data, offset);
-				this._data = null;
-			}
+	public function updateDirectly(data:Float32Array, offset:Int) {
+		if (this._buffer == null) {
+			return;
+		}
+		
+		if (this._updatable) { // update buffer
+			this._engine.updateDynamicVertexBuffer(this._buffer, data, offset);
+			this._data = null;
 		}		
 	}
 

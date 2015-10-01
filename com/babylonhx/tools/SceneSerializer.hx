@@ -42,7 +42,7 @@ import samples.Fresnel;
 	static var serializedGeometries:Map<String, Geometry> = new Map<String, Geometry>();
 	
 		
-	public static function serialize(scene:Scene):Dynamic {
+	public static function Serialize(scene:Scene):Dynamic {
 		var serializationObject:Dynamic = { };
 		
 		// Scene
@@ -155,6 +155,27 @@ import samples.Fresnel;
 			if (light.getShadowGenerator() != null) {
 				serializationObject.shadowGenerators.push(serializeShadowGenerator(light));
 			}
+		}
+		
+		return serializationObject;
+	}
+	
+	public static function SerializeMesh(toSerialize:Dynamic, withParents:Bool = false):Dynamic {
+		var serializationObject:Dynamic = { };
+		
+		var _toSerialize:Array<Mesh> = cast (Std.is(toSerialize, Array) ? toSerialize : [toSerialize]);
+		
+		if (withParents) {
+			//deliberate for loop! not for each, appended should be processed as well.
+			for (i in 0...toSerialize.length) {
+				if (_toSerialize[i].parent != null) {
+					_toSerialize.push(cast _toSerialize[i].parent);
+				}
+			}
+		}
+		
+		for(mesh in _toSerialize) {
+			finalizeSingleMesh(mesh, serializationObject);
 		}
 		
 		return serializationObject;
@@ -399,6 +420,8 @@ import samples.Fresnel;
         serializationObject.specular = material.specularColor.asArray();
         serializationObject.specularPower = material.specularPower;
         serializationObject.emissive = material.emissiveColor.asArray();
+		serializationObject.useReflectionFresnelFromSpecular = serializationObject.useReflectionFresnelFromSpecular;
+        serializationObject.useEmissiveAsIllumination = serializationObject.useEmissiveAsIllumination;
 		
         serializationObject.alpha = material.alpha;
 		
@@ -642,8 +665,7 @@ import samples.Fresnel;
             serializationGeometries.torusKnots.push(serializeTorusKnot(cast geometry));
         }
         else if (Std.is(geometry, _Primitive)) {
-			trace("Unknow primitive type");
-			throw("Unknow primitive type");
+			trace("Unknown primitive type");
         }
         else {
             serializationGeometries.vertexData.push(serializeVertexData(geometry));
@@ -876,6 +898,52 @@ import samples.Fresnel;
         serializationObject.layerMask = mesh.layerMask;
 		
         return serializationObject;
+    }
+	
+	private static function finalizeSingleMesh(mesh:Mesh, serializationObject:Dynamic) {
+        //only works if the mesh is already loaded
+        if (mesh.delayLoadState == Engine.DELAYLOADSTATE_LOADED || mesh.delayLoadState == Engine.DELAYLOADSTATE_NONE) {
+            //serialize material
+            if (mesh.material != null) {
+                if (Std.is(mesh.material, StandardMaterial)) {
+                    serializationObject.materials = serializationObject.materials != null ? serializationObject.materials : [];
+                    serializationObject.materials.push(serializeMaterial(cast mesh.material));
+                } 
+				else if (Std.is(mesh.material, MultiMaterial)) {
+                    serializationObject.multiMaterials = serializationObject.multiMaterials != null ? serializationObject.multiMaterials : [];
+                    serializationObject.multiMaterials.push(serializeMultiMaterial(cast mesh.material));
+                }
+            }
+			
+            //serialize geometry
+            var geometry = mesh._geometry;
+            if (geometry != null) {
+                if (serializationObject.geometries == null) {
+                    serializationObject.geometries = { };
+					
+                    serializationObject.geometries.boxes = [];
+                    serializationObject.geometries.spheres = [];
+                    serializationObject.geometries.cylinders = [];
+                    serializationObject.geometries.toruses = [];
+                    serializationObject.geometries.grounds = [];
+                    serializationObject.geometries.planes = [];
+                    serializationObject.geometries.torusKnots = [];
+                    serializationObject.geometries.vertexData = [];
+                }
+				
+                serializeGeometry(geometry, serializationObject.geometries);
+            }
+			
+            // Skeletons
+            if (mesh.skeleton != null) {
+                serializationObject.skeletons = serializationObject.skeletons != null ? serializationObject.skeletons : [];
+                serializationObject.skeletons.push(serializeSkeleton(mesh.skeleton));
+            }
+			
+            //serialize the actual mesh
+            serializationObject.meshes = serializationObject.meshes != null ? serializationObject.meshes : [];
+            serializationObject.meshes.push(serializeMesh(mesh, serializationObject));
+        }
     }
 	
 }

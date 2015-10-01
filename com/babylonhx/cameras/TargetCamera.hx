@@ -40,6 +40,14 @@ import com.babylonhx.tools.Tools;
 	public function new(name:String, position:Vector3, scene:Scene) {
 		super(name, position, scene);
 	}
+	
+	public function getFrontPosition(distance:Float):Vector3 {
+		var direction = this.getTarget().subtract(this.position);
+		direction.normalize();
+		direction.scaleInPlace(distance);
+		
+		return this.globalPosition.add(direction);
+	}
 
 	public function _getLockedTargetPosition():Vector3 {
 		if (this.lockedTarget == null) {
@@ -108,7 +116,8 @@ import com.babylonhx.tools.Tools;
 		
 		if (vDir.x >= 0.0) {
 			this.rotation.y = (-Math.atan(vDir.z / vDir.x) + Math.PI / 2.0);
-		} else {
+		} 
+		else {
 			this.rotation.y = (-Math.atan(vDir.z / vDir.x) - Math.PI / 2.0);
 		}
 		
@@ -127,6 +136,60 @@ import com.babylonhx.tools.Tools;
 		this.position.addInPlace(this.cameraDirection);
 	}
 	
+	override public function _checkInputs() {
+		var needToMove = this._decideIfNeedsToMove();
+		var needToRotate = Math.abs(this.cameraRotation.x) > 0 || Math.abs(this.cameraRotation.y) > 0;
+		
+		// Move
+		if (needToMove) {
+			this._updatePosition();
+		}
+		
+		// Rotate
+		if (needToRotate) {
+			this.rotation.x += this.cameraRotation.x;
+			this.rotation.y += this.cameraRotation.y;
+			
+			if (!this.noRotationConstraint) {
+				var limit = (Math.PI / 2) * 0.95;
+				if (this.rotation.x > limit) {
+					this.rotation.x = limit;
+				}
+				if (this.rotation.x < -limit) {
+					this.rotation.x = -limit;
+				}
+			}
+		}
+		
+		// Inertia
+		if (needToMove) {
+			if (Math.abs(this.cameraDirection.x) < Engine.Epsilon) {
+				this.cameraDirection.x = 0;
+			}
+			
+			if (Math.abs(this.cameraDirection.y) < Engine.Epsilon) {
+				this.cameraDirection.y = 0;
+			}
+			
+			if (Math.abs(this.cameraDirection.z) < Engine.Epsilon) {
+				this.cameraDirection.z = 0;
+			}
+			
+			this.cameraDirection.scaleInPlace(this.inertia);
+		}
+		if (needToRotate) {
+			if (Math.abs(this.cameraRotation.x) < Engine.Epsilon) {
+				this.cameraRotation.x = 0;
+			}
+			
+			if (Math.abs(this.cameraRotation.y) < Engine.Epsilon) {
+				this.cameraRotation.y = 0;
+			}
+			this.cameraRotation.scaleInPlace(this.inertia);
+		}
+		
+		super._checkInputs();
+	}
 	
 	override public function _getViewMatrix_default():Matrix {
 		if (this.lockedTarget == null) {
@@ -225,7 +288,6 @@ import com.babylonhx.tools.Tools;
 		super._updateRigCameras();
 	}
 
-
 	private function _getRigCamPosition(halfSpace:Float, result:Vector3) {
 		if (this._rigCamTransformMatrix == null) {
 			this._rigCamTransformMatrix = new Matrix();
@@ -237,61 +299,5 @@ import com.babylonhx.tools.Tools;
 		
 		Vector3.TransformCoordinatesToRef(this.position, this._rigCamTransformMatrix, result);
 	}
-
-	override public function _checkInputs(): Void {
-            var needToMove = this._decideIfNeedsToMove();
-            var needToRotate = Math.abs(this.cameraRotation.x) > 0 || Math.abs(this.cameraRotation.y) > 0;
-
-            // Move
-            if (needToMove) {
-                this._updatePosition();
-            }
-
-            // Rotate
-            if (needToRotate) {
-                this.rotation.x += this.cameraRotation.x;
-                this.rotation.y += this.cameraRotation.y;
-
-
-                if (!this.noRotationConstraint) {
-                    var limit = (Math.PI / 2) * 0.95;
-
-
-                    if (this.rotation.x > limit)
-                        this.rotation.x = limit;
-                    if (this.rotation.x < -limit)
-                        this.rotation.x = -limit;
-                }
-            }
-
-            // Inertia
-            if (needToMove) {
-                if (Math.abs(this.cameraDirection.x) < Engine.Epsilon) {
-                    this.cameraDirection.x = 0;
-                }
-
-                if (Math.abs(this.cameraDirection.y) < Engine.Epsilon) {
-                    this.cameraDirection.y = 0;
-                }
-
-                if (Math.abs(this.cameraDirection.z) < Engine.Epsilon) {
-                    this.cameraDirection.z = 0;
-                }
-
-                this.cameraDirection.scaleInPlace(this.inertia);
-            }
-            if (needToRotate) {
-                if (Math.abs(this.cameraRotation.x) < Engine.Epsilon) {
-                    this.cameraRotation.x = 0;
-                }
-
-                if (Math.abs(this.cameraRotation.y) < Engine.Epsilon) {
-                    this.cameraRotation.y = 0;
-                }
-                this.cameraRotation.scaleInPlace(this.inertia);
-            }
-
-            super._checkInputs();
-        }
 	
 }

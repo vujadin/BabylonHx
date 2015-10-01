@@ -16,16 +16,15 @@ import com.babylonhx.math.Ray;
 	
 	public var color:Color3 = new Color3(1, 1, 1);
 	public var alpha:Float = 1;
+	
+	public var dashSize:Float = 0;
+	public var gapSize:Float = 0;
 
 	private var _colorShader:ShaderMaterial;
-	private var _ib:WebGLBuffer;
-
-	private var _indicesLength:Int;
-	private var _indices:Array<Int> = [];
 	
 
-	public function new(name:String, scene:Scene, updatable:Bool = false) {
-		super(name, scene);
+	public function new(name:String, scene:Scene, parent:Node = null, ?source:Mesh, doNotCloneChildren:Bool = false) {
+		super(name, scene, parent, source, doNotCloneChildren);
 		
 		this._colorShader = new ShaderMaterial("colorShader", scene, "color",
 			{
@@ -78,6 +77,10 @@ import com.babylonhx.math.Ray;
 		this._colorShader.dispose();
 		
 		super.dispose(doNotRecurse);
+	}
+	
+	override public function clone(name:String, ?newParent:Node, doNotCloneChildren:Bool = false):LinesMesh {
+		return new LinesMesh(name, this.getScene(), newParent, this, doNotCloneChildren);
 	}
 	
 }

@@ -1,4 +1,5 @@
 package com.babylonhx.math;
+import com.babylonhx.tools.Tools;
 
 /**
  * ...
@@ -94,7 +95,30 @@ package com.babylonhx.math;
 		return this;
 	}
 
+	public function toHexString():String {
+		var intR = Std.int(this.r * 255);
+		var intG = Std.int(this.g * 255);
+		var intB = Std.int(this.b * 255);
+		var intA = Std.int(this.a * 255);
+		
+		return "#" + Tools.ToHex(intR) + Tools.ToHex(intG) + Tools.ToHex(intB) + Tools.ToHex(intA);
+	}
+
 	// Statics
+	public static function FromHexString(hex:String):Color4 {
+		if (hex.substring(0, 1) != "#" || hex.length != 9) {
+			trace("Color4.FromHexString must be called with a string like #FFFFFFFF");
+			return new Color4(0, 0, 0, 0);
+		}
+		
+		var r = Std.parseInt(hex.substring(1, 3));
+		var g = Std.parseInt(hex.substring(3, 5));
+		var b = Std.parseInt(hex.substring(5, 7));
+		var a = Std.parseInt(hex.substring(7, 9));
+		
+		return Color4.FromInts(r, g, b, a);
+	}
+		
 	public static function Lerp(left:Color4, right:Color4, amount:Float):Color4 {
 		var result = new Color4(0, 0, 0, 0);
 		

@@ -19,6 +19,7 @@ import com.babylonhx.mesh.Mesh;
 	public var lensFlares:Array<LensFlare> = new Array<LensFlare>();
 	public var borderLimit:Float = 300;
 	public var meshesSelectionPredicate:Mesh->Bool;
+	public var layerMask:Int = 0x0FFFFFFF;
 
 	private var _scene:Scene;
 	private var _emitter:Dynamic;
@@ -92,6 +93,10 @@ import com.babylonhx.mesh.Mesh;
 	public function getEmitter():Dynamic {
 		return this._emitter;
 	}
+	
+	public function setEmitter(newEmitter:Dynamic) {
+		this._emitter = newEmitter;
+	}
 
 	public function getEmitterPosition():Vector3 {
 		return this._emitter.getAbsolutePosition != null ? this._emitter.getAbsolutePosition() :this._emitter.position;
@@ -158,17 +163,21 @@ import com.babylonhx.mesh.Mesh;
 		
 		if (this._positionX < this.borderLimit + globalViewport.x) {
 			awayX = this.borderLimit + globalViewport.x - this._positionX;
-		} else if (this._positionX > globalViewport.x + globalViewport.width - this.borderLimit) {
+		} 
+		else if (this._positionX > globalViewport.x + globalViewport.width - this.borderLimit) {
 			awayX = this._positionX - globalViewport.x - globalViewport.width + this.borderLimit;
-		} else {
+		} 
+		else {
 			awayX = 0;
 		}
 		
 		if (this._positionY < this.borderLimit + globalViewport.y) {
 			awayY = this.borderLimit + globalViewport.y - this._positionY;
-		} else if (this._positionY > globalViewport.y + globalViewport.height - this.borderLimit) {
+		} 
+		else if (this._positionY > globalViewport.y + globalViewport.height - this.borderLimit) {
 			awayY = this._positionY - globalViewport.y - globalViewport.height + this.borderLimit;
-		} else {
+		} 
+		else {
 			awayY = 0;
 		}
 		
@@ -196,7 +205,7 @@ import com.babylonhx.mesh.Mesh;
 		engine.enableEffect(this._effect);
 		engine.setState(false);
 		engine.setDepthBuffer(false);
-		engine.setAlphaMode(Engine.ALPHA_ADD);
+		engine.setAlphaMode(Engine.ALPHA_ONEONE);
 		
 		// VBOs
 		engine.bindBuffers(this._vertexBuffer, this._indexBuffer, this._vertexDeclaration, this._vertexStrideSize, this._effect);

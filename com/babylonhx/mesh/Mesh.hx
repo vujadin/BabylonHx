@@ -26,6 +26,7 @@ import com.babylonhx.tools.AsyncLoop;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.materials.Material;
 import com.babylonhx.materials.textures.Texture;
+import com.babylonhx.bones.Skeleton;
 
 import haxe.Json;
 
@@ -77,19 +78,37 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	private var _sideOrientation:Int = Mesh.DEFAULTSIDE;
 	public var sideOrientation(get, set):Int;
 	private var _areNormalsFrozen:Bool = false;
-	public var areNormalsFrozen(get, never):Bool;
+	public var areNormalsFrozen(get, never):Bool; // Will be used by ribbons mainly
+	
+	private var _sourcePositions:Array<Float>; 	// Will be used to save original positions when using software skinning
+    private var _sourceNormals:Array<Float>; 	// Will be used to save original normals when using software skinning
 	
 	public var cap:Int = Mesh.NO_CAP;
 	
 	// exposing physics...
 	public var rigidBody:Dynamic;
+	public var physicsDim:Dynamic;
 	
 	// for extrusion
 	public var path3D:Path3D;
 	public var pathArray:Array<Array<Vector3>>;
 	public var tessellation:Int;
 	
+	// for ribbon
+	private var _closePath:Bool = false;
+	private var _idx:Array<Int>;
+	
 
+	/**
+	  * @constructor
+	  * @param {string} name - The value used by scene.getMeshByName() to do a lookup.
+	  * @param {Scene} scene - The scene to add this mesh to.
+	  * @param {Node} parent - The parent of this mesh, if it has one
+	  * @param {Mesh} source - An optional Mesh from which geometry is shared, cloned.
+	  * @param {boolean} doNotCloneChildren - When cloning, skip cloning child meshes of source, default False.
+	  *                  When false, achieved by calling a clone(), also passing False.
+	  *                  This will make creation of children, recursive.
+	  */
 	public function new(name:String, scene:Scene, parent:Node = null, ?source:Mesh, doNotCloneChildren:Bool = false) {
 		super(name, scene);
 		
@@ -101,6 +120,13 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			
 			// copy
 			_deepCopy(source, this);
+			
+			this.id = name + "." + source.id;
+			
+			if (source != null) {
+				// Material
+                this.material = source.material;
+			}
 						
 			if (!doNotCloneChildren) {
 				// Children
@@ -161,7 +187,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		dest._localTranslation = source._localTranslation.clone();
 		dest._localWorld = source._localWorld;
 		dest._masterMesh = source._masterMesh;		// ??
-		dest._material = source._material;
+		//dest._material = source._material;
 		dest._newPositionForCollisions = source._newPositionForCollisions.clone();
 		dest._oldPositionForCollisions = source._oldPositionForCollisions.clone();
 		dest._onAfterRenderCallbacks = source._onAfterRenderCallbacks;
@@ -181,7 +207,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		dest._renderId = source._renderId;
 		dest._renderIdForInstances = source._renderIdForInstances.copy();
 		dest._rotateYByPI = source._rotateYByPI.clone();
-		dest._savedMaterial = source._savedMaterial;
+		//dest._savedMaterial = source._savedMaterial;
 		dest._scene = source._scene;
 		dest._shouldGenerateFlatShading = source._shouldGenerateFlatShading;
 		//dest._skeleton = source._skeleton.clone(Tools.uuid(), Tools.uuid());
@@ -249,6 +275,12 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		});
 	}
 
+	/**
+	 * Add a mesh as LOD level triggered at the given distance.
+	 * @param {number} distance - the distance from the center of the object to show this level
+	 * @param {BABYLON.Mesh} mesh - the mesh to be added as LOD level
+	 * @return {BABYLON.Mesh} this mesh (for chaining)
+	 */
 	public function addLODLevel(distance:Float, mesh:Mesh = null):Mesh {
 		if (mesh != null && mesh._masterMesh != null) {
 			trace("You cannot use a mesh as LOD level twice");
@@ -279,6 +311,11 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return null;
 	}
 
+	/**
+	 * Remove a mesh from the LOD array
+	 * @param {BABYLON.Mesh} mesh - the mesh to be removed.
+	 * @return {BABYLON.Mesh} this mesh (for chaining)
+	 */
 	public function removeLODLevel(mesh:Mesh):Mesh {
 		for (index in 0...this._LODLevels.length) {
 			if (this._LODLevels[index].mesh == mesh) {
@@ -327,6 +364,11 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
             this.onLODLevelSelection(distanceToCamera, this, this);
         }
 		return this;
+	}
+	
+	public var geometry(get, never):Geometry;
+	private function get_geometry():Geometry {
+		return this._geometry;
 	}
 
 	override public function getTotalVertices():Int {
@@ -407,13 +449,13 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return this._sideOrientation;
 	}
 	
-	inline private function get_areNormalsFrozen():Bool {
-		return this._areNormalsFrozen;
-	}
-
 	inline private function set_sideOrientation(value:Int):Int {
 		this._sideOrientation = value;
 		return value;
+	}
+	
+	inline private function get_areNormalsFrozen():Bool {
+		return this._areNormalsFrozen;
 	}
 	
 	/**  
@@ -638,6 +680,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 
 	public function unregisterBeforeRender(func:AbstractMesh->Void) {
 		var index = this._onBeforeRenderCallbacks.indexOf(func);
+		
 		if (index > -1) {
 			this._onBeforeRenderCallbacks.splice(index, 1);
 		}
@@ -654,7 +697,6 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 	}
 
-	// TODO: cela funkcija
 	public function _getInstancesRenderList(subMeshId:Int):_InstancesBatch {
 		var scene = this.getScene();
 		this._batchCache.mustReturn = false;
@@ -774,7 +816,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 	}
 
-	public function render(subMesh:SubMesh) {
+	public function render(subMesh:SubMesh, enableAlphaMode:Bool) {
 		var scene = this.getScene();
 				
 		// Managing instances
@@ -821,6 +863,11 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		var world = this.getWorldMatrix();
 		
 		effectiveMaterial.bind(world, this);
+		
+		// Alpha mode
+        if (enableAlphaMode) {
+            engine.setAlphaMode(effectiveMaterial.alphaMode);
+        }
 		
 		// Draw
 		this._processRendering(subMesh, effect, fillMode, batch, hardwareInstancedRendering,
@@ -1091,8 +1138,10 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	public function applyDisplacementMapFromBuffer(buffer:UInt8Array, heightMapWidth:Float, heightMapHeight:Float, minHeight:Float, maxHeight:Float, invert:Bool = false) {
 		if (!this.isVerticesDataPresent(VertexBuffer.PositionKind)
 			|| !this.isVerticesDataPresent(VertexBuffer.NormalKind)
-			|| !this.isVerticesDataPresent(VertexBuffer.UVKind)) {
-			trace("Cannot call applyDisplacementMap:Given mesh is not complete. Position, Normal or UV are missing");
+			|| !this.isVerticesDataPresent(VertexBuffer.UVKind)
+			|| !this.getVertexBuffer(VertexBuffer.PositionKind).isUpdatable()
+			|| !this.getVertexBuffer(VertexBuffer.NormalKind).isUpdatable()) {
+			trace("Cannot call applyDisplacementMap:Given mesh is not complete. Position, Normal or UV are missing or not updatable!");
 			return;
 		}
 		
@@ -1350,21 +1399,62 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 							j++;
 							i += 3;
 						}
+						if (ribbonInstance._closePath) {
+                            positions[i] = path[0].x;
+                            positions[i + 1] = path[0].y;
+                            positions[i + 2] = path[0].z;
+                            i += 3;
+                        }
 					}
 				}
 			};
-			var computeNormals = !(ribbonInstance.areNormalsFrozen);
-			ribbonInstance.updateMeshPositions(positionFunction, computeNormals);
+			
+			var positions = ribbonInstance.getVerticesData(VertexBuffer.PositionKind);
+			positionFunction(positions);
+			ribbonInstance.updateVerticesData(VertexBuffer.PositionKind, positions, true, false);
+			if (!ribbonInstance.areNormalsFrozen) {
+				var indices = ribbonInstance.getIndices();
+				var normals = ribbonInstance.getVerticesData(VertexBuffer.NormalKind);
+				VertexData.ComputeNormals(positions, indices, normals);
+				
+				if (ribbonInstance._closePath) {
+					var indexFirst:Int = 0;
+					var indexLast:Int = 0;
+					for (p in 0...pathArray.length) {
+						indexFirst = ribbonInstance._idx[p] * 3;
+						if (p + 1 < pathArray.length) {
+							indexLast = (ribbonInstance._idx[p + 1] - 1) * 3;
+						}
+						else {
+							indexLast = normals.length - 3;
+						}
+						normals[indexFirst] = (normals[indexFirst] + normals[indexLast]) * 0.5;
+						normals[indexFirst + 1] = (normals[indexFirst + 1] + normals[indexLast + 1]) * 0.5;
+						normals[indexFirst + 2] = (normals[indexFirst + 2] + normals[indexLast + 2]) * 0.5;
+						normals[indexLast] = normals[indexFirst];
+						normals[indexLast + 1] = normals[indexFirst + 1];
+						normals[indexLast + 2] = normals[indexFirst + 2];
+					}
+				}
+				
+				ribbonInstance.updateVerticesData(VertexBuffer.NormalKind, normals, true, false);
+			}
 			
 			return ribbonInstance;
 		}
 		else {  // new ribbon creation
 			var ribbon = new Mesh(name, scene);
 			ribbon.sideOrientation = sideOrientation;
+			
 			var vertexData = VertexData.CreateRibbon(pathArray, closeArray, closePath, offset, sideOrientation);
 			
-			vertexData.applyToMesh(ribbon, updatable);
+			if (closePath) {
+				ribbon._idx = vertexData._idx;
+			}
+			ribbon._closePath = closePath;
 			
+			vertexData.applyToMesh(ribbon, updatable);
+				
 			return ribbon;
 		}
 	}
@@ -1378,22 +1468,48 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
         return disc;
     }
 	
-	public static function CreateBox(name:String, size:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+	public static function CreateBox(name:String, options:Dynamic, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
 		var box = new Mesh(name, scene);
-		var vertexData = VertexData.CreateBox(size, sideOrientation);
+		var vertexData = VertexData.CreateBox(options, sideOrientation);
+		
+		if (scene.isPhysicsEnabled()) {
+			box.physicsDim = { };
+			box.physicsDim.size = options;
+		}
 		
 		vertexData.applyToMesh(box, updatable);
 		
 		return box;
 	}
-
-	public static function CreateSphere(name:String, segments:Int, diameter:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+	
+	public static function CreateSphere(name:String, options:Dynamic, diameterOrScene:Dynamic, ?scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+		if (Std.is(diameterOrScene, Scene)) {
+			scene = diameterOrScene;
+			updatable = options.updatable;
+		} 
+		else {
+			var segments = options;
+			
+			options = {
+				segments: segments,
+				diameterX: diameterOrScene,
+				diameterY: diameterOrScene,
+				diameterZ: diameterOrScene,
+				sideOrientation: sideOrientation
+			}
+		}
+		
 		var sphere = new Mesh(name, scene);
-		var vertexData = VertexData.CreateSphere(segments, diameter, sideOrientation);
+		var vertexData = VertexData.CreateSphere(options);
 		
 		vertexData.applyToMesh(sphere, updatable);
 		
-		return sphere;
+		if (scene.isPhysicsEnabled()) {
+			sphere.physicsDim = { };
+			sphere.physicsDim.diameter = options.diameterX / 2;
+		}
+		
+		return sphere;		
 	}
 
 	// Cylinder and cone (Code inspired by SharpDX.org)
@@ -1401,9 +1517,72 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		var cylinder = new Mesh(name, scene);
 		var vertexData = VertexData.CreateCylinder(height, diameterTop, diameterBottom, tessellation, subdivisions, sideOrientation);
 		
+		if (scene.isPhysicsEnabled()) {
+			cylinder.physicsDim = { };
+			cylinder.physicsDim.height = height;
+			cylinder.physicsDim.diameter = diameterBottom > diameterTop ? diameterBottom : diameterTop;
+		}
+		
 		vertexData.applyToMesh(cylinder, updatable);
 				
 		return cylinder;
+		/*
+		// setup tube creation parameters
+		var path:Array<Vector3> = [
+			new Vector3(0, -height/2, 0), 
+			new Vector3(0, height/2, 0), 
+		];
+		
+		var radiusFunction = function(i:Int, distance:Float):Float {
+			return (diameterBottom + (diameterTop - diameterBottom) * distance / height) / 2;
+		};
+		
+		// create tube without caps
+		var cylinder = Mesh.CreateTube(name, path, 1.0, tessellation, radiusFunction, Mesh.NO_CAP, scene, updatable, sideOrientation);
+		
+		// extract geometry data to add caps
+		var geometry_data = VertexData.ExtractFromMesh(cylinder);
+		
+		var createCylinderCap = function (isTop:Bool) {
+			var radius = isTop ? diameterTop / 2 : diameterBottom / 2;
+			if (radius == 0) {
+				return;
+			}
+			var vbase = Std.int(geometry_data.positions.length / 3);
+			var offset = new Vector3(0, isTop ? height / 2 : -height / 2, 0);
+			var textureScale = new Vector2(0.5, 0.5);
+			// Positions, normals & uvs
+			var angle:Float = 0;
+			for (i in 0...tessellation) {
+				angle = Math.PI * 2 * i / tessellation;
+				var circleVector = new Vector3(Math.cos(angle), 0, Math.sin(angle));
+				var position = circleVector.scale(radius).add(offset);
+				var textureCoordinate = new Vector2(circleVector.x * textureScale.x + 0.5, circleVector.z * textureScale.y + 0.5);
+				geometry_data.positions.concat([position.x, position.y, position.z]);
+				geometry_data.normals.concat([0, isTop ? 1 : -1, 0]);
+				geometry_data.uvs.concat([textureCoordinate.x, textureCoordinate.y]);
+			}
+			// Indices
+			for (i in 0...tessellation - 2) {
+				if (!isTop) {
+					geometry_data.indices.push(vbase);
+					geometry_data.indices.push(vbase + (i + 2) % tessellation);
+					geometry_data.indices.push(vbase + (i + 1) % tessellation);
+				}
+				else {
+					geometry_data.indices.push(vbase);
+					geometry_data.indices.push(vbase + (i + 1) % tessellation);
+					geometry_data.indices.push(vbase + (i + 2) % tessellation);
+				}
+			}
+		};
+		
+		// add caps to geometry and apply to mesh
+		createCylinderCap(true);
+		createCylinderCap(false);
+		geometry_data.applyToMesh(cylinder);
+		
+		return cylinder;*/
 	}
 
 	// Torus  (Code from SharpDX.org)
@@ -1426,30 +1605,86 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	// Lines
 	public static function CreateLines(name:String, points:Array<Vector3>, scene:Scene, updatable:Bool = false, linesInstance:LinesMesh = null):LinesMesh {
 		if (linesInstance != null) { // lines update
-			var positionsOfLines = function (points:Array<Vector3>):Dynamic {
-				var positionFunction = function (positions:Array<Float>) {
-					var i:Int = 0;
-					for(p in 0...points.length) {
-						positions[i] = points[p].x;
-						positions[i + 1] = points[p].y;
-						positions[i + 2] = points[p].z;
-						i += 3;
-					}
-				};
-				return positionFunction;
+			var positionFunction = function (positions:Array<Float>) {
+				var i:Int = 0;
+				for(p in 0...points.length) {
+					positions[i] = points[p].x;
+					positions[i + 1] = points[p].y;
+					positions[i + 2] = points[p].z;
+					i += 3;
+				}
 			};
-			var positionFunction = positionsOfLines(points);
 			linesInstance.updateMeshPositions(positionFunction, false);
 			
 			return linesInstance;			
 		}
 		
 		// lines creation
-		var lines = new LinesMesh(name, scene, updatable);
+		var lines = new LinesMesh(name, scene);
 		var vertexData = VertexData.CreateLines(points);
 		vertexData.applyToMesh(lines, updatable);
 		
 		return lines;
+	}
+	
+	// Dashed Lines
+    public static function CreateDashedLines(name:String, points:Array<Vector3>, ?dashSize:Float, ?gapSize:Float, ?dashNb:Float, scene:Scene, ?updatable:Bool = false, linesInstance:LinesMesh = null):LinesMesh {
+		if (linesInstance != null) {  //  dashed lines update
+			var positionFunction = function(positions:Array<Float>) {
+				var curvect:Vector3 = Vector3.Zero();
+				var nbSeg:Float = positions.length / 6;
+				var lg:Float = 0;
+				var nb:Int = 0;
+				var shft:Float = 0;
+				var dashshft:Float = 0;
+				var curshft:Float = 0;
+				var p:Int = 0;
+				var i:Int = 0;
+				var j:Int = 0;
+				for (i in 0...points.length - 1) {
+					points[i + 1].subtractToRef(points[i], curvect);
+					lg += curvect.length();
+				}
+				shft = lg / nbSeg;
+				dashshft = linesInstance.dashSize * shft / (linesInstance.dashSize + linesInstance.gapSize);
+				while (i < points.length - 1) {
+					points[i + 1].subtractToRef(points[i], curvect);
+					nb = Math.floor(curvect.length() / shft);
+					curvect.normalize();
+					j = 0;
+					while (j < nb && p < positions.length) {
+						curshft = shft * j;
+						positions[p] = points[i].x + curshft * curvect.x;
+						positions[p + 1] = points[i].y + curshft * curvect.y;
+						positions[p + 2] = points[i].z + curshft * curvect.z;
+						positions[p + 3] = points[i].x + (curshft + dashshft) * curvect.x;
+						positions[p + 4] = points[i].y + (curshft + dashshft) * curvect.y;
+						positions[p + 5] = points[i].z + (curshft + dashshft) * curvect.z;
+						p += 6;
+						j++;
+					}
+					++i;
+				}
+				while (p < positions.length) {
+					positions[p] = points[i].x;
+					positions[p + 1] = points[i].y;
+					positions[p + 2] = points[i].z;
+					p += 3;
+				}
+			};
+			linesInstance.updateMeshPositions(positionFunction, false);
+			
+			return linesInstance;
+		}
+		
+		// dashed lines creation
+		var dashedLines = new LinesMesh(name, scene);
+		var vertexData = VertexData.CreateDashedLines(points, dashSize, gapSize, dashNb);
+		vertexData.applyToMesh(dashedLines, updatable);
+		dashedLines.dashSize = dashSize;
+		dashedLines.gapSize = gapSize;
+		
+		return dashedLines;
 	}
 	
 	// Extrusion
@@ -1603,7 +1838,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	public static function CreateGround(name:String, width:Float, height:Float, subdivisions:Int, scene:Scene, updatable:Bool = false):Mesh {
 		var ground = new GroundMesh(name, scene);
 		ground._setReady(false);
-		ground.subdivisions = subdivisions;
+		ground._subdivisions = subdivisions;
 		
 		var vertexData = VertexData.CreateGround(width, height, subdivisions);
 		vertexData.applyToMesh(ground, updatable);
@@ -1622,7 +1857,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	
 	public static function CreateGroundFromHeightMap(name:String, url:String, width:Float, height:Float, subdivisions:Int, minHeight:Float, maxHeight:Float, scene:Scene, updatable:Bool = false, ?onReady:GroundMesh->Void):GroundMesh {
 		var ground = new GroundMesh(name, scene);
-		ground.subdivisions = subdivisions;
+		ground._subdivisions = subdivisions;
 		ground._setReady(false);
 		
 		var onload = function(img:Image) {
@@ -1955,6 +2190,102 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		
         return decal;
     }
+	
+	// Skeletons
+
+	/**
+	 * Update the vertex buffers by applying transformation from the bones
+	 * @param {skeleton} skeleton to apply
+	 */
+	public function applySkeleton(skeleton:Skeleton):Mesh {
+		if (!this.isVerticesDataPresent(VertexBuffer.PositionKind)) {
+			return this;
+		}
+		if (!this.isVerticesDataPresent(VertexBuffer.NormalKind)) {
+			return this;
+		}
+		if (!this.isVerticesDataPresent(VertexBuffer.MatricesIndicesKind)) {
+			return this;
+		}
+		if (!this.isVerticesDataPresent(VertexBuffer.MatricesWeightsKind)) {
+			return this;
+		}
+		
+		if (this._sourcePositions == null) {
+			var source = this.getVerticesData(VertexBuffer.PositionKind);
+			this._sourcePositions = source;
+			
+			if (!this.getVertexBuffer(VertexBuffer.PositionKind).isUpdatable()) {
+				this.setVerticesData(VertexBuffer.PositionKind, source, true);
+			}
+		}
+		
+		if (this._sourceNormals == null) {
+			var source = this.getVerticesData(VertexBuffer.NormalKind);
+			this._sourceNormals = source;
+			
+			if (!this.getVertexBuffer(VertexBuffer.NormalKind).isUpdatable()) {
+				this.setVerticesData(VertexBuffer.NormalKind, source, true);
+			}
+		}
+		
+		var positionsData = this.getVerticesData(VertexBuffer.PositionKind);
+		var normalsData = this.getVerticesData(VertexBuffer.NormalKind);
+		
+		var matricesIndicesData = this.getVerticesData(VertexBuffer.MatricesIndicesKind);
+		var matricesWeightsData = this.getVerticesData(VertexBuffer.MatricesWeightsKind);
+		
+		var skeletonMatrices = skeleton.getTransformMatrices();
+		
+		var tempVector3 = Vector3.Zero();
+		var finalMatrix = new Matrix();
+		var tempMatrix = new Matrix();
+		
+		var index:Int = 0;
+		while (index < positionsData.length) {
+			var index4 = Std.int((index / 3) * 4);
+			var matricesWeight0 = matricesWeightsData[index4];
+			var matricesWeight1 = matricesWeightsData[index4 + 1];
+			var matricesWeight2 = matricesWeightsData[index4 + 2];
+			var matricesWeight3 = matricesWeightsData[index4 + 3];
+			
+			if (matricesWeight0 > 0) {
+				var matricesIndex0 = matricesIndicesData[index4];
+				Matrix.FromFloat32ArrayToRefScaled(new Float32Array(skeletonMatrices), Std.int(matricesIndicesData[index4] * 16), matricesWeight0, tempMatrix);
+				finalMatrix.addToSelf(tempMatrix);
+			}
+			
+			if (matricesWeight1 > 0) {
+				Matrix.FromFloat32ArrayToRefScaled(new Float32Array(skeletonMatrices), Std.int(matricesIndicesData[index4 + 1] * 16), matricesWeight1, tempMatrix);
+				finalMatrix.addToSelf(tempMatrix);
+			}
+			
+			if (matricesWeight2 > 0) {
+				Matrix.FromFloat32ArrayToRefScaled(new Float32Array(skeletonMatrices), Std.int(matricesIndicesData[index4 + 2] * 16), matricesWeight2, tempMatrix);
+				finalMatrix.addToSelf(tempMatrix);
+			}
+			
+			if (matricesWeight3 > 0) {
+				Matrix.FromFloat32ArrayToRefScaled(new Float32Array(skeletonMatrices), Std.int(matricesIndicesData[index4 + 3] * 16), matricesWeight3, tempMatrix);
+				finalMatrix.addToSelf(tempMatrix);
+			}
+			
+			Vector3.TransformCoordinatesFromFloatsToRef(this._sourcePositions[index], this._sourcePositions[index + 1], this._sourcePositions[index + 2], finalMatrix, tempVector3);
+			tempVector3.toArray(positionsData, index);
+			
+			Vector3.TransformNormalFromFloatsToRef(this._sourceNormals[index], this._sourceNormals[index + 1], this._sourceNormals[index + 2], finalMatrix, tempVector3);
+			tempVector3.toArray(normalsData, index);
+			
+			finalMatrix.reset();
+			
+			index += 3;
+		}
+		
+		this.updateVerticesData(VertexBuffer.PositionKind, positionsData);
+		this.updateVerticesData(VertexBuffer.NormalKind, normalsData);
+		
+		return this;
+	}
 
 	// Tools
 	public static function MinMax(meshes:Array<AbstractMesh>):BabylonMinMax {

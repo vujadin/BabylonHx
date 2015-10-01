@@ -3,6 +3,7 @@ package com.babylonhx.rendering;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.mesh.SubMesh;
 
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -24,6 +25,7 @@ import com.babylonhx.mesh.SubMesh;
 		this.index = index;
 	}
 
+	var submesh:SubMesh = null;
 	public function render(customRenderFunction:SmartArray->SmartArray->SmartArray->Void):Bool {
 		if (customRenderFunction != null) {
 			customRenderFunction(this._opaqueSubMeshes, this._alphaTestSubMeshes, this._transparentSubMeshes);
@@ -35,18 +37,17 @@ import com.babylonhx.mesh.SubMesh;
 		}
 		
 		var engine = this._scene.getEngine();
-		// Opaque
-		var submesh:SubMesh = null;
+		// Opaque		
 		for (subIndex in 0...this._opaqueSubMeshes.length) {
 			submesh = this._opaqueSubMeshes.data[subIndex];
-			submesh.render();
+			submesh.render(false);
 		}
 		
 		// Alpha test
 		engine.setAlphaTesting(true);
 		for (subIndex in 0...this._alphaTestSubMeshes.length) {
 			submesh = this._alphaTestSubMeshes.data[subIndex];
-			submesh.render();
+			submesh.render(false);
 		}
 		engine.setAlphaTesting(false);
 		
@@ -82,10 +83,9 @@ import com.babylonhx.mesh.SubMesh;
 			});
 			
 			// Rendering
-			engine.setAlphaMode(Engine.ALPHA_COMBINE);
 			for (subIndex in 0...sortedArray.length) {
 				submesh = sortedArray[subIndex];
-				submesh.render();
+				submesh.render(true);
 			}
 			engine.setAlphaMode(Engine.ALPHA_DISABLE);
 		}
@@ -105,9 +105,11 @@ import com.babylonhx.mesh.SubMesh;
 		
 		if (material.needAlphaBlending() || mesh.visibility < 1.0 || mesh.hasVertexAlpha) { // Transparent
 			this._transparentSubMeshes.push(subMesh);
-		} else if (material.needAlphaTesting()) { // Alpha test
+		} 
+		else if (material.needAlphaTesting()) { // Alpha test
 			this._alphaTestSubMeshes.push(subMesh);
-		} else {
+		} 
+		else {
 			this._opaqueSubMeshes.push(subMesh); // Opaque
 		}
 	}

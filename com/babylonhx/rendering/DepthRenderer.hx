@@ -84,7 +84,7 @@ import com.babylonhx.tools.SmartArray;
 				}
 				
 				// Bones				
-				if (mesh.useBones) {
+				if (mesh.useBones && mesh.computeBonesUsingShaders) {
 					this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices());
 				}
 				
@@ -157,12 +157,12 @@ import com.babylonhx.tools.SmartArray;
 		return this._effect.isReady();
 	}
 
-	inline public function getDepthMap():RenderTargetTexture {
+	public function getDepthMap():RenderTargetTexture {
 		return this._depthMap;
 	}
 
 	// Methods
-	inline public function dispose() {
+	public function dispose() {
 		this._depthMap.dispose();
 	}
 	

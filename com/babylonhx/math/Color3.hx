@@ -1,4 +1,5 @@
 package com.babylonhx.math;
+import com.babylonhx.tools.Tools;
 
 /**
  * ...
@@ -121,8 +122,29 @@ package com.babylonhx.math;
 		
 		return this;
 	}
+	
+	public function toHexString():String {
+		var intR = Std.int(this.r * 255);
+		var intG = Std.int(this.g * 255);
+		var intB = Std.int(this.b * 255);
+		
+		return "#" + Tools.ToHex(intR) + Tools.ToHex(intG) + Tools.ToHex(intB);
+	}
 
 	// Statics
+	public static function FromHexString(hex:String):Color3 {
+		if (hex.substring(0, 1) != "#" || hex.length != 7) {
+			trace("Color3.FromHexString must be called with a string like #FFFFFF");
+			return new Color3(0, 0, 0);
+		}
+		
+		var r = Std.parseInt(hex.substring(1, 3));
+		var g = Std.parseInt(hex.substring(3, 5));
+		var b = Std.parseInt(hex.substring(5, 7));
+		
+		return Color3.FromInts(r, g, b);
+	}
+
 	inline public static function FromArray(array:Array<Float>, offset:Int = 0):Color3 {
 		return new Color3(array[0], array[1], array[2]);
 	}
@@ -131,7 +153,7 @@ package com.babylonhx.math;
 		return Color3.FromInts((rgb >> 16) & 255, (rgb >> 8) & 255, rgb & 255);
 	}
 
-	inline public static function FromInts(r:Float, g:Float, b:Float):Color3 {
+	inline public static function FromInts(r:Int, g:Int, b:Int):Color3 {
 		return new Color3(r / 255.0, g / 255.0, b / 255.0);
 	}
 

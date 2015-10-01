@@ -22,7 +22,7 @@ package com.babylonhx.math;
 		// Near
 		frustumPlanes[0].normal.x = transform.m[3] + transform.m[2];
 		frustumPlanes[0].normal.y = transform.m[7] + transform.m[6];
-		frustumPlanes[0].normal.z = transform.m[10] + transform.m[10];
+		frustumPlanes[0].normal.z = transform.m[11] + transform.m[10];
 		frustumPlanes[0].d = transform.m[15] + transform.m[14];
 		frustumPlanes[0].normalize();
 		

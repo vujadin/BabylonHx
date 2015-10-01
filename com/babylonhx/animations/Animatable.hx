@@ -59,6 +59,17 @@ package com.babylonhx.animations;
 		
 		return null;
 	}
+	
+	public function reset() {
+		var animations = this._animations;
+		
+		for (index in 0...animations.length) {
+			animations[index].reset();
+		}
+		
+		this._localDelayOffset = -1;
+		this._pausedDelay = -1;
+	}
 
 	inline public function pause() {
 		this._paused = true;

@@ -25,7 +25,7 @@ import com.babylonhx.utils.typedarray.ArrayBufferView;
 	}
 	
 	public function update(data:ArrayBufferView) {
-		this.getScene().getEngine().updateRawTexture(this._texture, data, this.format, this.getSize(), this._invertY);
+		this.getScene().getEngine().updateRawTexture(this._texture, data, this.format, this._invertY);
 	}
 
 	// Statics

@@ -18,6 +18,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public var name:String;
 	public var sprites:Array<Sprite> = [];
 	public var renderingGroupId:Int = 0;
+	public var layerMask:Int = 0x0FFFFFFF;
 	public var onDispose:Void->Void;
 	public var fogEnabled:Bool = true;
 	public var cellSize:Float;
@@ -85,7 +86,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			["diffuseSampler"], "#define FOG");
 	}
 
-	private function _appendSpriteVertex(index:Int, sprite:Sprite, offsetX:Float, offsetY:Float, rowSize:Int):Void {
+	private function _appendSpriteVertex(index:Int, sprite:Sprite, offsetX:Float, offsetY:Float, rowSize:Int) {
 		var arrayOffset = index * 16;
 		
 		if (offsetX == 0) {
@@ -122,7 +123,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._vertices[arrayOffset + 15] = sprite.color.a;
 	}
 
-	public function render():Void {
+	public function render() {
 		// Check
 		if (!this._effectBase.isReady() || !this._effectFog.isReady() || this._spriteTexture == null || !this._spriteTexture.isReady())
 			return;
@@ -189,7 +190,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		engine.setAlphaMode(Engine.ALPHA_DISABLE);
 	}
 
-	public function dispose():Void {
+	public function dispose() {
 		if (this._vertexBuffer != null) {
 			this._scene.getEngine()._releaseBuffer(this._vertexBuffer);
 			this._vertexBuffer = null;

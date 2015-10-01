@@ -17,7 +17,7 @@ import com.babylonhx.Scene;
 		this.maximumSize = maximumSize;
 	}
 	
-	override public function apply(scene:Scene):Bool {
+	override public function apply(scene:Scene, updateSelectionTree:Bool = false):Bool {
 		var allDone:Bool = true;
 		
 		for (index in 0...scene.textures.length) {

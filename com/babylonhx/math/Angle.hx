@@ -14,6 +14,7 @@ import com.babylonhx.math.Vector2;
 
 	private var _radians:Float;
 	
+	
 	inline public function degrees():Float { 
 		return (this._radians * 180 / Math.PI); 
 	}

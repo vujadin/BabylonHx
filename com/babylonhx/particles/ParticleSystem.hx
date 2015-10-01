@@ -49,6 +49,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public var maxAngularSpeed:Float = 0;
 
 	public var particleTexture:Texture;
+	
+	public var layerMask:Int = 0x0FFFFFFF;
 
 	public var onDispose:Void->Void;
 	public var updateFunction:Array<Particle>->Void;
@@ -398,7 +400,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		// Draw order
 		if (this.blendMode == ParticleSystem.BLENDMODE_ONEONE) {
-			engine.setAlphaMode(Engine.ALPHA_ADD);
+			engine.setAlphaMode(Engine.ALPHA_ONEONE);
 		} 
 		else {
 			engine.setAlphaMode(Engine.ALPHA_COMBINE);
@@ -443,7 +445,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public function clone(name:String, ?newEmitter:Dynamic):ParticleSystem {
 		var result = new ParticleSystem(name, this._capacity, this._scene);
 		
-		Tools.DeepCopy(this, result, ["particles"], ["_vertexDeclaration", "_vertexStrideSize"]);
+		// TODO:
+		//Tools.DeepCopy(this, result, ["particles"], ["_vertexDeclaration", "_vertexStrideSize"]);
 		
 		if (newEmitter == null) {
 			newEmitter = this.emitter;

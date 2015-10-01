@@ -5,6 +5,7 @@ import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh._InstancesBatch;
 import com.babylonhx.materials.Material;
+import com.babylonhx.math.Matrix;
 
 /**
  * ...
@@ -42,8 +43,7 @@ import com.babylonhx.materials.Material;
 		this._effect.setMatrix("viewProjection", scene.getTransformMatrix());
 		
 		// Bones
-		var useBones = mesh.skeleton != null && scene.skeletonsEnabled && mesh.isVerticesDataPresent(VertexBuffer.MatricesIndicesKind) && mesh.isVerticesDataPresent(VertexBuffer.MatricesWeightsKind);
-		if (useBones) {
+		if (mesh.useBones && mesh.computeBonesUsingShaders) {
 			this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices());
 		}
 		
@@ -56,27 +56,8 @@ import com.babylonhx.materials.Material;
 			this._effect.setMatrix("diffuseMatrix", alphaTexture.getTextureMatrix());
 		}
 		
-		if (hardwareInstancedRendering) {
-			mesh._renderWithInstances(subMesh, Material.TriangleFillMode, batch, this._effect, engine);
-		} else {
-			if (batch.renderSelf.length > subMesh._id) {
-				this._effect.setMatrix("world", mesh.getWorldMatrix());
-				
-				// Draw
-				mesh._draw(subMesh, Material.TriangleFillMode);
-			}
-			
-			if (batch.visibleInstances[subMesh._id] != null) {
-				for (instanceIndex in 0...batch.visibleInstances[subMesh._id].length) {
-					var instance = batch.visibleInstances[subMesh._id][instanceIndex];
-					
-					this._effect.setMatrix("world", instance.getWorldMatrix());
-					
-					// Draw
-					mesh._draw(subMesh, Material.TriangleFillMode);
-				}
-			}
-		}
+		mesh._processRendering(subMesh, this._effect, Material.TriangleFillMode, batch, hardwareInstancedRendering,
+					function(isInstance:Bool, world:Matrix) { this._effect.setMatrix("world", world); } );
 	}
 
 	public function isReady(subMesh:SubMesh, useInstances:Bool):Bool {

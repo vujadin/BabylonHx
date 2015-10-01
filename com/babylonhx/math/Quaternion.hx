@@ -168,6 +168,28 @@ package com.babylonhx.math;
 		result.m[14] = 0;
 		result.m[15] = 1.0;
 	}
+	
+	inline public function multVector(vec:Vector3):Vector3 {		  
+		var num = this.x * 2;
+		var num2 = this.y * 2;
+		var num3 = this.z * 2;
+		var num4 = this.x * num;
+		var num5 = this.y * num2;
+		var num6 = this.z * num3;
+		var num7 = this.x * num2;
+		var num8 = this.x * num3;
+		var num9 = this.y * num3;
+		var num10 = this.w * num;
+		var num11 = this.w * num2;
+		var num12 = this.w * num3;
+		
+		var result:Vector3 = new Vector3();
+		result.x = (1 - (num5 + num6)) * vec.x + (num7 - num12) * vec.y + (num8 + num11) * vec.z;
+		result.y = (num7 + num12) * vec.x + (1 - (num4 + num6)) * vec.y + (num9 - num10) * vec.z;
+		result.z = (num8 - num11) * vec.x + (num9 + num10) * vec.y + (1 - (num4 + num5)) * vec.z;
+		
+		return result;
+	}
 
 	inline public function fromRotationMatrix(matrix:Matrix) {
 		Quaternion.FromRotationMatrixToRef(matrix, this);
@@ -245,12 +267,79 @@ package com.babylonhx.math;
 		var result = new Quaternion();
 		var sin = Math.sin(angle / 2);
 		
+		axis.normalize();
+		
 		result.w = Math.cos(angle / 2);
 		result.x = axis.x * sin;
 		result.y = axis.y * sin;
 		result.z = axis.z * sin;
 		
 		return result;
+	}
+	
+	public static function LookRotation(forward:Vector3, ?up:Vector3) {
+		if (up == null) {
+			up  = Vector3.Up();
+		}
+		
+		forward.normalize();
+		
+		var vector:Vector3 = Vector3.Normalize(forward);
+		var vector2:Vector3 = Vector3.Normalize(Vector3.Cross(up, vector));
+		var vector3:Vector3 = Vector3.Cross(vector, vector2);
+		var m00 = vector2.x;
+		var m01 = vector2.y;
+		var m02 = vector2.z;
+		var m10 = vector3.x;
+		var m11 = vector3.y;
+		var m12 = vector3.z;
+		var m20 = vector.x;
+		var m21 = vector.y;
+		var m22 = vector.z;
+		
+		var num8:Float = (m00 + m11) + m22;
+		var quaternion:Quaternion = new Quaternion();
+		if (num8 > 0) {
+			var num = Math.sqrt(num8 + 1);
+			quaternion.w = num * 0.5;
+			num = 0.5 / num;
+			quaternion.x = (m12 - m21) * num;
+			quaternion.y = (m20 - m02) * num;
+			quaternion.z = (m01 - m10) * num;
+			
+			return quaternion;
+		}
+		
+		if ((m00 >= m11) && (m00 >= m22)) {
+			var num7 = Math.sqrt(((1 + m00) - m11) - m22);
+			var num4 = 0.5 / num7;
+			quaternion.x = 0.5 * num7;
+			quaternion.y = (m01 + m10) * num4;
+			quaternion.z = (m02 + m20) * num4;
+			quaternion.w = (m12 - m21) * num4;
+			
+			return quaternion;
+		}
+		
+		if (m11 > m22) {
+			var num6 = Math.sqrt(((1 + m11) - m00) - m22);
+			var num3 = 0.5 / num6;
+			quaternion.x = (m10+ m01) * num3;
+			quaternion.y = 0.5 * num6;
+			quaternion.z = (m21 + m12) * num3;
+			quaternion.w = (m20 - m02) * num3;
+			
+			return quaternion; 
+		}
+		
+		var num5 = Math.sqrt(((1 + m22) - m00) - m11);
+		var num2 = 0.5 / num5;
+		quaternion.x = (m20 + m02) * num2;
+		quaternion.y = (m21 + m12) * num2;
+		quaternion.z = 0.5 * num5;
+		quaternion.w = (m01 - m10) * num2;
+		
+		return quaternion;
 	}
 
 	inline public static function FromArray(array:Array<Float>, offset:Int = 0):Quaternion {

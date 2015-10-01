@@ -4,6 +4,7 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Plane;
 import com.babylonhx.math.Ray;
 import com.babylonhx.tools.SmartArray;
+import haxe.ds.Vector;
 
 
 /**
@@ -20,7 +21,7 @@ import com.babylonhx.tools.SmartArray;
 	private var _capacity:Int;
 	private var _minPoint:Vector3;
 	private var _maxPoint:Vector3;
-	private var _boundingVectors:Array<Vector3> = [];
+	private var _boundingVectors:Vector<Vector3> = new Vector<Vector3>(8);
 	private var _creationFunc:T->OctreeBlock<T>->Void;
 	
 
@@ -33,25 +34,25 @@ import com.babylonhx.tools.SmartArray;
 		this._minPoint = minPoint;
 		this._maxPoint = maxPoint;
 		
-		this._boundingVectors.push(minPoint.clone());
-		this._boundingVectors.push(maxPoint.clone());
+		this._boundingVectors.set(0, minPoint.clone());
+		this._boundingVectors.set(1, maxPoint.clone());
 		
-		this._boundingVectors.push(minPoint.clone());
+		this._boundingVectors.set(2, minPoint.clone());
 		this._boundingVectors[2].x = maxPoint.x;
 		
-		this._boundingVectors.push(minPoint.clone());
+		this._boundingVectors.set(3, minPoint.clone());
 		this._boundingVectors[3].y = maxPoint.y;
 		
-		this._boundingVectors.push(minPoint.clone());
+		this._boundingVectors.set(4, minPoint.clone());
 		this._boundingVectors[4].z = maxPoint.z;
 		
-		this._boundingVectors.push(maxPoint.clone());
+		this._boundingVectors.set(5, maxPoint.clone());
 		this._boundingVectors[5].z = minPoint.z;
 		
-		this._boundingVectors.push(maxPoint.clone());
+		this._boundingVectors.set(6, maxPoint.clone());
 		this._boundingVectors[6].x = minPoint.x;
 		
-		this._boundingVectors.push(maxPoint.clone());
+		this._boundingVectors.set(7, maxPoint.clone());
 		this._boundingVectors[7].y = minPoint.y;
 	}
 

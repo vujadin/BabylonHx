@@ -239,6 +239,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	inline public static function FromArray(array:Array<Float>, offset:Int = 0):Vector3 {
 		return new Vector3(array[offset], array[offset + 1], array[offset + 2]);
 	}
+	
+	inline public static function FromFloatArray(array:Float32Array, offset:Int = 0):Vector3 {
+        return new Vector3(array[offset], array[offset + 1], array[offset + 2]);
+    }
 
 	inline public static function FromArrayToRef(array:Array<Float>, offset:Int, result:Vector3) {
 		result.x = array[offset];
@@ -246,7 +250,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		result.z = array[offset + 2];
 	}
 
-	inline public static function FromFloatArrayToRef(array: #if (js || purejs) Float32Array #else Array<Float> #end, offset:Int, result:Vector3) {
+	inline public static function FromFloatArrayToRef(array: #if (js || purejs || web || html5) Float32Array #else Array<Float> #end, offset:Int, result:Vector3) {
 		result.x = array[offset];
 		result.y = array[offset + 1];
 		result.z = array[offset + 2];
@@ -261,9 +265,33 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	inline public static function Zero():Vector3 {
 		return new Vector3(0, 0, 0);
 	}
+	
+	inline public static function One():Vector3 {
+		return new Vector3(1, 1, 1);
+	}
 
 	inline public static function Up():Vector3 {
 		return new Vector3(0, 1.0, 0);
+	}
+	
+	inline public static function Down():Vector3 {
+		return new Vector3(0, -1.0, 0);
+	}
+	
+	inline public static function Forward():Vector3 {
+		return new Vector3(0, 0, 1.0);
+	}
+	
+	inline public static function Back():Vector3 {
+		return new Vector3(0, 0, -1.0);
+	}
+	
+	inline public static function Right():Vector3 {
+		return new Vector3(1.0, 0, 0);
+	}
+	
+	inline public static function Left():Vector3 {
+		return new Vector3(-1.0, 0, 0);
 	}
 
 	inline public static function TransformCoordinates(vector:Vector3, transformation:Matrix):Vector3 {
@@ -417,14 +445,28 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		return Vector3.TransformCoordinates(vector, finalMatrix);
 	}
-
-	inline public static function Unproject(source:Vector3, viewportWidth:Float, viewportHeight:Float, world:Matrix, view:Matrix, projection:Matrix):Vector3 {
-		var matrix = world.multiply(view).multiply(projection);
+	
+	inline public static function UnprojectFromTransform(source:Vector3, viewportWidth:Float, viewportHeight:Float, world:Matrix, transform:Matrix):Vector3 {
+		var matrix = world.multiply(transform);
 		matrix.invert();
 		source.x = source.x / viewportWidth * 2 - 1;
 		source.y = -(source.y / viewportHeight * 2 - 1);
 		var vector = Vector3.TransformCoordinates(source, matrix);
 		var num = source.x * matrix.m[3] + source.y * matrix.m[7] + source.z * matrix.m[11] + matrix.m[15];
+		
+		if (Tools.WithinEpsilon(num, 1.0)) {
+			vector = vector.scale(1.0 / num);
+		}
+		
+		return vector;
+	}
+
+	inline public static function Unproject(source:Vector3, viewportWidth:Float, viewportHeight:Float, world:Matrix, view:Matrix, projection:Matrix):Vector3 {
+		var matrix = world.multiply(view).multiply(projection);
+		matrix.invert();
+		var screenSource = new Vector3(source.x / viewportWidth * 2 - 1, -(source.y / viewportHeight * 2 - 1), source.z);
+        var vector = Vector3.TransformCoordinates(screenSource, matrix);
+        var num = screenSource.x * matrix.m[3] + screenSource.y * matrix.m[7] + screenSource.z * matrix.m[11] + matrix.m[15];
 		
 		if (Tools.WithinEpsilon(num, 1.0)) {
 			vector = vector.scale(1.0 / num);
@@ -462,4 +504,136 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		center.scaleInPlace(0.5);
 		return center;
 	}
+	
+	/** 
+	 * Given three orthogonal left-handed oriented Vector3 axis in space (target system), 
+	 * RotationFromAxis() returns the rotation Euler angles (ex : rotation.x, rotation.y, rotation.z) to apply
+	 * to something in order to rotate it from its local system to the given target system.
+	 */
+	public static function RotationFromAxis(axis1:Vector3, axis2:Vector3, axis3:Vector3):Vector3 {
+		var rotation = Vector3.Zero();
+		Vector3.RotationFromAxisToRef(axis1, axis2, axis3, rotation);
+		return rotation;
+	}
+	
+	/** 
+	 * The same as RotationFromAxis but updates the passed ref Vector3 parameter.
+	 */
+	public static function RotationFromAxisToRef(axis1:Vector3, axis2:Vector3, axis3:Vector3, ref:Vector3) {
+		var u = Vector3.Normalize(axis1);
+		var w = Vector3.Normalize(axis3);
+		
+		// world axis
+		var X = Axis.X;
+		var Y = Axis.Y;
+		
+		// equation unknowns and vars
+		var yaw = 0.0;
+		var pitch = 0.0;
+		var roll = 0.0;
+		var x = 0.0;
+		var y = 0.0;
+		var z = 0.0;
+		var t = 0.0;
+		var sign = -1.0;
+		var nbRevert = 0;
+		var cross: Vector3;
+		var dot = 0.0;
+		
+		// step 1  : rotation around w
+		// Rv3(u) = u1, and u1 belongs to plane xOz
+		// Rv3(w) = w1 = w invariant
+		var u1:Vector3 = null;
+		var v1:Vector3 = null;
+		if (Tools.WithinEpsilon(w.z, 0, Engine.Epsilon)) {
+			z = 1.0;
+		}
+		else if (Tools.WithinEpsilon(w.x, 0, Engine.Epsilon)) {
+			x = 1.0;
+		}
+		else {
+			t = w.z / w.x;
+			x = - t * Math.sqrt(1 / (1 + t * t));
+			z = Math.sqrt(1 / (1 + t * t));
+		}
+		
+		u1 = new Vector3(x, y, z);
+		u1.normalize();
+		v1 = Vector3.Cross(w, u1);     // v1 image of v through rotation around w
+		v1.normalize();
+		cross = Vector3.Cross(u, u1);  // returns same direction as w (=local z) if positive angle : cross(source, image)
+		cross.normalize();
+		if (Vector3.Dot(w, cross) < 0) {
+			sign = 1.0;
+		}
+		
+		dot = Vector3.Dot(u, u1);
+		dot = (Math.min(1.0, Math.max(-1.0, dot))); // to force dot to be in the range [-1, 1]
+		roll = Math.acos(dot) * sign;
+		
+		if (Vector3.Dot(u1, X) < 0) { // checks X orientation
+			roll = Math.PI + roll;
+			u1 = u1.scaleInPlace(-1);
+			v1 = v1.scaleInPlace(-1);
+			nbRevert++;
+		}
+		
+		// step 2 : rotate around u1
+		// Ru1(w1) = Ru1(w) = w2, and w2 belongs to plane xOz
+		// u1 is yet in xOz and invariant by Ru1, so after this step u1 and w2 will be in xOz
+		var w2:Vector3 = null;
+		var v2:Vector3 = null;
+		x = 0.0;
+		y = 0.0;
+		z = 0.0;
+		sign = -1;
+		if (Tools.WithinEpsilon(w.z, 0, Engine.Epsilon)) {
+			x = 1.0;
+		}
+		else {
+			t = u1.z / u1.x;
+			x = - t * Math.sqrt(1 / (1 + t * t));
+			z = Math.sqrt(1 / (1 + t * t));
+		}
+		
+		w2 = new Vector3(x, y, z);
+		w2.normalize();
+		v2 = Vector3.Cross(w2, u1);   // v2 image of v1 through rotation around u1
+		v2.normalize();
+		cross = Vector3.Cross(w, w2); // returns same direction as u1 (=local x) if positive angle : cross(source, image)
+		cross.normalize();
+		if (Vector3.Dot(u1, cross) < 0) {
+			sign = 1.0;
+		}
+		
+		dot = Vector3.Dot(w, w2);
+		dot = (Math.min(1.0, Math.max(-1.0, dot))); // to force dot to be in the range [-1, 1]
+		pitch = Math.acos(dot) * sign;
+		if (Vector3.Dot(v2, Y) < 0) { // checks for Y orientation
+			pitch = Math.PI + pitch;
+			v2 = v2.scaleInPlace(-1);
+			w2 = w2.scaleInPlace(-1);
+			nbRevert++;
+		}
+		
+		// step 3 : rotate around v2
+		// Rv2(u1) = X, same as Rv2(w2) = Z, with X=(1,0,0) and Z=(0,0,1)
+		sign = -1;
+		cross = Vector3.Cross(X, u1); // returns same direction as Y if positive angle : cross(source, image)
+		cross.normalize();
+		if (Vector3.Dot(cross, Y) < 0) {
+			sign = 1.0;
+		}
+		dot = Vector3.Dot(u1, X);
+		dot = (Math.min(1.0, Math.max(-1.0, dot))); // to force dot to be in the range [-1, 1]
+		yaw = - Math.acos(dot) * sign;         // negative : plane zOx oriented clockwise
+		if (dot < 0 && nbRevert < 2) {
+			yaw = Math.PI + yaw;
+		}
+		
+		ref.x = pitch;
+		ref.y = yaw;
+		ref.z = roll;
+	}
+	
 }

@@ -43,7 +43,7 @@ import com.babylonhx.math.Color3;
 		return this._numberOfBricksWidth;
 	}
 	private function set_numberOfBricksWidth(value:Int):Int {
-		this._numberOfBricksHeight = value;
+		this._numberOfBricksWidth = value;
 		this.updateShaderUniforms();
 		return value;
 	}

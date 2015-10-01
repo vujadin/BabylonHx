@@ -372,32 +372,12 @@ class OimoPlugin implements IPhysicsEnginePlugin {
 			var delta = this._registeredMeshes[i].delta;
 			
 			if (!body.sleeping) {
-				if (body.shapes != null) {
-					/*var parentShape = this._getLastShape(body);
+				if (body.shapes != null) {				
+					var parentShape = body;
 					mesh.position.x = parentShape.position.x * World.WORLD_SCALE;
 					mesh.position.y = parentShape.position.y * World.WORLD_SCALE;
 					mesh.position.z = parentShape.position.z * World.WORLD_SCALE;
-					var brm = body.rotation;
-					m = [
-						brm.e00, brm.e01, brm.e02, 0,
-						brm.e10, brm.e11, brm.e12, 0,
-						brm.e20, brm.e21, brm.e22, 0,
-						      0,       0,       0, 1
-					];
-					
-					mtx = Matrix.FromArray(m).invert();
-					
-					if (mesh.rotationQuaternion == null) {
-						mesh.rotationQuaternion = new Quaternion(0, 0, 0, 1);
-					}
-					mesh.rotationQuaternion.fromRotationMatrix(mtx);
-					mesh.computeWorldMatrix();*/					
-					
-					var parentShape = /*this._getLastShape*/(body);
-					mesh.position.x = parentShape.position.x * World.WORLD_SCALE;
-					mesh.position.y = parentShape.position.y * World.WORLD_SCALE;
-					mesh.position.z = parentShape.position.z * World.WORLD_SCALE;
-					mtx = Matrix.FromArray( #if js cast #end body.getMatrix());
+					mtx = Matrix.FromArray( #if (js || purejs || html5 || web) cast body.getMatrix() #else body.getMatrix().toArray() #end );
 					
 					if (mesh.rotationQuaternion == null) {
 						mesh.rotationQuaternion = new Quaternion(0, 0, 0, 1);
@@ -405,38 +385,8 @@ class OimoPlugin implements IPhysicsEnginePlugin {
 					mesh.rotationQuaternion.fromRotationMatrix(mtx);
 					mesh.computeWorldMatrix();
 					
-				} else {
-					/*var brm = body.rotation;
-					m = [
-						brm.e00, brm.e01, brm.e02, 0,
-						brm.e10, brm.e11, brm.e12, 0,
-						brm.e20, brm.e21, brm.e22, 0,
-						      0,       0,       0, 1
-					];
-					mtx = Matrix.FromArray(m).invert();
-					
-					// Body position
-					var bodyX = mtx.m[12] * World.WORLD_SCALE;
-					var	bodyY = mtx.m[13] * World.WORLD_SCALE;
-					var	bodyZ = mtx.m[14] * World.WORLD_SCALE;
-						
-					if (delta == null) {
-						mesh.position.x = bodyX;
-						mesh.position.y = bodyY;
-						mesh.position.z = bodyZ;
-					} else {
-						mesh.position.x = bodyX + delta.x;
-						mesh.position.y = bodyY + delta.y;
-						mesh.position.z = bodyZ + delta.z;
-					}
-					
-					if (mesh.rotationQuaternion == null) {
-						mesh.rotationQuaternion = new Quaternion(0, 0, 0, 1);
-					}
-					Quaternion.FromRotationMatrixToRef(mtx, mesh.rotationQuaternion);
-					mesh.computeWorldMatrix();*/
-					
-					m = #if js cast #end body.getMatrix();
+				} else {					
+					m = #if (js || purejs || html5 || web) cast body.getMatrix() #else body.getMatrix().toArray() #end;
 					mtx = Matrix.FromArray(m);
 					
 					// Body position

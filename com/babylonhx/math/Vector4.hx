@@ -17,7 +17,7 @@ import com.babylonhx.tools.Tools;
 	public var w:Float;
 	
 
-	public function new(x:Float, y:Float, z:Float, w:Float) { 
+	public function new(x:Float = 0, y:Float = 0, z:Float = 0, w:Float = 0) { 
 		this.x = x;
 		this.y = y;
 		this.z = z;
@@ -34,6 +34,15 @@ import com.babylonhx.tools.Tools;
 		this.toArray(result, 0);
 		
 		return result;
+	}
+	
+	inline public function set(x:Float = 0, y:Float = 0, z:Float = 0, ?w:Float) {
+		this.x = x;
+		this.y = y;
+		this.z = z;
+		if (w != null) {
+			this.w = w;
+		}
 	}
 
 	inline public function toArray(array:Array<Float>, index:Int = 0):Vector4 {
@@ -181,6 +190,10 @@ import com.babylonhx.tools.Tools;
 		result.w = this.w / otherVector.w;
 		
 		return this;
+	}
+	
+	inline public function dotProduct(a:Vector4):Float {		
+		return x * a.x + y * a.y + z * a.z;		
 	}
 
 	inline public function MinimizeInPlace(other:Vector4):Vector4 {

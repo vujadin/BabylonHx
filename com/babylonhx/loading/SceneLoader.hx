@@ -14,29 +14,11 @@ import com.babylonhx.loading.plugins.BabylonFileLoader;
 @:expose('BABYLON.SceneLoader') class SceneLoader {
 	
 	// Flags
-	private static var _ForceFullSceneLoadingForIncremental:Bool = false;
-	private static var _ShowLoadingScreen:Bool = true;
-
-	public static var ForceFullSceneLoadingForIncremental(get, set):Bool;
-	private static function get_ForceFullSceneLoadingForIncremental():Bool {
-		return SceneLoader._ForceFullSceneLoadingForIncremental;
-	}
-	private static function set_ForceFullSceneLoadingForIncremental(val:Bool):Bool {
-		SceneLoader._ForceFullSceneLoadingForIncremental = val;
-		return val;
-	}
-
-	public static var ShowLoadingScreen(get, set):Bool;
-	private static function get_ShowLoadingScreen():Bool {
-		return SceneLoader._ShowLoadingScreen;
-	}
-	private static function set_ShowLoadingScreen(val:Bool):Bool {
-		SceneLoader._ShowLoadingScreen = val;
-		return val;
-	}
+	public static var ForceFullSceneLoadingForIncremental:Bool = false;
+	public static var ShowLoadingScreen:Bool = true;
 
 	// Members
-	private static var _registeredPlugins:Array<ISceneLoaderPlugin> = [BabylonFileLoader.plugin];
+	private static var _registeredPlugins:Array<ISceneLoaderPlugin> = [];
 
 	private static function _getPluginForFilename(sceneFilename:String):ISceneLoaderPlugin {
 		var dotPosition = sceneFilename.lastIndexOf(".");
@@ -49,27 +31,27 @@ import com.babylonhx.loading.plugins.BabylonFileLoader;
 		
 		var extension = sceneFilename.substring(dotPosition, queryStringPosition).toLowerCase();
 		
-		for (index in 0...SceneLoader._registeredPlugins.length) {
-			var plugin = SceneLoader._registeredPlugins[index];
+		for (index in 0..._registeredPlugins.length) {
+			var plugin = _registeredPlugins[index];
 			
 			if (plugin.extensions.indexOf(extension) != -1) {
 				return plugin;
 			}
 		}
 		
-		return SceneLoader._registeredPlugins[SceneLoader._registeredPlugins.length - 1];
+		return _registeredPlugins[_registeredPlugins.length - 1];
 	}
 
 	// Public functions
 	public static function RegisterPlugin(plugin:ISceneLoaderPlugin) {
 		plugin.extensions = plugin.extensions.toLowerCase();
-		SceneLoader._registeredPlugins.push(plugin);
+		_registeredPlugins.push(plugin);
 	}
 
 	public static function ImportMesh(meshesNames:String, rootUrl:String, sceneFilename:String, scene:Scene, ?onsuccess:Array<AbstractMesh>->Array<ParticleSystem>->Array<Skeleton>->Void, ?progressCallBack:Void->Void, ?onerror:Scene->Dynamic->Void) {
 		var manifestChecked = function() {
 			
-			var plugin = SceneLoader._getPluginForFilename(sceneFilename);
+			var plugin = _getPluginForFilename(sceneFilename);
 			
 			if (plugin == null) {
 				var dotPosition = sceneFilename.lastIndexOf(".");
@@ -152,7 +134,7 @@ import com.babylonhx.loading.plugins.BabylonFileLoader;
 	* @param engine is the instance of BABYLON.Engine to use to create the scene
 	*/
 	public static function Load(rootUrl:String, sceneFilename:Dynamic, engine:Engine, ?onsuccess:Scene-> Void, ?progressCallBack:Dynamic, ?onerror:Scene-> Void) {
-		SceneLoader.Append(rootUrl, sceneFilename, new Scene(engine), onsuccess, progressCallBack, onerror);
+		Append(rootUrl, sceneFilename, new Scene(engine), onsuccess, progressCallBack, onerror);
 	}
 
 	/**
@@ -162,7 +144,7 @@ import com.babylonhx.loading.plugins.BabylonFileLoader;
 	* @param scene is the instance of BABYLON.Scene to append to
 	*/
 	public static function Append(rootUrl:String, sceneFilename:Dynamic, scene:Scene, ?onsuccess:Scene->Void, ?progressCallBack:Dynamic, ?onerror:Scene->Void) {
-		var plugin = SceneLoader._getPluginForFilename(sceneFilename.name != null ? sceneFilename.name : sceneFilename);
+		var plugin = _getPluginForFilename(sceneFilename.name != null ? sceneFilename.name : sceneFilename);
 		
 		var loadSceneFromData = function(data:Dynamic) {
 			if (!plugin.load(scene, data, rootUrl)) {

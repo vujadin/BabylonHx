@@ -70,8 +70,10 @@ import com.babylonhx.animations.IAnimatable;
 	private var _globalPosition:Vector3 = Vector3.Zero();
 	public var globalPosition(get, never):Vector3;
 	
-	public var getProjectionMatrix:Bool->Matrix;
+	// VK: do not delete these !!!
 	public var _getViewMatrix:Void->Matrix;
+	public var getProjectionMatrix:Bool->Matrix;
+	
 	
 	#if purejs
 	private var eventPrefix:String = "mouse";
@@ -388,10 +390,13 @@ import com.babylonhx.animations.IAnimatable;
 		Matrix.OrthoOffCenterLHToRef(this.orthoLeft == null ? -halfWidth : this.orthoLeft, this.orthoRight == null ? halfWidth : this.orthoRight, this.orthoBottom == null ? -halfHeight : this.orthoBottom, this.orthoTop == null ? halfHeight : this.orthoTop, this.minZ, this.maxZ, this._projectionMatrix);
 		return this._projectionMatrix;
 	}
-
+	
 	public function dispose() {
 		// Remove from scene
 		this.getScene().removeCamera(this);
+		while (this._rigCameras.length > 0) {
+			this._rigCameras.pop().dispose();
+		}
 		
 		// Postprocesses
 		for (i in 0...this._postProcessesTakenIndices.length) {
@@ -495,14 +500,14 @@ import com.babylonhx.animations.IAnimatable;
 	}
 	
 	/**
-	 * May needs to be overridden by children so sub has required properties to be copied
+	 * Maybe needs to be overridden by children so sub has required properties to be copied
 	 */
 	public function createRigCamera(name:String, cameraIndex:Int):Camera {
 		return null;
 	}
 	
 	/**
-	 * May needs to be overridden by children
+	 * Maybe needs to be overridden by children
 	 */
 	public function _updateRigCameras() {
 		for (i in 0...this._rigCameras.length) {

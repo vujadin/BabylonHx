@@ -4,6 +4,7 @@ import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
 import com.babylonhx.math.Vector3;
+import haxe.ds.Vector;
 
 /**
 * ...
@@ -14,12 +15,12 @@ import com.babylonhx.math.Vector3;
 	
 	public var minimum:Vector3;
     public var maximum:Vector3;
-	public var vectors:Array<Vector3> = [];
+	public var vectors:Vector<Vector3> = new Vector<Vector3>(8);
 	
 	public var center:Vector3;
 	public var extendSize:Vector3;
-	public var directions:Array<Vector3>;
-	public var vectorsWorld:Array<Vector3> = [];
+	public var directions:Vector<Vector3> = new Vector<Vector3>(3);
+	public var vectorsWorld:Vector<Vector3> = new Vector<Vector3>(8);
 	
 	public var minimumWorld:Vector3;
 	public var maximumWorld:Vector3;
@@ -34,31 +35,31 @@ import com.babylonhx.math.Vector3;
 		this.maximum = maximum;
 		
 		// Bounding vectors            
-		this.vectors.push(this.minimum.clone());
-		this.vectors.push(this.maximum.clone());
+		this.vectors.set(0, this.minimum.clone());
+		this.vectors.set(1, this.maximum.clone());
 		
-		this.vectors.push(this.minimum.clone());
+		this.vectors.set(2, this.minimum.clone());
 		this.vectors[2].x = this.maximum.x;
 		
-		this.vectors.push(this.minimum.clone());
+		this.vectors.set(3, this.minimum.clone());
 		this.vectors[3].y = this.maximum.y;
 		
-		this.vectors.push(this.minimum.clone());
+		this.vectors.set(4, this.minimum.clone());
 		this.vectors[4].z = this.maximum.z;
 		
-		this.vectors.push(this.maximum.clone());
+		this.vectors.set(5, this.maximum.clone());
 		this.vectors[5].z = this.minimum.z;
 		
-		this.vectors.push(this.maximum.clone());
+		this.vectors.set(6, this.maximum.clone());
 		this.vectors[6].x = this.minimum.x;
 		
-		this.vectors.push(this.maximum.clone());
+		this.vectors.set(7, this.maximum.clone());
 		this.vectors[7].y = this.minimum.y;
 		
 		// OBB
 		this.center = this.maximum.add(this.minimum).scale(0.5);
 		this.extendSize = this.maximum.subtract(this.minimum).scale(0.5);
-		this.directions = [Vector3.Zero(), Vector3.Zero(), Vector3.Zero()];
+		this.directions = Vector.fromArrayCopy([Vector3.Zero(), Vector3.Zero(), Vector3.Zero()]);
 		
 		// World
 		for (index in 0...this.vectors.length) {
@@ -170,7 +171,7 @@ import com.babylonhx.math.Vector3;
 		return (num <= (sphereRadius * sphereRadius));
 	}
 
-	public static function IsCompletelyInFrustum(boundingVectors:Array<Vector3>, frustumPlanes:Array<Plane>):Bool {
+	public static function IsCompletelyInFrustum(boundingVectors:Vector<Vector3>, frustumPlanes:Array<Plane>):Bool {
 		for (p in 0...6) {
 			for (i in 0...8) {
 				if (frustumPlanes[p].dotCoordinate(boundingVectors[i]) < 0) {
@@ -181,7 +182,7 @@ import com.babylonhx.math.Vector3;
 		return true;
 	}
 
-	public static function IsInFrustum(boundingVectors:Array<Vector3>, frustumPlanes:Array<Plane>):Bool {
+	public static function IsInFrustum(boundingVectors:Vector<Vector3>, frustumPlanes:Array<Plane>):Bool {
 		for (p in 0...6) {
 			var inCount = 8;
 			

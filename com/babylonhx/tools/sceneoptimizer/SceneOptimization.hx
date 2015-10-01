@@ -15,7 +15,7 @@ import com.babylonhx.Scene;
 		this.priority = priority;
 	}
 	
-	public function apply(scene:Scene):Bool {
+	public function apply(scene:Scene, updateSelectionTree:Bool = false):Bool {
 		return true;   // Return true if everything that can be done was applied
 	}
 	

@@ -1,5 +1,6 @@
 package com.babylonhx.rendering;
 
+import com.babylonhx.cameras.Camera;
 import com.babylonhx.math.Color4;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.SubMesh;
@@ -20,6 +21,8 @@ import com.babylonhx.tools.Tools;
 	private var _renderingGroups:Array<RenderingGroup> = [];
 	private var _depthBufferAlreadyCleaned:Bool;
 	
+	private var _activeCamera:Camera;
+	
 
 	public function new(scene:Scene) {
 		this._scene = scene;
@@ -31,6 +34,7 @@ import com.babylonhx.tools.Tools;
 		}
 		
 		// Particles
+		_activeCamera = this._scene.activeCamera;
 		var beforeParticlesDate = Tools.Now();
 		for (particleIndex in 0...this._scene._activeParticleSystems.length) {
 			var particleSystem:ParticleSystem = cast this._scene._activeParticleSystems.data[particleIndex];
@@ -39,13 +43,17 @@ import com.babylonhx.tools.Tools;
 				continue;
 			}
 			
+			if ((_activeCamera.layerMask & particleSystem.layerMask) == 0) {
+                continue;
+            }
+			
 			this._clearDepthBuffer();
 			
 			if (particleSystem.emitter.position == null || activeMeshes == null || activeMeshes.indexOf(particleSystem.emitter) != -1) {
 				this._scene._activeParticles += particleSystem.render();
 			}
 		}
-		this._scene._particlesDuration += Tools.Now() - beforeParticlesDate;
+		//this._scene._particlesDuration += Tools.Now() - beforeParticlesDate;
 	}
 
 	private function _renderSprites(index:Int) {
@@ -53,26 +61,25 @@ import com.babylonhx.tools.Tools;
 			return;
 		}
 		
-		// Sprites       
+		// Sprites 
+		_activeCamera = this._scene.activeCamera;
 		var beforeSpritessDate = Tools.Now();
 		for (id in 0...this._scene.spriteManagers.length) {
 			var spriteManager = this._scene.spriteManagers[id];
 			
-			if (spriteManager.renderingGroupId == index) {
+			if (spriteManager.renderingGroupId == index && ((_activeCamera.layerMask & spriteManager.layerMask) != 0)) {
 				this._clearDepthBuffer();
 				spriteManager.render();
 			}
 		}
-		this._scene._spritesDuration += Tools.Now() - beforeSpritessDate;
+		//this._scene._spritesDuration += Tools.Now() - beforeSpritessDate;
 	}
 
-	private function _clearDepthBuffer() {
-		if (this._depthBufferAlreadyCleaned) {
-			return;
-		}
-		
-		this._scene.getEngine().clear(new Color4(0, 0, 0), false, true);
-		this._depthBufferAlreadyCleaned = true;
+	inline private function _clearDepthBuffer() {
+		if (!this._depthBufferAlreadyCleaned) {
+			this._scene.getEngine().clear(new Color4(0, 0, 0), false, true);
+			this._depthBufferAlreadyCleaned = true;
+		}		
 	}
 
 	public function render(customRenderFunction:SmartArray->SmartArray->SmartArray->Void, activeMeshes:Array<AbstractMesh>, renderParticles:Bool, renderSprites:Bool) {
