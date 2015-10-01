@@ -535,7 +535,7 @@ typedef Assets = nme.Assets;
 	#end
 	
 	
-	#if purejs
+	#if (purejs)
 	public static function LoadImage(url:String, ?callbackFn:Dynamic->Void, ?onerror:Dynamic->Void, ?db:Dynamic):Dynamic {
 		url = Tools.CleanUrl(url);
 		
@@ -648,10 +648,11 @@ typedef Assets = nme.Assets;
 	
 	#elseif (lime || openfl || nme)
 	public static function LoadImage(url:String, onload:Image-> Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
-		#if ((lime || openfl) && html5)
-		var img = Assets.getImage(url);
-		onload(new Image(img.data, img.width, img.height));
-		#elseif lime
+		//#if ((lime || openfl) && html5)
+		//var img = Assets.getImage(url);
+		//onload(new Image(img.data, img.width, img.height));
+		//https://github.com/openfl/lime/issues/491 temp removal of legacy version
+		#if lime
 		if (Assets.exists(url)) {
 			var future = Assets.loadImage(url);
 			future.onComplete(function(img:lime.graphics.Image):Void {

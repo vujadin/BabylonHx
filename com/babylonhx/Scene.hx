@@ -1395,7 +1395,7 @@ import com.babylonhx.tools.Tools;
 	}
 
 	private function _processSubCameras(camera:Camera) {
-		if (camera.cameraRigMode == Camera.RIG_MODE_NONE) {
+		if (camera.subCameras.length == 0 && camera._rigCameras.length == 0) {
 			this._renderForCamera(camera);
 			return;
 		}
@@ -1404,6 +1404,11 @@ import com.babylonhx.tools.Tools;
 		for (index in 0...camera.subCameras.length) {
 			this._renderForCamera(camera.subCameras[index]);
 		}
+
+		 // rig cameras
+         for (index in 0...camera._rigCameras.length) {
+                this._renderForCamera(camera._rigCameras[index]);
+         }
 		
 		this.activeCamera = camera;
 		this.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(false));
