@@ -597,11 +597,17 @@ import com.babylonhx.utils.typedarray.Float32Array;
 
 	public static function OrthoOffCenterLHToRef(left:Float, right:Float, bottom:Float, top:Float, znear:Float, zfar:Float, result:Matrix) {
 		result.m[0] = 2.0 / (right - left);
-		result.m[1] = result.m[2] = result.m[3] = 0;
+		result.m[1] = 0;
+		result.m[2] = 0;
+		result.m[3] = 0;
 		result.m[5] = 2.0 / (top - bottom);
-		result.m[4] = result.m[6] = result.m[7] = 0;
+		result.m[4] = 0;
+		result.m[6] = 0;
+		result.m[7] = 0;
 		result.m[10] = -1.0 / (znear - zfar);
-		result.m[8] = result.m[9] = result.m[11] = 0;
+		result.m[8] = 0;
+		result.m[9] = 0;
+		result.m[11] = 0;
 		result.m[12] = (left + right) / (left - right);
 		result.m[13] = (top + bottom) / (bottom - top);
 		result.m[14] = znear / (znear - zfar);
@@ -612,13 +618,20 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		var matrix = Matrix.Zero();
 		
 		matrix.m[0] = (2.0 * znear) / width;
-		matrix.m[1] = matrix.m[2] = matrix.m[3] = 0.0;
+		matrix.m[1] = 0.0;
+		matrix.m[2] = 0.0;
+		matrix.m[3] = 0.0;
 		matrix.m[5] = (2.0 * znear) / height;
-		matrix.m[4] = matrix.m[6] = matrix.m[7] = 0.0;
+		matrix.m[4] = 0.0;
+		matrix.m[6] = 0.0;
+		matrix.m[7] = 0.0;
 		matrix.m[10] = -zfar / (znear - zfar);
-		matrix.m[8] = matrix.m[9] = 0.0;
+		matrix.m[8] = 0.0;
+		matrix.m[9] = 0.0;
 		matrix.m[11] = 1.0;
-		matrix.m[12] = matrix.m[13] = matrix.m[15] = 0.0;
+		matrix.m[12] = 0.0;
+		matrix.m[13] = 0.0;
+		matrix.m[15] = 0.0;
 		matrix.m[14] = (znear * zfar) / (znear - zfar);
 		
 		return matrix;
@@ -642,7 +655,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			result.m[0] = tan;
 		}
 		
-		result.m[1] = result.m[2] = result.m[3] = 0.0;
+		result.m[1] = 0.0;
+		result.m[2] = 0.0;
+		result.m[3] = 0.0;
 		
 		if (v_fixed) { 
 			result.m[5] = tan; 
@@ -650,11 +665,16 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			result.m[5] = tan * aspect; 
 		}
 			
-		result.m[4] = result.m[6] = result.m[7] = 0.0;
-		result.m[8] = result.m[9] = 0.0;
+		result.m[4] = 0.0;
+		result.m[6] = 0.0;
+		result.m[7] = 0.0;
+		result.m[8] = 0.0;
+		result.m[9] = 0.0;
 		result.m[10] = -zfar / (znear - zfar);
 		result.m[11] = 1.0;
-		result.m[12] = result.m[13] = result.m[15] = 0.0;
+		result.m[12] = 0.0;
+		result.m[13] = 0.0;
+		result.m[15] = 0.0;
 		result.m[14] = (znear * zfar) / (znear - zfar);
 	}
 
