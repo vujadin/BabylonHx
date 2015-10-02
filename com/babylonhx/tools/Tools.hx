@@ -454,10 +454,10 @@ typedef Assets = nme.Assets;
 	#elseif (lime || openfl || nme)
 	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {			
 		if (type == "") {
-			#if (lime || openfl)
+			#if (lime || openfl && !nme)
 			if (Assets.exists(path)) {
 			#else // nme
-			if (Assets.info.exists(path)) {
+			/*if (Assets.info.exists(path))*/ {
 			#end
 				if (StringTools.endsWith(path, "bbin")) {
 					var callBackFunction = callbackFn != null ?
@@ -476,15 +476,17 @@ typedef Assets = nme.Assets;
 					callBackFunction(data);
 				}
 			} 
+			#if (lime || openfl && !nme)
 			else {
 				trace("File '" + path + "' doesn't exist!");
 			}
+			#end
 		} 
 		else {
-			#if (lime || openfl)
+			#if (lime || openfl && !nme)
 			if (Assets.exists(path)) {
 			#else // nme
-			if (Assets.info.exists(path)) {
+			/*if (Assets.info.exists(path))*/ {
 			#end
 				switch(type) {
 					case "text":
@@ -525,9 +527,11 @@ typedef Assets = nme.Assets;
 						#end
 				}
 			} 
+			#if (lime || openfl && !nme)
 			else {
 				trace("File '" + path + "' doesn't exist!");
 			}
+			#end
 		}
     }
 	#elseif kha
@@ -662,7 +666,7 @@ typedef Assets = nme.Assets;
 		else {
 			trace("Image '" + url + "' doesn't exist!");
 		}
-		#elseif openfl
+		#elseif (openfl && !nme)
 		if (Assets.exists(url)) {
 			var img = Assets.getBitmapData(url); 
 			onload(new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height));			
@@ -671,13 +675,13 @@ typedef Assets = nme.Assets;
 			trace("Image '" + url + "' doesn't exist!");
 		}
 		#elseif nme
-		if (Assets.info.exists(url)) {
+		/*if (Assets.info.exists(url))*/ {
 			var img = Assets.getBitmapData(url); 
 			onload(new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height));			
 		} 
-		else {
+		/*else {
 			trace("Image '" + url + "' doesn't exist!");
-		}
+		}*/
 		#end
     }
 	#elseif kha
