@@ -24,9 +24,7 @@ class BasicScene {
 		
 		// This attaches the camera to the canvas
 		camera.attachControl();
-		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
-								
+										
 		// This creates a light, aiming 0,1,0 - to the sky (non-mesh)
 		var light = new HemisphericLight("light1", new Vector3(0, 1, 0), scene);
 		
