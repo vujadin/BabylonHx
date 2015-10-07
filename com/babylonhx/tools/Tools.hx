@@ -662,7 +662,7 @@ typedef Assets = nme.Assets;
 			}
 			
 		//https://github.com/openfl/lime/issues/491 temp removal of legacy version
-		#if lime
+		#elseif lime
 		if (Assets.exists(url)) {
 			var future = Assets.loadImage(url);
 			future.onComplete(function(img:lime.graphics.Image):Void {
