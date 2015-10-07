@@ -301,7 +301,14 @@ import com.babylonhx.utils.Keycodes;
 			Vector3.TransformNormalToRef(this._localDirection, this._cameraTransformMatrix, this._transformedDirection);
 			this.cameraDirection.addInPlace(this._transformedDirection);
 		}
+		super._checkInputs();
 	}
+
+	/*
+	override public function _updateRigCameras(){
+		super._updateRigCameras();
+	}
+	*/
 
 	override public function _decideIfNeedsToMove():Bool {
 		return this._needMoveForGravity || Math.abs(this.cameraDirection.x) > 0 || Math.abs(this.cameraDirection.y) > 0 || Math.abs(this.cameraDirection.z) > 0;
@@ -319,10 +326,10 @@ import com.babylonhx.utils.Keycodes;
 			this.position.addInPlace(this.cameraDirection);
 		}
 	}
-
+	/*
 	override public function _update() {
 		this._checkInputs();
 		super._update();
-	}
+	}*/
 
 }

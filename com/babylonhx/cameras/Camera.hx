@@ -229,10 +229,10 @@ import com.babylonhx.animations.IAnimatable;
 			return 0;
 		}
 		
+
 		if (insertAt == null || insertAt < 0) {
 			this._postProcesses.push(postProcess);
 			this._postProcessesTakenIndices.push(this._postProcesses.length - 1);
-			
 			return this._postProcesses.length - 1;
 		}
 		
@@ -273,7 +273,6 @@ import com.babylonhx.animations.IAnimatable;
 		var result = insertAt + add;
 		
 		this._postProcesses[result] = postProcess;
-		
 		return result;
 	}
 
@@ -371,6 +370,7 @@ import com.babylonhx.animations.IAnimatable;
 	}
 
 	public function getProjectionMatrix_default(force:Bool = false):Matrix {
+
 		if (!force && this._isSynchronizedProjectionMatrix()) {
 			return this._projectionMatrix;
 		}
@@ -480,12 +480,12 @@ import com.babylonhx.animations.IAnimatable;
 					postProcesses.push(new VRDistortionCorrectionPostProcess("VR_Distort_Compensation_Right", this._rigCameras[1], true, metrics));
 				}
 		}
-		
+
 		this._update();
 	}
 
 	private function _getVRProjectionMatrix(force:Bool = false):Matrix {
-		Matrix.PerspectiveFovLHToRef(this._cameraRigParams.vrMetrics.aspectRatioFov, this._cameraRigParams.vrMetrics.aspectRatio, this.minZ, this.maxZ, this._cameraRigParams.vrWorkMatrix);
+		Matrix.PerspectiveFovLHToRef(this._cameraRigParams.vrMetrics.get_aspectRatioFov(), this._cameraRigParams.vrMetrics.get_aspectRatio(), this.minZ, this.maxZ, this._cameraRigParams.vrWorkMatrix);
 		this._cameraRigParams.vrWorkMatrix.multiplyToRef(this._cameraRigParams.vrHMatrix, this._projectionMatrix);
 		return this._projectionMatrix;
 	}

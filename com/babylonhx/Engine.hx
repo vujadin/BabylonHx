@@ -507,9 +507,9 @@ import nme.display.OpenGLView;
 	 *   });
 	 */
 	public function resize() {
-		#if purejs
-		var width = untyped Browser.navigator.isCocoonJS ? Browser.window.innerWidth : this._renderingCanvas.clientWidth;
-		var height = untyped Browser.navigator.isCocoonJS ? Browser.window.innerHeight : this._renderingCanvas.clientHeight;
+		#if purejs 
+		var width = (untyped Browser.navigator.isCocoonJS  || untyped Browser.navigator.isCocoonJSWebkit) ? Browser.window.innerWidth : this._renderingCanvas.clientWidth;
+		var height = (untyped Browser.navigator.isCocoonJS  || untyped Browser.navigator.isCocoonJSWebkit) ? Browser.window.innerHeight : this._renderingCanvas.clientHeight;
 		
 		this.setSize(Std.int(width / this._hardwareScalingLevel), Std.int(height / this._hardwareScalingLevel));
 		#end
@@ -1869,7 +1869,7 @@ import nme.display.OpenGLView;
         }*/
     }
 	
-	#if purejs
+	#if purejs 
 	// Statics
 	public static function isSupported():Bool {
 		try {
