@@ -73,7 +73,7 @@ class PBRMaterial extends Material {
 		}
 		
 		// Effect
-		if (scene.clipPlane) {
+		if (scene.clipPlane != null) {
 			this._defines.defines["CLIPPLANE"] = true;
 		}
 		
@@ -110,7 +110,7 @@ class PBRMaterial extends Material {
 				this._defines.defines["VERTEXCOLOR"] = true;
 				
 				if (mesh.hasVertexAlpha) {
-					this._defines.defines["VERTEXALPHA"] = true
+					this._defines.defines["VERTEXALPHA"] = true;
 				}
 			}
 			if (mesh.useBones && mesh.computeBonesUsingShaders) {
@@ -193,11 +193,11 @@ class PBRMaterial extends Material {
 		return true;
 	}
 
-	public function bindOnlyWorldMatrix(world:Matrix) {
+	override public function bindOnlyWorldMatrix(world:Matrix) {
 		this._effect.setMatrix("world", world);
 	}
 
-	public function bind(world:Matrix, ?mesh:Mesh) {
+	override public function bind(world:Matrix, ?mesh:Mesh) {
 		var scene = this.getScene();
 		
 		// Matrices        
@@ -211,7 +211,7 @@ class PBRMaterial extends Material {
 		
 		if (scene.getCachedMaterial() != this) {
 			// Clip plane
-			if (scene.clipPlane) {
+			if (scene.clipPlane != null) {
 				var clipPlane = scene.clipPlane;
 				this._effect.setFloat4("vClipPlane", clipPlane.normal.x, clipPlane.normal.y, clipPlane.normal.z, clipPlane.d);
 			}
@@ -247,11 +247,11 @@ class PBRMaterial extends Material {
 		return results;
 	}
 
-	public function dispose(forceDisposeEffect:Bool = false) {        
+	override public function dispose(forceDisposeEffect:Bool = false) {        
 		super.dispose(forceDisposeEffect);
 	}
 
-	public function clone(name:String):PBRMaterial {
+	override public function clone(name:String):PBRMaterial {
 		var newPBRMaterial = new PBRMaterial(name, this.getScene());
 		
 		// Base material

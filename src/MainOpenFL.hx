@@ -48,28 +48,28 @@ class MainOpenFL extends Sprite {
 	public function new() {
 		super();
 				
-		Lib.current.stage.addChild(this);
+		stage.addChild(this);
 		
-		engine = new Engine(this, false);	
+		engine = new Engine(stage, false);	
 		scene = new Scene(engine);
 		
-		engine.width = Lib.current.stage.stageWidth;
-		engine.height = Lib.current.stage.stageHeight;
+		engine.width = stage.stageWidth;
+		engine.height = stage.stageHeight;
 		
-		Lib.current.stage.addEventListener(Event.RESIZE, resize);
-		Lib.current.stage.addEventListener(Event.ENTER_FRAME, update);
+		stage.addEventListener(Event.RESIZE, resize);
+		stage.addEventListener(Event.ENTER_FRAME, update);
 		
 		#if desktop
-		Lib.current.stage.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
-		Lib.current.stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
-		Lib.current.stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
-		Lib.current.stage.addEventListener(MouseEvent.MOUSE_WHEEL, onMouseWheel);
-		Lib.current.stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
-		Lib.current.stage.addEventListener(KeyboardEvent.KEY_UP, onKeyUp);
+		stage.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+		stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+		stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+		stage.addEventListener(MouseEvent.MOUSE_WHEEL, onMouseWheel);
+		stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+		stage.addEventListener(KeyboardEvent.KEY_UP, onKeyUp);
 		#elseif mobile
-		Lib.current.stage.addEventListener(TouchEvent.TOUCH_BEGIN, onTouchStart);
-		Lib.current.stage.addEventListener(TouchEvent.TOUCH_END, onTouchEnd);
-		Lib.current.stage.addEventListener(TouchEvent.TOUCH_MOVE, onTouchMove);
+		stage.addEventListener(TouchEvent.TOUCH_BEGIN, onTouchStart);
+		stage.addEventListener(TouchEvent.TOUCH_END, onTouchEnd);
+		stage.addEventListener(TouchEvent.TOUCH_MOVE, onTouchMove);
 		#end
 				
 		// hack to show 2D on top of 3D
@@ -77,19 +77,21 @@ class MainOpenFL extends Sprite {
 		ground.enableEdgesRendering();
 		
 		// this part is needed for android
+		#if mobile
 		var lines = Mesh.CreateLines("lines", [
 			new Vector3(-0.1, 0, 0),
 			new Vector3(0.1, 0, 0)
 		], scene);
 		lines.alpha = 0.01;
+		#end
 		// end of hack
 		
 		createDemo();
 	}
 		
 	private function setupGame():Void {
-		var stageWidth:Int = Lib.current.stage.stageWidth;
-		var stageHeight:Int = Lib.current.stage.stageHeight;
+		var stageWidth:Int = stage.stageWidth;
+		var stageHeight:Int = stage.stageHeight;
 		
 		if (zoom == -1) {
 			var ratioX:Float = stageWidth / gameWidth;
@@ -99,7 +101,7 @@ class MainOpenFL extends Sprite {
 			gameHeight = Math.ceil(stageHeight / zoom);
 		}
 		
-		Lib.current.stage.addChild(new FlxGame(gameWidth, gameHeight, initialState, zoom, framerate, framerate, skipSplash, startFullscreen));
+		stage.addChild(new FlxGame(gameWidth, gameHeight, initialState, zoom, framerate, framerate, skipSplash, startFullscreen));
 	}
 	
 	function createDemo() {
@@ -107,12 +109,12 @@ class MainOpenFL extends Sprite {
 		
 		setupGame();
 				
-		Lib.current.stage.addChild(new openfl.display.FPS(10, 10, 0xffffff));
+		stage.addChild(new openfl.display.FPS(10, 10, 0xffffff));
 	}
 	
 	function resize(e){
-		engine.width = Lib.current.stage.stageWidth;
-		engine.height = Lib.current.stage.stageHeight;
+		engine.width = stage.stageWidth;
+		engine.height = stage.stageHeight;
 	}
 	
 	function onKeyDown(e:KeyboardEvent) {

@@ -615,7 +615,9 @@ import com.babylonhx.rendering.EdgesRenderer;
 			}
 			
 			Matrix.LookAtLHToRef(localPosition, zero, Vector3.Up(), this._localBillboard);
-			this._localBillboard.m[12] = this._localBillboard.m[13] = this._localBillboard.m[14] = 0;
+			this._localBillboard.m[12] = 0;
+			this._localBillboard.m[13] = 0;
+			this._localBillboard.m[14] = 0;
 			
 			this._localBillboard.invert();
 			
