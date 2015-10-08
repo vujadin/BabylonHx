@@ -2,6 +2,7 @@ package com.babylonhx.materials.textures;
 
 import com.babylonhx.math.Plane;
 import com.babylonhx.math.Matrix;
+import com.babylonhx.math.Vector3;
 
 /**
  * ...
@@ -20,7 +21,7 @@ import com.babylonhx.math.Matrix;
 	public function new(name:String, size:Int, scene:Scene, ?generateMipMaps:Bool) {
 		super(name, size, scene, generateMipMaps, true);
 		
-		this.onBeforeRender = function() {
+		this.onBeforeRender = function(val:Int = 0) {
 			Matrix.ReflectionToRef(this.mirrorPlane, this._mirrorMatrix);
 			this._savedViewMatrix = scene.getViewMatrix();
 			
@@ -31,11 +32,14 @@ import com.babylonhx.math.Matrix;
 			scene.clipPlane = this.mirrorPlane;
 			
 			scene.getEngine().cullBackFaces = false;
+			
+			scene._mirroredCameraPosition = Vector3.TransformCoordinates(scene.activeCamera.position, this._mirrorMatrix);
 		}
 		
-		this.onAfterRender = function() {
+		this.onAfterRender = function(val:Int = 0) {
 			scene.setTransformMatrix(this._savedViewMatrix, scene.getProjectionMatrix());
 			scene.getEngine().cullBackFaces = true;
+			scene._mirroredCameraPosition = null;
 			
 			scene.clipPlane = null;
 		}

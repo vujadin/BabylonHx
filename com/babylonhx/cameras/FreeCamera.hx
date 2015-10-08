@@ -56,8 +56,6 @@ import com.babylonhx.utils.Keycodes;
 	private var _onKeyDown:Dynamic;			
 	private var _onKeyUp:Dynamic;				
 	public var _onLostFocus:Void->Void;				
-
-	//public var _waitingLockedTargetId:String;
 	
 
 	public function new(name:String, position:Vector3, scene:Scene) {
@@ -262,15 +260,39 @@ import com.babylonhx.utils.Keycodes;
 		globalPosition.subtractFromFloatsToRef(0, this.ellipsoid.y, 0, this._oldPosition);
 		this._collider.radius = this.ellipsoid;
 		
-		this.getScene()._getNewPosition(this._oldPosition, velocity, this._collider, 3, this._newPosition);
-		this._newPosition.subtractToRef(this._oldPosition, this._diffPosition);
+		//no need for clone, as long as gravity is not on.
+		var actualVelocity = velocity;
 		
-		if (this._diffPosition.length() > Engine.CollisionsEpsilon) {
-			this.position.addInPlace(this._diffPosition);
-			if (this.onCollide != null) {
-				this.onCollide(this._collider.collidedMesh);
+		//add gravity to the velocity to prevent the dual-collision checking
+		if (this.applyGravity) {
+			//this prevents mending with cameraDirection, a global variable of the free camera class.
+			actualVelocity = velocity.add(this.getScene().gravity);
+		}
+				
+		this.getScene().collisionCoordinator.getNewPosition(this._oldPosition, actualVelocity, this._collider, 3, null, this._onCollisionPositionChange, this.uniqueId);		
+	}
+	
+	private function _onCollisionPositionChange(collisionId:Int, newPosition:Vector3, collidedMesh:AbstractMesh = null) {
+		//TODO move this to the collision coordinator!
+		if (this.getScene().workerCollisions) {
+			newPosition.multiplyInPlace(this._collider.radius);
+		}
+		
+		var updatePosition = function(newPos:Vector3) {
+			this._newPosition.copyFrom(newPos);
+			
+			this._newPosition.subtractToRef(this._oldPosition, this._diffPosition);
+			
+			var oldPosition = this.position.clone();
+			if (this._diffPosition.length() > Engine.CollisionsEpsilon) {
+				this.position.addInPlace(this._diffPosition);
+				if (this.onCollide != null && collidedMesh != null) {
+					this.onCollide(collidedMesh);
+				}
 			}
 		}
+		
+		updatePosition(newPosition);
 	}
 
 	override public function _checkInputs() {		
@@ -301,14 +323,9 @@ import com.babylonhx.utils.Keycodes;
 			Vector3.TransformNormalToRef(this._localDirection, this._cameraTransformMatrix, this._transformedDirection);
 			this.cameraDirection.addInPlace(this._transformedDirection);
 		}
+		
 		super._checkInputs();
 	}
-
-	/*
-	override public function _updateRigCameras(){
-		super._updateRigCameras();
-	}
-	*/
 
 	override public function _decideIfNeedsToMove():Bool {
 		return this._needMoveForGravity || Math.abs(this.cameraDirection.x) > 0 || Math.abs(this.cameraDirection.y) > 0 || Math.abs(this.cameraDirection.z) > 0;
@@ -317,19 +334,10 @@ import com.babylonhx.utils.Keycodes;
 	override public function _updatePosition() {
 		if (this.checkCollisions && this.getScene().collisionsEnabled) {
 			this._collideWithWorld(this.cameraDirection);
-			if (this.applyGravity) {
-				var oldPosition = this.position;
-				this._collideWithWorld(this.getScene().gravity);
-				this._needMoveForGravity = (Vector3.DistanceSquared(oldPosition, this.position) != 0);
-			}
-		} else {
+		} 
+		else {
 			this.position.addInPlace(this.cameraDirection);
 		}
 	}
-	/*
-	override public function _update() {
-		this._checkInputs();
-		super._update();
-	}*/
 
 }

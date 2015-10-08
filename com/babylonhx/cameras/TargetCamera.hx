@@ -41,7 +41,7 @@ import com.babylonhx.tools.Tools;
 		super(name, position, scene);
 	}
 	
-	public function getFrontPosition(distance:Float):Vector3 {
+	inline public function getFrontPosition(distance:Float):Vector3 {
 		var direction = this.getTarget().subtract(this.position);
 		direction.normalize();
 		direction.scaleInPlace(distance);
@@ -98,13 +98,14 @@ import com.babylonhx.tools.Tools;
 	}
 
 	// Methods
-	public function _computeLocalCameraSpeed():Float {
+	inline public function _computeLocalCameraSpeed():Float {
 		var engine = this.getEngine();
 		return this.speed * ((engine.getDeltaTime() / (engine.getFps() * 10.0)));
 	}
 
 	// Target
-	public function setTarget(target:Vector3) {
+	static var vDir:Vector3 = Vector3.Zero();
+	inline public function setTarget(target:Vector3) {
 		this.upVector.normalize();
 		
 		Matrix.LookAtLHToRef(this.position, target, this.upVector, this._camMatrix);
@@ -112,7 +113,7 @@ import com.babylonhx.tools.Tools;
 		
 		this.rotation.x = Math.atan(this._camMatrix.m[6] / this._camMatrix.m[10]);
 		
-		var vDir = target.subtract(this.position);
+		vDir = target.subtract(this.position);
 		
 		if (vDir.x >= 0.0) {
 			this.rotation.y = (-Math.atan(vDir.z / vDir.x) + Math.PI / 2.0);
@@ -122,6 +123,18 @@ import com.babylonhx.tools.Tools;
 		}
 		
 		this.rotation.z = -Math.acos(Vector3.Dot(new Vector3(0, 1.0, 0), this.upVector));
+		
+		if (Math.isNaN(this.rotation.x)) {
+			this.rotation.x = 0;
+		}
+		
+		if (Math.isNaN(this.rotation.y)) {
+			this.rotation.y = 0;
+		}
+		
+		if (Math.isNaN(this.rotation.z)) {
+			this.rotation.z = 0;
+		}
 	}
 
 	public function getTarget():Vector3 {

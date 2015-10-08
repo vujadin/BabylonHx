@@ -2,6 +2,7 @@ package com.babylonhx.math;
 
 import com.babylonhx.tools.Tools;
 import com.babylonhx.utils.typedarray.Float32Array;
+import haxe.ds.Vector;
 
 
 /**
@@ -250,7 +251,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		result.z = array[offset + 2];
 	}
 
-	inline public static function FromFloatArrayToRef(array: #if (js || purejs || web || html5) Float32Array #else Array<Float> #end, offset:Int, result:Vector3) {
+	inline public static function FromFloatArrayToRef(array: #if (js || purejs || web || html5) Float32Array #else Vector<Float> #end, offset:Int, result:Vector3) {
 		result.x = array[offset];
 		result.y = array[offset + 1];
 		result.z = array[offset + 2];

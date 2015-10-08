@@ -8,6 +8,7 @@ import com.babylonhx.cameras.Camera;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.tools.SmartArray;
+import com.babylonhx.math.Matrix;
 
 /**
  * ...
@@ -16,15 +17,22 @@ import com.babylonhx.tools.SmartArray;
 
 @:expose('BABYLON.RenderTargetTexture') class RenderTargetTexture extends Texture {
 	
+	public static inline var REFRESHRATE_RENDER_ONCE:Int = 0;
+    public static inline var REFRESHRATE_RENDER_ONEVERYFRAME:Int = 1;
+    public static inline var REFRESHRATE_RENDER_ONEVERYTWOFRAMES:Int = 2;
+	
 	public var renderList:Array<AbstractMesh> = [];
 	public var renderParticles:Bool = true;
 	public var renderSprites:Bool = false;
-	public var onBeforeRender:Void->Void;
-	public var onAfterRender:Void->Void;
+	public var onBeforeRender:Int->Void;
+	public var onAfterRender:Int->Void;
 	public var onAfterUnbind:Void->Void;
 	public var onClear:Engine->Void;
 	public var activeCamera:Camera;
 	public var customRenderFunction:Dynamic;//SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void->Void;
+	
+	public var refreshRate(get, set):Int;
+	public var canRescale(get, never):Bool;
 
 	private var _size:Dynamic;
 	public var _generateMipMaps:Bool;
@@ -33,9 +41,10 @@ import com.babylonhx.tools.SmartArray;
 	private var _doNotChangeAspectRatio:Bool;
 	private var _currentRefreshId:Int = -1;
 	private var _refreshRate:Int = 1;
+	private var _textureMatrix:Matrix;
 
 	
-	public function new(name:String, size:Dynamic, scene:Scene, ?generateMipMaps:Bool, doNotChangeAspectRatio:Bool = true, type:Int = Engine.TEXTURETYPE_UNSIGNED_INT) {
+	public function new(name:String, size:Dynamic, scene:Scene, ?generateMipMaps:Bool, doNotChangeAspectRatio:Bool = true, type:Int = Engine.TEXTURETYPE_UNSIGNED_INT, isCube:Bool = false) {
 		super(null, scene, !generateMipMaps);
 		
 		this.coordinatesMode = Texture.PROJECTION_MODE;
@@ -45,8 +54,16 @@ import com.babylonhx.tools.SmartArray;
 		this._size = size;
 		this._generateMipMaps = generateMipMaps;
 		this._doNotChangeAspectRatio = doNotChangeAspectRatio;
+		this.isCube = isCube;
 		
-		this._texture = scene.getEngine().createRenderTargetTexture(size, { generateMipMaps: generateMipMaps, type: type });
+		if (isCube) {
+			this._texture = scene.getEngine().createRenderTargetCubeTexture(size, { generateMipMaps: generateMipMaps, type: type } );
+			this.coordinatesMode = Texture.INVCUBIC_MODE;
+            this._textureMatrix = Matrix.Identity();
+		}
+		else {
+			this._texture = scene.getEngine().createRenderTargetTexture(size, { generateMipMaps: generateMipMaps, type: type });
+		}
 		
 		// Rendering groups
 		this._renderingManager = new RenderingManager(scene);
@@ -56,7 +73,6 @@ import com.babylonhx.tools.SmartArray;
 		this._currentRefreshId = -1;
 	}
 
-	public var refreshRate(get, set):Int;
 	private function get_refreshRate():Int {
 		return this._refreshRate;
 	}
@@ -93,19 +109,31 @@ import com.babylonhx.tools.SmartArray;
 		return this._size;
 	}
 
-	public var canRescale(get, never):Bool;
 	private function get_canRescale():Bool {
 		return true;
 	}
 
 	override public function scale(ratio:Float) {
-		var newSize = this._size * ratio;
+		var newSize = Std.int(this._size * ratio);
 		this.resize(newSize, this._generateMipMaps);
 	}
+	
+	override public function getReflectionTextureMatrix():Matrix {
+        if (this.isCube) {
+            return this._textureMatrix;
+        }
+		
+        return super.getReflectionTextureMatrix();
+    }
 
-	public function resize(size:Float, ?generateMipMaps:Bool) {
+	public function resize(size:Int, ?generateMipMaps:Bool) {
 		this.releaseInternalTexture();
-		this._texture = this.getScene().getEngine().createRenderTargetTexture(size, generateMipMaps);
+		if (this.isCube) {
+			this._texture = this.getScene().getEngine().createRenderTargetCubeTexture(size);
+		} 
+		else {
+			this._texture = this.getScene().getEngine().createRenderTargetTexture(size, generateMipMaps);
+		}
 	}
 
 	public function render(useCameraPostProcess:Bool = false) {
@@ -126,18 +154,12 @@ import com.babylonhx.tools.SmartArray;
 			return;
 		}
 		
-		// Bind
-		if (!useCameraPostProcess || !scene.postProcessManager._prepareFrame(this._texture)) {
-			engine.bindFramebuffer(this._texture);
-		}
-		
+		// Prepare renderingManager
 		this._renderingManager.reset();
 		
-		var currentRenderList:Array<AbstractMesh> = this.renderList != null ? this.renderList : cast scene.getActiveMeshes().data;
+		var currentRenderList:Array<AbstractMesh> = cast this.renderList != null ? this.renderList : scene.getActiveMeshes().data;
 		
-		for (meshIndex in 0...currentRenderList.length) {
-			var mesh:Mesh = cast currentRenderList[meshIndex];
-			
+		for (mesh in currentRenderList) {
 			if (mesh != null) {
 				if (!mesh.isReady()) {
 					// Reset _currentRefreshId
@@ -145,26 +167,56 @@ import com.babylonhx.tools.SmartArray;
 					continue;
 				}
 				
-				if (mesh.isEnabled() && mesh.isVisible && (mesh.subMeshes != null) && ((mesh.layerMask & scene.activeCamera.layerMask) != 0)) {
+				if (mesh.isEnabled() && mesh.isVisible && mesh.subMeshes != null && ((mesh.layerMask & scene.activeCamera.layerMask) != 0)) {
 					mesh._activate(scene.getRenderId());
 					
-					for (subIndex in 0...mesh.subMeshes.length) {
-						var subMesh = mesh.subMeshes[subIndex];
+					for (subMesh in mesh.subMeshes) {
 						scene._activeIndices += subMesh.indexCount;
 						this._renderingManager.dispatch(subMesh);
 					}
 				}
 			}
 		}
-				
+		
+		if (this.isCube) {
+			for (face in 0...6) {
+				this.renderToTarget(face, currentRenderList, useCameraPostProcess);
+			}
+		} 
+		else {
+			this.renderToTarget(0, currentRenderList, useCameraPostProcess);
+		}
+		
+		if (this.onAfterUnbind != null) {
+			this.onAfterUnbind();
+		}
+		
+		scene.resetCachedMaterial();
+	}
+	
+	public function renderToTarget(faceIndex:Int, currentRenderList:Array<AbstractMesh>, useCameraPostProcess:Bool) {
+		var scene = this.getScene();
+		var engine = scene.getEngine();
+		
+		// Bind
+		if (!useCameraPostProcess || !scene.postProcessManager._prepareFrame(this._texture)) {
+			if (this.isCube) {
+				engine.bindFramebuffer(this._texture, faceIndex);
+			} 
+			else {
+				engine.bindFramebuffer(this._texture);
+			}
+		}
+		
 		if (this.onBeforeRender != null) {
-			this.onBeforeRender();
+			this.onBeforeRender(faceIndex);
 		}
 		
 		// Clear
 		if (this.onClear != null) {
 			this.onClear(engine);
-		} else {
+		} 
+		else {
 			engine.clear(scene.clearColor, true, true);
 		}
 		
@@ -176,7 +228,7 @@ import com.babylonhx.tools.SmartArray;
 		this._renderingManager.render(this.customRenderFunction, currentRenderList, this.renderParticles, this.renderSprites);
 		
 		if (useCameraPostProcess) {
-			scene.postProcessManager._finalizeFrame(false, this._texture);
+			scene.postProcessManager._finalizeFrame(false, this._texture, faceIndex);
 		}
 		
 		if (!this._doNotChangeAspectRatio) {
@@ -184,14 +236,18 @@ import com.babylonhx.tools.SmartArray;
 		}
 		
 		if (this.onAfterRender != null) {
-			this.onAfterRender();
+			this.onAfterRender(faceIndex);
 		}
 		
 		// Unbind
-		engine.unBindFramebuffer(this._texture);
-		
-		if (this.onAfterUnbind != null) {
-			this.onAfterUnbind();
+		if (!this.isCube || faceIndex == 5) {
+			if (this.isCube) {
+				if (faceIndex == 5) {
+					engine.generateMipMapsForCubemap(this._texture);
+				}
+			}
+			
+			engine.unBindFramebuffer(this._texture, true);
 		}
 	}
 

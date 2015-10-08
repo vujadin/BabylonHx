@@ -180,6 +180,10 @@ import com.babylonhx.tools.Tools;
 					if (this.roughness > 0) {
 						this._defines.defines["ROUGHNESS"] = true;
 					}
+					
+					if (this.reflectionTexture.coordinatesMode == Texture.INVCUBIC_MODE) {
+                        this._defines.defines["INVERTCUBICMAP"] = true;
+                    }
 				}
 			}
 			
@@ -571,7 +575,7 @@ import com.babylonhx.tools.Tools;
 				
 		// Bones
 		if (mesh != null && mesh.useBones && mesh.computeBonesUsingShaders) {
-			this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices());
+			this._effect.setMatrices("mBones", #if (js || html5 || purejs) mesh.skeleton.getTransformMatrices() #else mesh.skeleton.getTransformMatrices().toArray() #end );
 		}
 		
 		if (scene.getCachedMaterial() != this) {
@@ -631,7 +635,7 @@ import com.babylonhx.tools.Tools;
 				}
 				
 				this._effect.setMatrix("reflectionMatrix", this.reflectionTexture.getReflectionTextureMatrix());
-				this._effect.setFloat3("vReflectionInfos", this.reflectionTexture.coordinatesMode, this.reflectionTexture.level, this.reflectionTexture.isCube ? 1 : 0);
+				this._effect.setFloat3("vReflectionInfos", this.reflectionTexture.coordinatesMode == Texture.INVCUBIC_MODE ? Texture.CUBIC_MODE : this.reflectionTexture.coordinatesMode, this.reflectionTexture.level, this.reflectionTexture.isCube ? 1 : 0);
 			}
 			
 			if (this.emissiveTexture != null && StandardMaterial.EmissiveTextureEnabled) {
@@ -681,7 +685,7 @@ import com.babylonhx.tools.Tools;
 			this._scaledSpecular.g = this.specularColor.g * Tools.Clamp(1.0 - this.emissiveColor.g);
 			this._scaledSpecular.b = this.specularColor.b * Tools.Clamp(1.0 - this.emissiveColor.b);
 			
-			this._effect.setVector3("vEyePosition", scene.activeCamera.position);
+			this._effect.setVector3("vEyePosition", scene._mirroredCameraPosition != null ? scene._mirroredCameraPosition : scene.activeCamera.position);
 			this._effect.setColor3("vAmbientColor", this._globalAmbientColor);
 			
 			if (this._defines.defines["SPECULARTERM"]) {

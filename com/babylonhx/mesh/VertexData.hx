@@ -761,7 +761,7 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		
 		return vertexData;
 	}
-
+	
 	public static function CreateSphere(options:Dynamic, diameter:Float = 1, sideOrientation:Int = Mesh.DEFAULTSIDE):VertexData {
 				
 		var indices:Array<Int> = [];

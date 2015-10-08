@@ -40,6 +40,7 @@ import com.babylonhx.physics.IPhysicsEnginePlugin;
 import com.babylonhx.physics.PhysicsBodyCreationOptions;
 import com.babylonhx.postprocess.PostProcessManager;
 import com.babylonhx.postprocess.renderpipeline.PostProcessRenderPipelineManager;
+import com.babylonhx.probes.ReflectionProbe;
 import com.babylonhx.rendering.BoundingBoxRenderer;
 import com.babylonhx.rendering.DepthRenderer;
 import com.babylonhx.rendering.OutlineRenderer;
@@ -89,6 +90,9 @@ import com.babylonhx.tools.Tools;
 	private var _pointerX:Int;
 	private var _pointerY:Int;
 	private var _meshUnderPointer:AbstractMesh; 
+	
+	// Mirror
+    public var _mirroredCameraPosition:Vector3;
 
 	// Keyboard
 	private var _onKeyDown:Dynamic;		// Event->Void
@@ -198,6 +202,10 @@ import com.babylonhx.tools.Tools;
 
 	// Imported meshes
 	public var importedMeshesFiles:Array<String> = [];
+	
+	// Probes
+	public var probesEnabled:Bool = true;
+	public var reflectionProbes:Array<ReflectionProbe> = [];
 
 	// Database
 	public var database:Dynamic; //ANY
@@ -299,6 +307,9 @@ import com.babylonhx.tools.Tools;
 		
 		//simplification queue
 		this.simplificationQueue = new SimplificationQueue();
+		
+		//collision coordinator initialization. For now legacy per default.
+		this.workerCollisions = false;
 		
 		// TODO: macro ...
 		#if purejs
@@ -708,6 +719,10 @@ import com.babylonhx.tools.Tools;
 	public function addMesh(newMesh:AbstractMesh) {
 		newMesh.uniqueId = this._uniqueIdCounter++;
 		var position = this.meshes.push(newMesh);
+		
+		//notify the collision coordinator
+		this.collisionCoordinator.onMeshAdded(newMesh);
+		
 		if (this.onNewMeshAdded != null) {
 			this.onNewMeshAdded(newMesh, position, this);
 		}
@@ -719,6 +734,10 @@ import com.babylonhx.tools.Tools;
 			// Remove from the scene if mesh found 
 			this.meshes.splice(index, 1);
 		}
+		
+		//notify the collision coordinator
+		this.collisionCoordinator.onMeshRemoved(toRemove);
+		
 		if (this.onMeshRemoved != null) {
 			this.onMeshRemoved(toRemove);
 		}
@@ -909,6 +928,9 @@ import com.babylonhx.tools.Tools;
 			return false;
 		}
 		
+		//notify the collision coordinator
+		this.collisionCoordinator.onGeometryAdded(geometry);
+		
 		this._geometries.push(geometry);
 		if (this.onGeometryAdded != null) {
 			this.onGeometryAdded(geometry);
@@ -927,6 +949,10 @@ import com.babylonhx.tools.Tools;
 		
 		if (index > -1) {
 			this._geometries.splice(index, 1);
+			
+			//notify the collision coordinator
+			this.collisionCoordinator.onGeometryDeleted(geometry);
+			
 			if (this.onGeometryRemoved != null) {
 				this.onGeometryRemoved(geometry);
 			}

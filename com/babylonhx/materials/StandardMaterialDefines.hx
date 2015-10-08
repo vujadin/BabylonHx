@@ -74,6 +74,8 @@ class StandardMaterialDefines {
 		defines["ROUGHNESS"] = false;
 		defines["EMISSIVEASILLUMINATION"] = false;
 		defines["REFLECTIONFRESNELFROMSPECULAR"] = false;
+		defines["LIGHTMAP"] = false;
+		defines["INVERTCUBICMAP"] = false;
 		
 		BonesPerMesh = 0;
 		

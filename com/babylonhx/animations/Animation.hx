@@ -142,12 +142,12 @@ import com.babylonhx.mesh.AbstractMesh;
 		return Color3.Lerp(startValue, endValue, gradient);
 	}
 	
-	static var matrixInterpolateFunction_startScale:Vector3 = new Vector3(0, 0, 0);
+	static var matrixInterpolateFunction_startScale:Vector3 = Vector3.Zero();
 	static var matrixInterpolateFunction_startRotation:Quaternion = new Quaternion();
-	static var matrixInterpolateFunction_startTranslation:Vector3 = new Vector3(0, 0, 0);
-	static var matrixInterpolateFunction_endScale:Vector3 = new Vector3(0, 0, 0);
+	static var matrixInterpolateFunction_startTranslation:Vector3 = Vector3.Zero();
+	static var matrixInterpolateFunction_endScale:Vector3 = Vector3.Zero();
 	static var matrixInterpolateFunction_endRotation:Quaternion = new Quaternion();
-	static var matrixInterpolateFunction_endTranslation:Vector3 = new Vector3(0, 0, 0);
+	static var matrixInterpolateFunction_endTranslation:Vector3 = Vector3.Zero();
 	public function matrixInterpolateFunction(startValue:Matrix, endValue:Matrix, gradient:Float):Matrix {
 		matrixInterpolateFunction_startScale.set(0, 0, 0);
 		matrixInterpolateFunction_startRotation.set();

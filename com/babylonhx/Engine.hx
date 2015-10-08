@@ -24,6 +24,8 @@ import com.babylonhx.utils.typedarray.Int16Array;
 import com.babylonhx.utils.typedarray.ArrayBufferView;
 import com.babylonhx.utils.Image;
 
+import haxe.ds.Vector;
+
 
 #if (js || purejs)
 import js.Browser;
@@ -507,9 +509,9 @@ import nme.display.OpenGLView;
 	 *   });
 	 */
 	public function resize() {
-		#if purejs 
-		var width = (untyped Browser.navigator.isCocoonJS  || untyped Browser.navigator.isCocoonJSWebkit) ? Browser.window.innerWidth : this._renderingCanvas.clientWidth;
-		var height = (untyped Browser.navigator.isCocoonJS  || untyped Browser.navigator.isCocoonJSWebkit) ? Browser.window.innerHeight : this._renderingCanvas.clientHeight;
+		#if purejs
+		var width = untyped Browser.navigator.isCocoonJS ? Browser.window.innerWidth : this._renderingCanvas.clientWidth;
+		var height = untyped Browser.navigator.isCocoonJS ? Browser.window.innerHeight : this._renderingCanvas.clientHeight;
 		
 		this.setSize(Std.int(width / this._hardwareScalingLevel), Std.int(height / this._hardwareScalingLevel));
 		#end
@@ -536,19 +538,27 @@ import nme.display.OpenGLView;
 		#end
 	}
 
-	public function bindFramebuffer(texture:WebGLTexture) {
+	public function bindFramebuffer(texture:WebGLTexture, faceIndex:Int = 0) {
 		this._currentRenderTarget = texture;
 		
 		GL.bindFramebuffer(GL.FRAMEBUFFER, texture._framebuffer);
+		
+		if (texture.isCube) {
+            GL.framebufferTexture2D(GL.FRAMEBUFFER, GL.COLOR_ATTACHMENT0, GL.TEXTURE_CUBE_MAP_POSITIVE_X + faceIndex, texture.data, 0);
+        } 
+		else {
+            GL.framebufferTexture2D(GL.FRAMEBUFFER, GL.COLOR_ATTACHMENT0, GL.TEXTURE_2D, texture.data, 0);
+        }
+		
 		GL.viewport(0, 0, Std.int(texture._width), Std.int(texture._height));
 		
 		this.wipeCaches();
 	}
 
-	inline public function unBindFramebuffer(texture:WebGLTexture) {
+	inline public function unBindFramebuffer(texture:WebGLTexture, disableGenerateMipMaps:Bool = false) {
 		this._currentRenderTarget = null;
 		
-		if (texture.generateMipMaps) {
+		if (texture.generateMipMaps && !disableGenerateMipMaps) {
 			GL.bindTexture(GL.TEXTURE_2D, texture.data);
 			GL.generateMipmap(GL.TEXTURE_2D);
 			GL.bindTexture(GL.TEXTURE_2D, null);
@@ -556,6 +566,14 @@ import nme.display.OpenGLView;
 			
 		GL.bindFramebuffer(GL.FRAMEBUFFER, null);
 	}
+	
+	public function generateMipMapsForCubemap(texture:WebGLTexture) {
+        if (texture.generateMipMaps) {
+            GL.bindTexture(GL.TEXTURE_CUBE_MAP, texture.data);
+            GL.generateMipmap(GL.TEXTURE_CUBE_MAP);
+            GL.bindTexture(GL.TEXTURE_CUBE_MAP, null);
+        }
+    }
 
 	inline public function flushFramebuffer() {
 		GL.flush();
@@ -731,9 +749,9 @@ import nme.display.OpenGLView;
 	}
 
 
-	public function updateAndBindInstancesBuffer(instancesBuffer:WebGLBuffer, data: #if (js || purejs) Float32Array #else Array<Float> #end , offsetLocations:Array<Int>) {
+	public function updateAndBindInstancesBuffer(instancesBuffer:WebGLBuffer, data: #if (js || html5 || purejs) Float32Array #else Vector<Float> #end , offsetLocations:Array<Int>) {
 		GL.bindBuffer(GL.ARRAY_BUFFER, instancesBuffer.buffer);
-		GL.bufferSubData(GL.ARRAY_BUFFER, 0, cast data);
+		GL.bufferSubData(GL.ARRAY_BUFFER, 0, cast #if (js || html5 || purejs) data #else data.toArray() #end );
 				
 		for (index in 0...4) {
 			var offsetLocation = offsetLocations[index];
@@ -959,7 +977,7 @@ import nme.display.OpenGLView;
 	}
 
 	inline public function setMatrix(uniform:GLUniformLocation, matrix:Matrix) {	
-		GL.uniformMatrix4fv(uniform, false, #if (js || purejs) matrix.m #else new Float32Array(matrix.toArray()) #end );
+		GL.uniformMatrix4fv(uniform, false, #if (js || purejs) matrix.m #else new Float32Array(matrix.toArray().toArray()) #end );
 	}
 	
 	inline public function setMatrix3x3(uniform:GLUniformLocation, matrix:Float32Array) {
@@ -1392,7 +1410,7 @@ import nme.display.OpenGLView;
 		var type = Engine.TEXTURETYPE_UNSIGNED_INT;
 		var samplingMode = Texture.TRILINEAR_SAMPLINGMODE;
 		if (options != null) {
-            generateMipMaps = options.generateMipMaps != null ? options.generateMipmaps : options;
+            generateMipMaps = options.generateMipMaps != null ? options.generateMipMaps : options;
             generateDepthBuffer = options.generateDepthBuffer != null ? options.generateDepthBuffer : true;
 			type = options.type == null ? type : options.type;
             if (options.samplingMode != null) {
@@ -1433,7 +1451,6 @@ import nme.display.OpenGLView;
 		// Create the framebuffer
 		var framebuffer = GL.createFramebuffer();
 		GL.bindFramebuffer(GL.FRAMEBUFFER, framebuffer);
-		GL.framebufferTexture2D(GL.FRAMEBUFFER, GL.COLOR_ATTACHMENT0, GL.TEXTURE_2D, texture.data, 0);
 		if (generateDepthBuffer) {
 			GL.framebufferRenderbuffer(GL.FRAMEBUFFER, GL.DEPTH_ATTACHMENT, GL.RENDERBUFFER, depthBuffer);
 		}
@@ -1456,6 +1473,64 @@ import nme.display.OpenGLView;
 		this._activeTexturesCache = [];
 		
 		this._loadedTexturesCache.push(texture);
+		
+		return texture;
+	}
+	
+	public function createRenderTargetCubeTexture(size:Int, ?options:Dynamic):WebGLTexture {
+		var texture = new WebGLTexture("", GL.createTexture());
+		
+		var generateMipMaps:Bool = true;
+		var samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE;
+		if (options != null) {
+			generateMipMaps = options.generateMipMaps == null ? options : options.generateMipMaps;
+			if (options.samplingMode != null) {
+				samplingMode = options.samplingMode;
+			}
+		}
+		
+		texture.isCube = true;
+		texture.references = 1;
+		texture.generateMipMaps = generateMipMaps;
+		texture.references = 1;
+		texture.samplingMode = samplingMode;
+		
+		var filters = getSamplingParameters(samplingMode, generateMipMaps);
+		
+		GL.bindTexture(GL.TEXTURE_CUBE_MAP, texture.data);
+		
+		for (face in 0...6) {
+			GL.texImage2D((GL.TEXTURE_CUBE_MAP_POSITIVE_X + face), 0, GL.RGBA, size, size, 0, GL.RGBA, GL.UNSIGNED_BYTE, null);
+		}
+		
+		GL.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_MAG_FILTER, filters.mag);
+		GL.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_MIN_FILTER, filters.min);
+		GL.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_WRAP_S, GL.CLAMP_TO_EDGE);
+		GL.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_WRAP_T, GL.CLAMP_TO_EDGE);
+		
+		// Create the depth buffer
+		var depthBuffer = GL.createRenderbuffer();
+		GL.bindRenderbuffer(GL.RENDERBUFFER, depthBuffer);
+		GL.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_COMPONENT16, size, size);
+		
+		// Create the framebuffer
+		var framebuffer = GL.createFramebuffer();
+		GL.bindFramebuffer(GL.FRAMEBUFFER, framebuffer);
+		GL.framebufferRenderbuffer(GL.FRAMEBUFFER, GL.DEPTH_ATTACHMENT, GL.RENDERBUFFER, depthBuffer);
+		
+		// Unbind
+		GL.bindTexture(GL.TEXTURE_CUBE_MAP, null);
+		GL.bindRenderbuffer(GL.RENDERBUFFER, null);
+		GL.bindFramebuffer(GL.FRAMEBUFFER, null);
+		
+		texture._framebuffer = framebuffer;
+		texture._depthBuffer = depthBuffer;
+		
+		this._activeTexturesCache = [];
+		
+		texture._width = size;
+		texture._height = size;
+		texture.isReady = true;
 		
 		return texture;
 	}
@@ -1869,7 +1944,7 @@ import nme.display.OpenGLView;
         }*/
     }
 	
-	#if purejs 
+	#if purejs
 	// Statics
 	public static function isSupported():Bool {
 		try {

@@ -29,6 +29,7 @@ import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.bones.Skeleton;
 
 import haxe.Json;
+import haxe.ds.Vector;
 
 import com.babylonhx.utils.Image;
 import com.babylonhx.utils.typedarray.Float32Array;
@@ -71,7 +72,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	private var _renderIdForInstances:Array<Int> = [];
 	private var _batchCache:_InstancesBatch = new _InstancesBatch();
 	private var _worldMatricesInstancesBuffer:WebGLBuffer;
-	private var _worldMatricesInstancesArray: #if (js || purejs) Float32Array #else Array<Float> #end;
+	private var _worldMatricesInstancesArray: #if (js || purejs) Float32Array #else Vector<Float> #end;
 	private var _instancesBufferSize:Int = 32 * 16 * 4; // let's start with a maximum of 32 instances
 	public var _shouldGenerateFlatShading:Bool;
 	private var _preActivateId:Int = -1;
@@ -746,13 +747,13 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			}
 			
 			this._worldMatricesInstancesBuffer = engine.createInstancesBuffer(this._instancesBufferSize);
-			this._worldMatricesInstancesArray = #if (js || purejs) new Float32Array(Std.int(this._instancesBufferSize / 4)) #else [] #end ;
+			this._worldMatricesInstancesArray = #if (js || purejs) new Float32Array(Std.int(this._instancesBufferSize / 4)) #else new Vector<Float>(Std.int(this._instancesBufferSize / 4)) #end ;
 		}
 		
 		var offset = 0;
 		var instancesCount = 0;
 		
-		var world = this.getWorldMatrix();
+		var world:Matrix = this.getWorldMatrix();
 		if (batch.renderSelf[subMesh._id]) {
 			world.copyToArray(this._worldMatricesInstancesArray, offset);
 			offset += 16;
@@ -1467,6 +1468,20 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		
         return disc;
     }
+	
+	public static function CreateSkyBox(name:String, size:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+		var box = new Mesh(name, scene);
+		var vertexData = VertexData.CreateBox(size, sideOrientation);
+		
+		if (scene.isPhysicsEnabled()) {
+			box.physicsDim = { };
+			box.physicsDim.size = size;
+		}
+		
+		vertexData.applyToMesh(box, updatable);
+		
+		return box;
+	}
 	
 	public static function CreateBox(name:String, options:Dynamic, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
 		var box = new Mesh(name, scene);
@@ -2251,22 +2266,22 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			
 			if (matricesWeight0 > 0) {
 				var matricesIndex0 = matricesIndicesData[index4];
-				Matrix.FromFloat32ArrayToRefScaled(new Float32Array(skeletonMatrices), Std.int(matricesIndicesData[index4] * 16), matricesWeight0, tempMatrix);
+				Matrix.FromFloat32ArrayToRefScaled(new Float32Array( #if (js || html5 || purejs) skeletonMatrices #else skeletonMatrices.toArray() #end ), Std.int(matricesIndicesData[index4] * 16), matricesWeight0, tempMatrix);
 				finalMatrix.addToSelf(tempMatrix);
 			}
 			
 			if (matricesWeight1 > 0) {
-				Matrix.FromFloat32ArrayToRefScaled(new Float32Array(skeletonMatrices), Std.int(matricesIndicesData[index4 + 1] * 16), matricesWeight1, tempMatrix);
+				Matrix.FromFloat32ArrayToRefScaled(new Float32Array( #if (js || html5 || purejs) skeletonMatrices #else skeletonMatrices.toArray() #end ), Std.int(matricesIndicesData[index4 + 1] * 16), matricesWeight1, tempMatrix);
 				finalMatrix.addToSelf(tempMatrix);
 			}
 			
 			if (matricesWeight2 > 0) {
-				Matrix.FromFloat32ArrayToRefScaled(new Float32Array(skeletonMatrices), Std.int(matricesIndicesData[index4 + 2] * 16), matricesWeight2, tempMatrix);
+				Matrix.FromFloat32ArrayToRefScaled(new Float32Array( #if (js || html5 || purejs) skeletonMatrices #else skeletonMatrices.toArray() #end ), Std.int(matricesIndicesData[index4 + 2] * 16), matricesWeight2, tempMatrix);
 				finalMatrix.addToSelf(tempMatrix);
 			}
 			
 			if (matricesWeight3 > 0) {
-				Matrix.FromFloat32ArrayToRefScaled(new Float32Array(skeletonMatrices), Std.int(matricesIndicesData[index4 + 3] * 16), matricesWeight3, tempMatrix);
+				Matrix.FromFloat32ArrayToRefScaled(new Float32Array( #if (js || html5 || purejs) skeletonMatrices #else skeletonMatrices.toArray() #end ), Std.int(matricesIndicesData[index4 + 3] * 16), matricesWeight3, tempMatrix);
 				finalMatrix.addToSelf(tempMatrix);
 			}
 			

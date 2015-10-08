@@ -104,7 +104,7 @@ import com.babylonhx.materials.textures.WebGLTexture;
 		engine.setDepthWrite(true);
 	}
 
-	public function _finalizeFrame(doNotPresent:Bool = false, ?targetTexture:WebGLTexture, ?postProcesses:Array<PostProcess>) {
+	public function _finalizeFrame(doNotPresent:Bool = false, ?targetTexture:WebGLTexture, ?faceIndex:Int, ?postProcesses:Array<PostProcess>) {
 		if (postProcesses == null) {
 			postProcesses = this._scene.activeCamera._postProcesses;
 		}
@@ -119,10 +119,12 @@ import com.babylonhx.materials.textures.WebGLTexture;
 		for (index in 0...postProcessesTakenIndices.length) {
 			if (index < postProcessesTakenIndices.length - 1) {
 				postProcesses[postProcessesTakenIndices[index + 1]].activate(this._scene.activeCamera);
-			} else {
+			} 
+			else {
 				if (targetTexture != null) {
-					engine.bindFramebuffer(targetTexture);
-				} else {
+					engine.bindFramebuffer(targetTexture, faceIndex);
+				} 
+				else {
 					engine.restoreDefaultFramebuffer();
 				}
 			}

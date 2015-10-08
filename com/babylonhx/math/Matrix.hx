@@ -2,7 +2,12 @@ package com.babylonhx.math;
 
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.tools.Tools;
+
 import com.babylonhx.utils.typedarray.Float32Array;
+#if cpp
+import haxe.ds.Vector;
+#end
+
 
 /**
 * ...
@@ -19,7 +24,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	#if (js || html5 || purejs)
 	public var m:Float32Array;
 	#else
-	public var m:Array<Float>;	
+	public var m:Vector<Float>;	
 	#end
 	
 	
@@ -27,17 +32,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		#if (js || html5 || purejs)
 		m = new Float32Array(16);
 		#else
-		m = [];
+		m = new Vector<Float>(16);
 		#end
 	}
 	
 	public function toString():String {
-		/*var ret = "[";
-		for (el in m) {
-			ret += el + ", ";
-		}
-		return ret + "]";*/
-		return m + "";
+		return #if (js || html5 || purejs) m #else m.toArray() #end + "";
 	}
 
 	// Properties
@@ -68,12 +68,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	// Methods
-	inline public function toArray(): #if (js || html5 || purejs) Float32Array #else Array<Float> #end {
+	inline public function toArray(): #if (js || html5 || purejs) Float32Array #else Vector<Float> #end {
 		return this.m;
 	}
 
 	inline public function asArray(): #if (js || html5 || purejs) Float32Array #else Array<Float> #end {
-		return this.toArray();
+		return #if (js || html5 || purejs) m #else m.toArray() #end ;
 	}
 
 	inline public function invert():Matrix {
@@ -190,7 +190,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 	}
 
-	inline public function copyToArray(array: #if (js || html5 || purejs) Float32Array #else Array<Float> #end, offset:Int = 0) {
+	inline public function copyToArray(array: #if (js || html5 || purejs) Float32Array #else Vector<Float> #end, offset:Int = 0) {
 		for (index in 0...16) {
 			array[offset + index] = this.m[index];
 		}
@@ -200,7 +200,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this.multiplyToArray(other, result.m, 0);
 	}
 
-	inline public function multiplyToArray(other:Matrix, result: #if (js || html5 || purejs) Float32Array #else Array<Float> #end, offset:Int) {		
+	inline public function multiplyToArray(other:Matrix, result: #if (js || html5 || purejs) Float32Array #else Vector<Float> #end, offset:Int) {		
 		result[offset] = this.m[0] * other.m[0] + this.m[1] * other.m[4] + this.m[2] * other.m[8] + this.m[3] * other.m[12];
 		result[offset + 1] = this.m[0] * other.m[1] + this.m[1] * other.m[5] + this.m[2] * other.m[9] + this.m[3] * other.m[13];
 		result[offset + 2] = this.m[0] * other.m[2] + this.m[1] * other.m[6] + this.m[2] * other.m[10] + this.m[3] * other.m[14];
@@ -553,6 +553,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return result;
 	}
 
+	static var ex:Float;
+	static var ey:Float;
+	static var ez:Float;
 	public static function LookAtLHToRef(eye:Vector3, target:Vector3, up:Vector3, result:Matrix) {
 		// Z axis
 		target.subtractToRef(eye, Matrix._zAxis);
@@ -567,9 +570,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		Matrix._yAxis.normalize();
 		
 		// Eye angles
-		var ex = -Vector3.Dot(Matrix._xAxis, eye);
-		var ey = -Vector3.Dot(Matrix._yAxis, eye);
-		var ez = -Vector3.Dot(Matrix._zAxis, eye);
+		ex = -Vector3.Dot(Matrix._xAxis, eye);
+		ey = -Vector3.Dot(Matrix._yAxis, eye);
+		ez = -Vector3.Dot(Matrix._zAxis, eye);
 		
 		return Matrix.FromValuesToRef(Matrix._xAxis.x, Matrix._yAxis.x, Matrix._zAxis.x, 0,
 			Matrix._xAxis.y, Matrix._yAxis.y, Matrix._zAxis.y, 0,

@@ -20,7 +20,7 @@ import com.babylonhx.mesh.Mesh;
 	public var _name:String;
 	
 
-	public function new(scene:Scene, name:String, size:Int, renderList:Array<Mesh>, beforeRender:Void->Void, afterRender:Void->Void) {
+	public function new(scene:Scene, name:String, size:Int, renderList:Array<Mesh>, beforeRender:Int->Void, afterRender:Int->Void) {
 		this._name = name;
 		
 		this._renderTexture = new RenderTargetTexture(name, size, scene);

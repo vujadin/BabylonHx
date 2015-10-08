@@ -85,7 +85,7 @@ import com.babylonhx.tools.SmartArray;
 				
 				// Bones				
 				if (mesh.useBones && mesh.computeBonesUsingShaders) {
-					this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices());
+					this._effect.setMatrices("mBones", #if (js || html5 || purejs) mesh.skeleton.getTransformMatrices() #else mesh.skeleton.getTransformMatrices().toArray() #end );
 				}
 				
 				// Draw

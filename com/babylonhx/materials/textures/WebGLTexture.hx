@@ -35,6 +35,7 @@ import com.babylonhx.utils.GL;
 	public var _height:Int;
 	public var _cachedCoordinatesMode:Int;
 	public var _isDisabled:Bool;
+	public var _cubeFaces:Array<WebGLTexture>;
 	
 	public var __smartArrayFlags:Array<Int>;
 	

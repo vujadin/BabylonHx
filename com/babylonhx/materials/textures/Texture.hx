@@ -21,6 +21,7 @@ import com.babylonhx.math.Vector3;
 	public static inline var CUBIC_MODE:Int = 3;
 	public static inline var PROJECTION_MODE:Int = 4;
 	public static inline var SKYBOX_MODE:Int = 5;
+	public static inline var INVCUBIC_MODE:Int = 6;
 
 	public static inline var CLAMP_ADDRESSMODE:Int = 0;
 	public static inline var WRAP_ADDRESSMODE:Int = 1;
