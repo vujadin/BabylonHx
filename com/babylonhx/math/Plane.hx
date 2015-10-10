@@ -42,7 +42,7 @@ package com.babylonhx.math;
 
 	static var transposedMatrix = new Matrix();
 	inline public function transform(transformation:Matrix):Plane {
-		transposedMatrix = Matrix.Transpose(transformation);
+		transposedMatrix = com.babylonhx.math.Matrix.Transpose(transformation);
 		var x = this.normal.x;
 		var y = this.normal.y;
 		var z = this.normal.z;
