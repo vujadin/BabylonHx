@@ -211,63 +211,7 @@ import nme.display.OpenGLView;
         this.resize();
 		
 		// Caps
-		this._caps = new EngineCapabilities();
-		this._caps.maxTexturesImageUnits = GL.getParameter(GL.MAX_TEXTURE_IMAGE_UNITS);
-		this._caps.maxTextureSize = GL.getParameter(GL.MAX_TEXTURE_SIZE);
-		this._caps.maxCubemapTextureSize = GL.getParameter(GL.MAX_CUBE_MAP_TEXTURE_SIZE);
-		this._caps.maxRenderTextureSize = GL.getParameter(GL.MAX_RENDERBUFFER_SIZE);
-		
-		// Infos
-		this._glVersion = GL.getParameter(GL.VERSION);
-		this._glExtensions = GL.getSupportedExtensions();
-						
-		// Extensions
-		try {
-			this._caps.standardDerivatives = (GL.getExtension('OES_standard_derivatives') != null);
-			this._caps.s3tc = GL.getExtension('WEBGL_compressed_texture_s3tc');
-			this._caps.textureFloat = (GL.getExtension('OES_texture_float') != null);
-			this._caps.textureAnisotropicFilterExtension = GL.getExtension('EXT_texture_filter_anisotropic') || GL.getExtension('WEBKIT_EXT_texture_filter_anisotropic') || GL.getExtension('MOZ_EXT_texture_filter_anisotropic');
-			this._caps.maxAnisotropy = this._caps.textureAnisotropicFilterExtension != null ? GL.getParameter(this._caps.textureAnisotropicFilterExtension.MAX_TEXTURE_MAX_ANISOTROPY_EXT) : 0;
-			this._caps.instancedArrays = GL.getExtension('ANGLE_instanced_arrays');
-			this._caps.uintIndices = GL.getExtension('OES_element_index_uint') != null;	
-			this._caps.highPrecisionShaderSupported = true;
-			if (GL.getShaderPrecisionFormat != null) {
-				var highp = GL.getShaderPrecisionFormat(GL.FRAGMENT_SHADER, GL.HIGH_FLOAT);
-				this._caps.highPrecisionShaderSupported = highp != null && highp.precision != 0;
-			}
-		} catch (err:Dynamic) {
-			//trace(err);
-		}
-		#if (!js && !purejs)
-			if (this._caps.s3tc == null) {
-				this._caps.s3tc = this._glExtensions.indexOf("GL_EXT_texture_compression_s3tc") != -1;
-			}
-			if (this._caps.textureAnisotropicFilterExtension == null || this._caps.textureAnisotropicFilterExtension == false) {
-				
-				this._caps.textureAnisotropicFilterExtension = this._glExtensions.indexOf("GL_EXT_texture_filter_anisotropic") != -1;
-			}
-			if (this._caps.maxRenderTextureSize == 0) {
-				this._caps.maxRenderTextureSize = 16384;
-			}
-			if (this._caps.maxCubemapTextureSize == 0) {
-				this._caps.maxCubemapTextureSize = 16384;
-			}
-			if (this._caps.maxTextureSize == 0) {
-				this._caps.maxTextureSize = 16384;
-			}
-			if (this._caps.uintIndices == null) {
-				this._caps.uintIndices = true;
-			}
-			if (this._caps.standardDerivatives == false) {
-				this._caps.standardDerivatives = true;
-			}
-			if (this._caps.maxAnisotropy == 0) {
-				this._caps.maxAnisotropy = 16;
-			}
-			if (this._caps.textureFloat == false) {
-				this._caps.textureFloat = this._glExtensions.indexOf("GL_ARB_texture_float") != -1;
-			}
-		#end	
+		this._caps = new EngineCapabilities(GL.getSupportedExtensions());
 				
 		// Depth buffer
 		this.setDepthBuffer(true);
@@ -748,16 +692,20 @@ import nme.display.OpenGLView;
 		buffer = null;
 	}
 
-
 	public function updateAndBindInstancesBuffer(instancesBuffer:WebGLBuffer, data: #if (js || html5 || purejs) Float32Array #else Vector<Float> #end , offsetLocations:Array<Int>) {
 		GL.bindBuffer(GL.ARRAY_BUFFER, instancesBuffer.buffer);
-		GL.bufferSubData(GL.ARRAY_BUFFER, 0, cast #if (js || html5 || purejs) data #else data.toArray() #end );
+
+		#if (js || html5 || purejs) 
+			GL.bufferSubData(GL.ARRAY_BUFFER, 0, cast data);
+		#else
+			GL.bufferSubData(GL.ARRAY_BUFFER, 0, new Float32Array(data.toArray()));
+		#end
 				
 		for (index in 0...4) {
 			var offsetLocation = offsetLocations[index];
 			GL.enableVertexAttribArray(offsetLocation);
 			GL.vertexAttribPointer(offsetLocation, 4, GL.FLOAT, false, 64, index * 16);
-			this._caps.instancedArrays.vertexAttribDivisorANGLE(offsetLocation, 1);
+			this._caps.instancedArrays.vertexAttribDivisor(offsetLocation, 1);
 		}
 	}
 
@@ -766,7 +714,7 @@ import nme.display.OpenGLView;
 		for (index in 0...4) {
 			var offsetLocation = offsetLocations[index];
 			GL.disableVertexAttribArray(offsetLocation);
-			this._caps.instancedArrays.vertexAttribDivisorANGLE(offsetLocation, 0);
+			this._caps.instancedArrays.vertexAttribDivisor(offsetLocation, 0);
 		}
 	}
 
@@ -785,7 +733,7 @@ import nme.display.OpenGLView;
 		var indexFormat = this._uintIndicesCurrentlySet ? GL.UNSIGNED_INT : GL.UNSIGNED_SHORT;
 		var mult:Int = this._uintIndicesCurrentlySet ? 4 : 2;
 		if (instancesCount > -1) {
-			this._caps.instancedArrays.drawElementsInstancedANGLE(useTriangles ? GL.TRIANGLES : GL.LINES, indexCount, indexFormat, indexStart * mult, instancesCount);
+			this._caps.instancedArrays.drawElementsInstanced(useTriangles ? GL.TRIANGLES : GL.LINES, indexCount, indexFormat, indexStart * mult, instancesCount);
 			return;
 		}
 		
@@ -799,7 +747,7 @@ import nme.display.OpenGLView;
 		this._drawCalls++;
 		
 		if (instancesCount > -1) {
-			this._caps.instancedArrays.drawArraysInstancedANGLE(GL.POINTS, verticesStart, verticesCount, instancesCount);
+			this._caps.instancedArrays.drawArraysInstanced(GL.POINTS, verticesStart, verticesCount, instancesCount);
 			return;
 		}
 		
