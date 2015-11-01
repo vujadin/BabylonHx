@@ -220,6 +220,9 @@ import nme.display.OpenGLView;
 		// Infos
 		this._glVersion = GL.getParameter(GL.VERSION);
 		this._glExtensions = GL.getSupportedExtensions();
+		/*for (ext in this._glExtensions) {
+			trace(ext);
+		}*/
 						
 		// Extensions
 		try {
@@ -228,7 +231,18 @@ import nme.display.OpenGLView;
 			this._caps.textureFloat = (GL.getExtension('OES_texture_float') != null);
 			this._caps.textureAnisotropicFilterExtension = GL.getExtension('EXT_texture_filter_anisotropic') || GL.getExtension('WEBKIT_EXT_texture_filter_anisotropic') || GL.getExtension('MOZ_EXT_texture_filter_anisotropic');
 			this._caps.maxAnisotropy = this._caps.textureAnisotropicFilterExtension != null ? GL.getParameter(this._caps.textureAnisotropicFilterExtension.MAX_TEXTURE_MAX_ANISOTROPY_EXT) : 0;
+			
+			#if (!mobile && cpp)
+			this._caps.instancedArrays = GL.getExtension('GL_ARB_instanced_arrays');
+			/*this._caps.instancedArrays = { 
+				vertexAttribDivisorANGLE: GL.getExtension('glVertexAttribDivisorARB'),
+				drawElementsInstancedANGLE: GL.getExtension('glDrawElementsInstancedARB'),
+				drawArraysInstancedANGLE: GL.getExtension('glDrawElementsInstancedARB')
+			};*/
+			#else
 			this._caps.instancedArrays = GL.getExtension('ANGLE_instanced_arrays');
+			#end
+			
 			this._caps.uintIndices = GL.getExtension('OES_element_index_uint') != null;	
 			this._caps.highPrecisionShaderSupported = true;
 			if (GL.getShaderPrecisionFormat != null) {
@@ -550,7 +564,7 @@ import nme.display.OpenGLView;
             GL.framebufferTexture2D(GL.FRAMEBUFFER, GL.COLOR_ATTACHMENT0, GL.TEXTURE_2D, texture.data, 0);
         }
 		
-		GL.viewport(0, 0, Std.int(texture._width), Std.int(texture._height));
+		GL.viewport(0, 0, texture._width, texture._height);
 		
 		this.wipeCaches();
 	}
@@ -749,14 +763,20 @@ import nme.display.OpenGLView;
 	}
 
 
-	public function updateAndBindInstancesBuffer(instancesBuffer:WebGLBuffer, data: #if (js || html5 || purejs) Float32Array #else Vector<Float> #end , offsetLocations:Array<Int>) {
+	public function updateAndBindInstancesBuffer(instancesBuffer:WebGLBuffer, data: #if (js || html5 || purejs) Float32Array #else Array<Float> #end , offsetLocations:Array<Int>) {
 		GL.bindBuffer(GL.ARRAY_BUFFER, instancesBuffer.buffer);
-		GL.bufferSubData(GL.ARRAY_BUFFER, 0, cast #if (js || html5 || purejs) data #else data.toArray() #end );
+		
+		#if (js || html5 || purejs) 
+		GL.bufferSubData(GL.ARRAY_BUFFER, 0, cast data);
+		#else
+		GL.bufferSubData(GL.ARRAY_BUFFER, 0, new Float32Array(data));
+		#end
 				
 		for (index in 0...4) {
 			var offsetLocation = offsetLocations[index];
 			GL.enableVertexAttribArray(offsetLocation);
 			GL.vertexAttribPointer(offsetLocation, 4, GL.FLOAT, false, 64, index * 16);
+			
 			this._caps.instancedArrays.vertexAttribDivisorANGLE(offsetLocation, 1);
 		}
 	}
@@ -766,6 +786,7 @@ import nme.display.OpenGLView;
 		for (index in 0...4) {
 			var offsetLocation = offsetLocations[index];
 			GL.disableVertexAttribArray(offsetLocation);
+			
 			this._caps.instancedArrays.vertexAttribDivisorANGLE(offsetLocation, 0);
 		}
 	}
@@ -786,6 +807,7 @@ import nme.display.OpenGLView;
 		var mult:Int = this._uintIndicesCurrentlySet ? 4 : 2;
 		if (instancesCount > -1) {
 			this._caps.instancedArrays.drawElementsInstancedANGLE(useTriangles ? GL.TRIANGLES : GL.LINES, indexCount, indexFormat, indexStart * mult, instancesCount);
+			
 			return;
 		}
 		
@@ -800,6 +822,7 @@ import nme.display.OpenGLView;
 		
 		if (instancesCount > -1) {
 			this._caps.instancedArrays.drawArraysInstancedANGLE(GL.POINTS, verticesStart, verticesCount, instancesCount);
+			
 			return;
 		}
 		
@@ -977,7 +1000,7 @@ import nme.display.OpenGLView;
 	}
 
 	inline public function setMatrix(uniform:GLUniformLocation, matrix:Matrix) {	
-		GL.uniformMatrix4fv(uniform, false, #if (js || purejs) matrix.m #else new Float32Array(matrix.toArray().toArray()) #end );
+		GL.uniformMatrix4fv(uniform, false, #if (js || purejs) matrix.m #else new Float32Array(matrix.toArray()) #end );
 	}
 	
 	inline public function setMatrix3x3(uniform:GLUniformLocation, matrix:Float32Array) {
@@ -1365,11 +1388,20 @@ import nme.display.OpenGLView;
 	inline public function updateTextureSamplingMode(samplingMode:Int, texture:WebGLTexture) {
 		var filters = getSamplingParameters(samplingMode, texture.generateMipMaps);
 		
-		GL.bindTexture(GL.TEXTURE_2D, texture.data);
-		
-		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, filters.mag);
-		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, filters.min);
-		GL.bindTexture(GL.TEXTURE_2D, null);
+		if (texture.isCube) {
+			GL.bindTexture(GL.TEXTURE_CUBE_MAP, texture.data);
+			
+			GL.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_MAG_FILTER, filters.mag);
+            GL.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_MIN_FILTER, filters.min);
+            GL.bindTexture(GL.TEXTURE_CUBE_MAP, null);
+		}
+		else {
+			GL.bindTexture(GL.TEXTURE_2D, texture.data);
+			
+			GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, filters.mag);
+			GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, filters.min);
+			GL.bindTexture(GL.TEXTURE_2D, null);
+		}
 	}
 
 	public function updateVideoTexture(texture:WebGLTexture, video:Dynamic, invertY:Bool) {
@@ -1500,7 +1532,7 @@ import nme.display.OpenGLView;
 		GL.bindTexture(GL.TEXTURE_CUBE_MAP, texture.data);
 		
 		for (face in 0...6) {
-			GL.texImage2D((GL.TEXTURE_CUBE_MAP_POSITIVE_X + face), 0, GL.RGBA, size, size, 0, GL.RGBA, GL.UNSIGNED_BYTE, null);
+			GL.texImage2D(GL.TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL.RGBA, size, size, 0, GL.RGBA, GL.UNSIGNED_BYTE, null);
 		}
 		
 		GL.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_MAG_FILTER, filters.mag);
@@ -1540,7 +1572,7 @@ import nme.display.OpenGLView;
 		texture.isCube = true;
 		texture.url = rootUrl;
 		texture.references = 1;
-		this._loadedTexturesCache.push(texture);
+		//this._loadedTexturesCache.push(texture);
 		
 		var extension = rootUrl.substr(rootUrl.length - 4, 4).toLowerCase();
 		var isDDS = this.getCaps().s3tc && (extension == ".dds");
@@ -1631,7 +1663,8 @@ import nme.display.OpenGLView;
 					imgs.push(bd);
 					if (++i == extensions.length) {
 						generate();
-					} else {
+					} 
+					else {
 						loadImage();
 					}
 				});
@@ -1734,16 +1767,13 @@ import nme.display.OpenGLView;
 		if (internalTexture.isCube) {
 			GL.bindTexture(GL.TEXTURE_CUBE_MAP, internalTexture.data);
 			
-			// TODO
-			/*if (internalTexture._cachedCoordinatesMode != texture.coordinatesMode) {
+			if (internalTexture._cachedCoordinatesMode != texture.coordinatesMode) {
 				internalTexture._cachedCoordinatesMode = texture.coordinatesMode;
 				// CUBIC_MODE and SKYBOX_MODE both require CLAMP_TO_EDGE.  All other modes use REPEAT.
 				var textureWrapMode = (texture.coordinatesMode != Texture.CUBIC_MODE && texture.coordinatesMode != Texture.SKYBOX_MODE) ? GL.REPEAT : GL.CLAMP_TO_EDGE;
 				GL.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_WRAP_S, textureWrapMode);
 				GL.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_WRAP_T, textureWrapMode);
-			}*/
-			GL.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_WRAP_S, GL.CLAMP_TO_EDGE);
-			GL.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_WRAP_T, GL.CLAMP_TO_EDGE);
+			}
 			
 			this._setAnisotropicLevel(GL.TEXTURE_CUBE_MAP, texture);
 		} 

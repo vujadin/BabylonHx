@@ -21,6 +21,11 @@ import com.babylonhx.tools.Tools;
 	private var _renderingGroups:Array<RenderingGroup> = [];
 	private var _depthBufferAlreadyCleaned:Bool;
 	
+	private var _currentIndex:Int;
+    private var _currentActiveMeshes:Array<AbstractMesh>;
+    private var _currentRenderParticles:Bool;
+    private var _currentRenderSprites:Bool;
+	
 	private var _activeCamera:Camera;
 	
 
@@ -35,7 +40,7 @@ import com.babylonhx.tools.Tools;
 		
 		// Particles
 		_activeCamera = this._scene.activeCamera;
-		var beforeParticlesDate = Tools.Now();
+		//var beforeParticlesDate = Tools.Now();
 		for (particleIndex in 0...this._scene._activeParticleSystems.length) {
 			var particleSystem:ParticleSystem = cast this._scene._activeParticleSystems.data[particleIndex];
 			
@@ -63,7 +68,7 @@ import com.babylonhx.tools.Tools;
 		
 		// Sprites 
 		_activeCamera = this._scene.activeCamera;
-		var beforeSpritessDate = Tools.Now();
+		//var beforeSpritessDate = Tools.Now();
 		for (id in 0...this._scene.spriteManagers.length) {
 			var spriteManager = this._scene.spriteManagers[id];
 			
@@ -81,32 +86,50 @@ import com.babylonhx.tools.Tools;
 			this._depthBufferAlreadyCleaned = true;
 		}		
 	}
+	
+	private function _renderSpritesAndParticles() {
+		if (this._currentRenderSprites) {
+			this._renderSprites(this._currentIndex);
+		}
+		
+		if (this._currentRenderParticles) {
+			this._renderParticles(this._currentIndex, this._currentActiveMeshes);
+		}
+	}
 
-	public function render(customRenderFunction:SmartArray->SmartArray->SmartArray->Void, activeMeshes:Array<AbstractMesh>, renderParticles:Bool, renderSprites:Bool) {
+	static var _renderingGroup:RenderingGroup;
+	static var _needToStepBack:Bool;
+	public function render(customRenderFunction:SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void, activeMeshes:Array<AbstractMesh>, renderParticles:Bool, renderSprites:Bool) {
+		this._currentActiveMeshes = activeMeshes;
+        this._currentRenderParticles = renderParticles;
+        this._currentRenderSprites = renderSprites;
+		
 		var index:Int = 0;
 		while(index < RenderingManager.MAX_RENDERINGGROUPS) {
-		//for (index in 0...RenderingManager.MAX_RENDERINGGROUPS) {
 			this._depthBufferAlreadyCleaned = false;
-			var renderingGroup = this._renderingGroups[index];
-			var needToStepBack = false;
+			_renderingGroup = this._renderingGroups[index];
+			_needToStepBack = false;
 			
-			if (renderingGroup != null) {
+			this._currentIndex = index;
+			
+			if (_renderingGroup != null) {
 				this._clearDepthBuffer();
-				if (!renderingGroup.render(customRenderFunction)) {
+				
+				if (_renderingGroup.onBeforeTransparentRendering == null) {
+                    _renderingGroup.onBeforeTransparentRendering = this._renderSpritesAndParticles;
+                }
+				
+				if (!_renderingGroup.render(customRenderFunction)) {
 					this._renderingGroups.splice(index, 1);
-					needToStepBack = true;
+					_needToStepBack = true;
+					this._renderSpritesAndParticles();
 				}
 			}
-			
-			if(renderSprites) {
-				this._renderSprites(index);
+			else {
+				this._renderSpritesAndParticles();
 			}
 			
-			if (renderParticles) {
-				this._renderParticles(index, activeMeshes);
-			}
-			
-			if (needToStepBack) {
+			if (_needToStepBack) {
 				index--;
 			}
 			

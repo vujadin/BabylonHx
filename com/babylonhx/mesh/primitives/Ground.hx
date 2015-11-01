@@ -22,7 +22,7 @@ package com.babylonhx.mesh.primitives;
 	}
 
 	override public function _regenerateVertexData():VertexData {
-		return VertexData.CreateGround(this.width, this.height, this.subdivisions);
+		return VertexData.CreateGround({ width: this.width, height: this.height, subdivisions: this.subdivisions });
 	}
 
 	override public function copy(id:String):Geometry {

@@ -11,6 +11,7 @@ import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.culling.BoundingSphere;
 import com.babylonhx.culling.octrees.Octree;
 import com.babylonhx.materials.Material;
+import com.babylonhx.materials.MaterialDefines;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
 import com.babylonhx.math.Axis;
@@ -21,6 +22,7 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Frustum;
+import com.babylonhx.Node.NodeCache;
 import com.babylonhx.physics.PhysicsEngine;
 import com.babylonhx.physics.PhysicsBodyCreationOptions;
 import com.babylonhx.rendering.EdgesRenderer;
@@ -29,6 +31,7 @@ import com.babylonhx.rendering.EdgesRenderer;
  * ...
  * @author Krtolica Vujadin
  */
+ 
 @:expose('BABYLON.AbstractMesh') class AbstractMesh extends Node implements IDisposable {
 	
 	// Statics
@@ -119,6 +122,7 @@ import com.babylonhx.rendering.EdgesRenderer;
 	public var useVertexColors:Bool = true;
 	public var applyFog:Bool = true;
 	public var computeBonesUsingShaders:Bool = true;
+	public var numBoneInfluencers:Int = 4;
 
 	public var useOctreeForRenderingSelection:Bool = true;
 	public var useOctreeForPicking:Bool = true;
@@ -186,6 +190,7 @@ import com.babylonhx.rendering.EdgesRenderer;
 	
 	private var _isDirty:Bool = false;
 	public var _masterMesh:AbstractMesh;
+	public var _materialDefines:MaterialDefines;
 
 	public var _boundingInfo:BoundingInfo;
 	private var _pivotMatrix:Matrix = Matrix.Identity();
@@ -541,6 +546,8 @@ import com.babylonhx.rendering.EdgesRenderer;
 		}
 	}
 
+	static var cameraWorldMatrix:Matrix;
+	static var cameraGlobalPosition:Vector3 = new Vector3();
 	public function computeWorldMatrix(force:Bool = false):Matrix {
 		if (this._isWorldMatrixFrozen) {
             return this._worldMatrix;
@@ -573,9 +580,9 @@ import com.babylonhx.rendering.EdgesRenderer;
 		if (this.infiniteDistance && this.parent == null) {
 			var camera = this.getScene().activeCamera;
 			if(camera != null) {
-				var cameraWorldMatrix = camera.getWorldMatrix();
+				cameraWorldMatrix = camera.getWorldMatrix();
 				
-				var cameraGlobalPosition = new Vector3(cameraWorldMatrix.m[12], cameraWorldMatrix.m[13], cameraWorldMatrix.m[14]);
+				cameraGlobalPosition.copyFromFloats(cameraWorldMatrix.m[12], cameraWorldMatrix.m[13], cameraWorldMatrix.m[14]);
 				
 				Matrix.TranslationToRef(this.position.x + cameraGlobalPosition.x, this.position.y + cameraGlobalPosition.y,
 												this.position.z + cameraGlobalPosition.z, this._localTranslation);
@@ -1048,7 +1055,7 @@ import com.babylonhx.rendering.EdgesRenderer;
 		return pickingInfo;
 	}
 
-	public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false/*?doNotCloneChildren:Bool*/):AbstractMesh {
+	public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false):AbstractMesh {
 		return null;
 	}
 
@@ -1063,11 +1070,14 @@ import com.babylonhx.rendering.EdgesRenderer;
 		}
 	}
 
-	public function dispose(doNotRecurse:Bool = false/*?doNotRecurse:Bool*/) {
+	public function dispose(doNotRecurse:Bool = false) {
 		// Physics
 		if (this.getPhysicsImpostor() != PhysicsEngine.NoImpostor) {
 			this.setPhysicsState(PhysicsEngine.NoImpostor);
 		}
+		
+		// Animations
+        this.getScene().stopAnimation(this);
 		
 		// Intersections in progress
 		for (index in 0...this._intersectionsInProgress.length) {

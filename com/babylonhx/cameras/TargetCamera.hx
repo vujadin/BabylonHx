@@ -104,6 +104,7 @@ import com.babylonhx.tools.Tools;
 	}
 
 	// Target
+	static var zUpVector:Vector3 = new Vector3(0, 1.0, 0);
 	static var vDir:Vector3 = Vector3.Zero();
 	inline public function setTarget(target:Vector3) {
 		this.upVector.normalize();
@@ -122,9 +123,9 @@ import com.babylonhx.tools.Tools;
 			this.rotation.y = (-Math.atan(vDir.z / vDir.x) - Math.PI / 2.0);
 		}
 		
-		this.rotation.z = -Math.acos(Vector3.Dot(new Vector3(0, 1.0, 0), this.upVector));
+		this.rotation.z = -Math.acos(Vector3.Dot(zUpVector, this.upVector));
 		
-		if (Math.isNaN(this.rotation.x)) {
+		/*if (Math.isNaN(this.rotation.x)) {
 			this.rotation.x = 0;
 		}
 		
@@ -134,7 +135,7 @@ import com.babylonhx.tools.Tools;
 		
 		if (Math.isNaN(this.rotation.z)) {
 			this.rotation.z = 0;
-		}
+		}*/
 	}
 
 	public function getTarget():Vector3 {

@@ -96,7 +96,7 @@ import haxe.ds.Vector;
 		}
 	}
 
-	public function select(frustumPlanes:Array<Plane>, selection:SmartArray, allowDuplicate:Bool = false/*?allowDuplicate:Bool*/) {
+	public function select(frustumPlanes:Array<Plane>, selection:SmartArray<T>, allowDuplicate:Bool = false) {
 		if (BoundingBox.IsInFrustum(this._boundingVectors, frustumPlanes)) {
 			if (this.blocks != null) {
 				for (index in 0...this.blocks.length) {
@@ -107,14 +107,14 @@ import haxe.ds.Vector;
 			}
 			
 			if (allowDuplicate) {
-				selection.concat(this.entries);
+				selection.concatArray(this.entries);
 			} else {
-				selection.concatWithNoDuplicate(this.entries);
+				selection.concatArrayWithNoDuplicate(this.entries);
 			}
 		}
 	}
 
-	public function intersects(sphereCenter:Vector3, sphereRadius:Float, selection:SmartArray, allowDuplicate:Bool = false/*?allowDuplicate:Bool*/) {
+	public function intersects(sphereCenter:Vector3, sphereRadius:Float, selection:SmartArray<T>, allowDuplicate:Bool = false) {
 		if (BoundingBox.IntersectsSphere(this._minPoint, this._maxPoint, sphereCenter, sphereRadius)) {
 			if (this.blocks != null) {
 				for (index in 0...this.blocks.length) {
@@ -125,14 +125,14 @@ import haxe.ds.Vector;
 			}
 			
 			if (allowDuplicate) {
-				selection.concat(this.entries);
+				selection.concatArray(this.entries);
 			} else {
-				selection.concatWithNoDuplicate(this.entries);
+				selection.concatArrayWithNoDuplicate(this.entries);
 			}
 		}
 	}
 
-	public function intersectsRay(ray:Ray, selection:SmartArray) {
+	public function intersectsRay(ray:Ray, selection:SmartArray<T>) {
 		if (ray.intersectsBoxMinMax(this._minPoint, this._maxPoint)) {
 			if (this.blocks != null) {
 				for (index in 0...this.blocks.length) {
@@ -141,11 +141,11 @@ import haxe.ds.Vector;
 				}
 				return;
 			}
-			selection.concatWithNoDuplicate(this.entries);
+			selection.concatArrayWithNoDuplicate(this.entries);
 		}
 	}
 
-	public function createInnerBlocks():Void {
+	public function createInnerBlocks() {
 		Octree._CreateBlocks(this._minPoint, this._maxPoint, this.entries, this._capacity, this._depth, this._maxDepth, this, this._creationFunc);
 	}
 	

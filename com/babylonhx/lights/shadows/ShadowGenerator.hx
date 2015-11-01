@@ -80,10 +80,11 @@ import com.babylonhx.Scene;
 		
 		this._filter = value;
 		
-		if (this.useVarianceShadowMap || this.useBlurVarianceShadowMap) {
+		if (this.useVarianceShadowMap || this.useBlurVarianceShadowMap || this.usePoissonSampling) {
 			this._shadowMap.anisotropicFilteringLevel = 16;
 			this._shadowMap.updateSamplingMode(Texture.TRILINEAR_SAMPLINGMODE);
-		} else {
+		} 
+		else {
 			this._shadowMap.anisotropicFilteringLevel = 1;
 			this._shadowMap.updateSamplingMode(Texture.NEAREST_SAMPLINGMODE);
 		}
@@ -141,6 +142,8 @@ import com.babylonhx.Scene;
 	private var _downSamplePostprocess:PassPostProcess;
 	private var _boxBlurPostprocess:PostProcess;
 	private var _mapSize:Int;
+	private var _currentFaceIndex:Int = 0;
+    private var _currentFaceIndexCache:Int = 0;
 
 	
 	public function new(mapSize:Int, light:IShadowLight) {
@@ -157,6 +160,10 @@ import com.babylonhx.Scene;
 		this._shadowMap.anisotropicFilteringLevel = 1;
 		this._shadowMap.updateSamplingMode(Texture.NEAREST_SAMPLINGMODE);
 		this._shadowMap.renderParticles = false;
+		
+		this._shadowMap.onBeforeRender = function(?faceIndex:Int) {
+			this._currentFaceIndex = faceIndex;
+		};
 		
 		this._shadowMap.onAfterUnbind = function() {
 			if (!this.useBlurVarianceShadowMap) {
@@ -214,7 +221,7 @@ import com.babylonhx.Scene;
 				
 				// Bones
 				if (mesh.useBones && mesh.computeBonesUsingShaders) {
-					this._effect.setMatrices("mBones", #if (js || html5 || purejs) mesh.skeleton.getTransformMatrices() #else mesh.skeleton.getTransformMatrices().toArray() #end );
+					this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices());
 				}
 				
 				// Draw
@@ -226,7 +233,7 @@ import com.babylonhx.Scene;
 			}
 		};
 		
-		this._shadowMap.customRenderFunction = function(opaqueSubMeshes:SmartArray, alphaTestSubMeshes:SmartArray, transparentSubMeshes:SmartArray) {
+		this._shadowMap.customRenderFunction = function(opaqueSubMeshes:SmartArray<SubMesh>, alphaTestSubMeshes:SmartArray<SubMesh>, transparentSubMeshes:SmartArray<SubMesh>) {
 			for (index in 0...opaqueSubMeshes.length) {
 				renderSubMesh(opaqueSubMeshes.data[index]);
 			}
@@ -332,7 +339,7 @@ import com.babylonhx.Scene;
 		this._currentRenderID = scene.getRenderId();
 		
 		var lightPosition = this._light.position;
-		Vector3.NormalizeToRef(this._light.direction, this._lightDirection);
+		Vector3.NormalizeToRef(this._light.getShadowDirection(this._currentFaceIndex), this._lightDirection);
 		
 		if (Math.abs(Vector3.Dot(this._lightDirection, Vector3.Up())) == 1.0) {
             this._lightDirection.z = 0.0000000000001; // Need to avoid perfectly perpendicular light
@@ -349,7 +356,7 @@ import com.babylonhx.Scene;
 			
 			Matrix.LookAtLHToRef(lightPosition, this._light.position.add(_lightDirection), Vector3.Up(), this._viewMatrix);
 			
-			this._light.setShadowProjectionMatrix(this._projectionMatrix, this._viewMatrix, this.getShadowMap().renderList, false);
+			this._light.setShadowProjectionMatrix(this._projectionMatrix, this._viewMatrix, this.getShadowMap().renderList);
 			
 			this._viewMatrix.multiplyToRef(this._projectionMatrix, this._transformMatrix);
 		}

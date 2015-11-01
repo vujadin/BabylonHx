@@ -20,7 +20,7 @@ package com.babylonhx.mesh.primitives;
 	}
 
 	override public function _regenerateVertexData():VertexData {
-		return VertexData.CreateBox(this.size, this.side);
+		return VertexData.CreateBox({ size: this.size, sideOrientation: this.side });
 	}
 
 	override public function copy(id:String):Geometry {

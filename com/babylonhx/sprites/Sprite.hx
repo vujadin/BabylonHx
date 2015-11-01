@@ -23,6 +23,7 @@ import com.babylonhx.animations.Animation;
 	public var invertV:Bool = false;
 	public var disposeWhenFinishedAnimating:Bool;
 	public var animations:Array<Animation> = [];
+	public var isPickable:Bool = false;
 
 	private var _animationStarted:Bool = false;
 	private var _loopAnimation:Bool = false;

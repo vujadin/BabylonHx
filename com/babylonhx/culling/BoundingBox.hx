@@ -76,27 +76,28 @@ import haxe.ds.Vector;
 		return this._worldMatrix;
 	}
 
-	public function _update(world:Matrix) {
+	static var v_update:Vector3;
+	inline public function _update(world:Matrix) {
 		Vector3.FromFloatsToRef(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, this.minimumWorld);
 		Vector3.FromFloatsToRef(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, this.maximumWorld);
 		
 		for (index in 0...this.vectors.length) {
-			var v = this.vectorsWorld[index];
-			Vector3.TransformCoordinatesToRef(this.vectors[index], world, v);
+			v_update = this.vectorsWorld[index];
+			Vector3.TransformCoordinatesToRef(this.vectors[index], world, v_update);
 			
-			if (v.x < this.minimumWorld.x)
-				this.minimumWorld.x = v.x;
-			if (v.y < this.minimumWorld.y)
-				this.minimumWorld.y = v.y;
-			if (v.z < this.minimumWorld.z)
-				this.minimumWorld.z = v.z;
+			if (v_update.x < this.minimumWorld.x)
+				this.minimumWorld.x = v_update.x;
+			if (v_update.y < this.minimumWorld.y)
+				this.minimumWorld.y = v_update.y;
+			if (v_update.z < this.minimumWorld.z)
+				this.minimumWorld.z = v_update.z;
 				
-			if (v.x > this.maximumWorld.x)
-				this.maximumWorld.x = v.x;
-			if (v.y > this.maximumWorld.y)
-				this.maximumWorld.y = v.y;
-			if (v.z > this.maximumWorld.z)
-				this.maximumWorld.z = v.z;
+			if (v_update.x > this.maximumWorld.x)
+				this.maximumWorld.x = v_update.x;
+			if (v_update.y > this.maximumWorld.y)
+				this.maximumWorld.y = v_update.y;
+			if (v_update.z > this.maximumWorld.z)
+				this.maximumWorld.z = v_update.z;
 		}
 		
 		// OBB
@@ -137,7 +138,7 @@ import haxe.ds.Vector;
 		return BoundingBox.IntersectsSphere(this.minimumWorld, this.maximumWorld, sphere.centerWorld, sphere.radiusWorld);
 	}
 
-	public function intersectsMinMax(min:Vector3, max:Vector3):Bool {
+	inline public function intersectsMinMax(min:Vector3, max:Vector3):Bool {
 		if (this.maximumWorld.x < min.x || this.minimumWorld.x > max.x)
 			return false;
 			

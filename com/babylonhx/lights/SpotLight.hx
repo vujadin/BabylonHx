@@ -36,9 +36,13 @@ import com.babylonhx.mesh.AbstractMesh;
 		return this.transformedPosition != null ? this.transformedPosition : this.position;
 	}
 	
-	public function setShadowProjectionMatrix(matrix:Matrix, viewMatrix:Matrix, renderList: Array<AbstractMesh>, useVSM:Bool) {
+	public function setShadowProjectionMatrix(matrix:Matrix, viewMatrix:Matrix, renderList:Array<AbstractMesh>) {
 		var activeCamera = this.getScene().activeCamera;
 		Matrix.PerspectiveFovLHToRef(this.angle, 1.0, activeCamera.minZ, activeCamera.maxZ, matrix);
+	}
+	
+	public function needCube():Bool {
+		return false;
 	}
 
 	public function supportsVSM():Bool {
@@ -47,6 +51,10 @@ import com.babylonhx.mesh.AbstractMesh;
 
 	public function needRefreshPerFrame():Bool {
 		return false;
+	}
+	
+	public function getShadowDirection(?faceIndex:Int):Vector3 {
+		return this.direction;
 	}
 
 	public function setDirectionToTarget(target:Vector3):Vector3 {

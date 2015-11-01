@@ -207,7 +207,7 @@ import com.babylonhx.utils.Keycodes;
 				switch (pointers.count) {
 					
 					case 1: //normal camera rotation
-						if ((this._isCtrlPushed && useCtrlForPanning) || (!useCtrlForPanning && this._isRightClick)) {
+						if (this.panningSensibility != 0 && ((this._isCtrlPushed && useCtrlForPanning) || (!useCtrlForPanning && this._isRightClick))) {
 							if (this._localDirection == null) {
 								this._localDirection = Vector3.Zero();
 								this._transformedDirection = Vector3.Zero();
@@ -523,6 +523,10 @@ import com.babylonhx.utils.Keycodes;
 	}
 
 	public function setPosition(position:Vector3) {
+		if (this.position.equals(position)) {
+            return;
+        }
+		
 		var radiusv3 = position.subtract(this._getTargetPosition());
 		this.radius = radiusv3.length();
 		

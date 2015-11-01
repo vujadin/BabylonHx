@@ -37,6 +37,10 @@ package com.babylonhx.animations;
 		this._scene = scene;
 		scene._activeAnimatables.push(this);
 	}
+	
+	public function getAnimations():Array<Animation> {
+		return this._animations;
+	}
 
 	// Methods
 	public function appendAnimations(target:Dynamic, animations:Array<Animation>) {

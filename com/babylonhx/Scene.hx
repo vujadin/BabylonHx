@@ -44,6 +44,7 @@ import com.babylonhx.probes.ReflectionProbe;
 import com.babylonhx.rendering.BoundingBoxRenderer;
 import com.babylonhx.rendering.DepthRenderer;
 import com.babylonhx.rendering.OutlineRenderer;
+import com.babylonhx.rendering.EdgesRenderer;
 import com.babylonhx.rendering.RenderingManager;
 import com.babylonhx.sprites.SpriteManager;
 import com.babylonhx.tools.SmartArray;
@@ -79,6 +80,7 @@ import com.babylonhx.tools.Tools;
 	public var forceShowBoundingBoxes:Bool = false;
 	public var clipPlane:Plane;
 	public var animationsEnabled:Bool = true;
+	public var constantlyUpdateMeshUnderPointer:Bool = false;
 
 	// Pointers
 	public var _onPointerMove:Dynamic;	// MouseEvent->Void
@@ -213,7 +215,7 @@ import com.babylonhx.tools.Tools;
 	// Actions
 	public var actionManager:ActionManager;
 	public var _actionManagers:Array<ActionManager> = [];
-	private var _meshesForIntersections:SmartArray = new SmartArray(256);// new SmartArray<AbstractMesh>(256);
+	private var _meshesForIntersections:SmartArray<AbstractMesh> = new SmartArray<AbstractMesh>(256);// new SmartArray<AbstractMesh>(256);
 
 	// Procedural textures
 	public var proceduralTexturesEnabled:Bool = true;
@@ -240,7 +242,7 @@ import com.babylonhx.tools.Tools;
 	private var _renderId:Int = 0;
 	private var _executeWhenReadyTimeoutId:Int = -1;
 
-	public var _toBeDisposed:SmartArray = new SmartArray(256);// SmartArray<IDisposable> = new SmartArray<IDisposable>(256);
+	public var _toBeDisposed:SmartArray<IDisposable> = new SmartArray<IDisposable>(256);// SmartArray<IDisposable> = new SmartArray<IDisposable>(256);
 
 	private var _onReadyCallbacks:Array<Void->Void> = [];
 	private var _pendingData:Array<Dynamic> = [];//ANY
@@ -248,12 +250,12 @@ import com.babylonhx.tools.Tools;
 	private var _onBeforeRenderCallbacks:Array<Void->Void> = [];
 	private var _onAfterRenderCallbacks:Array<Void->Void> = [];
 
-	private var _activeMeshes:SmartArray = new SmartArray(256);				// new SmartArray<Mesh>(256);
-	private var _processedMaterials:SmartArray = new SmartArray(256);		// new SmartArray<Material>(256);
-	private var _renderTargets:SmartArray = new SmartArray(256);			// new SmartArray<RenderTargetTexture>(256);
-	public var _activeParticleSystems:SmartArray = new SmartArray(256);		// new SmartArray<ParticleSystem>(256);
-	private var _activeSkeletons:SmartArray = new SmartArray(32);			// new SmartArray<Skeleton>(32);
-	private var _softwareSkinnedMeshes:SmartArray = new SmartArray(32);		// new SmartArray<Mesh>(32);
+	private var _activeMeshes:SmartArray<Mesh> = new SmartArray<Mesh>(256);				
+	private var _processedMaterials:SmartArray<Material> = new SmartArray<Material>(256);		
+	private var _renderTargets:SmartArray<RenderTargetTexture> = new SmartArray<RenderTargetTexture>(256);			
+	public var _activeParticleSystems:SmartArray<ParticleSystem> = new SmartArray<ParticleSystem>(256);		
+	private var _activeSkeletons:SmartArray<Skeleton> = new SmartArray<Skeleton>(32);			
+	private var _softwareSkinnedMeshes:SmartArray<Mesh> = new SmartArray<Mesh>(32);		
 	private var _activeBones:Int = 0;
 
 	private var _renderingManager:RenderingManager;
@@ -267,7 +269,7 @@ import com.babylonhx.tools.Tools;
 	private var _scaledPosition:Vector3 = Vector3.Zero();
 	private var _scaledVelocity:Vector3 = Vector3.Zero();
 
-	private var _edgesRenderers:SmartArray = new SmartArray(16);// new SmartArray<EdgesRenderer>(16);
+	private var _edgesRenderers:SmartArray<EdgesRenderer> = new SmartArray<EdgesRenderer>(16);// new SmartArray<EdgesRenderer>(16);
 	private var _boundingBoxRenderer:BoundingBoxRenderer;
 	private var _outlineRenderer:OutlineRenderer;
 	private var _depthRenderer:DepthRenderer;
@@ -376,7 +378,7 @@ import com.babylonhx.tools.Tools;
 		return this._evaluateActiveMeshesDuration;
 	}
 
-	inline public function getActiveMeshes():SmartArray { //SmartArray<Mesh> {
+	inline public function getActiveMeshes():SmartArray<Mesh> {
 		return this._activeMeshes;
 	}
 
@@ -428,7 +430,9 @@ import com.babylonhx.tools.Tools;
 			this._updatePointerPosition(x, y);
 			
 			var pickResult:PickingInfo = this.pick(this._pointerX, this._pointerY,
-				function(mesh:AbstractMesh):Bool { return mesh.isPickable && mesh.isVisible && mesh.isReady(); },
+				function(mesh:AbstractMesh):Bool { 
+					return mesh.isPickable && mesh.isVisible && mesh.isReady() && (this.constantlyUpdateMeshUnderPointer || mesh.actionManager != null); 
+				},
 				false,
 				this.cameraToUseForPointers);
 				
@@ -437,7 +441,8 @@ import com.babylonhx.tools.Tools;
 				
 				this.setPointerOverMesh(pickResult.pickedMesh);
 				//canvas.style.cursor = "pointer";
-			} else {
+			} 
+			else {
 				this.setPointerOverMesh(null);
 				//canvas.style.cursor = "";
 				this._meshUnderPointer = null;
@@ -741,6 +746,16 @@ import com.babylonhx.tools.Tools;
 		if (this.onMeshRemoved != null) {
 			this.onMeshRemoved(toRemove);
 		}
+		return index;
+	}
+	
+	public function removeSkeleton(toRemove:Skeleton):Int {
+		var index = this.skeletons.indexOf(toRemove);
+		if (index != -1) {
+			// Remove from the scene if mesh found 
+			this.skeletons.splice(index, 1);
+		}
+		
 		return index;
 	}
 
@@ -1125,7 +1140,7 @@ import com.babylonhx.tools.Tools;
 
 	inline private function _evaluateSubMesh(subMesh:SubMesh, mesh:AbstractMesh) {
 		if (mesh.alwaysSelectAsActiveMesh || mesh.subMeshes.length == 1 || subMesh.isInFrustum(this._frustumPlanes)) {
-			var material = subMesh.getMaterial();
+			var material:Material = subMesh.getMaterial();
 			
 			if (mesh.showSubMeshesBoundingBox) {
 				this._boundingBoxRenderer.renderList.push(subMesh.getBoundingInfo().boundingBox);
@@ -1137,7 +1152,7 @@ import com.babylonhx.tools.Tools;
 					if (this._processedMaterials.indexOf(material) == -1) {
 						this._processedMaterials.push(material);
 						
-						this._renderTargets.concat(material.getRenderTargetTextures());
+						this._renderTargets.concatSmartArray(material.getRenderTargetTextures());
 					}
 				}
 				
@@ -1246,7 +1261,7 @@ import com.babylonhx.tools.Tools;
 			this._activeSkeletons.pushNoDuplicate(mesh.skeleton);
 			
 			if (!mesh.computeBonesUsingShaders) {
-                this._softwareSkinnedMeshes.pushNoDuplicate(mesh);
+                this._softwareSkinnedMeshes.pushNoDuplicate(cast mesh);
             }
 		}
 		
@@ -1314,14 +1329,14 @@ import com.babylonhx.tools.Tools;
 		
 		// Skeletons
 		for (skeletonIndex in 0...this._activeSkeletons.length) {
-			var skeleton = this._activeSkeletons.data[skeletonIndex];			
+			var skeleton:Skeleton = cast this._activeSkeletons.data[skeletonIndex];			
 			
 			skeleton.prepare();			
 		}
 		
 		// Software skinning
         for (softwareSkinnedMeshIndex in 0...this._softwareSkinnedMeshes.length) {
-            var mesh = this._softwareSkinnedMeshes.data[softwareSkinnedMeshIndex];
+            var mesh:Mesh = cast this._softwareSkinnedMeshes.data[softwareSkinnedMeshIndex];
 			
             mesh.applySkeleton(mesh.skeleton);
         }
@@ -1331,11 +1346,11 @@ import com.babylonhx.tools.Tools;
 		if (this.renderTargetsEnabled) {
 			//Tools.StartPerformanceCounter("Render targets", this._renderTargets.length > 0);
 			for (renderIndex in 0...this._renderTargets.length) {
-				var renderTarget = this._renderTargets.data[renderIndex];
+				var renderTarget:RenderTargetTexture = this._renderTargets.data[renderIndex];
 				if (renderTarget._shouldRender()) {
 					this._renderId++;
 					var hasSpecialRenderTargetCamera = renderTarget.activeCamera != null && renderTarget.activeCamera != this.activeCamera;
-					renderTarget.render(hasSpecialRenderTargetCamera, this.dumpNextRenderTargets);
+					renderTarget.render(hasSpecialRenderTargetCamera);
 				}
 			}
 			//Tools.EndPerformanceCounter("Render targets", this._renderTargets.length > 0);
@@ -1827,7 +1842,7 @@ import com.babylonhx.tools.Tools;
 	}
 
 	// Picking
-	public function createPickingRay(x:Float, y:Float, world:Matrix, camera:Camera):Ray {
+	public function createPickingRay(x:Float, y:Float, world:Matrix, camera:Camera, cameraViewSpace:Bool = false):Ray {
 		var engine = this._engine;
 		
 		if (camera == null) {
@@ -1844,11 +1859,31 @@ import com.babylonhx.tools.Tools;
 		// Moving coordinates to local viewport world
 		x = x / this._engine.getHardwareScalingLevel() - viewport.x;
 		y = y / this._engine.getHardwareScalingLevel() - (this._engine.getRenderHeight() - viewport.y - viewport.height);
-		return Ray.CreateNew(x, y, viewport.width, viewport.height, world != null ? world : Matrix.Identity(), camera.getViewMatrix(), camera.getProjectionMatrix(false));
-		//       return Ray.CreateNew(x / window.devicePixelRatio, y / window.devicePixelRatio, viewport.width, viewport.height, world ? world :Matrix.Identity(), camera.getViewMatrix(), camera.getProjectionMatrix());
+		return Ray.CreateNew(x, y, viewport.width, viewport.height, world != null ? world : Matrix.Identity(), cameraViewSpace ? Matrix.Identity() : camera.getViewMatrix(), camera.getProjectionMatrix(false));
+	}
+	
+	public function createPickingRayInCameraSpace(x:Float, y:Float, ?camera:Camera):Ray {
+		var engine = this._engine;
+		
+		if (camera == null) {
+			if (this.activeCamera == null) {
+				throw "Active camera not set";
+			}
+			
+			camera = this.activeCamera;
+		}
+		
+		var cameraViewport = camera.viewport;
+		var viewport = cameraViewport.toGlobal(engine);
+		var identity = Matrix.Identity();
+		
+		// Moving coordinates to local viewport world
+		x = x / this._engine.getHardwareScalingLevel() - viewport.x;
+		y = y / this._engine.getHardwareScalingLevel() - (this._engine.getRenderHeight() - viewport.y - viewport.height);
+		return Ray.CreateNew(x, y, viewport.width, viewport.height, identity, identity, camera.getProjectionMatrix(false));
 	}
 
-	private function _internalPick(rayFunction:Matrix->Ray, predicate:AbstractMesh->Bool, fastCheck:Bool = false/*?fastCheck:Bool*/):PickingInfo {
+	private function _internalPick(rayFunction:Matrix->Ray, predicate:AbstractMesh->Bool, fastCheck:Bool = false):PickingInfo {
 		var pickingInfo:PickingInfo = null;
 		
 		for (meshIndex in 0...this.meshes.length) {

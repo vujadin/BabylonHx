@@ -2,11 +2,59 @@ package com.babylonhx;
 
 import com.babylonhx.math.Matrix;
 import com.babylonhx.animations.Animation;
+import com.babylonhx.math.Quaternion;
+import com.babylonhx.math.Vector2;
+import com.babylonhx.math.Vector3;
+import com.babylonhx.Node.NodeCache;
 
 /**
  * ...
  * @author Krtolica Vujadin
  */
+
+class NodeCache {
+	
+	public var parent:Node;
+	
+	// AbstractMesh
+	public var position:Vector3;
+	public var scaling:Vector3;
+	public var pivotMatrixUpdated:Bool;
+	public var rotationQuaternion:Quaternion;
+	public var localMatrixUpdated:Bool;
+	public var rotation:Vector3;
+	public var upVector:Vector3;
+	
+	// Camera
+	public var mode:Null<Int>;
+	public var minZ:Null<Float>;
+	public var maxZ:Null<Float>;
+	public var fov:Null<Float>;
+	public var aspectRatio:Null<Float>;
+	public var orthoLeft:Null<Float>;
+	public var orthoRight:Null<Float>;
+	public var orthoTop:Null<Float>;
+	public var orthoBottom:Null<Float>;
+	public var renderWidth:Null<Int>;
+	public var renderHeight:Null<Int>;
+	
+	// TargetCamera
+	public var lockedTarget:Vector3;
+	
+	// ArcRotateCamera
+	public var target:Vector3;
+	public var alpha:Null<Float>;
+	public var beta:Null<Float>;
+	public var gamma:Null<Float>;
+	public var radius:Null<Float>;
+	public var targetScreenOffset:Vector2;
+	
+	
+	public function new() {
+		//...
+	}
+	
+}
 
 @:expose('BABYLON.Node') class Node implements ISmartArrayCompatible {
 	
@@ -31,7 +79,7 @@ import com.babylonhx.animations.Animation;
 	public var _waitingParentId:Null<String>;
 
 	private var _scene:Scene;
-	public var _cache:Dynamic;
+	public var _cache:NodeCache;
 	
 
 	public function new(name:String, scene:Scene) {
@@ -57,7 +105,7 @@ import com.babylonhx.animations.Animation;
 	// override it in derived class if you add new variables to the cache
 	// and call the parent class method
 	public function _initCache() {
-		this._cache = {};
+		this._cache = new NodeCache();
 		this._cache.parent = null;
 	}
 

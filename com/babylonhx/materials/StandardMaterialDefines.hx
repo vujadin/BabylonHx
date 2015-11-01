@@ -4,15 +4,14 @@ package com.babylonhx.materials;
  * ...
  * @author Krtolica Vujadin
  */
-class StandardMaterialDefines {
-
-	public var defines:Map<String, Bool> = new Map<String, Bool>();
+class StandardMaterialDefines extends MaterialDefines {	
+	
 	public var BonesPerMesh:Int = 0;
 	
-	private var _keys:Array<String> = [];
-		
 	
 	public function new() {
+		super();
+		
 		defines["DIFFUSE"] = false;
 		defines["AMBIENT"] = false;
 		defines["OPACITY"] = false;
@@ -73,8 +72,18 @@ class StandardMaterialDefines {
 		defines["GLOSSINESS"] = false;
 		defines["ROUGHNESS"] = false;
 		defines["EMISSIVEASILLUMINATION"] = false;
+		defines["LINKEMISSIVEWITHDIFFUSE"] = false;
 		defines["REFLECTIONFRESNELFROMSPECULAR"] = false;
 		defines["LIGHTMAP"] = false;
+		defines["USELIGHTMAPASSHADOWMAP"] = false;
+		defines["REFLECTIONMAP_3D"] = false;
+        defines["REFLECTIONMAP_SPHERICAL"] = false;
+        defines["REFLECTIONMAP_PLANAR"] = false;
+        defines["REFLECTIONMAP_CUBIC"] = false;
+        defines["REFLECTIONMAP_PROJECTION"] = false;
+        defines["REFLECTIONMAP_SKYBOX"] = false;
+        defines["REFLECTIONMAP_EXPLICIT"] = false;
+		defines["REFLECTIONMAP_EQUIRECTANGULAR"] = false;
 		defines["INVERTCUBICMAP"] = false;
 		
 		BonesPerMesh = 0;
@@ -83,42 +92,21 @@ class StandardMaterialDefines {
 			_keys.push(key);
 		}
 	}
-
-	var ret:Bool = true;
-	inline public function isEqual(other:StandardMaterialDefines):Bool {
-		ret = true;
-		for (prop in this._keys) {
-			if (this.defines[prop] != other.defines[prop]) {
-				ret = false;
-				break;
-			}
-		}
+	
+	override public function cloneTo(other:MaterialDefines) {
+		super.cloneTo(other);
 		
-		return ret;
+		untyped other.BonesPerMesh = this.BonesPerMesh;
 	}
-
-	public function cloneTo(other:StandardMaterialDefines) {
-		for (prop in this._keys) {
-			other.defines[prop] = this.defines[prop];
-		}
-		other.BonesPerMesh = this.BonesPerMesh;
-	}
-
-	public function reset() {
-		for (prop in this._keys) {
-			this.defines[prop] = false;
-		}
+	
+	override public function reset() {
+		super.reset();
 		
 		this.BonesPerMesh = 0;
 	}
 
-	public function toString():String {
-		var result = "";
-		for (prop in this._keys) {
-			if (this.defines[prop] == true) {
-				result += "#define " + prop + "\n";
-			}
-		}
+	override public function toString():String {
+		var result = super.toString();
 		
 		if (this.BonesPerMesh > 0) {
 			result += "#define BonesPerMesh " + this.BonesPerMesh + "\n";

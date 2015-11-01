@@ -29,6 +29,8 @@ import com.babylonhx.utils.GL;
 	public var height:Float = -1;
 	public var renderTargetSamplingMode:Int;
 	public var clearColor:Color4;
+	
+	public var isSupported(get, never):Bool;
 
 	private var _camera:Camera;
 	private var _scene:Scene;
@@ -36,7 +38,7 @@ import com.babylonhx.utils.GL;
 	private var _renderRatio:Dynamic;// Float;
 	private var _reusable:Bool = false;
 	private var _textureType:Int;
-	public var _textures:SmartArray = new SmartArray(2);// SmartArray<WebGLTexture> = new SmartArray<WebGLTexture>(2);
+	public var _textures:SmartArray<WebGLTexture> = new SmartArray<WebGLTexture>(2);
 	public var _currentRenderTextureInd:Int = 0;
 	private var _effect:Effect;
 	
@@ -121,6 +123,10 @@ import com.babylonhx.utils.GL;
 			this._currentRenderTextureInd = (this._currentRenderTextureInd + 1) % 2;
 		}
 	}
+	
+	private function get_isSupported():Bool {
+        return this._effect.isSupported;
+    }
 
 	public function apply():Effect {
 		// Check

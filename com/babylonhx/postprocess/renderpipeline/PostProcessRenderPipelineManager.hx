@@ -80,7 +80,14 @@ package com.babylonhx.postprocess.renderpipeline;
 
 	public function update() {
 		for (renderPipelineName in this._renderPipelines.keys()) {
-			this._renderPipelines[renderPipelineName]._update();
+			var pipeline = this._renderPipelines[renderPipelineName];
+			if (!pipeline.isSupported) {
+				pipeline.dispose();
+				this._renderPipelines.remove(renderPipelineName);
+			} 
+			else {
+				pipeline._update();
+			}
 		}
 	}
 	

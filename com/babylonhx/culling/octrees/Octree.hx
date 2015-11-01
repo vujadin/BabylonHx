@@ -19,13 +19,13 @@ import com.babylonhx.tools.SmartArray;
 	public var maxDepth:Int;
 
 	private var _maxBlockCapacity:Int;
-	private var _selectionContent:SmartArray;       
+	private var _selectionContent:SmartArray<T>;       
 	private var _creationFunc:T->OctreeBlock<T>->Void;
 	
 
 	public function new(creationFunc:T->OctreeBlock<T>->Void, maxBlockCapacity:Int = 64, maxDepth:Int = 2) {
 		this._maxBlockCapacity = maxBlockCapacity;
-		this._selectionContent = new SmartArray(1024);
+		this._selectionContent = new SmartArray<T>(1024);
 		this._creationFunc = creationFunc;
 		this.maxDepth = maxDepth;
 	}
@@ -42,7 +42,7 @@ import com.babylonhx.tools.SmartArray;
 		}
 	}
 
-	inline public function select(frustumPlanes:Array<Plane>, allowDuplicate:Bool = false/*?allowDuplicate:Bool*/):SmartArray {
+	inline public function select(frustumPlanes:Array<Plane>, allowDuplicate:Bool = false):SmartArray<T> {
 		this._selectionContent.reset();
 		
 		for (index in 0...this.blocks.length) {
@@ -51,15 +51,16 @@ import com.babylonhx.tools.SmartArray;
 		}
 		
 		if (allowDuplicate) {
-			this._selectionContent.concat(this.dynamicContent);
-		} else {
-			this._selectionContent.concatWithNoDuplicate(this.dynamicContent);                
+			this._selectionContent.concatArray(this.dynamicContent);
+		} 
+		else {
+			this._selectionContent.concatArrayWithNoDuplicate(this.dynamicContent);                
 		}
 		
 		return this._selectionContent;
 	}
 
-	inline public function intersects(sphereCenter:Vector3, sphereRadius:Float, allowDuplicate:Bool = false):SmartArray {
+	inline public function intersects(sphereCenter:Vector3, sphereRadius:Float, allowDuplicate:Bool = false):SmartArray<T> {
 		this._selectionContent.reset();
 		
 		for (index in 0...this.blocks.length) {
@@ -68,15 +69,15 @@ import com.babylonhx.tools.SmartArray;
 		}
 		
 		if (allowDuplicate) {
-			this._selectionContent.concat(this.dynamicContent);
+			this._selectionContent.concatArray(this.dynamicContent);
 		} else {
-			this._selectionContent.concatWithNoDuplicate(this.dynamicContent);
+			this._selectionContent.concatArrayWithNoDuplicate(this.dynamicContent);
 		}
 		
 		return this._selectionContent;
 	}
 
-	public function intersectsRay(ray:Ray):SmartArray {
+	public function intersectsRay(ray:Ray):SmartArray<T> {
 		this._selectionContent.reset();
 		
 		for (index in 0...this.blocks.length) {
@@ -84,12 +85,12 @@ import com.babylonhx.tools.SmartArray;
 			block.intersectsRay(ray, this._selectionContent);
 		}
 		
-		this._selectionContent.concatWithNoDuplicate(this.dynamicContent);
+		this._selectionContent.concatArrayWithNoDuplicate(this.dynamicContent);
 		
 		return this._selectionContent;
 	}
 
-	public static function _CreateBlocks<T>(worldMin:Vector3, worldMax:Vector3, entries:Array<T>, maxBlockCapacity:Int, currentDepth:Int, maxDepth:Int, target:IOctreeContainer<T>, creationFunc:T->OctreeBlock<T>->Void):Void {
+	public static function _CreateBlocks<T>(worldMin:Vector3, worldMax:Vector3, entries:Array<T>, maxBlockCapacity:Int, currentDepth:Int, maxDepth:Int, target:IOctreeContainer<T>, creationFunc:T->OctreeBlock<T>->Void) {
 		target.blocks = new Array<OctreeBlock<T>>();
 		var blockSize = new Vector3((worldMax.x - worldMin.x) / 2, (worldMax.y - worldMin.y) / 2, (worldMax.z - worldMin.z) / 2);
 		
@@ -108,13 +109,13 @@ import com.babylonhx.tools.SmartArray;
 		}
 	}
 
-	public static function CreationFuncForMeshes(entry:AbstractMesh, block:OctreeBlock<AbstractMesh>):Void {
+	public static function CreationFuncForMeshes(entry:AbstractMesh, block:OctreeBlock<AbstractMesh>) {
 		if (!entry.isBlocked && entry.getBoundingInfo().boundingBox.intersectsMinMax(block.minPoint, block.maxPoint)) {
 			block.entries.push(entry);
 		}
 	}
 
-	public static function CreationFuncForSubMeshes(entry:SubMesh, block:OctreeBlock<SubMesh>):Void {
+	public static function CreationFuncForSubMeshes(entry:SubMesh, block:OctreeBlock<SubMesh>) {
 		if (entry.getBoundingInfo().boundingBox.intersectsMinMax(block.minPoint, block.maxPoint)) {
 			block.entries.push(entry);
 		}

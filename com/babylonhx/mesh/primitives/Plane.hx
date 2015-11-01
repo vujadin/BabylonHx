@@ -20,7 +20,7 @@ package com.babylonhx.mesh.primitives;
 	}
 
 	override public function _regenerateVertexData():VertexData {
-		return VertexData.CreatePlane(this.size, this.side);
+		return VertexData.CreatePlane({ width: this.size, height: this.size, sideOrientation: this.side });
 	}
 
 	override public function copy(id:String):Geometry {

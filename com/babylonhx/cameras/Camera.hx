@@ -65,7 +65,7 @@ import com.babylonhx.animations.IAnimatable;
 	public var _postProcesses:Array<PostProcess> = [];
 	public var _postProcessesTakenIndices:Array<Int> = [];
 	
-	public var _activeMeshes = new SmartArray(256);
+	public var _activeMeshes = new SmartArray<Mesh>(256);
 	
 	private var _globalPosition:Vector3 = Vector3.Zero();
 	public var globalPosition(get, never):Vector3;
@@ -102,7 +102,7 @@ import com.babylonhx.animations.IAnimatable;
 		return this._globalPosition;
 	}
 	
-	public function getActiveMeshes():SmartArray {
+	public function getActiveMeshes():SmartArray<Mesh> {
         return this._activeMeshes;
     }
 
@@ -394,6 +394,9 @@ import com.babylonhx.animations.IAnimatable;
 	}
 	
 	public function dispose() {
+		// Animations
+        this.getScene().stopAnimation(this);
+		
 		// Remove from scene
 		this.getScene().removeCamera(this);
 		while (this._rigCameras.length > 0) {
@@ -466,7 +469,7 @@ import com.babylonhx.animations.IAnimatable;
 				this._rigCameras[0]._cameraRigParams.vrPreViewMatrix = metrics.leftPreViewMatrix;
 				this._rigCameras[0].getProjectionMatrix = this._rigCameras[0]._getVRProjectionMatrix;
 				
-				if (metrics.compensateDistorsion) {
+				if (metrics.compensateDistortion) {
 					postProcesses.push(new VRDistortionCorrectionPostProcess("VR_Distort_Compensation_Left", this._rigCameras[0], false, metrics));
 				}
 				
@@ -478,7 +481,7 @@ import com.babylonhx.animations.IAnimatable;
 				
 				this._rigCameras[1].getProjectionMatrix = this._rigCameras[1]._getVRProjectionMatrix;
 				
-				if (metrics.compensateDistorsion) {
+				if (metrics.compensateDistortion) {
 					postProcesses.push(new VRDistortionCorrectionPostProcess("VR_Distort_Compensation_Right", this._rigCameras[1], true, metrics));
 				}
 		}
@@ -487,7 +490,7 @@ import com.babylonhx.animations.IAnimatable;
 	}
 
 	private function _getVRProjectionMatrix(force:Bool = false):Matrix {
-		Matrix.PerspectiveFovLHToRef(this._cameraRigParams.vrMetrics.get_aspectRatioFov(), this._cameraRigParams.vrMetrics.get_aspectRatio(), this.minZ, this.maxZ, this._cameraRigParams.vrWorkMatrix);
+		Matrix.PerspectiveFovLHToRef(this._cameraRigParams.vrMetrics.aspectRatioFov, this._cameraRigParams.vrMetrics.aspectRatio, this.minZ, this.maxZ, this._cameraRigParams.vrWorkMatrix);
 		this._cameraRigParams.vrWorkMatrix.multiplyToRef(this._cameraRigParams.vrHMatrix, this._projectionMatrix);
 		return this._projectionMatrix;
 	}

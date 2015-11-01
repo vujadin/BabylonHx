@@ -80,6 +80,7 @@ import com.babylonhx.math.Matrix;
 	private function set_refreshRate(value:Int):Int {
 		this._refreshRate = value;
 		this.resetRefreshCounter();
+		
 		return value;
 	}
 
@@ -95,6 +96,7 @@ import com.babylonhx.math.Matrix;
 		}
 		
 		this._currentRefreshId++;
+		
 		return false;
 	}
 	
@@ -102,6 +104,7 @@ import com.babylonhx.math.Matrix;
 		if (!this.getScene().renderTargetsEnabled) {
 			return false;
 		}
+		
 		return super.isReady();
 	}
 
@@ -157,7 +160,7 @@ import com.babylonhx.math.Matrix;
 		// Prepare renderingManager
 		this._renderingManager.reset();
 		
-		var currentRenderList:Array<AbstractMesh> = cast this.renderList != null ? this.renderList : scene.getActiveMeshes().data;
+		var currentRenderList:Array<AbstractMesh> = cast this.renderList != null ? this.renderList : cast scene.getActiveMeshes().data;
 		
 		for (mesh in currentRenderList) {
 			if (mesh != null) {
@@ -247,7 +250,7 @@ import com.babylonhx.math.Matrix;
 				}
 			}
 			
-			engine.unBindFramebuffer(this._texture, true);
+			engine.unBindFramebuffer(this._texture, this.isCube);
 		}
 	}
 

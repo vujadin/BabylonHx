@@ -2,6 +2,8 @@ package com.babylonhx.rendering;
 
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.mesh.SubMesh;
+import com.babylonhx.mesh.AbstractMesh;
+import com.babylonhx.materials.Material;
 
 
 /**
@@ -14,10 +16,12 @@ import com.babylonhx.mesh.SubMesh;
 	public var index:Int;
 	
 	private var _scene:Scene;
-	private var _opaqueSubMeshes:SmartArray = new SmartArray();
-	private var _transparentSubMeshes:SmartArray = new SmartArray();
-	private var _alphaTestSubMeshes:SmartArray = new SmartArray();
+	private var _opaqueSubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>();
+	private var _transparentSubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>();
+	private var _alphaTestSubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>();
 	private var _activeVertices:Int = 0;
+	
+	public var onBeforeTransparentRendering:Void->Void;
 	
 
 	public function new(index:Int, scene:Scene) {
@@ -26,13 +30,16 @@ import com.babylonhx.mesh.SubMesh;
 	}
 
 	var submesh:SubMesh = null;
-	public function render(customRenderFunction:SmartArray->SmartArray->SmartArray->Void):Bool {
+	public function render(customRenderFunction:SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void):Bool {
 		if (customRenderFunction != null) {
 			customRenderFunction(this._opaqueSubMeshes, this._alphaTestSubMeshes, this._transparentSubMeshes);
 			return true;
 		}
 		
 		if (this._opaqueSubMeshes.length == 0 && this._alphaTestSubMeshes.length == 0 && this._transparentSubMeshes.length == 0) {
+			if (this.onBeforeTransparentRendering != null) {
+                this.onBeforeTransparentRendering();
+            }
 			return false;
 		}
 		
@@ -50,6 +57,10 @@ import com.babylonhx.mesh.SubMesh;
 			submesh.render(false);
 		}
 		engine.setAlphaTesting(false);
+		
+		if (this.onBeforeTransparentRendering != null) {
+            this.onBeforeTransparentRendering();
+        }
 		
 		// Transparent
 		if (this._transparentSubMeshes.length > 0) {
@@ -99,9 +110,11 @@ import com.babylonhx.mesh.SubMesh;
 		this._alphaTestSubMeshes.reset();
 	}
 
-	public function dispatch(subMesh:SubMesh) {
-		var material = subMesh.getMaterial();
-		var mesh = subMesh.getMesh();
+	var material:Material;
+	var mesh:AbstractMesh;
+	inline public function dispatch(subMesh:SubMesh) {
+		material = subMesh.getMaterial();
+		mesh = subMesh.getMesh();
 		
 		if (material.needAlphaBlending() || mesh.visibility < 1.0 || mesh.hasVertexAlpha) { // Transparent
 			this._transparentSubMeshes.push(subMesh);

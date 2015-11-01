@@ -30,7 +30,7 @@ package com.babylonhx.mesh.primitives;
 	}
 
 	override public function _regenerateVertexData():VertexData {
-		return VertexData.CreateTorusKnot(this.radius, this.tube, this.radialSegments, this.tubularSegments, this.p, this.q, this.side);
+		return VertexData.CreateTorusKnot({ radius: this.radius, tube: this.tube, radialSegments: this.radialSegments, tubularSegments: this.tubularSegments, p: this.p, q: this.q, sideOrientation: this.side });
 	}
 
 	override public function copy(id:String):Geometry {

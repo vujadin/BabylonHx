@@ -3,8 +3,6 @@ package com.babylonhx.physics;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
 
-import com.babylonhx.physics.plugins.OimoPlugin;
-
 
 /**
  * ...
@@ -30,8 +28,8 @@ import com.babylonhx.physics.plugins.OimoPlugin;
 	private var _currentPlugin:IPhysicsEnginePlugin;
 	
 
-	public function new(?plugin:IPhysicsEnginePlugin) {
-		this._currentPlugin = plugin != null ? plugin : new OimoPlugin();
+	public function new(plugin:IPhysicsEnginePlugin) {
+		this._currentPlugin = plugin;
 	}
 
 	public function _initialize(?gravity:Vector3) {
@@ -84,7 +82,11 @@ import com.babylonhx.physics.plugins.OimoPlugin;
 	}
 
 	public function isSupported():Bool {
-		return this._currentPlugin.isSupported();
+		if (this._currentPlugin != null) {
+			return this._currentPlugin.isSupported();
+		}
+		
+		return false;
 	}
 	
 }

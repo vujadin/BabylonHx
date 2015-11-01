@@ -21,7 +21,7 @@ import haxe.ds.Vector;
 
 	private var _scene:Scene;
 	private var _isDirty:Bool = true;
-	private var _transformMatrices: #if (js || purejs || web || html5) Float32Array #else Vector<Float> #end ;
+	private var _transformMatrices: #if (js || purejs || web || html5) Float32Array #else Array<Float> #end ;
 	private var _animatables:Array<IAnimatable>;
 	private var _identity:Matrix = Matrix.Identity();
 	
@@ -44,7 +44,7 @@ import haxe.ds.Vector;
 	}
 
 	// Members
-	inline public function getTransformMatrices(): #if (js || purejs || web || html5) Float32Array #else Vector<Float> #end {
+	inline public function getTransformMatrices(): #if (js || purejs || web || html5) Float32Array #else Array<Float> #end {
 		return this._transformMatrices;
 	}
 	
@@ -63,7 +63,7 @@ import haxe.ds.Vector;
 		}
 		
 		if (this._transformMatrices == null || this._transformMatrices.length != 16 * (this.bones.length + 1)) {
-			this._transformMatrices = #if (js || html5 || purejs) new Float32Array(16 * (this.bones.length + 1)) #else new Vector<Float>(16 * (this.bones.length + 1)) #end ;
+			this._transformMatrices = #if (js || html5 || purejs) new Float32Array(16 * (this.bones.length + 1)) #else [] #end ;
 		}
 		
 		for (index in 0...this.bones.length) {
@@ -115,5 +115,13 @@ import haxe.ds.Vector;
 		
 		return result;
 	}
+	
+	public function dispose() {
+        // Animations
+        this.getScene().stopAnimation(this);
+		
+        // Remove from scene
+        this.getScene().removeSkeleton(this);
+    }
 	
 }

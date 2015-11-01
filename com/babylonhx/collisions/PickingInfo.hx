@@ -4,6 +4,7 @@ import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.VertexBuffer;
+import com.babylonhx.sprites.Sprite;
 
 /**
 * ...
@@ -19,6 +20,8 @@ import com.babylonhx.mesh.VertexBuffer;
 	public var bv:Float = 0;
 	public var faceId:Int = -1;
 	public var subMeshId:Int = 0;
+	public var pickedSprite:Sprite = null;
+	
 	
 	public function new() {
 		

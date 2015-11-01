@@ -16,17 +16,19 @@ import com.babylonhx.mesh.Mesh;
 
 @:expose('BABYLON.Material') class Material implements ISmartArrayCompatible {
 	
-	public static var TriangleFillMode:Int = 0;
-	public static var WireFrameFillMode:Int = 1;
-	public static var PointFillMode:Int = 2;
+	public static inline var TriangleFillMode:Int = 0;
+	public static inline var WireFrameFillMode:Int = 1;
+	public static inline var PointFillMode:Int = 2;
 	
-	public static var ClockWiseSideOrientation:Int = 0;
-	public static var CounterClockWiseSideOrientation:Int = 1;
+	public static inline var ClockWiseSideOrientation:Int = 0;
+	public static inline var CounterClockWiseSideOrientation:Int = 1;
+	
+	public static inline var maxSimultaneousLights:Int = 4;
 
 
 	public var id:String;
 	public var name:String;
-	public var checkReadyOnEveryCall:Bool = true;
+	public var checkReadyOnEveryCall:Bool = false;
 	public var checkReadyOnlyOnce:Bool = false;
 	public var state:String = "";
 	public var alpha:Float = 1.0;
@@ -36,7 +38,7 @@ import com.babylonhx.mesh.Mesh;
 	public var onError:Effect->String->Void;
 	public var onDispose:Void->Void;
 	public var onBind:Material->Void;
-	public var getRenderTargetTextures:Void->SmartArray; // SmartArray<RenderTargetTexture>;
+	public var getRenderTargetTextures:Void->SmartArray<RenderTargetTexture>;
 	public var alphaMode:Int = Engine.ALPHA_COMBINE;
 	public var disableDepthWrite:Bool = false;
 	public var fogEnabled:Bool = false;
@@ -160,15 +162,44 @@ import com.babylonhx.mesh.Mesh;
 	public function clone(name:String):Material {
 		return null;
 	}
+	
+	public function getBindedMeshes():Array<AbstractMesh> {
+		var result = new Array<AbstractMesh>();
+		
+		for (index in 0...this._scene.meshes.length) {
+			var mesh = this._scene.meshes[index];
+			
+			if (mesh.material == this) {
+				result.push(mesh);
+			}
+		}
+		
+		return result;
+	}
 
-	public function dispose(forceDisposeEffect:Bool = false) {
+	public function dispose(forceDisposeEffect:Bool = false) {	
+		// Animations
+        this.getScene().stopAnimation(this);
+		
 		// Remove from scene
-		this._scene.materials.remove(this);
+		var index = this._scene.materials.indexOf(this);
+		if (index >= 0) {
+			this._scene.materials.splice(index, 1);
+		}
 		
 		// Shader are kept in cache for further use but we can get rid of this by using forceDisposeEffect
 		if (forceDisposeEffect && this._effect != null) {
 			this._scene.getEngine()._releaseEffect(this._effect);
 			this._effect = null;
+		}
+		
+		// Remove from meshes
+		for (index in 0...this._scene.meshes.length) {
+			var mesh = this._scene.meshes[index];
+			
+			if (mesh.material == this) {
+				mesh.material = null;
+			}
 		}
 		
 		// Callback

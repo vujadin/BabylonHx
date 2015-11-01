@@ -206,7 +206,7 @@ class PBRMaterial extends Material {
 		
 		// Bones
 		if (mesh != null && mesh.useBones && mesh.computeBonesUsingShaders) {
-			this._effect.setMatrices("mBones", #if (js || html5 || purejs) mesh.skeleton.getTransformMatrices() #else mesh.skeleton.getTransformMatrices().toArray() #end );
+			this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices());
 		}
 		
 		if (scene.getCachedMaterial() != this) {

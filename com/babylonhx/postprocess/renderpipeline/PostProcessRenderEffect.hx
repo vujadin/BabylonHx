@@ -29,6 +29,8 @@ import com.babylonhx.tools.Tools;
 
 	public var applyParameters:PostProcess->Void;
 	
+	public var isSupported(get, never):Bool;
+	
 
 	public function new(engine:Engine, name:String, getPostProcess:Void->PostProcess, singleInstance:Bool = true) {
 		this._engine = engine;
@@ -44,6 +46,16 @@ import com.babylonhx.tools.Tools;
 		
 		this._renderPasses = new Map<String, PostProcessRenderPass>();
 		this._renderEffectAsPasses = new Map<String, PostProcessRenderEffect>();
+	}
+	
+	private function get_isSupported():Bool {
+		for (index in this._postProcesses.keys()) {
+			if (!this._postProcesses[index].isSupported) {
+				return false;
+			}
+		}
+		
+		return true;
 	}
 
 	public function _update() {

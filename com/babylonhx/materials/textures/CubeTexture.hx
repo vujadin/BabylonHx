@@ -7,20 +7,29 @@ import com.babylonhx.math.Matrix;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.CubeTexture') class CubeTexture extends Texture {
+@:expose('BABYLON.CubeTexture') class CubeTexture extends BaseTexture {
 	
+	public var url:String;
+	
+	private var _noMipmap:Bool;
 	private var _extensions:Array<String>;
 	private var _textureMatrix:Matrix;
 
 	
-	public function new(rootUrl:String, scene:Scene, ?extensions:Array<String>, ?noMipmap:Bool) {	
-		super(rootUrl, scene, noMipmap);
+	public function new(rootUrl:String, scene:Scene, ?extensions:Array<String>, noMipmap:Bool = false) {	
+		super(scene);
+		
 		this.coordinatesMode = Texture.CUBIC_MODE;
 		
 		this.name = rootUrl;
 		this.url = rootUrl;
 		this._noMipmap = noMipmap;
 		this.hasAlpha = false;
+		
+		if (rootUrl == null || rootUrl == "") {
+			return;
+		}
+		
 		//this._texture = this._getFromCache(rootUrl, noMipmap);
 		
 		if (extensions == null) {
@@ -32,7 +41,8 @@ import com.babylonhx.math.Matrix;
 		if (this._texture == null) {
 			if (!scene.useDelayedTextureLoading) {
 				this._texture = scene.getEngine().createCubeTexture(rootUrl, scene, extensions, noMipmap);
-			} else {
+			} 
+			else {
 				this.delayLoadState = Engine.DELAYLOADSTATE_NOTLOADED;
 			}
 		}

@@ -19,7 +19,7 @@ import com.babylonhx.math.Matrix;
 	public var chromaAbCorrection:Array<Float>;
 	public var postProcessScaleFactor:Float;
 	public var lensCenterOffset:Float;
-	public var compensateDistorsion:Bool = true;
+	public var compensateDistortion:Bool = true;
 	
 	public var aspectRatio(get, never):Float;
 	public var aspectRatioFov(get, never):Float;

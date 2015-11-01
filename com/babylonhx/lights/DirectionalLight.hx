@@ -19,8 +19,16 @@ import com.babylonhx.mesh.AbstractMesh;
 	public var transformedPosition:Vector3;
 	private var _worldMatrix:Matrix;
 	
-	public var shadowOrthoScale:Float = 0.1;
+	public var shadowOrthoScale:Float = 0.5;
 	
+	public var autoUpdateExtends:Bool = true;
+
+    // Cache
+    private var _orthoLeft:Float = Math.POSITIVE_INFINITY;
+    private var _orthoRight:Float = Math.NEGATIVE_INFINITY;
+    private var _orthoTop:Float = Math.NEGATIVE_INFINITY;
+    private var _orthoBottom:Float = Math.POSITIVE_INFINITY;
+
 
 	public function new(name:String, direction:Vector3, scene:Scene) {
 		super(name, scene);
@@ -38,57 +46,57 @@ import com.babylonhx.mesh.AbstractMesh;
 		return this.direction;
 	}
 	
-	public function setShadowProjectionMatrix(matrix: Matrix, viewMatrix: Matrix, renderList: Array<AbstractMesh>, useVSM:Bool) {
-		var orthoLeft = Math.POSITIVE_INFINITY;
-		var orthoRight = Math.NEGATIVE_INFINITY;
-		var orthoTop = Math.NEGATIVE_INFINITY;
-		var orthoBottom = Math.POSITIVE_INFINITY;
-		
-		var tempVector3 = Vector3.Zero();
-		
+	public function setShadowProjectionMatrix(matrix:Matrix, viewMatrix:Matrix, renderList:Array<AbstractMesh>) {
 		var activeCamera = this.getScene().activeCamera;
 		
 		// Check extends
-		for (meshIndex in 0...renderList.length) {
-			var mesh = renderList[meshIndex];
+		if (this.autoUpdateExtends || this._orthoLeft == Math.POSITIVE_INFINITY) {
+			var tempVector3 = Vector3.Zero();
 			
-			if (mesh == null) {
-				continue;
-			}
+			this._orthoLeft = Math.POSITIVE_INFINITY;
+			this._orthoRight = Math.NEGATIVE_INFINITY;
+			this._orthoTop = Math.NEGATIVE_INFINITY;
+			this._orthoBottom = Math.POSITIVE_INFINITY;
 			
-			var boundingInfo = mesh.getBoundingInfo();
-			
-			if (boundingInfo == null) {
-				continue;
-			}
-			
-			var boundingBox = boundingInfo.boundingBox;
-			
-			for (index in 0...boundingBox.vectorsWorld.length) {
-				Vector3.TransformCoordinatesToRef(boundingBox.vectorsWorld[index], viewMatrix, tempVector3);
+			for (meshIndex in 0...renderList.length) {
+				var mesh = renderList[meshIndex];
 				
-				if (tempVector3.x < orthoLeft) {
-					orthoLeft = tempVector3.x;
-				}
-				if (tempVector3.y < orthoBottom) {
-					orthoBottom = tempVector3.y;
+				if (mesh == null) {
+					continue;
 				}
 				
-				if (tempVector3.x > orthoRight) {
-					orthoRight = tempVector3.x;
+				var boundingInfo = mesh.getBoundingInfo();
+				
+				if (boundingInfo == null) {
+					continue;
 				}
-				if (tempVector3.y > orthoTop) {
-					orthoTop = tempVector3.y;
+				
+				var boundingBox = boundingInfo.boundingBox;
+				
+				for (index in 0...boundingBox.vectorsWorld.length) {
+					Vector3.TransformCoordinatesToRef(boundingBox.vectorsWorld[index], viewMatrix, tempVector3);
+					
+					if (tempVector3.x < this._orthoLeft) {
+						this._orthoLeft = tempVector3.x;
+					}
+					if (tempVector3.y < this._orthoBottom) {
+						this._orthoBottom = tempVector3.y;
+					}
+					
+					if (tempVector3.x > this._orthoRight) {
+						this._orthoRight = tempVector3.x;
+					}
+					if (tempVector3.y > this._orthoTop) {
+						this._orthoTop = tempVector3.y;
+					}
 				}
 			}
 		}
 		
-		var xOffset = orthoRight - orthoLeft;
-		var yOffset = orthoTop - orthoBottom;
+		var xOffset = this._orthoRight - this._orthoLeft;
+		var yOffset = this._orthoTop - this._orthoBottom;
 		
-		Matrix.OrthoOffCenterLHToRef(orthoLeft - xOffset * this.shadowOrthoScale, orthoRight + xOffset * this.shadowOrthoScale,
-                                     orthoBottom - yOffset * this.shadowOrthoScale, orthoTop + yOffset * this.shadowOrthoScale,
-                                     -activeCamera.maxZ, activeCamera.maxZ, matrix);
+		Matrix.OrthoOffCenterLHToRef(this._orthoLeft - xOffset * this.shadowOrthoScale, this._orthoRight + xOffset * this.shadowOrthoScale, this._orthoBottom - yOffset * this.shadowOrthoScale, this._orthoTop + yOffset * this.shadowOrthoScale, -activeCamera.maxZ, activeCamera.maxZ, matrix);
 	}
 
 	public function supportsVSM():Bool {
@@ -97,6 +105,14 @@ import com.babylonhx.mesh.AbstractMesh;
 
 	public function needRefreshPerFrame():Bool {
 		return true;
+	}
+	
+	public function needCube():Bool {
+		return false;
+	}
+	
+	public function getShadowDirection(?faceIndex:Int):Vector3 {
+		return this.direction;
 	}
 
 	public function computeTransformedPosition():Bool {

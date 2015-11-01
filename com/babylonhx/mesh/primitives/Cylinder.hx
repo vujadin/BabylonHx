@@ -28,7 +28,7 @@ package com.babylonhx.mesh.primitives;
 	}
 
 	override public function _regenerateVertexData():VertexData {
-		return VertexData.CreateCylinder(this.height, this.diameterTop, this.diameterBottom, this.tessellation, this.subdivisions, this.side);
+		return VertexData.CreateCylinder({ height: this.height, diameterTop: this.diameterTop, diameterBottom: this.diameterBottom, tesselation: this.tessellation, subdivisions: this.subdivisions, sideOrientation: this.side });
 	}
 
 	override public function copy(id:String):Geometry {

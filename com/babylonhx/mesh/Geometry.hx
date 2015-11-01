@@ -25,13 +25,16 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _engine:Engine;
 	private var _meshes:Array<Mesh>;
 	private var _totalVertices:Int = 0;
-	private var _indices:Array<Int> = [];
+	private var _indices:Array<Int>;
 	private var _vertexBuffers:Map<String, VertexBuffer>;
 	private var _isDisposed:Bool = false;
+	private var _extend:BabylonMinMax;
 	public var _delayInfo:Array<String> = []; //ANY
 	private var _indexBuffer:WebGLBuffer;
 	public var _boundingInfo:BoundingInfo;
 	public var _delayLoadingFunction:Dynamic->Geometry->Void;
+	
+	public var extend(get, never):BabylonMinMax;
 	
 
 	public function new(id:String, scene:Scene, ?vertexData:VertexData, updatable:Bool = false, ?mesh:Mesh) {
@@ -40,19 +43,27 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._meshes = [];
 		this._scene = scene;
 		
+		//Init vertex buffer cache
+		this._vertexBuffers = new Map();
+		this._indices = [];
+		
 		// vertexData
 		if (vertexData != null) {
 			this.setAllVerticesData(vertexData, updatable);
 		} 
 		else {
 			this._totalVertices = 0;
-			this._indices = [];
 		}
 		
 		// applyToMesh
 		if (mesh != null) {
 			this.applyToMesh(mesh);
+			mesh.computeWorldMatrix(true);
 		}
+	}
+	
+	private function get_extend():BabylonMinMax {
+		return this._extend;
 	}
 
 	inline public function getScene():Scene {
@@ -72,9 +83,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this.notifyUpdate();
 	}
 
-	public function setVerticesData(kind:String, data:Array<Float>, updatable:Bool = false, ?stride:Int) {
-		this._vertexBuffers = this._vertexBuffers != null ? this._vertexBuffers : new Map<String, VertexBuffer>();
-		
+	public function setVerticesData(kind:String, data:Array<Float>, updatable:Bool = false, ?stride:Int) {		
 		if (this._vertexBuffers.exists(kind)) {
 			this._vertexBuffers[kind].dispose();
 		}
@@ -86,7 +95,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			
 			this._totalVertices = cast data.length / stride;
 			
-			var extend:BabylonMinMax = Tools.ExtractMinAndMax(data, 0, this._totalVertices);
+			this._extend = Tools.ExtractMinAndMax(data, 0, this._totalVertices);
 			
 			var meshes = this._meshes;
 			var numOfMeshes = meshes.length;
@@ -94,7 +103,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			for (index in 0...numOfMeshes) {
 				var mesh = meshes[index];
 				mesh._resetPointsArrayCache();
-				mesh._boundingInfo = new BoundingInfo(extend.minimum, extend.maximum);
+				mesh._boundingInfo = new BoundingInfo(this._extend.minimum, this._extend.maximum);
 				mesh._createGlobalSubMesh();
 				mesh.computeWorldMatrix(true);
 			}
@@ -128,7 +137,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			this._totalVertices = cast data.length / stride;
 			
 			if (updateExtends) {
-				extend = Tools.ExtractMinAndMax(data, 0, this._totalVertices);
+				this._extend = Tools.ExtractMinAndMax(data, 0, this._totalVertices);
 			}
 			
 			var meshes = this._meshes;
@@ -138,7 +147,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 				var mesh = meshes[index];
 				mesh._resetPointsArrayCache();
 				if (updateExtends) {
-					mesh._boundingInfo = new BoundingInfo(extend.minimum, extend.maximum);
+					mesh._boundingInfo = new BoundingInfo(this._extend.minimum, this._extend.maximum);
 					
 					for (subIndex in 0...mesh.subMeshes.length) {
                         var subMesh = mesh.subMeshes[subIndex];
@@ -343,8 +352,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			if (kind == VertexBuffer.PositionKind) {
 				mesh._resetPointsArrayCache();
 				
-				var extend = Tools.ExtractMinAndMax(this._vertexBuffers[kind].getData(), 0, this._totalVertices);
-				mesh._boundingInfo = new BoundingInfo(extend.minimum, extend.maximum);
+				if (this._extend == null) {
+                    this._extend = Tools.ExtractMinAndMax(this._vertexBuffers[kind].getData(), 0, this._totalVertices);
+                }
+                mesh._boundingInfo = new BoundingInfo(this._extend.minimum, this._extend.maximum);
 				
 				mesh._createGlobalSubMesh();
 				
@@ -474,8 +485,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 		
 		// Bounding info
-		var extend = Tools.ExtractMinAndMax(this.getVerticesData(VertexBuffer.PositionKind), 0, this.getTotalVertices());
-		geometry._boundingInfo = new BoundingInfo(extend.minimum, extend.maximum);
+		geometry._boundingInfo = new BoundingInfo(this._extend.minimum, this._extend.maximum);
 		
 		return geometry;
 	}

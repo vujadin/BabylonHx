@@ -4,15 +4,14 @@ package com.babylonhx.materials;
  * ...
  * @author Krtolica Vujadin
  */
-class PBRMaterialDefines {
+class PBRMaterialDefines extends MaterialDefines {
 	
-	public var defines:Map<String, Bool> = new Map<String, Bool>();
 	public var BonesPerMesh:Int = 0;
-	
-	private var _keys:Array<String> = [];
 	
 
 	public function new() {
+		super();
+		
 		defines["ALBEDO"] = false;
 		defines["CLIPPLANE"] = false;
 		defines["ALPHATEST"] = false;
@@ -34,41 +33,20 @@ class PBRMaterialDefines {
 		}
 	}
 	
-	var ret:Bool = true;
-	inline public function isEqual(other:PBRMaterialDefines):Bool {
-		ret = true;
-		for (prop in this._keys) {
-			if (this.defines[prop] != other.defines[prop]) {
-				ret = false;
-				break;
-			}
-		}
+	override public function cloneTo(other:MaterialDefines) {
+		super.cloneTo(other);
 		
-		return ret;
+		untyped other.BonesPerMesh = this.BonesPerMesh;
 	}
 
-	public function cloneTo(other:PBRMaterialDefines) {
-		for (prop in this._keys) {
-			other.defines[prop] = this.defines[prop];
-		}
-		other.BonesPerMesh = this.BonesPerMesh;
-	}
-
-	public function reset() {
-		for (prop in this._keys) {
-			this.defines[prop] = false;
-		}
+	override public function reset() {
+		super.reset();
 		
 		this.BonesPerMesh = 0;
 	}
 
-	public function toString():String {
-		var result = "";
-		for (prop in this._keys) {
-			if (this.defines[prop] == true) {
-				result += "#define " + prop + "\n";
-			}
-		}
+	override public function toString():String {
+		var result = super.toString();
 		
 		if (this.BonesPerMesh > 0) {
 			result += "#define BonesPerMesh " + this.BonesPerMesh + "\n";

@@ -5,11 +5,11 @@ package com.babylonhx.tools;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.SmartArray') class SmartArray {
+@:expose('BABYLON.SmartArray') class SmartArray<T> {
 	
 	private static var _GlobalId:Int = 0;
 	
-	public var data:Array<Dynamic>;
+	public var data:Array<T>;
 	public var length:Int = 0;
 	
 	public var __smartArrayFlags:Array<Int>;
@@ -19,29 +19,29 @@ package com.babylonhx.tools;
 	
 
 	public function new(capacity:Int = 256) {
-		this.data = new Array<Dynamic>();
+		this.data = new Array<T>();
 		this._id = SmartArray._GlobalId++;
 	}
 
-	inline public function push(value:Dynamic):Void {
+	inline public function push(value:T):Void {
 		this.data[this.length++] = value;
 		//trace(value);
-		if (value.__smartArrayFlags == null) {
-			value.__smartArrayFlags = [];
+		if (untyped value.__smartArrayFlags == null) {
+			untyped value.__smartArrayFlags = [];
 		}
 		
-		value.__smartArrayFlags[this._id] = this._duplicateId;
+		untyped value.__smartArrayFlags[this._id] = this._duplicateId;
 	}
 
-	public function pushNoDuplicate(value:Dynamic):Void {
-		if(value.__smartArrayFlags != null && value.__smartArrayFlags[this._id] == this._duplicateId) {
+	public function pushNoDuplicate(value:T) {
+		if(untyped value.__smartArrayFlags != null && value.__smartArrayFlags[this._id] == this._duplicateId) {
 			return;
 		}
 		
 		this.push(value);
 	}
 
-	inline public function sort(compareFn:Dynamic->Dynamic->Int):Void {
+	inline public function sort(compareFn:T->T->Int) {
 		this.data.sort(compareFn);
 	}
 
@@ -50,24 +50,41 @@ package com.babylonhx.tools;
 		this._duplicateId++;
 	}
 
-	inline public function concat(array:Dynamic):Void {
+	inline public function concatArray(array:Array<T>) {
 		if (array.length != 0) {		
 			for (index in 0...array.length) {
-				this.data[this.length++] = (array.data != null ? array.data : array)[index];
+				this.data[this.length++] = array[index];
+			}
+		}
+	}
+	
+	inline public function concatSmartArray(array:SmartArray<T>) {
+		if (array.length != 0) {
+			for (index in 0...array.length) {
+				this.data[this.length++] = array.data[index];
 			}
 		}
 	}
 
-	inline public function concatWithNoDuplicate(array:Dynamic):Void {
+	inline public function concatArrayWithNoDuplicate(array:Array<T>) {
+		if (array.length != 0) {			
+			for (index in 0...array.length) {
+				var item = array[index];
+				this.pushNoDuplicate(item);
+			}
+		}
+	}
+	
+	inline public function concatSmartArrayWithNoDuplicate(array:SmartArray<T>) {
 		if (array.length != 0) {
 			for (index in 0...array.length) {
-				var item = (array.data != null ? array.data : array)[index];
+				var item = array.data[index];
 				this.pushNoDuplicate(item);
 			}
 		}
 	}
 
-	public function indexOf(value:Dynamic):Int {
+	public function indexOf(value:T):Int {
 		var position = this.data.indexOf(value);
 		
 		if (position >= this.length) {

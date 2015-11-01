@@ -24,7 +24,7 @@ import haxe.ds.Vector;
 	#if (js || html5 || purejs)
 	public var m:Float32Array;
 	#else
-	public var m:Vector<Float>;	
+	public var m:Array<Float>;	
 	#end
 	
 	
@@ -32,12 +32,12 @@ import haxe.ds.Vector;
 		#if (js || html5 || purejs)
 		m = new Float32Array(16);
 		#else
-		m = new Vector<Float>(16);
+		m = [];
 		#end
 	}
 	
 	public function toString():String {
-		return #if (js || html5 || purejs) m #else m.toArray() #end + "";
+		return m + "";
 	}
 
 	// Properties
@@ -68,12 +68,12 @@ import haxe.ds.Vector;
 	}
 
 	// Methods
-	inline public function toArray(): #if (js || html5 || purejs) Float32Array #else Vector<Float> #end {
+	inline public function toArray(): #if (js || html5 || purejs) Float32Array #else Array<Float> #end {
 		return this.m;
 	}
 
 	inline public function asArray(): #if (js || html5 || purejs) Float32Array #else Array<Float> #end {
-		return #if (js || html5 || purejs) m #else m.toArray() #end ;
+		return #if (js || html5 || purejs) m #else m #end ;
 	}
 
 	inline public function invert():Matrix {
@@ -190,7 +190,7 @@ import haxe.ds.Vector;
 		}
 	}
 
-	inline public function copyToArray(array: #if (js || html5 || purejs) Float32Array #else Vector<Float> #end, offset:Int = 0) {
+	inline public function copyToArray(array: #if (js || html5 || purejs) Float32Array #else Array<Float> #end, offset:Int = 0) {
 		for (index in 0...16) {
 			array[offset + index] = this.m[index];
 		}
@@ -200,7 +200,7 @@ import haxe.ds.Vector;
 		this.multiplyToArray(other, result.m, 0);
 	}
 
-	inline public function multiplyToArray(other:Matrix, result: #if (js || html5 || purejs) Float32Array #else Vector<Float> #end, offset:Int) {		
+	inline public function multiplyToArray(other:Matrix, result: #if (js || html5 || purejs) Float32Array #else Array<Float> #end, offset:Int) {		
 		result[offset] = this.m[0] * other.m[0] + this.m[1] * other.m[4] + this.m[2] * other.m[8] + this.m[3] * other.m[12];
 		result[offset + 1] = this.m[0] * other.m[1] + this.m[1] * other.m[5] + this.m[2] * other.m[9] + this.m[3] * other.m[13];
 		result[offset + 2] = this.m[0] * other.m[2] + this.m[1] * other.m[6] + this.m[2] * other.m[10] + this.m[3] * other.m[14];

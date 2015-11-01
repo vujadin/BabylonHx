@@ -44,7 +44,7 @@ import com.babylonhx.math.Matrix;
 		
 		// Bones
 		if (mesh.useBones && mesh.computeBonesUsingShaders) {
-			this._effect.setMatrices("mBones", #if (js || html5 || purejs) mesh.skeleton.getTransformMatrices() #else mesh.skeleton.getTransformMatrices().toArray() #end );
+			this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices());
 		}
 		
 		mesh._bind(subMesh, this._effect, Material.TriangleFillMode);

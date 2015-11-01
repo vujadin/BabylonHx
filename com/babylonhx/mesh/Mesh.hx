@@ -10,6 +10,8 @@ import com.babylonhx.math.Path3D;
 import com.babylonhx.math.Plane;
 import com.babylonhx.math.PositionNormalVertex;
 import com.babylonhx.math.Quaternion;
+import com.babylonhx.math.Color4;
+import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.mesh.simplification.ISimplificationSettings;
@@ -72,7 +74,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	private var _renderIdForInstances:Array<Int> = [];
 	private var _batchCache:_InstancesBatch = new _InstancesBatch();
 	private var _worldMatricesInstancesBuffer:WebGLBuffer;
-	private var _worldMatricesInstancesArray: #if (js || purejs) Float32Array #else Vector<Float> #end;
+	private var _worldMatricesInstancesArray: #if (js || purejs) Float32Array #else Array<Float> #end;
 	private var _instancesBufferSize:Int = 32 * 16 * 4; // let's start with a maximum of 32 instances
 	public var _shouldGenerateFlatShading:Bool;
 	private var _preActivateId:Int = -1;
@@ -95,8 +97,12 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	public var pathArray:Array<Array<Vector3>>;
 	public var tessellation:Int;
 	
-	// for ribbon
+	// for ribbon	
+	@:allow(com.babylonhx.mesh.MeshBuilder.CreateRibbon) 
 	private var _closePath:Bool = false;
+	@:allow(com.babylonhx.mesh.MeshBuilder.CreateRibbon)
+	private var _closeArray:Bool = false;
+	@:allow(com.babylonhx.mesh.MeshBuilder.CreateRibbon) 
 	private var _idx:Array<Int>;
 	
 
@@ -747,7 +753,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			}
 			
 			this._worldMatricesInstancesBuffer = engine.createInstancesBuffer(this._instancesBufferSize);
-			this._worldMatricesInstancesArray = #if (js || purejs) new Float32Array(Std.int(this._instancesBufferSize / 4)) #else new Vector<Float>(Std.int(this._instancesBufferSize / 4)) #end ;
+			this._worldMatricesInstancesArray = #if (js || purejs) new Float32Array(Std.int(this._instancesBufferSize / 4)) #else [] #end ;
 		}
 		
 		var offset = 0;
@@ -1379,834 +1385,312 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	}
 
 	// Statics
-	public static function CreateRibbon(?name:String, pathArray:Array<Array<Vector3>>, ?closeArray:Bool = false, ?closePath:Bool = false, ?offset:Int, scene:Scene, ?updatable:Bool = false, ?sideOrientation:Int = Mesh.DEFAULTSIDE, ribbonInstance:Mesh = null):Mesh {
-		if (ribbonInstance != null) {   // existing ribbon instance update
-			// positionFunction : ribbon case
-			// only pathArray and sideOrientation parameters are taken into account for positions update
-			var positionFunction = function (positions:Array<Float>) {
-				var minlg = pathArray[0].length;
-				var i:Int = 0;
-				var ns = (ribbonInstance.sideOrientation == Mesh.DOUBLESIDE) ? 2 : 1;
-				for (si in 1...ns + 1) {
-					for (p in 0...pathArray.length) {
-						var path = pathArray[p];
-						var l = path.length;
-						minlg = (minlg < l) ? minlg : l;
-						var j:Int = 0;
-						while (j < minlg) {
-							positions[i] = path[j].x;
-							positions[i + 1] = path[j].y;
-							positions[i + 2] = path[j].z;
-							j++;
-							i += 3;
-						}
-						if (ribbonInstance._closePath) {
-                            positions[i] = path[0].x;
-                            positions[i + 1] = path[0].y;
-                            positions[i + 2] = path[0].z;
-                            i += 3;
-                        }
-					}
-				}
-			};
-			
-			var positions = ribbonInstance.getVerticesData(VertexBuffer.PositionKind);
-			positionFunction(positions);
-			ribbonInstance.updateVerticesData(VertexBuffer.PositionKind, positions, true, false);
-			if (!ribbonInstance.areNormalsFrozen) {
-				var indices = ribbonInstance.getIndices();
-				var normals = ribbonInstance.getVerticesData(VertexBuffer.NormalKind);
-				VertexData.ComputeNormals(positions, indices, normals);
-				
-				if (ribbonInstance._closePath) {
-					var indexFirst:Int = 0;
-					var indexLast:Int = 0;
-					for (p in 0...pathArray.length) {
-						indexFirst = ribbonInstance._idx[p] * 3;
-						if (p + 1 < pathArray.length) {
-							indexLast = (ribbonInstance._idx[p + 1] - 1) * 3;
-						}
-						else {
-							indexLast = normals.length - 3;
-						}
-						normals[indexFirst] = (normals[indexFirst] + normals[indexLast]) * 0.5;
-						normals[indexFirst + 1] = (normals[indexFirst + 1] + normals[indexLast + 1]) * 0.5;
-						normals[indexFirst + 2] = (normals[indexFirst + 2] + normals[indexLast + 2]) * 0.5;
-						normals[indexLast] = normals[indexFirst];
-						normals[indexLast + 1] = normals[indexFirst + 1];
-						normals[indexLast + 2] = normals[indexFirst + 2];
-					}
-				}
-				
-				ribbonInstance.updateVerticesData(VertexBuffer.NormalKind, normals, true, false);
-			}
-			
-			return ribbonInstance;
-		}
-		else {  // new ribbon creation
-			var ribbon = new Mesh(name, scene);
-			ribbon.sideOrientation = sideOrientation;
-			
-			var vertexData = VertexData.CreateRibbon(pathArray, closeArray, closePath, offset, sideOrientation);
-			
-			if (closePath) {
-				ribbon._idx = vertexData._idx;
-			}
-			ribbon._closePath = closePath;
-			
-			vertexData.applyToMesh(ribbon, updatable);
-				
-			return ribbon;
-		}
+	public static function CreateRibbon(name:String, pathArray:Array<Array<Vector3>>, ?closeArray:Bool = false, ?closePath:Bool = false, ?offset:Int, scene:Scene, ?updatable:Bool = false, ?sideOrientation:Int = Mesh.DEFAULTSIDE, ribbonInstance:Mesh = null):Mesh {
+		return MeshBuilder.CreateRibbon(name, {
+			pathArray: pathArray,
+			closeArray: closeArray,
+			closePath: closePath,
+			offset: offset,
+			updatable: updatable,
+			sideOrientation: sideOrientation,
+			instance: ribbonInstance
+		}, scene);
 	}
 	
 	public static function CreateDisc(name:String, radius:Float, tessellation:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-        var disc = new Mesh(name, scene);
-        var vertexData = VertexData.CreateDisc(radius, tessellation, sideOrientation);
+		var options = {
+			radius: radius,
+			tessellation: tessellation,
+			sideOrientation: sideOrientation,
+			updatable: updatable
+		};
 		
-        vertexData.applyToMesh(disc, updatable);
-		
-        return disc;
-    }
-	
-	public static function CreateSkyBox(name:String, size:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		var box = new Mesh(name, scene);
-		var vertexData = VertexData.CreateBox(size, sideOrientation);
-		
-		if (scene.isPhysicsEnabled()) {
-			box.physicsDim = { };
-			box.physicsDim.size = size;
-		}
-		
-		vertexData.applyToMesh(box, updatable);
-		
-		return box;
+		return MeshBuilder.CreateDisc(name, options, scene);
 	}
-	
+		
 	public static function CreateBox(name:String, options:Dynamic, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		var box = new Mesh(name, scene);
-		var vertexData = VertexData.CreateBox(options, sideOrientation);
+		var _options = {
+			width: Std.is(options, Float) ? options : (options.width != null ? options.width : 1),
+			height: Std.is(options, Float) ? options : (options.height != null ? options.height : 1),
+			depth: Std.is(options, Float) ? options : (options.depth != null ? options.depth : 1),
+			sideOrientation: sideOrientation,
+			updatable: updatable
+		};
 		
-		if (scene.isPhysicsEnabled()) {
-			box.physicsDim = { };
-			box.physicsDim.size = options;
-		}
-		
-		vertexData.applyToMesh(box, updatable);
-		
-		return box;
-	}
-	
-	public static function CreateSphere(name:String, options:Dynamic, diameterOrScene:Dynamic, ?scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		if (Std.is(diameterOrScene, Scene)) {
-			scene = diameterOrScene;
-			updatable = options.updatable;
-		} 
-		else {
-			var segments = options;
-			
-			options = {
-				segments: segments,
-				diameterX: diameterOrScene,
-				diameterY: diameterOrScene,
-				diameterZ: diameterOrScene,
-				sideOrientation: sideOrientation
-			}
-		}
-		
-		var sphere = new Mesh(name, scene);
-		var vertexData = VertexData.CreateSphere(options);
-		
-		vertexData.applyToMesh(sphere, updatable);
-		
-		if (scene.isPhysicsEnabled()) {
-			sphere.physicsDim = { };
-			sphere.physicsDim.diameter = options.diameterX / 2;
-		}
-		
-		return sphere;		
+		return MeshBuilder.CreateBox(name, _options, scene);
 	}
 
-	// Cylinder and cone (Code inspired by SharpDX.org)
-	public static function CreateCylinder(name:String, height:Float, diameterTop:Float, diameterBottom:Float, tessellation:Int, subdivisions:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {		
-		var cylinder = new Mesh(name, scene);
-		var vertexData = VertexData.CreateCylinder(height, diameterTop, diameterBottom, tessellation, subdivisions, sideOrientation);
-		
-		if (scene.isPhysicsEnabled()) {
-			cylinder.physicsDim = { };
-			cylinder.physicsDim.height = height;
-			cylinder.physicsDim.diameter = diameterBottom > diameterTop ? diameterBottom : diameterTop;
-		}
-		
-		vertexData.applyToMesh(cylinder, updatable);
-				
-		return cylinder;
-		/*
-		// setup tube creation parameters
-		var path:Array<Vector3> = [
-			new Vector3(0, -height/2, 0), 
-			new Vector3(0, height/2, 0), 
-		];
-		
-		var radiusFunction = function(i:Int, distance:Float):Float {
-			return (diameterBottom + (diameterTop - diameterBottom) * distance / height) / 2;
+	public static function CreateSphere(name:String, options:Dynamic, ?scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+		var options = {
+			segments: options.segments,
+			diameterX: options.diameterX,
+			diameterY: options.diameterY,
+			diameterZ: options.diameterZ,
+			sideOrientation: sideOrientation,
+			updatable: updatable
 		};
 		
-		// create tube without caps
-		var cylinder = Mesh.CreateTube(name, path, 1.0, tessellation, radiusFunction, Mesh.NO_CAP, scene, updatable, sideOrientation);
-		
-		// extract geometry data to add caps
-		var geometry_data = VertexData.ExtractFromMesh(cylinder);
-		
-		var createCylinderCap = function (isTop:Bool) {
-			var radius = isTop ? diameterTop / 2 : diameterBottom / 2;
-			if (radius == 0) {
-				return;
-			}
-			var vbase = Std.int(geometry_data.positions.length / 3);
-			var offset = new Vector3(0, isTop ? height / 2 : -height / 2, 0);
-			var textureScale = new Vector2(0.5, 0.5);
-			// Positions, normals & uvs
-			var angle:Float = 0;
-			for (i in 0...tessellation) {
-				angle = Math.PI * 2 * i / tessellation;
-				var circleVector = new Vector3(Math.cos(angle), 0, Math.sin(angle));
-				var position = circleVector.scale(radius).add(offset);
-				var textureCoordinate = new Vector2(circleVector.x * textureScale.x + 0.5, circleVector.z * textureScale.y + 0.5);
-				geometry_data.positions.concat([position.x, position.y, position.z]);
-				geometry_data.normals.concat([0, isTop ? 1 : -1, 0]);
-				geometry_data.uvs.concat([textureCoordinate.x, textureCoordinate.y]);
-			}
-			// Indices
-			for (i in 0...tessellation - 2) {
-				if (!isTop) {
-					geometry_data.indices.push(vbase);
-					geometry_data.indices.push(vbase + (i + 2) % tessellation);
-					geometry_data.indices.push(vbase + (i + 1) % tessellation);
-				}
-				else {
-					geometry_data.indices.push(vbase);
-					geometry_data.indices.push(vbase + (i + 1) % tessellation);
-					geometry_data.indices.push(vbase + (i + 2) % tessellation);
-				}
-			}
+		return MeshBuilder.CreateSphere(name, options, scene);
+	}
+	
+	// Cylinder and cone
+	public static function CreateCylinder(name:String, height:Float, diameterTop:Float, diameterBottom:Float, tessellation:Int, subdivisions:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE): Mesh {
+		var options = {
+			height: height,
+			diameterTop: diameterTop,
+			diameterBottom: diameterBottom,
+			tessellation: tessellation,
+			subdivisions: subdivisions,
+			sideOrientation: sideOrientation,
+			updatable: updatable
 		};
 		
-		// add caps to geometry and apply to mesh
-		createCylinderCap(true);
-		createCylinderCap(false);
-		geometry_data.applyToMesh(cylinder);
-		
-		return cylinder;*/
+		return MeshBuilder.CreateCylinder(name, options, scene);
 	}
 
 	// Torus  (Code from SharpDX.org)
-	public static function CreateTorus(name:String, diameter:Float, thickness:Float, tessellation:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		var torus = new Mesh(name, scene);
-		var vertexData = VertexData.CreateTorus(diameter, thickness, tessellation, sideOrientation);
+	public static function CreateTorus(name:String, diameter:Float, thickness:Float, tessellation:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {		
+		var	options = {
+			diameter: diameter,
+			thickness: thickness,
+			tessellation: tessellation,
+			sideOrientation: sideOrientation,
+			updatable: updatable
+		};
 		
-		vertexData.applyToMesh(torus, updatable);		
-		
-		return torus;
-	}
-
-	public static function CreateTorusKnot(name:String, radius:Float, tube:Float, radialSegments:Int, tubularSegments:Int, p:Float, q:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		var torusKnot = new Mesh(name, scene);
-		var vertexData = VertexData.CreateTorusKnot(radius, tube, radialSegments, tubularSegments, p, q, sideOrientation);		
-		vertexData.applyToMesh(torusKnot, updatable);		
-		return torusKnot;
-	}
-
-	// Lines
-	public static function CreateLines(name:String, points:Array<Vector3>, scene:Scene, updatable:Bool = false, linesInstance:LinesMesh = null):LinesMesh {
-		if (linesInstance != null) { // lines update
-			var positionFunction = function (positions:Array<Float>) {
-				var i:Int = 0;
-				for(p in 0...points.length) {
-					positions[i] = points[p].x;
-					positions[i + 1] = points[p].y;
-					positions[i + 2] = points[p].z;
-					i += 3;
-				}
-			};
-			linesInstance.updateMeshPositions(positionFunction, false);
-			
-			return linesInstance;			
-		}
-		
-		// lines creation
-		var lines = new LinesMesh(name, scene);
-		var vertexData = VertexData.CreateLines(points);
-		vertexData.applyToMesh(lines, updatable);
-		
-		return lines;
+		return MeshBuilder.CreateTorus(name, options, scene);
 	}
 	
+	public static function CreateTorusKnot(name:String, radius:Float, tube:Float, radialSegments:Int, tubularSegments:Int, p:Float, q:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+		var options = {
+			radius: radius,
+			tube: tube,
+			radialSegments: radialSegments,
+			tubularSegments: tubularSegments,
+			p: p,
+			q: q,
+			sideOrientation: sideOrientation,
+			updatable: updatable
+		};
+		
+		return MeshBuilder.CreateTorusKnot(name, options, scene);
+	}
+	
+	// Lines
+	public static function CreateLines(name:String, points:Array<Vector3>, scene:Scene, updatable:Bool = false, linesInstance:LinesMesh = null):LinesMesh {
+		var options = {
+			points: points,
+			updatable: updatable,
+			linesInstance: linesInstance
+		};
+		
+		return MeshBuilder.CreateLines(name, options, scene);
+	}
+
 	// Dashed Lines
     public static function CreateDashedLines(name:String, points:Array<Vector3>, ?dashSize:Float, ?gapSize:Float, ?dashNb:Float, scene:Scene, ?updatable:Bool = false, linesInstance:LinesMesh = null):LinesMesh {
-		if (linesInstance != null) {  //  dashed lines update
-			var positionFunction = function(positions:Array<Float>) {
-				var curvect:Vector3 = Vector3.Zero();
-				var nbSeg:Float = positions.length / 6;
-				var lg:Float = 0;
-				var nb:Int = 0;
-				var shft:Float = 0;
-				var dashshft:Float = 0;
-				var curshft:Float = 0;
-				var p:Int = 0;
-				var i:Int = 0;
-				var j:Int = 0;
-				for (i in 0...points.length - 1) {
-					points[i + 1].subtractToRef(points[i], curvect);
-					lg += curvect.length();
-				}
-				shft = lg / nbSeg;
-				dashshft = linesInstance.dashSize * shft / (linesInstance.dashSize + linesInstance.gapSize);
-				while (i < points.length - 1) {
-					points[i + 1].subtractToRef(points[i], curvect);
-					nb = Math.floor(curvect.length() / shft);
-					curvect.normalize();
-					j = 0;
-					while (j < nb && p < positions.length) {
-						curshft = shft * j;
-						positions[p] = points[i].x + curshft * curvect.x;
-						positions[p + 1] = points[i].y + curshft * curvect.y;
-						positions[p + 2] = points[i].z + curshft * curvect.z;
-						positions[p + 3] = points[i].x + (curshft + dashshft) * curvect.x;
-						positions[p + 4] = points[i].y + (curshft + dashshft) * curvect.y;
-						positions[p + 5] = points[i].z + (curshft + dashshft) * curvect.z;
-						p += 6;
-						j++;
-					}
-					++i;
-				}
-				while (p < positions.length) {
-					positions[p] = points[i].x;
-					positions[p + 1] = points[i].y;
-					positions[p + 2] = points[i].z;
-					p += 3;
-				}
-			};
-			linesInstance.updateMeshPositions(positionFunction, false);
-			
-			return linesInstance;
-		}
+		var options = {
+			points: points,
+			dashSize: dashSize,
+			gapSize: gapSize,
+			dashNb: dashNb,
+			updatable: updatable,
+			linesInstance: linesInstance
+		};
 		
-		// dashed lines creation
-		var dashedLines = new LinesMesh(name, scene);
-		var vertexData = VertexData.CreateDashedLines(points, dashSize, gapSize, dashNb);
-		vertexData.applyToMesh(dashedLines, updatable);
-		dashedLines.dashSize = dashSize;
-		dashedLines.gapSize = gapSize;
-		
-		return dashedLines;
+		return MeshBuilder.CreateDashedLines(name, options, scene);
 	}
 	
 	// Extrusion
 	public static function ExtrudeShape(name:String, shape:Array<Vector3>, path:Array<Vector3>, scale:Float = 1, rotation:Float = 0, cap:Int = Mesh.NO_CAP, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE, extrudedInstance:Mesh = null):Mesh {
-		var extruded = Mesh._ExtrudeShapeGeneric(name, shape, path, scale, rotation, null, null, false, false, cap, false, scene, updatable, sideOrientation, extrudedInstance);
-		return extruded;
+		var options = {
+			shape: shape,
+			path: path,
+			scale: scale,
+			rotation: rotation,
+			cap: cap,
+			sideOrientation: sideOrientation,
+			extrudedInstance: extrudedInstance,
+			updatable: updatable
+		};
+		
+		return MeshBuilder.ExtrudeShape(name, options, scene);
 	}
 
 	public static function ExtrudeShapeCustom(name:String, shape:Array<Vector3>, path:Array<Vector3>, scaleFunction:Float->Float->Float, rotationFunction:Float->Float->Float, ribbonCloseArray:Bool = false, ribbonClosePath:Bool = false, cap:Int = Mesh.NO_CAP, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE, extrudedInstance:Mesh = null):Mesh {
-		var extrudedCustom = Mesh._ExtrudeShapeGeneric(name, shape, path, null, null, scaleFunction, rotationFunction, ribbonCloseArray, ribbonClosePath, cap, true, scene, updatable, sideOrientation, extrudedInstance);
-		return extrudedCustom;
-	}
-
-	private static function _ExtrudeShapeGeneric(name:String, shape:Array<Vector3>, curve:Array<Vector3>, ?scale:Float, ?rotation:Float, ?scaleFunction:Float->Float->Float, ?rotateFunction:Float->Float->Float, rbCA:Bool, rbCP:Bool, cap:Int, custom:Bool, scene:Scene, updtbl:Bool, side:Int, instance:Mesh = null):Mesh {
-		
-		// extrusion geometry
-		var extrusionPathArray = function(shape:Array<Vector3>, curve:Array<Vector3>, path3D:Path3D, shapePaths:Array<Array<Vector3>>, scale:Float, rotation:Float, scaleFunction:Int->Float->Float, rotateFunction:Int->Float->Float, cap:Int, custom:Bool = false) {
-			var tangents:Array<Vector3> = path3D.getTangents();
-			var normals:Array<Vector3> = path3D.getNormals();
-			var binormals:Array<Vector3> = path3D.getBinormals();
-			var distances:Array<Float> = path3D.getDistances();
-			
-			var angle:Float = 0;
-			var returnScale = function(i:Float, distance:Float):Float { 
-				return scale; 
-			};
-			var returnRotation = function(i:Float, distance:Float):Float { 
-				return rotation; 
-			};
-			var rotate = rotateFunction != null ? rotateFunction : returnRotation;
-			var scl = scaleFunction != null ? scaleFunction : returnScale;
-			var index:Int = 0;
-			
-			for (i in 0...curve.length) {
-				var shapePath = new Array<Vector3>();
-				var angleStep = rotate(i, distances[i]);
-				var scaleRatio = scl(i, distances[i]);
-				for (p in 0...shape.length) {
-					var rotationMatrix = Matrix.RotationAxis(tangents[i], angle);
-					var planed = ((tangents[i].scale(shape[p].z)).add(normals[i].scale(shape[p].x)).add(binormals[i].scale(shape[p].y)));
-					var rotated = Vector3.TransformCoordinates(planed, rotationMatrix).scaleInPlace(scaleRatio).add(curve[i]);
-					shapePath.push(rotated);
-				}
-				shapePaths[index] = shapePath;
-				angle += angleStep;
-				index++;
-			}
-			
-			// cap
-            var capPath = function(shapePath:Array<Vector3>):Array<Vector3> {
-                var pointCap:Array<Vector3> = [];
-                var barycenter = Vector3.Zero();
-                for (i in 0...shapePath.length) {
-                    barycenter.addInPlace(shapePath[i]);
-                }
-                barycenter.scaleInPlace(1 / shapePath.length);
-                for (i in 0...shapePath.length) {
-                    pointCap.push(barycenter);
-                }
-                return pointCap;
-            }
-			
-            switch (cap) {
-                case Mesh.NO_CAP:
-                    // nothing here...
-					
-                case Mesh.CAP_START:
-                    shapePaths.unshift(capPath(shapePaths[0]));
-                    
-                case Mesh.CAP_END:
-                    shapePaths.push(capPath(shapePaths[shapePaths.length - 1]));
-                    
-                case Mesh.CAP_ALL:
-                    shapePaths.unshift(capPath(shapePaths[0]));
-                    shapePaths.push(capPath(shapePaths[shapePaths.length - 1]));
-                    
-                default:
-                    //...
-            }
-			
-			return shapePaths;
-		};
-		
-		if (instance != null) { // instance update
-			
-			var path3D = instance.path3D.update(curve);
-			var pathArray = extrusionPathArray(shape, curve, instance.path3D, instance.pathArray, scale, rotation, scaleFunction, rotateFunction, instance.cap, custom);
-			
-			instance = Mesh.CreateRibbon(null, pathArray, null, null, null, null, null, null, instance);
-			
-			return instance;
+		var options = {
+			shape: shape,
+			path: path,
+			scaleFunction: scaleFunction,
+			rotationFunction: rotationFunction,
+			ribbonCloseArray: ribbonCloseArray,
+			ribbonClosePath: ribbonClosePath,
+			cap: cap,
+			sideOrientation: sideOrientation,
+			extrudedInstance: extrudedInstance,
+			updatable: updatable
 		}
-		// extruded shape creation
 		
-		var path3D:Path3D = new Path3D(curve);
-		var newShapePaths:Array<Array<Vector3>> = [];
-		cap = (cap < 0 || cap > 3) ? 0 : cap;
-		var pathArray = extrusionPathArray(shape, curve, path3D, newShapePaths, scale, rotation, scaleFunction, rotateFunction, cap, custom);
-		
-		var extrudedGeneric = Mesh.CreateRibbon(name, pathArray, rbCA, rbCP, 0, scene, updtbl, side);
-		extrudedGeneric.pathArray = pathArray;
-		extrudedGeneric.path3D = path3D;
-		extrudedGeneric.cap = cap;
-		
-		return extrudedGeneric;
+		return MeshBuilder.ExtrudeShapeCustom(name, options, scene);
 	}
 	
 	// Lathe
 	public static function CreateLathe(name:String, shape:Array<Vector3>, radius:Float = 1, tessellation:Int = 0, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		tessellation = tessellation > 0 ? tessellation : Std.int(radius * 60);
-		var pi2 = Math.PI * 2;
-		var Y = com.babylonhx.math.Axis.Y;
-		var shapeLathe:Array<Vector3> = [];
+		var options = {
+			shape: shape,
+			radius: radius,
+			tesselation: tessellation,
+			sideOrientation: sideOrientation,
+			updatable: updatable
+		};
 		
-		// first rotatable point
-		var i:Int = 0;
-		while (shape[i].x == 0) {
-			i++;
-		}
-		var pt = shape[i];
-		for (i in 0...shape.length) {
-			shapeLathe.push(shape[i].subtract(pt));
-		}
-		
-		// circle path
-		var step = pi2 / tessellation;
-		var rotated:Vector3 = null;
-		var path:Array<Vector3> = [];
-		for (i in 0...tessellation) {
-			rotated = new Vector3(Math.cos(i * step) * radius, 0, Math.sin(i * step) * radius);
-			path.push(rotated);
-		}
-		path.push(path[0]);
-		
-		// extrusion
-		var scaleFunction:Float->Float->Float = function(dummy1:Float = 0, dummy2:Float = 0):Float { return 1; };
-		var rotateFunction:Float->Float->Float = function(dummy1:Float = 0, dummy2:Float = 0):Float { return 0; };
-		var lathe = Mesh.ExtrudeShapeCustom(name, shapeLathe, path, scaleFunction, rotateFunction, true, false, Mesh.NO_CAP, scene, updatable, sideOrientation);
-		
-		return lathe;
+		return MeshBuilder.CreateLathe(name, options, scene);
 	}
 
 	// Plane & ground
-	public static function CreatePlane(name:String, size:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		var plane = new Mesh(name, scene);
-		var vertexData = VertexData.CreatePlane(size, sideOrientation);
-		vertexData.applyToMesh(plane, updatable);
-		return plane;
+	public static function CreatePlane(name:String, width:Float, height:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+		var options = {
+			width: width,
+			height: height,
+			sideOrientation: sideOrientation,
+			updatable: updatable
+		}
+		
+		return MeshBuilder.CreatePlane(name, options, scene);
 	}
 	
 	public static function CreateGround(name:String, width:Float, height:Float, subdivisions:Int, scene:Scene, updatable:Bool = false):Mesh {
-		var ground = new GroundMesh(name, scene);
-		ground._setReady(false);
-		ground._subdivisions = subdivisions;
+		var options = {
+			width: width,
+			height: height,
+			subdivisions: subdivisions,
+			updatable: updatable
+		}
 		
-		var vertexData = VertexData.CreateGround(width, height, subdivisions);
-		vertexData.applyToMesh(ground, updatable);
-		ground._setReady(true);
-		
-		return ground;
+		return MeshBuilder.CreateGround(name, options, scene);
 	}
 
 	public static function CreateTiledGround(name:String, xmin:Float, zmin:Float, xmax:Float, zmax:Float, subdivisions:Dynamic, precision:Dynamic, scene:Scene, updatable:Bool = false):Mesh {
-		var tiledGround = new Mesh(name, scene);
-		var vertexData = VertexData.CreateTiledGround(xmin, zmin, xmax, zmax, subdivisions, precision);
-		vertexData.applyToMesh(tiledGround, updatable);
+		var options = {
+			xmin: xmin,
+			zmin: zmin,
+			xmax: xmax,
+			zmax: zmax,
+			subdivisions: subdivisions,
+			precision: precision,
+			updatable: updatable               
+		}
 		
-		return tiledGround;
+		return MeshBuilder.CreateTiledGround(name, options, scene);
 	}
 	
 	public static function CreateGroundFromHeightMap(name:String, url:String, width:Float, height:Float, subdivisions:Int, minHeight:Float, maxHeight:Float, scene:Scene, updatable:Bool = false, ?onReady:GroundMesh->Void):GroundMesh {
-		var ground = new GroundMesh(name, scene);
-		ground._subdivisions = subdivisions;
-		ground._setReady(false);
+		var options = {
+			width: width,
+			height: height,
+			subdivisions: subdivisions,
+			minHeight: minHeight,
+			maxHeight: maxHeight, 
+			updatable: updatable,
+			onReady: onReady
+		};
 		
-		var onload = function(img:Image) {
-			var vertexData = VertexData.CreateGroundFromHeightMap(width, height, subdivisions, minHeight, maxHeight, img.data, img.width, img.height);
-			
-			vertexData.applyToMesh(ground, updatable);
-			
-			ground._setReady(true);
-			
-			//execute ready callback, if set
-			if (onReady != null) {
-				onReady(ground);
-			}
-		}
-		
-		Tools.LoadImage(url, onload);
-				
-		return ground;
+		return MeshBuilder.CreateGroundFromHeightMap(name, url, options, scene);
 	}
 	
 	public static function CreateTube(name:String, path:Array<Vector3>, radius:Float, tessellation:Int, radiusFunction:Int->Float->Float, cap:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE, tubeInstance:Mesh = null):Mesh {
-		// tube geometry
-		var tubePathArray = function (path:Array<Vector3>, path3D:Path3D, circlePaths:Array<Array<Vector3>>, radius:Float, tessellation:Int, ?radiusFunction:Int->Float->Float, cap:Int) {
-			var tangents = path3D.getTangents();
-			var normals = path3D.getNormals();
-			var distances = path3D.getDistances();
-			var pi2 = Math.PI * 2;
-			var step = pi2 / tessellation;
-			var returnRadius:Int->Float->Float = function(i:Int, distance:Float):Float { return radius; };
-			var radiusFunctionFinal:Int->Float->Float = radiusFunction != null ? radiusFunction : returnRadius;
-			
-			var circlePath:Array<Vector3> = [];
-			var rad:Float = 0;
-			var normal:Vector3 = Vector3.Zero();
-			var rotated:Vector3 = Vector3.Zero();
-			var rotationMatrix:Matrix;
-			var index:Int = 0;
-			for (i in 0...path.length) {
-				rad = radiusFunctionFinal(i, distances[i]); // current radius
-				circlePath = [];              				// current circle array
-				normal = normals[i];          				// current normal  
-				var ang:Float = 0.0;
-				for (t in 0...tessellation) {
-                    rotationMatrix = Matrix.RotationAxis(tangents[i], step * t);
-					rotated = Vector3.TransformCoordinates(normal, rotationMatrix).scaleInPlace(rad).add(path[i]);
-					circlePath.push(rotated);
-				}
-				circlePath.push(circlePath[0]);
-				circlePaths[index] = circlePath;
-				index++;
-			}
-			
-			// cap
-            var capPath = function(nbPoints:Int, pathIndex:Int):Array<Vector3> {
-                var pointCap:Array<Vector3> = [];
-                for(i in 0...nbPoints) {
-                    pointCap.push(path[pathIndex]); 
-                }
-                return pointCap;
-            };
-			
-            switch (cap) {
-                case Mesh.NO_CAP:
-                   
-                case Mesh.CAP_START:
-                    circlePaths.unshift(capPath(tessellation + 1, 0));
-                    
-                case Mesh.CAP_END:
-                    circlePaths.push(capPath(tessellation + 1, path.length - 1));
-                    
-                case Mesh.CAP_ALL:
-                    circlePaths.unshift(capPath(tessellation + 1, 0));
-                    circlePaths.push(capPath(tessellation + 1, path.length - 1));
-                     
-                default:
-                    //                   
-            }
-			
-			return circlePaths;
-		};
-		
-		if (tubeInstance != null) { // tube update
-			var path3D = tubeInstance.path3D.update(path);
-			var pathArray = tubePathArray(path, path3D, tubeInstance.pathArray, radius, tubeInstance.tessellation, radiusFunction, tubeInstance.cap);
-			tubeInstance = Mesh.CreateRibbon(null, pathArray, null, null, null, null, null, null, tubeInstance);
-			
-			return tubeInstance;
+		var options = {
+			path: path,
+			radius: radius,
+			tessellation: tessellation,
+			radiusFunction: radiusFunction,
+			cap: cap,
+			arc: 1,
+			updatable: updatable,
+			sideOrientation: sideOrientation,
+			tubeInstance: tubeInstance        
 		}
 		
-		// tube creation
-		var path3D:Path3D = new Path3D(path);
-		var newPathArray:Array<Array<Vector3>> = [];
-		cap = (cap < 0 || cap > 3) ? 0 : cap;
-        var pathArray = tubePathArray(path, path3D, newPathArray, radius, tessellation, radiusFunction, cap);
-		var tube = Mesh.CreateRibbon(name, pathArray, false, true, 0, scene, updatable, sideOrientation);
-		tube.pathArray = pathArray;
-		tube.path3D = path3D;
-		tube.tessellation = tessellation;
-		tube.cap = cap;
-		
-		return tube;
+		return MeshBuilder.CreateTube(name, options, scene);
 	}
 	
-	// Decals
-	static var CreateDecal_target:Vector3 = new Vector3(0, 0, 1);
-	static var CreateDecal_cameraWorldTarget:Vector3 = new Vector3(0, 0, 0);
-	static var decalWorldMatrix:Matrix = new Matrix();
-	static var inverseDecalWorldMatrix:Matrix = new Matrix();
-	static var CreateDecal_indices:Array<Int> = [];
-	static var CreateDecal_positions:Array<Float> = [];
-	static var CreateDecal_normals:Array<Float> = [];
-	static var CreateDecal_meshWorldMatrix:Matrix = new Matrix();
-	static var CreateDecal_transformMatrix:Matrix = new Matrix();
-	static var CreateDecal_vertexData:VertexData = new VertexData();
+	public static function CreatePolyhedron(name:String, ?type:Int, ?size:Float, ?sizeX:Float, ?sizeY:Float, ?sizeZ:Float, ?custom:Dynamic, ?faceUV:Array<Vector4>, ?faceColors:Array<Color4>, ?updatable:Bool, ?sideOrientation:Int, scene:Scene):Mesh {
+		var options = {			
+			type: type,
+			size: size,
+			sizeX: sizeX,
+			sizeY: sizeY,
+			sizeZ: sizeZ,
+			custom: custom,
+			faceUV: faceUV,
+			faceColors: faceColors,
+			updatable: updatable,
+			sideOrientation: sideOrientation
+		};
+		
+		return MeshBuilder.CreatePolyhedron(name, options, scene);
+	}
+	
+	public static function CreateIcoSphere(name:String, ?radius:Float, ?flat:Float, ?subdivisions:Int, ?sideOrientation:Int, updatable:Bool = false, scene:Scene):Mesh {
+		var options = {
+			radius: radius,
+			flat: flat,
+			subdivisions: subdivisions,
+			sideOreintation: sideOrientation,
+			updatable: updatable
+		};
+		
+		return MeshBuilder.CreateIcoSphere(name, options, scene);
+	}
+	
+	// Decals	
     public static function CreateDecal(name:String, sourceMesh:AbstractMesh, position:Vector3, normal:Vector3, size:Vector3, angle:Float = 0) {
-        CreateDecal_indices = sourceMesh.getIndices();
-        CreateDecal_positions = sourceMesh.getVerticesData(VertexBuffer.PositionKind);
-        CreateDecal_normals = sourceMesh.getVerticesData(VertexBuffer.NormalKind);
+        var options = {
+			position: position,
+			normal: normal,
+			size: size, 
+			angle: angle
+		}
 		
-        // Getting correct rotation
-        if (normal == null) {
-            var camera:Camera = sourceMesh.getScene().activeCamera;
-            CreateDecal_cameraWorldTarget = Vector3.TransformCoordinates(CreateDecal_target, camera.getWorldMatrix());
-			
-            normal = camera.globalPosition.subtract(CreateDecal_cameraWorldTarget);
-        }
-		
-        var yaw:Float = -Math.atan2(normal.z, normal.x) - Math.PI / 2;
-        var len:Float = Math.sqrt(normal.x * normal.x + normal.z * normal.z);
-        var pitch:Float = Math.atan2(normal.y, len);
-		
-        // Matrix
-        decalWorldMatrix = Matrix.RotationYawPitchRoll(yaw, pitch, angle).multiply(Matrix.Translation(position.x, position.y, position.z));
-        inverseDecalWorldMatrix = Matrix.Invert(decalWorldMatrix);
-        CreateDecal_meshWorldMatrix = sourceMesh.getWorldMatrix();
-        CreateDecal_transformMatrix = CreateDecal_meshWorldMatrix.multiply(inverseDecalWorldMatrix);
-		
-        CreateDecal_vertexData.indices = [];
-        CreateDecal_vertexData.positions = [];
-        CreateDecal_vertexData.normals = [];
-        CreateDecal_vertexData.uvs = [];
-		
-        var currentCreateDecal_vertexDataIndex:Int = 0;
-		
-        var extractDecalVector3 = function(indexId:Int):PositionNormalVertex {
-            var vertexId:Int = CreateDecal_indices[indexId];
-            var result:PositionNormalVertex = new PositionNormalVertex();
-            result.position = new Vector3(CreateDecal_positions[vertexId * 3], CreateDecal_positions[vertexId * 3 + 1], CreateDecal_positions[vertexId * 3 + 2]);
-			
-            // Send vector to decal local world
-            result.position = Vector3.TransformCoordinates(result.position, CreateDecal_transformMatrix);
-			
-            // Get normal
-            result.normal = new Vector3(CreateDecal_normals[vertexId * 3], CreateDecal_normals[vertexId * 3 + 1], CreateDecal_normals[vertexId * 3 + 2]);
-			
-            return result;
-        }
-        
-        // Inspired by https://github.com/mrdoob/three.js/blob/eee231960882f6f3b6113405f524956145148146/examples/js/geometries/DecalGeometry.js
-        var clip = function(vertices:Array<PositionNormalVertex>, axis:Vector3):Array<PositionNormalVertex> {
-            if (vertices.length == 0) {
-                return vertices;
-            }
-			
-            var clipSize = 0.5 * Math.abs(Vector3.Dot(size, axis));
-			
-            var clipVertices = function(v0:PositionNormalVertex, v1:PositionNormalVertex):PositionNormalVertex {
-                var clipFactor = Vector3.GetClipFactor(v0.position, v1.position, axis, clipSize);
-				
-                return new PositionNormalVertex(
-                    Vector3.Lerp(v0.position, v1.position, clipFactor),
-                    Vector3.Lerp(v0.normal, v1.normal, clipFactor)
-                );
-            }
-			
-            var result:Array<PositionNormalVertex> = [];
-			
-			var v1Out:Bool = false;
-			var v2Out:Bool = false;
-			var v3Out:Bool = false;
-			var total = 0;
-			var nV1:PositionNormalVertex = null;
-			var nV2:PositionNormalVertex = null;
-			var nV3:PositionNormalVertex = null;
-			var nV4:PositionNormalVertex = null;
-			
-			var d1:Float = 0.0;
-			var d2:Float = 0.0;
-			var d3:Float = 0.0;
-			
-			var index = 0;
-			while(index < vertices.length) {				
-                d1 = Vector3.Dot(vertices[index].position, axis) - clipSize;
-                d2 = Vector3.Dot(vertices[index + 1].position, axis) - clipSize;
-                d3 = Vector3.Dot(vertices[index + 2].position, axis) - clipSize;
-				
-                v1Out = d1 > 0;
-                v2Out = d2 > 0;
-                v3Out = d3 > 0;
-				
-                total = (v1Out ? 1 : 0) + (v2Out ? 1 : 0) + (v3Out ? 1 : 0);
-				
-                switch (total) {
-                    case 0:
-                        result.push(vertices[index]);
-                        result.push(vertices[index + 1]);
-                        result.push(vertices[index + 2]);
-                        
-                    case 1:
-                        if (v1Out) {
-                            nV1 = vertices[index + 1];
-                            nV2 = vertices[index + 2];
-                            nV3 = clipVertices(vertices[index], nV1);
-                            nV4 = clipVertices(vertices[index], nV2);
-                        }
-						
-                        if (v2Out) {
-                            nV1 = vertices[index];
-                            nV2 = vertices[index + 2];
-                            nV3 = clipVertices(vertices[index + 1], nV1);
-                            nV4 = clipVertices(vertices[index + 1], nV2);
-							
-                            result.push(nV3);
-                            result.push(nV2.clone());
-                            result.push(nV1.clone());
-							
-                            result.push(nV2.clone());
-                            result.push(nV3.clone());
-                            result.push(nV4);
-                            //break;
-                        } else {
-							if (v3Out) {
-								nV1 = vertices[index];
-								nV2 = vertices[index + 1];
-								nV3 = clipVertices(vertices[index + 2], nV1);
-								nV4 = clipVertices(vertices[index + 2], nV2);
-							}
-							
-							result.push(nV1.clone());
-							result.push(nV2.clone());
-							result.push(nV3);
-							
-							result.push(nV4);
-							result.push(nV3.clone());
-							result.push(nV2.clone());
-						}
-                        
-                    case 2:
-                        if (!v1Out) {
-                            nV1 = vertices[index].clone();
-                            nV2 = clipVertices(nV1, vertices[index + 1]);
-                            nV3 = clipVertices(nV1, vertices[index + 2]);
-                            result.push(nV1);
-                            result.push(nV2);
-                            result.push(nV3);
-                        }
-                        if (!v2Out) {
-                            nV1 = vertices[index + 1].clone();
-                            nV2 = clipVertices(nV1, vertices[index + 2]);
-                            nV3 = clipVertices(nV1, vertices[index]);
-                            result.push(nV1);
-                            result.push(nV2);
-                            result.push(nV3);
-                        }
-                        if (!v3Out) {
-                            nV1 = vertices[index + 2].clone();
-                            nV2 = clipVertices(nV1, vertices[index]);
-                            nV3 = clipVertices(nV1, vertices[index + 1]);
-                            result.push(nV1);
-                            result.push(nV2);
-                            result.push(nV3);
-                        }
-                        
-                    case 3:
-                        //
-                }
-				
-				index += 3;
-            }
-			
-            return result;
-        }
-		
-		var faceVertices:Array<PositionNormalVertex> = [];
-		var index = 0;
-		while(index < CreateDecal_indices.length) {
-            faceVertices = [];
-			
-            faceVertices.push(extractDecalVector3(index));
-            faceVertices.push(extractDecalVector3(index + 1));
-            faceVertices.push(extractDecalVector3(index + 2));
-			
-            // Clip
-            faceVertices = clip(faceVertices, new Vector3(1, 0, 0));
-            faceVertices = clip(faceVertices, new Vector3(-1, 0, 0));
-            faceVertices = clip(faceVertices, new Vector3(0, 1, 0));
-            faceVertices = clip(faceVertices, new Vector3(0, -1, 0));
-            faceVertices = clip(faceVertices, new Vector3(0, 0, 1));
-            faceVertices = clip(faceVertices, new Vector3(0, 0, -1));
-			
-            if (faceVertices.length == 0) {
-				index += 3;
-                continue;
-            }
-              
-            // Add UVs and get back to world
-			var localRotationMatrix = Matrix.RotationYawPitchRoll(yaw, pitch, angle);
-			var vertex:PositionNormalVertex = null;
-            for (vIndex in 0...faceVertices.length) {
-                vertex = faceVertices[vIndex];
-				
-                CreateDecal_vertexData.indices.push(currentCreateDecal_vertexDataIndex);
-                vertex.position.toArray(CreateDecal_vertexData.positions, currentCreateDecal_vertexDataIndex * 3);
-                vertex.normal.toArray(CreateDecal_vertexData.normals, currentCreateDecal_vertexDataIndex * 3);
-                CreateDecal_vertexData.uvs.push(0.5 + vertex.position.x / size.x);
-                CreateDecal_vertexData.uvs.push(0.5 + vertex.position.y / size.y);
-				
-                currentCreateDecal_vertexDataIndex++;
-            }
-			
-			index += 3;
-        }
-		
-        // Return mesh
-        var decal = new Mesh(name, sourceMesh.getScene());
-        CreateDecal_vertexData.applyToMesh(decal);
-		
-		decal.position = position.clone();
-		decal.rotation = new Vector3(pitch, yaw, angle);
-		
-        return decal;
+		return MeshBuilder.CreateDecal(name, sourceMesh, options);
     }
 	
 	// Skeletons
+	/**
+	 * @returns original positions used for CPU skinning.  Useful for integrating Morphing with skeletons in same mesh.
+	 */
+	public function setPositionsForCPUSkinning():Array<Float> {
+		var source:Array<Float> = null;
+		if (this._sourcePositions == null) {
+			source = this.getVerticesData(VertexBuffer.PositionKind);
+			
+			this._sourcePositions = source;
+			
+			if (!this.getVertexBuffer(VertexBuffer.PositionKind).isUpdatable()) {
+				this.setVerticesData(VertexBuffer.PositionKind, source, true);
+			}
+		}
+		
+		return this._sourcePositions;
+	}
+
+	/**
+	 * @returns original normals used for CPU skinning.  Useful for integrating Morphing with skeletons in same mesh.
+	 */
+	public function setNormalsForCPUSkinning():Array<Float> {
+		var source:Array<Float> = null;
+		if (this._sourceNormals == null) {
+			source = this.getVerticesData(VertexBuffer.NormalKind);
+			
+			this._sourceNormals = source;
+			
+			if (!this.getVertexBuffer(VertexBuffer.NormalKind).isUpdatable()) {
+				this.setVerticesData(VertexBuffer.NormalKind, source, true);
+			}
+		}
+		
+		return this._sourceNormals;
+	}
 
 	/**
 	 * Update the vertex buffers by applying transformation from the bones
@@ -2247,7 +1731,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		var positionsData = this.getVerticesData(VertexBuffer.PositionKind);
 		var normalsData = this.getVerticesData(VertexBuffer.NormalKind);
 		
-		var matricesIndicesData = this.getVerticesData(VertexBuffer.MatricesIndicesKind);
+		var matricesIndicesData:Array<Int> = cast this.getVerticesData(VertexBuffer.MatricesIndicesKind);
 		var matricesWeightsData = this.getVerticesData(VertexBuffer.MatricesWeightsKind);
 		
 		var skeletonMatrices = skeleton.getTransformMatrices();
@@ -2256,34 +1740,24 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		var finalMatrix = new Matrix();
 		var tempMatrix = new Matrix();
 		
+		var matWeightIdx:Int = 0;
 		var index:Int = 0;
 		while (index < positionsData.length) {
-			var index4 = Std.int((index / 3) * 4);
-			var matricesWeight0 = matricesWeightsData[index4];
-			var matricesWeight1 = matricesWeightsData[index4 + 1];
-			var matricesWeight2 = matricesWeightsData[index4 + 2];
-			var matricesWeight3 = matricesWeightsData[index4 + 3];
-			
-			if (matricesWeight0 > 0) {
-				var matricesIndex0 = matricesIndicesData[index4];
-				Matrix.FromFloat32ArrayToRefScaled(new Float32Array( #if (js || html5 || purejs) skeletonMatrices #else skeletonMatrices.toArray() #end ), Std.int(matricesIndicesData[index4] * 16), matricesWeight0, tempMatrix);
-				finalMatrix.addToSelf(tempMatrix);
-			}
-			
-			if (matricesWeight1 > 0) {
-				Matrix.FromFloat32ArrayToRefScaled(new Float32Array( #if (js || html5 || purejs) skeletonMatrices #else skeletonMatrices.toArray() #end ), Std.int(matricesIndicesData[index4 + 1] * 16), matricesWeight1, tempMatrix);
-				finalMatrix.addToSelf(tempMatrix);
-			}
-			
-			if (matricesWeight2 > 0) {
-				Matrix.FromFloat32ArrayToRefScaled(new Float32Array( #if (js || html5 || purejs) skeletonMatrices #else skeletonMatrices.toArray() #end ), Std.int(matricesIndicesData[index4 + 2] * 16), matricesWeight2, tempMatrix);
-				finalMatrix.addToSelf(tempMatrix);
-			}
-			
-			if (matricesWeight3 > 0) {
-				Matrix.FromFloat32ArrayToRefScaled(new Float32Array( #if (js || html5 || purejs) skeletonMatrices #else skeletonMatrices.toArray() #end ), Std.int(matricesIndicesData[index4 + 3] * 16), matricesWeight3, tempMatrix);
-				finalMatrix.addToSelf(tempMatrix);
-			}
+			for (inf in 0...this.numBoneInfluencers){
+                var weight = matricesWeightsData[matWeightIdx + inf];
+                if (weight > 0) {
+					#if (cpp || neko)
+					Matrix.FromFloat32ArrayToRefScaled(new Float32Array(skeletonMatrices), matricesIndicesData[matWeightIdx + inf] * 16, weight, tempMatrix);
+					#else
+                    Matrix.FromFloat32ArrayToRefScaled(skeletonMatrices, matricesIndicesData[matWeightIdx + inf] * 16, weight, tempMatrix);
+					#end
+                    finalMatrix.addToSelf(tempMatrix);                    
+                }
+				else {
+					break;   
+				}
+            }
+            matWeightIdx += this.numBoneInfluencers;
 			
 			Vector3.TransformCoordinatesFromFloatsToRef(this._sourcePositions[index], this._sourcePositions[index + 1], this._sourcePositions[index + 2], finalMatrix, tempVector3);
 			tempVector3.toArray(positionsData, index);
@@ -2307,8 +1781,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		var minVector:Vector3 = null;
 		var maxVector:Vector3 = null;
 		
-		for (i in meshes) {
-			var mesh = i;
+		for (mesh in meshes) {
 			var boundingBox = mesh.getBoundingInfo().boundingBox;
 			if (minVector == null) {
 				minVector = boundingBox.minimumWorld;
@@ -2354,7 +1827,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		// Merge
 		var vertexData:VertexData = null;
 		var otherVertexData:VertexData = null;
-
+		
 		var source:Mesh = null;
 		for (index in 0...meshes.length) {
 			if (meshes[index] != null) {

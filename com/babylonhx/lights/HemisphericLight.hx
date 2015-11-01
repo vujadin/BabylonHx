@@ -33,8 +33,9 @@ import com.babylonhx.math.Vector3;
 		return null;
 	}
 
+	static var normalizeDirection:Vector3;
 	override public function transferToEffect(effect:Effect, ?directionUniformName:String, ?groundColorUniformName:String):Void {
-		var normalizeDirection = Vector3.Normalize(this.direction);
+		normalizeDirection = Vector3.Normalize(this.direction);
 		effect.setFloat4(directionUniformName, normalizeDirection.x, normalizeDirection.y, normalizeDirection.z, 0);
 		effect.setColor3(groundColorUniformName, this.groundColor.scale(this.intensity));
 	}

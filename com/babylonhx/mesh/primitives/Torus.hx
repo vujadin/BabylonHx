@@ -24,7 +24,7 @@ package com.babylonhx.mesh.primitives;
 	}
 
 	override public function _regenerateVertexData():VertexData {
-		return VertexData.CreateTorus(this.diameter, this.thickness, this.tessellation, this.side);
+		return VertexData.CreateTorus({ diameter: this.diameter, thickness: this.thickness, tesselation: this.tessellation, sideOrientation: this.side });
 	}
 
 	override public function copy(id:String):Geometry {

@@ -7,7 +7,8 @@ import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Color4;
 
 import com.babylonhx.utils.typedarray.UInt8Array;
-
+import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.Int32Array;
 
 /**
  * ...
@@ -37,6 +38,7 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		// nothing to do here ...
 	}
 
+	//@:generic public function set<T:(Array<Float>, Float32Array)>(data:T, kind:String) {
 	public function set(data:Array<Float>, kind:String) {
 		switch (kind) {
 			case VertexBuffer.PositionKind:
@@ -403,15 +405,14 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		return result;
 	}
 	
-	public static function CreateRibbon(options:Dynamic, closeArray:Bool = false, closePath:Bool = false, ?offset:Int, sideOrientation:Int = Mesh.DEFAULTSIDE):VertexData {
-		var pathArray:Array<Array<Vector3>> = cast(options.pathArray != null ? options.pathArray : options);
+	public static function CreateRibbon(options:Dynamic):VertexData {
+		var pathArray:Array<Array<Vector3>> = cast(options.pathArray);
+		var closeArray:Bool = options.closeArray != null ? options.closeArray : false;
+		var closePath:Bool = options.closePath != null ? options.closePath : false;
 		var defaultOffset = Math.floor(pathArray[0].length / 2);
-		offset = options.offset != null ? options.offset : (offset != null ? offset : defaultOffset);
+		var offset = options.offset != null ? options.offset : defaultOffset;
 		offset = offset > defaultOffset ? defaultOffset : Math.floor(offset); // offset max allowed : defaultOffset
-		
-		if (options.sideOrientation != null) {
-			sideOrientation = options.sideOrientation;
-		}
+		var	sideOrientation:Int = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
 		
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
@@ -607,7 +608,7 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		return vertexData;
 	}
 	
-	public static function CreateBox(options:Dynamic, sideOrientation:Int = Mesh.DEFAULTSIDE):VertexData {
+	public static function CreateBox(options:Dynamic):VertexData {
 		var normalsSource = [
 			new Vector3(0, 0, 1),
 			new Vector3(0, 0, -1),
@@ -622,32 +623,14 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		var normals:Array<Float> = [];
 		var uvs:Array<Float> = [];
 		
-		var width:Float = 1;
-		var height:Float = 1;
-		var depth:Float = 1;
+		var width:Float = options.width;
+		var height:Float = options.height;
+		var depth:Float = options.depth;
+		var sideOrientation = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
 		var faceUV:Array<Vector4> = options.faceUV != null ? options.faceUV : new Array<Vector4>();
-		var faceColors:Array<Color4> = [];
+		var faceColors:Array<Color4> = options.faceColors;
 		var colors:Array<Float> = [];
-		
-		if (options.faceColors != null) {
-			faceColors = options.faceColors;
-		}
-		
-		if (options.width != null) {
-			width = options.width != null ? options.width : 1;
-			height = options.height != null ? options.height : 1;
-			depth = options.depth != null ? options.depth : 1;
-		} 
-		else { // back-compat with size parameter
-			width = options != null ? options : 1;
-			height = width;
-			depth = height;
-		}
-		
-		if (options.sideOrientation != null) {
-			sideOrientation = options.sideOrientation;
-		}
-		
+			
 		for (f in 0...6) {
 			if (faceUV[f] == null) {
 				faceUV[f] = new Vector4(0, 0, 1, 1);
@@ -656,7 +639,7 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 				faceColors[f] = new Color4(1, 1, 1, 1);
 			}
 		}
-		
+			
 		var scaleVector = new Vector3(width / 2, height / 2, depth / 2);
 		
 		// Create each face in turn.
@@ -753,7 +736,7 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		vertexData.positions = positions;
 		vertexData.normals = normals;
 		vertexData.uvs = uvs;
-		
+				
 		if (faceColors != null && faceColors.length > 0) {
 			var totalColors = (sideOrientation == Mesh.DOUBLESIDE) ? colors.concat(colors) : colors;
 			vertexData.colors = totalColors;
@@ -762,30 +745,25 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		return vertexData;
 	}
 	
-	public static function CreateSphere(options:Dynamic, diameter:Float = 1, sideOrientation:Int = Mesh.DEFAULTSIDE):VertexData {
-				
+	public static function CreateSphere(options:Dynamic):VertexData {				
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
 		var normals:Array<Float> = [];
 		var uvs:Array<Float> = [];
 		
-		var segments:Int = 32;
-		var diameterX:Float = 1;
-		var diameterY:Float = 1;
-		var diameterZ:Float = 1;
-		if (options.segments != null) {
-			segments = options.segments != null ? options.segments : 32;
-			diameterX = options.diameterX != null ? options.diameterX : 1;
-			diameterY = options.diameterY != null ? options.diameterY : 1;
-			diameterZ = options.diameterZ != null ? options.diameterZ : 1;
+		var	segments = options.segments != null ? options.segments : 32;
+		var	diameterX = options.diameterX != null ? options.diameterX : 1;
+		var	diameterY = options.diameterY != null ? options.diameterY : 1;
+		var	diameterZ = options.diameterZ != null ? options.diameterZ : 1;
+		var arc:Float = options.arc != null ? options.arc : 1.0;
+		if (arc < 0) {
+			arc = 1.0;
 		}
-		else {
-			segments = options != null ? options : 32;
-			diameterX = diameter;
-			diameterY = diameterX;
-			diameterZ = diameterX;
+		var slice:Float = options.slice ? options.slice : 1.0;
+		if (slice < 0) {
+			slice = 1.0;
 		}
-		//sideOrientation = sideOrientation || options.sideOrientation;
+		var sideOrientation = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
 		var radius = new Vector3(diameterX / 2, diameterY / 2, diameterZ / 2);
 		var totalZRotationSteps = 2 + segments;
 		var totalYRotationSteps = 2 * totalZRotationSteps;
@@ -829,8 +807,10 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		
 		// Sides
 		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		
 		// Result
 		var vertexData = new VertexData();
+		
 		vertexData.indices = indices;
 		vertexData.positions = positions;
 		vertexData.normals = normals;
@@ -840,32 +820,33 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 	}
 
 	// Cylinder and cone (made using ribbons)
-	public static function CreateCylinder(options:Dynamic, diameterTop:Float = 0.5, diameterBottom:Float = 1, tessellation:Int = 16, subdivisions:Int = 1, sideOrientation:Int = Mesh.DEFAULTSIDE):VertexData {		
+	public static function CreateCylinder(options:Dynamic):VertexData {		
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
 		var normals:Array<Float> = [];
 		var uvs:Array<Float> = [];
+		var colors:Array<Float> = [];
 		
 		var height:Float = options.height != null ? options.height : 3;
-		
-		if (options.diameterTop != null) {
-			diameterTop = options.diameterTop;
+		var diameterTop:Float = options.diameterTop != null ? options.diameterTop : (options.diameter != null ? options.diameter : 1);
+		var diameterBottom:Float = options.diameterBottom != null ? options.diameterBottom : (options.diameter ? options.diameter : 1);
+		var tessellation:Int = options.tessellation != null ? options.tessellation : 24;
+		var subdivisions:Int = options.subdivisions != null ? options.subdivisions : 1;
+		var arc:Float = options.arc != null ? options.arc : 1.0;
+		if (arc < 0) {
+			arc = 1.0;
 		}
-		
-		if (options.diameterBottom != null) {
-			diameterBottom = options.diameterBottom;
-		}
-		
-		if (options.tessellation != null) {
-			tessellation = options.tessellation;
-		}
-		
-		if (options.subdivisions != null) {
-			subdivisions = options.subdivisions;
-		}
-		
-		if (options.sideOrientation != null) {
-			sideOrientation = options.sideOrientation;
+		var sideOrientation:Int = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
+		var faceUV:Array<Vector4> = options.faceUV != null ? options.faceUV : [];
+		var faceColors:Array<Color4> = options.faceColors != null ? options.faceColors : [];
+		// default face colors and UV if undefined
+		for (f in 0...3) {
+			if (faceColors != null && faceColors[f] == null) {
+				faceColors[f] = new Color4(1, 1, 1, 1);
+			}
+			if (faceUV != null && faceUV[f] == null) {
+				faceUV[f] = new Vector4(0, 0, 1, 1);
+			}
 		}
 		
 		var angle_step:Float = Math.PI * 2 / tessellation;
@@ -907,6 +888,13 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 				
 				uvs.push(j / tessellation);
 				uvs.push(1 - h);
+				
+				if (faceColors.length > 0) {
+					colors.push(faceColors[1].r);
+					colors.push(faceColors[1].g);
+					colors.push(faceColors[1].b);
+					colors.push(faceColors[1].a);
+				}
 			}
 		}
 		
@@ -983,15 +971,23 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		vertexData.positions = positions;
 		vertexData.normals = normals;
 		vertexData.uvs = uvs;
+		if (colors.length > 0) {
+			vertexData.colors = colors;
+		}
 		
 		return vertexData;
 	}
 
-	public static function CreateTorus(diameter:Float = 1, thickness:Float = 0.5, tessellation:Int = 16, sideOrientation:Int = Mesh.DEFAULTSIDE):VertexData {
+	public static function CreateTorus(options:Dynamic):VertexData {
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
 		var normals:Array<Float> = [];
 		var uvs:Array<Float> = [];
+		
+		var diameter = options.diameter != null ? options.diameter : 1;
+		var thickness = options.thickness != null ? options.thickness : 0.5;
+		var tessellation = options.tessellation != null ? options.tessellation : 16;
+		var sideOrientation = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
 		
 		var stride = tessellation + 1;
 		
@@ -1052,9 +1048,10 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		return vertexData;
 	}
 
-	public static function CreateLines(points:Array<Vector3>):VertexData {
+	public static function CreateLines(options:Dynamic):VertexData {
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
+		var points:Array<Vector3> = options.points;
 		
 		for (index in 0...points.length) {
 			positions.push(points[index].x);
@@ -1076,9 +1073,14 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		return vertexData;
 	}
 	
-	public static function CreateDashedLines(points:Array<Vector3>, dashSize:Float = 3, gapSize:Float = 1, dashNb:Float = 100):VertexData {
+	public static function CreateDashedLines(options:Dynamic):VertexData {
 		var positions:Array<Float> = [];
 		var indices:Array<Int> = [];
+		
+		var dashSize:Float = options.dashSize != null ? options.dashSize : 3;
+		var gapSize:Float = options.gapSize != null ? options.gapSize : 1;
+		var dashNb:Float = options.dashNb != null ? options.dashNb : 200;
+		var points:Array<Vector3> = options.points;
 		
 		var curvect:Vector3 = Vector3.Zero();
 		var lg:Float = 0;
@@ -1119,24 +1121,16 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		return vertexData;
 	}
 
-	public static function CreateGround(options:Dynamic, height:Float = 1, subdivisions:Int = 1):VertexData {
+	public static function CreateGround(options:Dynamic):VertexData {
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
 		var normals:Array<Float> = [];
 		var uvs:Array<Float> = [];
 		
-		var width:Float = 0;
-		
-		if (options.width != null) {
-			width = options.width != null ? options.width : 1;
-			height = options.height != null ? options.height : 1;
-			subdivisions = options.subdivisions != null ? options.subdivisions : 1;
-		} 
-		else {
-			width = options != null ? options : 1;
-			height = options != null ? options : 1;
-		}
-		
+		var width:Int = options.width != null ? options.width : 1;
+		var height:Int = options.height != null ? options.height : 1;
+		var subdivisions:Int = options.subdivisions != null ? options.subdivisions : 1;
+				
 		for (row in 0...subdivisions + 1) {
 			for (col in 0...subdivisions + 1) {
 				var position = new Vector3((col * width) / subdivisions - (width / 2.0), 0, ((subdivisions - row) * height) / subdivisions - (height / 2.0));
@@ -1176,13 +1170,13 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		return vertexData;
 	}
 
-	public static function CreateTiledGround(xmin:Float, zmin:Float, xmax:Float, zmax:Float, ?subdivisions:Dynamic, ?precision:Dynamic):VertexData {
-		if (subdivisions == null) {
-			subdivisions = { w: 1, h: 1 };
-		}
-		if (precision == null) {
-			precision = { w: 1, h: 1 };
-		}
+	public static function CreateTiledGround(options:Dynamic):VertexData {
+		var xmin:Float = options.xmin;
+		var zmin:Float = options.zmin;
+		var xmax:Float = options.xmax;
+		var zmax:Float = options.zmax;
+		var subdivisions:Dynamic = options.subdivisions != null ? options.subdivisions : { w: 1, h: 1 };
+		var precision:Dynamic = options.precision != null ? options.precision : { w: 1, h: 1 };
 		
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
@@ -1264,7 +1258,16 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		return vertexData;
 	}
 
-	public static function CreateGroundFromHeightMap(width:Float, height:Float, subdivisions:Int, minHeight:Float, maxHeight:Float, buffer:UInt8Array, bufferWidth:Float, bufferHeight:Float):VertexData {
+	public static function CreateGroundFromHeightMap(options:Dynamic):VertexData {
+		var width:Float = options.width;
+		var height:Float = options.height;
+		var subdivisions:Int = options.subdivisions;
+		var minHeight:Float = options.minHeight;
+		var maxHeight:Float = options.maxHeight;
+		var buffer:UInt8Array = options.buffer;
+		var bufferWidth:Float = options.bufferWidth;
+		var bufferHeight:Float = options.bufferHeight;
+		
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
 		var normals:Array<Float> = [];
@@ -1332,27 +1335,15 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		return vertexData;
 	}
 
-	public static function CreatePlane(options:Dynamic, sideOrientation:Int = Mesh.DEFAULTSIDE):VertexData {
+	public static function CreatePlane(options:Dynamic):VertexData {
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
 		var normals:Array<Float> = [];
 		var uvs:Array<Float> = [];
 		
-		var width:Float = 1;
-		var height:Float = 1;
-		
-		if (options.width != null) {
-			width = options.width != null ? options.width : 1;
-			height = options.height != null ? options.height : 1;
-			if (options.sideOrientation != null) {
-				sideOrientation = options.sideOrientation;
-			}
-		} 
-		else {
-			if (options != null) {
-				width = height = options;
-			}
-		}
+		var	width = options.width != null ? options.width : 1;
+		var	height = options.height != null ? options.height : 1;
+		var sideOrientation = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
 		
 		// Vertices
 		var halfWidth = width / 2;
@@ -1418,11 +1409,15 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		return vertexData;
 	}
 	
-	public static function CreateDisc(radius:Float, tessellation:Int, sideOrientation:Int = Mesh.DEFAULTSIDE):VertexData {
+	public static function CreateDisc(options:Dynamic):VertexData {
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
 		var normals:Array<Float> = [];
 		var uvs:Array<Float> = [];
+		
+		var radius:Float = options.radius != null ? options.radius : 0.5;
+		var tessellation:Int = options.tessellation != null ? options.tessellation : 64;
+		var sideOrientation:Int = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
 		
 		// positions and uvs
 		positions.push(0);
@@ -1473,13 +1468,380 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		
 		return vertexData;
 	}
-
-	// based on http://code.google.com/p/away3d/source/browse/trunk/fp10/Away3D/src/away3d/primitives/TorusKnot.as?spec=svn2473&r=2473
-	public static function CreateTorusKnot(radius:Float = 2, tube:Float = 0.5, radialSegments:Int = 32, tubularSegments:Int = 32, p:Float = 2, q:Float = 3, sideOrientation:Int = Mesh.DEFAULTSIDE):VertexData {
+	
+	public static function CreateIcoSphere(options:Dynamic):VertexData {
+		var sideOrientation:Int = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
+		var radius:Float = options.radius != null ? options.radius : 1;
+		var flat:Bool = options.flat != null ? options.flat : false;
+		var subdivisions:Int = options.subdivisions != null ? options.subdivisions : 1;
+		
+		var t = (1 + Math.sqrt(5)) / 2;
+		
+		// 12 vertex x,y,z
+		var ico_vertices:Array<Float> = [
+			-1, t, -0, 1, t, 0, -1, -t, 0, 1, -t, 0, // v0-3
+			0, -1, -t, 0, 1, -t, 0, -1, t, 0, 1, t, // v4-7
+			t, 0, 1, t, 0, -1, -t, 0, 1, -t, 0, -1  // v8-11
+		];
+		
+		// index of 3 vertex makes a face of icopshere
+		var ico_indices:Array<Int> = [
+			0, 11, 5, 0, 5, 1, 0, 1, 7, 0, 7, 10, 0, 10, 11,
+			1, 5, 9, 5, 11, 4, 11, 10, 2, 10, 7, 6, 7, 1, 8,
+			3, 9, 4, 3, 4, 2, 3, 2, 6, 3, 6, 8, 3, 8, 9,
+			4, 9, 5, 2, 4, 11, 6, 2, 10, 8, 6, 7, 9, 8, 1
+		];
+		
+		// uv as integer step (not pixels !)
+		var ico_vertexuv:Array<Int> = [
+			4, 1, 2, 1, 6, 3, 5, 4,  // v0-3
+			4, 3, 3, 2, 7, 4, 3, 0,  // v4-7
+			1, 0, 0, 1, 5, 0, 5, 2   // v8-11
+		];
+		// Vertices [0, 1, ...9, A, B] : position on UV plane (7,8,9,10=A have duplicate position)
+		// v=5h          9+  8+  7+
+		// v=4h        9+  3   6   A+
+		// v=3h      9+  4   2   A+
+		// v=2h    9+  5   B   A+
+		// v=1h  9   1   0   A+
+		// v=0h    8   7   A
+		//     u=0 1 2 3 4 5 6 7 8 9   *a
+		//
+		
+		// uv step is u:1 or 0.5, v:cos(30)=sqrt(3)/2, ratio approx is 84/97
+		var ustep = 97 / 1024;
+		var vstep = 168 / 1024;
+		var uoffset = 50 / 1024;
+		var voffset = 51 / 1024;
+		
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
 		var normals:Array<Float> = [];
 		var uvs:Array<Float> = [];
+		
+		var current_indice:Int = 0;
+		// prepare array of 3 vector (empty) (to be worked in place, shared for each face)
+		var face_vertex_pos:Array<Vector3> = [];
+		var face_vertex_uv:Array<Vector2> = [];
+		for (v012 in 0...3) {
+			face_vertex_pos[v012] = Vector3.Zero();
+			face_vertex_uv[v012] = Vector2.Zero();
+		}
+		// create all with normals
+		for (face in 0...20) {
+			// 3 vertex per face
+			for (v012 in 0...3) {
+				// look up vertex 0,1,2 to its index in 0 to 11
+				var v_id = ico_indices[3 * face + v012];
+				// vertex have 3D position (x,y,z)
+				face_vertex_pos[v012].copyFromFloats(
+					ico_vertices[3 * v_id],
+					ico_vertices[3 * v_id + 1],
+					ico_vertices[3 * v_id + 2]);
+				// Normalize to get normal, then scale to radius
+				face_vertex_pos[v012].normalize().scaleInPlace(radius);
+				
+				// uv from vertex ID (may need fix due to unwrap on texture plan, unalias needed)
+				// vertex may get to different UV according to belonging face (see fix below)
+				var fix:Int = 0;
+				// Vertice 9 UV to be fixed
+				if (face == 5 && v012 == 2) { 
+					fix = 1; 
+				}
+				if (face == 15 && v012 == 1) { 
+					fix = 2; 
+				}
+				if (face == 10 && v012 == 1) { 
+					fix = 3; 
+				}
+				if (face == 14 && v012 == 2) { 
+					fix = 4; 
+				}
+				// vertice 10 UV to be fixed
+				if (face == 4 && v012 == 1) { 
+					fix = 1; 
+				}
+				if (face == 7 && v012 == 1) { 
+					fix = 2; 
+				}
+				if (face == 17 && v012 == 2) { 
+					fix = 3; 
+				}
+				if (face == 8 && v012 == 0) { 
+					fix = 4; 
+				}
+				// vertice 7 UV to be fixed
+				if (face == 8 && v012 == 1) { 
+					fix = 5; 
+				}
+				if (face == 18 && v012 == 0) { 
+					fix = 5; 
+				}
+				// vertice 8 UV to be fixed
+				if (face == 13 && v012 == 2) { 
+					fix = 5; 
+				}
+				if (face == 14 && v012 == 1) { 
+					fix = 5; 
+				}
+				if (face == 18 && v012 == 2) { 
+					fix = 5; 
+				}
+				//
+				face_vertex_uv[v012].copyFromFloats(
+					(ico_vertexuv[2 * v_id] + fix) * ustep + uoffset,
+					(ico_vertexuv[2 * v_id + 1] + fix) * vstep + voffset);
+			}
+			
+			// Subdivide the face (interpolate pos, norm, uv)
+			// - pos is linear interpolation, then projected to sphere (converge polyhedron to sphere)
+			// - norm is linear interpolation of vertex corner normal
+			//   (to be checked if better to re-calc from face vertex, or if approximation is OK ??? )
+			// - uv is linear interpolation
+			//
+			// Topology is as below for sub-divide by 2
+			// vertex shown as v0,v1,v2
+			// interp index is i1 to progress in range [v0,v1[
+			// interp index is i2 to progress in range [v0,v2[
+			// face index as  (i1,i2)  for /\  : (i1,i2),(i1+1,i2),(i1,i2+1)
+			//            and (i1,i2)' for \/  : (i1+1,i2),(i1+1,i2+1),(i1,i2+1)
+			//
+			//
+			//                    i2    v2
+			//                    ^    ^
+			//                   /    / \
+			//                  /    /   \
+			//                 /    /     \
+			//                /    / (0,1) \
+			//               /    #---------\
+			//              /    / \ (0,0)'/ \
+			//             /    /   \     /   \
+			//            /    /     \   /     \
+			//           /    / (0,0) \ / (1,0) \
+			//          /    #---------#---------\
+			//              v0                    v1
+			//
+			//              --------------------> i1
+			//
+			// interp of (i1,i2):
+			//  along i2 :  x0=lerp(v0,v2, i2/S) <---> x1=lerp(v1,v2, i2/S)
+			//  along i1 :  lerp(x0,x1, i1/(S-i2))
+			//
+			// centroid of triangle is needed to get help normal computation
+			//  (c1,c2) are used for centroid location
+			
+			var interp_vertex = function(i1:Float, i2:Float, c1:Float, c2:Float) {
+				// vertex is interpolated from
+				//   - face_vertex_pos[0..2]
+				//   - face_vertex_uv[0..2]
+				var pos_x0 = Vector3.Lerp(face_vertex_pos[0], face_vertex_pos[2], i2 / subdivisions);
+				var pos_x1 = Vector3.Lerp(face_vertex_pos[1], face_vertex_pos[2], i2 / subdivisions);
+				var pos_interp = (subdivisions == i2) ? face_vertex_pos[2] : Vector3.Lerp(pos_x0, pos_x1, i1 / (subdivisions - i2));
+				pos_interp.normalize().scaleInPlace(radius);
+				
+				var vertex_normal:Vector3 = null;
+				if (flat) {
+					// in flat mode, recalculate normal as face centroid normal
+					var centroid_x0 = Vector3.Lerp(face_vertex_pos[0], face_vertex_pos[2], c2 / subdivisions);
+					var centroid_x1 = Vector3.Lerp(face_vertex_pos[1], face_vertex_pos[2], c2 / subdivisions);
+					var centroid_interp = Vector3.Lerp(centroid_x0, centroid_x1, c1 / (subdivisions - c2));
+					vertex_normal = Vector3.Normalize(centroid_interp);
+				} 
+				else {
+					// in smooth mode, recalculate normal from each single vertex position
+					vertex_normal = Vector3.Normalize(pos_interp);
+				}
+				
+				var uv_x0 = Vector2.Lerp(face_vertex_uv[0], face_vertex_uv[2], i2 / subdivisions);
+				var uv_x1 = Vector2.Lerp(face_vertex_uv[1], face_vertex_uv[2], i2 / subdivisions);
+				var uv_interp = (subdivisions == i2) ? face_vertex_uv[2] : Vector2.Lerp(uv_x0, uv_x1, i1 / (subdivisions - i2));
+				positions.push(pos_interp.x);
+				positions.push(pos_interp.y);
+				positions.push(pos_interp.z);
+				normals.push(vertex_normal.x);
+				normals.push(vertex_normal.y);
+				normals.push(vertex_normal.z);
+				uvs.push(uv_interp.x);
+				uvs.push(uv_interp.y);
+				// push each vertex has member of a face
+				// Same vertex can bleong to multiple face, it is pushed multiple time (duplicate vertex are present)
+				indices.push(current_indice);
+				current_indice++;
+			}
+			
+			for (i2 in 0...subdivisions) {
+				var i1:Int = 0;
+				while (i1 + i2 < subdivisions) {
+					// face : (i1,i2)  for /\  :
+					// interp for : (i1,i2),(i1+1,i2),(i1,i2+1)
+					interp_vertex(i1, i2, i1 + 1.0 / 3, i2 + 1.0 / 3);
+					interp_vertex(i1 + 1, i2, i1 + 1.0 / 3, i2 + 1.0 / 3);
+					interp_vertex(i1, i2 + 1, i1 + 1.0 / 3, i2 + 1.0 / 3);
+					if (i1 + i2 + 1 < subdivisions) {
+						// face : (i1,i2)' for \/  :
+						// interp for (i1+1,i2),(i1+1,i2+1),(i1,i2+1)
+						interp_vertex(i1 + 1, i2, i1 + 2.0 / 3, i2 + 2.0 / 3);
+						interp_vertex(i1 + 1, i2 + 1, i1 + 2.0 / 3, i2 + 2.0 / 3);
+						interp_vertex(i1, i2 + 1, i1 + 2.0 / 3, i2 + 2.0 / 3);
+					}
+					
+					++i1;
+				}
+			}
+		}
+		
+		// Sides
+		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		
+		// Result
+		var vertexData:VertexData = new VertexData();
+		vertexData.indices = indices;
+		vertexData.positions = positions;
+		vertexData.normals = normals;
+		vertexData.uvs = uvs;
+		
+		return vertexData;
+	}
+	
+	// inspired by // http://stemkoski.github.io/Three.js/Polyhedra.html
+	public static function CreatePolyhedron(options:Dynamic):VertexData {
+		// provided polyhedron types :
+		// 0 : Tetrahedron, 1 : Octahedron, 2 : Dodecahedron, 3 : Icosahedron, 4 : Rhombicuboctahedron, 5 : Triangular Prism, 6 : Pentagonal Prism, 7 : Hexagonal Prism, 8 : Square Pyramid (J1)
+		// 9 : Pentagonal Pyramid (J2), 10 : Triangular Dipyramid (J12), 11 : Pentagonal Dipyramid (J13), 12 : Elongated Square Dipyramid (J15), 13 : Elongated Pentagonal Dipyramid (J16), 14 : Elongated Pentagonal Cupola (J20)
+		var polyhedra:Array<Dynamic> = [];
+		polyhedra[0] = { vertex: [[0, 0, 1.732051], [1.632993, 0, -0.5773503], [-0.8164966, 1.414214, -0.5773503], [-0.8164966, -1.414214, -0.5773503]], face: [[0, 1, 2], [0, 2, 3], [0, 3, 1], [1, 3, 2]] };
+		polyhedra[1] = { vertex: [[0, 0, 1.414214], [1.414214, 0, 0], [0, 1.414214, 0], [-1.414214, 0, 0], [0, -1.414214, 0], [0, 0, -1.414214]], face: [[0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 1], [1, 4, 5], [1, 5, 2], [2, 5, 3], [3, 5, 4]] };
+		polyhedra[2] = { vertex: [[0, 0, 1.070466], [0.7136442, 0, 0.7978784], [-0.3568221, 0.618034, 0.7978784], [-0.3568221, -0.618034, 0.7978784], [0.7978784, 0.618034, 0.3568221], [0.7978784, -0.618034, 0.3568221], [-0.9341724, 0.381966, 0.3568221], [0.1362939, 1, 0.3568221], [0.1362939, -1, 0.3568221], [-0.9341724, -0.381966, 0.3568221], [0.9341724, 0.381966, -0.3568221], [0.9341724, -0.381966, -0.3568221], [-0.7978784, 0.618034, -0.3568221], [-0.1362939, 1, -0.3568221], [-0.1362939, -1, -0.3568221], [-0.7978784, -0.618034, -0.3568221], [0.3568221, 0.618034, -0.7978784], [0.3568221, -0.618034, -0.7978784], [-0.7136442, 0, -0.7978784], [0, 0, -1.070466]], face: [[0, 1, 4, 7, 2], [0, 2, 6, 9, 3], [0, 3, 8, 5, 1], [1, 5, 11, 10, 4], [2, 7, 13, 12, 6], [3, 9, 15, 14, 8], [4, 10, 16, 13, 7], [5, 8, 14, 17, 11], [6, 12, 18, 15, 9], [10, 11, 17, 19, 16], [12, 13, 16, 19, 18], [14, 15, 18, 19, 17]]
+		};
+		polyhedra[3] = { vertex: [[0, 0, 1.175571], [1.051462, 0, 0.5257311], [0.3249197, 1, 0.5257311], [-0.8506508, 0.618034, 0.5257311], [-0.8506508, -0.618034, 0.5257311], [0.3249197, -1, 0.5257311], [0.8506508, 0.618034, -0.5257311], [0.8506508, -0.618034, -0.5257311], [-0.3249197, 1, -0.5257311], [-1.051462, 0, -0.5257311], [-0.3249197, -1, -0.5257311], [0, 0, -1.175571]], face: [[0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 5], [0, 5, 1], [1, 5, 7], [1, 7, 6], [1, 6, 2], [2, 6, 8], [2, 8, 3], [3, 8, 9], [3, 9, 4], [4, 9, 10], [4, 10, 5], [5, 10, 7], [6, 7, 11], [6, 11, 8], [7, 10, 11], [8, 11, 9], [9, 11, 10]]
+		};
+		polyhedra[4] = { vertex: [[0, 0, 1.070722], [0.7148135, 0, 0.7971752], [-0.104682, 0.7071068, 0.7971752], [-0.6841528, 0.2071068, 0.7971752], [-0.104682, -0.7071068, 0.7971752], [0.6101315, 0.7071068, 0.5236279], [1.04156, 0.2071068, 0.1367736], [0.6101315, -0.7071068, 0.5236279], [-0.3574067, 1, 0.1367736], [-0.7888348, -0.5, 0.5236279], [-0.9368776, 0.5, 0.1367736], [-0.3574067, -1, 0.1367736], [0.3574067, 1, -0.1367736], [0.9368776, -0.5, -0.1367736], [0.7888348, 0.5, -0.5236279], [0.3574067, -1, -0.1367736], [-0.6101315, 0.7071068, -0.5236279], [-1.04156, -0.2071068, -0.1367736], [-0.6101315, -0.7071068, -0.5236279], [0.104682, 0.7071068, -0.7971752], [0.6841528, -0.2071068, -0.7971752], [0.104682, -0.7071068, -0.7971752], [-0.7148135, 0, -0.7971752], [0, 0, -1.070722]], face: [[0, 2, 3], [1, 6, 5], [4, 9, 11], [7, 15, 13], [8, 16, 10], [12, 14, 19], [17, 22, 18], [20, 21, 23], [0, 1, 5, 2], [0, 3, 9, 4], [0, 4, 7, 1], [1, 7, 13, 6], [2, 5, 12, 8], [2, 8, 10, 3], [3, 10, 17, 9], [4, 11, 15, 7], [5, 6, 14, 12], [6, 13, 20, 14], [8, 12, 19, 16], [9, 17, 18, 11], [10, 16, 22, 17], [11, 18, 21, 15], [13, 15, 21, 20], [14, 20, 23, 19], [16, 19, 23, 22], [18, 22, 23, 21]]
+		};
+		polyhedra[5] = { vertex: [[0, 0, 1.322876], [1.309307, 0, 0.1889822], [-0.9819805, 0.8660254, 0.1889822], [0.1636634, -1.299038, 0.1889822], [0.3273268, 0.8660254, -0.9449112], [-0.8183171, -0.4330127, -0.9449112]], face: [[0, 3, 1], [2, 4, 5], [0, 1, 4, 2], [0, 2, 5, 3], [1, 3, 5, 4]] };
+		polyhedra[6] = { vertex: [[0, 0, 1.159953], [1.013464, 0, 0.5642542], [-0.3501431, 0.9510565, 0.5642542], [-0.7715208, -0.6571639, 0.5642542], [0.6633206, 0.9510565, -0.03144481], [0.8682979, -0.6571639, -0.3996071], [-1.121664, 0.2938926, -0.03144481], [-0.2348831, -1.063314, -0.3996071], [0.5181548, 0.2938926, -0.9953061], [-0.5850262, -0.112257, -0.9953061]], face: [[0, 1, 4, 2], [0, 2, 6, 3], [1, 5, 8, 4], [3, 6, 9, 7], [5, 7, 9, 8], [0, 3, 7, 5, 1], [2, 4, 8, 9, 6]] };
+		polyhedra[7] = { vertex: [[0, 0, 1.118034], [0.8944272, 0, 0.6708204], [-0.2236068, 0.8660254, 0.6708204], [-0.7826238, -0.4330127, 0.6708204], [0.6708204, 0.8660254, 0.2236068], [1.006231, -0.4330127, -0.2236068], [-1.006231, 0.4330127, 0.2236068], [-0.6708204, -0.8660254, -0.2236068], [0.7826238, 0.4330127, -0.6708204], [0.2236068, -0.8660254, -0.6708204], [-0.8944272, 0, -0.6708204], [0, 0, -1.118034]], face: [[0, 1, 4, 2], [0, 2, 6, 3], [1, 5, 8, 4], [3, 6, 10, 7], [5, 9, 11, 8], [7, 10, 11, 9], [0, 3, 7, 9, 5, 1], [2, 4, 8, 11, 10, 6]] };
+		polyhedra[8] = { vertex: [[-0.729665, 0.670121, 0.319155], [-0.655235, -0.29213, -0.754096], [-0.093922, -0.607123, 0.537818], [0.702196, 0.595691, 0.485187], [0.776626, -0.36656, -0.588064]], face: [[1, 4, 2], [0, 1, 2], [3, 0, 2], [4, 3, 2], [4, 1, 0, 3]] };
+		polyhedra[9] = { vertex: [[-0.868849, -0.100041, 0.61257], [-0.329458, 0.976099, 0.28078], [-0.26629, -0.013796, -0.477654], [-0.13392, -1.034115, 0.229829], [0.738834, 0.707117, -0.307018], [0.859683, -0.535264, -0.338508]], face: [[3, 0, 2], [5, 3, 2], [4, 5, 2], [1, 4, 2], [0, 1, 2], [0, 3, 5, 4, 1]] };
+		polyhedra[10] = { vertex: [[-0.610389, 0.243975, 0.531213], [-0.187812, -0.48795, -0.664016], [-0.187812, 0.9759, -0.664016], [0.187812, -0.9759, 0.664016], [0.798201, 0.243975, 0.132803]], face: [[1, 3, 0], [3, 4, 0], [3, 1, 4], [0, 2, 1], [0, 4, 2], [2, 4, 1]] };
+		polyhedra[11] = { vertex: [[-1.028778, 0.392027, -0.048786], [-0.640503, -0.646161, 0.621837], [-0.125162, -0.395663, -0.540059], [0.004683, 0.888447, -0.651988], [0.125161, 0.395663, 0.540059], [0.632925, -0.791376, 0.433102], [1.031672, 0.157063, -0.354165]], face: [[3, 2, 0], [2, 1, 0], [2, 5, 1], [0, 4, 3], [0, 1, 4], [4, 1, 5], [2, 3, 6], [3, 4, 6], [5, 2, 6], [4, 5, 6]] };
+		polyhedra[12] = { vertex: [[-0.669867, 0.334933, -0.529576], [-0.669867, 0.334933, 0.529577], [-0.4043, 1.212901, 0], [-0.334933, -0.669867, -0.529576], [-0.334933, -0.669867, 0.529577], [0.334933, 0.669867, -0.529576], [0.334933, 0.669867, 0.529577], [0.4043, -1.212901, 0], [0.669867, -0.334933, -0.529576], [0.669867, -0.334933, 0.529577]], face: [[8, 9, 7], [6, 5, 2], [3, 8, 7], [5, 0, 2], [4, 3, 7], [0, 1, 2], [9, 4, 7], [1, 6, 2], [9, 8, 5, 6], [8, 3, 0, 5], [3, 4, 1, 0], [4, 9, 6, 1]] };
+		polyhedra[13] = { vertex: [[-0.931836, 0.219976, -0.264632], [-0.636706, 0.318353, 0.692816], [-0.613483, -0.735083, -0.264632], [-0.326545, 0.979634, 0], [-0.318353, -0.636706, 0.692816], [-0.159176, 0.477529, -0.856368], [0.159176, -0.477529, -0.856368], [0.318353, 0.636706, 0.692816], [0.326545, -0.979634, 0], [0.613482, 0.735082, -0.264632], [0.636706, -0.318353, 0.692816], [0.931835, -0.219977, -0.264632]], face: [[11, 10, 8], [7, 9, 3], [6, 11, 8], [9, 5, 3], [2, 6, 8], [5, 0, 3], [4, 2, 8], [0, 1, 3], [10, 4, 8], [1, 7, 3], [10, 11, 9, 7], [11, 6, 5, 9], [6, 2, 0, 5], [2, 4, 1, 0], [4, 10, 7, 1]] };
+		polyhedra[14] = { vertex: [[-0.93465, 0.300459, -0.271185], [-0.838689, -0.260219, -0.516017], [-0.711319, 0.717591, 0.128359], [-0.710334, -0.156922, 0.080946], [-0.599799, 0.556003, -0.725148], [-0.503838, -0.004675, -0.969981], [-0.487004, 0.26021, 0.48049], [-0.460089, -0.750282, -0.512622], [-0.376468, 0.973135, -0.325605], [-0.331735, -0.646985, 0.084342], [-0.254001, 0.831847, 0.530001], [-0.125239, -0.494738, -0.966586], [0.029622, 0.027949, 0.730817], [0.056536, -0.982543, -0.262295], [0.08085, 1.087391, 0.076037], [0.125583, -0.532729, 0.485984], [0.262625, 0.599586, 0.780328], [0.391387, -0.726999, -0.716259], [0.513854, -0.868287, 0.139347], [0.597475, 0.85513, 0.326364], [0.641224, 0.109523, 0.783723], [0.737185, -0.451155, 0.538891], [0.848705, -0.612742, -0.314616], [0.976075, 0.365067, 0.32976], [1.072036, -0.19561, 0.084927]], face: [[15, 18, 21], [12, 20, 16], [6, 10, 2], [3, 0, 1], [9, 7, 13], [2, 8, 4, 0], [0, 4, 5, 1], [1, 5, 11, 7], [7, 11, 17, 13], [13, 17, 22, 18], [18, 22, 24, 21], [21, 24, 23, 20], [20, 23, 19, 16], [16, 19, 14, 10], [10, 14, 8, 2], [15, 9, 13, 18], [12, 15, 21, 20], [6, 12, 16, 10], [3, 6, 2, 0], [9, 3, 1, 7], [9, 15, 12, 6, 3], [22, 17, 11, 5, 4, 8, 14, 19, 23, 24]]
+		};
+		
+		var type:Int = options.type != null ? options.type : 0;
+		if (type < 0) {
+			type = 0;
+		}
+		if (type >= polyhedra.length) {
+			type = polyhedra.length - 1;
+		}
+		var size = options.size != null ? options.size : 1;
+		var sizeX = options.sizeX != null ? options.sizeX : size;
+		var sizeY = options.sizeY != null ? options.sizeY : size;
+		var sizeZ = options.sizeZ != null ? options.sizeZ : size;
+		var data:Dynamic = options.custom != null ? options.custom : polyhedra[type];
+		var nbfaces:Int = data.face.length;
+		var faceUV:Array<Vector4> = options.faceUV != null ? options.faceUV : [];
+		var faceColors:Array<Color4> = options.faceColors != null ? options.faceColors : [];
+		var sideOrientation:Int = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
+		
+		var positions:Array<Float> = [];
+		var indices:Array<Int> = [];
+		var normals:Array<Float> = [];
+		var uvs:Array<Float> = [];
+		var colors:Array<Float> = [];
+		var index:Int = 0;
+		var faceIdx:Int = 0;  // face cursor in the array "indexes"
+		var indexes:Array<Int> = [];
+		var u:Float = 0;
+		var v:Float = 0;
+		var ang:Float = 0;
+		var x:Float = 0;
+		var y:Float = 0;
+		var tmp:Float = 0;
+		
+		// default face colors and UV if undefined
+		for (f in 0...nbfaces) {
+			if (faceColors != null && faceColors[f] == null) {
+				faceColors[f] = new Color4(1, 1, 1, 1);
+			}
+			if (faceUV != null && faceUV[f] == null) {
+				faceUV[f] = new Vector4(0, 0, 1, 1);
+			}
+		}
+
+		for (f in 0...nbfaces) {
+			var fl:Int = data.face[f].length;  // number of vertices of the current face
+			ang = 2 * Math.PI / fl;
+			x = 0.5 * Math.tan(ang / 2);
+			y = 0.5;
+			
+			// positions, uvs, colors
+			for (i in 0...fl) {
+				// positions
+				positions.push(data.vertex[data.face[f][i]][0] * sizeX);
+				positions.push(data.vertex[data.face[f][i]][1] * sizeY);
+				positions.push(data.vertex[data.face[f][i]][2] * sizeZ);
+				indexes.push(index);
+				index++;
+				// uvs
+				u = faceUV[f].x + (faceUV[f].z - faceUV[f].x) * (0.5 + x);
+				v = faceUV[f].y + (faceUV[f].w - faceUV[f].y) * (y - 0.5);
+				uvs.push(u);
+				uvs.push(v);
+				tmp = x * Math.cos(ang) - y * Math.sin(ang);
+				y = x * Math.sin(ang) + y * Math.cos(ang);
+				x = tmp;
+				// colors
+				if (faceColors[f] != null) {
+					colors.push(faceColors[f].r);
+					colors.push(faceColors[f].g);
+					colors.push(faceColors[f].b);
+					colors.push(faceColors[f].a);
+				}
+			}
+			
+			// indices from indexes
+			for (i in 0...fl - 2) {
+				indices.push(indexes[0 + faceIdx]);
+				indices.push(indexes[i + 2 + faceIdx]);
+				indices.push(indexes[i + 1 + faceIdx]);
+			}
+			faceIdx += fl;
+		}
+		
+		VertexData.ComputeNormals(positions, indices, normals);
+		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		
+		var vertexData = new VertexData();
+		
+		vertexData.positions = positions;
+		vertexData.indices = indices;
+		vertexData.normals = normals;
+		vertexData.uvs = uvs;
+		
+		if (faceColors.length > 0) {
+			vertexData.colors = colors;
+		}
+		
+		return vertexData;
+	}
+
+	// based on http://code.google.com/p/away3d/source/browse/trunk/fp10/Away3D/src/away3d/primitives/TorusKnot.as?spec=svn2473&r=2473
+	public static function CreateTorusKnot(options:Dynamic):VertexData {
+		var indices:Array<Int> = [];
+		var positions:Array<Float> = [];
+		var normals:Array<Float> = [];
+		var uvs:Array<Float> = [];
+				
+		var radius:Float = options.radius != null ? options.radius : 2;
+		var tube:Float = options.tube != null ? options.tube : 0.5;
+		var radialSegments:Int = options.radialSegments != null ? options.radialSegments : 32;
+		var tubularSegments:Int = options.tubularSegments != null ? options.tubularSegments : 32;
+		var p:Float = options.p != null ? options.p : 2;
+		var q:Float = options.q != null ? options.q : 3;
+		var sideOrientation:Int = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
 		
 		// Helper
 		var getPos = function(angle:Float):Vector3 {

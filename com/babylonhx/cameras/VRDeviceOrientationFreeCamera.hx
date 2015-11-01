@@ -16,10 +16,10 @@ import js.Browser;
         private var _offsetOrientation:Dynamic;
         private var _deviceOrientationHandler:Dynamic;
 
-        public function new(name:String, position:Vector3, scene:Scene, compensateDistorsion:Bool = true) {
+        public function new(name:String, position:Vector3, scene:Scene, compensateDistortion:Bool = true) {
             super(name, position, scene);
             var metrics = VRCameraMetrics.GetDefault();
-            metrics.compensateDistorsion = compensateDistorsion;
+            metrics.compensateDistortion = compensateDistortion;
             this.setCameraRigMode(Camera.RIG_MODE_VR, { vrCameraMetrics: metrics });
 
             //this._deviceOrientationHandler = this._onOrientationEvent.bind(this);

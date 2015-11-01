@@ -19,7 +19,7 @@ import com.babylonhx.culling.BoundingBox;
 	public var frontColor:Color3 = new Color3(1, 1, 1);
 	public var backColor:Color3 = new Color3(0.1, 0.1, 0.1);
 	public var showBackLines:Bool = true;
-	public var renderList:SmartArray = new SmartArray(32);// SmartArray<BoundingBox> = new SmartArray<BoundingBox>(32);
+	public var renderList:SmartArray<BoundingBox> = new SmartArray<BoundingBox>(32);// SmartArray<BoundingBox> = new SmartArray<BoundingBox>(32);
 
 	private var _scene:Scene;
 	private var _colorShader:ShaderMaterial;
@@ -52,7 +52,7 @@ import com.babylonhx.culling.BoundingBox;
 	}
 
 	public function render() {
-		if (this.renderList.length == 0 || !this._colorShader.isReady()) {
+		if (this.renderList.length == 0) {
 			return;
 		}
 		
@@ -66,7 +66,7 @@ import com.babylonhx.culling.BoundingBox;
 		engine.setDepthWrite(false);
 		this._colorShader._preBind();
 		for (boundingBoxIndex in 0...this.renderList.length) {
-			var boundingBox = this.renderList.data[boundingBoxIndex];
+			var boundingBox:BoundingBox = cast this.renderList.data[boundingBoxIndex];
 			var min = boundingBox.minimum;
 			var max = boundingBox.maximum;
 			var diff = max.subtract(min);

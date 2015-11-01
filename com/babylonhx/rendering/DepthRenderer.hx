@@ -85,7 +85,7 @@ import com.babylonhx.tools.SmartArray;
 				
 				// Bones				
 				if (mesh.useBones && mesh.computeBonesUsingShaders) {
-					this._effect.setMatrices("mBones", #if (js || html5 || purejs) mesh.skeleton.getTransformMatrices() #else mesh.skeleton.getTransformMatrices().toArray() #end );
+					this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices());
 				}
 				
 				// Draw
@@ -94,7 +94,7 @@ import com.babylonhx.tools.SmartArray;
 			}
 		};
 		
-		this._depthMap.customRenderFunction = function(opaqueSubMeshes:SmartArray, alphaTestSubMeshes:SmartArray) {			
+		this._depthMap.customRenderFunction = function(opaqueSubMeshes:SmartArray<SubMesh>, alphaTestSubMeshes:SmartArray<SubMesh>) {			
 			for (index in 0...opaqueSubMeshes.length) {
 				renderSubMesh(opaqueSubMeshes.data[index]);
 			}

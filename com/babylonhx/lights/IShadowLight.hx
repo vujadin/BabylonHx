@@ -13,17 +13,19 @@ import com.babylonhx.mesh.AbstractMesh;
 @:expose('BABYLON.IShadowLight') interface IShadowLight {
   
 	var position:Vector3;
-	var direction:Vector3;
 	var transformedPosition:Vector3;
 	var name:String;
 
 	function computeTransformedPosition():Bool;
 	function getScene():Scene;
 	
-	function setShadowProjectionMatrix(matrix:Matrix, viewMatrix:Matrix, renderList:Array<AbstractMesh>, useVSM:Bool):Void;
+	function setShadowProjectionMatrix(matrix:Matrix, viewMatrix:Matrix, renderList:Array<AbstractMesh>):Void;
 	
 	function supportsVSM():Bool;
 	function needRefreshPerFrame():Bool;
+	function needCube():Bool;
+	
+	function getShadowDirection(?faceIndex:Int):Vector3;
 
 	var _shadowGenerator:ShadowGenerator;
 	

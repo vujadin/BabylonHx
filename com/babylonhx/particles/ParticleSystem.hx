@@ -64,9 +64,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public var direction2:Vector3 = new Vector3(0, 1.0, 0);
 	public var minEmitBox:Vector3 = new Vector3(-0.5, -0.5, -0.5);
 	public var maxEmitBox:Vector3 = new Vector3(0.5, 0.5, 0.5);
-	public var color1:Color4 = new Color4(1.0, 1.0, 1.0, 1.0);
-	public var color2:Color4 = new Color4(1.0, 1.0, 1.0, 1.0);
-	public var colorDead:Color4 = new Color4(0, 0, 0, 1.0);
+	public var color1:Color4 = new Color4(1.0, 1.0, 1.0, 0.5);
+	public var color2:Color4 = new Color4(1.0, 1.0, 1.0, 0.4);
+	public var colorDead:Color4 = new Color4(0, 0, 0, 0.0);
 	public var textureMask:Color4 = new Color4(1.0, 1.0, 1.0, 1.0);
 	public var startDirectionFunction:Float->Matrix->Vector3->Void;
 	public var startPositionFunction:Matrix->Vector3->Void;
@@ -103,6 +103,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _actualFrame:Int = 0;
 	public var _scaledUpdateSpeed:Float;
 	
+	private var _engine:Engine;
+	
 
 	public function new(name:String, capacity:Int, scene:Scene, ?customEffect:Effect) {
 		this.name = name;
@@ -110,13 +112,14 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._capacity = capacity;
 		
 		this._scene = scene;
+		this._engine = scene.getEngine();
 		
 		this._customEffect = customEffect;
 		
 		scene.particleSystems.push(this);
-		
+				
 		// VBO
-		this._vertexBuffer = scene.getEngine().createDynamicVertexBuffer(capacity * this._vertexStrideSize * 4);
+		this._vertexBuffer = this._engine.createDynamicVertexBuffer(capacity * this._vertexStrideSize * 4);
 		
 		var indices:Array<Int> = [];
 		var index:Int = 0;
@@ -130,7 +133,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			index += 4;
 		}
 		
-		this._indexBuffer = scene.getEngine().createIndexBuffer(indices);
+		this._indexBuffer = this._engine.createIndexBuffer(indices);
 		
 		#if html5
 		this._vertices = new Float32Array(capacity * this._vertexStrideSize);
@@ -156,7 +159,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 		
 		this.updateFunction = function(particles:Array<Particle>):Void {
-			var index:Int = 0;
+			/*var index:Int = 0;
 			while (index < particles.length) {
 				var particle = particles[index];
 				particle.age += this._scaledUpdateSpeed;
@@ -182,8 +185,32 @@ import com.babylonhx.utils.typedarray.Float32Array;
 					particle.direction.addInPlace(this._scaledGravity);
 					index++;
 				}
+			}*/
+			var index:Int = 0;
+			while (index < particles.length) {
+				var particle = particles[index];
+				particle.age += this._scaledUpdateSpeed;
+				
+				if (particle.age >= particle.lifeTime) { // Recycle
+					particles.splice(index, 1);
+					this._stockParticles.push(particle);
+				}
+				else {
+					particle.color.copyFrom(doubleColor4());
+					particle.size = randomNumber(this.minSize, this.maxSize);
+					
+					particle.direction.scaleToRef(this._scaledUpdateSpeed, this._scaledDirection);
+					particle.position.addInPlace(this._scaledDirection);
+					
+					this.gravity.scaleToRef(this._scaledUpdateSpeed, this._scaledGravity);
+					particle.direction.addInPlace(this._scaledGravity);
+					
+					index++;
+				}
 			}
 		}
+		
+		this._getEffect();
 	}
 
 	inline public function getCapacity():Int {
@@ -223,7 +250,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._vertices[offset + 10] = offsetY;
 	}
 
-	inline private function _update(newParticles:Int):Void {
+	inline private function _update(newParticles:Int) {
 		// Update current
 		this._alive = this.particles.length > 0;
 		
@@ -234,11 +261,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		if (this.emitter.position != null) {
 			worldMatrix = this.emitter.getWorldMatrix();
-		} else {
-			worldMatrix = Matrix.Translation(this.emitter.x, this.emitter.y, this.emitter.z);
+		} 
+		else {
+			worldMatrix = Matrix.Translation(this.emitter.x + randomNumber(-500, 500), this.emitter.y, this.emitter.z + randomNumber(-500, 500));
 		}
 		
-		for (index in 0...newParticles) {
+		/*for (index in 0...newParticles) {
 			if (this.particles.length == this._capacity) {
 				break;
 			}
@@ -246,7 +274,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			if (this._stockParticles.length != 0) {
 				particle = this._stockParticles.pop();
 				particle.age = 0;
-			} else {
+			} 
+			else {
 				particle = new Particle();
 			}
 			this.particles.push(particle);
@@ -264,6 +293,32 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			
 			this.colorDead.subtractToRef(particle.color, this._colorDiff);
 			this._colorDiff.scaleToRef(1.0 / particle.lifeTime, particle.colorStep);
+		}*/
+		
+		for (index in 0...newParticles) {
+			if (this.particles.length == this._capacity) {
+				break;
+			}
+			
+			if (this._stockParticles.length != 0) {
+				particle = this._stockParticles.pop();
+				particle.age = 0;
+			} 
+			else {
+				particle = new Particle();
+			}
+			this.particles.push(particle);
+			
+			var emitPower = randomNumber(this.minEmitPower, this.maxEmitPower);
+				
+			this.startDirectionFunction(emitPower, worldMatrix, particle.direction);
+			
+			particle.lifeTime = randomNumber(this.minLifeTime, this.maxLifeTime);
+			
+			particle.size = randomNumber(this.minSize, this.maxSize);
+			particle.angularSpeed = randomNumber(this.minAngularSpeed, this.maxAngularSpeed);
+			
+			this.startPositionFunction(worldMatrix, particle.position);
 		}
 	}
 
@@ -283,7 +338,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		if (this._cachedDefines != join) {
 			this._cachedDefines = join;
 			
-			this._effect = this._scene.getEngine().createEffect(
+			this._effect = this._engine.createEffect(
 				"particles",
 				["position", "color", "options"],
 				["invView", "view", "projection", "vClipPlane", "textureMask"],
@@ -293,14 +348,14 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return this._effect;
 	}
 
-	public function animate():Void {
+	public function animate() {
 		if (!this._started)
 			return;
 			
-		var effect = this._getEffect();
+		//var effect = this._getEffect();
 		
 		// Check
-		if (this.emitter == null || !effect.isReady() || this.particleTexture == null || !this.particleTexture.isReady()) {
+		if (this.emitter == null || !this._effect.isReady() || this.particleTexture == null || !this.particleTexture.isReady()) {
 			return;
 		}
 			
@@ -318,7 +373,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		if (this.manualEmitCount > -1) {
 			emitCout = this.manualEmitCount;
 			this.manualEmitCount = 0;
-		} else {
+		} 
+		else {
 			emitCout = this.emitRate;
 		}
 		
@@ -338,7 +394,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			if (this.targetStopDuration != 0 && this._actualFrame >= this.targetStopDuration) {
 				this.stop();
 			}
-		} else {
+		} 
+		else {
 			newParticles = 0;
 		}
 		
@@ -364,66 +421,64 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			this._appendParticleVertex(offset++, particle, 1, 1);
 			this._appendParticleVertex(offset++, particle, 0, 1);
 		}
-		var engine = this._scene.getEngine();
-		engine.updateDynamicVertexBuffer(this._vertexBuffer, this._vertices);
+		
+		this._engine.updateDynamicVertexBuffer(this._vertexBuffer, this._vertices);
 	}
 
 	public function render():Int {
-		var effect = this._getEffect();
+		//var effect = this._getEffect();
 		
 		// Check
-		if (this.emitter == null || !effect.isReady() || this.particleTexture == null || !this.particleTexture.isReady())
+		if (this.emitter == null || !this._effect.isReady() || this.particleTexture == null || !this.particleTexture.isReady())
 			return 0;
-			
-		var engine = this._scene.getEngine();
-		
+					
 		// Render
-		engine.enableEffect(effect);
-		engine.setState(false);
+		this._engine.enableEffect(this._effect);
+		this._engine.setState(false);
 		
 		var viewMatrix = this._scene.getViewMatrix();
-		effect.setTexture("diffuseSampler", this.particleTexture);
-		effect.setMatrix("view", viewMatrix);
-		effect.setMatrix("projection", this._scene.getProjectionMatrix());
-		effect.setFloat4("textureMask", this.textureMask.r, this.textureMask.g, this.textureMask.b, this.textureMask.a);
+		this._effect.setTexture("diffuseSampler", this.particleTexture);
+		this._effect.setMatrix("view", viewMatrix);
+		this._effect.setMatrix("projection", this._scene.getProjectionMatrix());
+		this._effect.setFloat4("textureMask", this.textureMask.r, this.textureMask.g, this.textureMask.b, this.textureMask.a);
 		
 		if (this._scene.clipPlane != null) {
 			var clipPlane = this._scene.clipPlane;
 			var invView = viewMatrix.clone();
 			invView.invert();
-			effect.setMatrix("invView", invView);
-			effect.setFloat4("vClipPlane", clipPlane.normal.x, clipPlane.normal.y, clipPlane.normal.z, clipPlane.d);
+			this._effect.setMatrix("invView", invView);
+			this._effect.setFloat4("vClipPlane", clipPlane.normal.x, clipPlane.normal.y, clipPlane.normal.z, clipPlane.d);
 		}
 		
 		// VBOs
-		engine.bindBuffers(this._vertexBuffer, this._indexBuffer, this._vertexDeclaration, this._vertexStrideSize, effect);
+		this._engine.bindBuffers(this._vertexBuffer, this._indexBuffer, this._vertexDeclaration, this._vertexStrideSize, this._effect);
 		
 		// Draw order
 		if (this.blendMode == ParticleSystem.BLENDMODE_ONEONE) {
-			engine.setAlphaMode(Engine.ALPHA_ONEONE);
+			this._engine.setAlphaMode(Engine.ALPHA_ONEONE);
 		} 
 		else {
-			engine.setAlphaMode(Engine.ALPHA_COMBINE);
+			this._engine.setAlphaMode(Engine.ALPHA_COMBINE);
 		}
 		
 		if (this.forceDepthWrite) {
-			engine.setDepthWrite(true);
+			this._engine.setDepthWrite(true);
 		}
 		
-		engine.draw(true, 0, this.particles.length * 6);
-		engine.setAlphaMode(Engine.ALPHA_DISABLE);
+		this._engine.draw(true, 0, this.particles.length * 6);
+		this._engine.setAlphaMode(Engine.ALPHA_DISABLE);
 		
 		return this.particles.length;
 	}
 
-	inline public function dispose(doNotRecurse:Bool = false/*?doNotRecurse:Bool*/):Void {
+	inline public function dispose(doNotRecurse:Bool = false) {
 		if (this._vertexBuffer != null) {
-			this._scene.getEngine()._releaseBuffer(this._vertexBuffer);
+			this._engine._releaseBuffer(this._vertexBuffer);
 			this._vertexBuffer = null;
 		}
 		
 		if (this._indexBuffer != null) {
-			this._scene.getEngine()._releaseBuffer(this._indexBuffer);
+			this._engine._releaseBuffer(this._indexBuffer);
 			this._indexBuffer = null;
 		}
 		
@@ -460,6 +515,17 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		result.start();
 		
 		return result;
+	}
+	
+	var randomColor:Color4 = new Color4();
+	inline function doubleColor4():Color4 {
+		randomColor.b = Math.random() * 2;
+		randomColor.r = Math.random() * 2;
+		randomColor.g = Math.random() * 2;
+		randomColor.a = Math.random();
+		
+		return randomColor;
+		//return new Color4(Math.random() * 2, Math.random() * 2, Math.random() * 2, 0.2);
 	}
 	
 	inline private function randomNumber(min:Float, max:Float):Float {

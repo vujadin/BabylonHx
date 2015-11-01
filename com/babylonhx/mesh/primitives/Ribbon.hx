@@ -29,7 +29,7 @@ class Ribbon extends _Primitive {
 	}
 
 	override public function _regenerateVertexData():VertexData {
-		return VertexData.CreateRibbon(this.pathArray, this.closeArray, this.closePath, this.offset, this.side);
+		return VertexData.CreateRibbon({ pathArray: this.pathArray, closeArray: this.closeArray, closePath: this.closePath, offset: this.offset, side: this.side });
 	}
 
 	override public function copy(id:String):Geometry {

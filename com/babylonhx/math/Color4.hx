@@ -14,7 +14,7 @@ import com.babylonhx.tools.Tools;
 	public var a:Float;
 	
 	
-	public function new(r:Float, g:Float, b:Float, a:Float = 1.0) {
+	public function new(r:Float = 0, g:Float = 0, b:Float = 0, a:Float = 1.0) {
 		this.r = r;
 		this.g = g;
 		this.b = b;

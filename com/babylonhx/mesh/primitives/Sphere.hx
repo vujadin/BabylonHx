@@ -22,7 +22,7 @@ package com.babylonhx.mesh.primitives;
 	}
 
 	override public function _regenerateVertexData():VertexData {
-		return VertexData.CreateSphere(this.segments, this.diameter, this.side);
+		return VertexData.CreateSphere({ segments: this.segments, diameter: this.diameter, sideOrientation: this.side });
 	}
 
 	override public function copy(id:String):Geometry {

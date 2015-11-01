@@ -4,6 +4,11 @@ import com.babylonhx.materials.Effect;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.tools.Tools;
+import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Matrix;
+import com.babylonhx.collisions.PickingInfo;
+import com.babylonhx.math.Ray;
+import com.babylonhx.cameras.Camera;
 
 import com.babylonhx.utils.typedarray.Float32Array;
 
@@ -122,6 +127,62 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._vertices[arrayOffset + 14] = sprite.color.b;
 		this._vertices[arrayOffset + 15] = sprite.color.a;
 	}
+	
+	public function intersects(ray:Ray, camera:Camera, ?predicate:Sprite->Bool, fastCheck:Bool = false):PickingInfo {
+		var count:Int = Std.int(Math.min(this._capacity, this.sprites.length));
+		var min:Vector3 = Vector3.Zero();
+		var max:Vector3 = Vector3.Zero();
+		var distance = Math.POSITIVE_INFINITY;
+		var currentSprite:Sprite = null;
+		var cameraSpacePosition:Vector3 = Vector3.Zero();
+		var cameraView:Matrix = camera.getViewMatrix();
+		
+		for (index in 0...count) {
+			var sprite = this.sprites[index];
+			if (sprite == null) {
+				continue;
+			}
+			
+			if (predicate != null) {
+				if (!predicate(sprite)) {
+					continue;
+				}
+			} 
+			else if (!sprite.isPickable) {
+				continue;
+			}
+			
+			Vector3.TransformCoordinatesToRef(sprite.position, cameraView, cameraSpacePosition);
+			
+			min.copyFromFloats(cameraSpacePosition.x - sprite.width / 2, cameraSpacePosition.y - sprite.height / 2, cameraSpacePosition.z);
+			max.copyFromFloats(cameraSpacePosition.x + sprite.width / 2, cameraSpacePosition.y + sprite.height / 2, cameraSpacePosition.z);
+			
+			if (ray.intersectsBoxMinMax(min, max)) {
+				var currentDistance = Vector3.Distance(cameraSpacePosition, ray.origin);
+				
+				if (distance > currentDistance) {
+					distance = currentDistance;
+					currentSprite = sprite;
+					
+					if (fastCheck) {
+						break;
+					}
+				}
+			}
+		}
+		
+		if (currentSprite != null) {
+			var result = new PickingInfo();
+			
+			result.hit = true;
+			result.pickedSprite = currentSprite;
+			result.distance = distance;
+			
+			return result;
+		}
+		
+		return null;
+	} 
 
 	public function render() {
 		// Check

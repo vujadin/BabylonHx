@@ -28,6 +28,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public var onCompiled:Effect->Void;
 	public var onError:Effect->String->Void;
 	public var onBind:Effect->Void;
+	
+	public var isSupported(get, never):Bool;
 
 	private var _engine:Engine;
 	private var _uniformsNames:Array<String>;
@@ -245,6 +247,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
             }
         }
     }
+	
+	private function get_isSupported():Bool {
+		return this._compilationError == "";
+	}
 
 	inline public function _bindTexture(channel:String, texture:WebGLTexture) {
 		this._engine._bindTexture(this._samplers.indexOf(channel), texture);
@@ -258,15 +264,15 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._engine.setTextureFromPostProcess(this._samplers.indexOf(channel), postProcess);
 	}
 
-	//public _cacheMatrix(uniformName, matrix) {
-	//    if (!this._valueCache[uniformName]) {
-	//        this._valueCache[uniformName] = new Matrix();
-	//    }
-
-	//    for (var index = 0; index < 16; index++) {
-	//        this._valueCache[uniformName].m[index] = matrix.m[index];
-	//    }
-	//};
+	public function _cacheMatrix(uniformName:String, matrix:Matrix) {
+	    if (this._valueCache[uniformName] == null) {
+	        this._valueCache[uniformName] = [];
+	    }
+		
+	    for (index in 0...16) {
+	        this._valueCache[uniformName][index] = matrix.m[index];
+	    }
+	}
 
 	inline public function _cacheFloat2(uniformName:String, x:Float, y:Float) {
 		if (!this._valueCache.exists(uniformName)) {
@@ -332,10 +338,15 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	inline public function setMatrix(uniformName:String, matrix:Matrix):Effect {
-		//if (this._valueCache[uniformName] && this._valueCache[uniformName].equals(matrix))
-		//    return;
+		#if !js
+		if (this._valueCache[uniformName] != null && this._valueCache[uniformName] == matrix.m) {
+		#else
+		if (this._valueCache[uniformName] != null && this._valueCache[uniformName] == cast matrix.m) {
+		#end
+		    return this;
+		}
 		
-		//this._cacheMatrix(uniformName, matrix);
+		this._cacheMatrix(uniformName, matrix);
 		this._engine.setMatrix(this.getUniform(uniformName), matrix);
 		
 		return this;

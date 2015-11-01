@@ -91,12 +91,9 @@ import com.babylonhx.animations.IAnimatable;
 	}
 
 	inline public function refreshBoundingInfo() {
-		var data = this._sourceMesh.getVerticesData(VertexBuffer.PositionKind);
+		var meshBB = this._sourceMesh.getBoundingInfo();
 		
-		if (data != null) {
-			var extend = Tools.ExtractMinAndMax(data, 0, this._sourceMesh.getTotalVertices());
-			this._boundingInfo = new BoundingInfo(extend.minimum, extend.maximum);
-		}
+		this._boundingInfo = new BoundingInfo(meshBB.minimum.clone(), meshBB.maximum.clone());
 		
 		this._updateBoundingInfo();
 	}
@@ -138,7 +135,6 @@ import com.babylonhx.animations.IAnimatable;
 
 	// Clone
 	override public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false):InstancedMesh {
-		trace("InstancedMesh:clone()");
 		var result = this._sourceMesh.createInstance(name);
 		
 		// TODO: Deep copy
