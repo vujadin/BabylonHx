@@ -66,9 +66,9 @@ import com.babylonhx.materials.textures.procedurals.standard.GrassProceduralText
 import com.babylonhx.materials.textures.procedurals.standard.MarbleProceduralTexture;
 import com.babylonhx.materials.textures.procedurals.standard.RoadProceduralTexture;
 import com.babylonhx.materials.textures.procedurals.standard.WoodProceduralTexture;
-import com.babylonhx.materials.textures.procedurals.CustomProceduralTexture;
+//import com.babylonhx.materials.textures.procedurals.CustomProceduralTexture;
 import com.babylonhx.materials.textures.procedurals.ProceduralTexture;
-import com.babylonhx.materials.textures.BabylonTexture;
+//import com.babylonhx.materials.textures.BabylonTexture;
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.materials.textures.CubeTexture;
 import com.babylonhx.materials.textures.MirrorTexture;
@@ -107,7 +107,7 @@ import com.babylonhx.mesh.primitives.Ground;
 import com.babylonhx.mesh.primitives.Sphere;
 import com.babylonhx.mesh.primitives.TiledGround;
 import com.babylonhx.mesh.AbstractMesh;
-import com.babylonhx.mesh.BabylonBuffer;
+//import com.babylonhx.mesh.BabylonBuffer;
 import com.babylonhx.mesh.Geometry;
 import com.babylonhx.mesh.GroundMesh;
 import com.babylonhx.mesh.LinesMesh;
@@ -154,6 +154,17 @@ import com.babylonhx.Engine;
 import com.babylonhx.EngineCapabilities;
 import com.babylonhx.Node;
 import com.babylonhx.Scene;
+//import com.babylonvx.Block;
+//import com.babylonvx.Chunk;
+//import com.babylonvx.ChunkObject;
+//import com.babylonvx.SimplexNoise3D;
+//import com.babylonvx.Vector3i;
+//import com.babylonvx.World;
+//import com.babylonvx.WorldController;
+//import com.babylonvx.Utils;
+//import com.babylonvx.GreedyMesh;
+//import com.babylonvx.VoxelMesh;
+
 
 /**
  * Empty test.
