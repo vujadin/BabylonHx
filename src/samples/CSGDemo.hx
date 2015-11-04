@@ -4,7 +4,6 @@ import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.lights.HemisphericLight;
 import com.babylonhx.materials.MultiMaterial;
 import com.babylonhx.materials.StandardMaterial;
-import com.babylonhx.layer.Layer;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.csg.CSG;
@@ -26,13 +25,11 @@ class CSGDemo {
 		camera.attachControl(this);
 		camera.setPosition(new Vector3(10, 10, 15));
 		camera.minZ = 10.0;
-		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
-		
+				
 		var mat0 = new StandardMaterial("mat0", scene);
 				
-		var a = Mesh.CreateTorus("torus", 8, 3, 20, scene);
-		var b = Mesh.CreateBox("box", 1.5, scene);// ("cyl", 14, 1.6, 1.6, 15, 15, scene);
+		var a = Mesh.CreateTorus("torus", { diameter: 8, thickness: 3, tessellation: 20 }, scene);
+		var b = Mesh.CreateBox("box", { width: 1.5, height: 1.5, depth: 1.5 }, scene);
 		b.scaling.y *= 8;
 		b.rotation.x = Math.PI / 2;
 		a.isVisible = false;
@@ -51,7 +48,7 @@ class CSGDemo {
 		var newMesh = subCSG.toMesh("csg", mat0, scene);
 		newMesh.position = new Vector3(-12, 0, 0);
 				
-		a = Mesh.CreateCylinder("cyl", 14, 4, 4, 15, 15, scene);
+		a = Mesh.CreateCylinder("cyl", { height: 14, diameterTop: 4, diameterBottom: 4, tessellation: 15, subdivision: 15 }, scene);
 		a.isVisible = false;
 				
 		b.rotation.y = 0;
@@ -71,8 +68,8 @@ class CSGDemo {
 		var newMesh2 = subCSG.toMesh("csg2", mat0, scene);
 		newMesh2.position = new Vector3(10, 0, 0);
 						
-		a = Mesh.CreateSphere("sphere", 10, 5, scene);
-		b = Mesh.CreateBox("box2", 10, scene);
+		a = Mesh.CreateSphere("sphere", { segments: 10, diameterX: 5, diameterY: 5, diameterZ: 5 }, scene);
+		b = Mesh.CreateBox("box2", { width: 10, height: 10, depth: 10 }, scene);
 		b.scaling.x = 0.02;
 		b.rotation.z = Math.PI / 4;
 		b.position.x = -3;

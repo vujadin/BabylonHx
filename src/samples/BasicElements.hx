@@ -22,40 +22,33 @@ class BasicElements {
 		
 		var light = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);
 		light.diffuse = Color3.FromInt(0xf68712);
-		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
-		
+				
 		//Creation of a box
 		//(name of the box, size, scene)
-		var box = Mesh.CreateBox("box", 6.0, scene);
+		var box = Mesh.CreateBox("box", { width: 6.0, height: 6.0, depth: 6.0 }, scene);
 		
 		//Creation of a sphere 
-		//(name of the sphere, segments, diameter, scene) 
-		var sphere = Mesh.CreateSphere("sphere", 10, 10.0, scene);
+		var sphere = Mesh.CreateSphere("sphere", { segments: 10, diameterX: 10, diameterY: 10, diameterZ: 10 }, scene);
 		
 		//Creation of a plan
-		//(name of the plane, size, scene)
-		var plan = Mesh.CreatePlane("plane", 10.0, scene);
+		var plan = Mesh.CreatePlane("plane", { width: 10.0, height: 10.0 }, scene);
 		
 		//Creation of a cylinder
-		//(name, height, diameter, tessellation, scene, updatable)
-		var cylinder = Mesh.CreateCylinder("cylinder", 3, 3, 3, 6, 1, scene, false);
+		var cylinder = Mesh.CreateCylinder("cylinder", { height: 8, diameterTop: 5, diameterBottom: 5, tessellation: 16, subdivisions: 16 }, scene);
 		
 		// Creation of a torus
-		// (name, diameter, thickness, tessellation, scene, updatable)
-		var torus = Mesh.CreateTorus("torus", 5, 1, 10, scene, false);
+		var torus = Mesh.CreateTorus("torus", { diameter: 5, thickness: 1, tessellation: 10 }, scene);
 		
 		// Creation of a knot
-		// (name, radius, tube, radialSegments, tubularSegments, p, q, scene, updatable)
-		var knot = Mesh.CreateTorusKnot("knot", 2, 0.5, 128, 64, 2, 3, scene);
+		var knot = Mesh.CreateTorusKnot("knot", { radius: 2, tube: 0.5, radialSegments: 128, tubularSegments: 64, p: 2, q: 3 }, scene);
 				
 		// Creation of a lines mesh
-		var lines = Mesh.CreateLines("lines", [
+		var lines = Mesh.CreateLines("lines", { points: [
 			new Vector3(-10, 0, 0),
 			new Vector3(10, 0, 0),
 			new Vector3(0, 0, -10),
 			new Vector3(0, 0, 10)
-		], scene);
+		] }, scene);
 		
 		// Creation of a ribbon
 		// let's first create many paths along a maths exponential function as an example 
@@ -73,7 +66,7 @@ class BasicElements {
 		}
 		
 		// (name, array of paths, closeArray, closePath, offset, scene)
-		var ribbon = Mesh.CreateRibbon("ribbon", arrayOfPaths, false, false, 0, scene);
+		var ribbon = Mesh.CreateRibbon("ribbon", { pathArray: arrayOfPaths, closeArray: false, closePath: false, offset: 0 }, scene);
 		
 		// Moving elements
 		box.position = new Vector3(-10, 0, 0);   // Using a vector
@@ -82,7 +75,7 @@ class BasicElements {
 		cylinder.position.z = -10;
 		torus.position.x = 10;
 		knot.position.y = -10;
-		ribbon.position = new Vector3( -10, -10, 20);
+		ribbon.position = new Vector3(-10, -10, 20);
 		
 		scene.getEngine().runRenderLoop(function () {
 			scene.render();

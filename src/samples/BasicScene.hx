@@ -16,6 +16,7 @@ import com.babylonhx.Scene;
 class BasicScene {
 
 	public function new(scene:Scene) {
+		
 		// This creates and positions a free camera (non-mesh)
 		var camera = new FreeCamera("camera1", new Vector3(0, 5, -10), scene);
 				
@@ -24,7 +25,7 @@ class BasicScene {
 		
 		// This attaches the camera to the canvas
 		camera.attachControl();
-										
+								
 		// This creates a light, aiming 0,1,0 - to the sky (non-mesh)
 		var light = new HemisphericLight("light1", new Vector3(0, 1, 0), scene);
 		
@@ -32,18 +33,20 @@ class BasicScene {
 		light.intensity = 0.7;
 		
 		// Our built-in 'sphere' shape. Params: name, subdivs, size, scene
-		var sphere = Mesh.CreateSphere("sphere1", 16, 2, scene);
+		var sphere = Mesh.CreateSphere("sphere1", { diameterX: 3, diameterY: 3, diameterZ: 3, segments: 16 }, scene);
+		sphere.material = new StandardMaterial("sm", scene);
 				
 		// Move the sphere upward 1/2 its height
 		sphere.position.y = 1;
 		
 		// Our built-in 'ground' shape. Params: name, width, depth, subdivs, scene
 		var ground = Mesh.CreateGround("ground1", 6, 6, 2, scene);
+		/*ground.enableEdgesRendering();
+		ground.edgesWidth = 14.0;*/
 		
 		scene.getEngine().runRenderLoop(function () {
             scene.render();
         });
-		
 	}
 	
 }
