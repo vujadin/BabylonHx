@@ -394,6 +394,7 @@ class MeshBuilder {
 		ground._setReady(false);
 		
 		var onload = function(img:Image) {
+			options.buffer = img.data;
 			var vertexData = VertexData.CreateGroundFromHeightMap(options);
 			
 			vertexData.applyToMesh(ground, updatable);
@@ -484,7 +485,7 @@ class MeshBuilder {
 		if (tubeInstance != null) { // tube update
 			var path3D = tubeInstance.path3D.update(path);
 			var pathArray = tubePathArray(path, path3D, tubeInstance.pathArray, radius, tubeInstance.tessellation, radiusFunction, tubeInstance.cap);
-			tubeInstance = Mesh.CreateRibbon(null, pathArray, null, null, null, null, null, null, tubeInstance);
+			tubeInstance = Mesh.CreateRibbon(null, { pathArray: pathArray, instance: tubeInstance }, scene);
 			
 			return tubeInstance;
 		}
@@ -494,7 +495,7 @@ class MeshBuilder {
 		var newPathArray:Array<Array<Vector3>> = [];
 		cap = (cap < 0 || cap > 3) ? 0 : cap;
         var pathArray = tubePathArray(path, path3D, newPathArray, radius, tessellation, radiusFunction, cap);
-		var tube = Mesh.CreateRibbon(name, pathArray, false, true, 0, scene, updatable, sideOrientation);
+		var tube = Mesh.CreateRibbon(name, { pathArray: pathArray, closeArray: false, closePath: true, offset: 0, updatable: updatable, sideOrientation: sideOrientation }, scene);
 		tube.pathArray = pathArray;
 		tube.path3D = path3D;
 		tube.tessellation = tessellation;
@@ -821,7 +822,7 @@ class MeshBuilder {
 			var path3D = instance.path3D.update(curve);
 			var pathArray = extrusionPathArray(shape, curve, instance.path3D, instance.pathArray, scale, rotation, scaleFunction, rotateFunction, instance.cap, custom);
 			
-			instance = Mesh.CreateRibbon(null, pathArray, null, null, null, null, null, null, instance);
+			instance = Mesh.CreateRibbon(null, { pathArray: pathArray, instance: instance }, scene);
 			
 			return instance;
 		}
@@ -832,7 +833,7 @@ class MeshBuilder {
 		cap = (cap < 0 || cap > 3) ? 0 : cap;
 		var pathArray = extrusionPathArray(shape, curve, path3D, newShapePaths, scale, rotation, scaleFunction, rotateFunction, cap, custom);
 		
-		var extrudedGeneric = Mesh.CreateRibbon(name, pathArray, rbCA, rbCP, 0, scene, updtbl, side);
+		var extrudedGeneric = Mesh.CreateRibbon(name, { pathArray: pathArray, closePath: rbCA, closeArray: rbCP, offset: 0, updatable: updtbl, sideOrientation: side }, scene);
 		extrudedGeneric.pathArray = pathArray;
 		extrudedGeneric.path3D = path3D;
 		extrudedGeneric.cap = cap;

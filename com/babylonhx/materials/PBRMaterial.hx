@@ -114,9 +114,8 @@ class PBRMaterial extends Material {
 				}
 			}
 			if (mesh.useBones && mesh.computeBonesUsingShaders) {
-				this._defines.defines["BONES"] = true;
+				this._defines.NUM_BONE_INFLUENCERS = mesh.numBoneInfluencers;
 				this._defines.BonesPerMesh = (mesh.skeleton.bones.length + 1);
-				this._defines.defines["BONES4"] = true;
 			}
 			
 			// Instances
@@ -136,11 +135,7 @@ class PBRMaterial extends Material {
 			if (this._defines.defines["FOG"]) {
 				fallbacks.addFallback(1, "FOG");
 			}  
-			
-			if (this._defines.defines["BONES4"]) {
-				fallbacks.addFallback(0, "BONES4");
-			}
-			
+						
 			//Attributes
 			var attribs:Array<String> = [VertexBuffer.PositionKind];
 			
@@ -160,7 +155,7 @@ class PBRMaterial extends Material {
 				attribs.push(VertexBuffer.ColorKind);
 			}
 			
-			if (this._defines.defines["BONES"]) {
+			if (this._defines.NUM_BONE_INFLUENCERS > 0) {
 				attribs.push(VertexBuffer.MatricesIndicesKind);
 				attribs.push(VertexBuffer.MatricesWeightsKind);
 			}

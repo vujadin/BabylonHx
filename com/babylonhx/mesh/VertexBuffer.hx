@@ -21,7 +21,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
     public static inline var UV6Kind:String = "uv6";
 	public static inline var ColorKind:String = "color";
 	public static inline var MatricesIndicesKind:String = "matricesIndices";
-	public static inline var MatricesWeightsKind:String = "matricesWeights";	
+	public static inline var MatricesWeightsKind:String = "matricesWeights";
+	public static inline var MatricesIndicesExtraKind:String = "matricesIndicesExtra";
+    public static inline var MatricesWeightsExtraKind:String = "matricesWeightsExtra";
 	
 	private var _mesh:Mesh;
 	private var _engine:Engine;
@@ -65,10 +67,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			case VertexBuffer.ColorKind:
 				this._strideSize = 4;
 				
-			case VertexBuffer.MatricesIndicesKind:
+			case VertexBuffer.MatricesIndicesKind, VertexBuffer.MatricesIndicesExtraKind:
 				this._strideSize = 4;
 				
-			case VertexBuffer.MatricesWeightsKind:
+			case VertexBuffer.MatricesWeightsKind, VertexBuffer.MatricesWeightsExtraKind:
 				this._strideSize = 4;
 				
 		}

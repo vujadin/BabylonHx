@@ -7,6 +7,7 @@ package com.babylonhx.materials;
 class PBRMaterialDefines extends MaterialDefines {
 	
 	public var BonesPerMesh:Int = 0;
+	public var NUM_BONE_INFLUENCERS:Int = 0;
 	
 
 	public function new() {
@@ -21,12 +22,11 @@ class PBRMaterialDefines extends MaterialDefines {
 		defines["UV2"] = false;
 		defines["VERTEXCOLOR"] = false;
 		defines["VERTEXALPHA"] = false;
-		defines["BONES"] = false;
-		defines["BONES4"] = false;
 		defines["INSTANCES"] = false;
 		defines["POINTSIZE"] = false;
 		
 		BonesPerMesh = 0;
+		NUM_BONE_INFLUENCERS = 0;
 		
 		for (key in defines.keys()) {
 			_keys.push(key);
@@ -37,12 +37,14 @@ class PBRMaterialDefines extends MaterialDefines {
 		super.cloneTo(other);
 		
 		untyped other.BonesPerMesh = this.BonesPerMesh;
+		untyped other.NUM_BONE_INFLUENCERS = this.NUM_BONE_INFLUENCERS;
 	}
-
+	
 	override public function reset() {
 		super.reset();
 		
 		this.BonesPerMesh = 0;
+		this.NUM_BONE_INFLUENCERS = 0;
 	}
 
 	override public function toString():String {
@@ -50,6 +52,10 @@ class PBRMaterialDefines extends MaterialDefines {
 		
 		if (this.BonesPerMesh > 0) {
 			result += "#define BonesPerMesh " + this.BonesPerMesh + "\n";
+		}
+		
+		if (this.NUM_BONE_INFLUENCERS > 0) {
+			result += "#define NUM_BONE_INFLUENCERS " + this.NUM_BONE_INFLUENCERS + "\n";
 		}
 		
 		return result;

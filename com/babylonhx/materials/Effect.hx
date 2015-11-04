@@ -57,7 +57,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._uniformsNames = uniformsNames.concat(samplers);
 		this._samplers = samplers;
 		this._attributesNames = attributesNames;
-								
+		
 		this.onError = onError;
 		this.onCompiled = onCompiled;
 		
@@ -181,7 +181,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private function _prepareEffect(vertexSourceCode:String, fragmentSourceCode:String, attributesNames:Array<String>, defines:String, ?fallbacks:EffectFallbacks) {		
         try {
             var engine = this._engine;
-			
+						
 			if (!engine.getCaps().highPrecisionShaderSupported) { // Moving highp to mediump
                 vertexSourceCode = StringTools.replace(vertexSourceCode, "precision highp float", "precision mediump float");
                 fragmentSourceCode = StringTools.replace(fragmentSourceCode, "precision highp float", "precision mediump float");
@@ -189,7 +189,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			
 			this.tempVert = defines + vertexSourceCode;
 			this.tempFrag = defines + fragmentSourceCode;
-						
+												
             this._program = engine.createShaderProgram(vertexSourceCode, fragmentSourceCode, defines);
 			
             this._uniforms = engine.getUniforms(this._program, this._uniformsNames);
@@ -220,9 +220,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			
         } catch (e:Dynamic) {
 			trace(e);
+			
 			#if (js || purejs)
 			// Is it a problem with precision?
-			if (e.message.indexOf("highp") != -1) {
+			if (e.indexOf("highp") != -1) {
 				vertexSourceCode = StringTools.replace(vertexSourceCode, "precision highp float", "precision mediump float");
 				fragmentSourceCode = StringTools.replace(fragmentSourceCode, "precision highp float", "precision mediump float");
 				

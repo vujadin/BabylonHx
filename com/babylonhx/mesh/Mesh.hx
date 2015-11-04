@@ -44,6 +44,98 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
  * @author Krtolica Vujadin
  */
 
+typedef SphereOptions = {
+	?segments:Int,
+	?diameterX:Float,
+	?diameterY:Float,
+	?diameterZ:Float,
+	?sideOrientation:Int,
+	?updatable:Bool
+}
+
+typedef BoxOptions = {	
+	width:Float,
+	height:Float,
+	depth:Float,
+	?sideOrientation:Int,
+	?updatable:Bool
+}
+
+typedef CylinderOptions = {
+	?height:Float,
+	?diameterTop:Float,
+	?diameterBottom:Float,
+	?tessellation:Int,
+	?subdivision:Int,
+	?sideOrientation:Int,
+	?updatable:Bool
+}
+
+typedef DiscOptions = {
+	?radius:Float,
+	?tessellation:Float,
+	?sideOrientation:Int,
+	?updatable:Bool
+}
+
+typedef RibbonOptions = {
+	pathArray:Array<Array<Vector3>>, 
+	?closeArray:Bool, 
+	?closePath:Bool, 
+	?offset:Int,
+	?instance:Mesh,
+	?sideOrientation:Int,
+	?updatable:Bool
+}
+
+typedef TorusOptions = {
+	diameter:Float,
+	thickness:Float, 
+	tessellation:Int,
+	?sideOrientation:Int,
+	?updatable:Bool
+}
+
+typedef TorusKnotOptions = {
+	radius:Float, 
+	tube:Float, 
+	radialSegments:Int, 
+	tubularSegments:Int, 
+	p:Float, 
+	q:Float,
+	?sideOrientation:Int,
+	?updatable:Bool
+}
+
+typedef LinesOptions = {
+	points:Array<Vector3>,
+	?updatable:Bool
+}
+
+typedef DashedLinesOptions = {
+	points:Array<Vector3>, 
+	?dashSize:Float, 
+	?gapSize:Float, 
+	?dashNb:Float,
+	?sideOrientation:Int,
+	?updatable:Bool,
+	?linesInstance:LinesMesh 
+}
+
+typedef PlaneOptions = {
+	width:Float, 
+	height:Float,
+	?sideOrientation:Int,
+	?updatable:Bool
+}
+
+typedef GroundOptions = {
+	width:Float, 
+	height:Float, 
+	subdivision:Int,
+	?updatable:Bool
+}
+
 @:expose('BABYLON.Mesh') class Mesh extends AbstractMesh implements IGetSetVerticesData implements IAnimatable {
 	
 	public static inline var FRONTSIDE:Int = 0;
@@ -1385,119 +1477,43 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	}
 
 	// Statics
-	public static function CreateRibbon(name:String, pathArray:Array<Array<Vector3>>, ?closeArray:Bool = false, ?closePath:Bool = false, ?offset:Int, scene:Scene, ?updatable:Bool = false, ?sideOrientation:Int = Mesh.DEFAULTSIDE, ribbonInstance:Mesh = null):Mesh {
-		return MeshBuilder.CreateRibbon(name, {
-			pathArray: pathArray,
-			closeArray: closeArray,
-			closePath: closePath,
-			offset: offset,
-			updatable: updatable,
-			sideOrientation: sideOrientation,
-			instance: ribbonInstance
-		}, scene);
+	public static function CreateRibbon(name:String, options:RibbonOptions, scene:Scene):Mesh {
+		return MeshBuilder.CreateRibbon(name, options, scene);
 	}
 	
-	public static function CreateDisc(name:String, radius:Float, tessellation:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		var options = {
-			radius: radius,
-			tessellation: tessellation,
-			sideOrientation: sideOrientation,
-			updatable: updatable
-		};
-		
+	public static function CreateDisc(name:String, options:DiscOptions, scene:Scene):Mesh {		
 		return MeshBuilder.CreateDisc(name, options, scene);
 	}
 		
-	public static function CreateBox(name:String, options:Dynamic, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		var _options = {
-			width: Std.is(options, Float) ? options : (options.width != null ? options.width : 1),
-			height: Std.is(options, Float) ? options : (options.height != null ? options.height : 1),
-			depth: Std.is(options, Float) ? options : (options.depth != null ? options.depth : 1),
-			sideOrientation: sideOrientation,
-			updatable: updatable
-		};
-		
-		return MeshBuilder.CreateBox(name, _options, scene);
+	public static function CreateBox(name:String, options:BoxOptions, scene:Scene):Mesh {		
+		return MeshBuilder.CreateBox(name, options, scene);
 	}
 
-	public static function CreateSphere(name:String, options:Dynamic, ?scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		var options = {
-			segments: options.segments,
-			diameterX: options.diameterX,
-			diameterY: options.diameterY,
-			diameterZ: options.diameterZ,
-			sideOrientation: sideOrientation,
-			updatable: updatable
-		};
-		
+	public static function CreateSphere(name:String, options:SphereOptions, scene:Scene):Mesh {
 		return MeshBuilder.CreateSphere(name, options, scene);
 	}
 	
 	// Cylinder and cone
-	public static function CreateCylinder(name:String, height:Float, diameterTop:Float, diameterBottom:Float, tessellation:Int, subdivisions:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE): Mesh {
-		var options = {
-			height: height,
-			diameterTop: diameterTop,
-			diameterBottom: diameterBottom,
-			tessellation: tessellation,
-			subdivisions: subdivisions,
-			sideOrientation: sideOrientation,
-			updatable: updatable
-		};
-		
+	public static function CreateCylinder(name:String, options:CylinderOptions, scene:Scene): Mesh {				
 		return MeshBuilder.CreateCylinder(name, options, scene);
 	}
 
 	// Torus  (Code from SharpDX.org)
-	public static function CreateTorus(name:String, diameter:Float, thickness:Float, tessellation:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {		
-		var	options = {
-			diameter: diameter,
-			thickness: thickness,
-			tessellation: tessellation,
-			sideOrientation: sideOrientation,
-			updatable: updatable
-		};
-		
+	public static function CreateTorus(name:String, options:TorusOptions, scene:Scene):Mesh {				
 		return MeshBuilder.CreateTorus(name, options, scene);
 	}
 	
-	public static function CreateTorusKnot(name:String, radius:Float, tube:Float, radialSegments:Int, tubularSegments:Int, p:Float, q:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		var options = {
-			radius: radius,
-			tube: tube,
-			radialSegments: radialSegments,
-			tubularSegments: tubularSegments,
-			p: p,
-			q: q,
-			sideOrientation: sideOrientation,
-			updatable: updatable
-		};
-		
+	public static function CreateTorusKnot(name:String, options:TorusKnotOptions, scene:Scene):Mesh {		
 		return MeshBuilder.CreateTorusKnot(name, options, scene);
 	}
 	
 	// Lines
-	public static function CreateLines(name:String, points:Array<Vector3>, scene:Scene, updatable:Bool = false, linesInstance:LinesMesh = null):LinesMesh {
-		var options = {
-			points: points,
-			updatable: updatable,
-			linesInstance: linesInstance
-		};
-		
+	public static function CreateLines(name:String, options:LinesOptions, scene:Scene):LinesMesh {
 		return MeshBuilder.CreateLines(name, options, scene);
 	}
 
 	// Dashed Lines
-    public static function CreateDashedLines(name:String, points:Array<Vector3>, ?dashSize:Float, ?gapSize:Float, ?dashNb:Float, scene:Scene, ?updatable:Bool = false, linesInstance:LinesMesh = null):LinesMesh {
-		var options = {
-			points: points,
-			dashSize: dashSize,
-			gapSize: gapSize,
-			dashNb: dashNb,
-			updatable: updatable,
-			linesInstance: linesInstance
-		};
-		
+    public static function CreateDashedLines(name:String, options:DashedLinesOptions, scene:Scene):LinesMesh {		
 		return MeshBuilder.CreateDashedLines(name, options, scene);
 	}
 	
@@ -1548,25 +1564,11 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	}
 
 	// Plane & ground
-	public static function CreatePlane(name:String, width:Float, height:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		var options = {
-			width: width,
-			height: height,
-			sideOrientation: sideOrientation,
-			updatable: updatable
-		}
-		
+	public static function CreatePlane(name:String, options:PlaneOptions, scene:Scene):Mesh {		
 		return MeshBuilder.CreatePlane(name, options, scene);
 	}
 	
-	public static function CreateGround(name:String, width:Float, height:Float, subdivisions:Int, scene:Scene, updatable:Bool = false):Mesh {
-		var options = {
-			width: width,
-			height: height,
-			subdivisions: subdivisions,
-			updatable: updatable
-		}
-		
+	public static function CreateGround(name:String, options:GroundOptions, scene:Scene):Mesh {
 		return MeshBuilder.CreateGround(name, options, scene);
 	}
 
@@ -1734,6 +1736,10 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		var matricesIndicesData:Array<Int> = cast this.getVerticesData(VertexBuffer.MatricesIndicesKind);
 		var matricesWeightsData = this.getVerticesData(VertexBuffer.MatricesWeightsKind);
 		
+		var needExtras:Bool = this.numBoneInfluencers > 4;
+        var matricesIndicesExtraData = needExtras ? this.getVerticesData(VertexBuffer.MatricesIndicesExtraKind) : null;
+        var matricesWeightsExtraData = needExtras ? this.getVerticesData(VertexBuffer.MatricesWeightsExtraKind) : null;
+		
 		var skeletonMatrices = skeleton.getTransformMatrices();
 		
 		var tempVector3 = Vector3.Zero();
@@ -1743,7 +1749,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		var matWeightIdx:Int = 0;
 		var index:Int = 0;
 		while (index < positionsData.length) {
-			for (inf in 0...this.numBoneInfluencers){
+			for (inf in 0...4){
                 var weight = matricesWeightsData[matWeightIdx + inf];
                 if (weight > 0) {
 					#if (cpp || neko)
@@ -1757,7 +1763,19 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 					break;   
 				}
             }
-            matWeightIdx += this.numBoneInfluencers;
+            matWeightIdx += 4;
+			
+			if (needExtras) {
+                for (inf in 0...4) {
+                    var weight = matricesWeightsExtraData[matWeightIdx + inf];
+                    if (weight > 0) {
+                        Matrix.FromFloat32ArrayToRefScaled(new Float32Array(skeletonMatrices), cast (matricesIndicesExtraData[matWeightIdx + inf] * 16), weight, tempMatrix);
+                        finalMatrix.addToSelf(tempMatrix);
+                    } else {
+						break;           
+					}
+                }
+            }
 			
 			Vector3.TransformCoordinatesFromFloatsToRef(this._sourcePositions[index], this._sourcePositions[index + 1], this._sourcePositions[index + 2], finalMatrix, tempVector3);
 			tempVector3.toArray(positionsData, index);

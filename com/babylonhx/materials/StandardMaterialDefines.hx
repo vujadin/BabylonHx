@@ -7,6 +7,7 @@ package com.babylonhx.materials;
 class StandardMaterialDefines extends MaterialDefines {	
 	
 	public var BonesPerMesh:Int = 0;
+	public var NUM_BONE_INFLUENCERS:Int = 0;
 	
 	
 	public function new() {
@@ -38,10 +39,14 @@ class StandardMaterialDefines extends MaterialDefines {
 		defines["HEMILIGHT1"] = false;
 		defines["HEMILIGHT2"] = false;
 		defines["HEMILIGHT3"] = false;
-		defines["POINTDIRLIGHT0"] = false;
-		defines["POINTDIRLIGHT1"] = false;
-		defines["POINTDIRLIGHT2"] = false;
-		defines["POINTDIRLIGHT3"] = false;
+		defines["POINTLIGHT0"] = false;
+		defines["POINTLIGHT1"] = false;
+		defines["POINTLIGHT2"] = false;
+		defines["POINTLIGHT3"] = false;
+		defines["DIRLIGHT0"] = false;
+		defines["DIRLIGHT1"] = false;
+		defines["DIRLIGHT2"] = false;
+		defines["DIRLIGHT3"] = false;
 		defines["SPECULARTERM"] = false;
 		defines["SHADOW0"] = false;
 		defines["SHADOW1"] = false;
@@ -66,8 +71,6 @@ class StandardMaterialDefines extends MaterialDefines {
 		defines["UV2"] = false;
 		defines["VERTEXCOLOR"] = false;
 		defines["VERTEXALPHA"] = false;
-		defines["BONES"] = false;
-		defines["BONES4"] = false;
 		defines["INSTANCES"] = false;
 		defines["GLOSSINESS"] = false;
 		defines["ROUGHNESS"] = false;
@@ -87,6 +90,7 @@ class StandardMaterialDefines extends MaterialDefines {
 		defines["INVERTCUBICMAP"] = false;
 		
 		BonesPerMesh = 0;
+		NUM_BONE_INFLUENCERS = 0;
 		
 		for (key in defines.keys()) {
 			_keys.push(key);
@@ -97,20 +101,21 @@ class StandardMaterialDefines extends MaterialDefines {
 		super.cloneTo(other);
 		
 		untyped other.BonesPerMesh = this.BonesPerMesh;
+		untyped other.NUM_BONE_INFLUENCERS = this.NUM_BONE_INFLUENCERS;
 	}
 	
 	override public function reset() {
 		super.reset();
 		
 		this.BonesPerMesh = 0;
+		this.NUM_BONE_INFLUENCERS = 0;
 	}
 
 	override public function toString():String {
 		var result = super.toString();
 		
-		if (this.BonesPerMesh > 0) {
-			result += "#define BonesPerMesh " + this.BonesPerMesh + "\n";
-		}
+		result += "#define BonesPerMesh " + this.BonesPerMesh + "\n";
+		result += "#define NUM_BONE_INFLUENCERS " + this.NUM_BONE_INFLUENCERS + "\n";
 		
 		return result;
 	}

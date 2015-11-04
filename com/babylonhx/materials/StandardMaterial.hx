@@ -69,7 +69,7 @@ import com.babylonhx.animations.IAnimatable;
 	
 	public var useGlossinessFromSpecularMapAlpha:Bool = false;
 
-	private var _renderTargets:SmartArray<RenderTargetTexture> = new SmartArray<RenderTargetTexture>(16);// SmartArray<RenderTargetTexture>
+	private var _renderTargets:SmartArray<RenderTargetTexture> = new SmartArray<RenderTargetTexture>(16);
 	private var _worldViewProjectionMatrix:Matrix = Matrix.Zero();
 	private var _globalAmbientColor:Color3 = new Color3(0, 0, 0);
 	private var _renderId:Int = 0;
@@ -112,21 +112,21 @@ import com.babylonhx.animations.IAnimatable;
 
 	// Methods
 	private function _checkCache(scene:Scene, ?mesh:AbstractMesh, useInstances:Bool = false):Bool {
-        if (mesh == null) {
-            return true;
-        }
+		if (mesh == null) {
+			return true;
+		}
 		
 		if (this._defines.defines["INSTANCES"] != useInstances) {
 			return false;
 		}
 		
-        if (mesh._materialDefines != null && mesh._materialDefines.isEqual(this._defines)) {
-            return true;
-        }
+		if (mesh._materialDefines != null && mesh._materialDefines.isEqual(this._defines)) {
+			return true;
+		}
 		
-        return false;
-    }
-	
+		return false;
+	}
+
 	public static function PrepareDefinesForLights(scene:Scene, mesh:AbstractMesh, defines:MaterialDefines):Bool {
 		var lightIndex:Int = 0;
 		var needNormals:Bool = false;
@@ -194,7 +194,7 @@ import com.babylonhx.animations.IAnimatable;
 			if (scene.shadowsEnabled) {
 				var shadowGenerator = light.getShadowGenerator();
 				if (mesh != null && mesh.receiveShadows && shadowGenerator != null) {
-					defines.defines["SHADOW" + lightIndex] = true;
+					defines.defines["SHADOW" + lightIndex] = true; 
 					
 					defines.defines["SHADOWS"] = true;
 					
@@ -275,7 +275,7 @@ import com.babylonhx.animations.IAnimatable;
 			}
 		}
 	}
-	
+
 	override public function isReady(?mesh:AbstractMesh, useInstances:Bool = false):Bool {
 		if (this.checkReadyOnlyOnce) {
 			if (this._wasPreviouslyReady) {
@@ -373,8 +373,7 @@ import com.babylonhx.animations.IAnimatable;
 							this._defines.defines["REFLECTIONMAP_SPHERICAL"] = true;
 							
 						case Texture.EQUIRECTANGULAR_MODE:
-                            this._defines.defines["REFLECTIONMAP_EQUIRECTANGULAR"] = true;
-							
+							this._defines.defines["REFLECTIONMAP_EQUIRECTANGULAR"] = true;							
 					}
 				}
 			}
@@ -412,7 +411,7 @@ import com.babylonhx.animations.IAnimatable;
 			}
 		}
 		
-		if (scene.getEngine().getCaps().standardDerivatives != null && this.bumpTexture != null && StandardMaterial.BumpTextureEnabled) {
+		if (scene.getEngine().getCaps().standardDerivatives == true && this.bumpTexture != null && StandardMaterial.BumpTextureEnabled) {
 			if (!this.bumpTexture.isReady()) {
 				return false;
 			} 
@@ -440,8 +439,8 @@ import com.babylonhx.animations.IAnimatable;
 		}
 		
 		if (this.linkEmissiveWithDiffuse) {
-            this._defines.defines["LINKEMISSIVEWITHDIFFUSE"] = true;
-        }
+			this._defines.defines["LINKEMISSIVEWITHDIFFUSE"] = true;
+		}
 		
 		if (this.useReflectionFresnelFromSpecular) {
 			this._defines.defines["REFLECTIONFRESNELFROMSPECULAR"] = true;
@@ -467,7 +466,7 @@ import com.babylonhx.animations.IAnimatable;
 				this.opacityFresnelParameters != null && this.opacityFresnelParameters.isEnabled ||
 				this.emissiveFresnelParameters != null && this.emissiveFresnelParameters.isEnabled ||
 				this.reflectionFresnelParameters != null && this.reflectionFresnelParameters.isEnabled) {
-				
+					
 				if (this.diffuseFresnelParameters != null && this.diffuseFresnelParameters.isEnabled) {
 					this._defines.defines["DIFFUSEFRESNEL"] = true;
 				}
@@ -514,9 +513,8 @@ import com.babylonhx.animations.IAnimatable;
 				}
 			}
 			if (mesh.useBones && mesh.computeBonesUsingShaders) {
-				this._defines.defines["BONES"] = true;
+				this._defines.NUM_BONE_INFLUENCERS = mesh.numBoneInfluencers;
 				this._defines.BonesPerMesh = (mesh.skeleton.bones.length + 1);
-				this._defines.defines["BONES4"] = true;
 			}
 			
 			// Instances
@@ -554,10 +552,7 @@ import com.babylonhx.animations.IAnimatable;
 			}
 			
 			for (lightIndex in 0...Material.maxSimultaneousLights) {
-				var lightEnabled:Bool = true;
-				lightEnabled = this._defines.defines["LIGHT" + lightIndex];
-				
-				if (!lightEnabled) {
+				if (!this._defines.defines["LIGHT" + lightIndex]) {
 					continue;
 				}
 				
@@ -565,22 +560,15 @@ import com.babylonhx.animations.IAnimatable;
 					fallbacks.addFallback(lightIndex, "LIGHT" + lightIndex);
 				}
 				
-				var shadowEnabled:Bool = true;
-				shadowEnabled = this._defines.defines["SHADOW" + lightIndex];
-				
-				if (shadowEnabled) {
+				if (this._defines.defines["SHADOW" + lightIndex]) {
 					fallbacks.addFallback(0, "SHADOW" + lightIndex);
 				}
 				
-				shadowEnabled = this._defines.defines["SHADOWPCF" + lightIndex];
-				
-				if (shadowEnabled) {
+				if (this._defines.defines["SHADOWPCF" + lightIndex]) {
 					fallbacks.addFallback(0, "SHADOWPCF" + lightIndex);
 				}
 				
-				shadowEnabled = this._defines.defines["SHADOWVSM" + lightIndex];
-				
-				if (shadowEnabled) {
+				if (this._defines.defines["SHADOWVSM" + lightIndex]) {
 					fallbacks.addFallback(0, "SHADOWVSM" + lightIndex);
 				}
 			}
@@ -609,8 +597,8 @@ import com.babylonhx.animations.IAnimatable;
 				fallbacks.addFallback(4, "FRESNEL");
 			}
 			
-			if (this._defines.defines["BONES4"]) {
-				fallbacks.addFallback(0, "BONES4");
+			if (this._defines.NUM_BONE_INFLUENCERS > 0){
+				fallbacks.addCPUSkinningFallback(0, mesh);    
 			}
 			
 			//Attributes
@@ -632,9 +620,13 @@ import com.babylonhx.animations.IAnimatable;
 				attribs.push(VertexBuffer.ColorKind);
 			}
 			
-			if (this._defines.defines["BONES"]) {
+			if (this._defines.NUM_BONE_INFLUENCERS > 0) {
 				attribs.push(VertexBuffer.MatricesIndicesKind);
 				attribs.push(VertexBuffer.MatricesWeightsKind);
+				if (this._defines.NUM_BONE_INFLUENCERS > 4) {
+					attribs.push(VertexBuffer.MatricesIndicesExtraKind);
+					attribs.push(VertexBuffer.MatricesWeightsExtraKind);
+				}
 			}
 			
 			if (this._defines.defines["INSTANCES"]) {
@@ -649,7 +641,8 @@ import com.babylonhx.animations.IAnimatable;
 			if (scene.getEngine().getCaps().standardDerivatives != true) {
 				shaderName = "legacydefault";
 			}
-			var join = this._defines.toString();
+			var join:String = this._defines.toString();
+			
 			this._effect = scene.getEngine().createEffect(shaderName,
 				attribs,
 				["world", "view", "viewProjection", "vEyePosition", "vLightsType", "vAmbientColor", "vDiffuseColor", "vSpecularColor", "vEmissiveColor",
@@ -669,7 +662,6 @@ import com.babylonhx.animations.IAnimatable;
 				],
 				join, fallbacks, this.onCompiled, this.onError);
 		}
-		
 		if (!this._effect.isReady()) {
 			return false;
 		}
@@ -678,16 +670,15 @@ import com.babylonhx.animations.IAnimatable;
 		this._wasPreviouslyReady = true;
 		
 		if (mesh != null) {
-            if (mesh._materialDefines == null) {
-                mesh._materialDefines = new StandardMaterialDefines();
-            }
+			if (mesh._materialDefines == null) {
+				mesh._materialDefines = new StandardMaterialDefines();
+			}
 			
-            this._defines.cloneTo(mesh._materialDefines);
-        }
+			this._defines.cloneTo(mesh._materialDefines);
+		}
 		
 		return true;
 	}
-
 
 	override public function unbind() {
 		if (this.reflectionTexture != null && this.reflectionTexture.isRenderTarget) {
@@ -811,7 +802,7 @@ import com.babylonhx.animations.IAnimatable;
 			
 			// Colors
 			scene.ambientColor.multiplyToRef(this.ambientColor, this._globalAmbientColor);
-						
+			
 			this._effect.setVector3("vEyePosition", scene._mirroredCameraPosition != null ? scene._mirroredCameraPosition : scene.activeCamera.position);
 			this._effect.setColor3("vAmbientColor", this._globalAmbientColor);
 			
@@ -824,7 +815,7 @@ import com.babylonhx.animations.IAnimatable;
 		// Diffuse
 		this._effect.setColor4("vDiffuseColor", this.diffuseColor, this.alpha * mesh.visibility);
 		
-		// Lights		
+		// Lights
 		if (scene.lightsEnabled && !this.disableLighting) {
 			StandardMaterial.BindLights(scene, mesh, this._effect, this._defines);
 		}

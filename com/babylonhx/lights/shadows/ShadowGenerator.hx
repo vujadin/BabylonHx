@@ -227,7 +227,8 @@ import com.babylonhx.Scene;
 				// Draw
 				mesh._processRendering(subMesh, this._effect, Material.TriangleFillMode, batch, hardwareInstancedRendering,
 					function(isInstance:Bool, world:Matrix) { this._effect.setMatrix("world", world); } );
-			} else {
+			} 
+			else {
 				// Need to reset refresh rate of the shadowMap
 				this._shadowMap.resetRefreshCounter();
 			}
@@ -252,7 +253,8 @@ import com.babylonhx.Scene;
 		this._shadowMap.onClear = function(engine:Engine) {
 			if (this.useBlurVarianceShadowMap || this.useVarianceShadowMap) {
 				engine.clear(new Color4(0, 0, 0, 0), true, true);
-			} else {
+			} 
+			else {
 				engine.clear(new Color4(1.0, 1.0, 1.0, 1.0), true, true);
 			}
 		}
@@ -287,7 +289,11 @@ import com.babylonhx.Scene;
 		if (mesh.useBones && mesh.computeBonesUsingShaders) {
 			attribs.push(VertexBuffer.MatricesIndicesKind);
 			attribs.push(VertexBuffer.MatricesWeightsKind);
-			defines.push("#define BONES");
+			if (mesh.numBoneInfluencers > 4) {
+                attribs.push(VertexBuffer.MatricesIndicesExtraKind);
+                attribs.push(VertexBuffer.MatricesWeightsExtraKind);
+            }
+            defines.push("#define NUM_BONE_INFLUENCERS " + mesh.numBoneInfluencers);
 			defines.push("#define BonesPerMesh " + (mesh.skeleton.bones.length + 1));
 		}
 		

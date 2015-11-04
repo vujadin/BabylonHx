@@ -28,6 +28,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	public var colors:Array<Float>;
 	public var matricesIndices:Array<Float>;
 	public var matricesWeights:Array<Float>;
+	public var matricesIndicesExtra:Array<Float>;
+    public var matricesWeightsExtra:Array<Float>;
 	public var indices:Array<Int>;
 	
 	// for ribbon
@@ -73,6 +75,12 @@ import com.babylonhx.utils.typedarray.Int32Array;
 				
 			case VertexBuffer.MatricesWeightsKind:
 				this.matricesWeights = data;
+				
+			case VertexBuffer.MatricesIndicesExtraKind:
+                this.matricesIndicesExtra = data;
+                
+            case VertexBuffer.MatricesWeightsExtraKind:
+                this.matricesWeightsExtra = data;
 				
 			default:
 				// nothing
@@ -141,6 +149,14 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			meshOrGeometry.setVerticesData(VertexBuffer.MatricesWeightsKind, this.matricesWeights, updatable);
 		}
 		
+		if (this.matricesIndicesExtra != null) {
+            meshOrGeometry.setVerticesData(VertexBuffer.MatricesIndicesExtraKind, this.matricesIndicesExtra, updatable);
+        }
+		
+        if (this.matricesWeightsExtra != null) {
+            meshOrGeometry.setVerticesData(VertexBuffer.MatricesWeightsExtraKind, this.matricesWeightsExtra, updatable);
+        }
+		
 		if (this.indices != null) {
 			meshOrGeometry.setIndices(this.indices);
 		}
@@ -190,6 +206,14 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		if (this.matricesWeights != null) {
 			meshOrGeometry.updateVerticesData(VertexBuffer.MatricesWeightsKind, this.matricesWeights, updateExtends, makeItUnique);
 		}
+		
+		if (this.matricesIndicesExtra != null) {
+            meshOrGeometry.updateVerticesData(VertexBuffer.MatricesIndicesExtraKind, this.matricesIndicesExtra, updateExtends, makeItUnique);
+        }
+		
+        if (this.matricesWeightsExtra != null) {
+            meshOrGeometry.updateVerticesData(VertexBuffer.MatricesWeightsExtraKind, this.matricesWeightsExtra, updateExtends, makeItUnique);
+        }
 		
 		if (this.indices != null) {
 			meshOrGeometry.setIndices(this.indices);
@@ -334,6 +358,24 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			}
 		}
 		
+		if (other.matricesIndicesExtra != null) {
+            if (this.matricesIndicesExtra == null) {
+                this.matricesIndicesExtra = [];
+            }
+            for (index in 0...other.matricesIndicesExtra.length) {
+                this.matricesIndicesExtra.push(other.matricesIndicesExtra[index]);
+            }
+        }
+		
+        if (other.matricesWeightsExtra != null) {
+            if (this.matricesWeightsExtra == null) {
+                this.matricesWeightsExtra = [];
+            }
+            for (index in 0...other.matricesWeightsExtra.length) {
+                this.matricesWeightsExtra.push(other.matricesWeightsExtra[index]);
+            }
+        }
+		
 		if (other.colors != null) {
 			if (this.colors == null) {
 				this.colors = [];
@@ -399,6 +441,14 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.MatricesWeightsKind)) {
 			result.matricesWeights = meshOrGeometry.getVerticesData(VertexBuffer.MatricesWeightsKind, copyWhenShared);
 		}
+		
+		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.MatricesIndicesExtraKind)) {
+            result.matricesIndicesExtra = meshOrGeometry.getVerticesData(VertexBuffer.MatricesIndicesExtraKind, copyWhenShared);
+        }
+		
+        if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.MatricesWeightsExtraKind)) {
+            result.matricesWeightsExtra = meshOrGeometry.getVerticesData(VertexBuffer.MatricesWeightsExtraKind, copyWhenShared);
+        }
 		
 		result.indices = meshOrGeometry.getIndices(copyWhenShared);
 		
@@ -827,13 +877,13 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		var uvs:Array<Float> = [];
 		var colors:Array<Float> = [];
 		
-		var height:Float = options.height != null ? options.height : 3;
+		var height:Float = options.height != null ? options.height : 2;
 		var diameterTop:Float = options.diameterTop != null ? options.diameterTop : (options.diameter != null ? options.diameter : 1);
 		var diameterBottom:Float = options.diameterBottom != null ? options.diameterBottom : (options.diameter ? options.diameter : 1);
 		var tessellation:Int = options.tessellation != null ? options.tessellation : 24;
 		var subdivisions:Int = options.subdivisions != null ? options.subdivisions : 1;
 		var arc:Float = options.arc != null ? options.arc : 1.0;
-		if (arc < 0) {
+		if (arc < 0 || arc > 1) {
 			arc = 1.0;
 		}
 		var sideOrientation:Int = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
@@ -886,8 +936,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 				normals.push(ringNormal.y);
 				normals.push(ringNormal.z);
 				
-				uvs.push(j / tessellation);
-				uvs.push(1 - h);
+				uvs.push(faceUV[1].x + (faceUV[1].z - faceUV[1].x) * j / tessellation);
+				uvs.push(faceUV[1].y + (faceUV[1].w - faceUV[1].y) * h);
 				
 				if (faceColors.length > 0) {
 					colors.push(faceColors[1].r);
@@ -920,40 +970,67 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			if (radius == 0) {
 				return;
 			}
-			var vbase = Std.int(positions.length / 3);
-			var offset = new Vector3(0, isTop ? height / 2 : -height / 2, 0);
-			var textureScale = new Vector2(0.5, 0.5);
+			
 			// Cap positions, normals & uvs
 			var angle:Float = 0;
 			var circleVector:Vector3 = null;
+			var u:Vector4 = isTop ? faceUV[2] : faceUV[0];
+			var c:Color4 = null;
+			if (faceColors != null) {
+				c = isTop ? faceColors[2] : faceColors[0];
+			}
+			// cap center
+			var vbase = Std.int(positions.length / 3);
+			var offset = isTop ? height / 2 : -height / 2;
+			var center = new Vector3(0, offset, 0);
+			positions.push(center.x);
+			positions.push(center.y);
+			positions.push(center.z);
+			normals.push(0);
+			normals.push(isTop ? 1 : -1);
+			normals.push(0);
+			uvs.push(u.x + (u.z - u.x) * 0.5);
+			uvs.push(u.y + (u.w - u.y) * 0.5);
+			if (faceColors != null) {
+				colors.push(c.r);
+				colors.push(c.g);
+				colors.push(c.b);
+				colors.push(c.a);
+			}
 			
-			for (i in 0...tessellation) {
-				angle = Math.PI * 2 * i / tessellation;
-				circleVector = new Vector3(Math.cos(-angle), 0, Math.sin(-angle));
-				var position = circleVector.scale(radius).add(offset);
-				var textureCoordinate = new Vector2(circleVector.x * textureScale.x + 0.5, circleVector.z * textureScale.y + 0.5);
-				positions.push(position.x);
-				positions.push(position.y);
-				positions.push(position.z);
-				
+			var textureScale = new Vector2(0.5, 0.5);
+			for (i in 0...tessellation+1) {
+				angle = Math.PI * 2 * i * arc / tessellation;
+				var cos = Math.cos(-angle);
+				var sin = Math.sin(-angle);
+				circleVector = new Vector3(cos * radius, offset, sin * radius);
+				var textureCoordinate = new Vector2(cos * textureScale.x + 0.5, sin * textureScale.y + 0.5);
+				positions.push(circleVector.x);
+				positions.push(circleVector.y);
+				positions.push(circleVector.z);
 				normals.push(0);
 				normals.push(isTop ? 1 : -1);
 				normals.push(0);
-				
-				uvs.push(textureCoordinate.x);
-				uvs.push(textureCoordinate.y);
+				uvs.push(u.x + (u.z - u.x) * textureCoordinate.x);
+				uvs.push(u.y + (u.w - u.y) * textureCoordinate.y);
+				if (faceColors != null) {
+					colors.push(c.r);
+					colors.push(c.g);
+					colors.push(c.b);
+					colors.push(c.a);
+				}
 			}
 			// Cap indices
-			for (i in 0...tessellation - 2) {
+			for (i in 0...tessellation) {
 				if (!isTop) {
 					indices.push(vbase);
-					indices.push(vbase + (i + 1) % tessellation);
-					indices.push(vbase + (i + 2) % tessellation);
+					indices.push(vbase + (i + 1));
+					indices.push(vbase + (i + 2));
 				}
 				else {
 					indices.push(vbase);
-					indices.push(vbase + (i + 2) % tessellation);
-					indices.push(vbase + (i + 1) % tessellation);
+					indices.push(vbase + (i + 2));
+					indices.push(vbase + (i + 1));
 				}
 			}
 		};
@@ -971,7 +1048,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		vertexData.positions = positions;
 		vertexData.normals = normals;
 		vertexData.uvs = uvs;
-		if (colors.length > 0) {
+		if (faceColors != null) {
 			vertexData.colors = colors;
 		}
 		
@@ -1292,7 +1369,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 				var g = buffer[pos + 1] / 255.0;
 				var b = buffer[pos + 2] / 255.0;
 				#end
-				
+								
 				var gradient = r * 0.3 + g * 0.59 + b * 0.11;
 				position.y = minHeight + (maxHeight - minHeight) * gradient;
 				
