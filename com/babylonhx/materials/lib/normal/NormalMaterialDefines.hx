@@ -1,10 +1,10 @@
-package com.babylonhx.materials.lib.water;
+package com.babylonhx.materials.lib.normal;
 
 /**
  * ...
  * @author Krtolica Vujadin
  */
-class WaterMaterialDefines extends MaterialDefines {
+class NormalMaterialDefines extends MaterialDefines {
 
 	public var BonesPerMesh:Int = 0;
 	
@@ -12,8 +12,7 @@ class WaterMaterialDefines extends MaterialDefines {
 	public function new() {
 		super();
 		
-		defines["BUMP"] = false;
-		defines["REFLECTION"] = false;
+		defines["DIFFUSE"] = false;
 		defines["CLIPPLANE"] = false;
 		defines["ALPHATEST"] = false;
 		defines["POINTSIZE"] = false;
@@ -38,7 +37,6 @@ class WaterMaterialDefines extends MaterialDefines {
 		defines["DIRLIGHT1"] = false;
 		defines["DIRLIGHT2"] = false;
 		defines["DIRLIGHT3"] = false;
-		defines["SPECULARTERM"] = false;
 		defines["SHADOW0"] = false;
 		defines["SHADOW1"] = false;
 		defines["SHADOW2"] = false;

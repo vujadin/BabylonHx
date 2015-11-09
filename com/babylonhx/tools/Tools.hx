@@ -472,10 +472,7 @@ typedef Assets = nme.Assets;
 						function(result:Dynamic) {
 							callbackFn(result);
 						} : function(_) { };
-					var future = Assets.loadText(path);
-					future.onComplete(function(data:String) {
-						callBackFunction(data);
-					});
+					callBackFunction(Assets.getText(path));
 				}
 			} 
 			#if (lime || openfl && !nme)

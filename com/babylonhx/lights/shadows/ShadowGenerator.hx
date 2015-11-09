@@ -154,11 +154,13 @@ import com.babylonhx.Scene;
 		light._shadowGenerator = this;
 		
 		// Render target
-		this._shadowMap = new RenderTargetTexture(light.name + "_shadowMap", mapSize, this._scene, false);
+		this._shadowMap = new RenderTargetTexture(light.name + "_shadowMap", mapSize, this._scene, false, true, Engine.TEXTURETYPE_UNSIGNED_INT, light.needCube());
 		this._shadowMap.wrapU = Texture.CLAMP_ADDRESSMODE;
 		this._shadowMap.wrapV = Texture.CLAMP_ADDRESSMODE;
 		this._shadowMap.anisotropicFilteringLevel = 1;
-		this._shadowMap.updateSamplingMode(Texture.NEAREST_SAMPLINGMODE);
+		if (!light.needCube()) {
+			this._shadowMap.updateSamplingMode(Texture.NEAREST_SAMPLINGMODE);
+		}
 		this._shadowMap.renderParticles = false;
 		
 		this._shadowMap.onBeforeRender = function(?faceIndex:Int) {
@@ -295,6 +297,9 @@ import com.babylonhx.Scene;
             }
             defines.push("#define NUM_BONE_INFLUENCERS " + mesh.numBoneInfluencers);
 			defines.push("#define BonesPerMesh " + (mesh.skeleton.bones.length + 1));
+		} 
+		else {
+			defines.push("#define NUM_BONE_INFLUENCERS 0");
 		}
 		
 		// Instances
@@ -338,7 +343,7 @@ import com.babylonhx.Scene;
 	// Methods
 	public function getTransformMatrix():Matrix {
 		var scene = this._scene;
-		if (this._currentRenderID == scene.getRenderId()) {
+		if (this._currentRenderID == scene.getRenderId() && this._currentFaceIndexCache == this._currentFaceIndex) {
 			return this._transformMatrix;
 		}
 		

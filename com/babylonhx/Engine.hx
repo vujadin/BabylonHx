@@ -1550,6 +1550,12 @@ import nme.display.OpenGLView;
 		GL.bindFramebuffer(GL.FRAMEBUFFER, framebuffer);
 		GL.framebufferRenderbuffer(GL.FRAMEBUFFER, GL.DEPTH_ATTACHMENT, GL.RENDERBUFFER, depthBuffer);
 		
+		// mipmaps
+        if (texture.generateMipMaps) {
+            GL.bindTexture(GL.TEXTURE_CUBE_MAP, texture.data);
+            GL.generateMipmap(GL.TEXTURE_CUBE_MAP);
+        }
+		
 		// Unbind
 		GL.bindTexture(GL.TEXTURE_CUBE_MAP, null);
 		GL.bindRenderbuffer(GL.RENDERBUFFER, null);
@@ -1688,12 +1694,7 @@ import nme.display.OpenGLView;
 		GL.deleteTexture(texture.data);
 		
 		// Unbind channels
-		for (channel in 0...this._caps.maxTexturesImageUnits) {
-			GL.activeTexture(getGLTexture(channel));
-			GL.bindTexture(GL.TEXTURE_2D, null);
-			GL.bindTexture(GL.TEXTURE_CUBE_MAP, null);
-			this._activeTexturesCache[channel] = null;
-		}
+		this.unbindAllTextures();		
 		
 		var index = this._loadedTexturesCache.indexOf(texture);
 		if (index != -1) {
@@ -1701,6 +1702,15 @@ import nme.display.OpenGLView;
 		}
 		
 		texture = null;
+	}
+	
+	public function unbindAllTextures() {
+		for (channel in 0...this._caps.maxTexturesImageUnits) {
+			GL.activeTexture(getGLTexture(channel));
+			GL.bindTexture(GL.TEXTURE_2D, null);
+			GL.bindTexture(GL.TEXTURE_CUBE_MAP, null);
+			this._activeTexturesCache[channel] = null;
+		}
 	}
 	
 	inline function getGLTexture(channel:Int):Int {
@@ -1856,10 +1866,11 @@ import nme.display.OpenGLView;
 				
         GL.shaderSource(shader, (defines != null ? defines + "\n" : "") + source);
         GL.compileShader(shader);
-
+		
         if (GL.getShaderParameter(shader, GL.COMPILE_STATUS) == 0) {
             throw(GL.getShaderInfoLog(shader));
         }
+		
         return shader;
     }
 	

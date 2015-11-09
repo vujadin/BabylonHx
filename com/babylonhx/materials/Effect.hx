@@ -181,7 +181,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private function _prepareEffect(vertexSourceCode:String, fragmentSourceCode:String, attributesNames:Array<String>, defines:String, ?fallbacks:EffectFallbacks) {		
         try {
             var engine = this._engine;
-						
+					
 			if (!engine.getCaps().highPrecisionShaderSupported) { // Moving highp to mediump
                 vertexSourceCode = StringTools.replace(vertexSourceCode, "precision highp float", "precision mediump float");
                 fragmentSourceCode = StringTools.replace(fragmentSourceCode, "precision highp float", "precision mediump float");
@@ -189,7 +189,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			
 			this.tempVert = defines + vertexSourceCode;
 			this.tempFrag = defines + fragmentSourceCode;
-												
+			
             this._program = engine.createShaderProgram(vertexSourceCode, fragmentSourceCode, defines);
 			
             this._uniforms = engine.getUniforms(this._program, this._uniformsNames);
@@ -218,8 +218,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 				this.onCompiled(this);
 			}
 			
-        } catch (e:Dynamic) {
-			trace(e);
+        } catch (e:Dynamic) {		
 			
 			#if (js || purejs)
 			// Is it a problem with precision?
@@ -236,7 +235,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			if (fallbacks != null && fallbacks.isMoreFallbacks) {
 				defines = fallbacks.reduce(defines);
 				this._prepareEffect(vertexSourceCode, fragmentSourceCode, attributesNames, defines, fallbacks);
-            } else {
+            } 
+			else {
                 trace("Unable to compile effect: " + this.name);
                 trace("Defines: " + defines);
                 trace("Error: " + e);

@@ -19,6 +19,17 @@ import com.babylonhx.utils.typedarray.Float32Array;
  * ...
  * @author Krtolica Vujadin
  */
+
+typedef SolidPartileOptions = {
+	?updatable:Bool,
+	?isPickable:Bool
+}
+
+typedef PickedParticle = {
+	idx:Int,
+	faceId:Int
+}
+ 
 class SolidParticleSystem implements IDisposable {
 	
 	// public members  
@@ -28,6 +39,8 @@ class SolidParticleSystem implements IDisposable {
 	public var counter:Int = 0;
 	public var name:String;
 	public var mesh:Mesh;
+	public var vars:Dynamic = { };
+	public var pickedParticles:Array<PickedParticle> = [];
 	
 	// private members
 	private var _scene:Scene;
@@ -36,11 +49,15 @@ class SolidParticleSystem implements IDisposable {
 	private var _normals:Array<Float> = [];
 	private var _colors:Array<Float> = [];
 	private var _uvs:Array<Float> = [];
-	private var _positions32:Float32Array;
-	private var _normals32:Float32Array;
-	private var _colors32:Float32Array;
-	private var _uvs32:Float32Array;
+	//private var _positions32:Float32Array;
+	//private var _normals32:Float32Array;		// updated normals for the VBO
+	private var _fixedNormal32:Float32Array;	// initial normal references
+	//private var _colors32:Float32Array;			
+	//private var _uvs32:Float32Array;			
 	private var _index:Int = 0;  // indices index
+	private var _updatable:Bool = true;
+	private var _pickable:Bool = false;
+	private var _alwaysVisible:Bool = false;
 	private var _shapeCounter:Int = 0;
 	private var _copy:SolidParticle = new SolidParticle(null, null, null, null, null);
 	private var _shape:Array<Vector3>;
@@ -60,10 +77,10 @@ class SolidParticleSystem implements IDisposable {
 	private var _particle:SolidParticle;
 	private var _fakeCamPos:Vector3 = Vector3.Zero();
 	private var _rotMatrix:Matrix = new Matrix();
-	private var _invertedMatrix:Matrix = new Matrix();
 	private var _rotated:Vector3 = Vector3.Zero();
 	private var _quaternion:Quaternion = new Quaternion();
 	private var _vertex:Vector3 = Vector3.Zero();
+	private var _normal:Vector3 = Vector3.Zero();
 	private var _yaw:Float = 0.0;
 	private var _pitch:Float = 0.0;
 	private var _roll:Float = 0.0;
@@ -76,6 +93,9 @@ class SolidParticleSystem implements IDisposable {
 	private var _cosPitch:Float = 0.0;
 	private var _sinYaw:Float = 0.0;
 	private var _cosYaw:Float = 0.0;
+	private var _w:Float = 0.0;
+	
+	public var isAlwaysVisible(get, set):Bool;
 	
 	public var computeParticleColor(get, set):Bool;
 	public var computeParticleTexture(get, set):Bool;
@@ -83,10 +103,21 @@ class SolidParticleSystem implements IDisposable {
 	public var computeParticleVertex(get, set):Bool;
 		
 
-	public function new(name:String, scene:Scene) {
+	public function new(name:String, scene:Scene, ?options:SolidPartileOptions) {
 		this.name = name;
 		this._scene = scene;
 		this._camera = scene.activeCamera;
+		
+		this._pickable = options != null && options.isPickable != null ? options.isPickable : false;
+		if (options != null && options.updatable != null) {
+			this._updatable = options.updatable;
+		} 
+		else {
+			this._updatable = true;
+		}
+		if (this._pickable) {
+			this.pickedParticles = [];
+		}
 	}
 	
 	// build the SPS mesh : returns the mesh
@@ -97,25 +128,33 @@ class SolidParticleSystem implements IDisposable {
 			triangle.dispose();
 		}
 		
-		this._positions32 = new Float32Array(this._positions);
+		/*this._positions32 = new Float32Array(this._positions);
 		this._uvs32 = new Float32Array(this._uvs);
-		this._colors32 = new Float32Array(this._colors);
+		this._colors32 = new Float32Array(this._colors);*/
 		VertexData.ComputeNormals(this._positions, this._indices, this._normals);
-		this._normals32 = new Float32Array(this._normals);
+		/*this._normals32 = new Float32Array(this._normals);*/
+		this._fixedNormal32 = new Float32Array(this._normals);
 		
 		var vertexData:VertexData = new VertexData();
 		vertexData.set(this._positions, VertexBuffer.PositionKind);
 		vertexData.indices = this._indices;
 		vertexData.set(this._normals, VertexBuffer.NormalKind);
-		if (this._uvs32 != null) {
+		/*if (this._uvs32 != null) {
 			vertexData.set(this._uvs, VertexBuffer.UVKind);
 		}
 		if (this._colors32 != null) {
+			vertexData.set(this._colors, VertexBuffer.ColorKind);
+		}*/
+		if (this._uvs != null) {
+			vertexData.set(this._uvs, VertexBuffer.UVKind);
+		}
+		if (this._colors != null) {
 			vertexData.set(this._colors, VertexBuffer.ColorKind);
 		}
 		var mesh = new Mesh(name, this._scene);
 		vertexData.applyToMesh(mesh, updatable);
 		this.mesh = mesh;
+		this.mesh.isPickable = this._pickable;
 		
 		// free memory
 		/*this._positions = null;
@@ -223,6 +262,13 @@ class SolidParticleSystem implements IDisposable {
 		for (i in 0...meshInd.length) {
 			indices.push(p + meshInd[i]);
 		}
+		
+		if (this._pickable) {
+			var nbfaces = Std.int(meshInd.length / 3);
+			for (i in 0...nbfaces) {
+				this.pickedParticles.push({ idx: idx, faceId: i });
+			}
+		}
 	}
 
 	// returns a shape array from positions array
@@ -268,10 +314,14 @@ class SolidParticleSystem implements IDisposable {
 		var modelShape = new ModelShape(this._shapeCounter, shape, shapeUV, posfunc, vtxfunc);
 		
 		// particles
+		var idx = this.nbParticles;
 		for (i in 0...nb) {
-		    this._meshBuilder(this._index, shape, this._positions, meshInd, this._indices, meshUV, this._uvs, meshCol, this._colors, this.nbParticles + i, i, options);
-			this._addParticle(this.nbParticles + i, this._positions.length, modelShape, this._shapeCounter, i);
+		    this._meshBuilder(this._index, shape, this._positions, meshInd, this._indices, meshUV, this._uvs, meshCol, this._colors, idx, i, options);
+			if (this._updatable) {
+				this._addParticle(idx, this._positions.length, modelShape, this._shapeCounter, i);
+			}
 			this._index += shape.length;
+			idx++;
 		}
 		this.nbParticles += nb;
 		this._shapeCounter++;
@@ -370,8 +420,7 @@ class SolidParticleSystem implements IDisposable {
 			this._roll = this.mesh.rotation.z;
 			this._quaternionRotationYPR();
 			this._quaternionToRotationMatrix();
-			this._rotMatrix.invertToRef(this._invertedMatrix);
-			Vector3.TransformCoordinatesToRef(this._camera.globalPosition, this._invertedMatrix, this._fakeCamPos);
+			Vector3.TransformCoordinatesToRef(this._camera.globalPosition, this._rotMatrix, this._fakeCamPos);
 			
 			// set two orthogonal vectors (_cam_axisX and and _cam_axisY) to the cam-mesh axis (_cam_axisZ)
 			this._fakeCamPos.subtractToRef(this.mesh.position, this._cam_axisZ);
@@ -398,7 +447,9 @@ class SolidParticleSystem implements IDisposable {
 			this._shapeUV = this._particle._model._shapeUV;
 			
 			// call to custom user function to update the particle properties
-			this.updateParticle(this._particle); 
+			if (this.updateParticle != null) {
+				this.updateParticle(this._particle); 
+			}
 			
 			// particle rotation matrix
 			if (this.billboard) {
@@ -434,15 +485,36 @@ class SolidParticleSystem implements IDisposable {
 				if (this._computeParticleVertex) {
 					this.updateParticleVertex(this._particle, this._vertex, pt);
 				}
+				
+				// positions
 				this._vertex.x *= this._particle.scale.x;
 				this._vertex.y *= this._particle.scale.y;
 				this._vertex.z *= this._particle.scale.z;
 				
-				Vector3.TransformCoordinatesToRef(this._vertex, this._rotMatrix, this._rotated);
+				this._w = (this._vertex.x * this._rotMatrix.m[3]) + (this._vertex.y * this._rotMatrix.m[7]) + (this._vertex.z * this._rotMatrix.m[11]) + this._rotMatrix.m[15];
+				this._rotated.x = ((this._vertex.x * this._rotMatrix.m[0]) + (this._vertex.y * this._rotMatrix.m[4]) + (this._vertex.z * this._rotMatrix.m[8]) + this._rotMatrix.m[12]) / this._w;
+				this._rotated.y = ((this._vertex.x * this._rotMatrix.m[1]) + (this._vertex.y * this._rotMatrix.m[5]) + (this._vertex.z * this._rotMatrix.m[9]) + this._rotMatrix.m[13]) / this._w;
+				this._rotated.z = ((this._vertex.x * this._rotMatrix.m[2]) + (this._vertex.y * this._rotMatrix.m[6]) + (this._vertex.z * this._rotMatrix.m[10]) + this._rotMatrix.m[14]) / this._w;
 				
 				this._positions[idx] = this._particle.position.x + this._cam_axisX.x * this._rotated.x + this._cam_axisY.x * this._rotated.y + this._cam_axisZ.x * this._rotated.z;
 				this._positions[idx + 1] = this._particle.position.y + this._cam_axisX.y * this._rotated.x + this._cam_axisY.y * this._rotated.y + this._cam_axisZ.y * this._rotated.z;
 				this._positions[idx + 2] = this._particle.position.z + this._cam_axisX.z * this._rotated.x + this._cam_axisY.z * this._rotated.y + this._cam_axisZ.z * this._rotated.z;
+				
+				// normals : if the particles can't be morphed then just rotate the normals
+				if (!this._computeParticleVertex && !this.billboard) {
+					this._normal.x = this._fixedNormal32[idx];
+					this._normal.y = this._fixedNormal32[idx + 1];
+					this._normal.z = this._fixedNormal32[idx + 2];
+					
+					this._w = (this._normal.x * this._rotMatrix.m[3]) + (this._normal.y * this._rotMatrix.m[7]) + (this._normal.z * this._rotMatrix.m[11]) + this._rotMatrix.m[15];
+					this._rotated.x = ((this._normal.x * this._rotMatrix.m[0]) + (this._normal.y * this._rotMatrix.m[4]) + (this._normal.z * this._rotMatrix.m[8]) + this._rotMatrix.m[12]) / this._w;
+					this._rotated.y = ((this._normal.x * this._rotMatrix.m[1]) + (this._normal.y * this._rotMatrix.m[5]) + (this._normal.z * this._rotMatrix.m[9]) + this._rotMatrix.m[13]) / this._w;
+					this._rotated.z = ((this._normal.x * this._rotMatrix.m[2]) + (this._normal.y * this._rotMatrix.m[6]) + (this._normal.z * this._rotMatrix.m[10]) + this._rotMatrix.m[14]) / this._w;
+					
+					/*this._normals32[idx] = this._cam_axisX.x * this._rotated.x + this._cam_axisY.x * this._rotated.y + this._cam_axisZ.x * this._rotated.z;
+					this._normals32[idx + 1] = this._cam_axisX.y * this._rotated.x + this._cam_axisY.y * this._rotated.y + this._cam_axisZ.y * this._rotated.z;
+					this._normals32[idx + 2] = this._cam_axisX.z * this._rotated.x + this._cam_axisY.z * this._rotated.y + this._cam_axisZ.z * this._rotated.z;*/
+				}
 				
 				if (this._computeParticleColor) {
 					this._colors[colidx] = this._particle.color.r;
@@ -471,7 +543,13 @@ class SolidParticleSystem implements IDisposable {
 			}
 			this.mesh.updateVerticesData(VertexBuffer.PositionKind, this._positions, false, false);
 			if (!this.mesh.areNormalsFrozen) {
-				VertexData.ComputeNormals(this._positions, this._indices, this._normals);
+				if (this._computeParticleVertex || this.billboard) {
+					// recompute the normals only if the particles can be morphed, update then the normal reference array
+					VertexData.ComputeNormals(this._positions, this._indices, this._normals);
+					for (i in 0...this._normals.length) {
+						this._fixedNormal32[i] = this._normals[i];
+					}
+				}
 				this.mesh.updateVerticesData(VertexBuffer.NormalKind, this._normals, false, false);
 			}
 		}
@@ -516,6 +594,36 @@ class SolidParticleSystem implements IDisposable {
 	// dispose the SPS
 	public function dispose(doNotRecurse:Bool = false) {
 		this.mesh.dispose();
+		this.vars = null;
+		// drop references to internal big arrays for the GC
+		this._positions = null;
+		this._indices = null;
+		this._normals = null;
+		this._uvs = null;
+		this._colors = null;
+		//this._positions32 = null;
+		//this._normals32 = null;
+		this._fixedNormal32 = null;
+		//this._uvs32 = null;
+		//this._colors32 = null;
+		this.pickedParticles = null;
+	}
+	
+	// Visibilty helpers
+	public function refreshVisibleSize() {
+		this.mesh.refreshBoundingInfo();
+	}
+
+	// getter and setter
+	private function get_isAlwaysVisible():Bool {
+		return this._alwaysVisible;
+	}
+
+	private function set_isAlwaysVisible(val:Bool):Bool {
+		this._alwaysVisible = val;
+		this.mesh.alwaysSelectAsActiveMesh = val;
+		
+		return val;
 	}
 
 	// Optimizer setters

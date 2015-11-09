@@ -28,11 +28,20 @@ import com.babylonhx.mesh.AbstractMesh;
 	public var _excludedMeshesIds:Array<String> = [];
 	public var _includedOnlyMeshesIds:Array<String> = [];
 	
+	private var _type:String;
+	public var type(get, never):String;
+	
 
 	public function new(name:String, scene:Scene) {
 		super(name, scene);
 		
+		this._type = "LIGHT";
+		
 		scene.addLight(this);
+	}
+	
+	private function get_type():String {
+		return this._type;
 	}
 
 	public function getShadowGenerator():ShadowGenerator {

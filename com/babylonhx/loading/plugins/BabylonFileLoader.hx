@@ -84,7 +84,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	private static var _plugin:ISceneLoaderPlugin = {
 		extensions: ".babylon",
         importMesh: function(meshesNames:Dynamic, scene:Scene, data:Dynamic, rootUrl:String, meshes:Array<AbstractMesh>, particleSystems:Array<ParticleSystem>, skeletons:Array<Skeleton>):Bool {
-					
+				
 			var parsedData:Dynamic = null;
 			if (Std.is(data, String)) {
 				parsedData = Json.parse(data);

@@ -1,4 +1,4 @@
-precision highp float;
+﻿precision highp float;
 
 // Constants
 uniform vec3 vEyePosition;
@@ -6,6 +6,15 @@ uniform vec4 vDiffuseColor;
 
 // Input
 varying vec3 vPositionW;
+
+// MAGMAAAA
+uniform float time;
+uniform float speed;
+uniform vec3 fogColor;
+uniform sampler2D noiseTexture;
+
+// Varying
+varying float noise;
 
 #ifdef NORMAL
 varying vec3 vNormalW;
@@ -97,29 +106,11 @@ uniform vec3 vLightGround3;
 #endif
 
 // Samplers
-#ifdef BUMP
-varying vec2 vNormalUV;
-uniform sampler2D normalSampler;
-uniform vec2 vNormalInfos;
+#ifdef DIFFUSE
+varying vec2 vDiffuseUV;
+uniform sampler2D diffuseSampler;
+uniform vec2 vDiffuseInfos;
 #endif
-
-uniform sampler2D refractionSampler;
-uniform sampler2D reflectionSampler;
-
-// Water uniforms
-const float LOG2 = 1.442695;
-
-uniform vec3 cameraPosition;
-
-uniform vec4 waterColor;
-uniform float colorBlendFactor;
-
-uniform float bumpHeight;
-
-// Water varyings
-varying vec3 vRefractionMapTexCoord;
-varying vec3 vReflectionMapTexCoord;
-varying vec3 vPosition;
 
 // Shadows
 #ifdef SHADOWS
@@ -268,6 +259,7 @@ float computeShadowWithVSM(vec4 vPositionFromLight, sampler2D shadowSampler, flo
 #endif
 #endif
 
+
 #ifdef CLIPPLANE
 varying float fClipDistance;
 #endif
@@ -377,6 +369,12 @@ lightingInfo computeHemisphericLighting(vec3 viewDirectionW, vec3 vNormal, vec4 
 	return result;
 }
 
+
+float random( vec3 scale, float seed ){
+    return fract( sin( dot( gl_FragCoord.xyz + seed, scale ) ) * 43758.5453 + seed ) ;
+}
+
+
 void main(void) {
 	// Clip plane
 #ifdef CLIPPLANE
@@ -393,39 +391,51 @@ void main(void) {
 	// Alpha
 	float alpha = vDiffuseColor.a;
 
-#ifdef BUMP
-	baseColor = texture2D(normalSampler, vNormalUV);
+
+
+#ifdef DIFFUSE
+    ////// MAGMA ///
+
+	vec4 noiseTex = texture2D( noiseTexture, vDiffuseUV );
+	vec2 T1 = vDiffuseUV + vec2( 1.5, -1.5 ) * time  * 0.02;
+	vec2 T2 = vDiffuseUV + vec2( -0.5, 2.0 ) * time * 0.01 * speed;
+
+	T1.x += noiseTex.x * 2.0;
+	T1.y += noiseTex.y * 2.0;
+	T2.x -= noiseTex.y * 0.2;
+	T2.y += noiseTex.z * 0.2;
+
+	float p = texture2D( noiseTexture, T1 * 3.0 ).a;
+
+	vec4 lavaColor = texture2D( diffuseSampler, T2 * 4.0);
+	vec4 temp = lavaColor * ( vec4( p, p, p, p ) * 2.0 ) + ( lavaColor * lavaColor - 0.1 );
+
+	baseColor = temp;
+
+	float fogDensity = 0.15;
+	float depth = gl_FragCoord.z * 4.0;
+	const float LOG2 = 1.442695;
+    float fogFactor = exp2( - fogDensity * fogDensity * depth * depth * LOG2 );
+    fogFactor = 1.0 - clamp( fogFactor, 0.0, 1.0 );
+
+    baseColor = mix( baseColor, vec4( fogColor, baseColor.w ), fogFactor );
+
+    ///// END MAGMA ////
+
+
+
+//	baseColor = texture2D(diffuseSampler, vDiffuseUV);
 
 #ifdef ALPHATEST
 	if (baseColor.a < 0.4)
 		discard;
 #endif
 
-	baseColor.rgb *= vNormalInfos.y;
+	baseColor.rgb *= vDiffuseInfos.y;
 #endif
 
 #ifdef VERTEXCOLOR
 	baseColor.rgb *= vColor.rgb;
-#endif
-
-#ifdef REFLECTION
-	// Water
-	vec2 perturbation = bumpHeight * (baseColor.rg - 0.5);
-	
-	vec2 projectedRefractionTexCoords = clamp(vRefractionMapTexCoord.xy / vRefractionMapTexCoord.z + perturbation, 0.0, 1.0);
-	vec4 refractiveColor = texture2D(refractionSampler, projectedRefractionTexCoords);
-	
-	vec2 projectedReflectionTexCoords = clamp(vReflectionMapTexCoord.xy / vReflectionMapTexCoord.z + perturbation, 0.0, 1.0);
-	vec4 reflectiveColor = texture2D(reflectionSampler, projectedReflectionTexCoords);
-	
-	vec3 eyeVector = normalize(vEyePosition - vPosition);
-	vec3 upVector = vec3(0.0, 1.0, 0.0);
-	
-	float fresnelTerm = max(dot(eyeVector, upVector), 0.0);
-	
-	vec4 combinedColor = refractiveColor * fresnelTerm + reflectiveColor * (1.0 - fresnelTerm);
-	
-	baseColor = colorBlendFactor * waterColor + (1.0 - colorBlendFactor) * combinedColor;
 #endif
 
 	// Bump
@@ -435,7 +445,7 @@ void main(void) {
 	vec3 normalW = vec3(1.0, 1.0, 1.0);
 #endif
 
-		// Lighting
+	// Lighting
 	vec3 diffuseBase = vec3(0., 0., 0.);
 	float shadow = 1.;
 
@@ -588,6 +598,7 @@ void main(void) {
 	float fog = CalcFogFactor();
 	color.rgb = fog * color.rgb + (1.0 - fog) * vFogColor;
 #endif
-	
+
+
 	gl_FragColor = color;
 }

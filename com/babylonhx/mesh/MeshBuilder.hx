@@ -363,7 +363,8 @@ class MeshBuilder {
 	private static function CreateGround(name:String, options:Dynamic, scene:Scene):Mesh {
 		var ground = new GroundMesh(name, scene);
 		ground._setReady(false);
-		ground._subdivisions = options.subdivisions != null ? options.subdivisions : 1;
+		ground._subdivisions = options.subdivision != null ? options.subdivision : 1;
+		trace(ground._subdivisions);
 		
 		var vertexData = VertexData.CreateGround(options);
 		vertexData.applyToMesh(ground, options.updatable);
@@ -383,7 +384,7 @@ class MeshBuilder {
 	private static function CreateGroundFromHeightMap(name:String, url:String, options:Dynamic, scene:Scene):GroundMesh {
 		var width:Float = options.width != null ? options.width : 10;
 		var height:Float = options.height != null ? options.height : 10;
-		var subdivisions:Int = options.subdivisions != null ? options.subdivisions : 1;
+		var subdivisions:Int = options.subdivision != null ? options.subdivision : 1;
 		var minHeight:Float = options.minHeight != null ? options.minHeight : 0;
 		var maxHeight:Float = options.maxHeight != null ? options.maxHeight : 10;
 		var updatable:Bool = options.updatable;
@@ -395,6 +396,8 @@ class MeshBuilder {
 		
 		var onload = function(img:Image) {
 			options.buffer = img.data;
+			options.bufferWidth = img.width;
+			options.bufferHeight = img.height;
 			var vertexData = VertexData.CreateGroundFromHeightMap(options);
 			
 			vertexData.applyToMesh(ground, updatable);

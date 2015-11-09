@@ -13,7 +13,7 @@ import com.babylonhx.math.Color3;
 	
 
 	public function new(name:String, size:Float, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
-		super(name, size, "road", scene, fallbackTexture, generateMipMaps);
+		super(name, size, "roadtexture", scene, fallbackTexture, generateMipMaps);
 		this.updateShaderUniforms();
 		this.refreshRate = 0;
 	}

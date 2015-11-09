@@ -26,6 +26,7 @@ import com.babylonhx.mesh.AbstractMesh;
 	public function new(name:String, position:Vector3, direction:Vector3, angle:Float, exponent:Float, scene:Scene) {
 		super(name, scene);
 		
+		this._type = "SPOTLIGHT";
 		this.position = position;
 		this.direction = direction;
 		this.angle = angle;
@@ -91,7 +92,8 @@ import com.babylonhx.mesh.AbstractMesh;
 			
 			effect.setFloat4(positionUniformName, this.transformedPosition.x, this.transformedPosition.y, this.transformedPosition.z, this.exponent);
 			normalizeDirection = Vector3.Normalize(this._transformedDirection);
-		} else {
+		} 
+		else {
 			effect.setFloat4(positionUniformName, this.position.x, this.position.y, this.position.z, this.exponent);
 			normalizeDirection = Vector3.Normalize(this.direction);
 		}

@@ -21,6 +21,8 @@ import com.babylonhx.math.Vector3;
 
 	public function new(name:String, position:Vector3, scene:Scene) {
 		super(name, scene);
+		
+		this._type = "POINTLIGHT";
 		this.position = position;
 	}
 	
@@ -84,8 +86,7 @@ import com.babylonhx.math.Vector3;
 				return new Vector3(0, 0, 1);
 				
 			case 5:
-				return new Vector3(0, 0, -1);
-				
+				return new Vector3(0, 0, -1);				
 		}
 		
 		return Vector3.Zero();

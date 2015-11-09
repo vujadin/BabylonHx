@@ -50,13 +50,8 @@ class PBRMaterialDefines extends MaterialDefines {
 	override public function toString():String {
 		var result = super.toString();
 		
-		if (this.BonesPerMesh > 0) {
-			result += "#define BonesPerMesh " + this.BonesPerMesh + "\n";
-		}
-		
-		if (this.NUM_BONE_INFLUENCERS > 0) {
-			result += "#define NUM_BONE_INFLUENCERS " + this.NUM_BONE_INFLUENCERS + "\n";
-		}
+		result += "#define BonesPerMesh " + this.BonesPerMesh + "\n";
+		result += "#define NUM_BONE_INFLUENCERS " + this.NUM_BONE_INFLUENCERS + "\n";
 		
 		return result;
 	}

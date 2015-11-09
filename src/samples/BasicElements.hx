@@ -34,7 +34,7 @@ class BasicElements {
 		var plan = Mesh.CreatePlane("plane", { width: 10.0, height: 10.0 }, scene);
 		
 		//Creation of a cylinder
-		var cylinder = Mesh.CreateCylinder("cylinder", { height: 8, diameterTop: 5, diameterBottom: 5, tessellation: 16, subdivisions: 16 }, scene);
+		var cylinder = Mesh.CreateCylinder("cylinder", { height: 8, diameterTop: 5, diameterBottom: 5, tessellation: 16, subdivision: 16 }, scene);
 		
 		// Creation of a torus
 		var torus = Mesh.CreateTorus("torus", { diameter: 5, thickness: 1, tessellation: 10 }, scene);

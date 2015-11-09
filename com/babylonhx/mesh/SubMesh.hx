@@ -160,7 +160,6 @@ import com.babylonhx.tools.Tools;
 
 	inline public function intersects(ray:Ray, positions:Array<Vector3>, indices:Array<Int>, fastCheck:Bool = false):IntersectionInfo {
 		var intersectInfo:IntersectionInfo = null;
-		trace("submesh: intersects");
 		if (positions != null && indices != null) {		
 			// Triangles test
 			var index:Int = this.indexStart;

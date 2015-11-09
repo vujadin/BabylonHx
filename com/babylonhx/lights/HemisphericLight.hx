@@ -21,6 +21,8 @@ import com.babylonhx.math.Vector3;
 
 	public function new(name:String, direction:Vector3, scene:Scene) {
 		super(name, scene);
+		
+		this._type = "HEMILIGHT";
 		this.direction = direction;
 	}
 

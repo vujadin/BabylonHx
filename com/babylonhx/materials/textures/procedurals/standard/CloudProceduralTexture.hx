@@ -14,7 +14,7 @@ import com.babylonhx.math.Color4;
 	
 
 	public function new(name:String, size:Float, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
-		super(name, size, "cloud", scene, fallbackTexture, generateMipMaps);
+		super(name, size, "cloudtexture", scene, fallbackTexture, generateMipMaps);
 		this.updateShaderUniforms();
 		this.refreshRate = 0;
 	}

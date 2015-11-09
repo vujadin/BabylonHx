@@ -4,6 +4,7 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Color3;
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.mesh.VertexBuffer;
+import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.lights.DirectionalLight;
 import com.babylonhx.lights.HemisphericLight;
@@ -38,18 +39,23 @@ class SimpleMaterial extends Material {
 	public function new(name:String, scene:Scene) {
 		super(name, scene);
 		
+		if (!ShadersStore.Shaders.exists("simplemat.fragment")) {
+			ShadersStore.Shaders.set("simplemat.fragment", fragmentShader);
+			ShadersStore.Shaders.set("simplemat.vertex", vertexShader);
+		}
+		
 		this._cachedDefines.BonesPerMesh = -1;
 	}
 	
-	public function needAlphaBlending():Bool {
+	override public function needAlphaBlending():Bool {
 		return (this.alpha < 1.0);
 	}
 
-	public function needAlphaTesting():Bool {
+	override public function needAlphaTesting():Bool {
 		return false;
 	}
 
-	public function getAlphaTestTexture():BaseTexture {
+	override public function getAlphaTestTexture():BaseTexture {
 		return null;
 	}
 
@@ -59,7 +65,7 @@ class SimpleMaterial extends Material {
 			return true;
 		}
 		
-		if (this._defines.INSTANCES != useInstances) {
+		if (this._defines.defines["INSTANCES"] != useInstances) {
 			return false;
 		}
 		
@@ -166,26 +172,13 @@ class SimpleMaterial extends Material {
 				needNormals = true;
 				this._defines.defines["LIGHT" + lightIndex] = true;
 				
-				var type:String = "";
-				if (Std.is(light, SpotLight)) {
-					type = "SPOTLIGHT" + lightIndex;
-				} 
-				else if (Std.is(light, HemisphericLight)) {
-					type = "HEMILIGHT" + lightIndex;
-				} 
-				else if (Std.is(light, PointLight)) {
-					type = "POINTLIGHT" + lightIndex;
-				}
-				else {
-					type = "DIRLIGHT" + lightIndex;
-				}
-				
+				var type:String = light.type + lightIndex;
 				this._defines.defines[type] = true;
 				
 				// Shadows
 				if (scene.shadowsEnabled) {
 					var shadowGenerator = light.getShadowGenerator();
-					if (mesh != null && mesh.receiveShadows && shadowGenerator) {
+					if (mesh != null && mesh.receiveShadows && shadowGenerator != null) {
 						this._defines.defines["SHADOW" + lightIndex] = true;
 						
 						this._defines.defines["SHADOWS"] = true;
@@ -251,7 +244,7 @@ class SimpleMaterial extends Material {
 				fallbacks.addFallback(1, "FOG");
 			}
 			
-			for (lightIndex in 0...maxSimultaneousLights) {
+			for (lightIndex in 0...Material.maxSimultaneousLights) {
 				if (!this._defines.defines["LIGHT" + lightIndex]) {
 					continue;
 				}
@@ -348,11 +341,11 @@ class SimpleMaterial extends Material {
 		return true;
 	}
 
-	public function bindOnlyWorldMatrix(world:Matrix) {
+	override public function bindOnlyWorldMatrix(world:Matrix) {
 		this._effect.setMatrix("world", world);
 	}
 
-	public function bind(world:Matrix, ?mesh:Mesh) {
+	override public function bind(world:Matrix, ?mesh:Mesh) {
 		var scene = this.getScene();
 		
 		// Matrices        
@@ -401,19 +394,19 @@ class SimpleMaterial extends Material {
 					continue;
 				}
 				
-				if (Std.is(light, PointLight)) {
+				if (light.type == "POINTLIGHT") {
 					// Point Light
 					light.transferToEffect(this._effect, "vLightData" + lightIndex);
 				} 
-				else if (Std.is(light, DirectionalLight)) {
+				else if (light.type == "DIRLIGHT") {
 					// Directional Light
 					light.transferToEffect(this._effect, "vLightData" + lightIndex);
 				} 
-				else if (Std.is(light, SpotLight)) {
+				else if (light.type == "SPOTLIGHT") {
 					// Spot Light
 					light.transferToEffect(this._effect, "vLightData" + lightIndex, "vLightDirection" + lightIndex);
 				} 
-				else if (Std.is(light, HemisphericLight)) {
+				else if (light.type == "HEMILIGHT") {
 					// Hemispheric Light
 					light.transferToEffect(this._effect, "vLightData" + lightIndex, "vLightGround" + lightIndex);
 				}
@@ -463,7 +456,7 @@ class SimpleMaterial extends Material {
 		return results;
 	}
 
-	public function dispose(?forceDisposeEffect:Bool = false) {
+	override public function dispose(forceDisposeEffect:Bool = false) {
 		if (this.diffuseTexture != null) {
 			this.diffuseTexture.dispose();
 		}
@@ -471,7 +464,7 @@ class SimpleMaterial extends Material {
 		super.dispose(forceDisposeEffect);
 	}
 
-	public function clone(name:String):SimpleMaterial {
+	override public function clone(name:String):SimpleMaterial {
 		var newMaterial = new SimpleMaterial(name, this.getScene());
 		
 		// Base material

@@ -25,7 +25,7 @@ import com.babylonhx.math.Vector2;
 	
 
 	public function new(name:String, size:Float, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
-		super(name, size, "fire", scene, fallbackTexture, generateMipMaps);
+		super(name, size, "firetexture", scene, fallbackTexture, generateMipMaps);
 		this._fireColors = FireProceduralTexture.RedFireColors;
 		this.updateShaderUniforms();
 		this.refreshRate = 1;

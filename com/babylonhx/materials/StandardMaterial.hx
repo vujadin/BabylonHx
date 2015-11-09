@@ -169,20 +169,7 @@ import com.babylonhx.animations.IAnimatable;
 			needNormals = true;
 			defines.defines["LIGHT" + lightIndex] = true;
 			
-			var type:String = "";
-			if (Std.is(light, SpotLight)) {
-				type = "SPOTLIGHT" + lightIndex;
-			} 
-			else if (Std.is(light, HemisphericLight)) {
-				type = "HEMILIGHT" + lightIndex;
-			} 
-			else if (Std.is(light, PointLight)) {
-				type = "POINTLIGHT" + lightIndex;
-			} 
-			else {
-				type = "DIRLIGHT" + lightIndex;
-			}
-			
+			var type:String = light.type + lightIndex;			
 			defines.defines[type] = true;
 			
 			// Specular
@@ -232,19 +219,19 @@ import com.babylonhx.animations.IAnimatable;
 				continue;
 			}
 			
-			if (Std.is(light, PointLight)) {
+			if (light.type == "POINTLIGHT") {
 				// Point Light
 				light.transferToEffect(effect, "vLightData" + lightIndex);
 			} 
-			else if (Std.is(light, DirectionalLight)) {
+			else if (light.type == "DIRLIGHT") {
 				// Directional Light
 				light.transferToEffect(effect, "vLightData" + lightIndex);
 			} 
-			else if (Std.is(light, SpotLight)) {
+			else if (light.type == "SPOTLIGHT") {
 				// Spot Light
 				light.transferToEffect(effect, "vLightData" + lightIndex, "vLightDirection" + lightIndex);
 			} 
-			else if (Std.is(light, HemisphericLight)) {
+			else if (light.type == "HEMILIGHT") {
 				// Hemispheric Light
 				light.transferToEffect(effect, "vLightData" + lightIndex, "vLightGround" + lightIndex);
 			}
@@ -260,7 +247,7 @@ import com.babylonhx.animations.IAnimatable;
 			if (scene.shadowsEnabled) {
 				var shadowGenerator = light.getShadowGenerator();
 				if (mesh.receiveShadows && shadowGenerator != null) {
-					if (Std.is(light, IShadowLight) && !cast(light, IShadowLight).needCube()) {
+					if (!cast(light, IShadowLight).needCube()) {
 						effect.setMatrix("lightMatrix" + lightIndex, shadowGenerator.getTransformMatrix());
 					}
 					effect.setTexture("shadowSampler" + lightIndex, shadowGenerator.getShadowMapForRendering());

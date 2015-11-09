@@ -33,6 +33,7 @@ import com.babylonhx.mesh.AbstractMesh;
 	public function new(name:String, direction:Vector3, scene:Scene) {
 		super(name, scene);
 		
+		this._type = "DIRLIGHT";
 		this.direction = direction;
 		this.position = direction.scale(-1);
 	}

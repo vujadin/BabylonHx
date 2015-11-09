@@ -33,16 +33,14 @@ class BasicScene {
 		light.intensity = 0.7;
 		
 		// Our built-in 'sphere' shape. Params: name, subdivs, size, scene
-		var sphere = Mesh.CreateSphere("sphere1", { diameterX: 3, diameterY: 3, diameterZ: 3, segments: 16 }, scene);
+		var sphere = Mesh.CreateSphere("sphere1", { diameterX: 2, diameterY: 2, diameterZ: 2, segments: 16 }, scene);
 		sphere.material = new StandardMaterial("sm", scene);
 				
 		// Move the sphere upward 1/2 its height
 		sphere.position.y = 1;
 		
 		// Our built-in 'ground' shape. Params: name, width, depth, subdivs, scene
-		var ground = Mesh.CreateGround("ground1", 6, 6, 2, scene);
-		/*ground.enableEdgesRendering();
-		ground.edgesWidth = 14.0;*/
+		var ground = Mesh.CreateGround("ground1", { width: 7, height: 7, subdivision: 2 }, scene);
 		
 		scene.getEngine().runRenderLoop(function () {
             scene.render();

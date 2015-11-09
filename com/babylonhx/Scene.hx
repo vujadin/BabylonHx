@@ -1893,7 +1893,8 @@ import com.babylonhx.tools.Tools;
 				if (!predicate(mesh)) {
 					continue;
 				}
-			} else if (!mesh.isEnabled() || !mesh.isVisible || !mesh.isPickable) {
+			} 
+			else if (!mesh.isEnabled() || !mesh.isVisible || !mesh.isPickable) {
 				continue;
 			}
 			

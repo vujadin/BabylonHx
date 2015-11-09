@@ -136,6 +136,60 @@ typedef GroundOptions = {
 	?updatable:Bool
 }
 
+typedef TiledGroundOptions = {
+	xmin:Float, 
+	zmin:Float, 
+	xmax:Float, 
+	zmax:Float, 
+	subdivisions:Int, 
+	precision:Int,
+	?updatable:Bool
+}
+
+typedef GroundFromHeightmap = {
+	url:String,
+	width:Float, 
+	height:Float, 
+	subdivisions:Int, 
+	minHeight:Float, 
+	maxHeight:Float, 
+	?updatable:Bool, 
+	?onReady:GroundMesh->Void
+}
+
+typedef TubeOptions = {
+	path:Array<Vector3>, 
+	radius:Float, 
+	tessellation:Int, 
+	radiusFunction:Int->Float->Float, 
+	cap:Int, 
+	?arc:Int,
+	?updatable:Bool, 
+	?sideOrientation:Int, 
+	?tubeInstance:Mesh
+}
+
+typedef PolyhedronOptions = {
+	?type:Int, 
+	?size:Float, 
+	?sizeX:Float, 
+	?sizeY:Float, 
+	?sizeZ:Float, 
+	?custom:Dynamic, 
+	?faceUV:Array<Vector4>, 
+	?faceColors:Array<Color4>, 
+	?updatable:Bool, 
+	?sideOrientation:Int
+}
+
+typedef IcoSphereOptions = {
+	?radius:Float, 
+	?flat:Float, 
+	?subdivisions:Int, 
+	?sideOrientation:Int, 
+	?updatable:Bool
+}
+
 @:expose('BABYLON.Mesh') class Mesh extends AbstractMesh implements IGetSetVerticesData implements IAnimatable {
 	
 	public static inline var FRONTSIDE:Int = 0;
@@ -1572,76 +1626,23 @@ typedef GroundOptions = {
 		return MeshBuilder.CreateGround(name, options, scene);
 	}
 
-	public static function CreateTiledGround(name:String, xmin:Float, zmin:Float, xmax:Float, zmax:Float, subdivisions:Dynamic, precision:Dynamic, scene:Scene, updatable:Bool = false):Mesh {
-		var options = {
-			xmin: xmin,
-			zmin: zmin,
-			xmax: xmax,
-			zmax: zmax,
-			subdivisions: subdivisions,
-			precision: precision,
-			updatable: updatable               
-		}
-		
+	public static function CreateTiledGround(name:String, options:TiledGroundOptions, scene:Scene):Mesh {		
 		return MeshBuilder.CreateTiledGround(name, options, scene);
 	}
 	
-	public static function CreateGroundFromHeightMap(name:String, url:String, width:Float, height:Float, subdivisions:Int, minHeight:Float, maxHeight:Float, scene:Scene, updatable:Bool = false, ?onReady:GroundMesh->Void):GroundMesh {
-		var options = {
-			width: width,
-			height: height,
-			subdivisions: subdivisions,
-			minHeight: minHeight,
-			maxHeight: maxHeight, 
-			updatable: updatable,
-			onReady: onReady
-		};
-		
-		return MeshBuilder.CreateGroundFromHeightMap(name, url, options, scene);
+	public static function CreateGroundFromHeightMap(name:String, options:GroundFromHeightmap, scene:Scene):GroundMesh {		
+		return MeshBuilder.CreateGroundFromHeightMap(name, options.url, options, scene);
 	}
 	
-	public static function CreateTube(name:String, path:Array<Vector3>, radius:Float, tessellation:Int, radiusFunction:Int->Float->Float, cap:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE, tubeInstance:Mesh = null):Mesh {
-		var options = {
-			path: path,
-			radius: radius,
-			tessellation: tessellation,
-			radiusFunction: radiusFunction,
-			cap: cap,
-			arc: 1,
-			updatable: updatable,
-			sideOrientation: sideOrientation,
-			tubeInstance: tubeInstance        
-		}
-		
+	public static function CreateTube(name:String, options:TubeOptions, scene:Scene):Mesh {		
 		return MeshBuilder.CreateTube(name, options, scene);
 	}
 	
-	public static function CreatePolyhedron(name:String, ?type:Int, ?size:Float, ?sizeX:Float, ?sizeY:Float, ?sizeZ:Float, ?custom:Dynamic, ?faceUV:Array<Vector4>, ?faceColors:Array<Color4>, ?updatable:Bool, ?sideOrientation:Int, scene:Scene):Mesh {
-		var options = {			
-			type: type,
-			size: size,
-			sizeX: sizeX,
-			sizeY: sizeY,
-			sizeZ: sizeZ,
-			custom: custom,
-			faceUV: faceUV,
-			faceColors: faceColors,
-			updatable: updatable,
-			sideOrientation: sideOrientation
-		};
-		
+	public static function CreatePolyhedron(name:String, options:PolyhedronOptions, scene:Scene):Mesh {		
 		return MeshBuilder.CreatePolyhedron(name, options, scene);
 	}
 	
-	public static function CreateIcoSphere(name:String, ?radius:Float, ?flat:Float, ?subdivisions:Int, ?sideOrientation:Int, updatable:Bool = false, scene:Scene):Mesh {
-		var options = {
-			radius: radius,
-			flat: flat,
-			subdivisions: subdivisions,
-			sideOreintation: sideOrientation,
-			updatable: updatable
-		};
-		
+	public static function CreateIcoSphere(name:String, options:IcoSphereOptions, scene:Scene):Mesh {
 		return MeshBuilder.CreateIcoSphere(name, options, scene);
 	}
 	

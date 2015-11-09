@@ -106,6 +106,14 @@ import com.babylonhx.tools.SmartArray;
 		// Configure
 		this._createPass(scene, ratio.passRatio != null ? ratio.passRatio : ratio);
 		
+		this.onActivate = function(camera:Camera) {
+            if (!this.isSupported) {
+                this.dispose(camera);
+            }
+			
+            this.onActivate = null;
+        };
+		
 		this.onApply = function(effect:Effect) {
 			this._updateMeshScreenCoordinates(scene);
 			
@@ -321,16 +329,16 @@ import com.babylonhx.tools.SmartArray;
 		var savedSceneClearColor:Color3 = new Color3(0.0, 0.0, 0.0);
 		var sceneClearColor:Color3 = new Color3(0.0, 0.0, 0.0);
 		
-		this._volumetricLightScatteringRTT.onBeforeRender = function() {
+		this._volumetricLightScatteringRTT.onBeforeRender = function(i:Int) {
 			savedSceneClearColor = scene.clearColor;
 			scene.clearColor = sceneClearColor;
 		};
 		
-		this._volumetricLightScatteringRTT.onAfterRender = function() {
+		this._volumetricLightScatteringRTT.onAfterRender = function(i:Int) {
 			scene.clearColor = savedSceneClearColor;
 		};
 		
-		this._volumetricLightScatteringRTT.customRenderFunction = function(opaqueSubMeshes:SmartArray, alphaTestSubMeshes:SmartArray, transparentSubMeshes:SmartArray) {
+		this._volumetricLightScatteringRTT.customRenderFunction = function(opaqueSubMeshes:SmartArray<SubMesh>, alphaTestSubMeshes:SmartArray<SubMesh>, transparentSubMeshes:SmartArray<SubMesh>) {
 			var engine = scene.getEngine();
 			
 			for (index in 0...opaqueSubMeshes.length) {
@@ -385,7 +393,8 @@ import com.babylonhx.tools.SmartArray;
 
 	private function _updateMeshScreenCoordinates(scene:Scene) {
 		var transform:Matrix = scene.getTransformMatrix();
-		var pos = Vector3.Project(this.useCustomMeshPosition ? this._customMeshPosition : this.mesh.position, Matrix.Identity(), transform, this._viewPort);
+		var meshPosition = this.mesh.parent != null ? this.mesh.getAbsolutePosition() : this.mesh.position;
+        var pos = Vector3.Project(this.useCustomMeshPosition ? this._customMeshPosition : meshPosition, Matrix.Identity(), transform, this._viewPort);
 		
 		this._screenCoordinates.x = pos.x / this._viewPort.width;
 		this._screenCoordinates.y = pos.y / this._viewPort.height;
@@ -404,7 +413,7 @@ import com.babylonhx.tools.SmartArray;
 	* @return {BABYLON.Mesh} the default mesh
 	*/
 	public static function CreateDefaultMesh(name:String, scene:Scene):Mesh {
-		var mesh = Mesh.CreatePlane(name, 1, scene);
+		var mesh = Mesh.CreatePlane(name, { width: 1, height: 1 }, scene);
 		mesh.billboardMode = AbstractMesh.BILLBOARDMODE_Z;
 		mesh.material = new StandardMaterial(name + "Material", scene);
 		

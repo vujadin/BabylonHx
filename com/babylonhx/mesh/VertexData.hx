@@ -1206,7 +1206,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		
 		var width:Int = options.width != null ? options.width : 1;
 		var height:Int = options.height != null ? options.height : 1;
-		var subdivisions:Int = options.subdivisions != null ? options.subdivisions : 1;
+		var subdivisions:Int = options.subdivision != null ? options.subdivision : 1;
 				
 		for (row in 0...subdivisions + 1) {
 			for (col in 0...subdivisions + 1) {
@@ -1252,7 +1252,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		var zmin:Float = options.zmin;
 		var xmax:Float = options.xmax;
 		var zmax:Float = options.zmax;
-		var subdivisions:Dynamic = options.subdivisions != null ? options.subdivisions : { w: 1, h: 1 };
+		var subdivisions:Dynamic = options.subdivision != null ? options.subdivision : { w: 1, h: 1 };
 		var precision:Dynamic = options.precision != null ? options.precision : { w: 1, h: 1 };
 		
 		var indices:Array<Int> = [];
@@ -1338,7 +1338,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	public static function CreateGroundFromHeightMap(options:Dynamic):VertexData {
 		var width:Float = options.width;
 		var height:Float = options.height;
-		var subdivisions:Int = options.subdivisions;
+		var subdivisions:Int = options.subdivision;
 		var minHeight:Float = options.minHeight;
 		var maxHeight:Float = options.maxHeight;
 		var buffer:UInt8Array = options.buffer;

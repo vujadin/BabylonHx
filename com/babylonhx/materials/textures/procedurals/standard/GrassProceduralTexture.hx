@@ -17,7 +17,7 @@ import com.babylonhx.math.Color3;
 	
 
 	public function new(name:String, size:Float, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
-		super(name, size, "grass", scene, fallbackTexture, generateMipMaps);
+		super(name, size, "grasstexture", scene, fallbackTexture, generateMipMaps);
 		
 		this._grassColors = [
 			new Color3(0.29, 0.38, 0.02),
