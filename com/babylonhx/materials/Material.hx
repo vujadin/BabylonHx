@@ -127,6 +127,10 @@ import com.babylonhx.mesh.Mesh;
 	public function trackCreation(onCompiled:Effect->Void, onError:Effect->String->Void) {
 		
 	}
+	
+	public function markDirty() {
+		this._wasPreviouslyReady = false;
+	}
 
 	public function _preBind():Void {
 		var engine = this._scene.getEngine();

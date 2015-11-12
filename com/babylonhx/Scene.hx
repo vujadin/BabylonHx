@@ -47,6 +47,7 @@ import com.babylonhx.rendering.OutlineRenderer;
 import com.babylonhx.rendering.EdgesRenderer;
 import com.babylonhx.rendering.RenderingManager;
 import com.babylonhx.sprites.SpriteManager;
+import com.babylonhx.sprites.Sprite;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.Tools;
 
@@ -84,6 +85,7 @@ import com.babylonhx.tools.Tools;
 
 	// Pointers
 	public var _onPointerMove:Dynamic;	// MouseEvent->Void
+	public var onPointerMove:Dynamic;	// MouseEvent->PickingInfo->Void
 	public var _onPointerDown:Dynamic;	// MouseEvent->Void
 	public var onPointerDown:Dynamic;   // MouseEvent->PickingInfo->Void
 	public var _onPointerUp:Dynamic;	// MouseEvent->Void
@@ -423,7 +425,11 @@ import com.babylonhx.tools.Tools;
 	}
 
 	// Pointers handling
-	public function attachControl() {
+	public function attachControl() {		
+		var spritePredicate = function(sprite:Sprite):Bool {
+			return sprite.isPickable && sprite.actionManager != null && sprite.actionManager.hasPickTriggers;
+		};
+		 
 		this._onPointerMove = function(x:Int, y:Int) {
 			//var canvas = this._engine.getRenderingCanvas();
 			
@@ -436,20 +442,36 @@ import com.babylonhx.tools.Tools;
 				false,
 				this.cameraToUseForPointers);
 				
-			if (pickResult.hit) {
+			if (pickResult.hit  && pickResult.pickedMesh != null) {
 				this._meshUnderPointer = pickResult.pickedMesh;
 				
 				this.setPointerOverMesh(pickResult.pickedMesh);
 				//canvas.style.cursor = "pointer";
 			} 
 			else {
-				this.setPointerOverMesh(null);
-				//canvas.style.cursor = "";
-				this._meshUnderPointer = null;
+				// Sprites
+				
+				pickResult = this.pickSprite(this._pointerX, this._pointerY, spritePredicate, false, this.cameraToUseForPointers);
+				
+				if (pickResult.hit && pickResult.pickedSprite != null) {
+					//canvas.style.cursor = "pointer";
+				} 
+				else {
+					// Restore pointer
+					this.setPointerOverMesh(null);
+					//canvas.style.cursor = "";
+					this._meshUnderPointer = null;
+				}
+			}
+			
+			if (this.onPointerMove != null) {
+				this.onPointerMove(pickResult);
 			}
 		};
 		
 		this._onPointerDown = function(x:Int, y:Int, button:Int) {
+			
+			this._updatePointerPosition(x, y);
 			
 			var predicate = null;
 			
@@ -458,8 +480,6 @@ import com.babylonhx.tools.Tools;
 					return mesh.isPickable && mesh.isVisible && mesh.isReady() && mesh.actionManager != null && mesh.actionManager.hasPickTriggers;
 				};
 			}
-			
-			this._updatePointerPosition(x, y);
 			
 			var pickResult:PickingInfo = this.pick(this._pointerX, this._pointerY, predicate, false, this.cameraToUseForPointers);
 			
@@ -484,10 +504,34 @@ import com.babylonhx.tools.Tools;
 			if (this.onPointerDown != null) {
 				this.onPointerDown(x, y, button, pickResult);
 			}
+			
+			// Sprites
+			if (this.spriteManagers.length > 0) {
+				pickResult = this.pickSprite(this._pointerX, this._pointerY, spritePredicate, false, this.cameraToUseForPointers);
+				
+				if (pickResult.hit && pickResult.pickedSprite != null) {
+					if (pickResult.pickedSprite.actionManager != null) {
+						switch (button) {
+							case 0:
+								pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnLeftPickTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
+								
+							case 1:
+								pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnCenterPickTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
+								
+							case 2:
+								pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnRightPickTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
+							
+						}
+						pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnPickTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
+					}
+				}
+			}
 		};
 		
 		this._onPointerUp = function(x:Int, y:Int, button:Int) {
 			var predicate = null;
+			
+			this._updatePointerPosition(x, y);
 			
 			if (this.onPointerUp == null) {
 				predicate = function(mesh:AbstractMesh):Bool {
@@ -495,8 +539,7 @@ import com.babylonhx.tools.Tools;
 				};
 			}
 			
-			this._updatePointerPosition(x, y);
-			
+			// Meshes
 			var pickResult:PickingInfo = this.pick(this._pointerX, this._pointerY, predicate, false, this.cameraToUseForPointers);
 			
 			if (pickResult.hit) {
@@ -507,6 +550,17 @@ import com.babylonhx.tools.Tools;
 			
 			if (this.onPointerUp != null) {
 				this.onPointerUp(x, y, button, pickResult);
+			}
+			
+			// Sprites
+			if (this.spriteManagers.length > 0) {
+				pickResult = this.pickSprite(this._pointerX, this._pointerY, spritePredicate, false, this.cameraToUseForPointers);
+				
+				if (pickResult.hit && pickResult.pickedSprite != null) {
+					if (pickResult.pickedSprite.actionManager != null) {
+						pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnPickUpTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
+					}
+				}
 			}
 		};
 		
@@ -525,7 +579,7 @@ import com.babylonhx.tools.Tools;
 		Engine.mouseDown.push(this._onPointerDown);
 		Engine.mouseUp.push(this._onPointerUp);
 		Engine.mouseMove.push(this._onPointerMove);
-				
+			
 		Engine.keyDown.push(this._onKeyDown);
 		Engine.keyUp.push(this._onKeyUp);
 	}
@@ -1919,8 +1973,43 @@ import com.babylonhx.tools.Tools;
 		
 		return pickingInfo != null ? pickingInfo : new PickingInfo();
 	}
+	
+	private function _internalPickSprites(ray:Ray, ?predicate:Sprite->Bool, fastCheck:Bool = false, ?camera:Camera):PickingInfo {
+		var pickingInfo:PickingInfo = new PickingInfo();
+		
+		if (camera == null) {
+			camera = this.activeCamera;
+		}
+		
+		if (this.spriteManagers.length > 0) {
+			for (spriteIndex in 0...this.spriteManagers.length) {
+				var spriteManager = this.spriteManagers[spriteIndex];
+				
+				if (!spriteManager.isPickable) {
+					continue;
+				}
+				
+				var result = spriteManager.intersects(ray, camera, predicate, fastCheck);
+				if (result == null || !result.hit) {
+					continue;
+				}
+				
+				if (!fastCheck && pickingInfo != null && result.distance >= pickingInfo.distance) {
+					continue;
+				}
+				
+				pickingInfo = result;
+				
+				if (fastCheck) {
+					break;
+				}
+			}
+		}
+		
+		return pickingInfo;
+	}
 
-	inline public function pick(x:Float, y:Float, ?predicate:AbstractMesh->Bool, fastCheck:Bool = false/*?fastCheck:Bool*/, ?camera:Camera):PickingInfo {
+	inline public function pick(x:Float, y:Float, ?predicate:AbstractMesh->Bool, fastCheck:Bool = false, ?camera:Camera):PickingInfo {
 		/// <summary>Launch a ray to try to pick a mesh in the scene</summary>
 		/// <param name="x">X position on screen</param>
 		/// <param name="y">Y position on screen</param>
@@ -1928,6 +2017,16 @@ import com.babylonhx.tools.Tools;
 		/// <param name="fastCheck">Launch a fast check only using the bounding boxes. Can be set to null.</param>
 		/// <param name="camera">camera to use for computing the picking ray. Can be set to null. In this case, the scene.activeCamera will be used</param>
 		return this._internalPick(function(world:Matrix):Ray { return this.createPickingRay(x, y, world, camera); }, predicate, fastCheck);
+	}
+	
+	inline public function pickSprite(x:Float, y:Float, ?predicate:Sprite->Bool, fastCheck:Bool = false, ?camera:Camera):PickingInfo {
+		/// <summary>Launch a ray to try to pick a mesh in the scene</summary>
+		/// <param name="x">X position on screen</param>
+		/// <param name="y">Y position on screen</param>
+		/// <param name="predicate">Predicate function used to determine eligible sprites. Can be set to null. In this case, a sprite must have isPickable set to true</param>
+		/// <param name="fastCheck">Launch a fast check only using the bounding boxes. Can be set to null.</param>
+		/// <param name="camera">camera to use for computing the picking ray. Can be set to null. In this case, the scene.activeCamera will be used</param>
+		return this._internalPickSprites(this.createPickingRayInCameraSpace(x, y, camera), predicate, fastCheck, camera);
 	}
 
 	public function pickWithRay(ray:Ray, predicate:Mesh->Bool, fastCheck:Bool = false/*?fastCheck:Bool*/):PickingInfo {

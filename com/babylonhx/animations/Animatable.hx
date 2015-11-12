@@ -74,6 +74,14 @@ package com.babylonhx.animations;
 		this._localDelayOffset = -1;
 		this._pausedDelay = -1;
 	}
+	
+	public function goToFrame(frame:Int) {
+		var animations = this._animations;
+		
+		for (index in 0...animations.length) {
+			animations[index].goToFrame(frame);
+		}
+	}
 
 	inline public function pause() {
 		this._paused = true;
@@ -97,6 +105,7 @@ package com.babylonhx.animations;
 
 	public function _animate(delay:Float):Bool {
 		if (this._paused) {
+			this.animationStarted = false;
 			if (this._pausedDelay == -1) {
 				this._pausedDelay = delay;
 			}
@@ -120,6 +129,8 @@ package com.babylonhx.animations;
 			var isRunning = animation.animate(delay - this._localDelayOffset, this.fromFrame, this.toFrame, this.loopAnimation, this.speedRatio);
 			running = running || isRunning;
 		}
+		
+		this.animationStarted = running;
 		
 		if (!running) {
 			// Remove from active animatables

@@ -779,7 +779,7 @@ typedef IcoSphereOptions = {
 			new Geometry(Geometry.RandomId(), scene, vertexData, false, this);
 		} 
 		else {
-			this._geometry.setIndices(indices);
+			this._geometry.setIndices(indices, totalVertices);
 		}
 	}
 
@@ -1828,6 +1828,7 @@ typedef IcoSphereOptions = {
 	 */
 	public static function MergeMeshes(meshes:Array<Mesh>, disposeSource:Bool = true, allow32BitsIndices:Bool = false, ?meshSubclass:Mesh):Mesh {
 		if (!allow32BitsIndices) {
+			trace("allow32BitsIndices");
 			var totalVertices = 0;
 			
 			// Counting vertices

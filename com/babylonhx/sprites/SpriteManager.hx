@@ -26,6 +26,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public var layerMask:Int = 0x0FFFFFFF;
 	public var onDispose:Void->Void;
 	public var fogEnabled:Bool = true;
+	public var isPickable = false;
 	public var cellSize:Float;
 
 	private var _capacity:Int;
@@ -186,8 +187,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 
 	public function render() {
 		// Check
-		if (!this._effectBase.isReady() || !this._effectFog.isReady() || this._spriteTexture == null || !this._spriteTexture.isReady())
+		if (!this._effectBase.isReady() || !this._effectFog.isReady() || this._spriteTexture == null || !this._spriteTexture.isReady()) {
 			return;
+		}
 			
 		var engine = this._scene.getEngine();
 		var baseSize = this._spriteTexture.getBaseSize();
@@ -216,7 +218,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		// Render
 		var effect = this._effectBase;
 		
-		if (this._scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
+		if (this._scene.fogEnabled && this._scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
 			effect = this._effectFog;
 		}
 		
@@ -230,7 +232,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		effect.setFloat2("textureInfos", this.cellSize / baseSize.width, this.cellSize / baseSize.height);
 		
 		// Fog
-		if (this._scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
+		if (this._scene.fogEnabled && this._scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
 			effect.setFloat4("vFogInfos", this._scene.fogMode, this._scene.fogStart, this._scene.fogEnd, this._scene.fogDensity);
 			effect.setColor3("vFogColor", this._scene.fogColor);
 		}

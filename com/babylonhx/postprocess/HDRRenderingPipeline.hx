@@ -34,6 +34,12 @@ class HDRRenderingPipeline extends PostProcessRenderPipeline {
 	* @type {number}
 	*/
 	public var gaussStandDev:Float = 0.8;
+	
+	/**
+    * Gaussian blur multiplier. Multiplies the blur effect
+    * @type {number}
+    */
+    public var gaussMultiplier:Float = 4.0;
 
 	// HDR
 	/**
@@ -386,13 +392,13 @@ class HDRRenderingPipeline extends PostProcessRenderPipeline {
 		var blurOffsetsW:Array<Float> = [];
 		var blurOffsetsH:Array<Float> = [];
 		var blurWeights:Array<Float> = [];
-		var uniforms:Array<String> = ["blurOffsets", "blurWeights"];
+		var uniforms:Array<String> = ["blurOffsets", "blurWeights", "multiplier"];
 		
 		// Utils for gaussian blur
 		var calculateBlurOffsets = function(height:Bool) {
 			var lastOutputDimensions:Dynamic = {
-				width: scene.getEngine().getRenderWidth() * (ratio / 4),
-				height: scene.getEngine().getRenderHeight() * (ratio / 4)
+				width: scene.getEngine().getRenderWidth(),
+				height: scene.getEngine().getRenderHeight()
 			};
 			
 			for (i in 0...9) {
@@ -424,6 +430,7 @@ class HDRRenderingPipeline extends PostProcessRenderPipeline {
 				}
 				effect.setArray("blurOffsets", height ? blurOffsetsH : blurOffsetsW);
 				effect.setArray("blurWeights", blurWeights);
+				effect.setFloat("multiplier", this.gaussMultiplier);
 			};
 		};
 		

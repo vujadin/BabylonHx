@@ -60,6 +60,7 @@ class WaterMaterialDefines extends MaterialDefines {
 		defines["BONES"] = false;
 		defines["BONES4"] = false;
 		defines["INSTANCES"] = false;
+		defines["SPECULARTERM"] = false;
 				
 		BonesPerMesh = 0;
 		

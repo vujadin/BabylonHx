@@ -159,7 +159,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 		
 		this.updateFunction = function(particles:Array<Particle>):Void {
-			/*var index:Int = 0;
+			var index:Int = 0;
 			while (index < particles.length) {
 				var particle = particles[index];
 				particle.age += this._scaledUpdateSpeed;
@@ -183,28 +183,6 @@ import com.babylonhx.utils.typedarray.Float32Array;
 					
 					this.gravity.scaleToRef(this._scaledUpdateSpeed, this._scaledGravity);
 					particle.direction.addInPlace(this._scaledGravity);
-					index++;
-				}
-			}*/
-			var index:Int = 0;
-			while (index < particles.length) {
-				var particle = particles[index];
-				particle.age += this._scaledUpdateSpeed;
-				
-				if (particle.age >= particle.lifeTime) { // Recycle
-					particles.splice(index, 1);
-					this._stockParticles.push(particle);
-				}
-				else {
-					particle.color.copyFrom(doubleColor4());
-					particle.size = randomNumber(this.minSize, this.maxSize);
-					
-					particle.direction.scaleToRef(this._scaledUpdateSpeed, this._scaledDirection);
-					particle.position.addInPlace(this._scaledDirection);
-					
-					this.gravity.scaleToRef(this._scaledUpdateSpeed, this._scaledGravity);
-					particle.direction.addInPlace(this._scaledGravity);
-					
 					index++;
 				}
 			}
@@ -266,7 +244,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			worldMatrix = Matrix.Translation(this.emitter.x + randomNumber(-500, 500), this.emitter.y, this.emitter.z + randomNumber(-500, 500));
 		}
 		
-		/*for (index in 0...newParticles) {
+		for (index in 0...newParticles) {
 			if (this.particles.length == this._capacity) {
 				break;
 			}
@@ -293,32 +271,6 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			
 			this.colorDead.subtractToRef(particle.color, this._colorDiff);
 			this._colorDiff.scaleToRef(1.0 / particle.lifeTime, particle.colorStep);
-		}*/
-		
-		for (index in 0...newParticles) {
-			if (this.particles.length == this._capacity) {
-				break;
-			}
-			
-			if (this._stockParticles.length != 0) {
-				particle = this._stockParticles.pop();
-				particle.age = 0;
-			} 
-			else {
-				particle = new Particle();
-			}
-			this.particles.push(particle);
-			
-			var emitPower = randomNumber(this.minEmitPower, this.maxEmitPower);
-				
-			this.startDirectionFunction(emitPower, worldMatrix, particle.direction);
-			
-			particle.lifeTime = randomNumber(this.minLifeTime, this.maxLifeTime);
-			
-			particle.size = randomNumber(this.minSize, this.maxSize);
-			particle.angularSpeed = randomNumber(this.minAngularSpeed, this.maxAngularSpeed);
-			
-			this.startPositionFunction(worldMatrix, particle.position);
 		}
 	}
 

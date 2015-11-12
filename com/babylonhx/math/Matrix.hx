@@ -30,9 +30,9 @@ import haxe.ds.Vector;
 	
 	public function new() {
 		#if (js || html5 || purejs)
-		m = new Float32Array(16);
+		m = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 		#else
-		m = [];
+		m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 		#end
 	}
 	
@@ -148,7 +148,7 @@ import haxe.ds.Vector;
 		
         return this;
     }
-
+	
     inline public function add(other:Matrix):Matrix {
         var result = new Matrix();
         this.addToRef(other, result);

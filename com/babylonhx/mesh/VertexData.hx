@@ -261,7 +261,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 				this.indices = [];
 			}
 			
-			var offset = Std.int(this.positions == null ? this.positions.length / 3 : 0);
+			var offset = Std.int(this.positions != null ? this.positions.length / 3 : 0);
 			for (index in 0...other.indices.length) {
 				this.indices.push(other.indices[index] + offset);
 			}

@@ -266,6 +266,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 		
 		var orig = this._indices;
+		
 		if (!copyWhenShared || this._meshes.length == 1) {
 			return orig;
 		}

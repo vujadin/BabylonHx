@@ -52,9 +52,9 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
     public var totalStrength:Float = 1.0;
 
     /**
-    The radius around the analyzed pixel used by the SSAO post-process. Default value is 0.0002
+    The radius around the analyzed pixel used by the SSAO post-process. Default value is 0.0001
     */
-    public var radius:Float = 0.0002;
+    public var radius:Float = 0.0001;
 	
 	/**
 	* Related to fallOff, used to interpolate SSAO samples (first interpolate function input) based on the occlusion difference of each pixel
@@ -62,7 +62,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 	* Default value is 0.0075
 	* @type {number}
 	*/
-	public var area:Float = 0.0075;
+	public var area:Float = 0.975;
 
 	/**
 	* Related to area, used to interpolate SSAO samples (second interpolate function input) based on the occlusion difference of each pixel
@@ -70,7 +70,14 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 	* Default value is 0.0002
 	* @type {number}
 	*/
-	public var fallOff:Float = 0.0002;
+	public var fallOff:Float = 0.000001;
+	
+	/**
+    * The base color of the SSAO post-process
+    * The final result is "base + ssao" between [0, 1]
+    * @type {number}
+    */
+    public var base:Float = 0.5;
 
 	private var _scene:Scene = null;
 	private var _depthTexture:RenderTargetTexture = null;
@@ -106,8 +113,8 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 		
 		this._originalColorPostProcess = new PassPostProcess("SSAOOriginalSceneColor", combineRatio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false);
 		this._createSSAOPostProcess(ratio);
-		this._blurHPostProcess = new BlurPostProcess("SSAOBlurH", new Vector2(1.0, 0.0), 4.0, ssaoRatio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false);
-		this._blurVPostProcess = new BlurPostProcess("SSAOBlurV", new Vector2(0.0, 1.0), 4.0, ssaoRatio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false);
+		this._blurHPostProcess = new BlurPostProcess("SSAOBlurH", new Vector2(1.0, 0.0), 2.0, ssaoRatio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false);
+		this._blurVPostProcess = new BlurPostProcess("SSAOBlurV", new Vector2(0.0, 1.0), 2.0, ssaoRatio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false);
 		this._createSSAOCombinePostProcess(combineRatio);
 		
 		// Set up pipeline
@@ -162,6 +169,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 
 	// Private Methods
 	private function _createSSAOPostProcess(ratio:Float):PostProcess {
+		var numSamples:Int = 16;
 		var sampleSphere = [
 			0.5381, 0.1856, -0.4319,
 			0.1379, 0.2486, 0.4430,
@@ -181,12 +189,17 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 			-0.4776, 0.2847, -0.0271
 		];
 		
-		var samplesFactor = 1.0 / 16.0;
+		var samplesFactor = 1.0 / numSamples;
 		
-		this._ssaoPostProcess = new PostProcess("ssao", "ssao", ["sampleSphere", "samplesFactor", "randTextureTiles", "totalStrength", "radius",  "area", "fallOff"], 
-												["randomSampler"],
-												ratio, null, Texture.BILINEAR_SAMPLINGMODE,
-												this._scene.getEngine(), false);
+		this._ssaoPostProcess = new PostProcess("ssao", "ssao",
+			[
+				"sampleSphere", "samplesFactor", "randTextureTiles", "totalStrength", "radius",
+				"area", "fallOff", "base"
+			],
+			["randomSampler"],
+			ratio, null, Texture.BILINEAR_SAMPLINGMODE,
+			this._scene.getEngine(), false,
+			"#define SAMPLES " + numSamples);
 												
 		this._ssaoPostProcess.onApply = function(effect:Effect) {
 			if (this._firstUpdate) {
@@ -200,6 +213,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 			effect.setFloat("radius", this.radius);
 			effect.setFloat("area", this.area);
             effect.setFloat("fallOff", this.fallOff);
+			effect.setFloat("base", this.base);
 			
 			effect.setTexture("textureSampler", this._depthTexture);
 			effect.setTexture("randomSampler", this._randomTexture);
@@ -231,7 +245,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 		
 		var rand = function(min:Float, max:Float):Float {
 			return Math.random() * (max - min) + min;
-		}
+		};
 		
 		var colorX:Int = 0;
 		var colorY:Int = 0;
@@ -239,9 +253,9 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 		var totalPixelsCount = size * size * 4;
 		var i:Int = 0;
 		while (i < totalPixelsCount) {
-			context[i] = Math.floor(rand(0.0, 1.0) * 255);
-			context[i + 1] = Math.floor(rand(0.0, 1.0) * 255);
-			context[i + 2] = Math.floor(rand(0.0, 1.0) * 255);
+			context[i] = Math.floor(rand(-1.0, 1.0) * 255);
+			context[i + 1] = Math.floor(rand(-1.0, 1.0) * 255);
+			context[i + 2] = Math.floor(rand(-1.0, 1.0) * 255);
 			context[i + 3] = 255;
 			
 			i += 4;

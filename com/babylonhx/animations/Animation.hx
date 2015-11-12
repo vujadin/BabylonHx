@@ -8,6 +8,7 @@ import com.babylonhx.math.Quaternion;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
+import com.babylonhx.Node;
 
 /**
 * ...
@@ -21,16 +22,16 @@ import com.babylonhx.mesh.AbstractMesh;
 
 @:expose('BABYLON.Animation') class Animation {
 	
-	public static var ANIMATIONTYPE_FLOAT:Int = 0;
-	public static var ANIMATIONTYPE_VECTOR3:Int = 1;
-	public static var ANIMATIONTYPE_QUATERNION:Int = 2;
-	public static var ANIMATIONTYPE_MATRIX:Int = 3;
-	public static var ANIMATIONTYPE_COLOR3:Int = 4;
-	public static var ANIMATIONTYPE_VECTOR2:Int = 5;
+	public static inline var ANIMATIONTYPE_FLOAT:Int = 0;
+	public static inline var ANIMATIONTYPE_VECTOR3:Int = 1;
+	public static inline var ANIMATIONTYPE_QUATERNION:Int = 2;
+	public static inline var ANIMATIONTYPE_MATRIX:Int = 3;
+	public static inline var ANIMATIONTYPE_COLOR3:Int = 4;
+	public static inline var ANIMATIONTYPE_VECTOR2:Int = 5;
 
-	public static var ANIMATIONLOOPMODE_RELATIVE:Int = 0;
-	public static var ANIMATIONLOOPMODE_CYCLE:Int = 1;
-	public static var ANIMATIONLOOPMODE_CONSTANT:Int = 2;
+	public static inline var ANIMATIONLOOPMODE_RELATIVE:Int = 0;
+	public static inline var ANIMATIONLOOPMODE_CYCLE:Int = 1;
+	public static inline var ANIMATIONLOOPMODE_CONSTANT:Int = 2;
 	
 	private var _keys:Array<BabylonFrame>;
 	private var _offsetsCache:Array<Dynamic> = [];// { };
@@ -47,10 +48,12 @@ import com.babylonhx.mesh.AbstractMesh;
 	public var loopMode:Int;
 	public var currentFrame:Int;
 	
+	public var allowMatricesInterpolation:Bool = false;
+
+	private var _ranges:Array<AnimationRange> = [];
 	
-	public static function CreateAndStartAnimation(name:String, mesh:AbstractMesh, targetProperty:String, framePerSecond:Int, totalFrame:Int,
-		from:Dynamic, to:Dynamic, ?loopMode:Int, ?easingFunction:EasingFunction):Animatable {
-		
+	
+	private static function _PrepareAnimation(name:String, targetProperty:String, framePerSecond:Int, totalFrame:Int, from:Dynamic, to:Dynamic, ?loopMode:Int, ?easingFunction:EasingFunction):Animation {
 		var dataType:Int = -1;
 		
 		if (Std.is(from, Float)) {
@@ -84,9 +87,21 @@ import com.babylonhx.mesh.AbstractMesh;
             animation.setEasingFunction(easingFunction);
         }
 		
-		mesh.animations.push(animation);
+		return animation;
+	}
+	
+	public static function CreateAndStartAnimation(name:String, node:Node, targetProperty:String, framePerSecond:Int, totalFrame:Int, from:Dynamic, to:Dynamic, ?loopMode:Int, ?easingFunction:EasingFunction, ?onAnimationEnd:Void->Void):Animatable {
+		var animation = Animation._PrepareAnimation(name, targetProperty, framePerSecond, totalFrame, from, to, loopMode, easingFunction);
 		
-		return mesh.getScene().beginAnimation(mesh, 0, totalFrame, (animation.loopMode == 1));
+		return node.getScene().beginDirectAnimation(node, [animation], 0, totalFrame, (animation.loopMode == 1), 1.0, onAnimationEnd);
+	}
+	
+	public static function CreateMergeAndStartAnimation(name:String, node:Node, targetProperty:String, framePerSecond:Int, totalFrame:Int, from:Dynamic, to:Dynamic, ?loopMode:Int, ?easingFunction:EasingFunction, ?onAnimationEnd:Void->Void) {
+		var animation = Animation._PrepareAnimation(name, targetProperty, framePerSecond, totalFrame, from, to, loopMode, easingFunction);
+		
+		node.animations.push(animation);
+		
+		return node.getScene().beginAnimation(node, 0, totalFrame, (animation.loopMode == 1), 1.0, onAnimationEnd);
 	}
 
 	public function new(name:String, targetProperty:String, framePerSecond:Int, dataType:Int, loopMode:Int = -1) {
@@ -175,8 +190,8 @@ import com.babylonhx.mesh.AbstractMesh;
 
 	public function setKeys(values:Array<BabylonFrame>) {
 		this._keys = values.slice(0);
-		this._offsetsCache = [];// { };
-		this._highLimitsCache = [];// { };
+		this._offsetsCache = [];
+		this._highLimitsCache = [];
 	}
 
 	private function _interpolate(currentFrame:Int, repeatCount:Int, loopMode:Int, ?offsetValue:Dynamic, ?highLimitValue:Dynamic):Dynamic {
@@ -272,6 +287,79 @@ import com.babylonhx.mesh.AbstractMesh;
 		}
 		
 		return this._keys[this._keys.length - 1].value;
+	}
+	
+	inline public function setValue(currentValue:Dynamic) {
+		// Set value
+		if (this.targetPropertyPath.length > 1) {
+			var property:Dynamic = null;
+			switch(this.targetPropertyPath[0]) {
+				case "scaling":
+					property = untyped this._target.scaling;
+					
+				case "position":
+					property = untyped this._target.position;
+					
+				case "rotation":
+					property = untyped this._target.rotation;
+					
+				default: 
+					property = Reflect.getProperty(this._target, this.targetPropertyPath[0]);
+			}			
+			
+			for (index in 1...this.targetPropertyPath.length - 1) {
+				property = Reflect.getProperty(property, this.targetPropertyPath[index]);
+			}
+			
+			switch(this.targetPropertyPath[this.targetPropertyPath.length - 1]) {					
+				case "x":
+					untyped property.x = currentValue;
+					
+				case "y":
+					untyped property.y = currentValue;
+					
+				case "z":
+					untyped property.z = currentValue;
+					
+				default:
+					Reflect.setProperty(property, this.targetPropertyPath[this.targetPropertyPath.length - 1], currentValue);
+			}			
+		} 
+		else {
+			switch(this.targetPropertyPath[0]) {
+				case "_matrix":
+					untyped this._target._matrix = currentValue;
+					
+				case "rotation":
+					untyped this._target.rotation = currentValue;
+					
+				case "position":
+					untyped this._target.position = currentValue;
+					
+				case "scaling":
+					untyped this._target.scaling = currentValue;
+									
+				default:
+					Reflect.setProperty(this._target, this.targetPropertyPath[0], currentValue);
+			}
+		}
+		
+		if (this._target.markAsDirty != null) {
+			this._target.markAsDirty(this.targetProperty);
+		}
+	}
+
+	public function goToFrame(frame:Int) {
+		if (frame < this._keys[0].frame) {
+			frame = this._keys[0].frame;
+		} 
+		else if (frame > this._keys[this._keys.length - 1].frame) {
+			frame = this._keys[this._keys.length - 1].frame;
+		}
+		
+		var currentValue = this._interpolate(frame, 0, this.loopMode);
+		
+		this.setValue(currentValue);
 	}
 
 	public function animate(delay:Float, from:Int, to:Int, loop:Bool, speedRatio:Float):Bool {
@@ -382,62 +470,7 @@ import com.babylonhx.mesh.AbstractMesh;
 		var currentValue = this._interpolate(currentFrame, repeatCount, this.loopMode, offsetValue, highLimitValue);
 		
 		// Set value
-		if (this.targetPropertyPath.length > 1) {
-			var property:Dynamic = null;
-			switch(this.targetPropertyPath[0]) {
-				case "scaling":
-					property = untyped this._target.scaling;
-					
-				case "position":
-					property = untyped this._target.position;
-					
-				case "rotation":
-					property = untyped this._target.rotation;
-					
-				default: 
-					property = Reflect.getProperty(this._target, this.targetPropertyPath[0]);
-			}			
-			
-			for (index in 1...this.targetPropertyPath.length - 1) {
-				property = Reflect.getProperty(property, this.targetPropertyPath[index]);
-			}
-			
-			switch(this.targetPropertyPath[this.targetPropertyPath.length - 1]) {					
-				case "x":
-					untyped property.x = currentValue;
-					
-				case "y":
-					untyped property.y = currentValue;
-					
-				case "z":
-					untyped property.z = currentValue;
-					
-				default:
-					Reflect.setProperty(property, this.targetPropertyPath[this.targetPropertyPath.length - 1], currentValue);
-			}			
-		} 
-		else {
-			switch(this.targetPropertyPath[0]) {
-				case "_matrix":
-					untyped this._target._matrix = currentValue;
-					
-				case "rotation":
-					untyped this._target.rotation = currentValue;
-					
-				case "position":
-					untyped this._target.position = currentValue;
-					
-				case "scaling":
-					untyped this._target.scaling = currentValue;
-									
-				default:
-					Reflect.setProperty(this._target, this.targetPropertyPath[0], currentValue);
-			}
-		}
-		
-		if (this._target.markAsDirty != null) {
-			this._target.markAsDirty(this.targetProperty);
-		}
+		this.setValue(currentValue);
 		
 		if (!returnValue) {
 			this._stopped = true;

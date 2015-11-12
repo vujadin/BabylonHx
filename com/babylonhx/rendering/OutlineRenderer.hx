@@ -37,7 +37,6 @@ import com.babylonhx.math.Matrix;
 		var material = subMesh.getMaterial();
 		
 		engine.enableEffect(this._effect);
-		this._effect.setFloat("offset", mesh.outlineWidth);
 		this._effect.setFloat("offset", useOverlay ? 0 : mesh.outlineWidth);
 		this._effect.setColor4("color", useOverlay ? mesh.overlayColor : mesh.outlineColor, useOverlay ? mesh.overlayAlpha : 1.0);
 		this._effect.setMatrix("viewProjection", scene.getTransformMatrix());
@@ -90,6 +89,9 @@ import com.babylonhx.math.Matrix;
             }
             defines.push("#define NUM_BONE_INFLUENCERS " + mesh.numBoneInfluencers);
 			defines.push("#define BonesPerMesh " + (mesh.skeleton.bones.length + 1));
+		} 
+		else {
+			defines.push("#define NUM_BONE_INFLUENCERS 0");
 		}
 		
 		// Instances

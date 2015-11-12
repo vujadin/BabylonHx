@@ -54,6 +54,8 @@ import com.babylonhx.tools.Tools;
 		this._renderingMesh = renderingMesh != null ? renderingMesh : cast(mesh, Mesh);
 		mesh.subMeshes.push(this);
 		
+		this._trianglePlanes = [];
+		
 		this._id = mesh.subMeshes.length - 1;
 		
 		if (createBoundingBox) {
@@ -100,13 +102,15 @@ import com.babylonhx.tools.Tools;
 		
 		var indices = this._renderingMesh.getIndices();
 		var extend:Dynamic = {
-			minimum: -1,
-			maximum: -1
+			minimum: Vector3.Zero(),
+			maximum: Vector3.Zero()
 		};
 		
+		//is this the only submesh?
 		if (this.indexStart == 0 && this.indexCount == indices.length) {
-			extend = Tools.ExtractMinAndMax(data, this.verticesStart, this.verticesCount);
-		} 
+			//the rendering mesh's bounding info can be used, it is the standard submesh for all indices.
+			extend = { minimum: this._renderingMesh.getBoundingInfo().minimum.clone(), maximum: this._renderingMesh.getBoundingInfo().maximum.clone() };
+		}
 		else {
 			extend = Tools.ExtractMinAndMaxIndexed(data, indices, this.indexStart, this.indexCount);
 		}
@@ -121,6 +125,7 @@ import com.babylonhx.tools.Tools;
 		if (this._boundingInfo == null) {
 			this.refreshBoundingInfo();
 		}
+		
 		this._boundingInfo._update(world);
 	}
 
@@ -171,16 +176,19 @@ import com.babylonhx.tools.Tools;
 				var currentIntersectInfo = ray.intersectsTriangle(p0, p1, p2);
 				
 				if (currentIntersectInfo != null) {
-					if(currentIntersectInfo.distance < 0 ) continue;
-					if (fastCheck || intersectInfo == null || currentIntersectInfo.distance < intersectInfo.distance) {
-						intersectInfo = currentIntersectInfo;
-						intersectInfo.faceId = Std.int(index / 3);
+                    if (currentIntersectInfo.distance < 0) {
+                        continue;
+                    }
+					
+                    if (fastCheck || intersectInfo == null || currentIntersectInfo.distance < intersectInfo.distance) {
+                        intersectInfo = currentIntersectInfo;
+                        intersectInfo.faceId = Std.int(index / 3);
 						
-						if (fastCheck) {
-							break;
-						}
-					}
-				}
+                        if (fastCheck) {
+                            break;
+                        }
+                    }
+                }
 				
 				index += 3;
 			}
@@ -220,10 +228,12 @@ import com.babylonhx.tools.Tools;
 		for (index in startIndex...startIndex + indexCount) {
 			var vertexIndex = indices[index];
 			
-			if (vertexIndex < minVertexIndex)
+			if (vertexIndex < minVertexIndex) {
 				minVertexIndex = vertexIndex;
-			if (vertexIndex > maxVertexIndex)
+			}
+			if (vertexIndex > maxVertexIndex) {
 				maxVertexIndex = vertexIndex;
+			}
 		}
 		
 		return new SubMesh(materialIndex, Std.int(minVertexIndex), Std.int(maxVertexIndex - minVertexIndex + 1), startIndex, indexCount, mesh, renderingMesh);

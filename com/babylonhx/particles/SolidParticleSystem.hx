@@ -77,6 +77,7 @@ class SolidParticleSystem implements IDisposable {
 	private var _particle:SolidParticle;
 	private var _fakeCamPos:Vector3 = Vector3.Zero();
 	private var _rotMatrix:Matrix = new Matrix();
+	private var _invertMatrix:Matrix = new Matrix();
 	private var _rotated:Vector3 = Vector3.Zero();
 	private var _quaternion:Quaternion = new Quaternion();
 	private var _vertex:Vector3 = Vector3.Zero();
@@ -420,7 +421,8 @@ class SolidParticleSystem implements IDisposable {
 			this._roll = this.mesh.rotation.z;
 			this._quaternionRotationYPR();
 			this._quaternionToRotationMatrix();
-			Vector3.TransformCoordinatesToRef(this._camera.globalPosition, this._rotMatrix, this._fakeCamPos);
+			this._rotMatrix.invertToRef(this._invertMatrix);
+			Vector3.TransformCoordinatesToRef(this._camera.globalPosition, this._invertMatrix, this._fakeCamPos);
 			
 			// set two orthogonal vectors (_cam_axisX and and _cam_axisY) to the cam-mesh axis (_cam_axisZ)
 			this._fakeCamPos.subtractToRef(this.mesh.position, this._cam_axisZ);

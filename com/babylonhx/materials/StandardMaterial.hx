@@ -538,6 +538,10 @@ import com.babylonhx.animations.IAnimatable;
 				fallbacks.addFallback(1, "FOG");
 			}
 			
+			if (this._defines.defines["POINTSIZE"]) {
+                fallbacks.addFallback(0, "POINTSIZE");
+            }
+			
 			for (lightIndex in 0...Material.maxSimultaneousLights) {
 				if (!this._defines.defines["LIGHT" + lightIndex]) {
 					continue;

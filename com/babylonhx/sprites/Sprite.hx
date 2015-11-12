@@ -3,6 +3,7 @@ package com.babylonhx.sprites;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.animations.Animation;
+import com.babylonhx.actions.ActionManager;
 
 
 /**
@@ -24,6 +25,7 @@ import com.babylonhx.animations.Animation;
 	public var disposeWhenFinishedAnimating:Bool;
 	public var animations:Array<Animation> = [];
 	public var isPickable:Bool = false;
+	public var actionManager:ActionManager;
 
 	private var _animationStarted:Bool = false;
 	private var _loopAnimation:Bool = false;
