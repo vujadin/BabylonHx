@@ -14,6 +14,23 @@ import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector2;
+import com.babylonhx.mesh.MeshBuilder.BoxOptions;
+import com.babylonhx.mesh.MeshBuilder.CylinderOptions;
+import com.babylonhx.mesh.MeshBuilder.DashedLinesOptions;
+import com.babylonhx.mesh.MeshBuilder.DiscOptions;
+import com.babylonhx.mesh.MeshBuilder.GroundFromHeightmapOptions;
+import com.babylonhx.mesh.MeshBuilder.GroundOptions;
+import com.babylonhx.mesh.MeshBuilder.IcoSphereOptions;
+import com.babylonhx.mesh.MeshBuilder.LatheOptions;
+import com.babylonhx.mesh.MeshBuilder.LinesOptions;
+import com.babylonhx.mesh.MeshBuilder.PlaneOptions;
+import com.babylonhx.mesh.MeshBuilder.PolyhedronOptions;
+import com.babylonhx.mesh.MeshBuilder.RibbonOptions;
+import com.babylonhx.mesh.MeshBuilder.SphereOptions;
+import com.babylonhx.mesh.MeshBuilder.TiledGroundOptions;
+import com.babylonhx.mesh.MeshBuilder.TorusKnotOptions;
+import com.babylonhx.mesh.MeshBuilder.TorusOptions;
+import com.babylonhx.mesh.MeshBuilder.TubeOptions;
 import com.babylonhx.mesh.simplification.ISimplificationSettings;
 import com.babylonhx.mesh.simplification.ISimplifier;
 import com.babylonhx.mesh.simplification.QuadraticErrorSimplification;
@@ -43,152 +60,6 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
  * ...
  * @author Krtolica Vujadin
  */
-
-typedef SphereOptions = {
-	?segments:Int,
-	?diameterX:Float,
-	?diameterY:Float,
-	?diameterZ:Float,
-	?sideOrientation:Int,
-	?updatable:Bool
-}
-
-typedef BoxOptions = {	
-	width:Float,
-	height:Float,
-	depth:Float,
-	?sideOrientation:Int,
-	?updatable:Bool
-}
-
-typedef CylinderOptions = {
-	?height:Float,
-	?diameterTop:Float,
-	?diameterBottom:Float,
-	?tessellation:Int,
-	?subdivision:Int,
-	?sideOrientation:Int,
-	?updatable:Bool
-}
-
-typedef DiscOptions = {
-	?radius:Float,
-	?tessellation:Float,
-	?sideOrientation:Int,
-	?updatable:Bool
-}
-
-typedef RibbonOptions = {
-	pathArray:Array<Array<Vector3>>, 
-	?closeArray:Bool, 
-	?closePath:Bool, 
-	?offset:Int,
-	?instance:Mesh,
-	?sideOrientation:Int,
-	?updatable:Bool
-}
-
-typedef TorusOptions = {
-	diameter:Float,
-	thickness:Float, 
-	tessellation:Int,
-	?sideOrientation:Int,
-	?updatable:Bool
-}
-
-typedef TorusKnotOptions = {
-	radius:Float, 
-	tube:Float, 
-	radialSegments:Int, 
-	tubularSegments:Int, 
-	p:Float, 
-	q:Float,
-	?sideOrientation:Int,
-	?updatable:Bool
-}
-
-typedef LinesOptions = {
-	points:Array<Vector3>,
-	?updatable:Bool
-}
-
-typedef DashedLinesOptions = {
-	points:Array<Vector3>, 
-	?dashSize:Float, 
-	?gapSize:Float, 
-	?dashNb:Float,
-	?sideOrientation:Int,
-	?updatable:Bool,
-	?linesInstance:LinesMesh 
-}
-
-typedef PlaneOptions = {
-	width:Float, 
-	height:Float,
-	?sideOrientation:Int,
-	?updatable:Bool
-}
-
-typedef GroundOptions = {
-	width:Float, 
-	height:Float, 
-	subdivision:Int,
-	?updatable:Bool
-}
-
-typedef TiledGroundOptions = {
-	xmin:Float, 
-	zmin:Float, 
-	xmax:Float, 
-	zmax:Float, 
-	subdivisions:Int, 
-	precision:Int,
-	?updatable:Bool
-}
-
-typedef GroundFromHeightmap = {
-	url:String,
-	width:Float, 
-	height:Float, 
-	subdivisions:Int, 
-	minHeight:Float, 
-	maxHeight:Float, 
-	?updatable:Bool, 
-	?onReady:GroundMesh->Void
-}
-
-typedef TubeOptions = {
-	path:Array<Vector3>, 
-	radius:Float, 
-	tessellation:Int, 
-	radiusFunction:Int->Float->Float, 
-	cap:Int, 
-	?arc:Int,
-	?updatable:Bool, 
-	?sideOrientation:Int, 
-	?tubeInstance:Mesh
-}
-
-typedef PolyhedronOptions = {
-	?type:Int, 
-	?size:Float, 
-	?sizeX:Float, 
-	?sizeY:Float, 
-	?sizeZ:Float, 
-	?custom:Dynamic, 
-	?faceUV:Array<Vector4>, 
-	?faceColors:Array<Color4>, 
-	?updatable:Bool, 
-	?sideOrientation:Int
-}
-
-typedef IcoSphereOptions = {
-	?radius:Float, 
-	?flat:Float, 
-	?subdivisions:Int, 
-	?sideOrientation:Int, 
-	?updatable:Bool
-}
 
 @:expose('BABYLON.Mesh') class Mesh extends AbstractMesh implements IGetSetVerticesData implements IAnimatable {
 	
@@ -992,8 +863,7 @@ typedef IcoSphereOptions = {
 		var hardwareInstancedRendering = (engine.getCaps().instancedArrays != null) && (batch.visibleInstances[subMesh._id] != null) && (batch.visibleInstances.length > subMesh._id && batch.visibleInstances[subMesh._id] != null);
 		
 		// Material
-		var effectiveMaterial:Material = subMesh.getMaterial();
-		
+		var effectiveMaterial:Material = subMesh.getMaterial();		
 		if (effectiveMaterial == null || !effectiveMaterial.isReady(this, hardwareInstancedRendering)) {
 			return;
 		}
@@ -1531,43 +1401,120 @@ typedef IcoSphereOptions = {
 	}
 
 	// Statics
-	public static function CreateRibbon(name:String, options:RibbonOptions, scene:Scene):Mesh {
+	public static function CreateRibbon(name:String, pathArray:Array<Array<Vector3>>, ?closeArray:Bool = false, ?closePath:Bool = false, ?offset:Int = 0, ?scene:Scene, ?updatable:Bool = false, ?sideOrientation:Int = Mesh.DEFAULTSIDE, ?instance:Mesh):Mesh {
+		var options:RibbonOptions = {
+			pathArray: pathArray, 
+			closeArray: closeArray, 
+			closePath: closePath, 
+			offset: offset,
+			instance: instance,
+			sideOrientation: sideOrientation,
+			updatable: updatable
+		};
 		return MeshBuilder.CreateRibbon(name, options, scene);
 	}
 	
-	public static function CreateDisc(name:String, options:DiscOptions, scene:Scene):Mesh {		
+	public static function CreateDisc(name:String, radius:Float, tessellation:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+		var options:DiscOptions = {
+			radius: radius,
+			tessellation: tessellation,
+			sideOrientation: sideOrientation,
+			updatable: updatable
+		};
+		
 		return MeshBuilder.CreateDisc(name, options, scene);
 	}
 		
-	public static function CreateBox(name:String, options:BoxOptions, scene:Scene):Mesh {		
+	public static function CreateBox(name:String, size:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {	
+		var options:BoxOptions = {
+			width: size,
+			height: size,
+			depth: size,
+			sideOrientation: sideOrientation,
+			updatable: updatable
+		};
+		
 		return MeshBuilder.CreateBox(name, options, scene);
 	}
 
-	public static function CreateSphere(name:String, options:SphereOptions, scene:Scene):Mesh {
+	public static function CreateSphere(name:String, segments:Int, diameter:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+		var options:SphereOptions = {
+			segments: segments,
+			diameterX: diameter,
+			diameterY: diameter,
+			diameterZ: diameter,
+			sideOrientation: sideOrientation,
+			updatable: updatable
+		};
+		
 		return MeshBuilder.CreateSphere(name, options, scene);
 	}
 	
 	// Cylinder and cone
-	public static function CreateCylinder(name:String, options:CylinderOptions, scene:Scene): Mesh {				
+	public static function CreateCylinder(name:String, height:Float, diameterTop:Float, diameterBottom:Float, tessellation:Int, subdivisions:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+		var options:CylinderOptions = {
+			height: height,
+			diameterTop: diameterTop,
+			diameterBottom: diameterBottom,
+			tessellation: tessellation,
+			subdivisions: subdivisions,
+			sideOrientation: sideOrientation,
+			updatable: updatable
+		};
+		
 		return MeshBuilder.CreateCylinder(name, options, scene);
 	}
 
 	// Torus  (Code from SharpDX.org)
-	public static function CreateTorus(name:String, options:TorusOptions, scene:Scene):Mesh {				
+	public static function CreateTorus(name:String, diameter:Float, thickness:Float, tessellation:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {				
+		var options:TorusOptions = {
+			diameter: diameter,
+			thickness: thickness,
+			tessellation: tessellation,
+			sideOrientation: sideOrientation,
+			updatable: updatable
+		};
+		
 		return MeshBuilder.CreateTorus(name, options, scene);
 	}
 	
-	public static function CreateTorusKnot(name:String, options:TorusKnotOptions, scene:Scene):Mesh {		
+	public static function CreateTorusKnot(name:String, radius:Float, tube:Float, radialSegments:Int, tubularSegments:Int, p:Int, q:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {	
+		var options:TorusKnotOptions = {
+			radius: radius,
+			tube: tube,
+			radialSegments: radialSegments,
+			tubularSegments: tubularSegments,
+			p: p,
+			q: q,
+			sideOrientation: sideOrientation,
+			updatable: updatable
+		};
+		
 		return MeshBuilder.CreateTorusKnot(name, options, scene);
 	}
 	
 	// Lines
-	public static function CreateLines(name:String, options:LinesOptions, scene:Scene):LinesMesh {
+	public static function CreateLines(name:String, points:Array<Vector3>, scene:Scene, updatable:Bool = false, ?instance:LinesMesh):LinesMesh {
+		var options:LinesOptions = {
+			points: points,
+			updatable: updatable,
+			instance: instance
+		};
+		
 		return MeshBuilder.CreateLines(name, options, scene);
 	}
 
 	// Dashed Lines
-    public static function CreateDashedLines(name:String, options:DashedLinesOptions, scene:Scene):LinesMesh {		
+    public static function CreateDashedLines(name:String, points:Array<Vector3>, dashSize:Float, gapSize:Float, dashNb:Float, scene:Scene, updatable:Bool = false, ?instance:LinesMesh):LinesMesh { 
+		var options:DashedLinesOptions = {
+			points: points,
+			dashSize: dashSize,
+			gapSize: gapSize,
+			dashNb: dashNb,
+			updatable: updatable,
+			instance: instance
+		}
+		
 		return MeshBuilder.CreateDashedLines(name, options, scene);
 	}
 	
@@ -1599,14 +1546,14 @@ typedef IcoSphereOptions = {
 			sideOrientation: sideOrientation,
 			extrudedInstance: extrudedInstance,
 			updatable: updatable
-		}
+		};
 		
 		return MeshBuilder.ExtrudeShapeCustom(name, options, scene);
 	}
 	
 	// Lathe
 	public static function CreateLathe(name:String, shape:Array<Vector3>, radius:Float = 1, tessellation:Int = 0, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		var options = {
+		var options:LatheOptions = {
 			shape: shape,
 			radius: radius,
 			tesselation: tessellation,
@@ -1618,23 +1565,69 @@ typedef IcoSphereOptions = {
 	}
 
 	// Plane & ground
-	public static function CreatePlane(name:String, options:PlaneOptions, scene:Scene):Mesh {		
+	public static function CreatePlane(name:String, size:Float, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {	   	  
+		var options:PlaneOptions = {
+			width: size,
+			height: size,
+			sideOrientation: sideOrientation,
+			updatable: updatable
+		}
+		
 		return MeshBuilder.CreatePlane(name, options, scene);
 	}
 	
-	public static function CreateGround(name:String, options:GroundOptions, scene:Scene):Mesh {
+	public static function CreateGround(name:String, width:Float, height:Float, subdivisions:Int, scene:Scene, updatable:Bool = false):Mesh {
+		var options:GroundOptions = {
+			width: width,
+			height: height,
+			subdivision: subdivisions,
+			updatable: updatable
+		}
+		
 		return MeshBuilder.CreateGround(name, options, scene);
 	}
-
-	public static function CreateTiledGround(name:String, options:TiledGroundOptions, scene:Scene):Mesh {		
+	
+	public static function CreateTiledGround(name:String, xmin:Float, zmin:Float, xmax:Float, zmax:Float, subdivisions:Int, precision:Int, scene:Scene, updatable:Bool = false): Mesh{
+		var options:TiledGroundOptions = {
+			xmin: xmin,
+			zmin: zmin,
+			xmax: xmax,
+			zmax: zmax,
+			subdivisions: subdivisions,
+			precision: precision,
+			updatable: updatable
+		};
+		
 		return MeshBuilder.CreateTiledGround(name, options, scene);
 	}
-	
-	public static function CreateGroundFromHeightMap(name:String, options:GroundFromHeightmap, scene:Scene):GroundMesh {		
-		return MeshBuilder.CreateGroundFromHeightMap(name, options.url, options, scene);
+		
+	public static function CreateGroundFromHeightMap(name:String, url:String, width:Float, height:Float, subdivisions:Int, minHeight:Float, maxHeight:Float, scene:Scene, updatable:Bool = false, ?onReady:GroundMesh->Void):GroundMesh {
+		var options:GroundFromHeightmapOptions = {
+			width: width,
+			height: height,
+			subdivisions: subdivisions,
+			minHeight: minHeight,
+			maxHeight: maxHeight,
+			updatable: updatable,
+			onReady: onReady
+		};
+		
+		return MeshBuilder.CreateGroundFromHeightMap(name, url, options, scene);
 	}
 	
-	public static function CreateTube(name:String, options:TubeOptions, scene:Scene):Mesh {		
+	public static function CreateTube(name:String, path:Array<Vector3>, radius:Float, tessellation:Int, radiusFunction:Int->Float->Float, cap:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE, ?instance:Mesh):Mesh {		
+		var options:TubeOptions = {
+			path: path,
+			radius: radius,
+			tessellation: tessellation,
+			radiusFunction: radiusFunction,
+			arc: 1,
+			cap: cap,
+			updatable: updatable,
+			sideOrientation: sideOrientation,
+			instance: instance
+		}
+		
 		return MeshBuilder.CreateTube(name, options, scene);
 	}
 	
@@ -1828,7 +1821,6 @@ typedef IcoSphereOptions = {
 	 */
 	public static function MergeMeshes(meshes:Array<Mesh>, disposeSource:Bool = true, allow32BitsIndices:Bool = false, ?meshSubclass:Mesh):Mesh {
 		if (!allow32BitsIndices) {
-			trace("allow32BitsIndices");
 			var totalVertices = 0;
 			
 			// Counting vertices

@@ -24,6 +24,7 @@ typedef IAMethods = {
 	public var textureFloat:Null<Bool>;
 	public var textureAnisotropicFilterExtension:Dynamic;
 	public var highPrecisionShaderSupported:Bool;
+	public var fragmentDepthSupported:Bool;
 	public var maxAnisotropy:Int;
 	
 	#if (!mobile && cpp)

@@ -1192,21 +1192,22 @@ import com.babylonhx.tools.Tools;
 		return (this._activeMeshes.indexOf(mesh) != -1);
 	}
 
+	static var _eSMMaterial:Material;
 	inline private function _evaluateSubMesh(subMesh:SubMesh, mesh:AbstractMesh) {
 		if (mesh.alwaysSelectAsActiveMesh || mesh.subMeshes.length == 1 || subMesh.isInFrustum(this._frustumPlanes)) {
-			var material:Material = subMesh.getMaterial();
+			_eSMMaterial = subMesh.getMaterial();
 			
 			if (mesh.showSubMeshesBoundingBox) {
 				this._boundingBoxRenderer.renderList.push(subMesh.getBoundingInfo().boundingBox);
 			}
 			
-			if (material != null) {
+			if (_eSMMaterial != null) {
 				// Render targets
-				if (material.getRenderTargetTextures != null) {
-					if (this._processedMaterials.indexOf(material) == -1) {
-						this._processedMaterials.push(material);
+				if (_eSMMaterial.getRenderTargetTextures != null) {
+					if (this._processedMaterials.indexOf(_eSMMaterial) == -1) {
+						this._processedMaterials.push(_eSMMaterial);
 						
-						this._renderTargets.concatSmartArray(material.getRenderTargetTextures());
+						this._renderTargets.concatSmartArray(_eSMMaterial.getRenderTargetTextures());
 					}
 				}
 				
@@ -1217,8 +1218,8 @@ import com.babylonhx.tools.Tools;
 		}
 	}
 
-	var _activeMeshes_:Array<Mesh> = [];
-	var _activeMesh_:Mesh = null;
+	static var _activeMeshes_:Array<Mesh> = [];
+	static var _activeMesh_:Mesh = null;
 	inline private function _evaluateActiveMeshes() {
 		this.activeCamera._activeMeshes.reset();
 		this._activeMeshes.reset();

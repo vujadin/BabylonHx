@@ -14,10 +14,6 @@ attribute vec2 uv2;
 #ifdef VERTEXCOLOR
 attribute vec4 color;
 #endif
-#ifdef BONES
-attribute vec4 matricesIndices;
-attribute vec4 matricesWeights;
-#endif
 
 // Uniforms
 
@@ -27,7 +23,7 @@ attribute vec4 world1;
 attribute vec4 world2;
 attribute vec4 world3;
 #else
-    uniform mat4 world;
+uniform mat4 world;
 #endif
 
 uniform mat4 view;
@@ -37,8 +33,15 @@ uniform mat4 viewProjection;
 varying vec2 vDiffuseUV;
 #endif
 
-#ifdef BONES
-uniform mat4 mBones[BonesPerMesh];
+#if NUM_BONE_INFLUENCERS > 0
+	uniform mat4 mBones[BonesPerMesh];
+
+	attribute vec4 matricesIndices;
+	attribute vec4 matricesWeights;
+	#if NUM_BONE_INFLUENCERS > 4
+		attribute vec4 matricesIndicesExtra;
+		attribute vec4 matricesWeightsExtra;
+	#endif
 #endif
 
 #ifdef POINTSIZE
@@ -73,71 +76,88 @@ varying vec2 vDistortionCoords2;
 varying vec2 vDistortionCoords3;
 
 void main(void) {
-    mat4 finalWorld;
+	mat4 finalWorld;
 
-    #ifdef INSTANCES
-    finalWorld = mat4(world0, world1, world2, world3);
-	#else
-        finalWorld = world;
+#ifdef INSTANCES
+	finalWorld = mat4(world0, world1, world2, world3);
+#else
+	finalWorld = world;
+#endif
+
+#if NUM_BONE_INFLUENCERS > 0
+	mat4 influence;
+	influence = mBones[int(matricesIndices[0])] * matricesWeights[0];
+
+	#if NUM_BONE_INFLUENCERS > 1
+		influence += mBones[int(matricesIndices[1])] * matricesWeights[1];
+	#endif 
+	#if NUM_BONE_INFLUENCERS > 2
+		influence += mBones[int(matricesIndices[2])] * matricesWeights[2];
+	#endif	
+	#if NUM_BONE_INFLUENCERS > 3
+		influence += mBones[int(matricesIndices[3])] * matricesWeights[3];
+	#endif	
+
+	#if NUM_BONE_INFLUENCERS > 4
+		influence += mBones[int(matricesIndicesExtra[0])] * matricesWeightsExtra[0];
 	#endif
+	#if NUM_BONE_INFLUENCERS > 5
+		influence += mBones[int(matricesIndicesExtra[1])] * matricesWeightsExtra[1];
+	#endif	
+	#if NUM_BONE_INFLUENCERS > 6
+		influence += mBones[int(matricesIndicesExtra[2])] * matricesWeightsExtra[2];
+	#endif	
+	#if NUM_BONE_INFLUENCERS > 7
+		influence += mBones[int(matricesIndicesExtra[3])] * matricesWeightsExtra[3];
+	#endif	
 
-    #ifdef BONES
-    mat4 m0 = mBones[int(matricesIndices.x)] * matricesWeights.x;
-    mat4 m1 = mBones[int(matricesIndices.y)] * matricesWeights.y;
-    mat4 m2 = mBones[int(matricesIndices.z)] * matricesWeights.z;
+	finalWorld = finalWorld * influence;
+#endif
 
-    #ifdef BONES4
-    mat4 m3 = mBones[int(matricesIndices.w)] * matricesWeights.w;
-    finalWorld = finalWorld * (m0 + m1 + m2 + m3);
-	#else
-        finalWorld = finalWorld * (m0 + m1 + m2);
-	#endif
+	gl_Position = viewProjection * finalWorld * vec4(position, 1.0);
 
-    #endif
-    gl_Position = viewProjection * finalWorld * vec4(position, 1.0);
+	vec4 worldPos = finalWorld * vec4(position, 1.0);
+	vPositionW = vec3(worldPos);
 
-    vec4 worldPos = finalWorld * vec4(position, 1.0);
-    vPositionW = vec3(worldPos);
+#ifdef NORMAL
+	vNormalW = normalize(vec3(finalWorld * vec4(normal, 0.0)));
+#endif
 
-    #ifdef NORMAL
-    vNormalW = normalize(vec3(finalWorld * vec4(normal, 0.0)));
-	#endif
+	// Texture coordinates
+#ifdef DIFFUSE
+	vDiffuseUV = uv;
+	vDiffuseUV.y -= 0.2;
+#endif
 
-    // Texture coordinates
-    #ifdef DIFFUSE
-    vDiffuseUV = uv;
-    vDiffuseUV.y -= 0.2;
-	#endif
+	// Clip plane
+#ifdef CLIPPLANE
+	fClipDistance = dot(worldPos, vClipPlane);
+#endif
 
-    // Clip plane
-    #ifdef CLIPPLANE
-    fClipDistance = dot(worldPos, vClipPlane);
-	#endif
+	// Fog
+#ifdef FOG
+	fFogDistance = (view * worldPos).z;
+#endif
 
-    // Fog
-    #ifdef FOG
-    fFogDistance = (view * worldPos).z;
-	#endif
+	// Vertex color
+#ifdef VERTEXCOLOR
+	vColor = color;
+#endif
 
-    // Vertex color
-    #ifdef VERTEXCOLOR
-    vColor = color;
-	#endif
+	// Point size
+#ifdef POINTSIZE
+	gl_PointSize = pointSize;
+#endif
 
-    // Point size
-    #ifdef POINTSIZE
-    gl_PointSize = pointSize;
-	#endif
-
-    // Fire
-    vec3 layerSpeed = vec3(-0.2, -0.52, -0.1) * speed;
-
-    vDistortionCoords1.x = uv.x;
-    vDistortionCoords1.y = uv.y + layerSpeed.x * time / 1000.0;
-
-    vDistortionCoords2.x = uv.x;
-    vDistortionCoords2.y = uv.y + layerSpeed.y * time / 1000.0;
-
-    vDistortionCoords3.x = uv.x;
-    vDistortionCoords3.y = uv.y + layerSpeed.z * time / 1000.0;
+	// Fire
+	vec3 layerSpeed = vec3(-0.2, -0.52, -0.1) * speed;
+	
+	vDistortionCoords1.x = uv.x;
+	vDistortionCoords1.y = uv.y + layerSpeed.x * time / 1000.0;
+	
+	vDistortionCoords2.x = uv.x;
+	vDistortionCoords2.y = uv.y + layerSpeed.y * time / 1000.0;
+	
+	vDistortionCoords3.x = uv.x;
+	vDistortionCoords3.y = uv.y + layerSpeed.z * time / 1000.0;
 }

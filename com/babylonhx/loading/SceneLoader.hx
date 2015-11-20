@@ -31,6 +31,10 @@ import com.babylonhx.loading.plugins.BabylonFileLoader;
 		
 		var extension = sceneFilename.substring(dotPosition, queryStringPosition).toLowerCase();
 		
+		if (extension == ".babylon") {
+			return BabylonFileLoader.plugin;
+		}
+		
 		for (index in 0..._registeredPlugins.length) {
 			var plugin = _registeredPlugins[index];
 			

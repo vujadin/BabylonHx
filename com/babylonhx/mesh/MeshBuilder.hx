@@ -1,6 +1,8 @@
 package com.babylonhx.mesh;
 
 import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Vector4;
+import com.babylonhx.math.Color4;
 import com.babylonhx.math.Path3D;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.PositionNormalTextureVertex;
@@ -13,10 +15,173 @@ import com.babylonhx.Scene;
  * ...
  * @author Krtolica Vujadin
  */
-@:allow(com.babylonhx.mesh.Mesh)
+
+typedef SphereOptions = {
+	?segments:Int,
+	?diameterX:Float,
+	?diameterY:Float,
+	?diameterZ:Float,
+	?sideOrientation:Int,
+	?updatable:Bool
+}
+
+typedef BoxOptions = {	
+	width:Float,
+	height:Float,
+	depth:Float,
+	?sideOrientation:Int,
+	?updatable:Bool
+}
+
+typedef CylinderOptions = {
+	?height:Float,
+	?arc:Float,
+	?diameterTop:Float,
+	?diameterBottom:Float,
+	?tessellation:Int,
+	?subdivisions:Int,
+	?faceColors:Array<Color4>,
+	?faceUV:Array<Vector4>,
+	?hasRings:Bool,
+	?sideOrientation:Int,
+	?enclose:Bool,
+	?updatable:Bool
+}
+
+typedef DiscOptions = {
+	?radius:Float,
+	?tessellation:Float,
+	?sideOrientation:Int,
+	?updatable:Bool
+}
+
+typedef RibbonOptions = {
+	pathArray:Array<Array<Vector3>>, 
+	?closeArray:Bool, 
+	?closePath:Bool, 
+	?offset:Int,
+	?instance:Mesh,
+	?sideOrientation:Int,
+	?updatable:Bool
+}
+
+typedef TorusOptions = {
+	diameter:Float,
+	thickness:Float, 
+	tessellation:Int,
+	?sideOrientation:Int,
+	?updatable:Bool
+}
+
+typedef TorusKnotOptions = {
+	radius:Float, 
+	tube:Float, 
+	radialSegments:Int, 
+	tubularSegments:Int, 
+	p:Float, 
+	q:Float,
+	?sideOrientation:Int,
+	?updatable:Bool
+}
+
+typedef LinesOptions = {
+	points:Array<Vector3>,
+	?updatable:Bool,
+	?instance:LinesMesh
+}
+
+typedef DashedLinesOptions = {
+	points:Array<Vector3>, 
+	?dashSize:Float, 
+	?gapSize:Float, 
+	?dashNb:Float,
+	?updatable:Bool,
+	?instance:LinesMesh 
+}
+
+typedef PlaneOptions = {
+	width:Float, 
+	height:Float,
+	?sideOrientation:Int,
+	?updatable:Bool
+}
+
+typedef GroundOptions = {
+	width:Float, 
+	height:Float, 
+	subdivision:Int,
+	?updatable:Bool
+}
+
+typedef TiledGroundOptions = {
+	xmin:Float, 
+	zmin:Float, 
+	xmax:Float, 
+	zmax:Float, 
+	subdivisions:Int, 
+	precision:Int,
+	?updatable:Bool
+}
+
+typedef GroundFromHeightmapOptions = {
+	width:Float, 
+	height:Float, 
+	subdivisions:Int, 
+	minHeight:Float, 
+	maxHeight:Float, 
+	?updatable:Bool, 
+	?onReady:GroundMesh->Void
+}
+
+typedef TubeOptions = {
+	path:Array<Vector3>, 
+	radius:Float, 
+	tessellation:Int, 
+	radiusFunction:Int->Float->Float, 
+	cap:Int, 
+	?arc:Int,
+	?updatable:Bool, 
+	?sideOrientation:Int, 
+	?instance:Mesh
+}
+
+typedef PolyhedronOptions = {
+	?type:Int, 
+	?size:Float, 
+	?sizeX:Float, 
+	?sizeY:Float, 
+	?sizeZ:Float, 
+	?custom:Dynamic, 
+	?faceUV:Array<Vector4>, 
+	?faceColors:Array<Color4>, 
+	?updatable:Bool, 
+	?sideOrientation:Int
+}
+
+typedef IcoSphereOptions = {
+	?radius:Float, 
+	?radiusX:Float, 
+	?radiusY:Float, 
+	?radiusZ:Float, 
+	?flat:Bool, 
+	?updatable:Bool,
+	?subdivisions:Int, 
+	?sideOrientation:Int
+}
+
+typedef LatheOptions = {
+	shape:Array<Vector3>,
+	?radius:Float,
+	?tesselation:Int,
+	?sideOrientation:Int,
+	?updatable:Bool,
+	?closed:Bool,
+	?arc:Float
+}
+ 
 class MeshBuilder {
 	
-	private static function CreateBox(name:String, options:Dynamic, scene:Scene):Mesh {
+	public static function CreateBox(name:String, options:Dynamic, scene:Scene):Mesh {
 		var box = new Mesh(name, scene);
 		var vertexData = VertexData.CreateBox(options);
 		
@@ -30,7 +195,7 @@ class MeshBuilder {
 		return box;
 	}
 	
-	private static function CreateSphere(name:String, options:Dynamic, scene:Scene):Mesh {		
+	public static function CreateSphere(name:String, options:Dynamic, scene:Scene):Mesh {		
 		var sphere = new Mesh(name, scene);
 		var vertexData = VertexData.CreateSphere(options);
 		
@@ -44,8 +209,17 @@ class MeshBuilder {
 		return sphere;		
 	}
 	
-	public static function CreateIcoSphere(name:String, options:Dynamic, scene:Scene):Mesh {
+	public static function CreateIcoSphere(name:String, options:IcoSphereOptions, scene:Scene):Mesh {
 		var sphere = new Mesh(name, scene);
+		
+		if (options.sideOrientation == null) {
+			options.sideOrientation = Mesh.DEFAULTSIDE;
+		}
+		
+		if (options.updatable == null) {
+			options.updatable = false;
+		}
+			
 		var vertexData = VertexData.CreateIcoSphere(options);
 		
 		vertexData.applyToMesh(sphere, options.updatable);
@@ -53,8 +227,7 @@ class MeshBuilder {
 		return sphere;
 	}
 	
-	@:allow(com.babylonhx.particles.SolidParticleSystem)
-	private static function CreateDisc(name:String, options:Dynamic, scene:Scene):Mesh {
+	public static function CreateDisc(name:String, options:Dynamic, scene:Scene):Mesh {
         var disc = new Mesh(name, scene);
         var vertexData = VertexData.CreateDisc(options);
 		
@@ -63,7 +236,7 @@ class MeshBuilder {
         return disc;
     }
 	
-	private static function CreateRibbon(?name:String, options:Dynamic, scene:Scene):Mesh {		
+	public static function CreateRibbon(?name:String, options:Dynamic, scene:Scene):Mesh {		
 		var pathArray:Array<Array<Vector3>> = options.pathArray ;
 		var closeArray:Bool = options.closeArray;
 		var closePath:Bool = options.closePath;
@@ -154,7 +327,7 @@ class MeshBuilder {
 	}	
 
 	// Cylinder and cone (Code inspired by SharpDX.org)
-	private static function CreateCylinder(name:String, options:Dynamic, scene:Scene):Mesh {		
+	public static function CreateCylinder(name:String, options:Dynamic, scene:Scene):Mesh {		
 		var cylinder = new Mesh(name, scene);
 		var vertexData = VertexData.CreateCylinder(options);
 		
@@ -169,7 +342,7 @@ class MeshBuilder {
 		return cylinder;
 	}
 	
-	private static function CreateTorus(name:String, options:Dynamic, scene:Scene):Mesh {
+	public static function CreateTorus(name:String, options:Dynamic, scene:Scene):Mesh {
 		var torus = new Mesh(name, scene);
 		var vertexData = VertexData.CreateTorus(options);
 		
@@ -178,7 +351,7 @@ class MeshBuilder {
 		return torus;
 	}
 
-	private static function CreateTorusKnot(name:String, options:Dynamic, scene:Scene):Mesh {
+	public static function CreateTorusKnot(name:String, options:Dynamic, scene:Scene):Mesh {
 		var torusKnot = new Mesh(name, scene);
 		var vertexData = VertexData.CreateTorusKnot(options);
 		
@@ -187,8 +360,8 @@ class MeshBuilder {
 		return torusKnot;
 	}
 	
-	private static function CreateLines(name:String, options:Dynamic, scene:Scene):LinesMesh {
-		var linesInstance:LinesMesh = options.lineInstance;
+	public static function CreateLines(name:String, options:Dynamic, scene:Scene):LinesMesh {
+		var linesInstance:LinesMesh = options.instance;
 		var points:Array<Vector3> = options.points;
 				
 		if (linesInstance != null) { // lines update
@@ -214,9 +387,9 @@ class MeshBuilder {
 		return lines;
 	}
 	
-	private static function CreateDashedLines(name:String, options:Dynamic, scene:Scene):LinesMesh {
+	public static function CreateDashedLines(name:String, options:Dynamic, scene:Scene):LinesMesh {
 		var points:Array<Vector3> = options.points;
-		var linesInstance:LinesMesh = options.linesInstance;
+		var linesInstance:LinesMesh = options.instance;
 		var gapSize:Float = options.gapSize;
 		var dashNb:Float = options.dashNb;
 		var dashSize:Float = options.dashSize;
@@ -279,7 +452,7 @@ class MeshBuilder {
 		return dashedLines;
 	}
 	
-	private static function ExtrudeShape(name:String, options:Dynamic, scene:Scene):Mesh {		
+	public static function ExtrudeShape(name:String, options:Dynamic, scene:Scene):Mesh {		
 		var path:Array<Vector3> = options.path;
 		var shape:Array<Vector3> = options.shape;
 		var scale:Float = options.scale != null ? options.scale : 1;
@@ -292,7 +465,7 @@ class MeshBuilder {
 		return MeshBuilder._ExtrudeShapeGeneric(name, shape, path, scale, rotation, null, null, false, false, cap, false, scene, updatable, sideOrientation, extrudedInstance);
 	}
 	
-	private static function ExtrudeShapeCustom(name:String, options:Dynamic, scene:Scene):Mesh {
+	public static function ExtrudeShapeCustom(name:String, options:Dynamic, scene:Scene):Mesh {
 		var path:Array<Vector3> = options.path;
 		var shape:Array<Vector3> = options.shape;
 		var scaleFunction:Float->Float->Float = options.scaleFunction != null ? options.scaleFunction : function(dummy1:Float = 0, dummy2:Float = 0):Float { return 1; };
@@ -307,7 +480,7 @@ class MeshBuilder {
 		return MeshBuilder._ExtrudeShapeGeneric(name, shape, path, null, null, scaleFunction, rotationFunction, ribbonCloseArray, ribbonClosePath, cap, true, scene, updatable, sideOrientation, extrudedInstance);
 	}
 	
-	private static function CreateLathe(name:String, options:Dynamic, scene:Scene):Mesh {
+	public static function CreateLathe(name:String, options:Dynamic, scene:Scene):Mesh {
 		var arc:Float = options.arc != null ? options.arc : 1.0;
 		if (arc <= 0) {
 			arc = 1.0;
@@ -351,7 +524,7 @@ class MeshBuilder {
 		return lathe;
 	}
 	
-	private static function CreatePlane(name:String, options:Dynamic, scene:Scene):Mesh {
+	public static function CreatePlane(name:String, options:Dynamic, scene:Scene):Mesh {
 		var plane = new Mesh(name, scene);		
 		var vertexData = VertexData.CreatePlane(options);
 		
@@ -360,11 +533,10 @@ class MeshBuilder {
 		return plane;
 	}
 	
-	private static function CreateGround(name:String, options:Dynamic, scene:Scene):Mesh {
+	public static function CreateGround(name:String, options:Dynamic, scene:Scene):Mesh {
 		var ground = new GroundMesh(name, scene);
 		ground._setReady(false);
 		ground._subdivisions = options.subdivision != null ? options.subdivision : 1;
-		trace(ground._subdivisions);
 		
 		var vertexData = VertexData.CreateGround(options);
 		vertexData.applyToMesh(ground, options.updatable);
@@ -373,7 +545,7 @@ class MeshBuilder {
 		return ground;
 	}
 	
-	private static function CreateTiledGround(name:String, options:Dynamic, scene:Scene):Mesh {
+	public static function CreateTiledGround(name:String, options:Dynamic, scene:Scene):Mesh {
 		var tiledGround = new Mesh(name, scene);
 		var vertexData = VertexData.CreateTiledGround(options);
 		vertexData.applyToMesh(tiledGround, options.updatable);
@@ -381,10 +553,10 @@ class MeshBuilder {
 		return tiledGround;
 	}
 	
-	private static function CreateGroundFromHeightMap(name:String, url:String, options:Dynamic, scene:Scene):GroundMesh {
+	public static function CreateGroundFromHeightMap(name:String, url:String, options:Dynamic, scene:Scene):GroundMesh {
 		var width:Float = options.width != null ? options.width : 10;
 		var height:Float = options.height != null ? options.height : 10;
-		var subdivisions:Int = options.subdivision != null ? options.subdivision : 1;
+		var subdivisions:Int = options.subdivisions != null ? options.subdivisions : 1;
 		var minHeight:Float = options.minHeight != null ? options.minHeight : 0;
 		var maxHeight:Float = options.maxHeight != null ? options.maxHeight : 10;
 		var updatable:Bool = options.updatable;
@@ -399,7 +571,6 @@ class MeshBuilder {
 			options.bufferWidth = img.width;
 			options.bufferHeight = img.height;
 			var vertexData = VertexData.CreateGroundFromHeightMap(options);
-			
 			vertexData.applyToMesh(ground, updatable);
 			
 			ground._setReady(true);
@@ -415,7 +586,7 @@ class MeshBuilder {
 		return ground;
 	}
 	
-	private static function CreateTube(name:String, options:Dynamic, scene:Scene):Mesh {
+	public static function CreateTube(name:String, options:Dynamic, scene:Scene):Mesh {
 		var path:Array<Vector3> = options.path;
 		var radius:Float = options.radius != null ? options.radius : 1;
 		var tessellation:Int = options.tessellation != null ? options.tessellation : 64;
@@ -423,7 +594,7 @@ class MeshBuilder {
 		var cap:Int = options.cap != null ? options.cap : Mesh.NO_CAP;
 		var updatable:Bool = options.updatable;
 		var sideOrientation:Int = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
-		var tubeInstance:Mesh = options.tubeInstance;
+		var tubeInstance:Mesh = options.instance;
 			
 		// tube geometry
 		var tubePathArray = function (path:Array<Vector3>, path3D:Path3D, circlePaths:Array<Array<Vector3>>, radius:Float, tessellation:Int, ?radiusFunction:Int->Float->Float, cap:Int) {
@@ -488,7 +659,7 @@ class MeshBuilder {
 		if (tubeInstance != null) { // tube update
 			var path3D = tubeInstance.path3D.update(path);
 			var pathArray = tubePathArray(path, path3D, tubeInstance.pathArray, radius, tubeInstance.tessellation, radiusFunction, tubeInstance.cap);
-			tubeInstance = Mesh.CreateRibbon(null, { pathArray: pathArray, instance: tubeInstance }, scene);
+			tubeInstance = MeshBuilder.CreateRibbon(null, { pathArray: pathArray, instance: tubeInstance }, scene);
 			
 			return tubeInstance;
 		}
@@ -498,7 +669,7 @@ class MeshBuilder {
 		var newPathArray:Array<Array<Vector3>> = [];
 		cap = (cap < 0 || cap > 3) ? 0 : cap;
         var pathArray = tubePathArray(path, path3D, newPathArray, radius, tessellation, radiusFunction, cap);
-		var tube = Mesh.CreateRibbon(name, { pathArray: pathArray, closeArray: false, closePath: true, offset: 0, updatable: updatable, sideOrientation: sideOrientation }, scene);
+		var tube = MeshBuilder.CreateRibbon(name, { pathArray: pathArray, closeArray: false, closePath: true, offset: 0, updatable: updatable, sideOrientation: sideOrientation }, scene);
 		tube.pathArray = pathArray;
 		tube.path3D = path3D;
 		tube.tessellation = tessellation;
@@ -507,7 +678,7 @@ class MeshBuilder {
 		return tube;
 	}
 	
-	private static function CreatePolyhedron(name:String, options:Dynamic, scene:Scene):Mesh {
+	public static function CreatePolyhedron(name:String, options:Dynamic, scene:Scene):Mesh {
 		var polyhedron = new Mesh(name, scene);		
 		var vertexData = VertexData.CreatePolyhedron(options);
 		vertexData.applyToMesh(polyhedron, options.updatable);
@@ -525,7 +696,7 @@ class MeshBuilder {
 	static var CreateDecal_meshWorldMatrix:Matrix = new Matrix();
 	static var CreateDecal_transformMatrix:Matrix = new Matrix();
 	static var CreateDecal_vertexData:VertexData = new VertexData();
-    private static function CreateDecal(name:String, sourceMesh:AbstractMesh, options:Dynamic) {
+    public static function CreateDecal(name:String, sourceMesh:AbstractMesh, options:Dynamic) {
 		var position:Vector3 = options.position != null ? options.position : Vector3.Zero();
 		var normal:Vector3 = options.normal;// != null ? options.normal : Vector3.Up();
 		var size:Vector3 = options.size != null ? options.size : new Vector3(1, 1, 1);
@@ -751,7 +922,7 @@ class MeshBuilder {
 	
 	
 	// Privates
-	private static function _ExtrudeShapeGeneric(name:String, shape:Array<Vector3>, curve:Array<Vector3>, ?scale:Float, ?rotation:Float, ?scaleFunction:Float->Float->Float, ?rotateFunction:Float->Float->Float, rbCA:Bool, rbCP:Bool, cap:Int, custom:Bool, scene:Scene, updtbl:Bool, side:Int, instance:Mesh = null):Mesh {
+	public static function _ExtrudeShapeGeneric(name:String, shape:Array<Vector3>, curve:Array<Vector3>, ?scale:Float, ?rotation:Float, ?scaleFunction:Float->Float->Float, ?rotateFunction:Float->Float->Float, rbCA:Bool, rbCP:Bool, cap:Int, custom:Bool, scene:Scene, updtbl:Bool, side:Int, instance:Mesh = null):Mesh {
 		
 		// extrusion geometry
 		var extrusionPathArray = function(shape:Array<Vector3>, curve:Array<Vector3>, path3D:Path3D, shapePaths:Array<Array<Vector3>>, scale:Float, rotation:Float, scaleFunction:Int->Float->Float, rotateFunction:Int->Float->Float, cap:Int, custom:Bool = false) {
@@ -825,7 +996,7 @@ class MeshBuilder {
 			var path3D = instance.path3D.update(curve);
 			var pathArray = extrusionPathArray(shape, curve, instance.path3D, instance.pathArray, scale, rotation, scaleFunction, rotateFunction, instance.cap, custom);
 			
-			instance = Mesh.CreateRibbon(null, { pathArray: pathArray, instance: instance }, scene);
+			instance = Mesh.CreateRibbon(null, pathArray, false, false, 0, null, false, Mesh.DEFAULTSIDE, instance);
 			
 			return instance;
 		}
@@ -836,7 +1007,7 @@ class MeshBuilder {
 		cap = (cap < 0 || cap > 3) ? 0 : cap;
 		var pathArray = extrusionPathArray(shape, curve, path3D, newShapePaths, scale, rotation, scaleFunction, rotateFunction, cap, custom);
 		
-		var extrudedGeneric = Mesh.CreateRibbon(name, { pathArray: pathArray, closePath: rbCA, closeArray: rbCP, offset: 0, updatable: updtbl, sideOrientation: side }, scene);
+		var extrudedGeneric = Mesh.CreateRibbon(name, pathArray, rbCA, rbCP, 0, scene, updtbl, side);
 		extrudedGeneric.pathArray = pathArray;
 		extrudedGeneric.path3D = path3D;
 		extrudedGeneric.cap = cap;

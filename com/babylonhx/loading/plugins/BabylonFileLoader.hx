@@ -83,19 +83,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	}
 	private static var _plugin:ISceneLoaderPlugin = {
 		extensions: ".babylon",
-        importMesh: function(meshesNames:Dynamic, scene:Scene, data:Dynamic, rootUrl:String, meshes:Array<AbstractMesh>, particleSystems:Array<ParticleSystem>, skeletons:Array<Skeleton>):Bool {
-				
-			var parsedData:Dynamic = null;
-			if (Std.is(data, String)) {
-				parsedData = Json.parse(data);
-			} 
-			else if(Std.is(data, Bytes)) {
-				//parsedData = MsgPack.decode(data);
-			} 
-			else {
-				trace("Unknown data type!");
-				return false;
-			}
+        importMesh: function(meshesNames:Dynamic, scene:Scene, data:Dynamic, rootUrl:String, meshes:Array<AbstractMesh>, particleSystems:Array<ParticleSystem>, skeletons:Array<Skeleton>):Bool {				
+			var parsedData:Dynamic = Json.parse(data);			
 				
             var loadedSkeletonsIds:Array<Int> = [];
             var loadedMaterialsIds:Array<String> = [];
@@ -237,20 +226,12 @@ import com.babylonhx.utils.typedarray.Int32Array;
             return true;
         },
 		load: function(scene:Scene, data:Dynamic, rootUrl:String):Bool {
-			var parsedData:Dynamic = null;
-			if (Std.is(data, String)) {
-				parsedData = Json.parse(data);
-			} 
-			else if(Std.is(data, Bytes)) {
-				//parsedData = MsgPack.decode(data);
-			} 
-			else {
-				trace("Unknown data type!");
+			if (data == null) {
+				trace("error: no data!");
 				return false;
 			}
-			
-			data = null;
-						
+			var parsedData:Dynamic = Json.parse(data);						
+									
             // Scene
             scene.useDelayedTextureLoading = parsedData.useDelayedTextureLoading && !SceneLoader.ForceFullSceneLoadingForIncremental;
             scene.autoClear = parsedData.autoClear;
@@ -635,6 +616,11 @@ import com.babylonhx.utils.typedarray.Int32Array;
             material.emissiveTexture = loadTexture(rootUrl, parsedMaterial.emissiveTexture, scene);
         }
 		
+		if (parsedMaterial.lightmapTexture != null) {
+            material.lightmapTexture = loadTexture(rootUrl, parsedMaterial.lightmapTexture, scene);
+            untyped material.lightmapThreshold = parsedMaterial.lightmapThreshold;
+        }
+		
         if (parsedMaterial.emissiveFresnelParameters != null) {
             material.emissiveFresnelParameters = parseFresnelParameters(parsedMaterial.emissiveFresnelParameters);
         }
@@ -645,6 +631,10 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		
         if (parsedMaterial.bumpTexture != null) {
             material.bumpTexture = loadTexture(rootUrl, parsedMaterial.bumpTexture, scene);
+        }
+		
+		if (parsedMaterial.checkReadyOnlyOnce != null) {
+            material.checkReadyOnlyOnce = parsedMaterial.checkReadyOnlyOnce;
         }
 		
         return material;
@@ -674,7 +664,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			
             if (subMatId != null) {
                 multiMaterial.subMaterials.push(scene.getMaterialByID(subMatId));
-            } else {
+            } 
+			else {
                 multiMaterial.subMaterials.push(null);
             }
         }
@@ -739,13 +730,13 @@ import com.babylonhx.utils.typedarray.Int32Array;
             shadowGenerator.getShadowMap().renderList.push(mesh);
         }
 		
-        if (parsedShadowGenerator.usePoissonSampling != null) {
+        if (parsedShadowGenerator.usePoissonSampling != null && parsedShadowGenerator.usePoissonSampling == true) {
             shadowGenerator.usePoissonSampling = true;
         } 
-		else if (parsedShadowGenerator.useVarianceShadowMap != null) {
+		else if (parsedShadowGenerator.useVarianceShadowMap != null && parsedShadowGenerator.useVarianceShadowMap == true) {
             shadowGenerator.useVarianceShadowMap = true;
         } 
-		else if (parsedShadowGenerator.useBlurVarianceShadowMap != null) {
+		else if (parsedShadowGenerator.useBlurVarianceShadowMap != null && parsedShadowGenerator.useBlurVarianceShadowMap == true) {
             shadowGenerator.useBlurVarianceShadowMap = true;
 			
             if (parsedShadowGenerator.blurScale != null) {
@@ -927,6 +918,12 @@ import com.babylonhx.utils.typedarray.Int32Array;
             camera = new FreeCamera(parsedCamera.name, position, scene);
         }
 		
+		// apply 3d rig, when found
+        if (parsedCamera.cameraRigMode != null) {
+            var rigParams = parsedCamera.interaxial_distance != null ? { interaxialDistance: parsedCamera.interaxial_distance } : {};
+            camera.setCameraRigMode(parsedCamera.cameraRigMode, rigParams);
+        }
+		
         // Test for lockedTargetMesh & FreeCamera outside of if-else-if nest, since things like GamepadCamera extend FreeCamera
         if (lockedTargetMesh != null && Std.is(camera, FreeCamera)) {
             cast(camera, FreeCamera).lockedTarget = lockedTargetMesh;
@@ -994,6 +991,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 
     public static function parseGeometry(parsedGeometry:Dynamic, scene:Scene):Geometry {
         var id = parsedGeometry.id;
+		
         return scene.getGeometryByID(id);
     }
 

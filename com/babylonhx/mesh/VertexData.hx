@@ -6,6 +6,8 @@ import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Color4;
 
+import com.babylonhx.mesh.MeshBuilder;
+
 import com.babylonhx.utils.typedarray.UInt8Array;
 import com.babylonhx.utils.typedarray.Float32Array;
 import com.babylonhx.utils.typedarray.Int32Array;
@@ -869,92 +871,184 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		return vertexData;
 	}
 
-	// Cylinder and cone (made using ribbons)
-	public static function CreateCylinder(options:Dynamic):VertexData {		
+	// Cylinder and cone 
+	public static function CreateCylinder(options:Dynamic):VertexData {	
+		var height:Float = options.height != null ? options.height : 2;
+		var diameterTop:Float = options.diameterTop != null ? options.diameterTop : 1;
+		var diameterBottom:Float = options.diameterBottom != null ? options.diameterBottom : 1;
+		var tessellation:Int = options.tessellation != null ? options.tessellation : 24;
+		var subdivisions:Int = options.subdivisions != null ? options.subdivisions : 1;
+		var hasRings:Bool = options.hasRings != null ? options.hasRings : false;
+		var enclose:Bool = options.enclose != null ? options.enclose : false;
+		var arc:Float = options.arc != null ? options.arc : 1.0;
+		if (arc <= 0 || arc > 1) arc = 1;
+		var sideOrientation:Int = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
+		var faceUV:Array<Vector4> = options.faceUV != null ? options.faceUV : [];
+		var faceColors:Array<Color4> = options.faceColors != null ? options.faceColors : null;
+		
+		// default face colors and UV if undefined
+		var quadNb:Int = (arc != 1 && enclose) ? 2 : 0;
+		var ringNb:Int = (hasRings) ? subdivisions : 1;
+		var colorNb:Int = 2 + (1 + quadNb) * ringNb;
+		for (f in 0...colorNb) {
+			if (faceColors != null && faceColors[f] == null) {
+				faceColors[f] = new Color4(1, 1, 1, 1);
+			}
+		}
+		for (f in 0...3) {
+			if (faceUV != null && faceUV[f] == null) {
+				faceUV[f] = new Vector4(0, 0, 1, 1);
+			}
+		}
+		
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
 		var normals:Array<Float> = [];
 		var uvs:Array<Float> = [];
 		var colors:Array<Float> = [];
 		
-		var height:Float = options.height != null ? options.height : 2;
-		var diameterTop:Float = options.diameterTop != null ? options.diameterTop : (options.diameter != null ? options.diameter : 1);
-		var diameterBottom:Float = options.diameterBottom != null ? options.diameterBottom : (options.diameter ? options.diameter : 1);
-		var tessellation:Int = options.tessellation != null ? options.tessellation : 24;
-		var subdivisions:Int = options.subdivisions != null ? options.subdivisions : 1;
-		var arc:Float = options.arc != null ? options.arc : 1.0;
-		if (arc < 0 || arc > 1) {
-			arc = 1.0;
-		}
-		var sideOrientation:Int = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
-		var faceUV:Array<Vector4> = options.faceUV != null ? options.faceUV : [];
-		var faceColors:Array<Color4> = options.faceColors != null ? options.faceColors : [];
-		// default face colors and UV if undefined
-		for (f in 0...3) {
-			if (faceColors != null && faceColors[f] == null) {
-				faceColors[f] = new Color4(1, 1, 1, 1);
-			}
-			if (faceUV != null && faceUV[f] == null) {
-				faceUV[f] = new Vector4(0, 0, 1, 1);
-			}
-		}
-		
-		var angle_step:Float = Math.PI * 2 / tessellation;
+		var angle_step:Float = Math.PI * 2 * arc / tessellation;
 		var angle:Float = 0;
 		var h:Float = 0;
 		var radius:Float = 0;
 		var tan:Float = (diameterBottom - diameterTop) / 2 / height;
 		var ringVertex:Vector3 = Vector3.Zero();
 		var ringNormal:Vector3 = Vector3.Zero();
+		var ringFirstVertex:Vector3 = Vector3.Zero();
+		var ringFirstNormal:Vector3 = Vector3.Zero();
+		var quadNormal:Vector3 = Vector3.Zero();
+		var Y:Vector3 = com.babylonhx.math.Axis.Y;
 		
 		// positions, normals, uvs
+		var ringIdx:Int = 1;
+		var c:Int = 1;
+		
 		for (i in 0...subdivisions + 1) {
 			h = i / subdivisions;
 			radius = (h * (diameterTop - diameterBottom) + diameterBottom) / 2;
-			for (j in 0...tessellation + 1) {
-				angle = j * angle_step;
-				ringVertex.x = Math.cos(-angle) * radius;
-				ringVertex.y = -height / 2 + h * height;
-				ringVertex.z = Math.sin(-angle) * radius;
-				if (diameterTop == 0 && i == subdivisions) {
-					// if no top cap, reuse former normals
-					ringNormal.x = normals[normals.length - (tessellation + 1) * 3];
-					ringNormal.y = normals[normals.length - (tessellation + 1) * 3 + 1];
-					ringNormal.z = normals[normals.length - (tessellation + 1) * 3 + 2];
+			ringIdx = (hasRings && i != 0 && i != subdivisions) ? 2 : 1;
+			for (r in 0...ringIdx) {
+				if (hasRings) {
+					c += r;
 				}
-				else {
-					ringNormal.x = ringVertex.x;
-					ringNormal.z = ringVertex.z;
-					ringNormal.y = Math.sqrt(ringNormal.x * ringNormal.x + ringNormal.z * ringNormal.z) * tan;
-					ringNormal.normalize();
+				if (enclose) {
+					c += 2 * r;
 				}
-				positions.push(ringVertex.x);
-				positions.push(ringVertex.y);
-				positions.push(ringVertex.z);
+				for (j in 0...tessellation + 1) {
+					angle = j * angle_step;
+					
+					// position
+					ringVertex.x = Math.cos(-angle) * radius;
+					ringVertex.y = -height / 2 + h * height;
+					ringVertex.z = Math.sin( -angle) * radius;
+					
+					// normal
+					if (diameterTop == 0 && i == subdivisions) {
+						// if no top cap, reuse former normals
+						ringNormal.x = normals[normals.length - (tessellation + 1) * 3];
+						ringNormal.y = normals[normals.length - (tessellation + 1) * 3 + 1];
+						ringNormal.z = normals[normals.length - (tessellation + 1) * 3 + 2];
+					}
+					else {
+						ringNormal.x = ringVertex.x;
+						ringNormal.z = ringVertex.z;
+						ringNormal.y = Math.sqrt(ringNormal.x * ringNormal.x + ringNormal.z * ringNormal.z) * tan;
+						ringNormal.normalize();
+					}
+					
+					// keep first ring vertex values for enclose
+					if (j == 0) {
+						ringFirstVertex.copyFrom(ringVertex);
+						ringFirstNormal.copyFrom(ringNormal);
+					}
+					
+					positions.push(ringVertex.x);
+					positions.push(ringVertex.y);
+					positions.push(ringVertex.z);
+					normals.push(ringNormal.x);
+					normals.push(ringNormal.y);
+					normals.push(ringNormal.z);
+					uvs.push(faceUV[1].x + (faceUV[1].z - faceUV[1].x) * j / tessellation);
+					uvs.push(faceUV[1].y + (faceUV[1].w - faceUV[1].y) * h);
+					if (faceColors != null) {
+						colors.push(faceColors[c].r);
+						colors.push(faceColors[c].g);
+						colors.push(faceColors[c].b);
+						colors.push(faceColors[c].a);
+					}
+				}
 				
-				normals.push(ringNormal.x);
-				normals.push(ringNormal.y);
-				normals.push(ringNormal.z);
-				
-				uvs.push(faceUV[1].x + (faceUV[1].z - faceUV[1].x) * j / tessellation);
-				uvs.push(faceUV[1].y + (faceUV[1].w - faceUV[1].y) * h);
-				
-				if (faceColors.length > 0) {
-					colors.push(faceColors[1].r);
-					colors.push(faceColors[1].g);
-					colors.push(faceColors[1].b);
-					colors.push(faceColors[1].a);
+				// if enclose, add four vertices and their dedicated normals
+				if (arc != 1 && enclose) {
+					positions.push(ringVertex.x);
+					positions.push(ringVertex.y);
+					positions.push(ringVertex.z);
+					positions.push(0);
+					positions.push(ringVertex.y);
+					positions.push(0);
+					positions.push(0);
+					positions.push(ringVertex.y);
+					positions.push(0);
+					positions.push(ringFirstVertex.x);
+					positions.push(ringFirstVertex.y);
+					positions.push(ringFirstVertex.z);
+					Vector3.CrossToRef(Y, ringNormal, quadNormal);
+					quadNormal.normalize();
+					normals.push(quadNormal.x);
+					normals.push(quadNormal.y);
+					normals.push(quadNormal.z);
+					normals.push(quadNormal.x);
+					normals.push(quadNormal.y);
+					normals.push( quadNormal.z);
+					Vector3.CrossToRef(ringFirstNormal, Y, quadNormal);
+					quadNormal.normalize();
+					normals.push(quadNormal.x);
+					normals.push(quadNormal.y);
+					normals.push(quadNormal.z);
+					normals.push(quadNormal.x);
+					normals.push(quadNormal.y);
+					normals.push(quadNormal.z);
+					uvs.push(faceUV[1].x + (faceUV[1].z - faceUV[1].x));
+					uvs.push(faceUV[1].y + (faceUV[1].w - faceUV[1].y));
+					uvs.push(faceUV[1].x + (faceUV[1].z - faceUV[1].x));
+					uvs.push(faceUV[1].y + (faceUV[1].w - faceUV[1].y));
+					uvs.push(faceUV[1].x + (faceUV[1].z - faceUV[1].x));
+					uvs.push(faceUV[1].y + (faceUV[1].w - faceUV[1].y));
+					uvs.push(faceUV[1].x + (faceUV[1].z - faceUV[1].x));
+					uvs.push(faceUV[1].y + (faceUV[1].w - faceUV[1].y));
+					colors.push(faceColors[c + 1].r);
+					colors.push(faceColors[c + 1].g);
+					colors.push(faceColors[c + 1].b);
+					colors.push(faceColors[c + 1].a);
+					colors.push(faceColors[c + 1].r);
+					colors.push(faceColors[c + 1].g);
+					colors.push(faceColors[c + 1].b);
+					colors.push(faceColors[c + 1].a);
+					colors.push(faceColors[c + 2].r);
+					colors.push(faceColors[c + 2].g);
+					colors.push(faceColors[c + 2].b);
+					colors.push(faceColors[c + 2].a);
+					colors.push(faceColors[c + 2].r);
+					colors.push(faceColors[c + 2].g);
+					colors.push(faceColors[c + 2].b);
+					colors.push(faceColors[c + 2].a);
 				}
 			}
 		}
 		
 		// indices
-		for (i in 0...subdivisions) {
+		var e:Int = (arc != 1 && enclose) ? tessellation + 4 : tessellation;     // correction of number of iteration if enclose
+		var i:Int = 0;
+		var i0:Int = 0;
+		var i1:Int = 0;
+		var i2:Int = 0;
+		var i3:Int = 0;
+		for (s in 0...subdivisions) {
 			for (j in 0...tessellation) {
-				var i0 = i * (tessellation + 1) + j;
-				var i1 = (i + 1) * (tessellation + 1) + j;
-				var i2 = i * (tessellation + 1) + (j + 1);
-				var i3 = (i + 1) * (tessellation + 1) + (j + 1);
+				var i0 = i * (e + 1) + j;
+				var i1 = (i + 1) * (e + 1) + j;
+				var i2 = i * (e + 1) + (j + 1);
+				var i3 = (i + 1) * (e + 1) + (j + 1);
 				indices.push(i0);
 				indices.push(i1);
 				indices.push(i2);
@@ -962,6 +1056,21 @@ import com.babylonhx.utils.typedarray.Int32Array;
 				indices.push(i2);
 				indices.push(i1);
 			}
+			if (arc != 1 && enclose) {      // if enclose, add two quads
+				indices.push(i0 + 2);
+				indices.push(i1 + 2);
+				indices.push(i2 + 2);
+				indices.push(i3 + 2);
+				indices.push(i2 + 2);
+				indices.push(i1 + 2);
+				indices.push(i0 + 4);
+				indices.push(i1 + 4);
+				indices.push(i2 + 4);
+				indices.push(i3 + 4);
+				indices.push(i2 + 4);
+				indices.push(i1 + 4);
+			}
+			i = (hasRings) ? (i + 2) : (i + 1);
 		}
 		
 		// Caps
@@ -1036,8 +1145,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		};
 		
 		// add caps to geometry
-		createCylinderCap(true);
 		createCylinderCap(false);
+		createCylinderCap(true);
 		
 		// Sides
 		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
@@ -1048,6 +1157,196 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		vertexData.positions = positions;
 		vertexData.normals = normals;
 		vertexData.uvs = uvs;
+		if (faceColors != null) {
+			vertexData.colors = colors;
+		}
+		
+		return vertexData;
+	}
+		
+	public static function CylinderOptions(options:CylinderOptions):VertexData {
+		var height:Float = options.height != null ? options.height : 2;
+		var diameterTop:Float = options.diameterTop != null ? options.diameterTop : 1;
+		var diameterBottom:Float = options.diameterBottom != null ? options.diameterBottom : 1;
+		var tessellation:Int = options.tessellation != null ? options.tessellation : 24;
+		var subdivisions:Int = options.subdivisions != null ? options.subdivisions : 1;
+		var hasRings:Bool = options.hasRings != null ? options.hasRings : false;
+		var arc:Float = options.arc != null ? options.arc : 1.0;
+		if (arc <= 0 || arc > 1) {
+			arc = 1.0;
+		}
+		var sideOrientation:Int = options.sideOrientation;
+		var faceUV:Array<Vector4> = options.faceUV != null ? options.faceUV : new Array<Vector4>();
+		var faceColors:Array<Color4> = options.faceColors;
+		// default face colors and UV if undefined
+		for (f in 0...3) {
+			if (faceColors != null && faceColors[f] == null) {
+				faceColors[f] = new Color4(1, 1, 1, 1);
+			}
+			if (faceUV != null && faceUV[f] == null) {
+				faceUV[f] = new Vector4(0, 0, 1, 1);
+			}
+		}
+		
+		var indices:Array<Int> = [];
+		var positions:Array<Float> = [];
+		var normals:Array<Float> = [];
+		var uvs:Array<Float> = [];
+		var colors:Array<Float> = [];
+		
+		var angle_step:Float = Math.PI * 2 / tessellation;
+		var angle:Float = 0;
+		var h:Float = 0;
+		var radius:Float = 0;
+		var tan:Float = (diameterBottom - diameterTop) / 2 / height;
+		var ringVertex:Vector3 = Vector3.Zero();
+		var ringNormal:Vector3 = Vector3.Zero();
+		
+		// positions, normals, uvs
+		var ringIdx:Int = 1;
+		for (i in 0...subdivisions + 1) {
+			h = i / subdivisions;
+			radius = (h * (diameterTop - diameterBottom) + diameterBottom) / 2;
+			ringIdx = (hasRings && i != 0 && i != subdivisions) ? 2 : 1;
+			for (r in 0...ringIdx) {
+				for (j in 0...tessellation + 1) {
+					angle = j * angle_step;
+					ringVertex.x = Math.cos(-angle) * radius;
+					ringVertex.y = -height / 2 + h * height;
+					ringVertex.z = Math.sin(-angle) * radius;
+					if (diameterTop == 0 && i == subdivisions) {
+						// if no top cap, reuse former normals
+						ringNormal.x = normals[normals.length - (tessellation + 1) * 3];
+						ringNormal.y = normals[normals.length - (tessellation + 1) * 3 + 1];
+						ringNormal.z = normals[normals.length - (tessellation + 1) * 3 + 2];
+					}
+					else {
+						ringNormal.x = ringVertex.x;
+						ringNormal.z = ringVertex.z;
+						ringNormal.y = Math.sqrt(ringNormal.x * ringNormal.x + ringNormal.z * ringNormal.z) * tan;
+						ringNormal.normalize();
+					}
+					positions.push(ringVertex.x);
+					positions.push(ringVertex.y);
+					positions.push(ringVertex.z);
+					normals.push(ringNormal.x);
+					normals.push(ringNormal.y);
+					normals.push(ringNormal.z);
+					uvs.push(faceUV[1].x + (faceUV[1].z - faceUV[1].x) * j / tessellation);
+					uvs.push(faceUV[1].y + (faceUV[1].w - faceUV[1].y) * h);
+					if (faceColors != null) {
+						colors.push(faceColors[1].r);
+						colors.push(faceColors[1].g);
+						colors.push(faceColors[1].b);
+						colors.push(faceColors[1].a);
+					}
+				}
+			}
+		}
+		
+		// indices
+		var i:Int = 0;
+		for (s in 0...subdivisions) {
+			for (j in 0...tessellation) {
+				var i0 = i * (tessellation + 1) + j;
+				var i1 = (i + 1) * (tessellation + 1) + j;
+				var i2 = i * (tessellation + 1) + (j + 1);
+				var i3 = (i + 1) * (tessellation + 1) + (j + 1);
+				indices.push(i0);
+				indices.push(i1);
+				indices.push(i2);
+				indices.push(i3);
+				indices.push(i2);
+				indices.push(i1);
+			}
+			i = (hasRings) ? (i + 2) : (i + 1);
+		}
+		
+		// Caps
+		var createCylinderCap = function(isTop:Bool) {
+			var radius = isTop ? diameterTop / 2 : diameterBottom / 2;
+			if (radius == 0) {
+				return;
+			}
+			
+			// Cap positions, normals & uvs
+			var angle:Float = 0;
+			var circleVector:Vector3 = null;
+			var u:Vector4 = isTop ? faceUV[2] : faceUV[0];
+			var c:Color4 = null;
+			if (faceColors != null) {
+				c = isTop ? faceColors[2] : faceColors[0];
+			}
+			// cap center
+			var vbase = Std.int(positions.length / 3);
+			var offset = isTop ? height / 2 : -height / 2;
+			var center = new Vector3(0, offset, 0);
+			positions.push(center.x);
+			positions.push(center.y);
+			positions.push(center.z);
+			normals.push(0);
+			normals.push(isTop ? 1 : -1);
+			normals.push(0);
+			uvs.push(u.x + (u.z - u.x) * 0.5);
+			uvs.push(u.y + (u.w - u.y) * 0.5);
+			if (faceColors != null) {
+				colors.push(c.r);
+				colors.push(c.g);
+				colors.push(c.b);
+				colors.push(c.a);
+			}
+			
+			var textureScale = new Vector2(0.5, 0.5);
+			for (i in 0...tessellation+1) {
+				angle = Math.PI * 2 * i * arc / tessellation;
+				var cos = Math.cos(-angle);
+				var sin = Math.sin(-angle);
+				circleVector = new Vector3(cos * radius, offset, sin * radius);
+				var textureCoordinate = new Vector2(cos * textureScale.x + 0.5, sin * textureScale.y + 0.5);
+				positions.push(circleVector.x);
+				positions.push(circleVector.y);
+				positions.push(circleVector.z);
+				normals.push(0);
+				normals.push(isTop ? 1 : -1);
+				normals.push(0);
+				uvs.push(u.x + (u.z - u.x) * textureCoordinate.x);
+				uvs.push(u.y + (u.w - u.y) * textureCoordinate.y);
+				if (faceColors != null) {
+					colors.push(c.r);
+					colors.push(c.g);
+					colors.push(c.b);
+					colors.push(c.a);
+				}
+			}
+			// Cap indices
+			for (i in 0...tessellation) {
+				if (!isTop) {
+					indices.push(vbase);
+					indices.push(vbase + (i + 1));
+					indices.push(vbase + (i + 2));
+				}
+				else {
+					indices.push(vbase);
+					indices.push(vbase + (i + 2));
+					indices.push(vbase + (i + 1));
+				}
+			}
+		};
+		
+		// add caps to geometry
+		createCylinderCap(false);
+		createCylinderCap(true);
+		
+		// Sides
+		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		
+		var vertexData = new VertexData();
+		
+		vertexData.indices = indices;
+		vertexData.positions = positions;
+		vertexData.normals = normals;
+		vertexData.uvs = uvs;
+		
 		if (faceColors != null) {
 			vertexData.colors = colors;
 		}
@@ -1338,12 +1637,14 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	public static function CreateGroundFromHeightMap(options:Dynamic):VertexData {
 		var width:Float = options.width;
 		var height:Float = options.height;
-		var subdivisions:Int = options.subdivision;
+		var subdivisions:Int = options.subdivisions;
 		var minHeight:Float = options.minHeight;
 		var maxHeight:Float = options.maxHeight;
 		var buffer:UInt8Array = options.buffer;
 		var bufferWidth:Float = options.bufferWidth;
 		var bufferHeight:Float = options.bufferHeight;
+		
+		trace(buffer.length);
 		
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
@@ -1546,11 +1847,14 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		return vertexData;
 	}
 	
-	public static function CreateIcoSphere(options:Dynamic):VertexData {
-		var sideOrientation:Int = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
+	public static function CreateIcoSphere(options:IcoSphereOptions):VertexData {
+		var sideOrientation:Int = options.sideOrientation;
 		var radius:Float = options.radius != null ? options.radius : 1;
-		var flat:Bool = options.flat != null ? options.flat : false;
-		var subdivisions:Int = options.subdivisions != null ? options.subdivisions : 1;
+		var flat:Bool = options.flat == null ? true : options.flat;
+		var subdivisions:Int = options.subdivisions != null ? options.subdivisions : 4;
+		var radiusX:Float = options.radiusX != null ? options.radiusX : radius;
+		var radiusY:Float = options.radiusY != null ? options.radiusY : radius;
+		var radiusZ:Float = options.radiusZ != null ? options.radiusZ : radius;
 		
 		var t = (1 + Math.sqrt(5)) / 2;
 		
@@ -1568,29 +1872,29 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			3, 9, 4, 3, 4, 2, 3, 2, 6, 3, 6, 8, 3, 8, 9,
 			4, 9, 5, 2, 4, 11, 6, 2, 10, 8, 6, 7, 9, 8, 1
 		];
-		
+				
 		// uv as integer step (not pixels !)
-		var ico_vertexuv:Array<Int> = [
-			4, 1, 2, 1, 6, 3, 5, 4,  // v0-3
-			4, 3, 3, 2, 7, 4, 3, 0,  // v4-7
-			1, 0, 0, 1, 5, 0, 5, 2   // v8-11
+		var ico_vertexuv = [
+			4, 1, 2, 1, 6, 3, 5, 4,
+			4, 3, 3, 2, 7, 4, 3, 0,
+			1, 0, 0, 1, 5, 0, 5, 2 // v8-11
 		];
-		// Vertices [0, 1, ...9, A, B] : position on UV plane (7,8,9,10=A have duplicate position)
-		// v=5h          9+  8+  7+
-		// v=4h        9+  3   6   A+
-		// v=3h      9+  4   2   A+
-		// v=2h    9+  5   B   A+
-		// v=1h  9   1   0   A+
-		// v=0h    8   7   A
-		//     u=0 1 2 3 4 5 6 7 8 9   *a
-		//
 		
+		// Vertices[0, 1, ...9, A, B] : position on UV plane
+		// '+' indicate duplicate position to be fixed (3,9:0,2,3,4,7,8,A,B)
+		// First island of uv mapping
+		// v = 4h          3+  2
+		// v = 3h        9+  4
+		// v = 2h      9+  5   B
+		// v = 1h    9   1   0
+		// v = 0h  3   8   7   A
+		//     u = 0 1 2 3 4 5 6  *a
 		// uv step is u:1 or 0.5, v:cos(30)=sqrt(3)/2, ratio approx is 84/97
-		var ustep = 97 / 1024;
-		var vstep = 168 / 1024;
-		var uoffset = 50 / 1024;
-		var voffset = 51 / 1024;
-		
+		var ustep:Float = 97 / 1024;
+		var vstep:Float = 168 / 1024;
+		var uoffset:Float = 50 / 1024;
+		var voffset:Float = 51 / 1024;
+				
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
 		var normals:Array<Float> = [];
@@ -1604,6 +1908,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			face_vertex_pos[v012] = Vector3.Zero();
 			face_vertex_uv[v012] = Vector2.Zero();
 		}
+		
 		// create all with normals
 		for (face in 0...20) {
 			// 3 vertex per face
@@ -1622,48 +1927,22 @@ import com.babylonhx.utils.typedarray.Int32Array;
 				// vertex may get to different UV according to belonging face (see fix below)
 				var fix:Int = 0;
 				// Vertice 9 UV to be fixed
-				if (face == 5 && v012 == 2) { 
-					fix = 1; 
-				}
-				if (face == 15 && v012 == 1) { 
-					fix = 2; 
-				}
-				if (face == 10 && v012 == 1) { 
-					fix = 3; 
-				}
-				if (face == 14 && v012 == 2) { 
-					fix = 4; 
-				}
+				if (face == 5 && v012 == 2) { fix = 1; }
+				if (face == 15 && v012 == 1) { fix = 2; }
+				if (face == 10 && v012 == 1) { fix = 3; }
+				if (face == 14 && v012 == 2) { fix = 4; }
 				// vertice 10 UV to be fixed
-				if (face == 4 && v012 == 1) { 
-					fix = 1; 
-				}
-				if (face == 7 && v012 == 1) { 
-					fix = 2; 
-				}
-				if (face == 17 && v012 == 2) { 
-					fix = 3; 
-				}
-				if (face == 8 && v012 == 0) { 
-					fix = 4; 
-				}
+				if (face == 4 && v012 == 1) { fix = 1; }
+				if (face == 7 && v012 == 1) { fix = 2; }
+				if (face == 17 && v012 == 2) { fix = 3; }
+				if (face == 8 && v012 == 0) { fix = 4; }
 				// vertice 7 UV to be fixed
-				if (face == 8 && v012 == 1) { 
-					fix = 5; 
-				}
-				if (face == 18 && v012 == 0) { 
-					fix = 5; 
-				}
+				if (face == 8 && v012 == 1) { fix = 5; }
+				if (face == 18 && v012 == 0) { fix = 5; }
 				// vertice 8 UV to be fixed
-				if (face == 13 && v012 == 2) { 
-					fix = 5; 
-				}
-				if (face == 14 && v012 == 1) { 
-					fix = 5; 
-				}
-				if (face == 18 && v012 == 2) { 
-					fix = 5; 
-				}
+				if (face == 13 && v012 == 2) { fix = 5; }
+				if (face == 14 && v012 == 1) { fix = 5; }
+				if (face == 18 && v012 == 2) { fix = 5; }
 				//
 				face_vertex_uv[v012].copyFromFloats(
 					(ico_vertexuv[2 * v_id] + fix) * ustep + uoffset,
@@ -1706,7 +1985,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			//
 			// centroid of triangle is needed to get help normal computation
 			//  (c1,c2) are used for centroid location
-			
+
 			var interp_vertex = function(i1:Float, i2:Float, c1:Float, c2:Float) {
 				// vertex is interpolated from
 				//   - face_vertex_pos[0..2]
@@ -1714,7 +1993,10 @@ import com.babylonhx.utils.typedarray.Int32Array;
 				var pos_x0 = Vector3.Lerp(face_vertex_pos[0], face_vertex_pos[2], i2 / subdivisions);
 				var pos_x1 = Vector3.Lerp(face_vertex_pos[1], face_vertex_pos[2], i2 / subdivisions);
 				var pos_interp = (subdivisions == i2) ? face_vertex_pos[2] : Vector3.Lerp(pos_x0, pos_x1, i1 / (subdivisions - i2));
-				pos_interp.normalize().scaleInPlace(radius);
+				pos_interp.normalize();
+				pos_interp.x *= radiusX;
+				pos_interp.y *= radiusY;
+				pos_interp.z *= radiusZ;
 				
 				var vertex_normal:Vector3 = null;
 				if (flat) {
@@ -1771,7 +2053,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
 		
 		// Result
-		var vertexData:VertexData = new VertexData();
+		var vertexData = new VertexData();
 		vertexData.indices = indices;
 		vertexData.positions = positions;
 		vertexData.normals = normals;
@@ -2002,54 +2284,80 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	 * @param {any} - normals   (number[] or Float32Array)
 	 */
 	public static function ComputeNormals(positions:Array<Float>, indices:Array<Int>, normals:Array<Float>) {
-		// temp Vector3
-		var p1p2 = Vector3.Zero();
-		var p3p2 = Vector3.Zero();
-		var faceNormal = Vector3.Zero();
+		var index:Int = 0;
+            
+		var p1p2x:Float = 0.0;
+		var p1p2y:Float = 0.0;
+		var p1p2z:Float = 0.0;
+		var p3p2x:Float = 0.0;
+		var p3p2y:Float = 0.0;
+		var p3p2z:Float = 0.0;
+		var faceNormalx:Float = 0.0;
+		var faceNormaly:Float = 0.0;
+		var faceNormalz:Float = 0.0;
 		
-		var vertexNormali1 = Vector3.Zero();
+		var length:Float = 0.0;
+		
+		var i1:Int = 0;
+		var i2:Int = 0;
+		var i3:Int = 0;
 		
 		for (index in 0...positions.length) {
 			normals[index] = 0.0;
 		}
 		
 		// indice triplet = 1 face
-		var nbFaces = Std.int(indices.length / 3);
+		var nbFaces:Int = Std.int(indices.length / 3);
 		for (index in 0...nbFaces) {
-			var i1 = indices[index * 3];
-			var i2 = indices[index * 3 + 1];
-			var i3 = indices[index * 3 + 2];
+			i1 = indices[index * 3];            // get the indexes of each vertex of the face
+			i2 = indices[index * 3 + 1];
+			i3 = indices[index * 3 + 2];
 			
-			p1p2.x = positions[i1 * 3] - positions[i2 * 3];
-			p1p2.y = positions[i1 * 3 + 1] - positions[i2 * 3 + 1];
-			p1p2.z = positions[i1 * 3 + 2] - positions[i2 * 3 + 2];
+			p1p2x = positions[i1 * 3] - positions[i2 * 3];          // compute two vectors per face
+			p1p2y = positions[i1 * 3 + 1] - positions[i2 * 3 + 1];
+			p1p2z = positions[i1 * 3 + 2] - positions[i2 * 3 + 2];
 			
-			p3p2.x = positions[i3 * 3] - positions[i2 * 3];
-			p3p2.y = positions[i3 * 3 + 1] - positions[i2 * 3 + 1];
-			p3p2.z = positions[i3 * 3 + 2] - positions[i2 * 3 + 2];
+			p3p2x = positions[i3 * 3] - positions[i2 * 3];
+			p3p2y = positions[i3 * 3 + 1] - positions[i2 * 3 + 1];
+			p3p2z = positions[i3 * 3 + 2] - positions[i2 * 3 + 2];
 			
-			Vector3.CrossToRef(p1p2, p3p2, faceNormal);
-			faceNormal.normalize();
+			faceNormalx = p1p2y * p3p2z - p1p2z * p3p2y;            // compute the face normal with cross product
+			faceNormaly = p1p2z * p3p2x - p1p2x * p3p2z;
+			faceNormalz = p1p2x * p3p2y - p1p2y * p3p2x;
 			
-			normals[i1 * 3] += faceNormal.x;
-			normals[i1 * 3 + 1] += faceNormal.y;
-			normals[i1 * 3 + 2] += faceNormal.z;
-			normals[i2 * 3] += faceNormal.x;
-			normals[i2 * 3 + 1] += faceNormal.y;
-			normals[i2 * 3 + 2] += faceNormal.z;
-			normals[i3 * 3] += faceNormal.x;
-			normals[i3 * 3 + 1] += faceNormal.y;
-			normals[i3 * 3 + 2] += faceNormal.z;
+			length = Math.sqrt(faceNormalx * faceNormalx + faceNormaly * faceNormaly + faceNormalz * faceNormalz);
+			length = (length == 0) ? 1.0 : length;
+			faceNormalx /= length;                                  // normalize this normal
+			faceNormaly /= length;
+			faceNormalz /= length;
+			
+			normals[i1 * 3] += faceNormalx;                         // accumulate all the normals per face
+			normals[i1 * 3 + 1] += faceNormaly;
+			normals[i1 * 3 + 2] += faceNormalz;
+			normals[i2 * 3] += faceNormalx;
+			normals[i2 * 3 + 1] += faceNormaly;
+			normals[i2 * 3 + 2] += faceNormalz;
+			normals[i3 * 3] += faceNormalx;
+			normals[i3 * 3 + 1] += faceNormaly;
+			normals[i3 * 3 + 2] += faceNormalz;
 		}
 		
-		// last normalization
-		var normLength = Std.int(normals.length / 3);
-		for (index in 0...normLength) {
-			Vector3.FromFloatsToRef(normals[index * 3], normals[index * 3 + 1], normals[index * 3 + 2], vertexNormali1);
-			vertexNormali1.normalize();
-			normals[index * 3] = vertexNormali1.x;
-			normals[index * 3 + 1] = vertexNormali1.y;
-			normals[index * 3 + 2] = vertexNormali1.z;
+		// last normalization of each normal
+		var nl:Int = Std.int(normals.length / 3);
+		for (index in 0...nl) {
+			faceNormalx = normals[index * 3];
+			faceNormaly = normals[index * 3 + 1];
+			faceNormalz = normals[index * 3 + 2];
+			
+			length = Math.sqrt(faceNormalx * faceNormalx + faceNormaly * faceNormaly + faceNormalz * faceNormalz);
+			length = (length == 0) ? 1.0 : length;
+			faceNormalx /= length;                                 
+			faceNormaly /= length;
+			faceNormalz /= length;
+			
+			normals[index * 3] = faceNormalx;
+			normals[index * 3 + 1] = faceNormaly;
+			normals[index * 3 + 2] = faceNormalz;
 		}
 	}
 	

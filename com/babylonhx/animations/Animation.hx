@@ -39,6 +39,9 @@ import com.babylonhx.Node;
 	private var _stopped:Bool = false;
 	private var _easingFunction:IEasingFunction;
 	public var _target:Dynamic;
+	
+	// The set of event that will be linked to this animation
+	private var _events:Array<AnimationEvent> = [];
 
 	public var name:String;
 	public var targetProperty:String;
@@ -115,10 +118,56 @@ import com.babylonhx.Node;
 
 	// Methods 
 	
+	/**
+	 * Add an event to this animation.
+	 */
+	public function addEvent(event:AnimationEvent) {
+		this._events.push(event);
+	}
+
+	/**
+	 * Remove all events found at the given frame
+	 * @param frame
+	 */
+	public function removeEvents(frame:Int) {
+		var index:Int = 0;
+		while (index < this._events.length) {
+			if (this._events[index].frame == frame) {
+				this._events.splice(index, 1);
+				index--;
+			}
+			
+			++index;
+		}
+	}
+	
 	public function reset() {
 		this._offsetsCache = [];
 		this._highLimitsCache = [];
 		this.currentFrame = 0;
+	}
+	
+	public function createRange(name:String, from:Float, to:Float) {
+		this._ranges.push(new AnimationRange(name, from, to));
+	}
+
+	public function deleteRange(name:String) {
+		for (index in 0...this._ranges.length) {
+			if (this._ranges[index].name == name) {
+				this._ranges.splice(index, 1);
+				return;
+			}
+		}
+	}
+
+	public function getRange(name:String):AnimationRange {
+		for (index in 0...this._ranges.length) {
+			if (this._ranges[index].name == name) {                    
+				return this._ranges[index];
+			}
+		}
+		
+		return null;
 	}
 	
 	inline public function isStopped():Bool {
@@ -468,6 +517,29 @@ import com.babylonhx.Node;
 		var repeatCount = Std.int(ratio / range);
 		var currentFrame = cast (returnValue ? from + ratio % range : to);
 		var currentValue = this._interpolate(currentFrame, repeatCount, this.loopMode, offsetValue, highLimitValue);
+		
+		// Check events
+		var index:Int = 0;
+		while (index < this._events.length) {
+			if (currentFrame >= this._events[index].frame) {
+				var event = this._events[index];
+				if (!event.isDone) {
+					// If event should be done only once, remove it.
+					if (event.onlyOnce) {
+						this._events.splice(index, 1);
+						index--;
+					}
+					event.isDone = true;
+					event.action();
+				} // Don't do anything if the event has already be done.
+			} 
+			else if (this._events[index].isDone && !this._events[index].onlyOnce) {
+				// reset event, the animation is looping
+				this._events[index].isDone = false;
+			}
+			
+			++index;
+		}
 		
 		// Set value
 		this.setValue(currentValue);

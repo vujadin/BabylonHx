@@ -91,7 +91,7 @@ import com.babylonhx.tools.Tools;
 	 * @param {number} ratio - The size of the postprocesses (0.5 means that your postprocess will have a width = canvas.width 0.5 and a height = canvas.height 0.5)
 	 * @param {BABYLON.Camera[]} cameras - The array of cameras that the rendering pipeline will be attached to
 	 */
-	public function new(name:String, parameters:Dynamic, scene:Scene, ratio:Float = 1.0, ?cameras:Array<Camera>) {
+	public function new(name:String, parameters:Dynamic, scene:Scene, ratio:Float = 1.0, ?cameras:Dynamic) {
 		super(scene.getEngine(), name);
 		
 		this._scene = scene;
@@ -177,10 +177,10 @@ import com.babylonhx.tools.Tools;
 		this._dofDarken = amount; 
 	}
 	public function enablePentagonBokeh() { 
-		this._dofPentagon = true; 
+		this._highlightsPostProcess.updateEffect("#define PENTAGON\n"); 
 	}
 	public function disablePentagonBokeh() { 
-		this._dofPentagon = false; 
+		this._highlightsPostProcess.updateEffect(); 
 	}
 	public function enableNoiseBlur() { 
 		this._blurNoise = true; 
@@ -204,7 +204,7 @@ import com.babylonhx.tools.Tools;
 	/**
 	 * Removes the internal pipeline assets and detaches the pipeline from the scene cameras
 	 */
-	public function dispose(disableDepthRender:Bool = false) {
+	override public function dispose(disableDepthRender:Bool = false) {
 		this._scene.postProcessRenderPipelineManager.detachCamerasFromRenderPipeline(this._name, this._scene.cameras);
 		
 		this._chromaticAberrationPostProcess = null;
@@ -236,15 +236,15 @@ import com.babylonhx.tools.Tools;
 	// highlights enhancing
 	private function _createHighlightsPostProcess(ratio:Float) {
 		this._highlightsPostProcess = new PostProcess("LensHighlights", "lensHighlights",
-			["pentagon", "gain", "threshold", "screen_width", "screen_height"],      // uniforms
+			["gain", "threshold", "screen_width", "screen_height"],      // uniforms
 			[],     // samplers
-			ratio, null, Texture.TRILINEAR_SAMPLINGMODE,
-			this._scene.getEngine(), false);
+			ratio, 
+			null, Texture.TRILINEAR_SAMPLINGMODE,
+			this._scene.getEngine(), false, this._dofPentagon ? "#define PENTAGON\n" : "");
 			
 		this._highlightsPostProcess.onApply = function(effect:Effect) {
 			effect.setFloat('gain', this._highlightsGain);
 			effect.setFloat('threshold', this._highlightsThreshold);
-			effect.setBool('pentagon', this._dofPentagon);
 			effect.setTextureFromPostProcess("textureSampler", this._chromaticAberrationPostProcess);
 			effect.setFloat('screen_width', this._scene.getEngine().getRenderWidth());
 			effect.setFloat('screen_height', this._scene.getEngine().getRenderHeight());
@@ -317,7 +317,7 @@ import com.babylonhx.tools.Tools;
 			
 			i += 4;
 		}
-						
+			
 		this._grainTexture.update(false);
 	}
 

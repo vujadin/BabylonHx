@@ -151,7 +151,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 	/**
 	 * Removes the internal pipeline assets and detatches the pipeline from the scene cameras
 	 */
-	public function dispose(disableDepthRender:Bool = false) {
+	override public function dispose(disableDepthRender:Bool = false) {
 		this._scene.postProcessRenderPipelineManager.detachCamerasFromRenderPipeline(this._name, this._scene.cameras);
 		
 		this._originalColorPostProcess = null;

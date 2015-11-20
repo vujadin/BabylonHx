@@ -1,4 +1,4 @@
-precision highp float;
+﻿precision highp float;
 
 // Attributes
 attribute vec3 position;
@@ -39,10 +39,10 @@ uniform mat4 world;
 uniform mat4 view;
 uniform mat4 viewProjection;
 
-#ifdef BUMP
-varying vec2 vNormalUV;
-uniform mat4 normalMatrix;
-uniform vec2 vNormalInfos;
+#ifdef DIFFUSE
+varying vec2 vTextureUV;
+uniform mat4 textureMatrix;
+uniform vec2 vTextureInfos;
 #endif
 
 #ifdef POINTSIZE
@@ -87,20 +87,6 @@ varying vec4 vPositionFromLight3;
 #endif
 #endif
 
-// Water uniforms
-uniform mat4 worldReflectionViewProjection;
-uniform vec2 windDirection;
-uniform float waveLength;
-uniform float time;
-uniform float windForce;
-uniform float waveHeight;
-uniform float waveSpeed;
-
-// Water varyings
-varying vec3 vPosition;
-varying vec3 vRefractionMapTexCoord;
-varying vec3 vReflectionMapTexCoord;
-
 void main(void) {
 	mat4 finalWorld;
 
@@ -140,6 +126,8 @@ void main(void) {
 	finalWorld = finalWorld * influence;
 #endif
 
+	gl_Position = viewProjection * finalWorld * vec4(position, 1.0);
+
 	vec4 worldPos = finalWorld * vec4(position, 1.0);
 	vPositionW = vec3(worldPos);
 
@@ -155,14 +143,14 @@ void main(void) {
 	vec2 uv2 = vec2(0., 0.);
 #endif
 
-#ifdef BUMP
-	if (vNormalInfos.x == 0.)
+#ifdef DIFFUSE
+	if (vTextureInfos.x == 0.)
 	{
-		vNormalUV = vec2(normalMatrix * vec4((uv * 1.0) / waveLength + time * windForce * windDirection, 1.0, 0.0));
+		vTextureUV = vec2(textureMatrix * vec4(uv, 1.0, 0.0));
 	}
 	else
 	{
-		vNormalUV = vec2(normalMatrix * vec4((uv2 * 1.0) / waveLength + time * windForce * windDirection, 1.0, 0.0));
+		vTextureUV = vec2(textureMatrix * vec4(uv2, 1.0, 0.0));
 	}
 #endif
 
@@ -200,28 +188,5 @@ void main(void) {
 	// Point size
 #ifdef POINTSIZE
 	gl_PointSize = pointSize;
-#endif
-
-	vec3 p = position;
-	float newY = (sin(((p.x / 0.05) + time * waveSpeed * windForce) * windDirection.x) * waveHeight * 5.0)
-			   + (cos(((p.z / 0.05) + time * waveSpeed * windForce) * windDirection.y) * waveHeight * 5.0);
-	p.y += abs(newY);
-	
-	gl_Position = viewProjection * finalWorld * vec4(p, 1.0);
-
-#ifdef REFLECTION
-	worldPos = viewProjection * finalWorld * vec4(p, 1.0);
-	
-	// Water
-	vPosition = position;
-	
-	vRefractionMapTexCoord.x = 0.5 * (worldPos.w + worldPos.x);
-	vRefractionMapTexCoord.y = 0.5 * (worldPos.w + worldPos.y);
-	vRefractionMapTexCoord.z = worldPos.w;
-	
-	worldPos = worldReflectionViewProjection * vec4(position, 1.0);
-	vReflectionMapTexCoord.x = 0.5 * (worldPos.w + worldPos.x);
-	vReflectionMapTexCoord.y = 0.5 * (worldPos.w + worldPos.y);
-	vReflectionMapTexCoord.z = worldPos.w;
 #endif
 }

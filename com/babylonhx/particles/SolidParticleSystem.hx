@@ -686,9 +686,7 @@ class SolidParticleSystem implements IDisposable {
 	// vertex : the current index of the current particle
 	// pt : the index of the current vertex in the particle shape
 	// ex : just set a vertex particle position
-	public function updateParticleVertex(particle:SolidParticle, vertex:Vector3, pt:Int):Vector3 {
-		return vertex;
-	}
+	public var updateParticleVertex:SolidParticle->Vector3->Int->Vector3;
 
 	// will be called before any other treatment by setParticles()
 	public function beforeUpdateParticles(?start:Float, ?stop:Float, update:Bool = false) {

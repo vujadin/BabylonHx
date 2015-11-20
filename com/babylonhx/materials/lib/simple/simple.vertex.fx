@@ -14,10 +14,6 @@ attribute vec2 uv2;
 #ifdef VERTEXCOLOR
 attribute vec4 color;
 #endif
-#ifdef BONES
-attribute vec4 matricesIndices;
-attribute vec4 matricesWeights;
-#endif
 
 // Uniforms
 
@@ -27,7 +23,7 @@ attribute vec4 world1;
 attribute vec4 world2;
 attribute vec4 world3;
 #else
-    uniform mat4 world;
+uniform mat4 world;
 #endif
 
 uniform mat4 view;
@@ -39,8 +35,15 @@ uniform mat4 diffuseMatrix;
 uniform vec2 vDiffuseInfos;
 #endif
 
-#ifdef BONES
-uniform mat4 mBones[BonesPerMesh];
+#if NUM_BONE_INFLUENCERS > 0
+	uniform mat4 mBones[BonesPerMesh];
+
+	attribute vec4 matricesIndices;
+	attribute vec4 matricesWeights;
+	#if NUM_BONE_INFLUENCERS > 4
+		attribute vec4 matricesIndicesExtra;
+		attribute vec4 matricesWeightsExtra;
+	#endif
 #endif
 
 #ifdef POINTSIZE
@@ -66,8 +69,8 @@ varying float fClipDistance;
 varying float fFogDistance;
 #endif
 
-#ifdef SHADOWS#
-if defined(SPOTLIGHT0) || defined(DIRLIGHT0)
+#ifdef SHADOWS
+#if defined(SPOTLIGHT0) || defined(DIRLIGHT0)
 uniform mat4 lightMatrix0;
 varying vec4 vPositionFromLight0;
 #endif
@@ -86,85 +89,105 @@ varying vec4 vPositionFromLight3;
 #endif
 
 void main(void) {
-    mat4 finalWorld;
+	mat4 finalWorld;
 
-    #ifdef INSTANCES
-    finalWorld = mat4(world0, world1, world2, world3);
-	#else
-        finalWorld = world;
-	#endif
+#ifdef INSTANCES
+	finalWorld = mat4(world0, world1, world2, world3);
+#else
+	finalWorld = world;
+#endif
 
-    #ifdef BONES
-    mat4 m0 = mBones[int(matricesIndices.x)] * matricesWeights.x;
-    mat4 m1 = mBones[int(matricesIndices.y)] * matricesWeights.y;
-    mat4 m2 = mBones[int(matricesIndices.z)] * matricesWeights.z;
+#if NUM_BONE_INFLUENCERS > 0
+	mat4 influence;
+	influence = mBones[int(matricesIndices[0])] * matricesWeights[0];
 
-    #ifdef BONES4
-    mat4 m3 = mBones[int(matricesIndices.w)] * matricesWeights.w;
-    finalWorld = finalWorld * (m0 + m1 + m2 + m3);
-	#else
-        finalWorld = finalWorld * (m0 + m1 + m2);
-	#endif
+	#if NUM_BONE_INFLUENCERS > 1
+		influence += mBones[int(matricesIndices[1])] * matricesWeights[1];
+	#endif 
+	#if NUM_BONE_INFLUENCERS > 2
+		influence += mBones[int(matricesIndices[2])] * matricesWeights[2];
+	#endif	
+	#if NUM_BONE_INFLUENCERS > 3
+		influence += mBones[int(matricesIndices[3])] * matricesWeights[3];
+	#endif	
 
-    #endif
-    gl_Position = viewProjection * finalWorld * vec4(position, 1.0);
+	#if NUM_BONE_INFLUENCERS > 4
+		influence += mBones[int(matricesIndicesExtra[0])] * matricesWeightsExtra[0];
+	#endif
+	#if NUM_BONE_INFLUENCERS > 5
+		influence += mBones[int(matricesIndicesExtra[1])] * matricesWeightsExtra[1];
+	#endif	
+	#if NUM_BONE_INFLUENCERS > 6
+		influence += mBones[int(matricesIndicesExtra[2])] * matricesWeightsExtra[2];
+	#endif	
+	#if NUM_BONE_INFLUENCERS > 7
+		influence += mBones[int(matricesIndicesExtra[3])] * matricesWeightsExtra[3];
+	#endif	
 
-    vec4 worldPos = finalWorld * vec4(position, 1.0);
-    vPositionW = vec3(worldPos);
+	finalWorld = finalWorld * influence;
+#endif
 
-    #ifdef NORMAL
-    vNormalW = normalize(vec3(finalWorld * vec4(normal, 0.0)));
-	#endif
+	gl_Position = viewProjection * finalWorld * vec4(position, 1.0);
 
-    // Texture coordinates
-    #ifndef UV1
-    vec2 uv = vec2(0., 0.);
-	#endif
-	#ifndef UV2
-    vec2 uv2 = vec2(0., 0.);
-	#endif
+	vec4 worldPos = finalWorld * vec4(position, 1.0);
+	vPositionW = vec3(worldPos);
 
-    #ifdef DIFFUSE
-    if (vDiffuseInfos.x == 0.) {
-        vDiffuseUV = vec2(diffuseMatrix * vec4(uv, 1.0, 0.0));
-    } else {
-        vDiffuseUV = vec2(diffuseMatrix * vec4(uv2, 1.0, 0.0));
-    }
-	#endif
+#ifdef NORMAL
+	vNormalW = normalize(vec3(finalWorld * vec4(normal, 0.0)));
+#endif
 
-    // Clip plane
-    #ifdef CLIPPLANE
-    fClipDistance = dot(worldPos, vClipPlane);
-	#endif
+	// Texture coordinates
+#ifndef UV1
+	vec2 uv = vec2(0., 0.);
+#endif
+#ifndef UV2
+	vec2 uv2 = vec2(0., 0.);
+#endif
 
-    // Fog
-    #ifdef FOG
-    fFogDistance = (view * worldPos).z;
-	#endif
+#ifdef DIFFUSE
+	if (vDiffuseInfos.x == 0.)
+	{
+		vDiffuseUV = vec2(diffuseMatrix * vec4(uv, 1.0, 0.0));
+	}
+	else
+	{
+		vDiffuseUV = vec2(diffuseMatrix * vec4(uv2, 1.0, 0.0));
+	}
+#endif
 
-    // Shadows
-    #ifdef SHADOWS
-	#if defined(SPOTLIGHT0) || defined(DIRLIGHT0)
-    vPositionFromLight0 = lightMatrix0 * worldPos;
-	#endif
-	#if defined(SPOTLIGHT1) || defined(DIRLIGHT1)
-    vPositionFromLight1 = lightMatrix1 * worldPos;
-	#endif
-	#if defined(SPOTLIGHT2) || defined(DIRLIGHT2)
-    vPositionFromLight2 = lightMatrix2 * worldPos;
-	#endif
-	#if defined(SPOTLIGHT3) || defined(DIRLIGHT3)
-    vPositionFromLight3 = lightMatrix3 * worldPos;
-	#endif
-	#endif
+	// Clip plane
+#ifdef CLIPPLANE
+	fClipDistance = dot(worldPos, vClipPlane);
+#endif
 
-    // Vertex color
-    #ifdef VERTEXCOLOR
-    vColor = color;
-	#endif
+	// Fog
+#ifdef FOG
+	fFogDistance = (view * worldPos).z;
+#endif
 
-    // Point size
-    #ifdef POINTSIZE
-    gl_PointSize = pointSize;
-	#endif
+	// Shadows
+#ifdef SHADOWS
+#if defined(SPOTLIGHT0) || defined(DIRLIGHT0)
+	vPositionFromLight0 = lightMatrix0 * worldPos;
+#endif
+#if defined(SPOTLIGHT1) || defined(DIRLIGHT1)
+	vPositionFromLight1 = lightMatrix1 * worldPos;
+#endif
+#if defined(SPOTLIGHT2) || defined(DIRLIGHT2)
+	vPositionFromLight2 = lightMatrix2 * worldPos;
+#endif
+#if defined(SPOTLIGHT3) || defined(DIRLIGHT3)
+	vPositionFromLight3 = lightMatrix3 * worldPos;
+#endif
+#endif
+
+	// Vertex color
+#ifdef VERTEXCOLOR
+	vColor = color;
+#endif
+
+	// Point size
+#ifdef POINTSIZE
+	gl_PointSize = pointSize;
+#endif
 }

@@ -527,4 +527,13 @@ import com.babylonhx.animations.IAnimatable;
 		}
 	}
 	
+	/*public function screenToWorld(x:Int, y:Int, depth:Float, position:Vector3) {
+		this.plane.position.z = depth;
+		var name = this.plane.name;
+		var info = this.getScene().pick(x, y, function (mesh:Mesh) {
+			return (mesh.name == name);
+		}, true, this);
+		position.copyFrom(info.hit ? info.pickedPoint : position);
+	}*/
+	
 }

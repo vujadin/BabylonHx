@@ -1,25 +1,26 @@
 package com.babylonhx.materials;
+import haxe.ds.Vector;
 
 /**
  * ...
- * @author ...
+ * @author Krtolica Vujadin
  */
 class MaterialDefines {
 	
-	public var defines:Map<String, Bool>;
-	public var _keys:Array<String>;
+	public var defines:Vector<Bool>;
+	public var _keys:Vector<String>;
 	
 
 	public function new() {
-		defines = new Map<String, Bool>();
-		_keys = [];
+		//defines = [];
+		//_keys = [];
 	}
 	
 	var ret:Bool = true;
 	inline public function isEqual(other:MaterialDefines):Bool {
 		ret = true;
-		for (prop in this._keys) {
-			if (this.defines[prop] != other.defines[prop]) {
+		for (i in 0...this.defines.length) {
+			if (this.defines[i] != other.defines[i]) {
 				ret = false;
 				break;
 			}
@@ -29,23 +30,23 @@ class MaterialDefines {
 	}
 
 	public function cloneTo(other:MaterialDefines) {
-		for (prop in this._keys) {
-			other.defines[prop] = this.defines[prop];
+		for (i in 0...this.defines.length) {
+			other.defines[i] = other.defines[i];
 		}		
 	}
 
 	public function reset() {
-		for (prop in this._keys) {
-			this.defines[prop] = false;
+		for (i in 0...this.defines.length) {
+			this.defines[i] = false;
 		}
 	}
 
 	var result:String = "";
 	public function toString():String {
 		result = "";
-		for (prop in this._keys) {
-			if (this.defines[prop] == true) {
-				result += "#define " + prop + "\n";
+		for (i in 0...this.defines.length) {
+			if (this.defines[i] == true) {
+				result += "#define " + this._keys[i] + "\n";
 			}
 		}
 		

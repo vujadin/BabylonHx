@@ -24,6 +24,7 @@ class NodeCache {
 	public var localMatrixUpdated:Bool;
 	public var rotation:Vector3;
 	public var upVector:Vector3;
+	public var billboardMode:Int;
 	
 	// Camera
 	public var mode:Null<Int>;
@@ -99,7 +100,7 @@ class NodeCache {
 
 	// override it in derived class
 	public function getWorldMatrix():Matrix {
-		return null;// Matrix.Identity();
+		return Matrix.Identity();
 	}
 	
 	// override it in derived class if you add new variables to the cache
@@ -141,7 +142,7 @@ class NodeCache {
 		if (this._parentRenderId != this.parent._currentRenderId) {
 			return false;
 		}
-				
+			
 		return this.parent.isSynchronized();
 	}
 
@@ -184,10 +185,21 @@ class NodeCache {
 		return true;
 	}
 
+	/**
+	 * Set the enabled state of this node.
+	 * @param {boolean} value - the new enabled state
+	 * @see isEnabled
+	 */
 	inline public function setEnabled(value:Bool) {
 		this._isEnabled = value;
 	}
 
+	/**
+	 * Is this node a descendant of the given node.
+	 * The function will iterate up the hierarchy until the ancestor was found or no more parents defined.
+	 * @param {BABYLON.Node} ancestor - The parent node to inspect
+	 * @see parent
+	 */
 	public function isDescendantOf(ancestor:Node):Bool {
 		if (this.parent != null) {
 			if (this.parent == ancestor) {
@@ -208,6 +220,10 @@ class NodeCache {
 		}
 	}
 
+	/**
+	 * Will return all nodes that have this node as parent.
+	 * @return {BABYLON.Node[]} all children nodes of all types.
+	 */
 	inline public function getDescendants():Array<Node> {
 		var results:Array<Node> = [];
 		this._getDescendants(cast this._scene.meshes, results);
@@ -231,6 +247,18 @@ class NodeCache {
 		if (this.onReady != null) {
 			this.onReady(this);
 		}
+	}
+	
+	public function getAnimationByName(name:String):Animation {
+		for (i in 0...this.animations.length) {
+			var animation = this.animations[i];
+			
+			if (animation.name == name) {
+				return animation;
+			}
+		}
+		
+		return null;
 	}
 	
 }

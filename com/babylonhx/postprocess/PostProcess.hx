@@ -41,6 +41,9 @@ import com.babylonhx.utils.GL;
 	public var _textures:SmartArray<WebGLTexture> = new SmartArray<WebGLTexture>(2);
 	public var _currentRenderTextureInd:Int = 0;
 	private var _effect:Effect;
+	private var _samplers:Array<String>;
+    private var _fragmentUrl:String;
+    private var _parameters:Array<String>;
 	
 
 	public function new(name:String, fragmentUrl:String, parameters:Array<String>, samplers:Array<String>, ratio:Dynamic, camera:Camera, samplingMode:Int = Texture.NEAREST_SAMPLINGMODE, ?engine:Engine, reusable:Bool = false, defines:String = "", textureType:Int = Engine.TEXTURETYPE_UNSIGNED_INT) {
@@ -61,13 +64,20 @@ import com.babylonhx.utils.GL;
 		this._reusable = reusable;
 		this._textureType = textureType;
 		
-		samplers = samplers != null ? samplers : [];
-		samplers.push("textureSampler");
+		this._samplers = samplers != null ? samplers : [];
+		this._samplers.push("textureSampler");
 		
-		this._effect = this._engine.createEffect({ vertex: "postprocess", fragment: fragmentUrl },
+		this._fragmentUrl = fragmentUrl;
+		this._parameters = parameters != null ? parameters : [];
+		
+		this.updateEffect(defines);
+	}
+	
+	public function updateEffect(?defines:String) {
+		this._effect = this._engine.createEffect({ vertex: "postprocess", fragment: this._fragmentUrl },
 			["position"],
-			parameters != null ? parameters : [],
-			samplers, defines);
+			this._parameters,
+			this._samplers, defines != null ? defines : "");
 	}
 
 	public function isReusable():Bool {

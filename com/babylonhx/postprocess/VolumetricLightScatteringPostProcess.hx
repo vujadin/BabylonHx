@@ -413,7 +413,7 @@ import com.babylonhx.tools.SmartArray;
 	* @return {BABYLON.Mesh} the default mesh
 	*/
 	public static function CreateDefaultMesh(name:String, scene:Scene):Mesh {
-		var mesh = Mesh.CreatePlane(name, { width: 1, height: 1 }, scene);
+		var mesh = Mesh.CreatePlane(name, 1, scene);
 		mesh.billboardMode = AbstractMesh.BILLBOARDMODE_Z;
 		mesh.material = new StandardMaterial(name + "Material", scene);
 		

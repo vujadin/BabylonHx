@@ -172,7 +172,7 @@ import com.babylonhx.tools.Tools;
 		}
 	}
 	
-	public function dispose() {
+	public function dispose(disableDepthRender:Bool = false) {
 		// Must be implemented by children
 	}
 	

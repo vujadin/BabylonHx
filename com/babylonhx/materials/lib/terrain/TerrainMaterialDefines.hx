@@ -1,4 +1,4 @@
-package com.babylonhx.materials.lib.water;
+package com.babylonhx.materials.lib.terrain;
 
 import haxe.ds.Vector;
 
@@ -6,10 +6,10 @@ import haxe.ds.Vector;
  * ...
  * @author Krtolica Vujadin
  */
-class WaterMaterialDefines extends MaterialDefines {
-	
-	public static inline var BUMP:Int = 0;
-	public static inline var REFLECTION:Int = 1;
+class TerrainMaterialDefines extends MaterialDefines {
+		
+	public static inline var DIFFUSE:Int = 0;
+	public static inline var BUMP:Int = 1;
 	public static inline var CLIPPLANE:Int = 2;
 	public static inline var ALPHATEST:Int = 3;
 	public static inline var POINTSIZE:Int = 4;
@@ -47,23 +47,23 @@ class WaterMaterialDefines extends MaterialDefines {
 	public static inline var SHADOWPCF1:Int = 36;
 	public static inline var SHADOWPCF2:Int = 37;
 	public static inline var SHADOWPCF3:Int = 38;
-	public static inline var NORMAL:Int = 39;
-	public static inline var UV1:Int = 40;
-	public static inline var UV2:Int = 41;
-	public static inline var VERTEXCOLOR:Int = 42;
-	public static inline var VERTEXALPHA:Int = 43;
-	public static inline var INSTANCES:Int = 44;
-	public static inline var SPECULARTERM:Int = 45;
+	public static inline var SPECULARTERM:Int = 39;
+	public static inline var NORMAL:Int = 40;
+	public static inline var UV1:Int = 41;
+	public static inline var UV2:Int = 42;
+	public static inline var VERTEXCOLOR:Int = 43;
+	public static inline var VERTEXALPHA:Int = 44;
+	public static inline var INSTANCES:Int = 45;
 	
 	public var BonesPerMesh:Int = 0;
 	public var NUM_BONE_INFLUENCERS:Int = 0;
 	
-	
+
 	public function new() {
 		super();
 		
-		this._keys = Vector.fromData(["BUMP", "REFLECTION", "CLIPPLANE", "ALPHATEST", "POINTSIZE", "FOG", "LIGHT0", "LIGHT1", "LIGHT2", "LIGHT3", "SPOTLIGHT0", "SPOTLIGHT1", "SPOTLIGHT2", "SPOTLIGHT3", "HEMILIGHT0", "HEMILIGHT1", "HEMILIGHT2", "HEMILIGHT3", "POINTLIGHT0", "POINTLIGHT1", "POINTLIGHT2", "POINTLIGHT3", "DIRLIGHT0", "DIRLIGHT1", "DIRLIGHT2", "DIRLIGHT3", "SHADOW0", "SHADOW1", "SHADOW2", "SHADOW3", "SHADOWS", "SHADOWVSM0", "SHADOWVSM1", "SHADOWVSM2", "SHADOWVSM3", "SHADOWPCF0", "SHADOWPCF1", "SHADOWPCF2", "SHADOWPCF3", "NORMAL", "UV1", "UV2", "VERTEXCOLOR", "VERTEXALPHA", "INSTANCES", "SPECULARTERM"]);
-			
+		this._keys = Vector.fromData(["DIFFUSE", "BUMP", "CLIPPLANE", "ALPHATEST", "POINTSIZE", "FOG", "LIGHT0", "LIGHT1", "LIGHT2", "LIGHT3", "SPOTLIGHT0", "SPOTLIGHT1", "SPOTLIGHT2", "SPOTLIGHT3", "HEMILIGHT0", "HEMILIGHT1", "HEMILIGHT2", "HEMILIGHT3", "POINTLIGHT0", "POINTLIGHT1", "POINTLIGHT2", "POINTLIGHT3", "DIRLIGHT0", "DIRLIGHT1", "DIRLIGHT2", "DIRLIGHT3", "SHADOW0", "SHADOW1", "SHADOW2", "SHADOW3", "SHADOWS", "SHADOWVSM0", "SHADOWVSM1", "SHADOWVSM2", "SHADOWVSM3", "SHADOWPCF0", "SHADOWPCF1", "SHADOWPCF2", "SHADOWPCF3", "SPECULARTERM", "NORMAL", "UV1", "UV2", "VERTEXCOLOR", "VERTEXALPHA", "INSTANCES"]);
+		
 		defines = new Vector(this._keys.length);
 		for (i in 0...this._keys.length) {
 			defines[i] = false;

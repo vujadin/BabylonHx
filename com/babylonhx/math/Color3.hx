@@ -7,6 +7,9 @@ import com.babylonhx.tools.Tools;
  */
 @:expose('BABYLON.Color3') class Color3 {
 	
+	static public inline var ToGammaSpace:Float = 1 / 2.2;
+	static public inline var ToLinearSpace:Float = 2.2;
+	
 	public var r:Float;
 	public var g:Float;
 	public var b:Float;
@@ -130,6 +133,36 @@ import com.babylonhx.tools.Tools;
 		
 		return "#" + Tools.ToHex(intR) + Tools.ToHex(intG) + Tools.ToHex(intB);
 	}
+	
+	inline public function toLinearSpace():Color3 {
+        var convertedColor:Color3 = new Color3();
+        this.toLinearSpaceToRef(convertedColor);
+		
+        return convertedColor;
+    }
+
+    inline public function toLinearSpaceToRef(convertedColor:Color3):Color3 {
+        convertedColor.r = Math.pow(this.r, ToLinearSpace);
+        convertedColor.g = Math.pow(this.g, ToLinearSpace);
+        convertedColor.b = Math.pow(this.b, ToLinearSpace);
+		
+        return this;
+    }
+
+    inline public function toGammaSpace():Color3 {
+        var convertedColor = new Color3();
+        this.toGammaSpaceToRef(convertedColor);
+		
+        return convertedColor;
+    }
+
+    inline public function toGammaSpaceToRef(convertedColor:Color3):Color3 {
+        convertedColor.r = Math.pow(this.r, ToGammaSpace);
+        convertedColor.g = Math.pow(this.g, ToGammaSpace);
+        convertedColor.b = Math.pow(this.b, ToGammaSpace);
+		
+        return this;
+    }
 
 	// Statics
 	public static function FromHexString(hex:String):Color3 {
