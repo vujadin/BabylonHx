@@ -14,7 +14,7 @@ import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.physics.PhysicsBodyCreationOptions;
-import com.babylonhx.physics.plugins.OimoPlugin;
+import com.babylonhx.physics.plugins.JigLibPlugin;
 import com.babylonhx.Scene;
 import com.babylonhx.physics.PhysicsEngine;
 
@@ -25,7 +25,7 @@ import com.babylonhx.physics.PhysicsEngine;
 class PhysicsSimple {
 
 	public function new(scene:Scene) {
-		scene.enablePhysics(new Vector3(0, -1, 0), new OimoPlugin());
+		scene.enablePhysics(new Vector3(0, -100, 0), new JigLibPlugin());
 						
 		var camera = new ArcRotateCamera("Camera", 0.86, 1.80, 650, new Vector3(0, 150, 0), scene);
 		camera.position = new Vector3(200, 0, 0);
@@ -34,7 +34,7 @@ class PhysicsSimple {
 		
 		var light = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);
 		
-		var skybox = Mesh.CreateBox("skyBox", 10000.0, scene);
+		/*var skybox = Mesh.CreateBox("skyBox", 10000.0, scene);
 		var skyboxMaterial = new StandardMaterial("skyBox", scene);
 		skyboxMaterial.backFaceCulling = false;
 		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/TropicalSunnyDay", scene);
@@ -42,7 +42,7 @@ class PhysicsSimple {
 		skyboxMaterial.diffuseColor = new Color3(0, 0, 0);
 		skyboxMaterial.specularColor = new Color3(0, 0, 0);
 		skybox.material = skyboxMaterial;
-		skybox.infiniteDistance = true;
+		skybox.infiniteDistance = true;*/
 				
 		var mat = new StandardMaterial("ground", scene);
 		var texDiff = new Texture("assets/img/ground.jpg", scene);

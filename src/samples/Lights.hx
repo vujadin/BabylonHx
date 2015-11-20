@@ -21,9 +21,7 @@ class Lights {
 		var camera = new ArcRotateCamera("Camera", 0, 0, 10, Vector3.Zero(), scene);
 		camera.setPosition(new Vector3(-10, 10, 0));
 		camera.attachControl(this, true);
-		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
-		
+				
 		// Lights
 		var light0 = new PointLight("Omni0", new Vector3(0, 10, 0), scene);
 		var light1 = new PointLight("Omni1", new Vector3(0, -10, 0), scene);

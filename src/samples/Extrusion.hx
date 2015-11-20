@@ -9,6 +9,7 @@ import com.babylonhx.layer.Layer;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
+import com.babylonhx.math.Space;
 import com.babylonhx.Scene;
 
 /**
@@ -23,8 +24,6 @@ class Extrusion {
 								
 		var light = new HemisphericLight("light1", new Vector3(0, 1, 0), scene);
 		light.diffuse = Color3.FromInt(0xf68712);
-		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
 					  
 		// 2D shape
 		var poly = Polygon.StartingAt(-10, -10)

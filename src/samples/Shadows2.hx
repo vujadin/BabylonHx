@@ -55,7 +55,7 @@ class Shadows2 {
 				star.rotation.z += 0.01;
 				
 				star.position.y += Math.sin(alpha) / 20;
-																		
+				
 				alpha += 0.02;
 			});
 			

@@ -35,7 +35,7 @@ class MainJS {
 		
 		engine = new Engine(canvas, false);	
 		scene = new Scene(engine);
-				
+			
 		Browser.window.addEventListener("resize", resize);
 		
 		canvas.addEventListener("mousedown", onMouseDown);
@@ -51,6 +51,7 @@ class MainJS {
 	function startDemo() {
 		//new samples.BasicScene(scene);
 		//new samples.BasicElements(scene);
+		//new samples.DashedLinesMesh(scene);
 		//new samples.CandleLight(scene);
 		//new samples.RotationAndScaling(scene);
 		//new samples.Materials(scene);
@@ -64,7 +65,7 @@ class MainJS {
 		//new samples.MeshImport(scene);
 		//new samples.LoadScene(scene);
 		//new samples.CSGDemo(scene);
-		new samples.Fog(scene);
+		//new samples.Fog(scene);
 		//new samples.DisplacementMap(scene);
 		//new samples.Environment(scene);
 		//new samples.LensFlares(scene);
@@ -73,6 +74,8 @@ class MainJS {
 		//new samples.Physics2(scene);
 		//new samples.Physics_Pyramid(scene);
 		//new samples.PhysicsSimple(scene);
+		//new samples.PhysicsCar(scene);
+		//new samples.PhysicsNew(scene);
 		//new samples.PolygonMesh1(scene);
 		//new samples.PolygonMesh2(scene);
 		//new samples.PolygonMesh3(scene);
@@ -110,8 +113,18 @@ class MainJS {
 		//new samples.InstancedBones(scene);				
 		//new samples.AdvancedShadows(scene);
 		//new samples.Ribbons(scene);
+		//new samples.RibbonTest2(scene);
 		//new samples.SoftShadows(scene);		
 		//new samples.BabylonHxWebsiteScene(scene);
+		//new samples.Water(scene);
+		//new samples.SolidParticles1(scene);
+		//new samples.PointLightShadow(scene);
+		//new samples.FireMat(scene);
+		//new samples.WaterMat(scene);
+		//new samples.LavaMat(scene);
+		//new samples.NormalMat(scene);
+		new samples.PythagorianThrees(scene);
+		//new samples.Particles4(scene);
 	}
 	
 	function resize(e) {

@@ -48,13 +48,14 @@ class Actions {
 		light3.state = "on";
 
 		// Ground
-		var ground = Mesh.CreateGround("ground", 1000, 1000, 1, scene, false);
+		var ground = Mesh.CreateGround("ground", 1000, 1000, 1, scene);
 		var groundMaterial = new StandardMaterial("ground", scene);
 		groundMaterial.specularColor = Color3.Black();
 		ground.material = groundMaterial;
 
 		// Boxes
 		var redBox = Mesh.CreateBox("red", 20, scene);
+		redBox.isPickable = true;
 		var redMat = new StandardMaterial("ground", scene);
 		redMat.diffuseColor = new Color3(0.4, 0.4, 0.4);
 		redMat.specularColor = new Color3(0.4, 0.4, 0.4);
@@ -63,6 +64,7 @@ class Actions {
 		redBox.position.x -= 100;
 
 		var greenBox = Mesh.CreateBox("green", 20, scene);
+		greenBox.isPickable = true;
 		var greenMat = new StandardMaterial("ground", scene);
 		greenMat.diffuseColor = new Color3(0.4, 0.4, 0.4);
 		greenMat.specularColor = new Color3(0.4, 0.4, 0.4);
@@ -71,6 +73,7 @@ class Actions {
 		greenBox.position.z -= 100;
 
 		var blueBox = Mesh.CreateBox("blue", 20, scene);
+		blueBox.isPickable = true;
 		var blueMat = new StandardMaterial("ground", scene);
 		blueMat.diffuseColor = new Color3(0.4, 0.4, 0.4);
 		blueMat.specularColor = new Color3(0.4, 0.4, 0.4);
@@ -80,6 +83,7 @@ class Actions {
 
 		// Sphere
 		var sphere = Mesh.CreateSphere("sphere", 16, 20, scene);
+		sphere.isPickable = true;
 		var sphereMat = new StandardMaterial("ground", scene);
 		sphereMat.diffuseColor = new Color3(0.4, 0.4, 0.4);
 		sphereMat.specularColor = new Color3(0.4, 0.4, 0.4);
@@ -89,6 +93,7 @@ class Actions {
 
 		// Rotating donut
 		var donut = Mesh.CreateTorus("donut", 20, 8, 16, scene);
+		donut.isPickable = true;
 
 		// On pick interpolations
 		var prepareButton = function (mesh:Mesh, color:Color3, light:PointLight) {

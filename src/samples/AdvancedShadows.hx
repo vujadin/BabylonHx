@@ -22,15 +22,15 @@ class AdvancedShadows {
 		camera.attachControl();
 
 		// Ground
-		var ground01 = Mesh.CreateGround("Spotlight Hard Shadows", 24, 60, 1, scene, false);
-		var ground02 = Mesh.CreateGround("Spotlight Poisson Sampling", 24, 60, 1, scene, false);
-		var ground03 = Mesh.CreateGround("Spotlight VSM", 24, 60, 1, scene, false);
-		var ground04 = Mesh.CreateGround("Spotlight Blur VSM", 24, 60, 1, scene, false);
+		var ground01 = Mesh.CreateGround("Spotlight Hard Shadows", 24, 60, 1, scene);
+		var ground02 = Mesh.CreateGround("Spotlight Poisson Sampling", 24, 60, 1, scene);
+		var ground03 = Mesh.CreateGround("Spotlight VSM", 24, 60, 1, scene);
+		var ground04 = Mesh.CreateGround("Spotlight Blur VSM", 24, 60, 1, scene);
 
-		var ground11 = Mesh.CreateGround("Directional Hard Shadows", 24, 60, 1, scene, false);
-		var ground12 = Mesh.CreateGround("Directional Poisson Sampling", 24, 60, 1, scene, false);
-		var ground13 = Mesh.CreateGround("Directional VSM", 24, 60, 1, scene, false);
-		var ground14 = Mesh.CreateGround("Directional Blur VSM", 24, 60, 1, scene, false);
+		var ground11 = Mesh.CreateGround("Directional Hard Shadows", 24, 60, 1, scene);
+		var ground12 = Mesh.CreateGround("Directional Poisson Sampling", 24, 60, 1, scene);
+		var ground13 = Mesh.CreateGround("Directional VSM", 24, 60, 1, scene);
+		var ground14 = Mesh.CreateGround("Directional Blur VSM", 24, 60, 1, scene);
 
 		var groundMaterial = new StandardMaterial("ground", scene);
 		groundMaterial.diffuseTexture = new Texture("assets/img/grass.jpg", scene);
@@ -74,13 +74,13 @@ class AdvancedShadows {
 		var light03 = new SpotLight("*spot03", new Vector3(60, 20, -10), new Vector3(0, -1, 0.3), 1.2, 1.5, scene);
 
 		// Boxes
-		var box00 = Mesh.CreateBox("*box00", 5, scene, false);
+		var box00 = Mesh.CreateBox("*box00", 5, scene);
 		box00.position = new Vector3(-30, 5, 0);
-		var box01 = Mesh.CreateBox("*box01", 5, scene, false);
+		var box01 = Mesh.CreateBox("*box01", 5, scene);
 		box01.position = new Vector3(0, 5, 0);
-		var box02 = Mesh.CreateBox("*box02", 5, scene, false);
+		var box02 = Mesh.CreateBox("*box02", 5, scene);
 		box02.position = new Vector3(30, 5, 0);
-		var box03 = Mesh.CreateBox("*box03", 5, scene, false);
+		var box03 = Mesh.CreateBox("*box03", 5, scene);
 		box03.position = new Vector3(60, 5, 0);
 
 		var boxMaterial = new StandardMaterial("mat", scene);
@@ -132,13 +132,13 @@ class AdvancedShadows {
 		light07.position = new Vector3(60, 50, 60);
 
 		// Boxes
-		var box04 = Mesh.CreateBox("*box04", 5, scene, false);
+		var box04 = Mesh.CreateBox("*box04", 5, scene);
 		box04.position = new Vector3(-30, 5, 100);
-		var box05 = Mesh.CreateBox("*box05", 5, scene, false);
+		var box05 = Mesh.CreateBox("*box05", 5, scene);
 		box05.position = new Vector3(0, 5, 100);
-		var box06 = Mesh.CreateBox("*box06", 5, scene, false);
+		var box06 = Mesh.CreateBox("*box06", 5, scene);
 		box06.position = new Vector3(30, 5, 100);
-		var box07 = Mesh.CreateBox("*box07", 5, scene, false);
+		var box07 = Mesh.CreateBox("*box07", 5, scene);
 		box07.position = new Vector3(60, 5, 100);
 
 		box04.material = boxMaterial;

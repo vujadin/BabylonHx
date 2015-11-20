@@ -38,7 +38,7 @@ class Collisions {
 		//Simple crate
 		var box = Mesh.CreateBox("crate", 2, scene);
 		box.material = new StandardMaterial("Mat", scene);
-		cast(box.material, StandardMaterial).diffuseTexture = new Texture("assets/img/crate.png", scene);
+		cast(box.material, StandardMaterial).diffuseTexture = new Texture("assets/img/crate.jpg", scene);
 		cast(box.material, StandardMaterial).diffuseTexture.hasAlpha = true;
 		box.position = new Vector3(5, -9, -10);
 		

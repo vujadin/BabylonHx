@@ -26,7 +26,7 @@ class WaterMat {
 		var light = new HemisphericLight("light1", new Vector3(0, 1, 0), scene);
 		
 		// Skybox
-		var skybox = Mesh.CreateBox("skyBox", { width: 1000, height: 1000, depth: 1000 }, scene);
+		var skybox = Mesh.CreateBox("skyBox", 1000, scene);
 		var skyboxMaterial = new StandardMaterial("skyBox", scene);
 		skyboxMaterial.backFaceCulling = false;
 		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/TropicalSunnyDay", scene);
@@ -43,12 +43,13 @@ class WaterMat {
 		var groundMaterial = new StandardMaterial("groundMaterial", scene);
 		groundMaterial.diffuseTexture = groundTexture;
 		
-		var ground = Mesh.CreateGround("ground", { width: 512, height: 512, subdivision: 32, updatable: false }, scene);
-		ground.position.y = -1;
+		var ground = Mesh.CreateGround("ground", 512, 512, 1, scene);
+		ground.position.y = -10;
 		ground.material = groundMaterial;
 			
 		// Water
-		var waterMesh = Mesh.CreateGround("waterMesh", { width: 512, height: 512, subdivision: 32, updatable: false }, scene);
+		var waterMesh = Mesh.CreateGround("waterMesh", 512, 512, 32, scene);
+		waterMesh.position.y = 10;
 		var water = new WaterMaterial("water", scene, new Vector2(1024, 1024));
 		water.backFaceCulling = true;
 		water.bumpTexture = new Texture("assets/img/waterbump.png", scene);

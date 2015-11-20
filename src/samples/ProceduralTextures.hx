@@ -15,7 +15,7 @@ import com.babylonhx.materials.textures.procedurals.standard.WoodProceduralTextu
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
-import com.babylonhx.math.Axis.Space;
+import com.babylonhx.math.Space;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
 

@@ -76,14 +76,14 @@ class CustomRenderTarget {
 		renderTarget.renderList.push(skybox);
 		scene.customRenderTargets.push(renderTarget);
 		
-		renderTarget.onBeforeRender = function () {
+		renderTarget.onBeforeRender = function(i:Int) {
 			for (index in 0...renderTarget.renderList.length) {
 				renderTarget.renderList[index]._savedMaterial = renderTarget.renderList[index].material;
 				renderTarget.renderList[index].material = depthMaterial;
 			}
 		}
 		
-		renderTarget.onAfterRender = function () {
+		renderTarget.onAfterRender = function(i:Int) {
 			// Restoring previoux material
 			for (index in 0...renderTarget.renderList.length) {
 				renderTarget.renderList[index].material = renderTarget.renderList[index]._savedMaterial;

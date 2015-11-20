@@ -7,7 +7,6 @@ import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.mesh.Mesh;
-import com.babylonhx.mesh.Mesh.TorusKnotOptions;
 import com.babylonhx.math.Color3;
 import com.babylonhx.lights.DirectionalLight;
 import com.babylonhx.lights.HemisphericLight;
@@ -42,10 +41,10 @@ class LavaMat {
 		// Lights
 		var hemisphericLight = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);		
 		
-		var knot = Mesh.CreateTorusKnot("knot", { radius: 10, tube: 3, radialSegments: 128, tubularSegments: 64, p: 2, q: 3 }, scene);
+		var knot = Mesh.CreateTorusKnot("knot", 10, 3, 128, 64, 2, 3, scene);
 		
 		// Skybox
-		var skybox = Mesh.CreateBox("skyBox", { width: 1000.0, height: 1000, depth: 1000 }, scene);
+		var skybox = Mesh.CreateBox("skyBox", 1000, scene);
 		var skyboxMaterial = new StandardMaterial("skyBox", scene);
 		skyboxMaterial.backFaceCulling = false;
 		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/skybox", scene);

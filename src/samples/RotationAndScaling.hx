@@ -59,7 +59,7 @@ class RotationAndScaling {
 		//Moving box7 relatively to box1
 		box7.parent = box1;
 		box7.position.z = -10;
-		
+				
 		scene.getEngine().runRenderLoop(function () {
             scene.render();
         });

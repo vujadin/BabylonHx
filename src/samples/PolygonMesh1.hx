@@ -4,8 +4,8 @@ import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.lights.HemisphericLight;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
-import com.babylonhx.mesh.polygonmesh.Polygon;
-import com.babylonhx.mesh.polygonmesh.PolygonMeshBuilder;
+import com.babylonhxext.polygonmesh.Polygon;
+import com.babylonhxext.polygonmesh.PolygonMeshBuilder;
 import com.babylonhx.Scene;
 
 /**

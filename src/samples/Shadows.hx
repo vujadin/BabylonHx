@@ -46,17 +46,17 @@ class Shadows {
 		cast(lightSphere2.material, StandardMaterial).emissiveColor = new Color3(1, 1, 0);
 		
 		// Ground
-		var ground = Mesh.CreateGroundFromHeightMap("ground", "assets/img/heightMap.png", 100, 100, 100, 0, 10, scene, false);
+		var ground = Mesh.CreateGroundFromHeightMap("ground", "assets/img/heightMap.png", 100, 100, 100, 0, 10, scene);
 		var groundMaterial = new StandardMaterial("ground", scene);
 		groundMaterial.diffuseTexture = new Texture("assets/img/ground.jpg", scene);
-		groundMaterial.diffuseTexture.uScale = 6;
-		groundMaterial.diffuseTexture.vScale = 6;
+		cast(groundMaterial.diffuseTexture, Texture).uScale = 6;
+		cast(groundMaterial.diffuseTexture, Texture).vScale = 6;
 		groundMaterial.specularColor = new Color3(0, 0, 0);
 		ground.position.y = -2.05;
 		ground.material = groundMaterial;
 		
 		// Torus
-		var torus = Mesh.CreateTorus("torus", 4, 2, 30, scene, false);
+		var torus = Mesh.CreateTorus("torus", 4, 2, 30, scene);
 		
 		// Shadows
 		var shadowGenerator = new ShadowGenerator(1024, light);

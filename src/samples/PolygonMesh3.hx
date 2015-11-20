@@ -49,9 +49,7 @@ class PolygonMesh3 {
 		camera.attachControl();
 		
 		var light = new HemisphericLight("hemi", new Vector3(0, -1, 0), scene);
-		
-		new Layer("background", "assets/img/nebula.jpg", scene, true);
-				
+						
 		var mat = new StandardMaterial("mat", scene);
 		mat.diffuseColor = Color3.FromInts(246, 135, 18);
 		mat.backFaceCulling = false;

@@ -31,7 +31,7 @@ class HeightMap {
 		camera.attachControl();
 				
 		// Skybox
-		var skybox = Mesh.CreateBox("skyBox", 1000.0, scene);
+		var skybox = Mesh.CreateBox("skyBox", 1000, scene);
 		var skyboxMaterial = new StandardMaterial("skyBox", scene);
 		skyboxMaterial.backFaceCulling = false;
 		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/Sky_FantasySky_Fire_Cam", scene);
@@ -44,7 +44,7 @@ class HeightMap {
 		// Ground
 		var groundMaterial = new StandardMaterial("ground", scene);
 		groundMaterial.diffuseTexture = new Texture("assets/img/ground.jpg", scene);
-		groundMaterial.diffuseTexture.uScale = groundMaterial.diffuseTexture.vScale = 10;
+		cast(groundMaterial.diffuseTexture, Texture).uScale = cast(groundMaterial.diffuseTexture, Texture).vScale = 10;
 		
 		var ground:Mesh = Mesh.CreateGroundFromHeightMap("ground", "assets/img/heightmap.jpg", 400, 400, 100, 0, 50, scene, false);
 		ground.material = groundMaterial;		

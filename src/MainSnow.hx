@@ -1,6 +1,5 @@
 package;
 
-import samples.InstancedBones;
 import snow.system.window.Window;
 import snow.types.Types;
 
@@ -25,6 +24,8 @@ class MainSnow extends snow.App {
 		
 		//new samples.BasicScene(scene);
 		//new samples.BasicElements(scene);
+		//new samples.DashedLinesMesh(scene);
+		//new samples.CandleLight(scene);
 		//new samples.RotationAndScaling(scene);
 		//new samples.Materials(scene);
 		//new samples.Lights(scene);
@@ -37,42 +38,66 @@ class MainSnow extends snow.App {
 		//new samples.MeshImport(scene);
 		//new samples.LoadScene(scene);
 		//new samples.CSGDemo(scene);
-		new samples.Fog(scene);
+		//new samples.Fog(scene);
 		//new samples.DisplacementMap(scene);
 		//new samples.Environment(scene);
 		//new samples.LensFlares(scene);
 		//new samples.PhysicsCannon(scene);
 		//new samples.Physics(scene);
+		//new samples.Physics2(scene);
 		//new samples.Physics_Pyramid(scene);
 		//new samples.PhysicsSimple(scene);
-		//new samples.PolygonMesh(scene);
+		//new samples.PhysicsCar(scene);
+		//new samples.PhysicsNew(scene);
+		//new samples.PolygonMesh1(scene);
+		//new samples.PolygonMesh2(scene);
+		//new samples.PolygonMesh3(scene);
 		//new samples.CustomRenderTarget(scene);
 		//new samples.Lines(scene);
-		//new samples.Bones(scene);
-		//new samples.PostprocessRefraction(scene);
+		//new samples.Lines2(scene);
+		//new samples.Bones(scene);		
 		//new samples.Shadows(scene);
+		//new samples.Shadows2(scene);
 		//new samples.HeightMap(scene);
 		//new samples.LoadObjFile(scene);
+		//new samples.LoadStlFile(scene);
+		//new samples.LoadPlyFile(scene);
 		//new samples.LOD(scene);
 		//new samples.Instances(scene);
-		//new samples.Fresnel(scene);
-		//new samples.PostprocessConvolution(scene);
+		//new samples.Instances2(scene);
+		//new samples.Fresnel(scene);		
 		//new samples.VolumetricLights(scene);
 		//new samples.CellShading(scene);
 		//new samples.Particles(scene);
 		//new samples.Particles2(scene);
+		//new samples.Particles3(scene);
 		//new samples.Extrusion(scene);
 		//new samples.Sprites(scene);
 		//new samples.PostprocessBloom(scene);
+		//new samples.PostprocessRefraction(scene);
+		//new samples.PostprocessConvolution(scene);
+		//new samples.GodRays(scene);
+		//new samples.DepthOfField(scene);
 		//new samples.Actions(scene);
-		//new samples.Picking(scene);
-		//new samples.Particles3(scene);
+		//new samples.Picking(scene);		
 		//new samples.Octree(scene);
-		//new samples.SSAO(scene);						// NOT WORKING YET !!
+		//new samples.SSAO(scene);						
 		//new samples.Decals(scene);
-		//new samples.InstancedBones(scene);
-		//new samples.GodRaysSkull(scene);
-		//new samples.Instances2(scene);
+		//new samples.InstancedBones(scene);				
+		//new samples.AdvancedShadows(scene);
+		//new samples.Ribbons(scene);
+		//new samples.RibbonTest2(scene);
+		//new samples.SoftShadows(scene);		
+		//new samples.BabylonHxWebsiteScene(scene);
+		//new samples.Water(scene);
+		//new samples.SolidParticles1(scene);
+		//new samples.PointLightShadow(scene);
+		//new samples.FireMat(scene);
+		//new samples.WaterMat(scene);
+		//new samples.LavaMat(scene);
+		//new samples.NormalMat(scene);
+		new samples.PythagorianThrees(scene);
+		//new samples.Particles4(scene);
 		
 		app.window.onrender = render;
 	}

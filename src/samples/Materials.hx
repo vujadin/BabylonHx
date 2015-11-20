@@ -21,19 +21,17 @@ class Materials {
 		//Create a light
 		var light = new PointLight("Omni", new Vector3( -60, 60, 80), scene);
 		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
-		
 		//Create an Arc Rotate Camera - aimed negative z this time
 		var camera = new ArcRotateCamera("Camera", Math.PI / 2, 1.0, 110, new Vector3(0, 5, 0), scene);
 		camera.attachControl();
 				
 		//Creation of 6 spheres
-		var sphere1 = Mesh.CreateSphere("Sphere1", 10, 9.0, scene);
-		var sphere2 = Mesh.CreateSphere("Sphere2", 2, 9.0, scene);//Only two segments
-		var sphere3 = Mesh.CreateSphere("Sphere3", 10, 9.0, scene);
-		var sphere4 = Mesh.CreateSphere("Sphere4", 10, 9.0, scene);
-		var sphere5 = Mesh.CreateSphere("Sphere5", 10, 9.0, scene);
-		var sphere6 = Mesh.CreateSphere("Sphere6", 10, 9.0, scene);
+		var sphere1 = Mesh.CreateSphere("Sphere1", { segments: 10, diameterX: 9, diameterY: 9, diameterZ: 9 }, scene);
+		var sphere2 = Mesh.CreateSphere("Sphere2", { segments: 2, diameterX: 9, diameterY: 9, diameterZ: 9 }, scene);//Only two segments
+		var sphere3 = Mesh.CreateSphere("Sphere3", { segments: 10, diameterX: 9, diameterY: 9, diameterZ: 9 }, scene);
+		var sphere4 = Mesh.CreateSphere("Sphere4", { segments: 10, diameterX: 9, diameterY: 9, diameterZ: 9 }, scene);
+		var sphere5 = Mesh.CreateSphere("Sphere5", { segments: 10, diameterX: 9, diameterY: 9, diameterZ: 9 }, scene);
+		var sphere6 = Mesh.CreateSphere("Sphere6", { segments: 10, diameterX: 9, diameterY: 9, diameterZ: 9 }, scene);
 		
 		//Position the spheres
 		sphere1.position.x = 40;
@@ -44,7 +42,7 @@ class Materials {
 		sphere6.position.x = -35;
 		
 		//Creation of a plane
-		var plane = Mesh.CreatePlane("plane", 120, scene);
+		var plane = Mesh.CreatePlane("plane", { width: 120, height: 120 }, scene);
 		plane.position.y = -5;
 		plane.rotation.x = Math.PI / 2;
 				
@@ -60,8 +58,8 @@ class Materials {
 		//Creation of a material with translated texture
 		var materialSphere4 = new StandardMaterial("texture4", scene);
 		materialSphere4.diffuseTexture = new Texture("assets/img/misc.jpg", scene);
-		materialSphere4.diffuseTexture.vOffset = 0.1;//Vertical offset of 10%
-		materialSphere4.diffuseTexture.uOffset = 0.4;//Horizontal offset of 40%
+		cast(materialSphere4.diffuseTexture, Texture).vOffset = 0.1;//Vertical offset of 10%
+		cast(materialSphere4.diffuseTexture, Texture).uOffset = 0.4;//Horizontal offset of 40%
 		
 		//Creation of a material with an alpha texture
 		var materialSphere5 = new StandardMaterial("texture5", scene);
@@ -77,8 +75,8 @@ class Materials {
 		//Creation of a repeated textured material
 		var materialPlane = new StandardMaterial("texturePlane", scene);
 		materialPlane.diffuseTexture = new Texture("assets/img/grass.jpg", scene);
-		materialPlane.diffuseTexture.uScale = 5.0;//Repeat 5 times on the Vertical Axes
-		materialPlane.diffuseTexture.vScale = 5.0;//Repeat 5 times on the Horizontal Axes
+		cast(materialPlane.diffuseTexture, Texture).uScale = 5.0;//Repeat 5 times on the Vertical Axes
+		cast(materialPlane.diffuseTexture, Texture).vScale = 5.0;//Repeat 5 times on the Horizontal Axes
 		materialPlane.backFaceCulling = false;//Allways show the front and the back of an element
 		
 		//Creation of a material with wireFrame

@@ -27,7 +27,7 @@ class SoftShadows {
 		camera.attachControl();
 		
 		SceneLoader.RegisterPlugin(BabylonFileLoader.plugin);
-
+		
 		SceneLoader.ImportMesh("", "assets/models/", "SSAOcat.babylon", scene, function (newMeshes:Array<AbstractMesh>, newParticles:Array<ParticleSystem>, newSkeletons:Array<Skeleton>) {
 
 			//scene.lights[0].dispose();

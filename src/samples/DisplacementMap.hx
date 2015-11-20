@@ -22,10 +22,10 @@ class DisplacementMap {
 		
 		var light = new HemisphericLight("Omni0", new Vector3(0, 1, 0), scene);
 		var material = new StandardMaterial("kosh", scene);
-		var sphere = Mesh.CreateSphere("Sphere", { diameterX: 2, diameterY: 2, diameterZ: 2, segments: 120, updatable: true }, scene);
+		var sphere = Mesh.CreateSphere("Sphere", 120, 2, scene, true);
 		sphere.position.z -= 2;
 		
-		var sphere2 = Mesh.CreateSphere("Sphere2", { diameterX: 2, diameterY: 2, diameterZ: 2, segments: 120, updatable: true }, scene);
+		var sphere2 = Mesh.CreateSphere("Sphere", 120, 2, scene, true);
 		sphere2.position.z += 2;
 		
 		camera.setPosition(new Vector3(-10, 3, 0));
@@ -39,12 +39,12 @@ class DisplacementMap {
 		sphere2.material = material;
 		
 		// Skybox
-		var skybox = Mesh.CreateBox("skyBox", { width: 2000, height: 2000, depth: 2000 }, scene);
+		var skybox = Mesh.CreateBox("skyBox", 2000, scene);
 		var skyboxMaterial = new StandardMaterial("skyBox", scene);
 		skyboxMaterial.backFaceCulling = false;
 		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/skybox", scene);
 		skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
-		skyboxMaterial.diffuseColor = new Color3(0, 0, 0);
+		skyboxMaterial.emissiveColor = new Color3(0, 0, 0);
 		skyboxMaterial.specularColor = new Color3(0, 0, 0);
 		//skyboxMaterial.disableLighting = true;
 		skybox.material = skyboxMaterial;

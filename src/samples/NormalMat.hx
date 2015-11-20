@@ -7,6 +7,9 @@ import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.materials.lib.normal.NormalMaterial;
+import com.babylonhx.materials.lib.terrain.TerrainMaterial;
+import com.babylonhx.materials.lib.simple.SimpleMaterial;
+import com.babylonhx.materials.lib.pbr.PBRMaterial;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.materials.textures.CubeTexture;
 import com.babylonhx.materials.StandardMaterial;
@@ -25,10 +28,10 @@ class NormalMat {
 		// Lights
 		var hemisphericLight = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);		
 		
-		var knot = Mesh.CreateTorusKnot("knot", { radius: 10, tube: 3, radialSegments: 128, tubularSegments: 64, p: 2, q: 3 }, scene);
+		var knot = Mesh.CreateTorusKnot("knot", 10, 3, 128, 64, 2, 3, scene);
 		
 		// Skybox
-		var skybox = Mesh.CreateBox("skyBox", { width: 1000.0, height: 1000, depth: 1000 }, scene);
+		var skybox = Mesh.CreateBox("skyBox", 1000, scene);
 		var skyboxMaterial = new StandardMaterial("skyBox", scene);
 		skyboxMaterial.backFaceCulling = false;
 		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/skybox", scene);

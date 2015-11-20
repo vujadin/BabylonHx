@@ -27,7 +27,7 @@ class Bones {
 		light.position = new Vector3(20, 150, 70);
 		camera.minZ = 10.0;
 		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
+		//new Layer("background", "assets/img/graygrad.jpg", scene, true);
 				
 		// Ground
 		var ground = Mesh.CreateGround("ground", 1000, 1000, 1, scene, false);

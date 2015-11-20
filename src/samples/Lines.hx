@@ -23,9 +23,7 @@ class Lines {
 		camera.attachControl(this);
 		camera.maxZ = 20000;		
 		camera.lowerRadiusLimit = 150;
-		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
-						
+			
 		// Create a whirlpool
 		var points:Array<Vector3> = generateLorenz(20000);
 				

@@ -17,9 +17,7 @@ class SSAO {
 
 	public function new(scene:Scene) {
 		var camera = new ArcRotateCamera("Camera", -2.5, 1.0, 200, new Vector3(0, 0, 0), scene);
-		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
-		
+				
 		SceneLoader.RegisterPlugin(BabylonFileLoader.plugin);
 		
 		// The first parameter can be used to specify which mesh to import. Here we import all meshes

@@ -21,9 +21,7 @@ class Animations {
 		var light = new PointLight("Omni", new Vector3(0, 100, 100), scene);
 		var camera = new ArcRotateCamera("Camera", 0, 0.8, 100, Vector3.Zero(), scene);
 		camera.attachControl(this, true);
-		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
-		
+				
 		//Boxes
 		var box1 = Mesh.CreateBox("Box1", 10.0, scene);
 		box1.position.x = -20;

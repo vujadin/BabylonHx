@@ -4,12 +4,14 @@ import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.lights.HemisphericLight;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.materials.textures.Texture;
+import com.babylonhx.layer.Layer;
 import com.babylonhx.materials.textures.procedurals.standard.FireProceduralTexture;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
 import com.babylonhx.postprocess.VolumetricLightScatteringPostProcess;
+import com.babylonhx.tools.Tools;
 import haxe.Timer;
 
 /**
@@ -21,9 +23,11 @@ class Ribbons {
 	public function new(scene:Scene) {
 		scene.clearColor = new Color3(0, 0, 0.2);
 		var camera = new ArcRotateCamera("Camera", Math.PI / 2 - 0.5, 0.5, 6, Vector3.Zero(), scene);
-		//camera.attachControl();
+		camera.attachControl();
 		camera.wheelPrecision = 100;
-
+		
+		//Mesh.CreateBox("box", 3.0, scene);
+		
 		// fire material
 		var fireMaterial = new StandardMaterial("fireMaterial", scene);
 		var fireTexture = new FireProceduralTexture("fire", 256, scene);
@@ -167,7 +171,8 @@ class Ribbons {
 		interval = function () {
 			newSH(m, paths, targetPaths, deltas, deltaColors);
 			mesh = morphing(mesh, m, paths, targetPaths, deltas, deltaColors);
-			Timer.delay(interval, delay);
+			
+			Tools.delay(interval, delay);
 		};
 		
 		// immediate first SH

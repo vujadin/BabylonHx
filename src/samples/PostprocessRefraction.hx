@@ -63,7 +63,7 @@ class PostprocessRefraction {
 			cast(monkey3.material, StandardMaterial).diffuseColor = new Color3(0, 0, 1.0);
 			   
 			// Post-process
-			var postProcess = new RefractionPostProcess("Refraction", "assets/img/refMap.jpg", new Color3(1.0, 1.0, 1.0), 0.5, 0.5, 1.0, camera);
+			var postProcess = new RefractionPostProcess("Refraction", "assets/img/refMap.png", new Color3(1.0, 1.0, 1.0), 0.5, 0.5, 1.0, camera);
 			
 			// Animations
 			var alpha = 0.0;

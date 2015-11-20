@@ -48,7 +48,7 @@ class MainLime extends Application {
 		//new samples.LoadScene(scene);
 		//new samples.CSGDemo(scene);
 		//new samples.Fog(scene);
-		new samples.DisplacementMap(scene);
+		//new samples.DisplacementMap(scene);
 		//new samples.Environment(scene);
 		//new samples.LensFlares(scene);
 		//new samples.PhysicsCannon(scene);
@@ -100,11 +100,18 @@ class MainLime extends Application {
 		//new samples.BabylonHxWebsiteScene(scene);
 		//new samples.Water(scene);
 		//new samples.SolidParticles1(scene);
+		//new samples.SolidParticles2(scene);
+		//new samples.SolidParticles3(scene);
 		//new samples.PointLightShadow(scene);
 		//new samples.FireMat(scene);
 		//new samples.WaterMat(scene);
 		//new samples.LavaMat(scene);
 		//new samples.NormalMat(scene);
+		new samples.PythagorianThrees(scene);
+		//new samples.Particles4(scene);
+		//new samples.MaterialsLibTest(scene);	
+		//new samples.ReflectionProbeTest(scene);
+		//new samples.IcoSphereTest(scene);
 				
 		engine.width = this.window.width;
 		engine.height = this.window.height;

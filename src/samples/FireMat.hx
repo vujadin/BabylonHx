@@ -38,7 +38,6 @@ class FireMat {
 		generator.useBlurVarianceShadowMap = true;
 		generator.blurBoxOffset = 2.0;
 		
-		SceneLoader.RegisterPlugin(BabylonFileLoader.plugin);
 		SceneLoader.ImportMesh("", "assets/models/", "candle.babylon", scene, function (meshes:Array<AbstractMesh>, skeletons, particleSystems) {
 			var plane = scene.getMeshByName("Plane");
 			plane.receiveShadows = true;
@@ -49,7 +48,7 @@ class FireMat {
 				}
 			}
 			
-			plane = Mesh.CreatePlane("fireplane", { width: 1.5, height: 1.5 }, scene);
+			plane = Mesh.CreatePlane("fireplane", 1.5, scene);
 			plane.position = new Vector3(0, 2.2, 0);
 			plane.scaling.x = 0.1;
 			plane.scaling.y = 0.7;
