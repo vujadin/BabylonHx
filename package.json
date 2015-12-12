@@ -1,0 +1,40 @@
+{
+  "name": "babylonhx",
+  "version": "0.0.5",
+  "description": "babylonHx a 3d haxe engine built for native and javascript",
+  "main": "/src/MainJS.hx",
+   "dependencies": {
+    "gulp": "^3.9.0"
+  },
+  "devDependencies": {
+    "glob": "^6.0.1",
+    "gulp": "^3.9.0",
+    "gulp-connect": "^2.2.0",
+    "gulp-shell": "^0.5.1",
+    "open": "0.0.5",
+    "path": "^0.12.7",
+    "run-sequence": "^1.1.5"
+  },
+  "scripts": {
+    "test": "lime test html5 -Dwebgl",
+    "buildOpenfl": "lime build html5 -Dwebgl"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/babylonhx/BabylonHx_2.0.git"
+  },
+  "keywords": [
+    "webgl",
+    "haxe",
+    "babylonjs",
+    "babylonhx",
+    "webkitview",
+    "CocoonJS"
+  ],
+  "author": "Brendon A. Smith",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/babylonhx/BabylonHx_2.0/issues"
+  },
+  "homepage": "https://github.com/babylonhx/BabylonHx_2.0#readme"
+}
