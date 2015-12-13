@@ -1,6 +1,6 @@
 language: java
 
-sudo: false
+sudo: true
 
 env: 
   - LD_LIBRARY_PATH=/usr/lib/neko
