@@ -26,8 +26,8 @@ before_install:
   - mkdir -p ~/haxelib
   - haxelib setup ~/haxelib
   - haxelib -notimeout install swf
-  - haxelib -notimeout install lime
-  - haxelib -notimeout install openfl
+  - haxelib -notimeout install lime 2.7.0
+  - haxelib -notimeout install openfl 3.4.0
   - haxelib -notimeout install poly2trihx  
   - haxelib -notimeout git snow https://github.com/underscorediscovery/snow.git
   - haxelib -notimeout git oimohx https://github.com/babylonhx/OimoHx.git
