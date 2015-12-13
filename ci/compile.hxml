@@ -4,11 +4,11 @@
 -cmd echo "|___/\__|_|_|__/\_| |_\___/_||_|_||_/_/\_\ "
 -cmd echo "                |__/"                      
 --remap flash:openfl
--lib lime
--lib openfl
+-lib lime 2.7.0
+-lib openfl 3.4.0
 -lib msgpack
 -lib oimohx
--lib babylonhx
+-cp ../
 -main TestMain
 -neko unit.n
 -cmd echo "----------------------------------------end testing----------------------------------------"
