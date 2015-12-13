@@ -204,7 +204,7 @@ typedef Assets = nme.Assets;
 		return url;
 	}
 	
-	#if purejs
+	#if (purejs)
 	public static function LoadFile(url:String, callbackFn:Dynamic->Void, ?progressCallBack:Dynamic->Void, ?database:Dynamic, useArrayBuffer:Bool = false, ?onError:Void->Void) {
 		url = Tools.CleanUrl(url);
 		
@@ -453,57 +453,38 @@ typedef Assets = nme.Assets;
 	
 	#elseif (lime || openfl || nme)
 	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {			
-		if (type == "") {
-			#if (lime || openfl && !nme)
+		if (type == "" || type == "text") {
+			#if ((html5 || js) && (lime || openfl))
 			if (Assets.exists(path)) {
-			#else // nme
-			/*if (Assets.info.exists(path))*/ {
-			#end
-				if (StringTools.endsWith(path, "bbin")) {
-					var callBackFunction = callbackFn != null ?
-						function(result:Dynamic) {
-							callbackFn(result);
-						} : function(_) { };
-					var data = Assets.getBytes(path);
+							
+				var callBackFunction = callbackFn != null ?
+					function(result:Dynamic) {
+						callbackFn(result);
+					} : function(_) { };
+					
+				var future = Assets.loadText(path);
+				future.onComplete(function(data:String):Void {
 					callBackFunction(data);
-				} 
-				else {
-					var callBackFunction = callbackFn != null ?
-						function(result:Dynamic) {
-							callbackFn(result);
-						} : function(_) { };
-					callBackFunction(Assets.getText(path));
-				}
+				});					
 			} 
-			#if (lime || openfl && !nme)
 			else {
 				trace("File '" + path + "' doesn't exist!");
 			}
+			#else
+			var callBackFunction = callbackFn != null ?
+					function(result:Dynamic) {
+						callbackFn(result);
+					} : function(_) { };
+					
+				var data = Assets.getText(path);
+				callBackFunction(data);			
 			#end
 		} 
 		else {
-			#if (lime || openfl && !nme)
+			#if (lime || openfl)
 			if (Assets.exists(path)) {
-			#else // nme
-			/*if (Assets.info.exists(path))*/ {
 			#end
-				switch(type) {
-					case "text":
-						var callBackFunction = callbackFn != null ?
-							function(result:Dynamic) {
-								callbackFn(result);
-							} : function(_) { };
-						var data = Assets.getText(path);
-						callBackFunction(data);
-						
-					case "bin":
-						var callBackFunction = callbackFn != null ?
-							function(result:Dynamic) {
-								callbackFn(result);
-							} : function(_) { };
-						var data = Assets.getBytes(path);	
-						callBackFunction(data);
-						
+				switch(type) {						
 					case "img":
 						#if lime
 						var img = Assets.getImage(path);
@@ -526,7 +507,7 @@ typedef Assets = nme.Assets;
 						#end
 				}
 			} 
-			#if (lime || openfl && !nme)
+			#if (lime || openfl)
 			else {
 				trace("File '" + path + "' doesn't exist!");
 			}
@@ -538,7 +519,7 @@ typedef Assets = nme.Assets;
 	#end
 	
 	
-	#if purejs
+	#if (purejs)
 	public static function LoadImage(url:String, ?callbackFn:Dynamic->Void, ?onerror:Dynamic->Void, ?db:Dynamic):Dynamic {
 		url = Tools.CleanUrl(url);
 		
@@ -631,21 +612,16 @@ typedef Assets = nme.Assets;
     } 
 	#else
 	public static function LoadImage(url:String, onload:Image->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
-		//if (SnowApp._host.app.assets.listed(url)) {
-			var callBackFunction = function(img:Dynamic) {
-				var i = new Image(img.image.pixels, img.image.width, img.image.height);
-				onload(i);
-			};
-			
-			SnowApp._host.app.assets.image(url).then(
-				function(asset:Dynamic) {
-					callBackFunction(asset);
-				}
-			);
-		//} 
-		//else {
-		//	trace("Image '" + url + "' doesn't exist!");
-		//}
+		var callBackFunction = function(img:Dynamic) {
+			var i = new Image(img.image.pixels, img.image.width, img.image.height);
+			onload(i);
+		};
+		
+		SnowApp._host.app.assets.image(url).then(
+			function(asset:Dynamic) {
+				callBackFunction(asset);
+			}
+		);
     } 
 	#end
 	
@@ -653,11 +629,17 @@ typedef Assets = nme.Assets;
 	public static function LoadImage(url:String, onload:Image-> Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
 		#if lime
 		if (Assets.exists(url)) {
+			#if (js || html5)
 			var future = Assets.loadImage(url);
 			future.onComplete(function(img:lime.graphics.Image):Void {
 				var image = new Image(img.data, img.width, img.height);
 				onload(image);
-			});						
+			});		
+			#else
+			var img = Assets.getImage(url);
+			var image = new Image(img.data, img.width, img.height);
+			onload(image);
+			#end
 		} 
 		else {
 			trace("Image '" + url + "' doesn't exist!");
@@ -670,14 +652,9 @@ typedef Assets = nme.Assets;
 		else {
 			trace("Image '" + url + "' doesn't exist!");
 		}
-		#elseif nme
-		/*if (Assets.info.exists(url))*/ {
-			var img = Assets.getBitmapData(url); 
-			onload(new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height));			
-		} 
-		/*else {
-			trace("Image '" + url + "' doesn't exist!");
-		}*/
+		#elseif nme		
+		var img = Assets.getBitmapData(url); 
+		onload(new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height));		
 		#end
     }
 	#elseif kha
