@@ -1,3 +1,34 @@
+BabylonHx Demos
+=========
+
+<div style="width:100%; float:left">
+	<div style="width:196px; float:left">
+	  <a href="http://babylonhx.github.io/webvr_materials/" target="_blank" />
+		<img src="http://babylonhx.github.io/webvr_materials/webvr_materials.jpg" style="float:left; width:196px; height:196px" />
+		</a>
+	</div>
+	<div style="width:196px; float:left">
+	  <a href="http://babylonhx.github.io/ProceduralTextures/" target="_blank" />
+		<img src="http://babylonhx.github.io/ProceduralTextures/ProceduralTextures.jpg" style="float:left; width:196px; height:196px" />
+		</a>
+	</div>
+	<div style="width:196px; float:left">
+	  <a href="http://babylonhx.github.io/Fresnel/" target="_blank" />
+		<img src="http://babylonhx.github.io/Fresnel/Fresnel.jpg" style="float:left; width:196px; height:196px" />
+		</a>
+	</div>
+	<div style="width:196px; float:left">
+	  <a href="http://babylonhx.github.io/DisplacementMap/" target="_blank" />
+		<img src="http://babylonhx.github.io/DisplacementMap/DisplacementMap.jpg" style="float:left; width:196px; height:196px" />
+		</a>
+	</div>
+	<div style="width:196px; float:left">
+	  <a href="http://babylonhx.github.io/heightmap/" target="_blank" />
+		<img src="http://babylonhx.github.io/heightmap/heightmap.jpg" style="float:left; width:196px; height:196px" />
+		</a>
+	</div>
+</div>
+
 BabylonHx
 =========
 
