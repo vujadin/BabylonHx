@@ -1,6 +1,6 @@
 BabylonHx Demos
 =========
-```html
+
 <div style="width:100%; float:left">
 	<div style="width:196px; float:left">
 	  <a href="http://babylonhx.github.io/webvr_materials/" target="_blank" />
@@ -28,7 +28,7 @@ BabylonHx Demos
 		</a>
 	</div>
 </div>
-```
+
 
 BabylonHx
 =========
