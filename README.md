@@ -17,6 +17,36 @@ BabylonHx Demos
 	  <a href="http://babylonhx.github.io/heightmap/" target="_blank" />
 		<img src="http://babylonhx.github.io/heightmap/heightmap-sm.jpg"  />
 	</a>
+	<a href="http://babylonhx.github.io/babylonvx/basic2/" target="_blank" />
+		<img src="http://babylonhx.github.io/babylonvx/basic2/basic2-sm.jpg"  />
+	</a>
+	<a href="http://babylonhx.github.io/CSGDemo/" target="_blank" />
+		<img src="http://babylonhx.github.io/CSGDemo/CSGDemo-sm.jpg"  />
+	</a>
+	<a href="http://babylonhx.github.io/Collisions/" target="_blank" />
+		<img src="http://babylonhx.github.io/Collisions/Collisions-sm.jpg"  />
+	</a>
+	<a href="http://babylonhx.github.io/EasingFunctions/" target="_blank" />
+		<img src="http://babylonhx.github.io/EasingFunctions/EasingFunctions-sm.jpg"  />
+	</a>
+	<a href="http://babylonhx.github.io/Environment/" target="_blank" />
+		<img src="http://babylonhx.github.io/Environment/Environment-sm.jpg"  />
+	</a>
+	<a href="http://babylonhx.github.io/Intersections/" target="_blank" />
+		<img src="http://babylonhx.github.io/Intersections/Intersections-sm.jpg"  />
+	</a>
+	<a href="http://babylonhx.github.io/basicscene/" target="_blank" />
+		<img src="http://babylonhx.github.io/basicscene/basicscene-sm.jpg"  />
+	</a>
+	<a href="hhttp://babylonhx.github.io/bloom/" target="_blank" />
+		<img src="http://babylonhx.github.io/bloom/bloom-sm.jpg"  />
+	</a>
+	<a href="http://babylonhx.github.io/bumpmap/" target="_blank" />
+		<img src="http://babylonhx.github.io/bumpmap/bumpmap-sm.jpg"  />
+	</a>
+	<a href="http://babylonhx.github.io/lensflare/" target="_blank" />
+		<img src="http://babylonhx.github.io/lensflare/lensflare-sm.jpg"  />
+	</a>
 </div>
 
 
