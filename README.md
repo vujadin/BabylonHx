@@ -1,7 +1,13 @@
 BabylonHx Demos
 =========
-
-<div style="width:100%; float:left">
+'''html
+<style>
+	div[data-container] div.img{
+		width:196px !important;
+		height:196px !important;
+	}
+</style>
+<div style="width:100%; float:left" data-container='true'>
 	<div style="width:196px; float:left">
 	  <a href="http://babylonhx.github.io/webvr_materials/" target="_blank" />
 		<img src="http://babylonhx.github.io/webvr_materials/webvr_materials.jpg" style="float:left; width:196px; height:196px" />
@@ -28,6 +34,7 @@ BabylonHx Demos
 		</a>
 	</div>
 </div>
+'''
 
 BabylonHx
 =========
