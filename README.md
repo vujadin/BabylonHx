@@ -58,6 +58,7 @@ It supports (almost) all features of the original.
 
 <img src="https://api.travis-ci.org/babylonhx/BabylonHx_2.0.svg" />
 
+API documentation - http://babylonhx.github.io/api/com/babylonhx/index.html
 
 **Usage instructions:**
 
