@@ -37,6 +37,9 @@ gulp.task('watch', function (callback) {
     gulp.watch(paths.main, ['buildpureJS', 'buildlime', 'restart']);
 });
 
+gulp.task('test', shell.task([
+    'haxe compile.hxml'
+]));
 
 gulp.task('buildlime', shell.task([
     'lime build html5 -Dwebgl'
@@ -47,12 +50,13 @@ gulp.task('buildpureJS', shell.task([
 ]));
 
 gulp.task('install_dep', shell.task([
+    'haxelib setup',
+    'haxelib -notimeout install lime', 
     'haxelib -notimeout install dox', 
     'haxelib -notimeout install openfl', 
     'haxelib -notimeout install swf', 
     'haxelib -notimeout install svg', 
     'haxelib -notimeout install actuate',
-    'haxelib -notimeout install actuate', 
     'haxelib -notimeout git catamaranhx https://github.com/catamaranHX/catamaranHX_lib.git', 
     'haxelib -notimeout git snow https://github.com/underscorediscovery/snow.git', 
     'haxelib -notimeout git oimohx https://github.com/babylonhx/OimoHx.git', 
