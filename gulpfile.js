@@ -57,6 +57,8 @@ gulp.task('install_dep', shell.task([
     'haxelib -notimeout install swf', 
     'haxelib -notimeout install svg', 
     'haxelib -notimeout install actuate',
+    'haxelib -notimeout git cannonhx https://github.com/vujadin/cannon.hx.git',
+    'haxelib -notimeout git babylonhxext https://github.com/vujadin/BabylonHx_Extensions.git',
     'haxelib -notimeout git catamaranhx https://github.com/catamaranHX/catamaranHX_lib.git', 
     'haxelib -notimeout git snow https://github.com/underscorediscovery/snow.git', 
     'haxelib -notimeout git oimohx https://github.com/babylonhx/OimoHx.git', 
