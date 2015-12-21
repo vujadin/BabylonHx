@@ -56,8 +56,8 @@ BabylonHx Demos
 	<a href="http://babylonhx.github.io/godrays/" target="_blank" />
 		<img src="http://babylonhx.github.io/godrays/godrays-sm.jpg" alt="godrays"   />
 	</a>
-	<a href="http://babylonhx.github.io/ProceduralTextures/" target="_blank" />
-		<img src="http://babylonhx.github.io/ProceduralTextures/ProceduralTextures-sm.jpg"  alt="ProceduralTextures"  />
+	<a href="http://babylonhx.github.io/refraction/" target="_blank" />
+		<img src="http://babylonhx.github.io/refraction/refraction-sm.jpg"  alt="refraction"  />
 	</a>
 	<a href="http://babylonhx.github.io/physics2/" target="_blank" />
 		<img src="http://babylonhx.github.io/physics2/physics2-sm.jpg" alt="physics2"   />
