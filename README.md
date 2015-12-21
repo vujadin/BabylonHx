@@ -3,49 +3,64 @@ BabylonHx Demos
 
 <div style="width:100%; float:left">
 	  <a href="http://babylonhx.github.io/webvr_materials/" target="_blank" />
-		<img src="http://babylonhx.github.io/webvr_materials/webvr_materials-sm.jpg"  />
+		<img src="http://babylonhx.github.io/webvr_materials/webvr_materials-sm.jpg" alt="vr materials sample"  />
 		</a>
-	  <a href="http://babylonhx.github.io/ProceduralTextures/" target="_blank" />
-		<img src="http://babylonhx.github.io/ProceduralTextures/ProceduralTextures-sm.jpg"  />
+	  <a href="http://babylonhx.github.io/ProceduralTextures/"  target="_blank" />
+		<img src="http://babylonhx.github.io/ProceduralTextures/ProceduralTextures-sm.jpg" alt="ProceduralTextures"   />
 		</a>
 	  <a href="http://babylonhx.github.io/Fresnel/" target="_blank" />
-		<img src="http://babylonhx.github.io/Fresnel/Fresnel-sm.jpg"  />
+		<img src="http://babylonhx.github.io/Fresnel/Fresnel-sm.jpg"  alt="Fresnel" />
 		</a>
 	  <a href="http://babylonhx.github.io/DisplacementMap/" target="_blank" />
-		<img src="http://babylonhx.github.io/DisplacementMap/DisplacementMap-sm.jpg" />
+		<img src="http://babylonhx.github.io/DisplacementMap/DisplacementMap-sm.jpg" alt="DisplacementMap" />
 		</a>
 	  <a href="http://babylonhx.github.io/heightmap/" target="_blank" />
-		<img src="http://babylonhx.github.io/heightmap/heightmap-sm.jpg"  />
+		<img src="http://babylonhx.github.io/heightmap/heightmap-sm.jpg" alt="heightmap"   />
 	</a>
 	<a href="http://babylonhx.github.io/babylonvx/basic2/" target="_blank" />
-		<img src="http://babylonhx.github.io/babylonvx/basic2/basic2-sm.jpg"  />
+		<img src="http://babylonhx.github.io/babylonvx/basic2/basic2-sm.jpg"   alt="basic2"  />
 	</a>
 	<a href="http://babylonhx.github.io/CSGDemo/" target="_blank" />
-		<img src="http://babylonhx.github.io/CSGDemo/CSGDemo-sm.jpg"  />
+		<img src="http://babylonhx.github.io/CSGDemo/CSGDemo-sm.jpg" alt="CSGDemo"  />
 	</a>
 	<a href="http://babylonhx.github.io/Collisions/" target="_blank" />
-		<img src="http://babylonhx.github.io/Collisions/Collisions-sm.jpg"  />
+		<img src="http://babylonhx.github.io/Collisions/Collisions-sm.jpg"   alt="Collisions"   />
 	</a>
 	<a href="http://babylonhx.github.io/EasingFunctions/" target="_blank" />
-		<img src="http://babylonhx.github.io/EasingFunctions/EasingFunctions-sm.jpg"  />
+		<img src="http://babylonhx.github.io/EasingFunctions/EasingFunctions-sm.jpg" alt="EasingFunctions"   />
 	</a>
 	<a href="http://babylonhx.github.io/Environment/" target="_blank" />
-		<img src="http://babylonhx.github.io/Environment/Environment-sm.jpg"  />
+		<img src="http://babylonhx.github.io/Environment/Environment-sm.jpg" alt="Environment"   />
 	</a>
 	<a href="http://babylonhx.github.io/Intersections/" target="_blank" />
-		<img src="http://babylonhx.github.io/Intersections/Intersections-sm.jpg"  />
+		<img src="http://babylonhx.github.io/Intersections/Intersections-sm.jpg" alt="Intersections"    />
 	</a>
 	<a href="http://babylonhx.github.io/basicscene/" target="_blank" />
-		<img src="http://babylonhx.github.io/basicscene/basicscene-sm.jpg"  />
+		<img src="http://babylonhx.github.io/basicscene/basicscene-sm.jpg" alt="basicscene"  />
 	</a>
 	<a href="hhttp://babylonhx.github.io/bloom/" target="_blank" />
-		<img src="http://babylonhx.github.io/bloom/bloom-sm.jpg"  />
+		<img src="http://babylonhx.github.io/bloom/bloom-sm.jpg" alt="bloom"   />
 	</a>
 	<a href="http://babylonhx.github.io/bumpmap/" target="_blank" />
-		<img src="http://babylonhx.github.io/bumpmap/bumpmap-sm.jpg"  />
+		<img src="http://babylonhx.github.io/bumpmap/bumpmap-sm.jpg" alt="bumpmap"   />
 	</a>
 	<a href="http://babylonhx.github.io/lensflare/" target="_blank" />
-		<img src="http://babylonhx.github.io/lensflare/lensflare-sm.jpg"  />
+		<img src="http://babylonhx.github.io/lensflare/lensflare-sm.jpg" alt="lensflare"   />
+	</a>
+	<a href="http://babylonhx.github.io/ribbon/" target="_blank" />
+		<img src="http://babylonhx.github.io/ribbon/ribbon-sm.jpg" alt="ribbon"   />
+	</a>
+	<a href="http://babylonhx.github.io/shadows2/" target="_blank" />
+		<img src="http://babylonhx.github.io/shadows2/shadows2-sm.jpg" alt="shadows2"   />
+	</a>
+	<a href="http://babylonhx.github.io/godrays/" target="_blank" />
+		<img src="http://babylonhx.github.io/godrays/godrays-sm.jpg" alt="godrays"   />
+	</a>
+	<a href="http://babylonhx.github.io/ProceduralTextures/" target="_blank" />
+		<img src="http://babylonhx.github.io/ProceduralTextures/ProceduralTextures-sm.jpg"  alt="ProceduralTextures"  />
+	</a>
+	<a href="http://babylonhx.github.io/physics2/" target="_blank" />
+		<img src="http://babylonhx.github.io/physics2/physics2-sm.jpg" alt="physics2"   />
 	</a>
 </div>
 
