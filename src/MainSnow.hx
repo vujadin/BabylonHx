@@ -25,7 +25,6 @@ class MainSnow extends snow.App {
 		//new samples.BasicScene(scene);
 		//new samples.BasicElements(scene);
 		//new samples.DashedLinesMesh(scene);
-		//new samples.CandleLight(scene);
 		//new samples.RotationAndScaling(scene);
 		//new samples.Materials(scene);
 		//new samples.Lights(scene);
@@ -96,7 +95,7 @@ class MainSnow extends snow.App {
 		//new samples.WaterMat(scene);
 		//new samples.LavaMat(scene);
 		//new samples.NormalMat(scene);
-		new samples.PythagorianThrees(scene);
+        new samples.ForestOfPythagoras(scene);
 		//new samples.Particles4(scene);
 		
 		app.window.onrender = render;
