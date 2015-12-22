@@ -31,7 +31,7 @@ class MainLime extends Application {
 		engine = new Engine(window, false);	
 		scene = new Scene(engine);
 				
-		//new samples.BasicScene(scene);
+        new samples.BasicScene(scene);
 		//new samples.BasicElements(scene);
 		//new samples.DashedLinesMesh(scene);
 		//new samples.CandleLight(scene);
@@ -107,7 +107,7 @@ class MainLime extends Application {
 		//new samples.WaterMat(scene);
 		//new samples.LavaMat(scene);
 		//new samples.NormalMat(scene);
-		new samples.PythagorianThrees(scene);
+        //new samples.ForestOfPythagoras(scene);
 		//new samples.Particles4(scene);
 		//new samples.MaterialsLibTest(scene);	
 		//new samples.ReflectionProbeTest(scene);
