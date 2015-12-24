@@ -7,12 +7,14 @@ import com.babylonhx.mesh.Mesh;
 import com.babylonhx.postprocess.PostProcess;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.Tools;
+import com.babylonhx.tools.Tags;
 import com.babylonhx.postprocess.AnaglyphPostProcess;
 import com.babylonhx.postprocess.StereoscopicInterlacePostProcess;
 import com.babylonhx.postprocess.VRDistortionCorrectionPostProcess;
 import com.babylonhx.postprocess.PassPostProcess;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.animations.IAnimatable;
+import com.babylonhx.animations.Animation;
 
 /**
 * ...
@@ -65,7 +67,7 @@ import com.babylonhx.animations.IAnimatable;
 	public var _postProcesses:Array<PostProcess> = [];
 	public var _postProcessesTakenIndices:Array<Int> = [];
 	
-	public var _activeMeshes = new SmartArray<Mesh>(256);
+	public var _activeMeshes:SmartArray<Mesh> = new SmartArray<Mesh>(256);
 	
 	private var _globalPosition:Vector3 = Vector3.Zero();
 	public var globalPosition(get, never):Vector3;
@@ -168,8 +170,9 @@ import com.babylonhx.animations.IAnimatable;
 	}
 
 	public function _isSynchronizedViewMatrix():Bool {
-		if (!super._isSynchronized())
+		if (!super._isSynchronized()) {
 			return false;
+		}
 			
 		return this._cache.position.equals(this.position)
 			&& this._cache.upVector.equals(this.upVector)
@@ -177,7 +180,7 @@ import com.babylonhx.animations.IAnimatable;
 	}
 
 	public function _isSynchronizedProjectionMatrix():Bool {
-		var check = this._cache.mode == this.mode
+		var check:Bool = this._cache.mode == this.mode
 			&& this._cache.minZ == this.minZ
 			&& this._cache.maxZ == this.maxZ;
 			
@@ -229,7 +232,6 @@ import com.babylonhx.animations.IAnimatable;
 			return 0;
 		}
 		
-
 		if (insertAt == null || insertAt < 0) {
 			this._postProcesses.push(postProcess);
 			this._postProcessesTakenIndices.push(this._postProcesses.length - 1);
@@ -289,6 +291,7 @@ import com.babylonhx.animations.IAnimatable;
 					continue;
 				}
 				
+				this._postProcesses[i] = null;
 				this._postProcesses.splice(i, 1);
 				
 				var index = this._postProcessesTakenIndices.indexOf(i);
@@ -306,6 +309,7 @@ import com.babylonhx.animations.IAnimatable;
 					continue;
 				}
 				
+				this._postProcesses[i] = null;
 				this._postProcesses.splice(atIndices[i], 1);
 				
 				var index = this._postProcessesTakenIndices.indexOf(atIndices[i]);
@@ -351,7 +355,8 @@ import com.babylonhx.animations.IAnimatable;
 			this._worldMatrix.multiplyToRef(this.parent.getWorldMatrix(), this._computedViewMatrix);
 			this._globalPosition.copyFromFloats(this._computedViewMatrix.m[12], this._computedViewMatrix.m[13], this._computedViewMatrix.m[14]);
 			
-			this._computedViewMatrix.invert();			
+			this._computedViewMatrix.invert();
+			
 			this._markSyncedWithParent();
 		}
 		
@@ -372,7 +377,6 @@ import com.babylonhx.animations.IAnimatable;
 	}
 
 	public function getProjectionMatrix_default(force:Bool = false):Matrix {
-
 		if (!force && this._isSynchronizedProjectionMatrix()) {
 			return this._projectionMatrix;
 		}
@@ -390,6 +394,7 @@ import com.babylonhx.animations.IAnimatable;
 		var halfWidth = engine.getRenderWidth() / 2.0;
 		var halfHeight = engine.getRenderHeight() / 2.0;
 		Matrix.OrthoOffCenterLHToRef(this.orthoLeft == null ? -halfWidth : this.orthoLeft, this.orthoRight == null ? halfWidth : this.orthoRight, this.orthoBottom == null ? -halfHeight : this.orthoBottom, this.orthoTop == null ? halfHeight : this.orthoTop, this.minZ, this.maxZ, this._projectionMatrix);
+		
 		return this._projectionMatrix;
 	}
 	
@@ -410,19 +415,19 @@ import com.babylonhx.animations.IAnimatable;
 	}
 	
 	// ---- Camera rigs section ----
-	public function setCameraRigMode(mode:Int, rigParams:Dynamic) {
+	public function setCameraRigMode(mode:Int, ?rigParams:Dynamic) {
 		while (this._rigCameras.length > 0) {
 			this._rigCameras.pop().dispose();
 		}
 		this.cameraRigMode = mode;
 		this._cameraRigParams = { };
-
+		
 		switch (this.cameraRigMode) {
 			case Camera.RIG_MODE_STEREOSCOPIC_ANAGLYPH, 
 				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_PARALLEL, 
 				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED, 
 				 Camera.RIG_MODE_STEREOSCOPIC_OVERUNDER:
-					 
+				
 				this._cameraRigParams.interaxialDistance = rigParams.interaxialDistance != null ? rigParams.interaxialDistance : 0.0637;
 				//we have to implement stereo camera calcultating left and right viewpoints from interaxialDistance and target, 
 				//not from a given angle as it is now, but until that complete code rewriting provisional stereoHalfAngle value is introduced
@@ -490,15 +495,14 @@ import com.babylonhx.animations.IAnimatable;
 	}
 
 	private function _getVRProjectionMatrix(force:Bool = false):Matrix {
-        var vrMetrics:VRCameraMetrics = cast this._cameraRigParams.vrMetrics;
-        Matrix.PerspectiveFovLHToRef(vrMetrics.aspectRatioFov, vrMetrics.aspectRatio, this.minZ, this.maxZ, this._cameraRigParams.vrWorkMatrix);
+		Matrix.PerspectiveFovLHToRef(this._cameraRigParams.vrMetrics.aspectRatioFov(), this._cameraRigParams.vrMetrics.aspectRatio(), this.minZ, this.maxZ, this._cameraRigParams.vrWorkMatrix);
 		this._cameraRigParams.vrWorkMatrix.multiplyToRef(this._cameraRigParams.vrHMatrix, this._projectionMatrix);
 		return this._projectionMatrix;
 	}
 
 	public function setCameraRigParameter(name:String, value:Dynamic) {
 		// VK TODO
-		//this._cameraRigParams[name] = value;
+		Reflect.setProperty(this._cameraRigParams, name, value);
 		//provisionnally:
 		if (name == "interaxialDistance") {
 			this._cameraRigParams.stereoHalfAngle = Tools.ToRadians(value / 0.0637);
@@ -526,6 +530,36 @@ import com.babylonhx.animations.IAnimatable;
 		if (this.cameraRigMode == Camera.RIG_MODE_STEREOSCOPIC_ANAGLYPH) {
 			this._rigCameras[0].viewport = this._rigCameras[1].viewport = this.viewport;
 		}
+	}
+	
+	public function serialize():Dynamic {
+		var serializationObject:Dynamic = { };
+		serializationObject.name = this.name;
+		serializationObject.tags = Tags.GetTags(this);
+		serializationObject.id = this.id;
+		serializationObject.position = this.position.asArray();
+		
+		// VK TODO
+		//serializationObject.type = Tools.GetConstructorName(this);
+		
+		// Parent
+		if (this.parent != null) {
+			serializationObject.parentId = this.parent.id;
+		}
+		
+		serializationObject.fov = this.fov;
+		serializationObject.minZ = this.minZ;
+		serializationObject.maxZ = this.maxZ;
+		
+		serializationObject.inertia = this.inertia;
+		
+		// Animations
+		Animation.AppendSerializedAnimations(this, serializationObject);
+		
+		// Layer mask
+		serializationObject.layerMask = this.layerMask;
+		
+		return serializationObject;
 	}
 	
 	/*public function screenToWorld(x:Int, y:Int, depth:Float, position:Vector3) {

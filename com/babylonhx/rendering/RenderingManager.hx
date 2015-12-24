@@ -106,7 +106,7 @@ import com.babylonhx.tools.Tools;
 		
 		var index:Int = 0;
 		while(index < RenderingManager.MAX_RENDERINGGROUPS) {
-			this._depthBufferAlreadyCleaned = false;
+			this._depthBufferAlreadyCleaned = index == 0;
 			_renderingGroup = this._renderingGroups[index];
 			_needToStepBack = false;
 			

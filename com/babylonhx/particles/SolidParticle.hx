@@ -12,7 +12,7 @@ import com.babylonhx.math.Quaternion;
  * @author Krtolica Vujadin
  */
 class SolidParticle {
-		
+	
 	public var idx:Int;                     				// particle global index
 	public var color:Color4 = new Color4(1, 1, 1, 1);  		// color
 	public var position:Vector3 = Vector3.Zero();       	// position
@@ -27,6 +27,8 @@ class SolidParticle {
 	public var shapeId:Int;                 				// model shape id
 	public var idxInShape:Int;              				// index of the particle in its shape id
 	
+	public var extraFields:Map<String, Float>;
+	
 
 	public function new(?particleIndex:Int, ?positionIndex:Int, ?model:ModelShape, ?shapeId:Int, ?idxInShape:Int) {
 		this.idx = particleIndex;
@@ -34,6 +36,8 @@ class SolidParticle {
 		this._model = model;
 		this.shapeId = shapeId;
 		this.idxInShape = idxInShape;
+		
+		extraFields = new Map();
 	}
 	
 }

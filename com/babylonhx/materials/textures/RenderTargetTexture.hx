@@ -34,7 +34,7 @@ import com.babylonhx.math.Matrix;
 	public var refreshRate(get, set):Int;
 	public var canRescale(get, never):Bool;
 
-	private var _size:Dynamic;
+	private var _size:Dynamic = { width: 0, height: 0 };
 	public var _generateMipMaps:Bool;
 	private var _renderingManager:RenderingManager;
 	public var _waitingRenderList:Array<String>;
@@ -51,18 +51,25 @@ import com.babylonhx.math.Matrix;
 		
 		this.name = name;
 		this.isRenderTarget = true;
-		this._size = size;
+		if (Std.is(size, Int)) {
+			this._size.width = size;
+			this._size.height = size;
+		}
+		else if (size.width != null) {
+			this._size.width = size.width;
+			this._size.height = size.height;
+		}
 		this._generateMipMaps = generateMipMaps;
 		this._doNotChangeAspectRatio = doNotChangeAspectRatio;
 		this.isCube = isCube;
 		
 		if (isCube) {
-			this._texture = scene.getEngine().createRenderTargetCubeTexture(size, { generateMipMaps: generateMipMaps, type: type } );
+			this._texture = scene.getEngine().createRenderTargetCubeTexture(this._size, { generateMipMaps: generateMipMaps, type: type } );
 			this.coordinatesMode = Texture.INVCUBIC_MODE;
             this._textureMatrix = Matrix.Identity();
 		}
 		else {
-			this._texture = scene.getEngine().createRenderTargetTexture(size, { generateMipMaps: generateMipMaps, type: type });
+			this._texture = scene.getEngine().createRenderTargetTexture(this._size, { generateMipMaps: generateMipMaps, type: type });
 		}
 		
 		// Rendering groups
@@ -108,7 +115,7 @@ import com.babylonhx.math.Matrix;
 		return super.isReady();
 	}
 
-	public function getRenderSize():Float {
+	public function getRenderSize():Dynamic {
 		return this._size;
 	}
 
@@ -117,7 +124,7 @@ import com.babylonhx.math.Matrix;
 	}
 
 	override public function scale(ratio:Float) {
-		var newSize = Std.int(this._size * ratio);
+		var newSize = { width: Std.int(this._size.width * ratio), height: Std.int(this._size.height * ratio) };
 		this.resize(newSize, this._generateMipMaps);
 	}
 	
@@ -129,7 +136,7 @@ import com.babylonhx.math.Matrix;
         return super.getReflectionTextureMatrix();
     }
 
-	public function resize(size:Int, ?generateMipMaps:Bool) {
+	public function resize(size:Dynamic, ?generateMipMaps:Bool) {
 		this.releaseInternalTexture();
 		if (this.isCube) {
 			this._texture = this.getScene().getEngine().createRenderTargetCubeTexture(size);
@@ -141,7 +148,10 @@ import com.babylonhx.math.Matrix;
 
 	public function render(useCameraPostProcess:Bool = false) {
 		var scene = this.getScene();
-		var engine = scene.getEngine();
+		
+		if (this.activeCamera != null && this.activeCamera != scene.activeCamera) {
+    		scene.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(true));
+    	}
 		
 		if (this._waitingRenderList != null) {
 			this.renderList = [];
@@ -193,6 +203,10 @@ import com.babylonhx.math.Matrix;
 		if (this.onAfterUnbind != null) {
 			this.onAfterUnbind();
 		}
+		
+		if (this.activeCamera != null && this.activeCamera != scene.activeCamera) {
+    		scene.setTransformMatrix(scene.activeCamera.getViewMatrix(), scene.activeCamera.getProjectionMatrix(true));
+    	}
 		
 		scene.resetCachedMaterial();
 	}
@@ -267,6 +281,23 @@ import com.babylonhx.math.Matrix;
 		newTexture.renderList = this.renderList.slice(0);
 		
 		return newTexture;
+	}
+	
+	override public function serialize():Dynamic {
+		if (this.name == null) {
+			return null;
+		}
+		
+		var serializationObject = super.serialize();
+		
+		serializationObject.renderTargetSize = this.getRenderSize();
+		serializationObject.renderList = [];
+		
+		for (index in 0...this.renderList.length) {
+			serializationObject.renderList.push(this.renderList[index].id);
+		}
+		
+		return serializationObject;
 	}
 	
 }

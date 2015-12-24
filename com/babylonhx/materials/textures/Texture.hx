@@ -2,6 +2,8 @@ package com.babylonhx.materials.textures;
 
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Plane;
+import com.babylonhx.animations.Animation;
 
 /**
  * ...
@@ -23,6 +25,7 @@ import com.babylonhx.math.Vector3;
 	public static inline var SKYBOX_MODE:Int = 5;
 	public static inline var INVCUBIC_MODE:Int = 6;
 	public static inline var EQUIRECTANGULAR_MODE:Int = 7;
+	public static inline var FIXED_EQUIRECTANGULAR_MODE:Int = 8;
 
 	public static inline var CLAMP_ADDRESSMODE:Int = 0;
 	public static inline var WRAP_ADDRESSMODE:Int = 1;
@@ -85,7 +88,8 @@ import com.babylonhx.math.Vector3;
 						this._buffer = null;
 					}
 				}
-			} else {
+			} 
+			else {
 				this.delayLoadState = Engine.DELAYLOADSTATE_NOTLOADED;
 			}
 		}
@@ -192,7 +196,7 @@ import com.babylonhx.math.Vector3;
 		
 		this._cachedCoordinatesMode = this.coordinatesMode;
 		
-		switch (this.coordinatesMode) {				
+		switch (this.coordinatesMode) {	                
 			case Texture.PLANAR_MODE:
 				Matrix.IdentityToRef(this._cachedTextureMatrix);
 				this._cachedTextureMatrix.m[0] = this.uScale;
@@ -215,8 +219,9 @@ import com.babylonhx.math.Vector3;
 				
 			default:
 				Matrix.IdentityToRef(this._cachedTextureMatrix);
-				
+			
 		}
+		
 		return this._cachedTextureMatrix;
 	}
 
@@ -243,9 +248,86 @@ import com.babylonhx.math.Vector3;
 		return newTexture;
 	}
 	
+	override public function serialize():Dynamic {
+		if (this.name == null) {
+			return null;
+		}
+		
+		var serializationObject = super.serialize();
+		
+		serializationObject.uOffset = this.uOffset;
+		serializationObject.vOffset = this.vOffset;
+		serializationObject.uScale = this.uScale;
+		serializationObject.vScale = this.vScale;
+		serializationObject.uAng = this.uAng;
+		serializationObject.vAng = this.vAng;
+		serializationObject.wAng = this.wAng;
+		
+		return serializationObject;
+	}
+	
 	// Statics
 	public static function CreateFromBase64String(data:String, name:String, scene:Scene, ?noMipmap:Bool, ?invertY:Bool, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, ?onLoad:Void->Void, ?onError:Void->Void):Texture {
 		return new Texture("data:" + name, scene, noMipmap, invertY, samplingMode, onLoad, onError, data);
+	}
+	
+	public static function Parse(parsedTexture:Dynamic, scene:Scene, rootUrl:String):BaseTexture {
+		if (parsedTexture.isCube) {
+			return CubeTexture.Parse(parsedTexture, scene, rootUrl);
+		}
+		
+		if (parsedTexture.name == null && !parsedTexture.isRenderTarget) {
+			return null;
+		}
+		
+		var texture:Texture = null;
+		
+		if (parsedTexture.mirrorPlane != null) {
+			texture = new MirrorTexture(parsedTexture.name, parsedTexture.renderTargetSize, scene);
+			cast(texture, MirrorTexture)._waitingRenderList = parsedTexture.renderList;
+			cast(texture, MirrorTexture).mirrorPlane = Plane.FromArray(parsedTexture.mirrorPlane);
+		} 
+		else if (parsedTexture.isRenderTarget) {
+			texture = new RenderTargetTexture(parsedTexture.name, parsedTexture.renderTargetSize, scene);
+			cast(texture, RenderTargetTexture)._waitingRenderList = parsedTexture.renderList;
+		} 
+		else {
+			if (parsedTexture.base64String) {
+				texture = Texture.CreateFromBase64String(parsedTexture.base64String, parsedTexture.name, scene);
+			} 
+			else {
+				texture = new Texture(rootUrl + parsedTexture.name, scene);
+			}
+		}
+		
+		texture.name = parsedTexture.name;
+		texture.hasAlpha = parsedTexture.hasAlpha;
+		texture.getAlphaFromRGB = parsedTexture.getAlphaFromRGB;
+		texture.level = parsedTexture.level;
+		
+		texture.coordinatesIndex = parsedTexture.coordinatesIndex;
+		texture.coordinatesMode = parsedTexture.coordinatesMode;
+		texture.uOffset = parsedTexture.uOffset;
+		texture.vOffset = parsedTexture.vOffset;
+		texture.uScale = parsedTexture.uScale;
+		texture.vScale = parsedTexture.vScale;
+		texture.uAng = parsedTexture.uAng;
+		texture.vAng = parsedTexture.vAng;
+		texture.wAng = parsedTexture.wAng;
+		
+		texture.wrapU = parsedTexture.wrapU;
+		texture.wrapV = parsedTexture.wrapV;
+		
+		// Animations
+		if (parsedTexture.animations != null) {
+			for (animationIndex in 0...parsedTexture.animations.length) {
+				var parsedAnimation = parsedTexture.animations[animationIndex];
+				
+				texture.animations.push(Animation.ParseAnimation(parsedAnimation));
+			}
+		}
+		
+		return texture;
 	}
 	
 }

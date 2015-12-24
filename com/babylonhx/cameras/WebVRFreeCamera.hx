@@ -5,6 +5,11 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Quaternion;
 import com.babylonhx.cameras.VRCameraMetrics;
 
+#if (js || purejs || web || html5) {
+import js.Browser;
+import js.html.Navigator;
+#end
+
 
 //declare var HMDVRDevice;
 //declare var PositionSensorVRDevice;
@@ -24,12 +29,14 @@ import com.babylonhx.cameras.VRCameraMetrics;
 		
 		var metrics = VRCameraMetrics.GetDefault();
 		metrics.compensateDistortion = compensateDistortion;
-		this.setCameraRigMode(Camera.RIG_MODE_VR, { vrCameraMetrics: metrics });
+		this.setCameraRigMode(Camera.RIG_MODE_VR, { vrCameraMetrics: metrics } );
+		
+		//this._getWebVRDevices = this._getWebVRDevices.bind(this);
 	}
 	
 	private function _getWebVRDevices(devices:Array<Dynamic>) {
-		var size = devices.length;
-		var i = 0;
+		var size:Int = devices.length;
+		var i:Int = 0;
 		
 		// Reset devices.
 		this._sensorDevice = null;
@@ -46,13 +53,13 @@ import com.babylonhx.cameras.VRCameraMetrics;
 		i = 0;
 		
 		while (i < size && this._sensorDevice == null) {
-			if (Type.getClassName(Type.getClass(devices[i])) == 'PositionSensorVRDevice' && (!this._hmdDevice || devices[i].hardwareUnitId == this._hmdDevice.hardwareUnitId)) {
+			if (Type.getClassName(Type.getClass(devices[i])) == 'PositionSensorVRDevice' && (this._hmdDevice == null || devices[i].hardwareUnitId == this._hmdDevice.hardwareUnitId)) {
 				this._sensorDevice = devices[i];
 			}
 			i++;
 		}
 		
-		this._vrEnabled = this._sensorDevice && this._hmdDevice ? true : false;
+		this._vrEnabled = this._sensorDevice != null && this._hmdDevice != null ? true : false;
 	}
 	
 	override public function _checkInputs() {
@@ -71,18 +78,20 @@ import com.babylonhx.cameras.VRCameraMetrics;
 	
 	override public function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = false) {
 		super.attachControl(element, noPreventDefault);
-		var nav:Dynamic = untyped window.navigator;
-		if (nav.getVRDevices) {
+		#if (js || purejs || web || html5) {
+		var nav:Navigator = untyped Browser.window.navigator;
+		if (nav.getVRDevices != null) {
 			nav.getVRDevices().then(this._getWebVRDevices);
 		}
-		else if (nav.mozGetVRDevices) {
+		else if (nav.mozGetVRDevices != null) {
 			nav.mozGetVRDevices(this._getWebVRDevices);
 		}
+		#end
 	}
 	
 	override public function detachControl(?element:Dynamic) {
 		super.detachControl(element);
 		this._vrEnabled = false;
 	}
-		
+	
 }

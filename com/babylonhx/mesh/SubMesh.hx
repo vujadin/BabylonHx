@@ -42,6 +42,8 @@ import com.babylonhx.tools.Tools;
 	public var indexStart:Int;
 	public var indexCount:Int;
 	
+	public var IsGlobal(get, never):Bool;
+	
 
 	public function new(materialIndex:Int, verticesStart:Int, verticesCount:Int, indexStart:Int, indexCount:Int, mesh:AbstractMesh, ?renderingMesh:Mesh, createBoundingBox:Bool = true) {
 		this.materialIndex = materialIndex;
@@ -63,8 +65,16 @@ import com.babylonhx.tools.Tools;
 			mesh.computeWorldMatrix(true);
 		}
 	}
+	
+	private function get_IsGlobal():Bool {
+		return (this.verticesStart == 0 && this.verticesCount == this._mesh.getTotalVertices());
+	}
 
 	inline public function getBoundingInfo():BoundingInfo {
+		if (this.IsGlobal) {
+			return this._mesh.getBoundingInfo();
+		}
+		
 		return this._boundingInfo;
 	}
 
@@ -93,6 +103,10 @@ import com.babylonhx.tools.Tools;
 
 	// Methods
 	public function refreshBoundingInfo() {
+		if (this.IsGlobal) {
+			return;
+		}
+		
 		var data = this._renderingMesh.getVerticesData(VertexBuffer.PositionKind);
 		
 		if (data == null) {
@@ -118,19 +132,19 @@ import com.babylonhx.tools.Tools;
 	}
 
 	inline public function _checkCollision(collider:Collider):Bool {
-		return this._boundingInfo._checkCollision(collider);
+		return this.getBoundingInfo()._checkCollision(collider);
 	}
 
 	inline public function updateBoundingInfo(world:Matrix) {
-		if (this._boundingInfo == null) {
+		if (this.getBoundingInfo() == null) {
 			this.refreshBoundingInfo();
 		}
 		
-		this._boundingInfo._update(world);
+		this.getBoundingInfo()._update(world);
 	}
 
 	inline public function isInFrustum(frustumPlanes:Array<Plane>):Bool {
-		return this._boundingInfo.isInFrustum(frustumPlanes);
+		return this.getBoundingInfo().isInFrustum(frustumPlanes);
 	}
 
 	inline public function render(enableAlphaMode:Bool) {
@@ -160,7 +174,7 @@ import com.babylonhx.tools.Tools;
 	}
 
 	inline public function canIntersects(ray:Ray):Bool {
-		return ray.intersectsBox(this._boundingInfo.boundingBox);
+		return ray.intersectsBox(this.getBoundingInfo().boundingBox);
 	}
 
 	inline public function intersects(ray:Ray, positions:Array<Vector3>, indices:Array<Int>, fastCheck:Bool = false):IntersectionInfo {
@@ -201,7 +215,9 @@ import com.babylonhx.tools.Tools;
 	public function clone(newMesh:AbstractMesh, ?newRenderingMesh:Mesh):SubMesh {
 		var result = new SubMesh(this.materialIndex, this.verticesStart, this.verticesCount, this.indexStart, this.indexCount, newMesh, newRenderingMesh, false);
 		
-		result._boundingInfo = new BoundingInfo(this._boundingInfo.minimum, this._boundingInfo.maximum);
+		if (!this.IsGlobal) {
+			result._boundingInfo = new BoundingInfo(this._boundingInfo.minimum, this._boundingInfo.maximum);
+		}
 		
 		return result;
 	}

@@ -2,11 +2,13 @@ package com.babylonhx.materials.lib.fire;
 
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Matrix;
+import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.animations.IAnimatable;
+import com.babylonhx.tools.Tags;
 
 /**
  * ...
@@ -335,7 +337,7 @@ class FireMaterial extends Material {
 		super.dispose(forceDisposeEffect);
 	}
 
-	override public function clone(name:String):FireMaterial {
+	override public function clone(name:String, cloneChildren:Bool = false):FireMaterial {
 		var newMaterial = new FireMaterial(name, this.getScene());
 		
 		// Base material
@@ -354,6 +356,62 @@ class FireMaterial extends Material {
 		
 		newMaterial.diffuseColor = this.diffuseColor.clone();
 		return newMaterial;
+	}
+	
+	override public function serialize():Dynamic {		
+		var serializationObject = super.serialize();
+		serializationObject.customType 		= "fire";
+		serializationObject.diffuseColor    = this.diffuseColor.asArray();
+		serializationObject.speed           = this.speed;
+		serializationObject.disableLighting = this.disableLighting;
+		
+		if (this.diffuseTexture != null) {
+			serializationObject.diffuseTexture = this.diffuseTexture.serialize();
+		}
+		
+		if (this.distortionTexture != null) {
+			serializationObject.distortionTexture = this.distortionTexture.serialize();
+		}
+		
+		if (this.opacityTexture != null) {
+			serializationObject.opacityTexture = this.opacityTexture.serialize();
+		}
+		
+		return serializationObject;
+	}
+
+	public static function Parse(source:Dynamic, scene:Scene, rootUrl:String):FireMaterial {
+		var material = new FireMaterial(source.name, scene);
+		
+		material.diffuseColor   	= Color3.FromArray(source.diffuseColor);
+		material.speed          	= source.speed;
+		material.disableLighting    = source.disableLighting;
+		
+		material.alpha = source.alpha;
+		
+		material.id = source.id;
+		
+		Tags.AddTagsTo(material, source.tags);
+		material.backFaceCulling = source.backFaceCulling;
+		material.wireframe = source.wireframe;
+		
+		if (source.diffuseTexture != null) {
+			material.diffuseTexture = Texture.Parse(source.diffuseTexture, scene, rootUrl);
+		}
+		
+		if (source.distortionTexture != null) {
+			material.distortionTexture = Texture.Parse(source.distortionTexture, scene, rootUrl);
+		}
+				
+		if (source.opacityTexture != null) {
+			material.opacityTexture = Texture.Parse(source.opacityTexture, scene, rootUrl);
+		}
+		
+		if (source.checkReadyOnlyOnce) {
+			material.checkReadyOnlyOnce = source.checkReadyOnlyOnce;
+		}
+		
+		return material;
 	}
 	
 }

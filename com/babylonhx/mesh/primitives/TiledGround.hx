@@ -23,7 +23,7 @@ package com.babylonhx.mesh.primitives;
 		this.zmax = zmax;
 		this.subdivisions = subdivisions;
 		this.precision = precision;
-
+		
 		super(id, scene, this._regenerateVertexData(), canBeRegenerated, mesh);
 	}
 

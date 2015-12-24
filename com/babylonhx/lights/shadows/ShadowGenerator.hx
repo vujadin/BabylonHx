@@ -213,6 +213,11 @@ import com.babylonhx.Scene;
 				var material = subMesh.getMaterial();
 				
 				this._effect.setMatrix("viewProjection", this.getTransformMatrix());
+				this._effect.setVector3("lightPosition", this.getLight().position);
+				
+				if (this.getLight().needCube()) {
+					this._effect.setFloat2("depthValues", scene.activeCamera.minZ, scene.activeCamera.maxZ);
+				}
 				
 				// Alpha test
 				if (material != null && material.needAlphaTesting()) {
@@ -269,6 +274,10 @@ import com.babylonhx.Scene;
 			defines.push("#define VSM");
 		}
 		
+		if (this.getLight().needCube()) {
+			defines.push("#define CUBEMAP");
+		}
+		
 		var attribs:Array<String> = [VertexBuffer.PositionKind];
 		
 		var mesh = subMesh.getMesh();
@@ -317,7 +326,7 @@ import com.babylonhx.Scene;
 			this._cachedDefines = join;
 			this._effect = this._scene.getEngine().createEffect("shadowMap",
 				attribs,
-				["world", "mBones", "viewProjection", "diffuseMatrix"],
+				["world", "mBones", "viewProjection", "diffuseMatrix", "lightPosition", "depthValues"],
 				["diffuseSampler"], join);
 		}
 		
@@ -353,7 +362,7 @@ import com.babylonhx.Scene;
 		Vector3.NormalizeToRef(this._light.getShadowDirection(this._currentFaceIndex), this._lightDirection);
 		
 		if (Math.abs(Vector3.Dot(this._lightDirection, Vector3.Up())) == 1.0) {
-            this._lightDirection.z = 0.0000000000001; // Need to avoid perfectly perpendicular light
+            this._lightDirection.z = 0.0000000000001; // Required to avoid perfectly perpendicular light
         }
 		
 		if (this._light.computeTransformedPosition()) {
@@ -365,7 +374,7 @@ import com.babylonhx.Scene;
 			this._cachedPosition = lightPosition.clone();
 			this._cachedDirection = this._lightDirection.clone();
 			
-			Matrix.LookAtLHToRef(lightPosition, this._light.position.add(_lightDirection), Vector3.Up(), this._viewMatrix);
+			Matrix.LookAtLHToRef(lightPosition, lightPosition.add(_lightDirection), Vector3.Up(), this._viewMatrix);
 			
 			this._light.setShadowProjectionMatrix(this._projectionMatrix, this._viewMatrix, this.getShadowMap().renderList);
 			

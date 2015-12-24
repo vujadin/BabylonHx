@@ -18,6 +18,7 @@ import com.babylonhx.utils.GL;
 	public var isBackground:Bool;
 	public var color:Color4;
 	public var onDispose:Void->Void;
+	public var alphaBlendingMode:Int = Engine.ALPHA_COMBINE;
 	
 	public var vertices:Array<Float> = [];
 	public var indices:Array<Int> = [];
@@ -93,7 +94,7 @@ import com.babylonhx.utils.GL;
 		engine.bindBuffers(this._vertexBuffer, this._indexBuffer, this._vertexDeclaration, this._vertexStrideSize, this._effect);
 		
 		// Draw order
-		engine.setAlphaMode(Engine.ALPHA_COMBINE);
+		engine.setAlphaMode(this.alphaBlendingMode);
 		engine.draw(true, 0, 6);
 		engine.setAlphaMode(Engine.ALPHA_DISABLE);
 	}

@@ -550,5 +550,91 @@ import com.babylonhx.Node;
 		
 		return returnValue;
 	}
+	
+	public function serialize():Dynamic {
+		var serializationObject:Dynamic = { };
+		
+		serializationObject.name = this.name;
+		serializationObject.property = this.targetProperty;
+		serializationObject.framePerSecond = this.framePerSecond;
+		serializationObject.dataType = this.dataType;
+		serializationObject.loopBehavior = this.loopMode;
+		
+		var dataType = this.dataType;
+		serializationObject.keys = [];
+		var keys = this.getKeys();
+		for (index in 0...keys.length) {
+			var animationKey = keys[index];
+			
+			var key:Dynamic = { };
+			key.frame = animationKey.frame;
+			
+			switch (dataType) {
+				case Animation.ANIMATIONTYPE_FLOAT:
+					key.values = [animationKey.value];
+					
+				case Animation.ANIMATIONTYPE_QUATERNION, Animation.ANIMATIONTYPE_MATRIX, Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONTYPE_COLOR3:
+					key.values = animationKey.value.asArray();
+				
+			}
+			
+			serializationObject.keys.push(key);
+		}
+		
+		return serializationObject;
+	}
+	
+	public static function ParseAnimation(parsedAnimation:Dynamic):Animation {
+        var animation = new Animation(parsedAnimation.name, parsedAnimation.property, parsedAnimation.framePerSecond, parsedAnimation.dataType, parsedAnimation.loopBehavior);
+		
+        var dataType = parsedAnimation.dataType;
+        var keys:Array<BabylonFrame> = [];
+        for (index in 0...parsedAnimation.keys.length) {
+            var key = parsedAnimation.keys[index];
+			
+            var data:Dynamic = null;
+			
+            switch (dataType) {
+                case Animation.ANIMATIONTYPE_FLOAT:
+                    data = key.values[0];
+                    
+                case Animation.ANIMATIONTYPE_QUATERNION:
+                    data = Quaternion.FromArray(key.values);
+                    
+                case Animation.ANIMATIONTYPE_MATRIX:
+                    data = Matrix.FromArray(key.values);
+					
+				case Animation.ANIMATIONTYPE_COLOR3:
+                    data = Color3.FromArray(key.values);
+                    
+                case Animation.ANIMATIONTYPE_VECTOR3:
+					data = Vector3.FromArray(key.values);
+					
+                default:
+                    data = Vector3.FromArray(key.values);
+                    
+            }
+			
+            keys.push({
+                frame:key.frame,
+                value:data
+            });
+        }
+		
+        animation.setKeys(keys);
+		
+        return animation;
+    }
+	
+	public static function AppendSerializedAnimations(source:IAnimatable, destination:Dynamic) {
+		if (source.animations != null) {
+			destination.animations = [];
+			for (animationIndex in 0...source.animations.length) {
+				var animation = source.animations[animationIndex];
+				
+				destination.animations.push(animation.serialize());
+			}
+		}
+	}
 
 }

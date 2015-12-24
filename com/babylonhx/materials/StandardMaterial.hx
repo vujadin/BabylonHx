@@ -17,6 +17,7 @@ import com.babylonhx.lights.DirectionalLight;
 import com.babylonhx.lights.HemisphericLight;
 import com.babylonhx.lights.PointLight;
 import com.babylonhx.tools.Tools;
+import com.babylonhx.tools.Tags;
 import com.babylonhx.animations.IAnimatable;
 
 /**
@@ -57,7 +58,7 @@ typedef SMD = StandardMaterialDefines
 	public var useEmissiveAsIllumination:Bool = false;
 	public var linkEmissiveWithDiffuse:Bool = false;
 	public var useReflectionFresnelFromSpecular:Bool = false;
-	public var useSpecularOverAlpha:Bool = true;	
+	public var useSpecularOverAlpha:Bool = false;	
 	public var disableLighting:Bool = false;
 	
 	public var roughness:Float = 0;
@@ -221,6 +222,7 @@ typedef SMD = StandardMaterialDefines
 	private static var _scaledSpecular:Color3 = new Color3();
 	public static function BindLights(scene:Scene, mesh:AbstractMesh, effect:Effect, defines:MaterialDefines) {
 		var lightIndex:Int = 0;
+		var depthValuesAlreadySet:Bool = false;
 		for (index in 0...scene.lights.length) {
 			var light = scene.lights[index];
 			
@@ -259,7 +261,14 @@ typedef SMD = StandardMaterialDefines
 				if (mesh.receiveShadows && shadowGenerator != null) {
 					if (!cast(light, IShadowLight).needCube()) {
 						effect.setMatrix("lightMatrix" + lightIndex, shadowGenerator.getTransformMatrix());
+					} 
+					else {
+                        if (!depthValuesAlreadySet) {
+                            depthValuesAlreadySet = true;
+                            effect.setFloat2("depthValues", scene.activeCamera.minZ, scene.activeCamera.maxZ);
+                        }
 					}
+					
 					effect.setTexture("shadowSampler" + lightIndex, shadowGenerator.getShadowMapForRendering());
 					effect.setFloat3("shadowsInfo" + lightIndex, shadowGenerator.getDarkness(), shadowGenerator.getShadowMap().getSize().width, shadowGenerator.bias);
 				}
@@ -274,7 +283,7 @@ typedef SMD = StandardMaterialDefines
 	}
 
 	override public function isReady(?mesh:AbstractMesh, useInstances:Bool = false):Bool {
-		if (this.checkReadyOnlyOnce) {
+		if (this.isFrozen) {
 			if (this._wasPreviouslyReady) {
 				return true;
 			}
@@ -370,7 +379,10 @@ typedef SMD = StandardMaterialDefines
 							this._defines.defines[SMD.REFLECTIONMAP_SPHERICAL] = true;
 							
 						case Texture.EQUIRECTANGULAR_MODE:
-							this._defines.defines[SMD.REFLECTIONMAP_EQUIRECTANGULAR] = true;							
+							this._defines.defines[SMD.REFLECTIONMAP_EQUIRECTANGULAR] = true;	
+							
+						case Texture.FIXED_EQUIRECTANGULAR_MODE:
+                            this._defines.defines[SMD.REFLECTIONMAP_EQUIRECTANGULAR_FIXED] = true;
 					}
 				}
 			}
@@ -525,7 +537,7 @@ typedef SMD = StandardMaterialDefines
 		}
 		
 		// Get correct effect      
-		if (!this._defines.isEqual(this._cachedDefines) || this._effect == null) {
+		if (!this._defines.isEqual(this._cachedDefines)) {
 			this._defines.cloneTo(this._cachedDefines);
 			
 			scene.resetCachedMaterial();
@@ -663,7 +675,7 @@ typedef SMD = StandardMaterialDefines
 					"vDiffuseInfos", "vAmbientInfos", "vOpacityInfos", "vReflectionInfos", "vEmissiveInfos", "vSpecularInfos", "vBumpInfos", "vLightmapInfos",
 					"mBones",
 					"vClipPlane", "diffuseMatrix", "ambientMatrix", "opacityMatrix", "reflectionMatrix", "emissiveMatrix", "specularMatrix", "bumpMatrix", "lightmapMatrix",
-					"shadowsInfo0", "shadowsInfo1", "shadowsInfo2", "shadowsInfo3",
+					"shadowsInfo0", "shadowsInfo1", "shadowsInfo2", "shadowsInfo3", "depthValues",
 					"diffuseLeftColor", "diffuseRightColor", "opacityParts", "reflectionLeftColor", "reflectionRightColor", "emissiveLeftColor", "emissiveRightColor",
 					"logarithmicDepthConstant"
 				],
@@ -707,7 +719,6 @@ typedef SMD = StandardMaterialDefines
 		
 		// Matrices        
 		this.bindOnlyWorldMatrix(world);
-		this._effect.setMatrix("viewProjection", scene.getTransformMatrix());
 		
 		// Bones
 		if (mesh != null && mesh.useBones && mesh.computeBonesUsingShaders) {
@@ -715,6 +726,7 @@ typedef SMD = StandardMaterialDefines
 		}
 		
 		if (scene.getCachedMaterial() != this) {
+			this._effect.setMatrix("viewProjection", scene.getTransformMatrix());
 			if (StandardMaterial.FresnelEnabled) {
 				// Fresnel
 				if (this.diffuseFresnelParameters != null && this.diffuseFresnelParameters.isEnabled) {
@@ -737,66 +749,68 @@ typedef SMD = StandardMaterialDefines
 				}
 			}
 			
-			// Textures        
-			if (this.diffuseTexture != null && StandardMaterial.DiffuseTextureEnabled) {
-				this._effect.setTexture("diffuseSampler", this.diffuseTexture);
-				
-				this._effect.setFloat2("vDiffuseInfos", this.diffuseTexture.coordinatesIndex, this.diffuseTexture.level);
-				this._effect.setMatrix("diffuseMatrix", this.diffuseTexture.getTextureMatrix());
-			}
-			
-			if (this.ambientTexture != null && StandardMaterial.AmbientTextureEnabled) {
-				this._effect.setTexture("ambientSampler", this.ambientTexture);
-				
-				this._effect.setFloat2("vAmbientInfos", this.ambientTexture.coordinatesIndex, this.ambientTexture.level);
-				this._effect.setMatrix("ambientMatrix", this.ambientTexture.getTextureMatrix());
-			}
-			
-			if (this.opacityTexture != null && StandardMaterial.OpacityTextureEnabled) {
-				this._effect.setTexture("opacitySampler", this.opacityTexture);
-				
-				this._effect.setFloat2("vOpacityInfos", this.opacityTexture.coordinatesIndex, this.opacityTexture.level);
-				this._effect.setMatrix("opacityMatrix", this.opacityTexture.getTextureMatrix());
-			}
-			
-			if (this.reflectionTexture != null && StandardMaterial.ReflectionTextureEnabled) {
-				if (this.reflectionTexture.isCube) {
-					this._effect.setTexture("reflectionCubeSampler", this.reflectionTexture);
-				} 
-				else {
-					this._effect.setTexture("reflection2DSampler", this.reflectionTexture);
+			// Textures 
+			if (scene.texturesEnabled) {
+				if (this.diffuseTexture != null && StandardMaterial.DiffuseTextureEnabled) {
+					this._effect.setTexture("diffuseSampler", this.diffuseTexture);
+					
+					this._effect.setFloat2("vDiffuseInfos", this.diffuseTexture.coordinatesIndex, this.diffuseTexture.level);
+					this._effect.setMatrix("diffuseMatrix", this.diffuseTexture.getTextureMatrix());
 				}
 				
-				this._effect.setMatrix("reflectionMatrix", this.reflectionTexture.getReflectionTextureMatrix());
-				this._effect.setFloat2("vReflectionInfos", this.reflectionTexture.level, this.roughness);
-			}
-			
-			if (this.emissiveTexture != null && StandardMaterial.EmissiveTextureEnabled) {
-				this._effect.setTexture("emissiveSampler", this.emissiveTexture);
+				if (this.ambientTexture != null && StandardMaterial.AmbientTextureEnabled) {
+					this._effect.setTexture("ambientSampler", this.ambientTexture);
+					
+					this._effect.setFloat2("vAmbientInfos", this.ambientTexture.coordinatesIndex, this.ambientTexture.level);
+					this._effect.setMatrix("ambientMatrix", this.ambientTexture.getTextureMatrix());
+				}
 				
-				this._effect.setFloat2("vEmissiveInfos", this.emissiveTexture.coordinatesIndex, this.emissiveTexture.level);
-				this._effect.setMatrix("emissiveMatrix", this.emissiveTexture.getTextureMatrix());
-			}
-			
-			if (this.lightmapTexture != null && StandardMaterial.LightmapEnabled) {
-				this._effect.setTexture("lightmapSampler", this.lightmapTexture);
+				if (this.opacityTexture != null && StandardMaterial.OpacityTextureEnabled) {
+					this._effect.setTexture("opacitySampler", this.opacityTexture);
+					
+					this._effect.setFloat2("vOpacityInfos", this.opacityTexture.coordinatesIndex, this.opacityTexture.level);
+					this._effect.setMatrix("opacityMatrix", this.opacityTexture.getTextureMatrix());
+				}
 				
-				this._effect.setFloat2("vLightmapInfos", this.lightmapTexture.coordinatesIndex, this.lightmapTexture.level);
-				this._effect.setMatrix("lightmapMatrix", this.lightmapTexture.getTextureMatrix());
-			}
-			
-			if (this.specularTexture != null && StandardMaterial.SpecularTextureEnabled) {
-				this._effect.setTexture("specularSampler", this.specularTexture);
+				if (this.reflectionTexture != null && StandardMaterial.ReflectionTextureEnabled) {
+					if (this.reflectionTexture.isCube) {
+						this._effect.setTexture("reflectionCubeSampler", this.reflectionTexture);
+					} 
+					else {
+						this._effect.setTexture("reflection2DSampler", this.reflectionTexture);
+					}
+					
+					this._effect.setMatrix("reflectionMatrix", this.reflectionTexture.getReflectionTextureMatrix());
+					this._effect.setFloat2("vReflectionInfos", this.reflectionTexture.level, this.roughness);
+				}
 				
-				this._effect.setFloat2("vSpecularInfos", this.specularTexture.coordinatesIndex, this.specularTexture.level);
-				this._effect.setMatrix("specularMatrix", this.specularTexture.getTextureMatrix());
-			}
-			
-			if (this.bumpTexture != null && scene.getEngine().getCaps().standardDerivatives == true && StandardMaterial.BumpTextureEnabled) {
-				this._effect.setTexture("bumpSampler", this.bumpTexture);
+				if (this.emissiveTexture != null && StandardMaterial.EmissiveTextureEnabled) {
+					this._effect.setTexture("emissiveSampler", this.emissiveTexture);
+					
+					this._effect.setFloat2("vEmissiveInfos", this.emissiveTexture.coordinatesIndex, this.emissiveTexture.level);
+					this._effect.setMatrix("emissiveMatrix", this.emissiveTexture.getTextureMatrix());
+				}
 				
-				this._effect.setFloat2("vBumpInfos", this.bumpTexture.coordinatesIndex, 1.0 / this.bumpTexture.level);
-				this._effect.setMatrix("bumpMatrix", this.bumpTexture.getTextureMatrix());
+				if (this.lightmapTexture != null && StandardMaterial.LightmapEnabled) {
+					this._effect.setTexture("lightmapSampler", this.lightmapTexture);
+					
+					this._effect.setFloat2("vLightmapInfos", this.lightmapTexture.coordinatesIndex, this.lightmapTexture.level);
+					this._effect.setMatrix("lightmapMatrix", this.lightmapTexture.getTextureMatrix());
+				}
+				
+				if (this.specularTexture != null && StandardMaterial.SpecularTextureEnabled) {
+					this._effect.setTexture("specularSampler", this.specularTexture);
+					
+					this._effect.setFloat2("vSpecularInfos", this.specularTexture.coordinatesIndex, this.specularTexture.level);
+					this._effect.setMatrix("specularMatrix", this.specularTexture.getTextureMatrix());
+				}
+				
+				if (this.bumpTexture != null && scene.getEngine().getCaps().standardDerivatives == true && StandardMaterial.BumpTextureEnabled) {
+					this._effect.setTexture("bumpSampler", this.bumpTexture);
+					
+					this._effect.setFloat2("vBumpInfos", this.bumpTexture.coordinatesIndex, 1.0 / this.bumpTexture.level);
+					this._effect.setMatrix("bumpMatrix", this.bumpTexture.getTextureMatrix());
+				}
 			}
 			
 			// Clip plane
@@ -822,29 +836,31 @@ typedef SMD = StandardMaterialDefines
 			this._effect.setColor3("vEmissiveColor", this.emissiveColor);
 		}
 		
-		// Diffuse
-		this._effect.setColor4("vDiffuseColor", this.diffuseColor, this.alpha * mesh.visibility);
-		
-		// Lights
-		if (scene.lightsEnabled && !this.disableLighting) {
-			StandardMaterial.BindLights(scene, mesh, this._effect, this._defines);
+		if (scene.getCachedMaterial() != this || !this.isFrozen) {
+			// Diffuse
+			this._effect.setColor4("vDiffuseColor", this.diffuseColor, this.alpha * mesh.visibility);
+			
+			// Lights
+			if (scene.lightsEnabled && !this.disableLighting) {
+				StandardMaterial.BindLights(scene, mesh, this._effect, this._defines);
+			}
+			
+			// View
+			if (scene.fogEnabled && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE || this.reflectionTexture != null) {
+				this._effect.setMatrix("view", scene.getViewMatrix());
+			}
+			
+			// Fog
+			if (scene.fogEnabled && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE) {
+				this._effect.setFloat4("vFogInfos", scene.fogMode, scene.fogStart, scene.fogEnd, scene.fogDensity);
+				this._effect.setColor3("vFogColor", scene.fogColor);
+			}
+			
+			// Log. depth
+			if (this._defines.defines[SMD.LOGARITHMICDEPTH]) {
+				this._effect.setFloat("logarithmicDepthConstant", 2.0 / (Math.log(scene.activeCamera.maxZ + 1.0) / 0.6931471805599453));  // Math.LN2
+			}
 		}
-		
-		// View
-		if (scene.fogEnabled && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE || this.reflectionTexture != null) {
-			this._effect.setMatrix("view", scene.getViewMatrix());
-		}
-		
-		// Fog
-		if (scene.fogEnabled && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE) {
-			this._effect.setFloat4("vFogInfos", scene.fogMode, scene.fogStart, scene.fogEnd, scene.fogDensity);
-			this._effect.setColor3("vFogColor", scene.fogColor);
-		}
-		
-		// Log. depth
-        if (this._defines.defines[SMD.LOGARITHMICDEPTH]) {
-            this._effect.setFloat("logarithmicDepthConstant", 2.0 / (Math.log(scene.activeCamera.maxZ + 1.0) / 0.6931471805599453));  // Math.LN2
-        }
 		
 		super.bind(world, mesh);
 	}
@@ -915,7 +931,7 @@ typedef SMD = StandardMaterialDefines
 		super.dispose(forceDisposeEffect);
 	}
 
-	override public function clone(name:String):StandardMaterial {
+	override public function clone(name:String, cloneChildren:Bool = false):StandardMaterial {
 		var newStandardMaterial = new StandardMaterial(name, this.getScene());
 		
 		// Base material
@@ -975,5 +991,160 @@ typedef SMD = StandardMaterialDefines
 		
 		return newStandardMaterial;
 	}
+	
+	override public function serialize():Dynamic {
+		var serializationObject = super.serialize();
+		
+		serializationObject.ambient = this.ambientColor.asArray();
+		serializationObject.diffuse = this.diffuseColor.asArray();
+		serializationObject.specular = this.specularColor.asArray();
+		serializationObject.specularPower = this.specularPower;
+		serializationObject.emissive = this.emissiveColor.asArray();
+		serializationObject.useReflectionFresnelFromSpecular = serializationObject.useReflectionFresnelFromSpecular;
+		serializationObject.useEmissiveAsIllumination = serializationObject.useEmissiveAsIllumination;
+		
+		if (this.diffuseTexture != null) {
+			serializationObject.diffuseTexture = this.diffuseTexture.serialize();
+		}
+		
+		if (this.diffuseFresnelParameters != null) {
+			serializationObject.diffuseFresnelParameters = this.diffuseFresnelParameters.serialize();
+		}
+		
+		if (this.ambientTexture != null) {
+			serializationObject.ambientTexture = this.ambientTexture.serialize();
+		}
+		
+		if (this.opacityTexture != null) {
+			serializationObject.opacityTexture = this.opacityTexture.serialize();
+		}
+		
+		if (this.opacityFresnelParameters != null) {
+			serializationObject.opacityFresnelParameters = this.diffuseFresnelParameters.serialize();
+		}
+		
+		if (this.reflectionTexture != null) {
+			serializationObject.reflectionTexture = this.reflectionTexture.serialize();
+		}
+		
+		if (this.reflectionFresnelParameters != null) {
+			serializationObject.reflectionFresnelParameters = this.reflectionFresnelParameters.serialize();
+		}
+		
+		if (this.emissiveTexture != null) {
+			serializationObject.emissiveTexture = this.emissiveTexture.serialize();
+		}
+		
+		if (this.lightmapTexture != null) {
+			serializationObject.lightmapTexture = this.lightmapTexture.serialize();
+			serializationObject.useLightmapAsShadowmap = this.useLightmapAsShadowmap;
+		}
+		
+		if (this.emissiveFresnelParameters != null) {
+			serializationObject.emissiveFresnelParameters = this.emissiveFresnelParameters.serialize();
+		}
+		
+		if (this.specularTexture != null) {
+			serializationObject.specularTexture = this.specularTexture.serialize();
+		}
+		
+		if (this.bumpTexture != null) {
+			serializationObject.bumpTexture = this.bumpTexture.serialize();
+		}
+		
+		return serializationObject;
+	}
+	
+	
+	public static function ParseFresnelParameters(parsedFresnelParameters:Dynamic):FresnelParameters {
+        var fresnelParameters = new FresnelParameters();
+		
+        fresnelParameters.isEnabled = parsedFresnelParameters.isEnabled;
+        fresnelParameters.leftColor = Color3.FromArray(parsedFresnelParameters.leftColor);
+        fresnelParameters.rightColor = Color3.FromArray(parsedFresnelParameters.rightColor);
+        fresnelParameters.bias = parsedFresnelParameters.bias;
+        fresnelParameters.power = parsedFresnelParameters.power != null ? parsedFresnelParameters.power : 1.0;
+		
+        return fresnelParameters;
+    }
+
+    public static function Parse(source:Dynamic, scene:Scene, rootUrl:String):Material {
+        var material = new StandardMaterial(source.name, scene);
+		
+        material.ambientColor = Color3.FromArray(source.ambient);
+        material.diffuseColor = Color3.FromArray(source.diffuse);
+        material.specularColor = Color3.FromArray(source.specular);
+        material.specularPower = source.specularPower;
+        material.emissiveColor = Color3.FromArray(source.emissive);
+		material.useReflectionFresnelFromSpecular = source.useReflectionFresnelFromSpecular;
+        material.useEmissiveAsIllumination = source.useEmissiveAsIllumination;
+		
+        material.alpha = source.alpha;
+		
+        material.id = source.id;
+		
+		if (source.disableDepthWrite != null) {
+            material.disableDepthWrite = source.disableDepthWrite;
+        }
+		
+        Tags.AddTagsTo(material, source.tags);
+        material.backFaceCulling = source.backFaceCulling;
+        material.wireframe = source.wireframe;
+		
+        if (source.diffuseTexture != null) {
+            material.diffuseTexture = BaseTexture.ParseTexture(source.diffuseTexture, scene, rootUrl);
+        }
+		
+        if (source.diffuseFresnelParameters != null) {
+            material.diffuseFresnelParameters = StandardMaterial.ParseFresnelParameters(source.diffuseFresnelParameters);
+        }
+		
+        if (source.ambientTexture != null) {
+            material.ambientTexture = BaseTexture.ParseTexture(source.ambientTexture, scene, rootUrl);
+        }
+		
+        if (source.opacityTexture != null) {
+            material.opacityTexture = BaseTexture.ParseTexture(source.opacityTexture, scene, rootUrl);
+        }
+		
+        if (source.opacityFresnelParameters != null) {
+            material.opacityFresnelParameters = StandardMaterial.ParseFresnelParameters(source.opacityFresnelParameters);
+        }
+		
+        if (source.reflectionTexture != null) {
+            material.reflectionTexture = BaseTexture.ParseTexture(source.reflectionTexture, scene, rootUrl);
+        }
+		
+        if (source.reflectionFresnelParameters != null) {
+            material.reflectionFresnelParameters = StandardMaterial.ParseFresnelParameters(source.reflectionFresnelParameters);
+        }
+		
+        if (source.emissiveTexture != null) {
+            material.emissiveTexture = BaseTexture.ParseTexture(source.emissiveTexture, scene, rootUrl);
+        }
+		
+		if (source.lightmapTexture != null) {
+            material.lightmapTexture = BaseTexture.ParseTexture(source.lightmapTexture, scene, rootUrl);
+            untyped material.lightmapThreshold = source.lightmapThreshold;
+        }
+		
+        if (source.emissiveFresnelParameters != null) {
+            material.emissiveFresnelParameters = StandardMaterial.ParseFresnelParameters(source.emissiveFresnelParameters);
+        }
+		
+        if (source.specularTexture != null) {
+            material.specularTexture = BaseTexture.ParseTexture(source.specularTexture, scene, rootUrl);
+        }
+		
+        if (source.bumpTexture != null) {
+            material.bumpTexture = BaseTexture.ParseTexture(source.bumpTexture, scene, rootUrl);
+        }
+		
+		if (source.checkReadyOnlyOnce != null) {
+            material.checkReadyOnlyOnce = source.checkReadyOnlyOnce;
+        }
+		
+        return material;
+    }
 
 }

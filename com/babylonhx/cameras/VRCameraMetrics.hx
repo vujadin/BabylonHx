@@ -21,8 +21,9 @@ import com.babylonhx.math.Matrix;
 	public var lensCenterOffset:Float;
 	public var compensateDistortion:Bool = true;
 	
-	public var aspectRatio(get, never):Float;
-	public var aspectRatioFov(get, never):Float;
+	// VK: these return null ??
+	/*public var aspectRatio(get, never):Float;
+	public var aspectRatioFov(get, never):Float;*/
 	public var leftHMatrix(get, never):Matrix;
 	public var rightHMatrix(get, never):Matrix;
 	public var leftPreViewMatrix(get, never):Matrix;
@@ -33,11 +34,11 @@ import com.babylonhx.math.Matrix;
 		//...
 	}
 
-	private function get_aspectRatio():Float {
+	public function aspectRatio():Float {
 		return this.hResolution / (2 * this.vResolution);
 	}
 
-	private function get_aspectRatioFov():Float {
+	public function aspectRatioFov():Float {
 		return (2 * Math.atan((this.postProcessScaleFactor * this.vScreenSize) / (2 * this.eyeToScreenDistance)));
 	}
 

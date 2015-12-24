@@ -27,27 +27,11 @@ import com.babylonhx.materials.textures.WebGLTexture;
 		}
 		
 		// VBO
-		var vertices:Array<Float> = [];
-		vertices.push(1);
-		vertices.push(1);
-		vertices.push(-1);
-		vertices.push(1);
-		vertices.push(-1);
-		vertices.push(-1);
-		vertices.push(1);
-		vertices.push(-1);
+		var vertices:Array<Float> = [1, 1, -1, 1, -1, -1, 1, -1];
 		this._vertexBuffer = this._scene.getEngine().createVertexBuffer(vertices);
 		
 		// Indices
-		var indices:Array<Int> = [];
-		indices.push(0);
-		indices.push(1);
-		indices.push(2);
-		
-		indices.push(0);
-		indices.push(2);
-		indices.push(3);
-		
+		var indices:Array<Int> = [0, 1, 2, 0, 2, 3];		
 		this._indexBuffer = this._scene.getEngine().createIndexBuffer(indices);
 	}
 
@@ -67,13 +51,16 @@ import com.babylonhx.materials.textures.WebGLTexture;
 	
 	public function directRender(postProcesses:Array<PostProcess>, ?targetTexture:WebGLTexture) {
 		var engine = this._scene.getEngine();
+		
 		for (index in 0...postProcesses.length) {
 			if (index < postProcesses.length - 1) {
 				postProcesses[index + 1].activate(this._scene.activeCamera, targetTexture);
-			} else {
+			} 
+			else {
 				if (targetTexture != null) {
 					engine.bindFramebuffer(targetTexture);
-				} else {
+				} 
+				else {
 					engine.restoreDefaultFramebuffer();
 				}
 			}
@@ -104,7 +91,7 @@ import com.babylonhx.materials.textures.WebGLTexture;
 		engine.setDepthWrite(true);
 	}
 
-	public function _finalizeFrame(doNotPresent:Bool = false, ?targetTexture:WebGLTexture, ?faceIndex:Int, ?postProcesses:Array<PostProcess>) {
+	public function _finalizeFrame(doNotPresent:Bool = false, ?targetTexture:WebGLTexture, faceIndex:Int = 0, ?postProcesses:Array<PostProcess>) {
 		if (postProcesses == null) {
 			postProcesses = this._scene.activeCamera._postProcesses;
 		}
@@ -118,7 +105,7 @@ import com.babylonhx.materials.textures.WebGLTexture;
 		
 		for (index in 0...postProcessesTakenIndices.length) {
 			if (index < postProcessesTakenIndices.length - 1) {
-				postProcesses[postProcessesTakenIndices[index + 1]].activate(this._scene.activeCamera);
+				postProcesses[postProcessesTakenIndices[index + 1]].activate(this._scene.activeCamera, targetTexture);
 			} 
 			else {
 				if (targetTexture != null) {

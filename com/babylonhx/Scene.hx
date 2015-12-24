@@ -6,6 +6,7 @@ import com.babylonhx.actions.ActionEvent;
 import com.babylonhx.animations.Animatable;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.bones.Skeleton;
+import com.babylonhx.bones.Bone;
 import com.babylonhx.cameras.FreeCamera;
 import com.babylonhx.collisions.Collider;
 import com.babylonhx.collisions.PickingInfo;
@@ -202,7 +203,7 @@ import com.babylonhx.tools.Tools;
 	public var customRenderTargets:Array<RenderTargetTexture> = [];
 
 	// Delay loading
-	public var useDelayedTextureLoading:Bool;
+	public var useDelayedTextureLoading:Bool = false;
 
 	// Imported meshes
 	public var importedMeshesFiles:Array<String> = [];
@@ -431,6 +432,10 @@ import com.babylonhx.tools.Tools;
 		};
 		 
 		this._onPointerMove = function(x:Int, y:Int) {
+			if (this.cameraToUseForPointers == null && this.activeCamera == null) {
+                return;
+            }
+			
 			//var canvas = this._engine.getRenderingCanvas();
 			
 			this._updatePointerPosition(x, y);
@@ -470,6 +475,9 @@ import com.babylonhx.tools.Tools;
 		};
 		
 		this._onPointerDown = function(x:Int, y:Int, button:Int) {
+			if (this.cameraToUseForPointers == null && this.activeCamera == null) {
+                return;
+            }
 			
 			this._updatePointerPosition(x, y);
 			
@@ -529,6 +537,10 @@ import com.babylonhx.tools.Tools;
 		};
 		
 		this._onPointerUp = function(x:Int, y:Int, button:Int) {
+			if (this.cameraToUseForPointers == null && this.activeCamera == null) {
+                return;
+            }
+			
 			var predicate = null;
 			
 			this._updatePointerPosition(x, y);
@@ -951,6 +963,40 @@ import com.babylonhx.tools.Tools;
 		
 		return null;
 	}
+	
+	/**
+	 * get a bone using its id
+	 * @param {string} the bone's id
+	 * @return {BABYLON.Bone|null} the bone or null if not found
+	 */
+	public function getBoneByID(id:String):Bone {
+		for (skeleton in this.skeletons) {
+			for (bone in skeleton.bones) {
+				if (bone.id == id) {
+					return bone;
+				}
+			}
+		}
+		
+		return null;
+	}
+
+	/**
+	* get a bone using its id
+	* @param {string} the bone's name
+	* @return {BABYLON.Bone|null} the bone or null if not found
+	*/
+	public function getBoneByName(name:String):Bone {
+		for (skeleton in this.skeletons) {
+			for (bone in skeleton.bones) {
+				if (bone.name == name) {
+					return bone;
+				}
+			}
+		}
+		
+		return null;
+	}
 
 	public function getLightByName(name:String):Light {
 		for (index in 0...this.lights.length) {
@@ -981,6 +1027,16 @@ import com.babylonhx.tools.Tools;
 		
         return null;
     }
+	
+	public function getParticleSystemByID(id:String):ParticleSystem {
+		for (index in 0...this.particleSystems.length) {
+			if (this.particleSystems[index].id == id) {
+				return this.particleSystems[index];
+			}
+		}
+		
+		return null;
+	}
 
 	public function getGeometryByID(id:String):Geometry {
 		for (index in 0...this._geometries.length) {
@@ -1127,7 +1183,15 @@ import com.babylonhx.tools.Tools;
 			return light;
 		}
 		
-		return this.getCameraByID(id);
+		var camera = this.getCameraByID(id);
+		
+		if (camera != null) {
+			return camera;
+		}
+		
+		var bone = this.getBoneByID(id);
+		
+		return bone;
 	}
 	
 	public function getNodeByName(name:String):Node {
@@ -1143,7 +1207,15 @@ import com.babylonhx.tools.Tools;
 			return light;
 		}
 		
-		return this.getCameraByName(name);
+		var camera = this.getCameraByName(name);
+		
+		if (camera != null) {
+			return camera;
+		}
+		
+		var bone = this.getBoneByName(name);
+		
+		return bone;
 	}
 
 	public function getMeshByName(name:String):AbstractMesh {
@@ -1398,7 +1470,7 @@ import com.babylonhx.tools.Tools;
 		
 		// Render targets
 		var beforeRenderTargetDate = Tools.Now();
-		if (this.renderTargetsEnabled) {
+		if (this.renderTargetsEnabled && this._renderTargets.length > 0) {
 			//Tools.StartPerformanceCounter("Render targets", this._renderTargets.length > 0);
 			for (renderIndex in 0...this._renderTargets.length) {
 				var renderTarget:RenderTargetTexture = this._renderTargets.data[renderIndex];
@@ -1410,10 +1482,8 @@ import com.babylonhx.tools.Tools;
 			}
 			//Tools.EndPerformanceCounter("Render targets", this._renderTargets.length > 0);
 			this._renderId++;
-		}
-		
-		if (this._renderTargets.length > 0) { // Restore back buffer
-            engine.restoreDefaultFramebuffer();
+			
+            engine.restoreDefaultFramebuffer();  // Restore back buffer
         }
 		
 		this._renderTargetsDuration += Tools.Now() - beforeRenderTargetDate;
@@ -1630,10 +1700,9 @@ import com.babylonhx.tools.Tools;
 		this.activeCamera = currentActiveCamera;
 		
 		// Procedural textures
-		if (this.proceduralTexturesEnabled) {
+		if (this.proceduralTexturesEnabled && this._proceduralTextures.length > 0) {
 			//Tools.StartPerformanceCounter("Procedural textures", this._proceduralTextures.length > 0);
-			for (proceduralIndex in 0...this._proceduralTextures.length) {
-				var proceduralTexture = this._proceduralTextures[proceduralIndex];
+			for (proceduralTexture in this._proceduralTextures) {
 				if (proceduralTexture._shouldRender()) {
 					proceduralTexture.render();
 				}
@@ -1728,6 +1797,18 @@ import com.babylonhx.tools.Tools;
 		
 		this._depthRenderer.dispose();
 		this._depthRenderer = null;
+	}
+	
+	public function freezeMaterials() {
+		for (i in 0...this.materials.length) {
+			this.materials[i].freeze();
+		}
+	}
+
+	public function unfreezeMaterials() {
+		for (i in 0...this.materials.length) {
+			this.materials[i].unfreeze();
+		}
 	}
 
 	public function dispose() {

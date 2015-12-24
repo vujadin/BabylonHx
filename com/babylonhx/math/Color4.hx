@@ -143,5 +143,27 @@ import com.babylonhx.tools.Tools;
 	public static function FromInts(r:Float, g:Float, b:Float, a:Float):Color4 {
 		return new Color4(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
 	}
+	
+	public static function CheckColors4(colors:Array<Float>, count:Int):Array<Float> {
+		// Check if color3 was used
+		if (colors.length == count * 3) {
+			var colors4:Array<Float> = [];
+			var index:Int = 0;
+			while (index < colors.length) {
+				var newIndex = Std.int((index / 3) * 4);
+				colors4[newIndex] = colors[index];
+				colors4[newIndex + 1] = colors[index + 1];
+				colors4[newIndex + 2] = colors[index + 2];
+				colors4[newIndex + 3] = 1.0;
+				
+				index += 3;
+			}
+			
+			return colors4;
+		}
+		
+		return colors;
+	}
+	
 }
 	

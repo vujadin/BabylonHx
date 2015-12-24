@@ -91,7 +91,7 @@ import com.babylonhx.tools.Tools;
 	 * @param {number} ratio - The size of the postprocesses (0.5 means that your postprocess will have a width = canvas.width 0.5 and a height = canvas.height 0.5)
 	 * @param {BABYLON.Camera[]} cameras - The array of cameras that the rendering pipeline will be attached to
 	 */
-	public function new(name:String, parameters:Dynamic, scene:Scene, ratio:Float = 1.0, ?cameras:Dynamic) {
+	public function new(name:String, parameters:Dynamic, scene:Scene, ratio:Float = 1.0, ?cameras:Array<Camera>) {
 		super(scene.getEngine(), name);
 		
 		this._scene = scene;

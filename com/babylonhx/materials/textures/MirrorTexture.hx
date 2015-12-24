@@ -60,4 +60,16 @@ import com.babylonhx.math.Vector3;
 		return newTexture;
 	}
 	
+	override public function serialize():Dynamic {
+		if (this.name == null) {
+			return null;
+		}
+		
+		var serializationObject = super.serialize();
+		
+		serializationObject.mirrorPlane = this.mirrorPlane.asArray();
+		
+		return serializationObject;
+	}
+	
 }

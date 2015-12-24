@@ -75,6 +75,7 @@ package com.babylonhx.math;
 	inline public function multiply(q1:Quaternion):Quaternion {
 		var result = new Quaternion(0, 0, 0, 1.0);
 		this.multiplyToRef(q1, result);
+		
 		return result;
 	}
 
@@ -84,6 +85,12 @@ package com.babylonhx.math;
 		result.z = this.x * q1.y - this.y * q1.x + this.z * q1.w + this.w * q1.z;
 		result.w = -this.x * q1.x - this.y * q1.y - this.z * q1.z + this.w * q1.w;
 	}
+	
+	inline public function multiplyInPlace(q1:Quaternion):Quaternion {
+        this.multiplyToRef(q1, this);
+		
+        return this;
+    }
 
 	inline public function length():Float {
 		return Math.sqrt((this.x * this.x) + (this.y * this.y) + (this.z * this.z) + (this.w * this.w));
@@ -102,6 +109,7 @@ package com.babylonhx.math;
 	inline public function toEulerAngles():Vector3 {
 		var result = Vector3.Zero();
 		this.toEulerAnglesToRef(result);
+		
 		return result;
 	}
 	
@@ -126,13 +134,14 @@ package com.babylonhx.math;
 			result.x = Math.atan2(qxz + qwy, qwx - qyz);
 			result.y = Math.acos(1 - 2 * determinant);
 			result.z = Math.atan2(qxz - qwy, qwx + qyz);
-		} else {
+		} 
+		else {
 			if (determinant == 0.000) {
 				result.x = 0.0;
 				result.y = 0.0;
 				result.z = Math.atan2(qxy - qwz, 0.5 - sqy - qz * qz); //actually, degeneracy gives us choice with x+z=Math.atan2(qxy-qwz,0.5-sqy-qz*qz)
-			} else //determinant == 1.000
-			{
+			} 
+			else { //determinant == 1.000
 				result.x = Math.atan2(qxy - qwz, 0.5 - sqy - qz * qz); //actually, degeneracy gives us choice with x-z=Math.atan2(qxy-qwz,0.5-sqy-qz*qz)
 				result.y = Math.PI;
 				result.z = 0.0;
@@ -193,6 +202,7 @@ package com.babylonhx.math;
 
 	inline public function fromRotationMatrix(matrix:Matrix) {
 		Quaternion.FromRotationMatrixToRef(matrix, this);
+		
 		return this;
 	}
 
@@ -200,6 +210,7 @@ package com.babylonhx.math;
 	inline public static function FromRotationMatrix(matrix:Matrix):Quaternion {
 		var result = new Quaternion();
 		Quaternion.FromRotationMatrixToRef(matrix, result);
+		
 		return result;
 	}
 	
@@ -244,7 +255,8 @@ package com.babylonhx.math;
 			result.y = 0.25 * s;
 			result.z = (m23 + m32) / s;
 			
-		} else {
+		} 
+		else {
 			
 			s = 2.0 * Math.sqrt(1.0 + m33 - m11 - m22);
 			

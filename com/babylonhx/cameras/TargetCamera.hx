@@ -93,8 +93,7 @@ import com.babylonhx.tools.Tools;
 		
 		var lockedTargetPosition:Vector3 = this._getLockedTargetPosition();
 		
-		return (this._cache.lockedTarget != null ? this._cache.lockedTarget.equals(lockedTargetPosition) : lockedTargetPosition == null)
-			&& this._cache.rotation.equals(this.rotation);
+		return (this._cache.lockedTarget != null ? this._cache.lockedTarget.equals(lockedTargetPosition) : lockedTargetPosition == null) && this._cache.rotation.equals(this.rotation);
 	}
 
 	// Methods
@@ -106,7 +105,7 @@ import com.babylonhx.tools.Tools;
 	// Target
 	static var zUpVector:Vector3 = new Vector3(0, 1.0, 0);
 	static var vDir:Vector3 = Vector3.Zero();
-	inline public function setTarget(target:Vector3) {
+	public function setTarget(target:Vector3) {
 		this.upVector.normalize();
 		
 		Matrix.LookAtLHToRef(this.position, target, this.upVector, this._camMatrix);
@@ -312,6 +311,21 @@ import com.babylonhx.tools.Tools;
 		this._rigCamTransformMatrix = this._rigCamTransformMatrix.multiply(Matrix.Translation(target.x, target.y, target.z));
 		
 		Vector3.TransformCoordinatesToRef(this.position, this._rigCamTransformMatrix, result);
+	}
+	
+	override public function serialize():Dynamic {
+		var serializationObject = super.serialize();
+		serializationObject.speed = this.speed;
+		
+		if (this.rotation != null) {
+			serializationObject.rotation = this.rotation.asArray();
+		}
+		
+		if (this.lockedTarget != null && this.lockedTarget.id != null) {
+			serializationObject.lockedTargetId = this.lockedTarget.id;
+		}
+		
+		return serializationObject;
 	}
 	
 }

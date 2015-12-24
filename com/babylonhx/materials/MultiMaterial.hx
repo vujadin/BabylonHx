@@ -28,7 +28,7 @@ import com.babylonhx.mesh.AbstractMesh;
 	}
 
 	// Methods
-	override public function isReady(?mesh:AbstractMesh, useInstances:Bool = false/*?useInstances:Bool*/):Bool {
+	override public function isReady(?mesh:AbstractMesh, useInstances:Bool = false):Bool {
 		for (index in 0...this.subMaterials.length) {
 			var subMaterial = this.subMaterials[index];
 			if (subMaterial != null) {
@@ -41,12 +41,18 @@ import com.babylonhx.mesh.AbstractMesh;
 		return true;
 	}
 	
-	override public function clone(name:String):MultiMaterial {
+	override public function clone(name:String, cloneChildren:Bool = false):MultiMaterial {
 		var newMultiMaterial = new MultiMaterial(name, this.getScene());
 		
 		for (index in 0...this.subMaterials.length) {
 			var subMaterial = this.subMaterials[index];
-			newMultiMaterial.subMaterials.push(subMaterial);
+			
+			if (cloneChildren) {
+				subMaterial = this.subMaterials[index].clone(name + "-" + this.subMaterials[index].name);
+			}
+			else {
+				newMultiMaterial.subMaterials.push(subMaterial);
+			}			
 		}
 		
 		return newMultiMaterial;

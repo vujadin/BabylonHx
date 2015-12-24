@@ -4,7 +4,9 @@ import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.animations.IAnimatable;
+import com.babylonhx.animations.Animation;
 import com.babylonhx.utils.typedarray.Float32Array;
+
 import haxe.ds.Vector;
 
 
@@ -122,6 +124,30 @@ import haxe.ds.Vector;
 		
         // Remove from scene
         this.getScene().removeSkeleton(this);
+    }
+	
+	public static function Parse(parsedSkeleton:Dynamic, scene:Scene):Skeleton {
+        var skeleton = new Skeleton(parsedSkeleton.name, parsedSkeleton.id, scene);
+		try {
+			for (index in 0...parsedSkeleton.bones.length) {
+				var parsedBone = parsedSkeleton.bones[index];
+				
+				var parentBone = null;
+				if (parsedBone.parentBoneIndex > -1) {
+					parentBone = skeleton.bones[parsedBone.parentBoneIndex];
+				}
+				
+				var bone = new Bone(parsedBone.name, skeleton, parentBone, Matrix.FromArray(parsedBone.matrix));
+				
+				if (parsedBone.animation != null) {
+					bone.animations.push(Animation.ParseAnimation(parsedBone.animation));
+				}
+			}
+		} catch (err:Dynamic) {
+			trace(err);
+		}
+		
+        return skeleton;
     }
 	
 }

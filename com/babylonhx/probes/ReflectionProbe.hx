@@ -15,11 +15,11 @@ class ReflectionProbe {
 	
 	private var _scene:Scene;
 	private var _renderTargetTexture:RenderTargetTexture;
-	private var _projectionMatrix: Matrix;
-	private var _viewMatrix = Matrix.Identity();
+	private var _projectionMatrix:Matrix;
+	private var _viewMatrix:Matrix = Matrix.Identity();
 	private var _target = Vector3.Zero();
-	private var _add = Vector3.Zero();
-	private var _attachedMesh: AbstractMesh;
+	private var _add:Vector3 = Vector3.Zero();
+	private var _attachedMesh:AbstractMesh;
 
 	public var position:Vector3 = Vector3.Zero();
 	
@@ -108,7 +108,12 @@ class ReflectionProbe {
 		if (index != -1) {
 			// Remove from the scene if found 
 			this._scene.reflectionProbes.splice(index, 1);
-		}            
+		}  
+		
+		if (this._renderTargetTexture != null) {
+            this._renderTargetTexture.dispose();
+            this._renderTargetTexture = null;
+        }
 	}
 	
 }

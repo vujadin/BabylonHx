@@ -185,6 +185,9 @@ import com.babylonhx.tools.SmartArray;
 			defines.push("#define NUM_BONE_INFLUENCERS " + mesh.numBoneInfluencers);
 			defines.push("#define BonesPerMesh " + (mesh.skeleton.bones.length + 1));
 		}
+		else {
+			defines.push("#define NUM_BONE_INFLUENCERS 0"); 
+		}
 		
 		// Instances
 		if (useInstances) {
@@ -259,7 +262,7 @@ import com.babylonhx.tools.SmartArray;
 	private function _createPass(scene:Scene, ratio:Float) {
 		var engine = scene.getEngine();
 		
-		this._volumetricLightScatteringRTT = new RenderTargetTexture("volumetricLightScatteringMap", { width: engine.getRenderWidth() * ratio, height: engine.getRenderHeight() * ratio }, scene, false, true, Engine.TEXTURETYPE_UNSIGNED_INT);
+		this._volumetricLightScatteringRTT = new RenderTargetTexture("volumetricLightScatteringMap", Std.int(engine.getRenderWidth() * ratio), scene, false, true, Engine.TEXTURETYPE_UNSIGNED_INT);
 		this._volumetricLightScatteringRTT.wrapU = Texture.CLAMP_ADDRESSMODE;
 		this._volumetricLightScatteringRTT.wrapV = Texture.CLAMP_ADDRESSMODE;
 		this._volumetricLightScatteringRTT.renderList = null;
