@@ -76,7 +76,7 @@ BabylonHx Demos
 		<img src="http://babylonhx.github.io/CustomRenderTarget/CustomRenderTarget-sm.jpg"  alt="CustomRenderTarget"  />
 	</a>
 	<a href="http://babylonhx.github.io/clouds/" target="_blank" />
-		<img src="http://babylonhx.github.io/physics2/clouds-sm.jpg" alt="clouds"   />
+		<img src="http://babylonhx.github.io/clouds/clouds-sm.jpg" alt="clouds"   />
 	</a>
 </div>
 
