@@ -62,6 +62,22 @@ BabylonHx Demos
 	<a href="http://babylonhx.github.io/physics2/" target="_blank" />
 		<img src="http://babylonhx.github.io/physics2/physics2-sm.jpg" alt="physics2"   />
 	</a>
+
+	<a href="http://babylonhx.github.io/ssao/" target="_blank" />
+		<img src="http://babylonhx.github.io/ssao/ssao-sm.jpg" alt="ssao"   />
+	</a>
+	<a href="http://babylonhx.github.io/fog/" target="_blank" />
+		<img src="http://babylonhx.github.io/fog/fog-sm.jpg" alt="fog"   />
+	</a>
+	<a href="http://babylonhx.github.io/volumetriclighting/" target="_blank" />
+		<img src="http://babylonhx.github.io/volumetriclighting/volumetriclighting-sm.jpg" alt="volumetriclighting"   />
+	</a>
+	<a href="http://babylonhx.github.io/CustomRenderTarget/" target="_blank" />
+		<img src="http://babylonhx.github.io/CustomRenderTarget/CustomRenderTarget-sm.jpg"  alt="CustomRenderTarget"  />
+	</a>
+	<a href="http://babylonhx.github.io/clouds/" target="_blank" />
+		<img src="http://babylonhx.github.io/physics2/clouds-sm.jpg" alt="clouds"   />
+	</a>
 </div>
 
 
