@@ -38,7 +38,7 @@ BabylonHx Demos
 	<a href="http://babylonhx.github.io/basicscene/" target="_blank" />
 		<img src="http://babylonhx.github.io/basicscene/basicscene-sm.jpg" alt="basicscene"  />
 	</a>
-	<a href="hhttp://babylonhx.github.io/bloom/" target="_blank" />
+	<a href="http://babylonhx.github.io/bloom/" target="_blank" />
 		<img src="http://babylonhx.github.io/bloom/bloom-sm.jpg" alt="bloom"   />
 	</a>
 	<a href="http://babylonhx.github.io/bumpmap/" target="_blank" />
