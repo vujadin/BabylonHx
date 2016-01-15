@@ -50,20 +50,21 @@ gulp.task('buildpureJS', shell.task([
 ]));
 
 gulp.task('install_dep', shell.task([
-    'haxelib setup',
-    'haxelib -notimeout install lime', 
-    'haxelib -notimeout install dox', 
-    'haxelib -notimeout install openfl', 
-    'haxelib -notimeout install swf', 
-    'haxelib -notimeout install svg', 
-    'haxelib -notimeout install actuate',
-    'haxelib -notimeout git cannonhx https://github.com/vujadin/cannon.hx.git',
-    'haxelib -notimeout git babylonhxext https://github.com/vujadin/BabylonHx_Extensions.git',
-    'haxelib -notimeout git catamaranhx https://github.com/catamaranHX/catamaranHX_lib.git', 
-    'haxelib -notimeout git snow https://github.com/underscorediscovery/snow.git', 
-    'haxelib -notimeout git oimohx https://github.com/babylonhx/OimoHx.git', 
-    'haxelib -notimeout git msgpack https://github.com/aaulia/msgpack-haxe.git', 
-    'haxelib -notimeout git babylonhx https://github.com/babylonhx/BabylonHx_2.0.git'
+    'sudo haxelib -notimeout install lime', 
+    'sudo haxelib -notimeout install dox', 
+    'sudo haxelib -notimeout install openfl', 
+    'sudo haxelib -notimeout install swf', 
+    'sudo haxelib -notimeout install svg', 
+    'sudo haxelib -notimeout install actuate',
+    'sudo haxelib -notimeout install flixel', 
+    'sudo haxelib -notimeout install kha', 
+    'sudo haxelib -notimeout git cannonhx https://github.com/vujadin/cannon.hx.git',
+    'sudo haxelib -notimeout git babylonhxext https://github.com/vujadin/BabylonHx_Extensions.git',
+    'sudo haxelib -notimeout git catamaranhx https://github.com/catamaranHX/catamaranHX_lib.git', 
+    'sudo haxelib -notimeout git snow https://github.com/underscorediscovery/snow.git', 
+    'sudo haxelib -notimeout git oimohx https://github.com/babylonhx/OimoHx.git', 
+    'sudo haxelib -notimeout git msgpack https://github.com/aaulia/msgpack-haxe.git', 
+    'sudo haxelib -notimeout git babylonhx https://github.com/babylonhx/BabylonHx_2.0.git'
 ]));
 
 gulp.task('dox', shell.task([
