@@ -106,50 +106,56 @@ package com.babylonhx.math;
 		return this;
 	}
 	
-	inline public function toEulerAngles():Vector3 {
+	inline public function toEulerAngles(order:String = "YZX"):Vector3 {
 		var result = Vector3.Zero();
-		this.toEulerAnglesToRef(result);
+		this.toEulerAnglesToRef(result, order);
 		
 		return result;
 	}
 	
-	inline public function toEulerAnglesToRef(result:Vector3) {
-		//result is an EulerAngles in the in the z-x-z convention
-		var qx = this.x;
-		var qy = this.y;
-		var qz = this.z;
-		var qw = this.w;
-		var qxy = qx * qy;
-		var qxz = qx * qz;
-		var qwy = qw * qy;
-		var qwz = qw * qz;
-		var qwx = qw * qx;
-		var qyz = qy * qz;
-		var sqx = qx * qx;
-		var sqy = qy * qy;
+	public function toEulerAnglesToRef(result:Vector3, order:String = "YZX") {
+		var heading:Float = Math.NEGATIVE_INFINITY;
+		var attitude:Float = 0;
+		var bank:Float = 0;
+		var x = this.x;
+		var y = this.y;
+		var z = this.z;
+		var w = this.w;
 		
-		var determinant = sqx + sqy;
-		
-		if (determinant != 0.000 && determinant != 1.000) {
-			result.x = Math.atan2(qxz + qwy, qwx - qyz);
-			result.y = Math.acos(1 - 2 * determinant);
-			result.z = Math.atan2(qxz - qwy, qwx + qyz);
-		} 
-		else {
-			if (determinant == 0.000) {
-				result.x = 0.0;
-				result.y = 0.0;
-				result.z = Math.atan2(qxy - qwz, 0.5 - sqy - qz * qz); //actually, degeneracy gives us choice with x+z=Math.atan2(qxy-qwz,0.5-sqy-qz*qz)
-			} 
-			else { //determinant == 1.000
-				result.x = Math.atan2(qxy - qwz, 0.5 - sqy - qz * qz); //actually, degeneracy gives us choice with x-z=Math.atan2(qxy-qwz,0.5-sqy-qz*qz)
-				result.y = Math.PI;
-				result.z = 0.0;
-			}
+		switch (order) {
+			case "YZX":
+				var test = x * y + z * w;
+				if (test > 0.499) { // singularity at north pole
+					heading = 2 * Math.atan2(x, w);
+					attitude = Math.PI / 2;
+					bank = 0;
+				}
+				if (test < -0.499) { // singularity at south pole
+					heading = -2 * Math.atan2(x, w);
+					attitude = -Math.PI / 2;
+					bank = 0;
+				}
+				if (heading == Math.NEGATIVE_INFINITY) {
+					var sqx = x * x;
+					var sqy = y * y;
+					var sqz = z * z;
+					heading = Math.atan2(2 * y * w - 2 * x * z, 1 - 2 * sqy - 2 * sqz); // Heading
+					attitude = Math.asin(2 * test); // attitude
+					bank = Math.atan2(2 * x * w - 2 * y * z, 1 - 2 * sqx - 2 * sqz); // bank
+				}
+				
+			default:
+				throw ("Euler order " + order + " not supported yet.");
 		}
+		
+		result.y = heading;
+		result.z = attitude;
+		result.x = bank;
+		
+		return this;
 	}
 
-	inline public function toRotationMatrix(result:Matrix) {
+	public function toRotationMatrix(result:Matrix) {
 		var xx = this.x * this.x;
 		var yy = this.y * this.y;
 		var zz = this.z * this.z;
@@ -178,7 +184,7 @@ package com.babylonhx.math;
 		result.m[15] = 1.0;
 	}
 	
-	inline public function multVector(vec:Vector3):Vector3 {		  
+	public function multVector(vec:Vector3):Vector3 {		  
 		var num = this.x * 2;
 		var num2 = this.y * 2;
 		var num3 = this.z * 2;
@@ -214,7 +220,7 @@ package com.babylonhx.math;
 		return result;
 	}
 	
-	inline public static function FromRotationMatrixToRef(matrix:Matrix, result:Quaternion) {
+	public static function FromRotationMatrixToRef(matrix:Matrix, result:Quaternion) {
 		var data = matrix.m;
 		var m11 = data[0];
 		var m12 = data[4];
@@ -382,7 +388,7 @@ package com.babylonhx.math;
 		result.w = (cosYaw * cosPitch * cosRoll) + (sinYaw * sinPitch * sinRoll);
 	}
 
-	inline public static function Slerp(left:Quaternion, right:Quaternion, amount:Float):Quaternion {
+	public static function Slerp(left:Quaternion, right:Quaternion, amount:Float):Quaternion {
 		var num2 = 0.0;
 		var num3 = 0.0;
 		var num = amount;

@@ -3,6 +3,7 @@ package com.babylonhx.layer;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color4;
+import com.babylonhx.math.Vector2;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.utils.GL;
 
@@ -17,6 +18,8 @@ import com.babylonhx.utils.GL;
 	public var texture:Texture;
 	public var isBackground:Bool;
 	public var color:Color4;
+	public var scale:Vector2 = new Vector2(1, 1);
+    public var offset:Vector2 = new Vector2(0, 0);
 	public var onDispose:Void->Void;
 	public var alphaBlendingMode:Int = Engine.ALPHA_COMBINE;
 	
@@ -66,7 +69,7 @@ import com.babylonhx.utils.GL;
 		// Effects
 		this._effect = this._scene.getEngine().createEffect("layer",
 			["position"],
-			["textureMatrix", "color"],
+			["textureMatrix", "color", "scale", "offset"],
 			["textureSampler"], "");
 	}
 
@@ -81,14 +84,17 @@ import com.babylonhx.utils.GL;
 		// Render
 		engine.enableEffect(this._effect);
 		engine.setState(false);
-
-
+		
 		// Texture
 		this._effect.setTexture("textureSampler", this.texture);
 		this._effect.setMatrix("textureMatrix", this.texture.getTextureMatrix());
 		
 		// Color
 		this._effect.setFloat4("color", this.color.r, this.color.g, this.color.b, this.color.a);
+		
+		// Scale / offset
+        this._effect.setVector2("offset", this.offset);
+        this._effect.setVector2("scale", this.scale);
 		
 		// VBOs
 		engine.bindBuffers(this._vertexBuffer, this._indexBuffer, this._vertexDeclaration, this._vertexStrideSize, this._effect);

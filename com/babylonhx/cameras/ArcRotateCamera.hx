@@ -109,7 +109,7 @@ import com.babylonhx.utils.Keycodes;
 	}
 
 	public function _getTargetPosition():Vector3 {
-		return this.target.position != null ? this.target.position : this.target;
+		return this.target.getAbsolutePosition != null ? this.target.getAbsolutePosition() : this.target;
 	}
 
 	// Cache

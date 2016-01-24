@@ -2,7 +2,10 @@ package com.babylonhx.bones;
 
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.math.Matrix;
+import com.babylonhx.math.Quaternion;
+import com.babylonhx.math.Vector3;
 import com.babylonhx.animations.Animation;
+import com.babylonhx.animations.AnimationRange;
 
 /**
 * ...
@@ -12,9 +15,11 @@ import com.babylonhx.animations.Animation;
 @:expose('BABYLON.Bone') class Bone extends Node implements IAnimatable {
 	
 	public var children:Array<Bone> = [];
+	public var length:Int;
 
 	private var _skeleton:Skeleton;
 	private var _matrix:Matrix;
+	private var _restPose:Matrix;
 	private var _baseMatrix:Matrix;
 	private var _worldTransform:Matrix = new Matrix();
 	private var _absoluteTransform:Matrix = new Matrix();
@@ -22,12 +27,13 @@ import com.babylonhx.animations.Animation;
 	private var _parent:Bone;
 
 	
-	public function new(name:String, skeleton:Skeleton, parentBone:Bone = null, matrix:Matrix) {
+	public function new(name:String, skeleton:Skeleton, parentBone:Bone = null, matrix:Matrix, ?restPose:Matrix) {
 		super(name, skeleton.getScene());
 		
 		this._skeleton = skeleton;
 		this._matrix = matrix;
 		this._baseMatrix = matrix;
+		this._restPose = restPose != null ? restPose : matrix.clone();
 		
 		skeleton.bones.push(this);
 		
@@ -53,6 +59,14 @@ import com.babylonhx.animations.Animation;
 
 	inline public function getBaseMatrix():Matrix {
 		return this._baseMatrix;
+	}
+	
+	inline public function getRestPose():Matrix {
+		return this._restPose;
+	}
+	
+	inline public function returnToRest() {
+		this.updateMatrix(this._restPose.clone());
 	}
 
 	override public function getWorldMatrix():Matrix {
@@ -101,6 +115,55 @@ import com.babylonhx.animations.Animation;
 	inline public function markAsDirty() {
 		this._currentRenderId++;
 		this._skeleton._markAsDirty();
+	}
+	
+	public function copyAnimationRange(source:Bone, rangeName:String, frameOffset:Int, rescaleAsRequired:Bool = false):Bool {
+		// all animation may be coming from a library skeleton, so may need to create animation
+		if (this.animations.length == 0){
+			this.animations.push(new Animation(this.name, "_matrix", source.animations[0].framePerSecond, Animation.ANIMATIONTYPE_MATRIX, 0)); 
+		}
+		
+		// get animation info / verify there is such a range from the source bone
+		var sourceRange:AnimationRange = source.animations[0].getRange(rangeName);
+		if (sourceRange == null) {
+			return false;
+		}
+		
+		var from = sourceRange.from;
+		var to = sourceRange.to;
+		var sourceKeys = source.animations[0].getKeys();
+		
+		// rescaling prep
+		var sourceBoneLength:Int = source.length;
+		var scalingReqd:Bool = rescaleAsRequired && sourceBoneLength > 0 && this.length > 0 && sourceBoneLength != this.length;
+		var ratio:Float = scalingReqd ? this.length / sourceBoneLength : 1;
+		
+		var destKeys = this.animations[0].getKeys();
+		
+		// loop vars declaration / initialization
+		var orig:BabylonFrame = null;
+		var origScale:Vector3 = scalingReqd ? Vector3.Zero() : null;
+		var origRotation:Quaternion = scalingReqd ? new Quaternion() : null;
+		var origTranslation:Vector3 = scalingReqd ? Vector3.Zero() : null;
+		var mat:Matrix = null;
+		
+		for (key in 0...sourceKeys.length) {
+			orig = sourceKeys[key];
+			if (orig.frame >= from  && orig.frame <= to) {
+				if (scalingReqd) {
+					orig.value.decompose(origScale, origRotation, origTranslation);
+					origTranslation.scaleInPlace(ratio);
+					mat = Matrix.Compose(origScale, origRotation, origTranslation);
+				}
+				else {
+					mat = orig.value;
+				}
+				destKeys.push( { frame: orig.frame + frameOffset, value: mat } );
+			}
+		}
+		this.animations[0].createRange(rangeName, from + frameOffset, to + frameOffset);
+		
+		return true;
 	}
 	
 }

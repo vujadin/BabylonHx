@@ -528,7 +528,7 @@ class LavaMaterial extends Material {
 	
 	override public function serialize():Dynamic {
 		var serializationObject = super.serialize();
-		serializationObject.customType         = "lava";
+		serializationObject.customType         = "LavaMaterial";
 		serializationObject.diffuseColor       = this.diffuseColor.asArray();
 		serializationObject.fogColor           = this.fogColor.asArray();
 		serializationObject.speed              = this.speed;

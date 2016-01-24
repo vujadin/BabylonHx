@@ -1,5 +1,6 @@
 package com.babylonhx.mesh;
 
+import com.babylonhx.math.Tmp;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Color4;
@@ -176,7 +177,8 @@ typedef LatheOptions = {
 	?sideOrientation:Int,
 	?updatable:Bool,
 	?closed:Bool,
-	?arc:Float
+	?arc:Float,
+	?cap:Int
 }
  
 class MeshBuilder {
@@ -491,35 +493,36 @@ class MeshBuilder {
 		var tessellation:Int = options.tessellation != null ? options.tessellation : 64;
 		var updatable:Bool = options.updatable;
 		var sideOrientation = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
+		var cap:Int = options.cap != null ? options.cap : Mesh.NO_CAP;
 		var pi2:Float = Math.PI * 2;
-		var shapeLathe:Array<Vector3> = [];
-				
-		// first rotatable point
-		var i:Int = 0;
-		while (shape[i].x == 0) {
-			i++;
-		}
-		var pt = shape[i];
-		for (i in 0...shape.length) {
-			shapeLathe.push(shape[i].subtract(pt));
-		}
+		var paths:Array<Array<Vector3>> = [];
 		
-		// circle path
-		var step = pi2 / tessellation;
+		var step:Float = pi2 / tessellation * arc;
 		var rotated:Vector3 = null;
-		var path:Array<Vector3> = [];
-		for (i in 0...tessellation) {
-			rotated = new Vector3(Math.cos(i * step) * radius, 0, Math.sin(i * step) * radius);
-			path.push(rotated);
-		}
-		if (closed) {
-			path.push(path[0]);
+		var path = new Array<Vector3>();
+		for (i in 0...tessellation + 1) {
+			var path:Array<Vector3> = [];
+			
+			if (cap == Mesh.CAP_START || cap == Mesh.CAP_ALL) {
+                path.push(new Vector3(0, shape[0].y ,0));
+                path.push(new Vector3(Math.cos(i * step) * shape[0].x * radius, shape[0].y, Math.sin(i * step) * shape[0].x * radius));
+            }
+			
+			for (p in 0...shape.length) {
+				rotated = new Vector3(Math.cos(i * step) * shape[p].x * radius, shape[p].y , Math.sin(i * step) * shape[p].x * radius);
+				path.push(rotated);
+			}
+			
+			if (cap == Mesh.CAP_END || cap == Mesh.CAP_ALL) {
+                path.push(new Vector3(Math.cos(i * step) * shape[shape.length - 1].x * radius, shape[shape.length - 1].y, Math.sin(i * step) * shape[shape.length - 1].x * radius));
+                path.push(new Vector3(0, shape[shape.length - 1].y ,0));
+            }
+			
+			paths.push(path);
 		}
 		
-		// extrusion
-		var scaleFunction:Float->Float->Float = function(dummy1:Float = 0, dummy2:Float = 0):Float { return 1; };
-		var rotateFunction:Float->Float->Float = function(dummy1:Float = 0, dummy2:Float = 0):Float { return 0; };
-		var lathe = MeshBuilder.ExtrudeShapeCustom(name, options, scene);
+		// lathe ribbon
+		var lathe = MeshBuilder.CreateRibbon(name, { pathArray: paths, closeArray: closed, sideOrientation: sideOrientation, updatable: updatable }, scene);
 		
 		return lathe;
 	}
@@ -582,7 +585,7 @@ class MeshBuilder {
 		}
 		
 		Tools.LoadImage(url, onload);
-				
+		
 		return ground;
 	}
 	
@@ -595,9 +598,9 @@ class MeshBuilder {
 		var updatable:Bool = options.updatable;
 		var sideOrientation:Int = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
 		var tubeInstance:Mesh = options.instance;
-			
+		
 		// tube geometry
-		var tubePathArray = function (path:Array<Vector3>, path3D:Path3D, circlePaths:Array<Array<Vector3>>, radius:Float, tessellation:Int, ?radiusFunction:Int->Float->Float, cap:Int) {
+		var tubePathArray = function (path:Array<Vector3>, path3D:Path3D, circlePaths:Array<Array<Vector3>>, radius:Float, tessellation:Int, ?radiusFunction:Int->Float->Float, cap:Int, arc:Float = 1) {
 			var tangents = path3D.getTangents();
 			var normals = path3D.getNormals();
 			var distances = path3D.getDistances();
@@ -610,19 +613,19 @@ class MeshBuilder {
 			var rad:Float = 0;
 			var normal:Vector3 = Vector3.Zero();
 			var rotated:Vector3 = Vector3.Zero();
-			var rotationMatrix:Matrix;
-			var index:Int = 0;
+			var rotationMatrix:Matrix = Tmp.matrix[0];
+			var index:Int = (cap == Mesh.NO_CAP || cap == Mesh.CAP_END) ? 0 : 2;
 			for (i in 0...path.length) {
 				rad = radiusFunctionFinal(i, distances[i]); // current radius
 				circlePath = [];              				// current circle array
 				normal = normals[i];          				// current normal  
-				var ang:Float = 0.0;
 				for (t in 0...tessellation) {
-                    rotationMatrix = Matrix.RotationAxis(tangents[i], step * t);
-					rotated = Vector3.TransformCoordinates(normal, rotationMatrix).scaleInPlace(rad).add(path[i]);
-					circlePath.push(rotated);
+					Matrix.RotationAxisToRef(tangents[i], step * t, rotationMatrix);
+					rotated = circlePath[t] != null ? circlePath[t] : Vector3.Zero();
+					Vector3.TransformCoordinatesToRef(normal, rotationMatrix, rotated);
+					rotated.scaleInPlace(rad).addInPlace(path[i]);
+					circlePath[t] = rotated;
 				}
-				circlePath.push(circlePath[0]);
 				circlePaths[index] = circlePath;
 				index++;
 			}
@@ -940,17 +943,20 @@ class MeshBuilder {
 			};
 			var rotate = rotateFunction != null ? rotateFunction : returnRotation;
 			var scl = scaleFunction != null ? scaleFunction : returnScale;
-			var index:Int = 0;
+			var index:Int = (cap == Mesh.NO_CAP || cap == Mesh.CAP_END) ? 0 : 2;
+			var rotationMatrix:Matrix = Tmp.matrix[0];
 			
 			for (i in 0...curve.length) {
 				var shapePath = new Array<Vector3>();
 				var angleStep = rotate(i, distances[i]);
 				var scaleRatio = scl(i, distances[i]);
 				for (p in 0...shape.length) {
-					var rotationMatrix = Matrix.RotationAxis(tangents[i], angle);
+					Matrix.RotationAxisToRef(tangents[i], angle, rotationMatrix);
 					var planed = ((tangents[i].scale(shape[p].z)).add(normals[i].scale(shape[p].x)).add(binormals[i].scale(shape[p].y)));
-					var rotated = Vector3.TransformCoordinates(planed, rotationMatrix).scaleInPlace(scaleRatio).add(curve[i]);
-					shapePath.push(rotated);
+					var rotated = shapePath[p] != null ? shapePath[p] : Vector3.Zero();
+					Vector3.TransformCoordinatesToRef(planed, rotationMatrix, rotated);
+					rotated.scaleInPlace(scaleRatio).addInPlace(curve[i]);
+					shapePath[p] = rotated;
 				}
 				shapePaths[index] = shapePath;
 				angle += angleStep;
@@ -976,14 +982,18 @@ class MeshBuilder {
                     // nothing here...
 					
                 case Mesh.CAP_START:
-                    shapePaths.unshift(capPath(shapePaths[0]));
+                    shapePaths[0] = capPath(shapePaths[2]);
+					shapePaths[1] = shapePaths[2].slice(0);
                     
                 case Mesh.CAP_END:
-                    shapePaths.push(capPath(shapePaths[shapePaths.length - 1]));
+                    shapePaths[index] = shapePaths[index - 1];
+					shapePaths[index + 1] = capPath(shapePaths[index - 1]);
                     
                 case Mesh.CAP_ALL:
-                    shapePaths.unshift(capPath(shapePaths[0]));
-                    shapePaths.push(capPath(shapePaths[shapePaths.length - 1]));
+                    shapePaths[0] = capPath(shapePaths[2]);
+					shapePaths[1] = shapePaths[2].slice(0);
+					shapePaths[index] = shapePaths[index - 1];
+					shapePaths[index + 1] = capPath(shapePaths[index - 1]);
                     
                 default:
                     //...
@@ -1000,8 +1010,8 @@ class MeshBuilder {
 			
 			return instance;
 		}
-		// extruded shape creation
 		
+		// extruded shape creation		
 		var path3D:Path3D = new Path3D(curve);
 		var newShapePaths:Array<Array<Vector3>> = [];
 		cap = (cap < 0 || cap > 3) ? 0 : cap;

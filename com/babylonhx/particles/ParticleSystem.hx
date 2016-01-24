@@ -320,18 +320,16 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._scaledUpdateSpeed = this.updateSpeed * this._scene.getAnimationRatio();
 		
 		// determine the number of particles we need to create   
-		var emitCout:Int = 0;
+		var newParticles:Int = 0;
 		
 		if (this.manualEmitCount > -1) {
-			emitCout = this.manualEmitCount;
-			this.manualEmitCount = 0;
+			newParticles = this.manualEmitCount;
+			this._newPartsExcess = 0;
 		} 
 		else {
-			emitCout = this.emitRate;
+			newParticles = Math.floor(this.emitRate * this._scaledUpdateSpeed);
+			this._newPartsExcess += Std.int(this.emitRate * this._scaledUpdateSpeed) - newParticles;
 		}
-		
-		var newParticles = Std.int(emitCout * this._scaledUpdateSpeed);
-		this._newPartsExcess += cast emitCout * this._scaledUpdateSpeed - newParticles;
 		
 		if (this._newPartsExcess > 1.0) {
 			newParticles += this._newPartsExcess;

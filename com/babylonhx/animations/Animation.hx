@@ -53,7 +53,7 @@ import com.babylonhx.Node;
 	
 	public var allowMatricesInterpolation:Bool = false;
 
-	private var _ranges:Array<AnimationRange> = [];
+	private var _ranges:Map<String, AnimationRange> = new Map();
 	
 	
 	private static function _PrepareAnimation(name:String, targetProperty:String, framePerSecond:Int, totalFrame:Int, from:Dynamic, to:Dynamic, ?loopMode:Int, ?easingFunction:EasingFunction):Animation {
@@ -148,26 +148,33 @@ import com.babylonhx.Node;
 	}
 	
 	public function createRange(name:String, from:Float, to:Float) {
-		this._ranges.push(new AnimationRange(name, from, to));
+		// check name not already in use; could happen for bones after serialized
+        if (!this._ranges.exists(name)){
+            this._ranges[name] = new AnimationRange(name, from, to);
+        }
 	}
 
-	public function deleteRange(name:String) {
-		for (index in 0...this._ranges.length) {
-			if (this._ranges[index].name == name) {
-				this._ranges.splice(index, 1);
-				return;
+	public function deleteRange(name:String, deleteFrames:Bool = true) {
+		if (this._ranges[name] != null){
+			if (deleteFrames) {
+				var from = this._ranges[name].from;
+				var to = this._ranges[name].to;
+				
+				// this loop MUST go high to low for multiple splices to work
+				var key = this._keys.length - 1;
+				while (key >= 0) {
+					if (this._keys[key].frame >= from  && this._keys[key].frame <= to) {
+					   this._keys.splice(key, 1); 
+					}
+					key--;
+				}
 			}
+			this._ranges.remove(name);
 		}
 	}
 
-	public function getRange(name:String):AnimationRange {
-		for (index in 0...this._ranges.length) {
-			if (this._ranges[index].name == name) {                    
-				return this._ranges[index];
-			}
-		}
-		
-		return null;
+	public function getRange(name:String):AnimationRange {		
+		return this._ranges[name];
 	}
 	
 	inline public function isStopped():Bool {
@@ -176,6 +183,18 @@ import com.babylonhx.Node;
 
 	inline public function getKeys():Array<BabylonFrame> {
 		return this._keys;
+	}
+	
+	inline public function getHighestFrame():Int {
+		var ret = 0; 
+		
+		for (key in 0...this._keys.length) {
+			if (ret < this._keys[key].frame) {
+				ret = this._keys[key].frame; 
+			}
+		}
+		
+		return ret;
 	}
 	
 	inline public function getEasingFunction() {
@@ -581,18 +600,26 @@ import com.babylonhx.Node;
 			serializationObject.keys.push(key);
 		}
 		
+		serializationObject.ranges = [];
+        for (name in this._ranges.keys()) {
+            var range:Dynamic = { };
+            range.name = name;
+            range.from = this._ranges[name].from;
+            range.to   = this._ranges[name].to;
+            serializationObject.ranges.push(range);
+        }
+		
 		return serializationObject;
 	}
 	
-	public static function ParseAnimation(parsedAnimation:Dynamic):Animation {
+	public static function Parse(parsedAnimation:Dynamic):Animation {
         var animation = new Animation(parsedAnimation.name, parsedAnimation.property, parsedAnimation.framePerSecond, parsedAnimation.dataType, parsedAnimation.loopBehavior);
 		
         var dataType = parsedAnimation.dataType;
         var keys:Array<BabylonFrame> = [];
+		var data:Dynamic = null;
         for (index in 0...parsedAnimation.keys.length) {
             var key = parsedAnimation.keys[index];
-			
-            var data:Dynamic = null;
 			
             switch (dataType) {
                 case Animation.ANIMATIONTYPE_FLOAT:
@@ -616,12 +643,19 @@ import com.babylonhx.Node;
             }
 			
             keys.push({
-                frame:key.frame,
-                value:data
+                frame: key.frame,
+                value: data
             });
         }
 		
         animation.setKeys(keys);
+		
+		if (parsedAnimation.ranges != null) {
+            for (index in 0...parsedAnimation.ranges.length) {
+                data = parsedAnimation.ranges[index];
+                animation.createRange(data.name, data.from, data.to);
+            }
+        }
 		
         return animation;
     }

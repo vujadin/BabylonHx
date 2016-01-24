@@ -471,12 +471,17 @@ import haxe.ds.Vector;
 	}
 
 	inline public static function RotationAxis(axis:Vector3, angle:Float):Matrix {
+		var result = Matrix.Zero();
+		Matrix.RotationAxisToRef(axis, angle, result);
+		return result;
+	}
+	
+	public static function RotationAxisToRef(axis:Vector3, angle:Float, result:Matrix) {
 		var s = Math.sin(-angle);
 		var c = Math.cos(-angle);
-		var c1 = 1 - c;
+		var c1:Float = 1 - c;
 		
 		axis.normalize();
-		var result = Matrix.Zero();
 		
 		result.m[0] = (axis.x * axis.x) * c1 + c;
 		result.m[1] = (axis.x * axis.y) * c1 - (axis.z * s);
@@ -494,8 +499,6 @@ import haxe.ds.Vector;
 		result.m[11] = 0.0;
 		
 		result.m[15] = 1.0;
-		
-		return result;
 	}
 
 	inline public static function RotationYawPitchRoll(yaw:Float, pitch:Float, roll:Float):Matrix {
@@ -548,14 +551,14 @@ import haxe.ds.Vector;
 	}
 	
 	public static function Lerp(startValue:Matrix, endValue:Matrix, gradient:Float):Matrix {
-		var startScale = new Vector3(0, 0, 0);
-		var startRotation = new Quaternion();
-		var startTranslation = new Vector3(0, 0, 0);
+		var startScale = Tmp.vector3[0];// new Vector3(0, 0, 0);
+		var startRotation = Tmp.quaternion[0]; // new Quaternion();
+		var startTranslation = Tmp.vector3[1]; // new Vector3(0, 0, 0);
 		startValue.decompose(startScale, startRotation, startTranslation);
 		
-		var endScale = new Vector3(0, 0, 0);
-		var endRotation = new Quaternion();
-		var endTranslation = new Vector3(0, 0, 0);
+		var endScale = Tmp.vector3[2]; // new Vector3(0, 0, 0);
+		var endRotation = Tmp.quaternion[1]; // new Quaternion();
+		var endTranslation = Tmp.vector3[3]; // new Vector3(0, 0, 0);
 		endValue.decompose(endScale, endRotation, endTranslation);
 		
 		var resultScale = Vector3.Lerp(startScale, endScale, gradient);
@@ -672,7 +675,8 @@ import haxe.ds.Vector;
 		
 		if (v_fixed) {
 			result.m[0] = tan / aspect;
-		} else if (h_fixed) {
+		} 
+		else if (h_fixed) {
 			result.m[0] = tan;
 		}
 		
@@ -682,7 +686,8 @@ import haxe.ds.Vector;
 		
 		if (v_fixed) { 
 			result.m[5] = tan; 
-		} else if (h_fixed) { 
+		} 
+		else if (h_fixed) { 
 			result.m[5] = tan * aspect; 
 		}
 			

@@ -627,7 +627,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
         if (parsedLight.animations != null) {
             for (animationIndex in 0...parsedLight.animations.length) {
                 var parsedAnimation = parsedLight.animations[animationIndex];
-                light.animations.push(Animation.ParseAnimation(parsedAnimation));
+                light.animations.push(Animation.Parse(parsedAnimation));
             }
         }
 		
@@ -749,7 +749,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
         if (parsedCamera.animations != null) {
             for (animationIndex in 0...parsedCamera.animations.length) {
                 var parsedAnimation = parsedCamera.animations[animationIndex];
-                camera.animations.push(Animation.ParseAnimation(parsedAnimation));
+                camera.animations.push(Animation.Parse(parsedAnimation));
             }
         }
 		

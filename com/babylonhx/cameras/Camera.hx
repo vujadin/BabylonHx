@@ -555,12 +555,140 @@ import com.babylonhx.animations.Animation;
 		
 		// Animations
 		Animation.AppendSerializedAnimations(this, serializationObject);
+		serializationObject.ranges = this.serializeAnimationRanges();
 		
 		// Layer mask
 		serializationObject.layerMask = this.layerMask;
 		
 		return serializationObject;
 	}
+	
+	public static function Parse(parsedCamera:Dynamic, scene:Scene):Camera {
+		var camera:Camera = null;
+		var position = Vector3.FromArray(parsedCamera.position);
+		var lockedTargetMesh:Mesh = parsedCamera.lockedTargetId != null ? cast scene.getLastMeshByID(parsedCamera.lockedTargetId) : null;
+		var interaxial_distance:Float = 0;
+		
+		if (parsedCamera.type == "AnaglyphArcRotateCamera" || parsedCamera.type == "ArcRotateCamera") {
+			var alpha = parsedCamera.alpha;
+			var beta = parsedCamera.beta;
+			var radius = parsedCamera.radius;
+			if (parsedCamera.type == "AnaglyphArcRotateCamera") {
+				interaxial_distance = parsedCamera.interaxial_distance;
+				camera = new AnaglyphArcRotateCamera(parsedCamera.name, alpha, beta, radius, lockedTargetMesh, interaxial_distance, scene);
+			} 
+			else {
+				camera = new ArcRotateCamera(parsedCamera.name, alpha, beta, radius, lockedTargetMesh, scene);
+			}
+		} 
+		else if (parsedCamera.type == "AnaglyphFreeCamera") {
+			interaxial_distance = parsedCamera.interaxial_distance;
+			camera = new AnaglyphFreeCamera(parsedCamera.name, position, interaxial_distance, scene);
+		} 
+		else if (parsedCamera.type == "DeviceOrientationCamera") {
+			//camera = new DeviceOrientationCamera(parsedCamera.name, position, scene);
+		} 
+		else if (parsedCamera.type == "FollowCamera") {
+			camera = new FollowCamera(parsedCamera.name, position, scene);
+			untyped camera.heightOffset = parsedCamera.heightOffset;
+			untyped camera.radius = parsedCamera.radius;
+			untyped camera.rotationOffset = parsedCamera.rotationOffset;
+			if (lockedTargetMesh != null) {
+				cast(camera, FollowCamera).target = lockedTargetMesh;
+			}
+		} 
+		else if (parsedCamera.type == "GamepadCamera") {
+			//camera = new GamepadCamera(parsedCamera.name, position, scene);
+		} 
+		else if (parsedCamera.type == "TouchCamera") {
+			camera = new TouchCamera(parsedCamera.name, position, scene);
+		} 
+		else if (parsedCamera.type == "VirtualJoysticksCamera") {
+			//camera = new VirtualJoysticksCamera(parsedCamera.name, position, scene);
+		} 
+		else if (parsedCamera.type == "WebVRFreeCamera") {
+			camera = new WebVRFreeCamera(parsedCamera.name, position, scene);
+		} 
+		else if (parsedCamera.type == "VRDeviceOrientationFreeCamera") {
+			camera = new VRDeviceOrientationFreeCamera(parsedCamera.name, position, scene);
+		} 
+		else {
+			// Free Camera is the default value
+			camera = new FreeCamera(parsedCamera.name, position, scene);
+		}
+		
+		// apply 3d rig, when found
+		if (parsedCamera.cameraRigMode != null) {
+			var rigParams = parsedCamera.interaxial_distance != null ? { interaxialDistance: parsedCamera.interaxial_distance } : { };
+			camera.setCameraRigMode(parsedCamera.cameraRigMode, rigParams);
+		}
+		
+		// Test for lockedTargetMesh & FreeCamera outside of if-else-if nest, since things like GamepadCamera extend FreeCamera
+		if (lockedTargetMesh != null && Std.is(camera, FreeCamera)) {
+			cast(camera, FreeCamera).lockedTarget = lockedTargetMesh;
+		}
+		
+		camera.id = parsedCamera.id;
+		
+		Tags.AddTagsTo(camera, parsedCamera.tags);
+		
+		// Parent
+		if (parsedCamera.parentId != null) {
+			camera._waitingParentId = parsedCamera.parentId;
+		}
+		
+		// Target
+		if (parsedCamera.target) {
+			if (Reflect.hasField(camera, "setTarget")) {
+				untyped camera.setTarget(Vector3.FromArray(parsedCamera.target));
+			} 
+			else {
+				//For ArcRotate
+				untyped camera.target = Vector3.FromArray(parsedCamera.target);
+			}
+		} 
+		else {
+			untyped camera.rotation = Vector3.FromArray(parsedCamera.rotation);
+		}
+		
+		camera.fov = parsedCamera.fov;
+		camera.minZ = parsedCamera.minZ;
+		camera.maxZ = parsedCamera.maxZ;
+		
+		untyped camera.speed = parsedCamera.speed;
+		camera.inertia = parsedCamera.inertia;
+		
+		untyped camera.checkCollisions = parsedCamera.checkCollisions;
+		untyped camera.applyGravity = parsedCamera.applyGravity;
+		if (parsedCamera.ellipsoid != null) {
+			untyped camera.ellipsoid = Vector3.FromArray(parsedCamera.ellipsoid);
+		}
+		
+		// Animations
+		if (parsedCamera.animations != null) {
+			for (animationIndex in 0...parsedCamera.animations.length) {
+				var parsedAnimation = parsedCamera.animations[animationIndex];
+				
+				camera.animations.push(Animation.Parse(parsedAnimation));
+			}
+			
+            Node.ParseAnimationRanges(camera, parsedCamera, scene);
+		}
+
+		if (parsedCamera.autoAnimate == true) {
+			scene.beginAnimation(camera, parsedCamera.autoAnimateFrom, parsedCamera.autoAnimateTo, parsedCamera.autoAnimateLoop, 1.0);
+		}
+		
+		// Layer Mask
+		if (parsedCamera.layerMask != null && (!Math.isNaN(parsedCamera.layerMask))) {
+			untyped camera.layerMask = Math.abs(Std.parseInt(parsedCamera.layerMask));
+		} 
+		else {
+			camera.layerMask = 0x0FFFFFFF;
+		}
+		
+		return camera;
+	 }
 	
 	/*public function screenToWorld(x:Int, y:Int, depth:Float, position:Vector3) {
 		this.plane.position.z = depth;

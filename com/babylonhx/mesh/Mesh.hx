@@ -1777,6 +1777,16 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	 * @param {skeleton} skeleton to apply
 	 */
 	public function applySkeleton(skeleton:Skeleton):Mesh {
+		if (this.geometry == null) {
+			return this;
+		}
+		
+		if (this.geometry._softwareSkinningRenderId == this.getScene().getRenderId()) {
+			return this;
+		}
+		
+		this.geometry._softwareSkinningRenderId = this.getScene().getRenderId();
+		
 		if (!this.isVerticesDataPresent(VertexBuffer.PositionKind)) {
 			return this;
 		}
@@ -2124,8 +2134,10 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
         if (parsedMesh.animations != null) {
             for (animationIndex in 0...parsedMesh.animations.length) {
                 var parsedAnimation = parsedMesh.animations[animationIndex];				
-                mesh.animations.push(Animation.ParseAnimation(parsedAnimation));
+                mesh.animations.push(Animation.Parse(parsedAnimation));
             }
+			
+			Node.ParseAnimationRanges(mesh, parsedMesh, scene);
         }
 		
         if (parsedMesh.autoAnimate != null) {
@@ -2164,8 +2176,10 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
                 if (parsedMesh.animations != null) {
                     for (animationIndex in 0...parsedMesh.animations.length) {
                         var parsedAnimation = parsedMesh.animations[animationIndex];
-                        instance.animations.push(Animation.ParseAnimation(parsedAnimation));
+                        instance.animations.push(Animation.Parse(parsedAnimation));
                     }
+					
+					Node.ParseAnimationRanges(instance, parsedMesh, scene);
                 }
             }
         }

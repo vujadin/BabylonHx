@@ -39,6 +39,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	private var _indexBuffer:WebGLBuffer;
 	public var _boundingInfo:BoundingInfo;
 	public var _delayLoadingFunction:Dynamic->Geometry->Void;
+	public var _softwareSkinningRenderId:Int = 0;
 	
 	public var extend(get, never):BabylonMinMax;
 	

@@ -539,13 +539,13 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		var t = 0.0;
 		var sign = -1.0;
 		var nbRevert = 0;
-		var cross: Vector3;
+		var cross:Vector3 = Tmp.vector3[0];
 		var dot = 0.0;
 		
 		// step 1  : rotation around w
 		// Rv3(u) = u1, and u1 belongs to plane xOz
 		// Rv3(w) = w1 = w invariant
-		var u1:Vector3 = null;
+		var u1:Vector3 = Tmp.vector3[1];
 		var v1:Vector3 = null;
 		if (Tools.WithinEpsilon(w.z, 0, Engine.Epsilon)) {
 			z = 1.0;
@@ -583,8 +583,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		// step 2 : rotate around u1
 		// Ru1(w1) = Ru1(w) = w2, and w2 belongs to plane xOz
 		// u1 is yet in xOz and invariant by Ru1, so after this step u1 and w2 will be in xOz
-		var w2:Vector3 = null;
-		var v2:Vector3 = null;
+		var w2:Vector3 = Tmp.vector3[2];
+		var v2:Vector3 = Tmp.vector3[3];
 		x = 0.0;
 		y = 0.0;
 		z = 0.0;

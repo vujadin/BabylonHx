@@ -27,6 +27,7 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
 import com.babylonhx.math.Ray;
 import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Frustum;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.Geometry;
@@ -95,6 +96,8 @@ import com.babylonhx.tools.Tools;
 	private var _pointerX:Int;
 	private var _pointerY:Int;
 	private var _meshUnderPointer:AbstractMesh; 
+	private var _startingPointerPosition:Vector2 = new Vector2(0, 0);
+	private var _startingPointerTime:Float = 0;
 	
 	// Mirror
     public var _mirroredCameraPosition:Vector3;
@@ -258,7 +261,8 @@ import com.babylonhx.tools.Tools;
 	private var _renderTargets:SmartArray<RenderTargetTexture> = new SmartArray<RenderTargetTexture>(256);			
 	public var _activeParticleSystems:SmartArray<ParticleSystem> = new SmartArray<ParticleSystem>(256);		
 	private var _activeSkeletons:SmartArray<Skeleton> = new SmartArray<Skeleton>(32);			
-	private var _softwareSkinnedMeshes:SmartArray<Mesh> = new SmartArray<Mesh>(32);		
+	private var _softwareSkinnedMeshes:SmartArray<Mesh> = new SmartArray<Mesh>(32);	
+	@:allow(com.babylonhx.bones.Skeleton) 
 	private var _activeBones:Int = 0;
 
 	private var _renderingManager:RenderingManager;
@@ -483,29 +487,50 @@ import com.babylonhx.tools.Tools;
 			
 			var predicate = null;
 			
+			// Meshes
 			if (this.onPointerDown == null) {
 				predicate = function(mesh:AbstractMesh):Bool {
-					return mesh.isPickable && mesh.isVisible && mesh.isReady() && mesh.actionManager != null && mesh.actionManager.hasPickTriggers;
+					return mesh.isPickable && mesh.isVisible && mesh.isReady() && mesh.actionManager != null && mesh.actionManager.hasPointerTriggers;
 				};
 			}
 			
 			var pickResult:PickingInfo = this.pick(this._pointerX, this._pointerY, predicate, false, this.cameraToUseForPointers);
 			
-			if (pickResult.hit) {
+			if (pickResult.hit && pickResult.pickedMesh != null) {
 				if (pickResult.pickedMesh.actionManager != null) {
-					switch (button) {
-						case 0:
-							pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnLeftPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
+					if (pickResult.pickedMesh.actionManager.hasPickTriggers) {
+						switch (button) {
+							case 0:
+								pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnLeftPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
+								
+							case 1:
+								pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnCenterPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
+								
+							case 2:
+								pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnRightPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
 							
-						case 1:
-							pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnCenterPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
-							
-						case 2:
-							pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnRightPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
+						}
 						
+						pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
 					}
 					
-					pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
+					if (pickResult.pickedMesh.actionManager.hasSpecificTrigger(ActionManager.OnLongPressTrigger)) {
+						var that = this;
+						Tools.delay(function () {
+							var pickResult = that.pick(that._pointerX, that._pointerY,
+								function(mesh:AbstractMesh):Bool { return mesh.isPickable && mesh.isVisible && mesh.isReady() && mesh.actionManager != null && mesh.actionManager.hasSpecificTrigger(ActionManager.OnLongPressTrigger); },
+								false, that.cameraToUseForPointers);
+								
+							if (pickResult.hit && pickResult.pickedMesh != null) {
+								if (pickResult.pickedMesh.actionManager != null) {
+									if (that._startingPointerTime != 0 && ((Date.now().getTime() - that._startingPointerTime) > ActionManager.LongPressDelay) && (Math.abs(that._startingPointerPosition.x - that._pointerX) < ActionManager.DragMovementThreshold && Math.abs(that._startingPointerPosition.y - that._pointerY) < ActionManager.DragMovementThreshold)) {
+										that._startingPointerTime = 0;
+										pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnLongPressTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
+									}
+								}
+							}
+						}, ActionManager.LongPressDelay);
+					}
 				}
 			}
 			
@@ -745,11 +770,15 @@ import com.babylonhx.tools.Tools;
 	}
 	
 	private function _animate() {
-		if (!this.animationsEnabled) {
+		if (!this.animationsEnabled || this._activeAnimatables.length == 0) {
 			return;
 		}
 		
 		if (this._animationStartDate == -1) {
+			if (this._pendingData.length > 0) {
+                return;
+            }
+			
 			this._animationStartDate = Tools.Now();
 		}
 		
@@ -1738,6 +1767,10 @@ import com.babylonhx.tools.Tools;
 			var currentRenderId = this._renderId;
 			for (cameraIndex in 0...this.activeCameras.length) {
 				this._renderId = currentRenderId;
+				if (cameraIndex > 0) {
+                    this._engine.clear(0, false, true);
+                }
+				
 				this._processSubCameras(this.activeCameras[cameraIndex]);
 			}
 		} 
@@ -1763,11 +1796,9 @@ import com.babylonhx.tools.Tools;
 		
 		// Cleaning
 		for (index in 0...this._toBeDisposed.length) {
-			this._toBeDisposed.data[index].dispose();
-			// TODO
+			this._toBeDisposed.data[index].dispose();			
 			this._toBeDisposed.data[index] = null;
-			//this._toBeDisposed[index] = null;
-			//this._toBeDisposed.data.splice(index, 1);
+			this._toBeDisposed.data.splice(index, 1);
 		}
 		
 		this._toBeDisposed.reset();

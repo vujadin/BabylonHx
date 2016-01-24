@@ -194,6 +194,7 @@ import com.babylonhx.math.Matrix;
 		if (this.isCube) {
 			for (face in 0...6) {
 				this.renderToTarget(face, currentRenderList, useCameraPostProcess);
+				scene.incrementRenderId();
 			}
 		} 
 		else {

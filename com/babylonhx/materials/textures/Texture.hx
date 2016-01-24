@@ -323,7 +323,7 @@ import com.babylonhx.animations.Animation;
 			for (animationIndex in 0...parsedTexture.animations.length) {
 				var parsedAnimation = parsedTexture.animations[animationIndex];
 				
-				texture.animations.push(Animation.ParseAnimation(parsedAnimation));
+				texture.animations.push(Animation.Parse(parsedAnimation));
 			}
 		}
 		
