@@ -52,14 +52,17 @@ import com.babylonhx.sprites.SpriteManager;
 import com.babylonhx.sprites.Sprite;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.Tools;
+#if (purejs || js || lime)
+import com.babylonhx.audio.*;
+#end
 
 /**
  * ...
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Scene') class Scene {
-	
+ @:expose('BABYLON.Scene') class Scene {
+
 	// Statics
 	public static var FOGMODE_NONE:Int = 0;
 	public static var FOGMODE_EXP:Int = 1;
@@ -100,7 +103,7 @@ import com.babylonhx.tools.Tools;
 	private var _startingPointerTime:Float = 0;
 	
 	// Mirror
-    public var _mirroredCameraPosition:Vector3;
+	public var _mirroredCameraPosition:Vector3;
 
 	// Keyboard
 	private var _onKeyDown:Dynamic;		// Event->Void
@@ -119,7 +122,7 @@ import com.babylonhx.tools.Tools;
 	public var lightsEnabled:Bool = true;
 	public var lights:Array<Light> = [];
 	public var onNewLightAdded:Light->Int->Scene->Void;
-    public var onLightRemoved:Light->Void;
+	public var onLightRemoved:Light->Void;
 
 	// Cameras
 	public var cameras:Array<Camera> = [];
@@ -131,12 +134,12 @@ import com.babylonhx.tools.Tools;
 	// Meshes
 	public var meshes:Array<AbstractMesh> = [];
 	public var onNewMeshAdded:AbstractMesh->Int->Scene->Void;
-    public var onMeshRemoved:AbstractMesh->Void;
+	public var onMeshRemoved:AbstractMesh->Void;
 
 	// Geometries
 	private var _geometries:Array<Geometry> = [];
 	public var onGeometryAdded:Geometry->Void;
-    public var onGeometryRemoved:Geometry->Void;
+	public var onGeometryRemoved:Geometry->Void;
 
 	public var materials:Array<Material> = [];
 	public var multiMaterials:Array<MultiMaterial> = [];
@@ -292,6 +295,12 @@ import com.babylonhx.tools.Tools;
 	private var _pointerOverMesh:AbstractMesh;
 	
 	//private var _debugLayer:DebugLayer;
+	#if (purejs || js)
+	public var mainSoundTrack: SoundTrack;
+    public var soundTracks = new Array<SoundTrack>();
+	private var _audioEnabled:Bool = true;
+	private var _headphone:Bool = false;
+	#end
 	
 
 	public function new(engine:Engine) {
@@ -326,6 +335,8 @@ import com.babylonhx.tools.Tools;
 		untyped __js__("Object.defineProperty(this, 'pointerX', { get: this.get_pointerX })");
 		untyped __js__("Object.defineProperty(this, 'pointerY', { get: this.get_pointerY })");
 		#end
+
+		 this.mainSoundTrack = new SoundTrack(this, { mainTrack: true });
 	}
 
 	// Properties 
@@ -345,8 +356,8 @@ import com.babylonhx.tools.Tools;
 	}
 	
 	public function getCachedMaterial():Material {
-        return this._cachedMaterial;
-    }
+		return this._cachedMaterial;
+	}
 
 	inline public function getBoundingBoxRenderer():BoundingBoxRenderer {
 		return this._boundingBoxRenderer;
@@ -373,8 +384,127 @@ import com.babylonhx.tools.Tools;
 	}
 	
 	inline public function getActiveBones():Int {
-        return this._activeBones;
-    }
+		return this._activeBones;
+	}
+
+     // Audio
+     #if (purejs || js)
+     private function _updateAudioParameters() {
+            if (!this._audioEnabled || (this.mainSoundTrack.soundCollection.length == 0 && this.soundTracks.length == 1)) {
+                return;
+            }
+
+            var listeningCamera: Camera;
+            var audioEngine = this.getEngine().audioEngine;
+
+            if (this.activeCameras.length > 0) {
+                listeningCamera = this.activeCameras[0];
+            } else {
+                listeningCamera = this.activeCamera;
+            }
+
+            if (listeningCamera != null && audioEngine.canUseWebAudio) {
+                audioEngine.audioContext.listener.setPosition(listeningCamera.position.x, listeningCamera.position.y, listeningCamera.position.z);
+                var mat = Matrix.Invert(listeningCamera.getViewMatrix());
+                var cameraDirection = Vector3.TransformNormal(new Vector3(0, 0, -1), mat);
+                cameraDirection.normalize();
+                audioEngine.audioContext.listener.setOrientation(cameraDirection.x, cameraDirection.y, cameraDirection.z, 0, 1, 0);
+                var i: Int;
+                for (i in 0...this.mainSoundTrack.soundCollection.length) {
+                    var sound = this.mainSoundTrack.soundCollection[i];
+                    if (sound.useCustomAttenuation) {
+                        sound.updateDistanceFromListener();
+                    }
+                }
+                for (i in 0...this.soundTracks.length) {
+                    for (j in 0...this.soundTracks[i].soundCollection.length) {
+                        var sound = this.soundTracks[i].soundCollection[j];
+                        if (sound.useCustomAttenuation) {
+                            sound.updateDistanceFromListener();
+                        }
+                    }
+                }
+            }
+        }
+
+
+     public function get_audioEnabled(): Bool {
+     	return this._audioEnabled;
+     }
+
+     public function set_audioEnabled(value: Bool) {
+     	this._audioEnabled = value;
+     	if (this._audioEnabled  ) {
+     		if (this._audioEnabled) {
+     			this._enableAudio();
+     		}
+     		else {
+     			this._disableAudio();
+     		}
+     	}
+     }
+
+     private function _disableAudio() {
+     	var i: Int;
+     	for (i in 0...this.mainSoundTrack.soundCollection.length) {
+     		this.mainSoundTrack.soundCollection[i].pause();
+     	}
+     	for (i in 0...this.soundTracks.length) {
+     		for (j in 0...this.soundTracks[i].soundCollection.length) {
+     			this.soundTracks[i].soundCollection[j].pause();
+     		}
+     	}
+     }
+
+     private function _enableAudio() {
+     	var i: Int;
+     	for (i in 0...this.mainSoundTrack.soundCollection.length) {
+     		if (this.mainSoundTrack.soundCollection[i].isPaused) {
+     			this.mainSoundTrack.soundCollection[i].play();
+     		}
+     	}
+     	for (i in 0...this.soundTracks.length) {
+     		for (j in 0...this.soundTracks[i].soundCollection.length) {
+     			if (this.soundTracks[i].soundCollection[j].isPaused) {
+     				this.soundTracks[i].soundCollection[j].play();
+     			}
+     		}
+     	}
+     }
+
+     public function get_headphone(): Bool {
+     	return this._headphone;
+     }
+
+     public function set_headphone(value: Bool) {
+     	this._headphone = value;
+     	if (this._audioEnabled) {
+     		if (this._headphone) {
+     			this._switchAudioModeForHeadphones();
+     		}
+     		else {
+     			this._switchAudioModeForNormalSpeakers();
+     		}
+     	}
+     }
+
+     private function _switchAudioModeForHeadphones() {
+     	this.mainSoundTrack.switchPanningModelToHRTF();
+
+     	for (i in 0...this.soundTracks.length) {
+     		this.soundTracks[i].switchPanningModelToHRTF();
+     	}
+     }
+
+     private function _switchAudioModeForNormalSpeakers() {
+     	this.mainSoundTrack.switchPanningModelToEqualPower();
+
+     	for (i in 0...this.soundTracks.length) {
+     		this.soundTracks[i].switchPanningModelToEqualPower();
+     	}
+     }
+
+     #end
 
 	// Stats
 	inline public function getLastFrameDuration():Float {
@@ -434,11 +564,11 @@ import com.babylonhx.tools.Tools;
 		var spritePredicate = function(sprite:Sprite):Bool {
 			return sprite.isPickable && sprite.actionManager != null && sprite.actionManager.hasPickTriggers;
 		};
-		 
+
 		this._onPointerMove = function(x:Int, y:Int) {
 			if (this.cameraToUseForPointers == null && this.activeCamera == null) {
-                return;
-            }
+				return;
+			}
 			
 			//var canvas = this._engine.getRenderingCanvas();
 			
@@ -447,10 +577,10 @@ import com.babylonhx.tools.Tools;
 			var pickResult:PickingInfo = this.pick(this._pointerX, this._pointerY,
 				function(mesh:AbstractMesh):Bool { 
 					return mesh.isPickable && mesh.isVisible && mesh.isReady() && (this.constantlyUpdateMeshUnderPointer || mesh.actionManager != null); 
-				},
-				false,
-				this.cameraToUseForPointers);
-				
+					},
+					false,
+					this.cameraToUseForPointers);
+
 			if (pickResult.hit  && pickResult.pickedMesh != null) {
 				this._meshUnderPointer = pickResult.pickedMesh;
 				
@@ -480,8 +610,8 @@ import com.babylonhx.tools.Tools;
 		
 		this._onPointerDown = function(x:Int, y:Int, button:Int) {
 			if (this.cameraToUseForPointers == null && this.activeCamera == null) {
-                return;
-            }
+				return;
+			}
 			
 			this._updatePointerPosition(x, y);
 			
@@ -501,13 +631,13 @@ import com.babylonhx.tools.Tools;
 					if (pickResult.pickedMesh.actionManager.hasPickTriggers) {
 						switch (button) {
 							case 0:
-								pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnLeftPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
-								
+							pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnLeftPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
+
 							case 1:
-								pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnCenterPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
-								
+							pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnCenterPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
+
 							case 2:
-								pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnRightPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
+							pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnRightPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
 							
 						}
 						
@@ -520,7 +650,7 @@ import com.babylonhx.tools.Tools;
 							var pickResult = that.pick(that._pointerX, that._pointerY,
 								function(mesh:AbstractMesh):Bool { return mesh.isPickable && mesh.isVisible && mesh.isReady() && mesh.actionManager != null && mesh.actionManager.hasSpecificTrigger(ActionManager.OnLongPressTrigger); },
 								false, that.cameraToUseForPointers);
-								
+
 							if (pickResult.hit && pickResult.pickedMesh != null) {
 								if (pickResult.pickedMesh.actionManager != null) {
 									if (that._startingPointerTime != 0 && ((Date.now().getTime() - that._startingPointerTime) > ActionManager.LongPressDelay) && (Math.abs(that._startingPointerPosition.x - that._pointerX) < ActionManager.DragMovementThreshold && Math.abs(that._startingPointerPosition.y - that._pointerY) < ActionManager.DragMovementThreshold)) {
@@ -529,15 +659,15 @@ import com.babylonhx.tools.Tools;
 									}
 								}
 							}
-						}, ActionManager.LongPressDelay);
-					}
-				}
-			}
-			
-			if (this.onPointerDown != null) {
-				this.onPointerDown(x, y, button, pickResult);
-			}
-			
+							}, ActionManager.LongPressDelay);
+}
+}
+}
+
+if (this.onPointerDown != null) {
+	this.onPointerDown(x, y, button, pickResult);
+}
+
 			// Sprites
 			if (this.spriteManagers.length > 0) {
 				pickResult = this.pickSprite(this._pointerX, this._pointerY, spritePredicate, false, this.cameraToUseForPointers);
@@ -546,13 +676,13 @@ import com.babylonhx.tools.Tools;
 					if (pickResult.pickedSprite.actionManager != null) {
 						switch (button) {
 							case 0:
-								pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnLeftPickTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
-								
+							pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnLeftPickTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
+
 							case 1:
-								pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnCenterPickTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
-								
+							pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnCenterPickTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
+
 							case 2:
-								pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnRightPickTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
+							pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnRightPickTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
 							
 						}
 						pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnPickTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
@@ -563,8 +693,8 @@ import com.babylonhx.tools.Tools;
 		
 		this._onPointerUp = function(x:Int, y:Int, button:Int) {
 			if (this.cameraToUseForPointers == null && this.activeCamera == null) {
-                return;
-            }
+				return;
+			}
 			
 			var predicate = null;
 			
@@ -616,7 +746,7 @@ import com.babylonhx.tools.Tools;
 		Engine.mouseDown.push(this._onPointerDown);
 		Engine.mouseUp.push(this._onPointerUp);
 		Engine.mouseMove.push(this._onPointerMove);
-			
+
 		Engine.keyDown.push(this._onKeyDown);
 		Engine.keyUp.push(this._onKeyUp);
 	}
@@ -625,7 +755,7 @@ import com.babylonhx.tools.Tools;
 		Engine.mouseDown.remove(this._onPointerDown);
 		Engine.mouseUp.remove(this._onPointerUp);
 		Engine.mouseMove.remove(this._onPointerMove);
-				
+
 		Engine.keyDown.remove(this._onKeyDown);
 		Engine.keyUp.remove(this._onKeyUp);
 	}
@@ -664,8 +794,8 @@ import com.babylonhx.tools.Tools;
 	}
 
 	inline public function resetCachedMaterial() {
-        this._cachedMaterial = null;
-    }
+		this._cachedMaterial = null;
+	}
 	
 	public function registerBeforeRender(func:Void->Void) {
 		this._onBeforeRenderCallbacks.push(func);
@@ -676,12 +806,12 @@ import com.babylonhx.tools.Tools;
 	}
 	
 	public function registerAfterRender(func:Void->Void) {
-        this._onAfterRenderCallbacks.push(func);
-    }
+		this._onAfterRenderCallbacks.push(func);
+	}
 	
-    public function unregisterAfterRender(func:Void->Void) {
-        this._onAfterRenderCallbacks.remove(func);
-    }
+	public function unregisterAfterRender(func:Void->Void) {
+		this._onAfterRenderCallbacks.remove(func);
+	}
 
 	public function _addPendingData(data:Dynamic) {
 		this._pendingData.push(data);
@@ -776,8 +906,8 @@ import com.babylonhx.tools.Tools;
 		
 		if (this._animationStartDate == -1) {
 			if (this._pendingData.length > 0) {
-                return;
-            }
+				return;
+			}
 			
 			this._animationStartDate = Tools.Now();
 		}
@@ -883,132 +1013,132 @@ import com.babylonhx.tools.Tools;
 		// Reset the activeCamera
 		if (this.activeCamera == toRemove) {
 			if (this.cameras.length > 0) {
-                this.activeCamera = this.cameras[0];
-            } else {
-                this.activeCamera = null;
-            }
-		}
-		
-		if (this.onCameraRemoved != null) {
-			this.onCameraRemoved(toRemove);
-		}
-		return index;
-	}
+				this.activeCamera = this.cameras[0];
+				} else {
+					this.activeCamera = null;
+				}
+			}
 
-	public function addLight(newLight:Light) {
-		newLight.uniqueId = this._uniqueIdCounter++;
-		var position = this.lights.push(newLight);
-		if (this.onNewLightAdded != null) {
-			this.onNewLightAdded(newLight, position, this);
+			if (this.onCameraRemoved != null) {
+				this.onCameraRemoved(toRemove);
+			}
+			return index;
 		}
-	}
 
-	public function addCamera(newCamera:Camera) {
-		newCamera.uniqueId = this._uniqueIdCounter++;
-		var position = this.cameras.push(newCamera);
-		if (this.onNewCameraAdded != null) {
-			this.onNewCameraAdded(newCamera, position, this);
-		}
-	}
-	
-	public function setActiveCameraByID(id:String):Camera {
-		var camera = this.getCameraByID(id);
-		
-		if (camera != null) {
-			this.activeCamera = camera;
-			return camera;
-		}
-		
-		return null;
-	}
-
-	public function setActiveCameraByName(name:String):Camera {
-		var camera = this.getCameraByName(name);
-		
-		if (camera != null) {
-			this.activeCamera = camera;
-			return camera;
-		}
-		
-		return null;
-	}
-
-	public function getMaterialByID(id:String):Material {
-		for (index in 0...this.materials.length) {
-			if (this.materials[index].id == id) {
-				return this.materials[index];
+		public function addLight(newLight:Light) {
+			newLight.uniqueId = this._uniqueIdCounter++;
+			var position = this.lights.push(newLight);
+			if (this.onNewLightAdded != null) {
+				this.onNewLightAdded(newLight, position, this);
 			}
 		}
-		
-		return null;
-	}
 
-	public function getMaterialByName(name:String):Material {
-		for (index in 0...this.materials.length) {
-			if (this.materials[index].name == name) {
-				return this.materials[index];
+		public function addCamera(newCamera:Camera) {
+			newCamera.uniqueId = this._uniqueIdCounter++;
+			var position = this.cameras.push(newCamera);
+			if (this.onNewCameraAdded != null) {
+				this.onNewCameraAdded(newCamera, position, this);
 			}
 		}
-		
-		return null;
-	}
-	
-	public function getLensFlareSystemByName(name:String):LensFlareSystem {
-		for (index in 0...this.lensFlareSystems.length) {
-			if (this.lensFlareSystems[index].name == name) {
-				return this.lensFlareSystems[index];
-			}
-		}
-		
-		return null;
-	}
 
-	public function getCameraByID(id:String):Camera {
-		for (index in 0...this.cameras.length) {
-			if (this.cameras[index].id == id) {
-				return this.cameras[index];
-			}
-		}
-		
-		return null;
-	}
-	
-	public function getCameraByUniqueID(uniqueId:Int):Camera {
-        for (index in 0...this.cameras.length) {
-            if (this.cameras[index].uniqueId == uniqueId) {
-                return this.cameras[index];
-            }
-        }
-		
-        return null;
-    }
+		public function setActiveCameraByID(id:String):Camera {
+			var camera = this.getCameraByID(id);
 
-	public function getCameraByName(name:String):Camera {
-		for (index in 0...this.cameras.length) {
-			if (this.cameras[index].name == name) {
-				return this.cameras[index];
+			if (camera != null) {
+				this.activeCamera = camera;
+				return camera;
 			}
+
+			return null;
 		}
-		
-		return null;
-	}
-	
+
+		public function setActiveCameraByName(name:String):Camera {
+			var camera = this.getCameraByName(name);
+
+			if (camera != null) {
+				this.activeCamera = camera;
+				return camera;
+			}
+
+			return null;
+		}
+
+		public function getMaterialByID(id:String):Material {
+			for (index in 0...this.materials.length) {
+				if (this.materials[index].id == id) {
+					return this.materials[index];
+				}
+			}
+
+			return null;
+		}
+
+		public function getMaterialByName(name:String):Material {
+			for (index in 0...this.materials.length) {
+				if (this.materials[index].name == name) {
+					return this.materials[index];
+				}
+			}
+
+			return null;
+		}
+
+		public function getLensFlareSystemByName(name:String):LensFlareSystem {
+			for (index in 0...this.lensFlareSystems.length) {
+				if (this.lensFlareSystems[index].name == name) {
+					return this.lensFlareSystems[index];
+				}
+			}
+
+			return null;
+		}
+
+		public function getCameraByID(id:String):Camera {
+			for (index in 0...this.cameras.length) {
+				if (this.cameras[index].id == id) {
+					return this.cameras[index];
+				}
+			}
+
+			return null;
+		}
+
+		public function getCameraByUniqueID(uniqueId:Int):Camera {
+			for (index in 0...this.cameras.length) {
+				if (this.cameras[index].uniqueId == uniqueId) {
+					return this.cameras[index];
+				}
+			}
+
+			return null;
+		}
+
+		public function getCameraByName(name:String):Camera {
+			for (index in 0...this.cameras.length) {
+				if (this.cameras[index].name == name) {
+					return this.cameras[index];
+				}
+			}
+
+			return null;
+		}
+
 	/**
 	 * get a bone using its id
 	 * @param {string} the bone's id
 	 * @return {BABYLON.Bone|null} the bone or null if not found
 	 */
-	public function getBoneByID(id:String):Bone {
-		for (skeleton in this.skeletons) {
-			for (bone in skeleton.bones) {
-				if (bone.id == id) {
-					return bone;
-				}
-			}
-		}
-		
-		return null;
-	}
+	 public function getBoneByID(id:String):Bone {
+	 	for (skeleton in this.skeletons) {
+	 		for (bone in skeleton.bones) {
+	 			if (bone.id == id) {
+	 				return bone;
+	 			}
+	 		}
+	 	}
+
+	 	return null;
+	 }
 
 	/**
 	* get a bone using its id
@@ -1048,14 +1178,14 @@ import com.babylonhx.tools.Tools;
 	}
 	
 	public function getLightByUniqueID(uniqueId:Int):Light {
-        for (index in 0...this.lights.length) {
-            if (this.lights[index].uniqueId == uniqueId) {
-                return this.lights[index];
-            }
-        }
+		for (index in 0...this.lights.length) {
+			if (this.lights[index].uniqueId == uniqueId) {
+				return this.lights[index];
+			}
+		}
 		
-        return null;
-    }
+		return null;
+	}
 	
 	public function getParticleSystemByID(id:String):ParticleSystem {
 		for (index in 0...this.particleSystems.length) {
@@ -1098,12 +1228,12 @@ import com.babylonhx.tools.Tools;
 	 * @param {BABYLON.Geometry} geometry - the geometry to be removed from the scene.
 	 * @return {boolean} was the geometry removed or not
 	 */
-	public function removeGeometry(geometry:Geometry):Bool {
-		var index = this._geometries.indexOf(geometry);
-		
-		if (index > -1) {
-			this._geometries.splice(index, 1);
-			
+	 public function removeGeometry(geometry:Geometry):Bool {
+	 	var index = this._geometries.indexOf(geometry);
+
+	 	if (index > -1) {
+	 		this._geometries.splice(index, 1);
+
 			//notify the collision coordinator
 			this.collisionCoordinator.onGeometryDeleted(geometry);
 			
@@ -1124,185 +1254,185 @@ import com.babylonhx.tools.Tools;
 	 * @param {string} id - the id to search for
 	 * @return {BABYLON.AbstractMesh|null} the mesh found or null if not found at all.
 	 */
-	public function getMeshByID(id:String):AbstractMesh {
-		for (index in 0...this.meshes.length) {
-			if (this.meshes[index].id == id) {
-				return this.meshes[index];
-			}
-		}
-		
-		return null;
-	}
-	
+	 public function getMeshByID(id:String):AbstractMesh {
+	 	for (index in 0...this.meshes.length) {
+	 		if (this.meshes[index].id == id) {
+	 			return this.meshes[index];
+	 		}
+	 	}
+
+	 	return null;
+	 }
+
 	/**
 	 * Get a mesh with its auto-generated unique id
 	 * @param {number} uniqueId - the unique id to search for
 	 * @return {BABYLON.AbstractMesh|null} the mesh found or null if not found at all.
 	 */
-	public function getMeshByUniqueID(uniqueId:Int):AbstractMesh {
-        for (index in 0...this.meshes.length) {
-            if (this.meshes[index].uniqueId == uniqueId) {
-                return this.meshes[index];
-            }
-        }
-		
-        return null;
-    }
+	 public function getMeshByUniqueID(uniqueId:Int):AbstractMesh {
+	 	for (index in 0...this.meshes.length) {
+	 		if (this.meshes[index].uniqueId == uniqueId) {
+	 			return this.meshes[index];
+	 		}
+	 	}
+
+	 	return null;
+	 }
 
 	/**
 	 * Get a the last added mesh found of a given ID
 	 * @param {string} id - the id to search for
 	 * @return {BABYLON.AbstractMesh|null} the mesh found or null if not found at all.
 	 */
-	public function getLastMeshByID(id:String):AbstractMesh {
-		var index:Int = this.meshes.length -1;
-		while(index >= 0) {
-			if (this.meshes[index].id == id) {
-				return this.meshes[index];
-			}
-			--index;
-		}
-		
-		return null;
-	}
+	 public function getLastMeshByID(id:String):AbstractMesh {
+	 	var index:Int = this.meshes.length -1;
+	 	while(index >= 0) {
+	 		if (this.meshes[index].id == id) {
+	 			return this.meshes[index];
+	 		}
+	 		--index;
+	 	}
+
+	 	return null;
+	 }
 
 	/**
 	 * Get a the last added node (Mesh, Camera, Light) found of a given ID
 	 * @param {string} id - the id to search for
 	 * @return {BABYLON.Node|null} the node found or null if not found at all.
 	 */
-	public function getLastEntryByID(id:String):Node {
-		var index:Int = this.meshes.length - 1;
-		while(index >= 0) {
-			if (this.meshes[index].id == id) {
-				return this.meshes[index];
-			}
-			--index;
-		}
-		
-		index = this.cameras.length - 1;
-		while(index >= 0) {
-			if (this.cameras[index].id == id) {
-				return this.cameras[index];
-			}
-			--index;
-		}
-		
-		index = this.lights.length - 1;
-		while(index >= 0) {
-			if (this.lights[index].id == id) {
-				return this.lights[index];
-			}
-			--index;
-		}
-		
-		return null;
-	}
-	
-	public function getNodeByID(id:String):Node {
-		var mesh = this.getMeshByID(id);
-		
-		if (mesh != null) {
-			return mesh;
-		}
-		
-		var light = this.getLightByID(id);
-		
-		if (light != null) {
-			return light;
-		}
-		
-		var camera = this.getCameraByID(id);
-		
-		if (camera != null) {
-			return camera;
-		}
-		
-		var bone = this.getBoneByID(id);
-		
-		return bone;
-	}
-	
-	public function getNodeByName(name:String):Node {
-		var mesh = this.getMeshByName(name);
-		
-		if (mesh != null) {
-			return mesh;
-		}
-		
-		var light = this.getLightByName(name);
-		
-		if (light != null) {
-			return light;
-		}
-		
-		var camera = this.getCameraByName(name);
-		
-		if (camera != null) {
-			return camera;
-		}
-		
-		var bone = this.getBoneByName(name);
-		
-		return bone;
-	}
+	 public function getLastEntryByID(id:String):Node {
+	 	var index:Int = this.meshes.length - 1;
+	 	while(index >= 0) {
+	 		if (this.meshes[index].id == id) {
+	 			return this.meshes[index];
+	 		}
+	 		--index;
+	 	}
 
-	public function getMeshByName(name:String):AbstractMesh {
-		for (index in 0...this.meshes.length) {
-			if (this.meshes[index].name == name) {
-				return this.meshes[index];
-			}
-		}
-		
-		return null;
-	}
+	 	index = this.cameras.length - 1;
+	 	while(index >= 0) {
+	 		if (this.cameras[index].id == id) {
+	 			return this.cameras[index];
+	 		}
+	 		--index;
+	 	}
 
-	public function getLastSkeletonByID(id:String):Skeleton {
-		var index:Int = this.skeletons.length - 1;
-		while(index >= 0) {
-			if (this.skeletons[index].id == id) {
-				return this.skeletons[index];
-			}
-			--index;
-		}
-		
-		return null;
-	}
+	 	index = this.lights.length - 1;
+	 	while(index >= 0) {
+	 		if (this.lights[index].id == id) {
+	 			return this.lights[index];
+	 		}
+	 		--index;
+	 	}
 
-	public function getSkeletonById(id:String):Skeleton {
-		for (index in 0...this.skeletons.length) {
-			if (this.skeletons[index].id == id) {
-				return this.skeletons[index];
-			}
-		}
-		
-		return null;
-	}
+	 	return null;
+	 }
 
-	public function getSkeletonByName(name:String):Skeleton {
-		for (index in 0...this.skeletons.length) {
-			if (this.skeletons[index].name == name) {
-				return this.skeletons[index];
-			}
-		}
-		
-		return null;
-	}
+	 public function getNodeByID(id:String):Node {
+	 	var mesh = this.getMeshByID(id);
 
-	inline public function isActiveMesh(mesh:Mesh):Bool {
-		return (this._activeMeshes.indexOf(mesh) != -1);
-	}
+	 	if (mesh != null) {
+	 		return mesh;
+	 	}
 
-	static var _eSMMaterial:Material;
-	inline private function _evaluateSubMesh(subMesh:SubMesh, mesh:AbstractMesh) {
-		if (mesh.alwaysSelectAsActiveMesh || mesh.subMeshes.length == 1 || subMesh.isInFrustum(this._frustumPlanes)) {
-			_eSMMaterial = subMesh.getMaterial();
-			
-			if (mesh.showSubMeshesBoundingBox) {
-				this._boundingBoxRenderer.renderList.push(subMesh.getBoundingInfo().boundingBox);
-			}
-			
-			if (_eSMMaterial != null) {
+	 	var light = this.getLightByID(id);
+
+	 	if (light != null) {
+	 		return light;
+	 	}
+
+	 	var camera = this.getCameraByID(id);
+
+	 	if (camera != null) {
+	 		return camera;
+	 	}
+
+	 	var bone = this.getBoneByID(id);
+
+	 	return bone;
+	 }
+
+	 public function getNodeByName(name:String):Node {
+	 	var mesh = this.getMeshByName(name);
+
+	 	if (mesh != null) {
+	 		return mesh;
+	 	}
+
+	 	var light = this.getLightByName(name);
+
+	 	if (light != null) {
+	 		return light;
+	 	}
+
+	 	var camera = this.getCameraByName(name);
+
+	 	if (camera != null) {
+	 		return camera;
+	 	}
+
+	 	var bone = this.getBoneByName(name);
+
+	 	return bone;
+	 }
+
+	 public function getMeshByName(name:String):AbstractMesh {
+	 	for (index in 0...this.meshes.length) {
+	 		if (this.meshes[index].name == name) {
+	 			return this.meshes[index];
+	 		}
+	 	}
+
+	 	return null;
+	 }
+
+	 public function getLastSkeletonByID(id:String):Skeleton {
+	 	var index:Int = this.skeletons.length - 1;
+	 	while(index >= 0) {
+	 		if (this.skeletons[index].id == id) {
+	 			return this.skeletons[index];
+	 		}
+	 		--index;
+	 	}
+
+	 	return null;
+	 }
+
+	 public function getSkeletonById(id:String):Skeleton {
+	 	for (index in 0...this.skeletons.length) {
+	 		if (this.skeletons[index].id == id) {
+	 			return this.skeletons[index];
+	 		}
+	 	}
+
+	 	return null;
+	 }
+
+	 public function getSkeletonByName(name:String):Skeleton {
+	 	for (index in 0...this.skeletons.length) {
+	 		if (this.skeletons[index].name == name) {
+	 			return this.skeletons[index];
+	 		}
+	 	}
+
+	 	return null;
+	 }
+
+	 inline public function isActiveMesh(mesh:Mesh):Bool {
+	 	return (this._activeMeshes.indexOf(mesh) != -1);
+	 }
+
+	 static var _eSMMaterial:Material;
+	 inline private function _evaluateSubMesh(subMesh:SubMesh, mesh:AbstractMesh) {
+	 	if (mesh.alwaysSelectAsActiveMesh || mesh.subMeshes.length == 1 || subMesh.isInFrustum(this._frustumPlanes)) {
+	 		_eSMMaterial = subMesh.getMaterial();
+
+	 		if (mesh.showSubMeshesBoundingBox) {
+	 			this._boundingBoxRenderer.renderList.push(subMesh.getBoundingInfo().boundingBox);
+	 		}
+
+	 		if (_eSMMaterial != null) {
 				// Render targets
 				if (_eSMMaterial.getRenderTargetTextures != null) {
 					if (this._processedMaterials.indexOf(_eSMMaterial) == -1) {
@@ -1352,7 +1482,7 @@ import com.babylonhx.tools.Tools;
 			len = this.meshes.length;
 			_activeMeshes_ = cast this.meshes;
 		}
-				
+
 		for (meshIndex in 0...len) {
 			_activeMesh_ = _activeMeshes_[meshIndex];
 			
@@ -1381,12 +1511,12 @@ import com.babylonhx.tools.Tools;
 			}
 			
 			_activeMesh_._preActivate();
-						
+
 			if (_activeMesh_.alwaysSelectAsActiveMesh || _activeMesh_.isVisible && _activeMesh_.visibility > 0 && ((_activeMesh_.layerMask & this.activeCamera.layerMask) != 0) && _activeMesh_.isInFrustum(this._frustumPlanes)) {
 				this._activeMeshes.push(_activeMesh_);
 				this.activeCamera._activeMeshes.push(_activeMesh_);
 				_activeMesh_._activate(this._renderId);
-								
+
 				this._activeMesh(meshLOD);
 			}
 		}
@@ -1417,8 +1547,8 @@ import com.babylonhx.tools.Tools;
 			this._activeSkeletons.pushNoDuplicate(mesh.skeleton);
 			
 			if (!mesh.computeBonesUsingShaders) {
-                this._softwareSkinnedMeshes.pushNoDuplicate(cast mesh);
-            }
+				this._softwareSkinnedMeshes.pushNoDuplicate(cast mesh);
+			}
 		}
 		
 		if (mesh.showBoundingBox || this.forceShowBoundingBoxes) {
@@ -1426,9 +1556,9 @@ import com.babylonhx.tools.Tools;
 		} 
 		
 		if (mesh._edgesRenderer != null) {
-            this._edgesRenderers.push(mesh._edgesRenderer);
-        }
-        
+			this._edgesRenderers.push(mesh._edgesRenderer);
+		}
+
 		if (mesh != null && mesh.subMeshes != null) {
 			// Submeshes Octrees
 			var len:Int = -1;
@@ -1439,30 +1569,30 @@ import com.babylonhx.tools.Tools;
 				
 				len = intersections.length;
 				subMeshes = cast intersections.data;
-			} else {
-				subMeshes = mesh.subMeshes;
-				len = subMeshes.length;
-			}
-			
-			for (subIndex in 0...len) {
-				var subMesh = subMeshes[subIndex];
-				this._evaluateSubMesh(subMesh, mesh);
+				} else {
+					subMeshes = mesh.subMeshes;
+					len = subMeshes.length;
+				}
+
+				for (subIndex in 0...len) {
+					var subMesh = subMeshes[subIndex];
+					this._evaluateSubMesh(subMesh, mesh);
+				}
 			}
 		}
-	}
 
-	inline public function updateTransformMatrix(force:Bool = false) {
-		this.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(force));
-	}
-
-	private function _renderForCamera(camera:Camera) {
-		var engine = this._engine;
-		
-		this.activeCamera = camera;
-		
-		if (this.activeCamera == null) {
-			throw("Active camera not set");
+		inline public function updateTransformMatrix(force:Bool = false) {
+			this.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(force));
 		}
+
+		private function _renderForCamera(camera:Camera) {
+			var engine = this._engine;
+
+			this.activeCamera = camera;
+
+			if (this.activeCamera == null) {
+				throw("Active camera not set");
+			}
 			
 		//Tools.StartPerformanceCounter("Rendering camera " + this.activeCamera.name);
 		// Viewport
@@ -1491,11 +1621,11 @@ import com.babylonhx.tools.Tools;
 		}
 		
 		// Software skinning
-        for (softwareSkinnedMeshIndex in 0...this._softwareSkinnedMeshes.length) {
-            var mesh:Mesh = cast this._softwareSkinnedMeshes.data[softwareSkinnedMeshIndex];
+		for (softwareSkinnedMeshIndex in 0...this._softwareSkinnedMeshes.length) {
+			var mesh:Mesh = cast this._softwareSkinnedMeshes.data[softwareSkinnedMeshIndex];
 			
-            mesh.applySkeleton(mesh.skeleton);
-        }
+			mesh.applySkeleton(mesh.skeleton);
+		}
 		
 		// Render targets
 		var beforeRenderTargetDate = Tools.Now();
@@ -1514,9 +1644,9 @@ import com.babylonhx.tools.Tools;
 			
             engine.restoreDefaultFramebuffer();  // Restore back buffer
         }
-		
-		this._renderTargetsDuration += Tools.Now() - beforeRenderTargetDate;
-		
+
+        this._renderTargetsDuration += Tools.Now() - beforeRenderTargetDate;
+
 		// Prepare Frame
 		this.postProcessManager._prepareFrame();
 		
@@ -1543,9 +1673,9 @@ import com.babylonhx.tools.Tools;
 		this._boundingBoxRenderer.render();
 		
 		// Edges
-        for (edgesRendererIndex in 0...this._edgesRenderers.length) {
-            this._edgesRenderers.data[edgesRendererIndex].render();
-        }
+		for (edgesRendererIndex in 0...this._edgesRenderers.length) {
+			this._edgesRenderers.data[edgesRendererIndex].render();
+		}
 		
 		// Lens flares
 		if (this.lensFlaresEnabled) {
@@ -1601,13 +1731,13 @@ import com.babylonhx.tools.Tools;
 		}
 
 		 // rig cameras
-         for (index in 0...camera._rigCameras.length) {
-                this._renderForCamera(camera._rigCameras[index]);
-         }
-		
-		this.activeCamera = camera;
-		this.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(false));
-		
+		 for (index in 0...camera._rigCameras.length) {
+		 	this._renderForCamera(camera._rigCameras[index]);
+		 }
+
+		 this.activeCamera = camera;
+		 this.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(false));
+
 		// Update camera
 		this.activeCamera._updateFromScene();
 	}
@@ -1629,21 +1759,21 @@ import com.babylonhx.tools.Tools;
 						action._executeCurrent(ActionEvent.CreateNew(sourceMesh));
 						sourceMesh._intersectionsInProgress.push(otherMesh);
 						
-					} else if (!areIntersecting && currentIntersectionInProgress > -1 && action.trigger == ActionManager.OnIntersectionExitTrigger) {
-						action._executeCurrent(ActionEvent.CreateNew(sourceMesh));
-						
-						var indexOfOther = sourceMesh._intersectionsInProgress.indexOf(otherMesh);
-						
-						if (indexOfOther > -1) {
-							sourceMesh._intersectionsInProgress.splice(indexOfOther, 1);
+						} else if (!areIntersecting && currentIntersectionInProgress > -1 && action.trigger == ActionManager.OnIntersectionExitTrigger) {
+							action._executeCurrent(ActionEvent.CreateNew(sourceMesh));
+
+							var indexOfOther = sourceMesh._intersectionsInProgress.indexOf(otherMesh);
+
+							if (indexOfOther > -1) {
+								sourceMesh._intersectionsInProgress.splice(indexOfOther, 1);
+							}
 						}
 					}
 				}
 			}
 		}
-	}
 
-	public function render() {
+		public function render() {
 		//var startDate = Tools.Now();
 		this._particlesDuration = 0;
 		this._spritesDuration = 0;
@@ -1657,7 +1787,7 @@ import com.babylonhx.tools.Tools;
 		this.getEngine().resetDrawCalls();
 		this._meshesForIntersections.reset();
 		this.resetCachedMaterial();
-			
+
 		//Tools.StartPerformanceCounter("Scene rendering");
 		
 		// Actions
@@ -1707,7 +1837,7 @@ import com.babylonhx.tools.Tools;
 					if (this.activeCamera == null) {
 						throw("Active camera not set");
 					}
-						
+
 					// Viewport
 					engine.setViewport(this.activeCamera.viewport);
 					
@@ -1768,8 +1898,8 @@ import com.babylonhx.tools.Tools;
 			for (cameraIndex in 0...this.activeCameras.length) {
 				this._renderId = currentRenderId;
 				if (cameraIndex > 0) {
-                    this._engine.clear(0, false, true);
-                }
+					this._engine.clear(0, false, true);
+				}
 				
 				this._processSubCameras(this.activeCameras[cameraIndex]);
 			}
@@ -1791,8 +1921,8 @@ import com.babylonhx.tools.Tools;
 		}
 		
 		for (callback in this._onAfterRenderCallbacks) {
-            callback();
-        }
+			callback();
+		}
 		
 		// Cleaning
 		for (index in 0...this._toBeDisposed.length) {
@@ -1994,7 +2124,7 @@ import com.babylonhx.tools.Tools;
 			max: max
 		};
 	}
-		
+
 	inline public function createOrUpdateSelectionOctree(maxCapacity:Int = 64, maxDepth:Int = 2):Octree<AbstractMesh> {
 		if (this._selectionOctree == null) {
 			this._selectionOctree = new Octree<AbstractMesh>(Octree.CreationFuncForMeshes, maxCapacity, maxDepth);
@@ -2072,11 +2202,11 @@ import com.babylonhx.tools.Tools;
 			if (result == null || !result.hit) {
 				continue;
 			}
-				
+
 			if (!fastCheck && pickingInfo != null && result.distance >= pickingInfo.distance) {
 				continue;
 			}
-				
+
 			pickingInfo = result;
 			
 			if (fastCheck) {
@@ -2149,7 +2279,7 @@ import com.babylonhx.tools.Tools;
 			}
 			world.invertToRef(this._pickWithRayInverseMatrix);
 			return Ray.Transform(ray, this._pickWithRayInverseMatrix);
-		}, cast predicate, fastCheck);
+			}, cast predicate, fastCheck);
 	}
 
 	public function setPointerOverMesh(mesh:AbstractMesh) {
@@ -2158,7 +2288,7 @@ import com.babylonhx.tools.Tools;
 		}
 		
 		if (this._pointerOverMesh != null && this._pointerOverMesh.actionManager != null) {
-		this._pointerOverMesh.actionManager.processTrigger(ActionManager.OnPointerOutTrigger, ActionEvent.CreateNew(this._pointerOverMesh));
+			this._pointerOverMesh.actionManager.processTrigger(ActionManager.OnPointerOutTrigger, ActionEvent.CreateNew(this._pointerOverMesh));
 		}
 		
 		this._pointerOverMesh = mesh;
@@ -2301,6 +2431,6 @@ import com.babylonhx.tools.Tools;
 
 	public function getMaterialByTags(tagsQuery:String):Array<Material> {
 		return cast this._getByTags(this.materials, tagsQuery).concat(this._getByTags(this.multiMaterials, tagsQuery));
-	}*/
-	
-}
+		}*/
+
+	}

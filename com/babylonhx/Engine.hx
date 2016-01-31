@@ -23,12 +23,14 @@ import com.babylonhx.utils.typedarray.Int32Array;
 import com.babylonhx.utils.typedarray.Int16Array;
 import com.babylonhx.utils.typedarray.ArrayBufferView;
 import com.babylonhx.utils.Image;
+import com.babylonhx.audio.AudioEngine;
 
 import haxe.ds.Vector;
 
 
 #if (js || purejs)
 import js.Browser;
+
 #end
 
 #if openfl
@@ -45,6 +47,8 @@ import nme.display.OpenGLView;
 @:expose('BABYLON.Engine') class Engine {
 	
 	// Const statics
+
+
 	public static inline var ALPHA_DISABLE:Int = 0;
 	public static inline var ALPHA_ADD:Int = 1;
 	public static inline var ALPHA_COMBINE:Int = 2;
@@ -163,6 +167,9 @@ import nme.display.OpenGLView;
 	public var height:Int;
 	#end
 	
+	#if (js || purejs)
+	public var audioEngine: AudioEngine = new AudioEngine();
+	#end
 		
 	public function new(canvas:Dynamic, antialias:Bool = false, ?options:Dynamic, adaptToDeviceRatio:Bool = false) {		
 		Engine.app = canvas;
@@ -178,6 +185,8 @@ import nme.display.OpenGLView;
 		this._workingContext = new OpenGLView();
 		canvas.addChild(this._workingContext);
 		#end
+
+	
 		
 		// TODO: make it for Snow also ??
 		#if (lime || openfl || nme)
