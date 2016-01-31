@@ -11,7 +11,7 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 import com.babylonhx.utils.typedarray.Float32Array;
 import com.babylonhx.utils.typedarray.Int32Array;
 
-import haxe.ds.Either;
+//import haxe.ds.Either;
 
 /**
  * ...

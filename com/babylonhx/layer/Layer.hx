@@ -15,7 +15,7 @@ import com.babylonhx.utils.GL;
 @:expose('BABYLON.Layer') class Layer {
 	
 	public var name:String;
-	public var texture:Texture;
+	public var texture:Dynamic;
 	public var isBackground:Bool;
 	public var color:Color4;
 	public var scale:Vector2 = new Vector2(1, 1);

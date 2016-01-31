@@ -311,9 +311,9 @@ import nme.display.OpenGLView;
 	}
 
 	public function getRenderWidth(useScreen:Bool = false):Int {
-		if (!useScreen && this._currentRenderTarget != null) {
+		/*if (!useScreen && this._currentRenderTarget != null) {
 			return this._currentRenderTarget._width;
-		}
+		}*/
 		#if (lime || openfl || nme || purejs)
 		return width;
 		#else
@@ -322,9 +322,9 @@ import nme.display.OpenGLView;
 	}
 
 	public function getRenderHeight(useScreen:Bool = false):Int {
-		if (!useScreen && this._currentRenderTarget != null) {
+		/*if (!useScreen && this._currentRenderTarget != null) {
 			return this._currentRenderTarget._height;
-		}
+		}*/
 		#if (lime || openfl || nme || purejs)
 		return height;
 		#else

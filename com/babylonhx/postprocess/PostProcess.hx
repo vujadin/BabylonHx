@@ -154,9 +154,9 @@ import com.babylonhx.utils.GL;
 		this._engine.setDepthWrite(false);
 				
 		// Texture
-		//if(this._textures.length > 0) {		
+		if(this._textures.length > 0) {		
 			this._effect._bindTexture("textureSampler", this._textures.data[this._currentRenderTextureInd]);
-		//}
+		}
 		
 		// Parameters
 		if (this.onApply != null) {

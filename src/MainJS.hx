@@ -15,10 +15,9 @@ import com.babylonhx.Scene;
  * ...
  * @author Krtolica Vujadin
  */
-class MainJS {
+@:expose('BABYLON.Main') class MainJS {
 	
 	var canvas:CanvasElement;
-	
 	var scene:Scene;
 	var engine:Engine;
 	
@@ -28,15 +27,19 @@ class MainJS {
 	}
 	
 	public function new() {
+		untyped Browser.navigator.isCocoonJS = true;
 		canvas = Browser.document.createCanvasElement();
 		canvas.width = Browser.window.innerWidth;
 		canvas.height = Browser.window.innerHeight;
 		Browser.document.body.appendChild(canvas);
 		
 		engine = new Engine(canvas, false);	
+		engine.width = canvas.width;
+		engine.height = canvas.height;
 		scene = new Scene(engine);
-			
+				
 		Browser.window.addEventListener("resize", resize);
+		Browser.window.addEventListener("orientationchange", resize);
 		
 		canvas.addEventListener("mousedown", onMouseDown);
 		canvas.addEventListener("mouseup", onMouseUp);
@@ -165,6 +168,18 @@ class MainJS {
 		for (f in Engine.mouseWheel) {
 			f(e.detail);
 		}
+	}
+
+	
+
+	public function render ():Void {
+		try{
+			untyped __js__ ("requestAnimationFrame") (render);
+			untyped __js__ ('CocoonJS_App_ForCocoonJS_WebViewIFrame.postMessage("update", "*");');
+		}catch(e:Dynamic){
+			trace(e);
+		}
+		
 	}
 	
 }
