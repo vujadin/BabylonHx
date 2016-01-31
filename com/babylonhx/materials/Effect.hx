@@ -45,7 +45,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	@:allow(com.babylonhx.Engine.dispose) 
 	private var _program:GLProgram;
 	
-	private var _valueCache:Map<String, Array<Float>>;		
+	private var _valueCache:Map<String, Array<Float>>;	
+	private var _valueCacheMatrix:Map<String, Matrix>;	// VK: special map for matrices
 	
 
 	public function new(baseName:Dynamic, attributesNames:Array<String>, uniformsNames:Array<String>, samplers:Array<String>, engine:Engine, ?defines:String, ?fallbacks:EffectFallbacks, ?onCompiled:Effect->Void, ?onError:Effect->String->Void) {
@@ -83,6 +84,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			this._prepareEffect(_vertexCode, _fragmentCode, attributesNames, defines, fallbacks);					
 			// Cache
 			this._valueCache = new Map<String, Array<Float>>();
+			this._valueCacheMatrix = new Map<String, Matrix>();
 		};
 		var getFragmentCode = function() {
 			var _fragmentCode:String = "";
@@ -192,8 +194,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			
 			var index:Int = 0;
 			while (index < this._samplers.length) {				
-                var sampler = this.getUniform(this._samplers[index]);				
-				#if (js || purejs || html5 || web || snow || nme)
+                var sampler = this.getUniform(this._samplers[index]);	
+				#if (js || purejs || html5 || web || snow || nme || neko)
 				if (sampler == null) {
 				#else // openfl/lime
 				if ( #if legacy sampler != null && #end cast(sampler, Int) < 0) {
@@ -265,14 +267,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._engine.setTextureFromPostProcess(this._samplers.indexOf(channel), postProcess);
 	}
 
-	/*public function _cacheMatrix(uniformName:String, matrix:Matrix) {
-	    if (this._valueCache[uniformName] == null) {
-	        this._valueCache[uniformName] = [];
+	inline public function _cacheMatrix(uniformName:String, matrix:Matrix) {
+	    if (this._valueCacheMatrix[uniformName] == null) {
+	        this._valueCacheMatrix[uniformName] = new Matrix();
 	    }
 		
-	    for (index in 0...16) {
-	        this._valueCache[uniformName][index] = matrix.m[index];
-	    }
+	    this._valueCacheMatrix[uniformName].copyFrom(matrix);
 	}
 
 	inline public function _cacheFloat2(uniformName:String, x:Float, y:Float) {
@@ -306,7 +306,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			this._valueCache[uniformName][2] = z;
 			this._valueCache[uniformName][3] = w;
 		}
-	}*/
+	}
 
 	inline public function setArray(uniformName:String, array:Array<Float>):Effect {
 		this._engine.setArray(this.getUniform(uniformName), array);
@@ -339,15 +339,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	inline public function setMatrix(uniformName:String, matrix:Matrix):Effect {
-		/*#if !js
-		if (this._valueCache[uniformName] != null && this._valueCache[uniformName] == matrix.m) {
-		#else
-		if (this._valueCache[uniformName] != null && this._valueCache[uniformName] == cast matrix.m) {
-		#end
+		/*var val = this._valueCacheMatrix[uniformName];
+		if (val != null && val.equals(matrix)) {
 		    return this;
-		}*/
+		}
 		
-		//this._cacheMatrix(uniformName, matrix);
+		this._cacheMatrix(uniformName, matrix);*/
 		this._engine.setMatrix(this.getUniform(uniformName), matrix);
 		
 		return this;
@@ -366,95 +363,121 @@ import com.babylonhx.utils.typedarray.Float32Array;
     }
 
 	inline public function setFloat(uniformName:String, value:Float):Effect {
-		//if (!(this._valueCache.exists(uniformName) && this._valueCache[uniformName][0] == value)) {
-		//	this._valueCache.set(uniformName, [value]);		
-			this._engine.setFloat(this.getUniform(uniformName), value);
-		//}	
+		var val = this._valueCache[uniformName];
+		if (val != null && val[0] == value) {
+			return this;
+		}	
+		
+		this._valueCache.set(uniformName, [value]);		
+		this._engine.setFloat(this.getUniform(uniformName), value);
 		
 		return this;
 	}
 
 	inline public function setBool(uniformName:String, bool:Bool):Effect {
-		//if (!(this._valueCache.exists(uniformName) && this._valueCache[uniformName][0] == (bool ? 1.0 : 0.0))) {
-		//	this._valueCache[uniformName] = bool ? [1.0] : [0.0];
-			this._engine.setBool(this.getUniform(uniformName), bool);
-		//}
+		var val = this._valueCache[uniformName];
+		if (val != null && val[0] == (bool ? 1.0 : 0.0)) {
+			return this;
+		}
+		
+		this._valueCache[uniformName] = bool ? [1.0] : [0.0];
+		this._engine.setBool(this.getUniform(uniformName), bool);
 		
 		return this;
 	}
 
 	inline public function setVector2(uniformName:String, vector2:Vector2):Effect {
-		//if (!(this._valueCache.exists(uniformName) && this._valueCache[uniformName][0] == vector2.x && this._valueCache[uniformName][1] == vector2.y)) {
-		//	this._cacheFloat2(uniformName, vector2.x, vector2.y);
-			this._engine.setFloat2(this.getUniform(uniformName), vector2.x, vector2.y);
-		//}
+		var val = this._valueCache[uniformName];
+		if (val != null && val[0] == vector2.x && val[1] == vector2.y) {
+			return this;
+		}
+		
+		this._cacheFloat2(uniformName, vector2.x, vector2.y);
+		this._engine.setFloat2(this.getUniform(uniformName), vector2.x, vector2.y);
 		
 		return this;
 	}
 
 	inline public function setFloat2(uniformName:String, x:Float, y:Float):Effect {
-		//if (!(this._valueCache.exists(uniformName) && this._valueCache[uniformName][0] == x && this._valueCache[uniformName][1] == y)) {
-		//	this._cacheFloat2(uniformName, x, y);
-			this._engine.setFloat2(this.getUniform(uniformName), x, y);
-		//}
+		var val = this._valueCache[uniformName];
+		if (val != null && val[0] == x && val[1] == y) {
+			return this;
+		}
+		
+		this._cacheFloat2(uniformName, x, y);
+		this._engine.setFloat2(this.getUniform(uniformName), x, y);
 		
 		return this;
 	}
 
 	inline public function setVector3(uniformName:String, vector3:Vector3):Effect {
-		//if (this._valueCache.exists(uniformName) && this._valueCache[uniformName][0] == vector3.x && this._valueCache[uniformName][1] == vector3.y && this._valueCache[uniformName][2] == vector3.z) {
-		//	return this;
-		//}
+		var val = this._valueCache[uniformName];
+		if (val != null && val[0] == vector3.x && val[1] == vector3.y && val[2] == vector3.z) {
+			return this;
+		}
 		
-		//this._cacheFloat3(uniformName, vector3.x, vector3.y, vector3.z);
+		this._cacheFloat3(uniformName, vector3.x, vector3.y, vector3.z);
 		this._engine.setFloat3(this.getUniform(uniformName), vector3.x, vector3.y, vector3.z);
 		
 		return this;
 	}
 
 	inline public function setFloat3(uniformName:String, x:Float, y:Float, z:Float):Effect {
-		//if (!(this._valueCache.exists(uniformName) && this._valueCache[uniformName][0] == x && this._valueCache[uniformName][1] == y && this._valueCache[uniformName][2] == z)) {
-		//	this._cacheFloat3(uniformName, x, y, z);
-			this._engine.setFloat3(this.getUniform(uniformName), x, y, z);
-		//}		
+		var val = this._valueCache[uniformName];
+		if (val != null && val[0] == x && val[1] == y && val[2] == z) {
+			return this;
+		}		
+		
+		this._cacheFloat3(uniformName, x, y, z);
+		this._engine.setFloat3(this.getUniform(uniformName), x, y, z);
 		
 		return this;
 	}
 	
-	inline public function setVector4(uniformName:String, vector4:Vector4):Effect {
-		/*if (this._valueCache.exists[uniformName] && this._valueCache[uniformName][0] == vector4.x && this._valueCache[uniformName][1] == vector4.y && this._valueCache[uniformName][2] == vector4.z && this._valueCache[uniformName][3] == vector4.w) {
+	public function setVector4(uniformName:String, vector4:Vector4):Effect {
+		var val = this._valueCache[uniformName];
+		if (val != null && val[0] == vector4.x && val[1] == vector4.y && val[2] == vector4.z && val[3] == vector4.w) {
 			return this;
 		}
 		
-		this._cacheFloat4(uniformName, vector4.x, vector4.y, vector4.z, vector4.w);*/
+		this._cacheFloat4(uniformName, vector4.x, vector4.y, vector4.z, vector4.w);
 		this._engine.setFloat4(this.getUniform(uniformName), vector4.x, vector4.y, vector4.z, vector4.w);
 		
 		return this;
 	}
 
-	inline public function setFloat4(uniformName:String, x:Float, y:Float, z:Float, w:Float):Effect {
-		//if (!(this._valueCache.exists(uniformName) && this._valueCache[uniformName][0] == x && this._valueCache[uniformName][1] == y && this._valueCache[uniformName][2] == z && this._valueCache[uniformName][3] == w)) {
-		//	this._cacheFloat4(uniformName, x, y, z, w);
-			this._engine.setFloat4(this.getUniform(uniformName), x, y, z, w);
-		//}		
+	public function setFloat4(uniformName:String, x:Float, y:Float, z:Float, w:Float):Effect {
+		var val = this._valueCache[uniformName];
+		if (val != null && val[0] == x && val[1] == y && val[2] == z && val[3] == w) {
+			return this;
+		}		
+		
+		this._cacheFloat4(uniformName, x, y, z, w);
+		this._engine.setFloat4(this.getUniform(uniformName), x, y, z, w);
 		
 		return this;
 	}
 
-	inline public function setColor3(uniformName:String, color3:Color3):Effect {
-		//if (!(this._valueCache.exists(uniformName) && this._valueCache[uniformName][0] == color3.r && this._valueCache[uniformName][1] == color3.g && this._valueCache[uniformName][2] == color3.b)) {
-		//	this._cacheFloat3(uniformName, color3.r, color3.g, color3.b);
-			this._engine.setColor3(this.getUniform(uniformName), color3);
-		//} 
+	public function setColor3(uniformName:String, color3:Color3):Effect {
+		var val = this._valueCache[uniformName];
+		if (val != null && val[0] == color3.r && val[1] == color3.g && val[2] == color3.b) {
+			return this;
+		} 
+		
+		this._cacheFloat3(uniformName, color3.r, color3.g, color3.b);
+		this._engine.setColor3(this.getUniform(uniformName), color3);
 		
 		return this;
 	}
 
-	inline public function setColor4(uniformName:String, color3:Color3, alpha:Float):Effect {
-		//if (!(this._valueCache.exists(uniformName) && this._valueCache[uniformName][0] == color3.r && this._valueCache[uniformName][1] == color3.g && this._valueCache[uniformName][2] == color3.b && this._valueCache[uniformName][3] == alpha)) {
-		//	this._cacheFloat4(uniformName, color3.r, color3.g, color3.b, alpha);
-			this._engine.setColor4(this.getUniform(uniformName), color3, alpha);
-		//}	
+	public function setColor4(uniformName:String, color3:Color3, alpha:Float):Effect {
+		var val = this._valueCache[uniformName];
+		if (val != null && val[0] == color3.r && val[1] == color3.g && val[2] == color3.b && val[3] == alpha) {
+			return this;
+		}	
+		
+		this._cacheFloat4(uniformName, color3.r, color3.g, color3.b, alpha);
+		this._engine.setColor4(this.getUniform(uniformName), color3, alpha);
 		
 		return this;
 	}

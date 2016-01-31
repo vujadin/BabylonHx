@@ -109,6 +109,7 @@ import com.babylonhx.culling.BoundingBox;
 		if (this._colorShader == null) {
 			return;
 		}
+		
 		this._colorShader.dispose();
 		this._vb.dispose();
 		this._scene.getEngine()._releaseBuffer(this._ib);

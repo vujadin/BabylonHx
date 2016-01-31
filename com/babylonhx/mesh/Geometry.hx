@@ -2,9 +2,15 @@ package com.babylonhx.mesh;
 
 import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.tools.Tools;
+import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Color4;
+import com.babylonhx.tools.Tags;
+
 import haxe.Json;
 
+import com.babylonhx.utils.typedarray.ArrayBufferView;
 import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.Int32Array;
 
 
 /**
@@ -33,6 +39,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _indexBuffer:WebGLBuffer;
 	public var _boundingInfo:BoundingInfo;
 	public var _delayLoadingFunction:Dynamic->Geometry->Void;
+	public var _softwareSkinningRenderId:Int = 0;
 	
 	public var extend(get, never):BabylonMinMax;
 	
@@ -512,5 +519,268 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 		return uid.toString();
 	}
+	
+	public static function ImportGeometry(parsedGeometry:Dynamic, mesh:Mesh) {
+		var scene = mesh.getScene();
+		
+		// Geometry
+		var geometryId = parsedGeometry.geometryId;
+		if (geometryId != null) {
+			var geometry = scene.getGeometryByID(geometryId);
+			if (geometry != null) {
+				geometry.applyToMesh(mesh);
+			}
+		} 
+		/*else if (Std.is(parsedGeometry, ArrayBufferView)) {
+			
+			var binaryInfo = mesh._binaryInfo;
+			
+			// VK TODO
+			if (binaryInfo.positionsAttrDesc != null && binaryInfo.positionsAttrDesc.count > 0) {
+				var positionsData = new Float32Array(parsedGeometry, binaryInfo.positionsAttrDesc.offset, binaryInfo.positionsAttrDesc.count);
+				mesh.setVerticesData(VertexBuffer.PositionKind, positionsData, false);
+			}
+			
+			if (binaryInfo.normalsAttrDesc != null && binaryInfo.normalsAttrDesc.count > 0) {
+				var normalsData = new Float32Array(parsedGeometry, binaryInfo.normalsAttrDesc.offset, binaryInfo.normalsAttrDesc.count);
+				mesh.setVerticesData(VertexBuffer.NormalKind, normalsData, false);
+			}
+			
+			if (binaryInfo.uvsAttrDesc != null && binaryInfo.uvsAttrDesc.count > 0) {
+				var uvsData = new Float32Array(parsedGeometry, binaryInfo.uvsAttrDesc.offset, binaryInfo.uvsAttrDesc.count);
+				mesh.setVerticesData(VertexBuffer.UVKind, uvsData, false);
+			}
+			
+			if (binaryInfo.uvs2AttrDesc != null && binaryInfo.uvs2AttrDesc.count > 0) {
+				var uvs2Data = new Float32Array(parsedGeometry, binaryInfo.uvs2AttrDesc.offset, binaryInfo.uvs2AttrDesc.count);
+				mesh.setVerticesData(VertexBuffer.UV2Kind, uvs2Data, false);
+			}
+			
+			if (binaryInfo.uvs3AttrDesc != null && binaryInfo.uvs3AttrDesc.count > 0) {
+				var uvs3Data = new Float32Array(parsedGeometry, binaryInfo.uvs3AttrDesc.offset, binaryInfo.uvs3AttrDesc.count);
+				mesh.setVerticesData(VertexBuffer.UV3Kind, uvs3Data, false);
+			}
+			
+			if (binaryInfo.uvs4AttrDesc != null && binaryInfo.uvs4AttrDesc.count > 0) {
+				var uvs4Data = new Float32Array(parsedGeometry, binaryInfo.uvs4AttrDesc.offset, binaryInfo.uvs4AttrDesc.count);
+				mesh.setVerticesData(VertexBuffer.UV4Kind, uvs4Data, false);
+			}
+			
+			if (binaryInfo.uvs5AttrDesc != null && binaryInfo.uvs5AttrDesc.count > 0) {
+				var uvs5Data = new Float32Array(parsedGeometry, binaryInfo.uvs5AttrDesc.offset, binaryInfo.uvs5AttrDesc.count);
+				mesh.setVerticesData(VertexBuffer.UV5Kind, uvs5Data, false);
+			}
+			
+			if (binaryInfo.uvs6AttrDesc != null && binaryInfo.uvs6AttrDesc.count > 0) {
+				var uvs6Data = new Float32Array(parsedGeometry, binaryInfo.uvs6AttrDesc.offset, binaryInfo.uvs6AttrDesc.count);
+				mesh.setVerticesData(VertexBuffer.UV6Kind, uvs6Data, false);
+			}
+			
+			if (binaryInfo.colorsAttrDesc != null && binaryInfo.colorsAttrDesc.count > 0) {
+				var colorsData = new Float32Array(parsedGeometry, binaryInfo.colorsAttrDesc.offset, binaryInfo.colorsAttrDesc.count);
+				mesh.setVerticesData(VertexBuffer.ColorKind, colorsData, false, binaryInfo.colorsAttrDesc.stride);
+			}
+			
+			if (binaryInfo.matricesIndicesAttrDesc != null && binaryInfo.matricesIndicesAttrDesc.count > 0) {
+				var matricesIndicesData = new Int32Array(parsedGeometry, binaryInfo.matricesIndicesAttrDesc.offset, binaryInfo.matricesIndicesAttrDesc.count);
+				mesh.setVerticesData(VertexBuffer.MatricesIndicesKind, matricesIndicesData, false);
+			}
+			
+			if (binaryInfo.matricesWeightsAttrDesc != null && binaryInfo.matricesWeightsAttrDesc.count > 0) {
+				var matricesWeightsData = new Float32Array(parsedGeometry, binaryInfo.matricesWeightsAttrDesc.offset, binaryInfo.matricesWeightsAttrDesc.count);
+				mesh.setVerticesData(VertexBuffer.MatricesWeightsKind, matricesWeightsData, false);
+			}
+			
+			if (binaryInfo.indicesAttrDesc != null && binaryInfo.indicesAttrDesc.count > 0) {
+				var indicesData = new Int32Array(parsedGeometry, binaryInfo.indicesAttrDesc.offset, binaryInfo.indicesAttrDesc.count);
+				mesh.setIndices(indicesData);
+			}
+			
+			if (binaryInfo.subMeshesAttrDesc != null && binaryInfo.subMeshesAttrDesc.count > 0) {
+				var subMeshesData = new Int32Array(parsedGeometry, binaryInfo.subMeshesAttrDesc.offset, binaryInfo.subMeshesAttrDesc.count * 5);
+				
+				mesh.subMeshes = [];
+				for (i in 0...binaryInfo.subMeshesAttrDesc.count) {
+					var materialIndex = subMeshesData[(i * 5) + 0];
+					var verticesStart = subMeshesData[(i * 5) + 1];
+					var verticesCount = subMeshesData[(i * 5) + 2];
+					var indexStart = subMeshesData[(i * 5) + 3];
+					var indexCount = subMeshesData[(i * 5) + 4];
+					
+					var subMesh = new SubMesh(materialIndex, verticesStart, verticesCount, indexStart, indexCount, mesh);
+				}
+			}
+		} 
+		else*/ if (parsedGeometry.positions != null && parsedGeometry.normals != null && parsedGeometry.indices != null) {
+			mesh.setVerticesData(VertexBuffer.PositionKind, parsedGeometry.positions, false);
+			mesh.setVerticesData(VertexBuffer.NormalKind, parsedGeometry.normals, false);
+			
+			if (parsedGeometry.uvs != null) {
+				mesh.setVerticesData(VertexBuffer.UVKind, parsedGeometry.uvs, false);
+			}
+			
+			if (parsedGeometry.uvs2 != null) {
+				mesh.setVerticesData(VertexBuffer.UV2Kind, parsedGeometry.uvs2, false);
+			}
+			
+			if (parsedGeometry.uvs3 != null) {
+				mesh.setVerticesData(VertexBuffer.UV3Kind, parsedGeometry.uvs3, false);
+			}
+			
+			if (parsedGeometry.uvs4 != null) {
+				mesh.setVerticesData(VertexBuffer.UV4Kind, parsedGeometry.uvs4, false);
+			}
+			
+			if (parsedGeometry.uvs5 != null) {
+				mesh.setVerticesData(VertexBuffer.UV5Kind, parsedGeometry.uvs5, false);
+			}
+			
+			if (parsedGeometry.uvs6 != null) {
+				mesh.setVerticesData(VertexBuffer.UV6Kind, parsedGeometry.uvs6, false);
+			}
+			
+			if (parsedGeometry.colors != null) {
+				mesh.setVerticesData(VertexBuffer.ColorKind, Color4.CheckColors4(parsedGeometry.colors, Std.int(parsedGeometry.positions.length / 3)), false);
+			}
+			
+			if (parsedGeometry.matricesIndices != null) {
+				if (!parsedGeometry.matricesIndices._isExpanded) {
+					var floatIndices:Array<Int> = [];
+					
+					for (i in 0...parsedGeometry.matricesIndices.length) {
+						var matricesIndex = parsedGeometry.matricesIndices[i];
+						
+						floatIndices.push(matricesIndex & 0x000000FF);
+						floatIndices.push((matricesIndex & 0x0000FF00) >> 8);
+						floatIndices.push((matricesIndex & 0x00FF0000) >> 16);
+						floatIndices.push(matricesIndex >> 24);
+					}
+					
+					mesh.setVerticesData(VertexBuffer.MatricesIndicesKind, cast floatIndices, false);
+				} 
+				else {
+					parsedGeometry.matricesIndices._isExpanded = null;
+					mesh.setVerticesData(VertexBuffer.MatricesIndicesKind, parsedGeometry.matricesIndices, false);
+				}
+			}
+			
+			if (parsedGeometry.matricesIndicesExtra != null) {
+				if (!parsedGeometry.matricesIndicesExtra._isExpanded) {
+					var floatIndices:Array<Int> = [];
+					
+					for (i in 0...parsedGeometry.matricesIndicesExtra.length) {
+						var matricesIndex = parsedGeometry.matricesIndicesExtra[i];
+						
+						floatIndices.push(matricesIndex & 0x000000FF);
+						floatIndices.push((matricesIndex & 0x0000FF00) >> 8);
+						floatIndices.push((matricesIndex & 0x00FF0000) >> 16);
+						floatIndices.push(matricesIndex >> 24);
+					}
+					
+					mesh.setVerticesData(VertexBuffer.MatricesIndicesExtraKind, cast floatIndices, false);
+				} 
+				else {
+					parsedGeometry.matricesIndices._isExpanded = null;
+					mesh.setVerticesData(VertexBuffer.MatricesIndicesExtraKind, parsedGeometry.matricesIndicesExtra, false);
+				}
+			}
+			
+			if (parsedGeometry.matricesWeights != null) {
+				mesh.setVerticesData(VertexBuffer.MatricesWeightsKind, parsedGeometry.matricesWeights, false);
+			}
+			
+			if (parsedGeometry.matricesWeightsExtra != null) {
+				mesh.setVerticesData(VertexBuffer.MatricesWeightsExtraKind, parsedGeometry.matricesWeightsExtra, false);
+			}
+			
+			mesh.setIndices(parsedGeometry.indices);
+		}
+		
+		// SubMeshes
+		if (parsedGeometry.subMeshes != null) {
+			mesh.subMeshes = [];
+			for (subIndex in 0...parsedGeometry.subMeshes.length) {
+				var parsedSubMesh = parsedGeometry.subMeshes[subIndex];
+				
+				var subMesh = new SubMesh(parsedSubMesh.materialIndex, parsedSubMesh.verticesStart, parsedSubMesh.verticesCount, parsedSubMesh.indexStart, parsedSubMesh.indexCount, mesh);
+			}
+		}
+		
+		// Flat shading
+		if (mesh._shouldGenerateFlatShading) {
+			mesh.convertToFlatShadedMesh();
+			mesh._shouldGenerateFlatShading = false;
+		}
+		
+		// Update
+		mesh.computeWorldMatrix(true);
+		
+		// Octree
+		if (scene.SelectionOctree != null) {
+			scene.SelectionOctree.addMesh(mesh);
+		}
+	}
+	
+	public static function ParseGeometry(parsedVertexData:Dynamic, scene:Scene, rootUrl:String = ""):Geometry {
+        if (scene.getGeometryByID(parsedVertexData.id) != null) {
+            return null; // null since geometry could be a primitive
+        }
+		
+        var geometry = new Geometry(parsedVertexData.id, scene);
+		
+        Tags.AddTagsTo(geometry, parsedVertexData.tags);
+		
+        if (parsedVertexData.delayLoadingFile != null && parsedVertexData.delayLoadingFile != "") {
+            geometry.delayLoadState = Engine.DELAYLOADSTATE_NOTLOADED;
+            geometry.delayLoadingFile = rootUrl + parsedVertexData.delayLoadingFile;
+            geometry._boundingInfo = new BoundingInfo(Vector3.FromArray(parsedVertexData.boundingBoxMinimum), Vector3.FromArray(parsedVertexData.boundingBoxMaximum));
+			
+            geometry._delayInfo = [];
+            if (parsedVertexData.hasUVs == true) {
+                geometry._delayInfo.push(VertexBuffer.UVKind);
+            }
+			
+            if (parsedVertexData.hasUVs2 == true) {
+                geometry._delayInfo.push(VertexBuffer.UV2Kind);
+            }
+			
+			if (parsedVertexData.hasUVs3 == true) {
+                geometry._delayInfo.push(VertexBuffer.UV3Kind);
+            }
+			
+            if (parsedVertexData.hasUVs4 == true) {
+                geometry._delayInfo.push(VertexBuffer.UV4Kind);
+            }
+			
+            if (parsedVertexData.hasUVs5 == true) {
+                geometry._delayInfo.push(VertexBuffer.UV5Kind);
+            }
+			
+            if (parsedVertexData.hasUVs6 == true) {
+                geometry._delayInfo.push(VertexBuffer.UV6Kind);
+            }
+			
+            if (parsedVertexData.hasColors == true) {
+                geometry._delayInfo.push(VertexBuffer.ColorKind);
+            }
+			
+            if (parsedVertexData.hasMatricesIndices == true) {
+                geometry._delayInfo.push(VertexBuffer.MatricesIndicesKind);
+            }
+			
+            if (parsedVertexData.hasMatricesWeights == true) {
+                geometry._delayInfo.push(VertexBuffer.MatricesWeightsKind);
+            }
+			
+            geometry._delayLoadingFunction = VertexData.ImportVertexData;
+        } 
+		else {
+            VertexData.ImportVertexData(parsedVertexData, geometry);
+        }
+		
+        scene.pushGeometry(geometry, true);
+		
+        return geometry;
+    }
 
 }

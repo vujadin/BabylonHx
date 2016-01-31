@@ -3,6 +3,7 @@ package com.babylonhx.materials.textures;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.math.Matrix;
+import com.babylonhx.math.Plane;
 
 import com.babylonhx.utils.GL;
 
@@ -173,6 +174,97 @@ import com.babylonhx.utils.GL;
 		if (this.onDispose != null) {
 			this.onDispose();
 		}
+	}
+	
+	public static function ParseCubeTexture(parsedTexture:Dynamic, scene:Scene, rootUrl:String):CubeTexture {
+		var texture:CubeTexture = null;
+		
+		if ((parsedTexture.name != null || parsedTexture.extensions != null) && parsedTexture.isRenderTarget == false) {
+			texture = new CubeTexture(rootUrl + parsedTexture.name, scene, parsedTexture.extensions);
+			
+			texture.name = parsedTexture.name;
+			texture.hasAlpha = parsedTexture.hasAlpha;
+			texture.level = parsedTexture.level;
+			texture.coordinatesMode = parsedTexture.coordinatesMode;
+		}
+		
+        return texture;
+    }
+	
+	public static function ParseTexture(parsedTexture:Dynamic, scene:Scene, rootUrl:String):BaseTexture {		
+        if (parsedTexture.isCube != null && parsedTexture.isCube == true) {
+            return BaseTexture.ParseCubeTexture(parsedTexture, scene, rootUrl);
+        }
+		
+		if (parsedTexture.name == null && parsedTexture.isRenderTarget == false) {
+            return null;
+        }
+		
+        var texture:Texture = null;
+		
+        if (parsedTexture.mirrorPlane != null) {
+            texture = new MirrorTexture(parsedTexture.name, parsedTexture.renderTargetSize, scene);
+            cast(texture, MirrorTexture)._waitingRenderList = parsedTexture.renderList;
+            cast(texture, MirrorTexture).mirrorPlane = Plane.FromArray(parsedTexture.mirrorPlane);
+        } 
+		else if (parsedTexture.isRenderTarget) {
+            texture = new RenderTargetTexture(parsedTexture.name, parsedTexture.renderTargetSize, scene);
+            cast(texture, RenderTargetTexture)._waitingRenderList = parsedTexture.renderList;
+        } 
+		else {
+            texture = new Texture(rootUrl + parsedTexture.name, scene);
+        }
+		
+        texture.name = parsedTexture.name;
+        texture.hasAlpha = parsedTexture.hasAlpha;
+		texture.getAlphaFromRGB = parsedTexture.getAlphaFromRGB;
+        texture.level = parsedTexture.level;
+		
+        texture.coordinatesIndex = parsedTexture.coordinatesIndex;
+        texture.coordinatesMode = parsedTexture.coordinatesMode;
+        texture.uOffset = parsedTexture.uOffset;
+        texture.vOffset = parsedTexture.vOffset;
+        texture.uScale = parsedTexture.uScale;
+        texture.vScale = parsedTexture.vScale;
+        texture.uAng = parsedTexture.uAng;
+        texture.vAng = parsedTexture.vAng;
+        texture.wAng = parsedTexture.wAng;
+		
+        texture.wrapU = parsedTexture.wrapU;
+        texture.wrapV = parsedTexture.wrapV;
+		
+        // Animations
+        if (parsedTexture.animations != null) {
+            for (animationIndex in 0...parsedTexture.animations.length) {
+                var parsedAnimation = parsedTexture.animations[animationIndex];
+				
+                texture.animations.push(Animation.Parse(parsedAnimation));
+            }
+        }
+		
+        return texture;
+    }
+	
+	public function serialize():Dynamic {
+		var serializationObject:Dynamic = { };
+		
+		if (this.name == null) {
+			return null;
+		}
+		
+		serializationObject.name = this.name;
+		serializationObject.hasAlpha = this.hasAlpha;
+		serializationObject.level = this.level;
+		
+		serializationObject.coordinatesIndex = this.coordinatesIndex;
+		serializationObject.coordinatesMode = this.coordinatesMode;
+		serializationObject.wrapU = this.wrapU;
+		serializationObject.wrapV = this.wrapV;
+		
+		// Animations
+		Animation.AppendSerializedAnimations(this, serializationObject);
+		
+		return serializationObject;
 	}
 	
 }

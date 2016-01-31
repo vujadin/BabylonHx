@@ -26,4 +26,10 @@ package com.babylonhx.math;
 		return new Viewport(this.x * width, this.y * height, this.width * width, this.height * height);
 	}
 	
+	public function toScreenGlobal(engine:Engine):Viewport {
+        var width = engine.getRenderWidth(true);
+        var height = engine.getRenderHeight(true);
+        return new Viewport(this.x * width, this.y * height, this.width * width, this.height * height);
+    }
+	
 }

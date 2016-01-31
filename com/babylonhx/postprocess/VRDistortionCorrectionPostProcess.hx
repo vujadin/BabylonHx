@@ -37,9 +37,9 @@ class VRDistortionCorrectionPostProcess extends PostProcess {
 		this._lensCenterOffset = vrMetrics.lensCenterOffset;
 		
 		this.onSizeChanged = function() {
-			this.aspectRatio = this.width * .5 / this.height;
+			this.aspectRatio = this.width * 0.5 / this.height;
 			this._scaleIn = new Vector2(2, 2 / this.aspectRatio);
-			this._scaleFactor = new Vector2(.5 * (1 / this._postProcessScaleFactor), .5 * (1 / this._postProcessScaleFactor) * this.aspectRatio);
+			this._scaleFactor = new Vector2(0.5 * (1 / this._postProcessScaleFactor), 0.5 * (1 / this._postProcessScaleFactor) * this.aspectRatio);
 			this._lensCenter = new Vector2(this._isRightEye ? 0.5 - this._lensCenterOffset * 0.5 : 0.5 + this._lensCenterOffset * 0.5, 0.5);
 		};
 		

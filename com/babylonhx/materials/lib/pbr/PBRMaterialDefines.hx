@@ -8,18 +8,18 @@ import haxe.ds.Vector;
  */
 class PBRMaterialDefines extends MaterialDefines {
 		
-	static public inline var DIFFUSE:Int = 0;
+	static public inline var ALBEDO:Int = 0;
 	static public inline var AMBIENT:Int = 1;
 	static public inline var OPACITY:Int = 2;
 	static public inline var OPACITYRGB:Int = 3;
 	static public inline var REFLECTION:Int = 4;
 	static public inline var EMISSIVE:Int = 5;
-	static public inline var SPECULAR:Int = 6;
+	static public inline var REFLECTIVITY:Int = 6;
 	static public inline var BUMP:Int = 7;
 	static public inline var SPECULAROVERALPHA:Int = 8;
 	static public inline var CLIPPLANE:Int = 9;
 	static public inline var ALPHATEST:Int = 10;
-	static public inline var ALPHAFROMDIFFUSE:Int = 11;
+	static public inline var ALPHAFROMALBEDO:Int = 11;
 	static public inline var POINTSIZE:Int = 12;
 	static public inline var FOG:Int = 13;
 	static public inline var LIGHT0:Int = 14;
@@ -56,33 +56,34 @@ class PBRMaterialDefines extends MaterialDefines {
 	static public inline var SHADOWPCF1:Int = 45;
 	static public inline var SHADOWPCF2:Int = 46;
 	static public inline var SHADOWPCF3:Int = 47;
-	static public inline var DIFFUSEFRESNEL:Int = 48;
-	static public inline var OPACITYFRESNEL:Int = 49;
-	static public inline var REFLECTIONFRESNEL:Int = 50;
-	static public inline var EMISSIVEFRESNEL:Int = 51;
-	static public inline var FRESNEL:Int = 52;
-	static public inline var NORMAL:Int = 53;
-	static public inline var UV1:Int = 54;
-	static public inline var UV2:Int = 55;
-	static public inline var VERTEXCOLOR:Int = 56;
-	static public inline var VERTEXALPHA:Int = 57;
-	static public inline var INSTANCES:Int = 58;
-	static public inline var GLOSSINESS:Int = 59;
-	static public inline var ROUGHNESS:Int = 60;
-	static public inline var EMISSIVEASILLUMINATION:Int = 61;
-	static public inline var LINKEMISSIVEWITHDIFFUSE:Int = 62;
-	static public inline var REFLECTIONFRESNELFROMSPECULAR:Int = 63;
-	static public inline var LIGHTMAP:Int = 64;
-	static public inline var USELIGHTMAPASSHADOWMAP:Int = 65;
-	static public inline var REFLECTIONMAP_3D:Int = 66;
-	static public inline var REFLECTIONMAP_SPHERICAL:Int = 67;
-	static public inline var REFLECTIONMAP_PLANAR:Int = 68;
-	static public inline var REFLECTIONMAP_CUBIC:Int = 69;
-	static public inline var REFLECTIONMAP_PROJECTION:Int = 70;
-	static public inline var REFLECTIONMAP_SKYBOX:Int = 71;
-	static public inline var REFLECTIONMAP_EXPLICIT:Int = 72;
-	static public inline var REFLECTIONMAP_EQUIRECTANGULAR:Int = 73;
-	static public inline var INVERTCUBICMAP:Int = 74;
+	static public inline var OPACITYFRESNEL:Int = 48;
+	static public inline var EMISSIVEFRESNEL:Int = 49;
+	static public inline var FRESNEL:Int = 50;
+	static public inline var NORMAL:Int = 51;
+	static public inline var UV1:Int = 52;
+	static public inline var UV2:Int = 53;
+	static public inline var VERTEXCOLOR:Int = 54;
+	static public inline var VERTEXALPHA:Int = 55;
+	static public inline var INSTANCES:Int = 56;
+	static public inline var MICROSURFACEFROMREFLECTIVITYMAP:Int = 57;
+	static public inline var EMISSIVEASILLUMINATION:Int = 58;
+	static public inline var LINKEMISSIVEWITHALBEDO:Int = 59;
+	static public inline var LIGHTMAP:Int = 60;
+	static public inline var USELIGHTMAPASSHADOWMAP:Int = 61;
+	static public inline var REFLECTIONMAP_3D:Int = 62;
+	static public inline var REFLECTIONMAP_SPHERICAL:Int = 63;
+	static public inline var REFLECTIONMAP_PLANAR:Int = 64;
+	static public inline var REFLECTIONMAP_CUBIC:Int = 65;
+	static public inline var REFLECTIONMAP_PROJECTION:Int = 66;
+	static public inline var REFLECTIONMAP_SKYBOX:Int = 67;
+	static public inline var REFLECTIONMAP_EXPLICIT:Int = 68;
+	static public inline var REFLECTIONMAP_EQUIRECTANGULAR:Int = 69;
+	static public inline var INVERTCUBICMAP:Int = 70;
+	static public inline var LOGARITHMICDEPTH:Int = 71;
+	static public inline var CAMERATONEMAP:Int = 72;
+	static public inline var CAMERACONTRAST:Int = 73;
+	static public inline var OVERLOADEDVALUES:Int = 74;
+	static public inline var OVERLOADEDSHADOWVALUES:Int = 75;
 	
 	public var BonesPerMesh:Int = 0;
 	public var NUM_BONE_INFLUENCERS:Int = 0;
@@ -91,7 +92,7 @@ class PBRMaterialDefines extends MaterialDefines {
 	public function new() {
 		super();
 		
-		this._keys = Vector.fromData(["DIFFUSE", "AMBIENT", "OPACITY", "OPACITYRGB", "REFLECTION", "EMISSIVE", "SPECULAR", "BUMP", "SPECULAROVERALPHA", "CLIPPLANE", "ALPHATEST", "ALPHAFROMDIFFUSE", "POINTSIZE", "FOG", "LIGHT0", "LIGHT1", "LIGHT2", "LIGHT3", "SPOTLIGHT0", "SPOTLIGHT1", "SPOTLIGHT2", "SPOTLIGHT3", "HEMILIGHT0", "HEMILIGHT1", "HEMILIGHT2", "HEMILIGHT3", "POINTLIGHT0", "POINTLIGHT1", "POINTLIGHT2", "POINTLIGHT3", "DIRLIGHT0", "DIRLIGHT1", "DIRLIGHT2", "DIRLIGHT3", "SPECULARTERM", "SHADOW0", "SHADOW1", "SHADOW2", "SHADOW3", "SHADOWS", "SHADOWVSM0", "SHADOWVSM1", "SHADOWVSM2", "SHADOWVSM3", "SHADOWPCF0", "SHADOWPCF1", "SHADOWPCF2", "SHADOWPCF3", "DIFFUSEFRESNEL", "OPACITYFRESNEL", "REFLECTIONFRESNEL", "EMISSIVEFRESNEL", "FRESNEL", "NORMAL", "UV1", "UV2", "VERTEXCOLOR", "VERTEXALPHA", "INSTANCES", "GLOSSINESS", "ROUGHNESS", "EMISSIVEASILLUMINATION", "LINKEMISSIVEWITHDIFFUSE", "REFLECTIONFRESNELFROMSPECULAR", "LIGHTMAP", "USELIGHTMAPASSHADOWMAP", "REFLECTIONMAP_3D", "REFLECTIONMAP_SPHERICAL", "REFLECTIONMAP_PLANAR", "REFLECTIONMAP_CUBIC", "REFLECTIONMAP_PROJECTION", "REFLECTIONMAP_SKYBOX", "REFLECTIONMAP_EXPLICIT", "REFLECTIONMAP_EQUIRECTANGULAR", "INVERTCUBICMAP"]);
+		this._keys = Vector.fromData(["ALBEDO", "AMBIENT", "OPACITY", "OPACITYRGB", "REFLECTION", "EMISSIVE", "REFLECTIVITY", "BUMP", "SPECULAROVERALPHA", "CLIPPLANE", "ALPHATEST", "ALPHAFROMALBEDO", "POINTSIZE", "FOG", "LIGHT0", "LIGHT1", "LIGHT2", "LIGHT3", "SPOTLIGHT0", "SPOTLIGHT1", "SPOTLIGHT2", "SPOTLIGHT3", "HEMILIGHT0", "HEMILIGHT1", "HEMILIGHT2", "HEMILIGHT3", "POINTLIGHT0", "POINTLIGHT1", "POINTLIGHT2", "POINTLIGHT3", "DIRLIGHT0", "DIRLIGHT1", "DIRLIGHT2", "DIRLIGHT3", "SPECULARTERM", "SHADOW0", "SHADOW1", "SHADOW2", "SHADOW3", "SHADOWS", "SHADOWVSM0", "SHADOWVSM1", "SHADOWVSM2", "SHADOWVSM3", "SHADOWPCF0", "SHADOWPCF1", "SHADOWPCF2", "SHADOWPCF3", "OPACITYFRESNEL", "EMISSIVEFRESNEL", "FRESNEL", "NORMAL", "UV1", "UV2", "VERTEXCOLOR", "VERTEXALPHA", "INSTANCES", "MICROSURFACEFROMREFLECTIVITYMAP", "EMISSIVEASILLUMINATION", "LINKEMISSIVEWITHALBEDO", "LIGHTMAP", "USELIGHTMAPASSHADOWMAP", "REFLECTIONMAP_3D", "REFLECTIONMAP_SPHERICAL", "REFLECTIONMAP_PLANAR", "REFLECTIONMAP_CUBIC", "REFLECTIONMAP_PROJECTION", "REFLECTIONMAP_SKYBOX", "REFLECTIONMAP_EXPLICIT", "REFLECTIONMAP_EQUIRECTANGULAR", "INVERTCUBICMAP", "LOGARITHMICDEPTH", "CAMERATONEMAP", "CAMERACONTRAST", "OVERLOADEDVALUES", "OVERLOADEDSHADOWVALUES"]);
 		
 		defines = new Vector(this._keys.length);
 		for (i in 0...this._keys.length) {

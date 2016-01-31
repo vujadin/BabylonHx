@@ -471,12 +471,17 @@ import haxe.ds.Vector;
 	}
 
 	inline public static function RotationAxis(axis:Vector3, angle:Float):Matrix {
+		var result = Matrix.Zero();
+		Matrix.RotationAxisToRef(axis, angle, result);
+		return result;
+	}
+	
+	public static function RotationAxisToRef(axis:Vector3, angle:Float, result:Matrix) {
 		var s = Math.sin(-angle);
 		var c = Math.cos(-angle);
-		var c1 = 1 - c;
+		var c1:Float = 1 - c;
 		
 		axis.normalize();
-		var result = Matrix.Zero();
 		
 		result.m[0] = (axis.x * axis.x) * c1 + c;
 		result.m[1] = (axis.x * axis.y) * c1 - (axis.z * s);
@@ -494,8 +499,6 @@ import haxe.ds.Vector;
 		result.m[11] = 0.0;
 		
 		result.m[15] = 1.0;
-		
-		return result;
 	}
 
 	inline public static function RotationYawPitchRoll(yaw:Float, pitch:Float, roll:Float):Matrix {
@@ -546,6 +549,24 @@ import haxe.ds.Vector;
 			0, 0, 1.0, 0,
 			x, y, z, 1.0, result);
 	}
+	
+	public static function Lerp(startValue:Matrix, endValue:Matrix, gradient:Float):Matrix {
+		var startScale = Tmp.vector3[0];// new Vector3(0, 0, 0);
+		var startRotation = Tmp.quaternion[0]; // new Quaternion();
+		var startTranslation = Tmp.vector3[1]; // new Vector3(0, 0, 0);
+		startValue.decompose(startScale, startRotation, startTranslation);
+		
+		var endScale = Tmp.vector3[2]; // new Vector3(0, 0, 0);
+		var endRotation = Tmp.quaternion[1]; // new Quaternion();
+		var endTranslation = Tmp.vector3[3]; // new Vector3(0, 0, 0);
+		endValue.decompose(endScale, endRotation, endTranslation);
+		
+		var resultScale = Vector3.Lerp(startScale, endScale, gradient);
+		var resultRotation = Quaternion.Slerp(startRotation, endRotation, gradient);
+		var resultTranslation = Vector3.Lerp(startTranslation, endTranslation, gradient);
+		
+		return Matrix.Compose(resultScale, resultRotation, resultTranslation);
+	}  
 
 	inline public static function LookAtLH(eye:Vector3, target:Vector3, up:Vector3):Matrix {
 		var result = Matrix.Zero();
@@ -654,7 +675,8 @@ import haxe.ds.Vector;
 		
 		if (v_fixed) {
 			result.m[0] = tan / aspect;
-		} else if (h_fixed) {
+		} 
+		else if (h_fixed) {
 			result.m[0] = tan;
 		}
 		
@@ -664,7 +686,8 @@ import haxe.ds.Vector;
 		
 		if (v_fixed) { 
 			result.m[5] = tan; 
-		} else if (h_fixed) { 
+		} 
+		else if (h_fixed) { 
 			result.m[5] = tan * aspect; 
 		}
 			

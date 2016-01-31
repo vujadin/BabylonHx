@@ -23,14 +23,17 @@ import com.babylonhx.utils.Keycodes;
 	public var inertialRadiusOffset:Float = 0;
 	public var lowerAlphaLimit:Null<Float> = null;
 	public var upperAlphaLimit:Null<Float> = null;
-	public var lowerBetaLimit:Float = 0.01;
-	public var upperBetaLimit:Float = Math.PI;
+	public var lowerBetaLimit:Null<Float> = 0.01;
+	public var upperBetaLimit:Null<Float> = Math.PI;
 	public var lowerRadiusLimit:Null<Float> = null;
 	public var upperRadiusLimit:Null<Float> = null;
-	public var angularSensibility:Float = 1000.0;
+	public var angularSensibilityX:Float = 1000.0;
+	public var angularSensibilityY:Float = 1000.0;
 	public var wheelPrecision:Float = 3.0;
 	public var pinchPrecision:Float = 2.0;
-	public var panningSensibility:Float = 0.1;
+	public var panningSensibility:Float = 50;
+	public var inertialPanningX:Float = 0;
+	public var inertialPanningY:Float = 0;
 	
 	#if purejs
 	public var keysUp:Array<Int> = [38];
@@ -73,7 +76,6 @@ import com.babylonhx.utils.Keycodes;
 	private var _transformedDirection:Vector3;
 	private var _isRightClick:Bool = false;
 	private var _isCtrlPushed:Bool = false;
-	private var _lastPanningPosition:Vector2 = new Vector2(0, 0);
 
 	// Collisions
 	public var onCollide:AbstractMesh->Void;
@@ -107,7 +109,7 @@ import com.babylonhx.utils.Keycodes;
 	}
 
 	public function _getTargetPosition():Vector3 {
-		return this.target.position != null ? this.target.position : this.target;
+		return this.target.getAbsolutePosition != null ? this.target.getAbsolutePosition() : this.target;
 	}
 
 	// Cache
@@ -134,8 +136,9 @@ import com.babylonhx.utils.Keycodes;
 
 	// Synchronized
 	override public function _isSynchronizedViewMatrix():Bool {
-		if (!super._isSynchronizedViewMatrix())
+		if (!super._isSynchronizedViewMatrix()) {
 			return false;
+		}
 			
 		return this._cache.target.equals(this._getTargetPosition())
 			&& this._cache.alpha == this.alpha
@@ -167,7 +170,7 @@ import com.babylonhx.utils.Keycodes;
 		#if purejs
 			this._onPointerDown = function(evt:Dynamic) {
 				// Manage panning
-				this._isRightClick = evt.button == 2 ? true : false;
+				this._isRightClick = evt.button == 2;
 				this._lastPanningPosition.x = evt.clientX;
 				this._lastPanningPosition.y = evt.clientY;
 				
@@ -267,8 +270,8 @@ import com.babylonhx.utils.Keycodes;
 				var offsetX = untyped evt.movementX || evt.mozMovementX || evt.webkitMovementX || evt.msMovementX || 0;
 				var offsetY = untyped evt.movementY || evt.mozMovementY || evt.webkitMovementY || evt.msMovementY || 0;
 				
-				this.inertialAlphaOffset -= offsetX / this.angularSensibility;
-				this.inertialBetaOffset -= offsetY / this.angularSensibility;
+				this.inertialAlphaOffset -= offsetX / this.angularSensibilityX;
+				this.inertialBetaOffset -= offsetY / this.angularSensibilityY;
 				
 				if (!noPreventDefault) {
 					evt.preventDefault();
@@ -321,8 +324,8 @@ import com.babylonhx.utils.Keycodes;
                     offsetY = y - previousPosition.y;
                 }
 				
-				this.inertialAlphaOffset -= offsetX / this.angularSensibility;
-				this.inertialBetaOffset -= offsetY / this.angularSensibility;	
+				this.inertialAlphaOffset -= offsetX / this.angularSensibilityX;
+				this.inertialBetaOffset -= offsetY / this.angularSensibilityY;	
 				
 				previousPosition = {
 					x: x, 
@@ -457,63 +460,115 @@ import com.babylonhx.utils.Keycodes;
 		Engine.mouseMove.remove(_onMouseMove);
 		Engine.mouseWheel.remove(_wheel);
 		#end
-				
+		
 		this._attachedElement = null;
 		
 		if (this._reset != null) {
 			this._reset();
 		}
 	}
-
-	override public function _update() {
+	
+	override public function _checkInputs() {
+		//if (async) collision inspection was triggered, don't update the camera's position - until the collision callback was called.
+		if (this._collisionTriggered) {
+			return;
+		}
+		
 		// Keyboard
 		for (index in 0...this._keys.length) {
 			var keyCode = this._keys[index];
-			
 			if (this.keysLeft.indexOf(keyCode) != -1) {
 				this.inertialAlphaOffset -= 0.01;
-			} else if (this.keysUp.indexOf(keyCode) != -1) {
+			} 
+			else if (this.keysUp.indexOf(keyCode) != -1) {
 				this.inertialBetaOffset -= 0.01;
-			} else if (this.keysRight.indexOf(keyCode) != -1) {
+			} 
+			else if (this.keysRight.indexOf(keyCode) != -1) {
 				this.inertialAlphaOffset += 0.01;
-			} else if (this.keysDown.indexOf(keyCode) != -1) {
+			} 
+			else if (this.keysDown.indexOf(keyCode) != -1) {
 				this.inertialBetaOffset += 0.01;
 			}
-		}
+		}			
 		
 		// Inertia
 		if (this.inertialAlphaOffset != 0 || this.inertialBetaOffset != 0 || this.inertialRadiusOffset != 0) {
-			this.alpha += this.inertialAlphaOffset;
+			this.alpha += this.beta <= 0 ? -this.inertialAlphaOffset : this.inertialAlphaOffset;
 			this.beta += this.inertialBetaOffset;
 			this.radius -= this.inertialRadiusOffset;
-			
 			this.inertialAlphaOffset *= this.inertia;
 			this.inertialBetaOffset *= this.inertia;
 			this.inertialRadiusOffset *= this.inertia;
-			
-			if (Math.abs(this.inertialAlphaOffset) < Engine.Epsilon)
+			if (Math.abs(this.inertialAlphaOffset) < Engine.Epsilon) {
 				this.inertialAlphaOffset = 0;
-				
-			if (Math.abs(this.inertialBetaOffset) < Engine.Epsilon)
+			}
+			if (Math.abs(this.inertialBetaOffset) < Engine.Epsilon) {
 				this.inertialBetaOffset = 0;
-				
-			if (Math.abs(this.inertialRadiusOffset) < Engine.Epsilon)
+			}
+			if (Math.abs(this.inertialRadiusOffset) < Engine.Epsilon) {
 				this.inertialRadiusOffset = 0;
+			}
+		}
+		
+		// Panning inertia
+		if (this.inertialPanningX != 0 || this.inertialPanningY != 0) {
+			if (this._localDirection == null) {
+				this._localDirection = Vector3.Zero();
+				this._transformedDirection = Vector3.Zero();
+			}
+			
+			this.inertialPanningX *= this.inertia;
+			this.inertialPanningY *= this.inertia;
+			
+			if (Math.abs(this.inertialPanningX) < Engine.Epsilon) {
+				this.inertialPanningX = 0;
+			}
+			if (Math.abs(this.inertialPanningY) < Engine.Epsilon) {
+				this.inertialPanningY = 0;
+			}
+			
+			this._localDirection.copyFromFloats(this.inertialPanningX, this.inertialPanningY, 0);
+			this._viewMatrix.invertToRef(this._cameraTransformMatrix);
+			Vector3.TransformNormalToRef(this._localDirection, this._cameraTransformMatrix, this._transformedDirection);
+			this.target.addInPlace(this._transformedDirection);
 		}
 		
 		// Limits
+		this._checkLimits();
+		
+		super._checkInputs();
+	}
+	
+	private function _checkLimits() {
+		if (this.lowerBetaLimit == null) {
+			if (this.allowUpsideDown && this.beta > Math.PI) {
+				this.beta = this.beta - (2 * Math.PI);
+			}
+		} 
+		else {
+			if (this.beta < this.lowerBetaLimit) {
+				this.beta = this.lowerBetaLimit;
+			}
+		}
+		
+		if (this.upperBetaLimit == null) {
+			if (this.allowUpsideDown && this.beta < -Math.PI) {
+				this.beta = this.beta + (2 * Math.PI);
+			}
+		} 
+		else {
+			if (this.beta > this.upperBetaLimit) {
+				this.beta = this.upperBetaLimit;
+			}
+		}
+		
 		if (this.lowerAlphaLimit != null && this.alpha < this.lowerAlphaLimit) {
 			this.alpha = this.lowerAlphaLimit;
 		}
 		if (this.upperAlphaLimit != null && this.alpha > this.upperAlphaLimit) {
 			this.alpha = this.upperAlphaLimit;
 		}
-		if (this.beta < this.lowerBetaLimit) {
-			this.beta = this.lowerBetaLimit;
-		}
-		if (this.beta > this.upperBetaLimit) {
-			this.beta = this.upperBetaLimit;
-		}
+		
 		if (this.lowerRadiusLimit != null && this.radius < this.lowerRadiusLimit) {
 			this.radius = this.lowerRadiusLimit;
 		}
@@ -540,6 +595,10 @@ import com.babylonhx.utils.Keycodes;
 		// Beta
 		this.beta = Math.acos(radiusv3.y / this.radius);		
 	}
+	
+	override public function setTarget(target:Vector3) {
+		this.target = target;
+	}
 
 	override public function _getViewMatrix_default():Matrix {
 		// Compute
@@ -550,38 +609,67 @@ import com.babylonhx.utils.Keycodes;
 		
 		var target = this._getTargetPosition();
 		
-		target.addToRef(new Vector3(this.radius * cosa * sinb, this.radius * cosb, this.radius * sina * sinb), this.position);
+		target.addToRef(new Vector3(this.radius * cosa * sinb, this.radius * cosb, this.radius * sina * sinb), this._newPosition);
 		
-		if (this.checkCollisions) {
+		if (this.getScene().collisionsEnabled && this.checkCollisions) {
 			this._collider.radius = this.collisionRadius;
-			this.position.subtractToRef(this._previousPosition, this._collisionVelocity);
+			this._newPosition.subtractToRef(this.position, this._collisionVelocity);
+			this._collisionTriggered = true;
+			this.getScene().collisionCoordinator.getNewPosition(this.position, this._collisionVelocity, this._collider, 3, null, this._onCollisionPositionChange, this.uniqueId);
+		} 
+		else {
+			this.position.copyFrom(this._newPosition);
 			
-			this.getScene()._getNewPosition(this._previousPosition, this._collisionVelocity, this._collider, 3, this._newPosition);
+			var up = this.upVector;
+			if (this.allowUpsideDown && this.beta < 0) {
+				up = up.clone();
+				up = up.negate();
+			}
 			
-			if (!this._newPosition.equalsWithEpsilon(this.position)) {
-				this.position.copyFrom(this._previousPosition);
-				
-				this.alpha = this._previousAlpha;
-				this.beta = this._previousBeta;
-				this.radius = this._previousRadius;
-				
-				if (this.onCollide != null) {
-					this.onCollide(this._collider.collidedMesh);
-				}
+			Matrix.LookAtLHToRef(this.position, target, up, this._viewMatrix);
+			this._viewMatrix.m[12] += this.targetScreenOffset.x;
+			this._viewMatrix.m[13] += this.targetScreenOffset.y;
+		}
+		
+		return this._viewMatrix;
+	}
+	
+	private function _onCollisionPositionChange(collisionId:Int, newPosition:Vector3, collidedMesh:AbstractMesh = null) {
+		if (this.getScene().workerCollisions && this.checkCollisions) {
+			newPosition.multiplyInPlace(this._collider.radius);
+		}
+		
+		if (collidedMesh != null) {
+			this._previousPosition.copyFrom(this.position);
+		} 
+		else {
+			this.setPosition(newPosition);
+			
+			if (this.onCollide != null) {
+				this.onCollide(collidedMesh);
 			}
 		}
 		
-		Matrix.LookAtLHToRef(this.position, target, this.upVector, this._viewMatrix);
+		// Recompute because of constraints
+		var cosa = Math.cos(this.alpha);
+		var sina = Math.sin(this.alpha);
+		var cosb = Math.cos(this.beta);
+		var sinb = Math.sin(this.beta);
+		var target = this._getTargetPosition();
+		target.addToRef(new Vector3(this.radius * cosa * sinb, this.radius * cosb, this.radius * sina * sinb), this._newPosition);
+		this.position.copyFrom(this._newPosition);
 		
-		this._previousAlpha = this.alpha;
-		this._previousBeta = this.beta;
-		this._previousRadius = this.radius;
-		this._previousPosition.copyFrom(this.position);
+		var up = this.upVector;
+		if (this.allowUpsideDown && this.beta < 0) {
+			up = up.clone();
+			up = up.negate();
+		}
 		
+		Matrix.LookAtLHToRef(this.position, target, up, this._viewMatrix);
 		this._viewMatrix.m[12] += this.targetScreenOffset.x;
 		this._viewMatrix.m[13] += this.targetScreenOffset.y;
-					
-		return this._viewMatrix;
+		
+		this._collisionTriggered = false;
 	}
 
 	public function zoomOn(?meshes:Array<AbstractMesh>, doNotUpdateMaxZ:Bool = false) {
@@ -614,6 +702,57 @@ import com.babylonhx.utils.Keycodes;
 		if (!doNotUpdateMaxZ) {
             this.maxZ = distance * 2;
         }
+	}
+	
+	override public function createRigCamera(name:String, cameraIndex:Int):Camera {
+		switch (this.cameraRigMode) {
+			case Camera.RIG_MODE_STEREOSCOPIC_ANAGLYPH, 
+				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_PARALLEL,
+				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED, 
+				 Camera.RIG_MODE_STEREOSCOPIC_OVERUNDER,
+				 Camera.RIG_MODE_VR:
+				var alphaShift = this._cameraRigParams.stereoHalfAngle * (cameraIndex == 0 ? 1 : -1);
+				return new ArcRotateCamera(name, this.alpha + alphaShift, this.beta, this.radius, this.target, this.getScene());
+		}
+		
+		return null;
+	}
+	
+	override public function _updateRigCameras() {
+		switch (this.cameraRigMode) {
+			case Camera.RIG_MODE_STEREOSCOPIC_ANAGLYPH,
+				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_PARALLEL,
+				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED,
+				 Camera.RIG_MODE_STEREOSCOPIC_OVERUNDER, Camera.RIG_MODE_VR:
+				var camLeft:ArcRotateCamera = cast this._rigCameras[0];
+				var camRight:ArcRotateCamera = cast this._rigCameras[1];
+				camLeft.alpha = this.alpha - this._cameraRigParams.stereoHalfAngle;
+				camRight.alpha = this.alpha + this._cameraRigParams.stereoHalfAngle;
+				camLeft.beta = camRight.beta = this.beta;
+				camLeft.radius = camRight.radius = this.radius;
+		}
+		
+		super._updateRigCameras();
+	}
+	
+	override public function serialize():Dynamic {
+		var serializationObject = super.serialize();
+		
+		if (Std.is(this.target, Vector3)) {
+			serializationObject.target = this.target.asArray();
+		}
+		
+		if (this.target != null && this.target.id != null) {
+			serializationObject.lockedTargetId = this.target.id;
+		}
+		
+		serializationObject.checkCollisions = this.checkCollisions;
+		
+		serializationObject.alpha = this.alpha;
+		serializationObject.beta = this.beta;
+		serializationObject.radius = this.radius;
+		
+		return serializationObject;
 	}
 	
 }

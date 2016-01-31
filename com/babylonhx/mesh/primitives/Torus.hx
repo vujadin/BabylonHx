@@ -1,5 +1,7 @@
 package com.babylonhx.mesh.primitives;
 
+import com.babylonhx.tools.Tags;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -30,5 +32,18 @@ package com.babylonhx.mesh.primitives;
 	override public function copy(id:String):Geometry {
 		return new Torus(id, this.getScene(), this.diameter, this.thickness, this.tessellation, this.canBeRegenerated(), null, this.side);
 	}
+	
+	public static function ParseTorus(parsedTorus:Dynamic, scene:Scene):Geometry {
+        if (Geometry.ParseGeometry(parsedTorus, scene) == null) {
+            return null; // null since geometry could be something else than a torus...
+        }
+		
+        var torus = new Torus(parsedTorus.id, scene, parsedTorus.diameter, parsedTorus.thickness, parsedTorus.tessellation, parsedTorus.canBeRegenerated, null);
+        Tags.AddTagsTo(torus, parsedTorus.tags);
+		
+        scene.pushGeometry(torus, true);
+		
+        return torus;
+    }
 	
 }

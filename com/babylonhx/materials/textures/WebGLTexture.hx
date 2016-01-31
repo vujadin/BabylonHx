@@ -42,7 +42,7 @@ import com.babylonhx.utils.GL;
 	
 	public function new(url:String, data:GLTexture) {
 		this.url = url;
-		this.data = data;		
+		this.data = data;	
 		
 		this.generateMipMaps = false;
 		this.isCube = false;

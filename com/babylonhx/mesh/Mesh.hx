@@ -2,6 +2,7 @@ package com.babylonhx.mesh;
 
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.animations.Animatable;
+import com.babylonhx.animations.Animation;
 import com.babylonhx.culling.BoundingSphere;
 import com.babylonhx.Engine;
 import com.babylonhx.materials.Effect;
@@ -43,6 +44,9 @@ import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.particles.ParticleSystem;
 import com.babylonhx.tools.AsyncLoop;
 import com.babylonhx.tools.Tools;
+import com.babylonhx.tools.Tags;
+import com.babylonhx.loading.SceneLoader;
+import com.babylonhx.physics.PhysicsBodyCreationOptions;
 import com.babylonhx.materials.Material;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.bones.Skeleton;
@@ -660,18 +664,20 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		// Wireframe
 		var indexBufferToBind:WebGLBuffer = null;
 		
-		switch (fillMode) {
-			case Material.PointFillMode:
-				indexBufferToBind = null;
-				
-			case Material.WireFrameFillMode:
-				indexBufferToBind = subMesh.getLinesIndexBuffer(this.getIndices(), engine);
-				
-			case Material.TriangleFillMode:
-				indexBufferToBind = this._geometry.getIndexBuffer();
-								
-			default:
-				indexBufferToBind = this._geometry.getIndexBuffer();
+		if (!this._unIndexed) {
+			switch (fillMode) {
+				case Material.PointFillMode:
+					indexBufferToBind = null;
+					
+				case Material.WireFrameFillMode:
+					indexBufferToBind = subMesh.getLinesIndexBuffer(this.getIndices(), engine);
+					
+				case Material.TriangleFillMode:
+					indexBufferToBind = this._geometry.getIndexBuffer();
+									
+				default:
+					indexBufferToBind = this._geometry.getIndexBuffer();
+			}
 		}
 		
 		// VBOs
@@ -691,10 +697,20 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 				engine.drawPointClouds(subMesh.verticesStart, subMesh.verticesCount, instancesCount);
 				
 			case Material.WireFrameFillMode:
-				engine.draw(false, 0, subMesh.linesIndexCount, instancesCount);	
+				if (this._unIndexed) {
+					engine.drawUnIndexed(false, subMesh.verticesStart, subMesh.verticesCount, instancesCount);
+				}
+				else {
+					engine.draw(false, 0, subMesh.linesIndexCount, instancesCount);	
+				}
 				
 			default:
-				engine.draw(true, subMesh.indexStart, subMesh.indexCount, instancesCount);
+				if (this._unIndexed) {
+					engine.drawUnIndexed(true, subMesh.verticesStart, subMesh.verticesCount, instancesCount);
+				}
+				else {
+					engine.draw(true, subMesh.indexStart, subMesh.indexCount, instancesCount);
+				}
 		}
 	}
 
@@ -1125,7 +1141,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	}
 
 	// Dispose
-	override public function dispose(doNotRecurse:Bool = false/*?doNotRecurse:Bool*/) {
+	override public function dispose(doNotRecurse:Bool = false) {
 		if (this._geometry != null) {
 			this._geometry.releaseForMesh(this, true);
 		}
@@ -1306,6 +1322,74 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			var previousOne = previousSubmeshes[submeshIndex];
 			var subMesh = new SubMesh(previousOne.materialIndex, previousOne.indexStart, previousOne.indexCount, previousOne.indexStart, previousOne.indexCount, this);
 		}
+		
+		this.synchronizeInstances();
+	}
+	
+	public function convertToUnIndexedMesh() {
+		/// <summary>Remove indices by unfolding faces into buffers</summary>
+		/// <summary>Warning: This implies adding vertices to the mesh in order to get exactly 3 vertices per face</summary>
+		var kinds:Array<String> = this.getVerticesDataKinds();
+		var vbs:Map<String, VertexBuffer> = new Map();
+		var data:Map<String, Array<Float>> = new Map();
+		var newdata:Map<String, Array<Float>> = new Map();
+		var updatableNormals:Bool = false;		
+		var kind:String = "";
+		
+		for (kindIndex in 0...kinds.length) {
+			kind = kinds[kindIndex];
+			var vertexBuffer:VertexBuffer = this.getVertexBuffer(kind);
+			vbs[kind] = vertexBuffer;
+			data[kind] = vbs[kind].getData();
+			newdata[kind] = [];
+		}
+		
+		// Save previous submeshes
+		var previousSubmeshes:Array<SubMesh> = this.subMeshes.slice(0);
+		
+		var indices:Array<Int> = this.getIndices();
+		var totalIndices:Int = this.getTotalIndices();
+		
+		// Generating unique vertices per face
+		for (index in 0...totalIndices) {
+			var vertexIndex = indices[index];
+			
+			for (kindIndex in 0...kinds.length) {
+				kind = kinds[kindIndex];
+				var stride = vbs[kind].getStrideSize();
+				
+				for (offset in 0...stride) {
+					newdata[kind].push(data[kind][vertexIndex * stride + offset]);
+				}
+			}
+		}
+		
+		// Updating indices
+		var index:Int = 0;
+		while (index < totalIndices) {
+			indices[index] = index;
+			indices[index + 1] = index + 1;
+			indices[index + 2] = index + 2;
+			
+			index += 3;
+		}
+		
+		this.setIndices(indices);
+		
+		// Updating vertex buffers
+		for (kindIndex in 0...kinds.length) {
+			kind = kinds[kindIndex];
+			this.setVerticesData(kind, newdata[kind], vbs[kind].isUpdatable());
+		}
+		
+		// Updating submeshes
+		this.releaseSubMeshes();
+		for (submeshIndex in 0...previousSubmeshes.length) {
+			var previousOne = previousSubmeshes[submeshIndex];
+			var subMesh = new SubMesh(previousOne.materialIndex, previousOne.indexStart, previousOne.indexCount, previousOne.indexStart, previousOne.indexCount, this);
+		}
+		
+		this._unIndexed = true;
 		
 		this.synchronizeInstances();
 	}
@@ -1693,6 +1777,16 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	 * @param {skeleton} skeleton to apply
 	 */
 	public function applySkeleton(skeleton:Skeleton):Mesh {
+		if (this.geometry == null) {
+			return this;
+		}
+		
+		if (this.geometry._softwareSkinningRenderId == this.getScene().getRenderId()) {
+			return this;
+		}
+		
+		this.geometry._softwareSkinningRenderId = this.getScene().getRenderId();
+		
 		if (!this.isVerticesDataPresent(VertexBuffer.PositionKind)) {
 			return this;
 		}
@@ -1877,5 +1971,220 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		
 		return meshSubclass;
 	}
+	
+	public static function ParseMesh(parsedMesh:Dynamic, scene:Scene, rootUrl:String):Mesh {
+        var mesh = new Mesh(parsedMesh.name, scene);
+        mesh.id = parsedMesh.id;
+		
+        Tags.AddTagsTo(mesh, parsedMesh.tags);
+		
+        mesh.position = Vector3.FromArray(parsedMesh.position);
+		
+        if (parsedMesh.rotationQuaternion != null) {
+            mesh.rotationQuaternion = Quaternion.FromArray(parsedMesh.rotationQuaternion);
+        } 
+		else if (parsedMesh.rotation != null) {
+            mesh.rotation = Vector3.FromArray(parsedMesh.rotation);
+        }
+		
+        mesh.scaling = Vector3.FromArray(parsedMesh.scaling);
+		
+        if (parsedMesh.localMatrix != null) {
+            mesh.setPivotMatrix(Matrix.FromArray(parsedMesh.localMatrix));
+        } 
+		else if (parsedMesh.pivotMatrix != null) {
+            mesh.setPivotMatrix(Matrix.FromArray(parsedMesh.pivotMatrix));
+        }
+		
+        mesh.setEnabled(parsedMesh.isEnabled);
+        mesh.isVisible = parsedMesh.isVisible;
+        mesh.infiniteDistance = parsedMesh.infiniteDistance;
+		
+        mesh.showBoundingBox = parsedMesh.showBoundingBox;
+        mesh.showSubMeshesBoundingBox = parsedMesh.showSubMeshesBoundingBox;
+		
+		if (parsedMesh.applyFog != null && parsedMesh.applyFog) {
+			mesh.applyFog = parsedMesh.applyFog;
+        }
+		
+        if (parsedMesh.pickable != null) {
+            mesh.isPickable = parsedMesh.pickable;
+        }
+		
+		if (parsedMesh.alphaIndex != null) {
+			mesh.alphaIndex = parsedMesh.alphaIndex;
+		}
+		
+        mesh.receiveShadows = parsedMesh.receiveShadows;
+        mesh.billboardMode = parsedMesh.billboardMode;
+		
+        if (parsedMesh.visibility != null) {
+            mesh.visibility = parsedMesh.visibility;
+        }
+		
+        mesh.checkCollisions = parsedMesh.checkCollisions;
+        mesh._shouldGenerateFlatShading = parsedMesh.useFlatShading;
+		
+		// freezeWorldMatrix
+        if (parsedMesh.freezeWorldMatrix != null) {
+            mesh._waitingFreezeWorldMatrix = parsedMesh.freezeWorldMatrix;
+        }
+		
+        // Parent
+        if (parsedMesh.parentId != null) {
+            mesh._waitingParentId = parsedMesh.parentId;
+        }
+		
+		// Actions
+        if (parsedMesh.actions != null) {
+            mesh._waitingActions = parsedMesh.actions;
+        }
+		
+        // Geometry
+        mesh.hasVertexAlpha = parsedMesh.hasVertexAlpha;
+		
+        if (parsedMesh.delayLoadingFile != null && parsedMesh.delayLoadingFile == true) {
+            mesh.delayLoadState = Engine.DELAYLOADSTATE_NOTLOADED;
+            mesh.delayLoadingFile = rootUrl + parsedMesh.delayLoadingFile;
+            mesh._boundingInfo = new BoundingInfo(Vector3.FromArray(parsedMesh.boundingBoxMinimum), Vector3.FromArray(parsedMesh.boundingBoxMaximum));
+			
+            if (parsedMesh._binaryInfo != null) {
+                mesh._binaryInfo = parsedMesh._binaryInfo;
+            }
+			
+            mesh._delayInfo = [];
+            if (parsedMesh.hasUVs) {
+                mesh._delayInfo.push(VertexBuffer.UVKind);
+            }
+			
+            if (parsedMesh.hasUVs2) {
+                mesh._delayInfo.push(VertexBuffer.UV2Kind);
+            }
+			
+			if (parsedMesh.hasUVs3) {
+                mesh._delayInfo.push(VertexBuffer.UV3Kind);
+            }
+			
+			if (parsedMesh.hasUVs4) {
+                mesh._delayInfo.push(VertexBuffer.UV4Kind);
+            }
+			
+			if (parsedMesh.hasUVs5) {
+                mesh._delayInfo.push(VertexBuffer.UV5Kind);
+            }
+			
+			if (parsedMesh.hasUVs6) {
+                mesh._delayInfo.push(VertexBuffer.UV6Kind);
+            }
+			
+            if (parsedMesh.hasColors) {
+                mesh._delayInfo.push(VertexBuffer.ColorKind);
+            }
+			
+            if (parsedMesh.hasMatricesIndices) {
+                mesh._delayInfo.push(VertexBuffer.MatricesIndicesKind);
+            }
+			
+            if (parsedMesh.hasMatricesWeights) {
+                mesh._delayInfo.push(VertexBuffer.MatricesWeightsKind);
+            }
+			
+            mesh._delayLoadingFunction = Geometry.ImportGeometry;
+			
+            if (SceneLoader.ForceFullSceneLoadingForIncremental) {
+                mesh._checkDelayState();
+            }
+			
+        } 
+		else {
+            Geometry.ImportGeometry(parsedMesh, mesh);
+        }
+		
+        // Material
+        if (parsedMesh.materialId != null) {
+            mesh.setMaterialByID(parsedMesh.materialId);
+        } 
+		else {
+            mesh.material = null;
+        }
+		
+        // Skeleton
+        if (parsedMesh.skeletonId > -1) {
+            mesh.skeleton = scene.getLastSkeletonByID(parsedMesh.skeletonId);
+			if (parsedMesh.numBoneInfluencers != null) {
+                mesh.numBoneInfluencers = parsedMesh.numBoneInfluencers;
+            }
+        }
+		
+        // Physics
+        if (parsedMesh.physicsImpostor != null) {
+            if (!scene.isPhysicsEnabled()) {
+                scene.enablePhysics();
+            }
+			
+			var physicsOptions:PhysicsBodyCreationOptions = new PhysicsBodyCreationOptions();
+			physicsOptions.mass = parsedMesh.physicsMass;
+			physicsOptions.friction = parsedMesh.physicsFriction;
+			physicsOptions.restitution = parsedMesh.physicsRestitution;
+				
+            mesh.setPhysicsState(parsedMesh.physicsImpostor, physicsOptions);
+        }
+		
+        // Animations
+        if (parsedMesh.animations != null) {
+            for (animationIndex in 0...parsedMesh.animations.length) {
+                var parsedAnimation = parsedMesh.animations[animationIndex];				
+                mesh.animations.push(Animation.Parse(parsedAnimation));
+            }
+			
+			Node.ParseAnimationRanges(mesh, parsedMesh, scene);
+        }
+		
+        if (parsedMesh.autoAnimate != null) {
+            scene.beginAnimation(mesh, parsedMesh.autoAnimateFrom, parsedMesh.autoAnimateTo, parsedMesh.autoAnimateLoop, 1.0);
+        }
+		
+        // Layer Mask
+        if (parsedMesh.layerMask != null) {
+            mesh.layerMask = Std.int(Math.abs(parsedMesh.layerMask));
+        } 
+		else {
+            mesh.layerMask = 0xFFFFFFFF;
+        }
+		
+        // Instances
+        if (parsedMesh.instances != null) {
+            for (index in 0...parsedMesh.instances.length) {
+                var parsedInstance = parsedMesh.instances[index];
+                var instance = mesh.createInstance(parsedInstance.name);
+				
+                Tags.AddTagsTo(instance, parsedInstance.tags);
+				
+                instance.position = Vector3.FromArray(parsedInstance.position);
+				
+                if (parsedInstance.rotationQuaternion != null) {
+                    instance.rotationQuaternion = Quaternion.FromArray(parsedInstance.rotationQuaternion);
+                } 
+				else if (parsedInstance.rotation != null) {
+                    instance.rotation = Vector3.FromArray(parsedInstance.rotation);
+                }
+				
+                instance.scaling = Vector3.FromArray(parsedInstance.scaling);
+				
+                instance.checkCollisions = mesh.checkCollisions;
+				
+                if (parsedMesh.animations != null) {
+                    for (animationIndex in 0...parsedMesh.animations.length) {
+                        var parsedAnimation = parsedMesh.animations[animationIndex];
+                        instance.animations.push(Animation.Parse(parsedAnimation));
+                    }
+					
+					Node.ParseAnimationRanges(instance, parsedMesh, scene);
+                }
+            }
+        }
+		
+        return mesh;
+    }
 	
 }

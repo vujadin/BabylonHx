@@ -36,6 +36,8 @@ import com.babylonhx.Scene;
 	private var _blurBoxOffset:Float = 0.0;
 	private var _bias:Float = 0.00005;
 	private var _lightDirection:Vector3 = Vector3.Zero();
+	
+	public var forceBackFacesOnly:Bool = false;
 
 	public var bias(get, set):Float;
 	private function get_bias():Float {
@@ -158,9 +160,7 @@ import com.babylonhx.Scene;
 		this._shadowMap.wrapU = Texture.CLAMP_ADDRESSMODE;
 		this._shadowMap.wrapV = Texture.CLAMP_ADDRESSMODE;
 		this._shadowMap.anisotropicFilteringLevel = 1;
-		if (!light.needCube()) {
-			this._shadowMap.updateSamplingMode(Texture.NEAREST_SAMPLINGMODE);
-		}
+		this._shadowMap.updateSamplingMode(Texture.NEAREST_SAMPLINGMODE);
 		this._shadowMap.renderParticles = false;
 		
 		this._shadowMap.onBeforeRender = function(?faceIndex:Int) {
@@ -213,6 +213,11 @@ import com.babylonhx.Scene;
 				var material = subMesh.getMaterial();
 				
 				this._effect.setMatrix("viewProjection", this.getTransformMatrix());
+				this._effect.setVector3("lightPosition", this.getLight().position);
+				
+				if (this.getLight().needCube()) {
+					this._effect.setFloat2("depthValues", scene.activeCamera.minZ, scene.activeCamera.maxZ);
+				}
 				
 				// Alpha test
 				if (material != null && material.needAlphaTesting()) {
@@ -226,9 +231,17 @@ import com.babylonhx.Scene;
 					this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices());
 				}
 				
+				if (this.forceBackFacesOnly) {
+					engine.setState(true, 0, false, true);
+				}
+				
 				// Draw
 				mesh._processRendering(subMesh, this._effect, Material.TriangleFillMode, batch, hardwareInstancedRendering,
 					function(isInstance:Bool, world:Matrix) { this._effect.setMatrix("world", world); } );
+					
+				if (this.forceBackFacesOnly) {
+					engine.setState(true, 0, false, false);
+				}
 			} 
 			else {
 				// Need to reset refresh rate of the shadowMap
@@ -267,6 +280,10 @@ import com.babylonhx.Scene;
 		
 		if (this.useVarianceShadowMap || this.useBlurVarianceShadowMap) {
 			defines.push("#define VSM");
+		}
+		
+		if (this.getLight().needCube()) {
+			defines.push("#define CUBEMAP");
 		}
 		
 		var attribs:Array<String> = [VertexBuffer.PositionKind];
@@ -317,7 +334,7 @@ import com.babylonhx.Scene;
 			this._cachedDefines = join;
 			this._effect = this._scene.getEngine().createEffect("shadowMap",
 				attribs,
-				["world", "mBones", "viewProjection", "diffuseMatrix"],
+				["world", "mBones", "viewProjection", "diffuseMatrix", "lightPosition", "depthValues"],
 				["diffuseSampler"], join);
 		}
 		
@@ -353,7 +370,7 @@ import com.babylonhx.Scene;
 		Vector3.NormalizeToRef(this._light.getShadowDirection(this._currentFaceIndex), this._lightDirection);
 		
 		if (Math.abs(Vector3.Dot(this._lightDirection, Vector3.Up())) == 1.0) {
-            this._lightDirection.z = 0.0000000000001; // Need to avoid perfectly perpendicular light
+            this._lightDirection.z = 0.0000000000001; // Required to avoid perfectly perpendicular light
         }
 		
 		if (this._light.computeTransformedPosition()) {
@@ -365,7 +382,7 @@ import com.babylonhx.Scene;
 			this._cachedPosition = lightPosition.clone();
 			this._cachedDirection = this._lightDirection.clone();
 			
-			Matrix.LookAtLHToRef(lightPosition, this._light.position.add(_lightDirection), Vector3.Up(), this._viewMatrix);
+			Matrix.LookAtLHToRef(lightPosition, lightPosition.add(_lightDirection), Vector3.Up(), this._viewMatrix);
 			
 			this._light.setShadowProjectionMatrix(this._projectionMatrix, this._viewMatrix, this.getShadowMap().renderList);
 			
@@ -416,6 +433,62 @@ import com.babylonhx.Scene;
 		if (this._boxBlurPostprocess != null) {
 			this._boxBlurPostprocess.dispose();
 		}
+	}
+	
+	public function serialize():Dynamic {
+		var serializationObject:Dynamic = { };
+		
+		serializationObject.lightId = untyped this._light.id;
+		serializationObject.mapSize = this.getShadowMap().getRenderSize();
+		serializationObject.useVarianceShadowMap = this.useVarianceShadowMap;
+		serializationObject.usePoissonSampling = this.usePoissonSampling;
+		serializationObject.forceBackFacesOnly = this.forceBackFacesOnly;
+		
+		serializationObject.renderList = [];
+		for (meshIndex in 0...this.getShadowMap().renderList.length) {
+			var mesh = this.getShadowMap().renderList[meshIndex];
+			
+			serializationObject.renderList.push(mesh.id);
+		}
+		
+		return serializationObject;
+	}
+
+	public static function Parse(parsedShadowGenerator:Dynamic, scene:Scene):ShadowGenerator {
+		var light = scene.getLightByID(parsedShadowGenerator.lightId);
+		var shadowGenerator:ShadowGenerator = new ShadowGenerator(parsedShadowGenerator.mapSize, cast light);
+		
+		for (meshIndex in 0...parsedShadowGenerator.renderList.length) {
+			var mesh = scene.getMeshByID(parsedShadowGenerator.renderList[meshIndex]);
+			
+			shadowGenerator.getShadowMap().renderList.push(mesh);
+		}
+		
+		if (parsedShadowGenerator.usePoissonSampling == true) {
+			shadowGenerator.usePoissonSampling = true;
+		} 
+		else if (parsedShadowGenerator.useVarianceShadowMap == true) {
+			shadowGenerator.useVarianceShadowMap = true;
+		} 
+		else if (parsedShadowGenerator.useBlurVarianceShadowMap == true) {
+			shadowGenerator.useBlurVarianceShadowMap = true;
+			
+			if (parsedShadowGenerator.blurScale != null) {
+				shadowGenerator.blurScale = parsedShadowGenerator.blurScale;
+			}
+			
+			if (parsedShadowGenerator.blurBoxOffset != null) {
+				shadowGenerator.blurBoxOffset = parsedShadowGenerator.blurBoxOffset;
+			}
+		}
+		
+		if (parsedShadowGenerator.bias != null) {
+			shadowGenerator.bias = parsedShadowGenerator.bias;
+		}
+		
+		shadowGenerator.forceBackFacesOnly = parsedShadowGenerator.forceBackFacesOnly;
+		
+		return shadowGenerator;
 	}
 	
 }

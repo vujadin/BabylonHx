@@ -1,5 +1,7 @@
 package com.babylonhx.mesh.primitives;
 
+import com.babylonhx.tools.Tags;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -34,5 +36,18 @@ package com.babylonhx.mesh.primitives;
 	override public function copy(id:String):Geometry {
 		return new Cylinder(id, this.getScene(), this.height, this.diameterTop, this.diameterBottom, this.tessellation, this.subdivisions, this.canBeRegenerated(), null, this.side);
 	}
+	
+	public static function ParseCylinder(parsedCylinder:Dynamic, scene:Scene):Cylinder {
+        if (Geometry.ParseGeometry(parsedCylinder, scene) == null) {
+            return null; // null since geometry could be something else than a cylinder...
+        }
+		
+        var cylinder = new Cylinder(parsedCylinder.id, scene, parsedCylinder.height, parsedCylinder.diameterTop, parsedCylinder.diameterBottom, parsedCylinder.tessellation, parsedCylinder.subdivisions, parsedCylinder.canBeRegenerated, null);
+        Tags.AddTagsTo(cylinder, parsedCylinder.tags);
+		
+        scene.pushGeometry(cylinder, true);
+		
+        return cylinder;
+    }
 	
 }

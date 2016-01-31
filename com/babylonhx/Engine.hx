@@ -61,8 +61,8 @@ import nme.display.OpenGLView;
 	public static inline var TEXTUREFORMAT_ALPHA = 0;
 	public static inline var TEXTUREFORMAT_LUMINANCE = 1;
 	public static inline var TEXTUREFORMAT_LUMINANCE_ALPHA = 2;
-	public static inline var TEXTUREFORMAT_RGB = 3;
-	public static inline var TEXTUREFORMAT_RGBA = 4;
+	public static inline var TEXTUREFORMAT_RGB = 4;
+	public static inline var TEXTUREFORMAT_RGBA = 5;
 
 	public static inline var TEXTURETYPE_UNSIGNED_INT = 0;
 	public static inline var TEXTURETYPE_FLOAT = 1;
@@ -164,16 +164,14 @@ import nme.display.OpenGLView;
 	#end
 	
 		
-	public function new(canvas:Dynamic, antialias:Bool = false, ?options:Dynamic) {
-		trace("BabylonHx - Cross-Platform 3D Engine | " + Date.now().getFullYear() + " | www.babylonhx.com");
-		
+	public function new(canvas:Dynamic, antialias:Bool = false, ?options:Dynamic, adaptToDeviceRatio:Bool = false) {		
 		Engine.app = canvas;
 		this._renderingCanvas = canvas;
 		this._canvasClientRect.width = 800;// canvas.width;
 		this._canvasClientRect.height = 600;// canvas.height;
 		
 		#if purejs
-		GL.context = cast(canvas, js.html.CanvasElement).getContextWebGL();
+		GL.context = cast(canvas, js.html.CanvasElement).getContext("webgl", options.antialiasing);
 		#end
 		
 		#if (openfl || nme)
@@ -193,7 +191,7 @@ import nme.display.OpenGLView;
 		if (options.preserveDrawingBuffer == null) {
             options.preserveDrawingBuffer = false;
         }
-				
+		
 		this._onBlur = function() {
 			this._windowIsBackground = true;
 		};
@@ -201,10 +199,10 @@ import nme.display.OpenGLView;
 		this._onFocus = function() {
 			this._windowIsBackground = false;
 		};
-				
+		
 		// Viewport
 		#if purejs
-		this._hardwareScalingLevel = 1.0 / (untyped Browser.window.devicePixelRatio || 1.0); 
+		this._hardwareScalingLevel = adaptToDeviceRatio ? 1.0 / (untyped Browser.window.devicePixelRatio || 1.0) : 1.0; 
 		#else
 		this._hardwareScalingLevel = 1;// Std.int(1.0 / (Capabilities.pixelAspectRatio));	
 		#end
@@ -223,7 +221,7 @@ import nme.display.OpenGLView;
 		/*for (ext in this._glExtensions) {
 			trace(ext);
 		}*/
-						
+		
 		// Extensions
 		try {
 			this._caps.standardDerivatives = (GL.getExtension('OES_standard_derivatives') != null);
@@ -286,7 +284,7 @@ import nme.display.OpenGLView;
 				this._caps.fragmentDepthSupported = GL.getExtension("GL_EXT_frag_depth") != null;
 			}
 		#end	
-				
+		
 		// Depth buffer
 		this.setDepthBuffer(true);
 		this.setDepthFunctionToLessOrEqual();
@@ -294,24 +292,27 @@ import nme.display.OpenGLView;
 		
 		// Fullscreen
 		this.isFullscreen = false;
-				
+		
 		// Pointer lock
 		this.isPointerLock = false;		
+		
+		var msg:String = "BabylonHx - Cross-Platform 3D Engine | " + Date.now().getFullYear() + " | www.babylonhx.com";
+		msg +=  " | GL version: " + this._glVersion; 
+		trace(msg);
 	}
 	
 	public function getExtensions():Array<String> {
 		return this._glExtensions;
 	}
 
-	public function getAspectRatio(camera:Camera):Float {
+	public function getAspectRatio(camera:Camera, useScreen:Bool = false):Float {
 		var viewport = camera.viewport;
-		return (this.getRenderWidth() * viewport.width) / (this.getRenderHeight() * viewport.height);
+		return (this.getRenderWidth(useScreen) * viewport.width) / (this.getRenderHeight(useScreen) * viewport.height);
 	}
 
-	public function getRenderWidth():Int {
-		// TODO
-		/*if (this._currentRenderTarget != null) {
-			return Std.int(this._currentRenderTarget._width);
+	public function getRenderWidth(useScreen:Bool = false):Int {
+		/*if (!useScreen && this._currentRenderTarget != null) {
+			return this._currentRenderTarget._width;
 		}*/
 		#if (lime || openfl || nme || purejs)
 		return width;
@@ -320,9 +321,9 @@ import nme.display.OpenGLView;
 		#end
 	}
 
-	public function getRenderHeight():Int {
-		/*if (this._currentRenderTarget != null) {
-			return Std.int(this._currentRenderTarget._height);
+	public function getRenderHeight(useScreen:Bool = false):Int {
+		/*if (!useScreen && this._currentRenderTarget != null) {
+			return this._currentRenderTarget._height;
 		}*/
 		#if (lime || openfl || nme || purejs)
 		return height;
@@ -390,7 +391,7 @@ import nme.display.OpenGLView;
 		}
 	}
 
-	public function _renderLoop(?rect:Dynamic) {
+	public function _renderLoop(?rect:Dynamic) {		
         // Start new frame
         this.beginFrame();
         if (this._renderFunction != null) {
@@ -399,6 +400,10 @@ import nme.display.OpenGLView;
 		
         // Present
         this.endFrame();
+		
+		#if (openfl || nme)
+		this._workingContext = new OpenGLView();
+		#end
 		
 		#if purejs
 		Browser.window.requestAnimationFrame(untyped _renderLoop);
@@ -431,14 +436,16 @@ import nme.display.OpenGLView;
 	inline public function clear(color:Dynamic, backBuffer:Bool, depthStencil:Bool) {
 		this.applyStates();
 		
-		if(Std.is(color, Color4)) {
-			GL.clearColor(color.r, color.g, color.b, color.a);
-		} 
-		else {
-			GL.clearColor(color.r, color.g, color.b, 1.0);
+		if (backBuffer) {
+			if(Std.is(color, Color4)) {
+				GL.clearColor(color.r, color.g, color.b, color.a);
+			} 
+			else {
+				GL.clearColor(color.r, color.g, color.b, 1.0);
+			}
 		}
 		
-		if (this._depthCullingState.depthMask) {
+		if (depthStencil && this._depthCullingState.depthMask) {
 			GL.clearDepth(1.0);
 		}
 		var mode = 0;
@@ -483,7 +490,10 @@ import nme.display.OpenGLView;
 	}
 
 	inline public function endFrame() {
-		this.flushFramebuffer();
+		//this.flushFramebuffer();
+		#if openfl
+		GL.activeTexture(GL.TEXTURE0);
+		#end
 	}
 	
 	// FPS
@@ -581,7 +591,7 @@ import nme.display.OpenGLView;
 			GL.generateMipmap(GL.TEXTURE_2D);
 			GL.bindTexture(GL.TEXTURE_2D, null);
 		}
-			
+		
 		GL.bindFramebuffer(GL.FRAMEBUFFER, null);
 	}
 	
@@ -809,7 +819,7 @@ import nme.display.OpenGLView;
 		// Render
 		var indexFormat = this._uintIndicesCurrentlySet ? GL.UNSIGNED_INT : GL.UNSIGNED_SHORT;
 		var mult:Int = this._uintIndicesCurrentlySet ? 4 : 2;
-		if (instancesCount > -1) {
+		if (instancesCount != -1) {
 			this._caps.instancedArrays.drawElementsInstancedANGLE(useTriangles ? GL.TRIANGLES : GL.LINES, indexCount, indexFormat, indexStart * mult, instancesCount);
 			
 			return;
@@ -824,7 +834,7 @@ import nme.display.OpenGLView;
 		
 		this._drawCalls++;
 		
-		if (instancesCount > -1) {
+		if (instancesCount != -1) {
 			this._caps.instancedArrays.drawArraysInstancedANGLE(GL.POINTS, verticesStart, verticesCount, instancesCount);
 			
 			return;
@@ -832,6 +842,20 @@ import nme.display.OpenGLView;
 		
 		GL.drawArrays(GL.POINTS, verticesStart, verticesCount);
 	}
+	
+	public function drawUnIndexed(useTriangles:Bool, verticesStart:Int, verticesCount:Int, instancesCount:Int = -1) {
+        // Apply states
+        this.applyStates();
+        this._drawCalls++;
+		
+        if (instancesCount != -1) {
+            this._caps.instancedArrays.drawArraysInstancedANGLE(useTriangles ? GL.TRIANGLES : GL.LINES, verticesStart, verticesCount, instancesCount);
+			
+            return;
+        }
+		
+        GL.drawArrays(useTriangles ? GL.TRIANGLES : GL.LINES, verticesStart, verticesCount);
+    }
 
 	// Shaders
 	inline public function _releaseEffect(effect:Effect) {
@@ -1514,7 +1538,7 @@ import nme.display.OpenGLView;
 		return texture;
 	}
 	
-	public function createRenderTargetCubeTexture(size:Int, ?options:Dynamic):WebGLTexture {
+	public function createRenderTargetCubeTexture(size:Dynamic, ?options:Dynamic):WebGLTexture {
 		var texture = new WebGLTexture("", GL.createTexture());
 		
 		var generateMipMaps:Bool = true;
@@ -1537,7 +1561,7 @@ import nme.display.OpenGLView;
 		GL.bindTexture(GL.TEXTURE_CUBE_MAP, texture.data);
 		
 		for (face in 0...6) {
-			GL.texImage2D(GL.TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL.RGBA, size, size, 0, GL.RGBA, GL.UNSIGNED_BYTE, null);
+			GL.texImage2D(GL.TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL.RGBA, size.width, size.height, 0, GL.RGBA, GL.UNSIGNED_BYTE, null);
 		}
 		
 		GL.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_MAG_FILTER, filters.mag);
@@ -1548,7 +1572,7 @@ import nme.display.OpenGLView;
 		// Create the depth buffer
 		var depthBuffer = GL.createRenderbuffer();
 		GL.bindRenderbuffer(GL.RENDERBUFFER, depthBuffer);
-		GL.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_COMPONENT16, size, size);
+		GL.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_COMPONENT16, size.width, size.height);
 		
 		// Create the framebuffer
 		var framebuffer = GL.createFramebuffer();
@@ -1571,8 +1595,8 @@ import nme.display.OpenGLView;
 		
 		this._activeTexturesCache = [];
 		
-		texture._width = size;
-		texture._height = size;
+		texture._width = size.width;
+		texture._height = size.height;
 		texture.isReady = true;
 		
 		return texture;
@@ -1740,7 +1764,7 @@ import nme.display.OpenGLView;
 	}
 
 	inline public function setTextureFromPostProcess(channel:Int, postProcess:PostProcess) {
-		if(postProcess._textures.length > 0) {
+		if (postProcess._textures.length > 0) {
 			this._bindTexture(channel, postProcess._textures.data[postProcess._currentRenderTextureInd]);
 		}
 	}
@@ -1880,9 +1904,7 @@ import nme.display.OpenGLView;
     }
 	
 	public static function getWebGLTextureType(type:Int):Int {
-		var textureType = (type == Engine.TEXTURETYPE_FLOAT ? GL.FLOAT : GL.UNSIGNED_BYTE);
-		
-		return textureType;
+		return (type == Engine.TEXTURETYPE_FLOAT ? GL.FLOAT : GL.UNSIGNED_BYTE);
 	}
 
     public static function getSamplingParameters(samplingMode:Int, generateMipMaps:Bool):Dynamic {

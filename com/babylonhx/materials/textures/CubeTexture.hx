@@ -46,7 +46,7 @@ import com.babylonhx.math.Matrix;
 				this.delayLoadState = Engine.DELAYLOADSTATE_NOTLOADED;
 			}
 		}
-				
+		
 		this.isCube = true;
 		
 		this._textureMatrix = Matrix.Identity();
@@ -81,6 +81,34 @@ import com.babylonhx.math.Matrix;
 
 	override public function getReflectionTextureMatrix():Matrix {
 		return this._textureMatrix;
+	}
+	
+	override public function serialize():Dynamic {
+		if (this.name == null) {
+			return null;
+		}
+		
+		var serializationObject:Dynamic = { };
+		serializationObject.name = this.name;
+		serializationObject.hasAlpha = this.hasAlpha;
+		serializationObject.isCube = true;
+		serializationObject.level = this.level;
+		serializationObject.coordinatesMode = this.coordinatesMode;
+		
+		return serializationObject;
+	}
+	
+	public static function Parse(parsedTexture:Dynamic, scene:Scene, rootUrl:String):CubeTexture {
+		var texture:CubeTexture = null;
+		if ((parsedTexture.name != null || parsedTexture.extensions != null) && !parsedTexture.isRenderTarget) {
+			texture = new CubeTexture(rootUrl + parsedTexture.name, scene, parsedTexture.extensions);
+			texture.name = parsedTexture.name;
+			texture.hasAlpha = parsedTexture.hasAlpha;
+			texture.level = parsedTexture.level;
+			texture.coordinatesMode = parsedTexture.coordinatesMode;
+		}
+		
+		return texture;
 	}
 	
 }

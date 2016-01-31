@@ -6,6 +6,8 @@ import com.babylonhx.math.Color3;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
+import com.babylonhx.tools.Tags;
+import com.babylonhx.animations.Animation;
 
 /**
  * ...
@@ -115,6 +117,90 @@ import com.babylonhx.mesh.AbstractMesh;
 		
 		// Remove from scene
 		this.getScene().removeLight(this);
+	}
+	
+	public function serialize():Dynamic {
+		var serializationObject:Dynamic = {};
+		serializationObject.name = this.name;
+		serializationObject.id = this.id;
+		serializationObject.tags = Tags.GetTags(this);
+		
+		//if (this.intensity != 0) {
+			serializationObject.intensity = this.intensity;
+		//}
+		
+		serializationObject.range = this.range;
+		
+		serializationObject.diffuse = this.diffuse.asArray();
+		serializationObject.specular = this.specular.asArray();
+		
+		return serializationObject;
+	}
+
+	public static function Parse(parsedLight:Dynamic, scene:Scene):Light {
+		var light:Light = null;
+
+		switch (parsedLight.type) {
+			case 0:
+				light = new PointLight(parsedLight.name, Vector3.FromArray(parsedLight.position), scene);
+				
+			case 1:
+				light = new DirectionalLight(parsedLight.name, Vector3.FromArray(parsedLight.direction), scene);
+				untyped light.position = Vector3.FromArray(parsedLight.position);
+				
+			case 2:
+				light = new SpotLight(parsedLight.name, Vector3.FromArray(parsedLight.position), Vector3.FromArray(parsedLight.direction), parsedLight.angle, parsedLight.exponent, scene);
+				
+			case 3:
+				light = new HemisphericLight(parsedLight.name, Vector3.FromArray(parsedLight.direction), scene);
+				untyped light.groundColor = Color3.FromArray(parsedLight.groundColor);
+				
+		}
+		
+		light.id = parsedLight.id;
+		
+		Tags.AddTagsTo(light, parsedLight.tags);
+		
+		if (parsedLight.intensity != null) {
+			light.intensity = parsedLight.intensity;
+		}
+		
+		if (parsedLight.range != null) {
+			light.range = parsedLight.range;
+		}
+		
+		light.diffuse = Color3.FromArray(parsedLight.diffuse);
+		light.specular = Color3.FromArray(parsedLight.specular);
+		
+		if (parsedLight.excludedMeshesIds != null) {
+			light._excludedMeshesIds = parsedLight.excludedMeshesIds;
+		}
+		
+		// Parent
+		if (parsedLight.parentId != null) {
+			light._waitingParentId = parsedLight.parentId;
+		}
+		
+		if (parsedLight.includedOnlyMeshesIds != null) {
+			light._includedOnlyMeshesIds = parsedLight.includedOnlyMeshesIds;
+		}
+		
+		// Animations
+		if (parsedLight.animations != null) {
+			for (animationIndex in 0...parsedLight.animations.length) {
+				var parsedAnimation = parsedLight.animations[animationIndex];
+				
+				light.animations.push(Animation.Parse(parsedAnimation));
+			}
+			
+			Node.ParseAnimationRanges(light, parsedLight, scene);
+		}
+		
+		if (parsedLight.autoAnimate == true) {
+			scene.beginAnimation(light, parsedLight.autoAnimateFrom, parsedLight.autoAnimateTo, parsedLight.autoAnimateLoop, 1.0);
+		}
+		
+		return light;
 	}
 	
 }

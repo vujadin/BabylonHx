@@ -1,5 +1,7 @@
 package com.babylonhx.mesh.primitives;
 
+import com.babylonhx.tools.Tags;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -28,5 +30,18 @@ package com.babylonhx.mesh.primitives;
 	override public function copy(id:String):Geometry {
 		return new Sphere(id, this.getScene(), this.segments, this.diameter, this.canBeRegenerated(), null, this.side);
 	}
+	
+	public static function ParseSphere(parsedSphere:Dynamic, scene:Scene):Sphere {
+        if (Geometry.ParseGeometry(parsedSphere, scene) == null) {
+            return null; // null since geometry could be something else than a sphere...
+        }
+		
+        var sphere = new Sphere(parsedSphere.id, scene, parsedSphere.segments, parsedSphere.diameter, parsedSphere.canBeRegenerated, null);
+        Tags.AddTagsTo(sphere, parsedSphere.tags);
+		
+        scene.pushGeometry(sphere, true);
+		
+        return sphere;
+    }
 	
 }

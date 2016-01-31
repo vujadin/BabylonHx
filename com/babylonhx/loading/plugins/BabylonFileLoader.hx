@@ -116,28 +116,28 @@ import com.babylonhx.utils.typedarray.Int32Array;
                                         if (parsedGeometryData.id == parsedMesh.geometryId) {
                                             switch (geometryType) {
                                                 case "boxes":
-                                                    parseBox(parsedGeometryData, scene);
+                                                    Box.ParseBox(parsedGeometryData, scene);
                                                     
                                                 case "spheres":
-                                                    parseSphere(parsedGeometryData, scene);
+                                                    Sphere.ParseSphere(parsedGeometryData, scene);
                                                     
                                                 case "cylinders":
-                                                    parseCylinder(parsedGeometryData, scene);
+                                                    Cylinder.ParseCylinder(parsedGeometryData, scene);
                                                     
                                                 case "toruses":
-                                                    parseTorus(parsedGeometryData, scene);
+                                                    Torus.ParseTorus(parsedGeometryData, scene);
                                                     
                                                 case "grounds":
-                                                    parseGround(parsedGeometryData, scene);
+                                                    Ground.ParseGround(parsedGeometryData, scene);
                                                     
                                                 case "planes":
-                                                    parsePlane(parsedGeometryData, scene);
+                                                    com.babylonhx.mesh.primitives.Plane.ParsePlane(parsedGeometryData, scene);
                                                     
                                                 case "torusKnots":
-                                                    parseTorusKnot(parsedGeometryData, scene);
+                                                    TorusKnot.ParseTorusKnot(parsedGeometryData, scene);
                                                     
                                                 case "vertexData":
-                                                    parseVertexData(parsedGeometryData, scene, rootUrl);
+                                                    Geometry.ParseGeometry(parsedGeometryData, scene, rootUrl);
                                                     
                                             }
                                             found = true;
@@ -191,14 +191,14 @@ import com.babylonhx.utils.typedarray.Int32Array;
                                 var parsedSkeleton = pds[skeletonIndex];
 								
                                 if (parsedSkeleton.id == parsedMesh.skeletonId) {
-									skeletons.push(parseSkeleton(parsedSkeleton, scene));
+									skeletons.push(Skeleton.Parse(parsedSkeleton, scene));
                                     loadedSkeletonsIds.push(parsedSkeleton.id);
                                 }
                             }
                         }
                     }
 					
-                    var mesh = parseMesh(parsedMesh, scene, rootUrl);
+                    var mesh = Mesh.ParseMesh(parsedMesh, scene, rootUrl);
                     meshes.push(mesh);
                 }
             }
@@ -258,7 +258,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
             if (parsedData.materials != null) {
                 for (index in 0...parsedData.materials.length) {
                     var parsedMaterial = parsedData.materials[index];
-                    parseMaterial(parsedMaterial, scene, rootUrl);
+                    StandardMaterial.Parse(parsedMaterial, scene, rootUrl);
                 }
             }
 			
@@ -273,7 +273,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
             if (parsedData.skeletons != null) {
                 for (index in 0...parsedData.skeletons.length) {
                     var parsedSkeleton = parsedData.skeletons[index];
-                    parseSkeleton(parsedSkeleton, scene);
+                    Skeleton.Parse(parsedSkeleton, scene);
                 }
             }
 			
@@ -285,7 +285,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
                 if (boxes != null) {
                     for (index in 0...boxes.length) {
                         var parsedBox = boxes[index];
-                        parseBox(parsedBox, scene);
+                        Box.ParseBox(parsedBox, scene);
                     }
                 }
 				
@@ -294,7 +294,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
                 if (spheres != null) {
                     for (index in 0...spheres.length) {
                         var parsedSphere = spheres[index];
-                        parseSphere(parsedSphere, scene);
+                        Sphere.ParseSphere(parsedSphere, scene);
                     }
                 }
 				
@@ -303,7 +303,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
                 if (cylinders != null) {
                     for (index in 0...cylinders.length) {
                         var parsedCylinder = cylinders[index];
-                        parseCylinder(parsedCylinder, scene);
+                        Cylinder.ParseCylinder(parsedCylinder, scene);
                     }
                 }
 				
@@ -312,7 +312,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
                 if (toruses != null) {
                     for (index in 0...toruses.length) {
                         var parsedTorus = toruses[index];
-                        parseTorus(parsedTorus, scene);
+                        Torus.ParseTorus(parsedTorus, scene);
                     }
                 }
 				
@@ -321,7 +321,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
                 if (grounds != null) {
                     for (index in 0...grounds.length) {
                         var parsedGround = grounds[index];
-                        parseGround(parsedGround, scene);
+                        Ground.ParseGround(parsedGround, scene);
                     }
                 }
 				
@@ -330,7 +330,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
                 if (planes != null) {
                     for (index in 0...planes.length) {
                         var parsedPlane = planes[index];
-                        parsePlane(parsedPlane, scene);
+                        com.babylonhx.mesh.primitives.Plane.ParsePlane(parsedPlane, scene);
                     }
                 }
 				
@@ -339,7 +339,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
                 if (torusKnots != null) {
                     for (index in 0...torusKnots.length) {
                         var parsedTorusKnot = torusKnots[index];
-                        parseTorusKnot(parsedTorusKnot, scene);
+                        TorusKnot.ParseTorusKnot(parsedTorusKnot, scene);
                     }
                 }
 				
@@ -348,7 +348,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
                 if (vertexData != null) {
                     for (index in 0...vertexData.length) {
                         var parsedVertexData = vertexData[index];
-                        parseVertexData(parsedVertexData, scene, rootUrl);
+                        Geometry.ParseGeometry(parsedVertexData, scene, rootUrl);
                     }
                 }
             }
@@ -357,7 +357,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			var pdm:Array<Dynamic> = cast parsedData.meshes;
             for (index in 0...pdm.length) {
                 var parsedMesh = pdm[index];
-                parseMesh(parsedMesh, scene, rootUrl);
+                Mesh.ParseMesh(parsedMesh, scene, rootUrl);
             }
 			
             // Cameras
@@ -456,196 +456,12 @@ import com.babylonhx.utils.typedarray.Int32Array;
         return colors;
     }
 
-    public static function loadCubeTexture(rootUrl:String, parsedTexture:Dynamic, scene:Scene):CubeTexture {
-		var texture:CubeTexture = null;
-		
-		if ((parsedTexture.name != null || parsedTexture.extensions != null) && parsedTexture.isRenderTarget == false) {
-			texture = new CubeTexture(rootUrl + parsedTexture.name, scene, parsedTexture.extensions);
-			
-			texture.name = parsedTexture.name;
-			texture.hasAlpha = parsedTexture.hasAlpha;
-			texture.level = parsedTexture.level;
-			texture.coordinatesMode = parsedTexture.coordinatesMode;
-		}
-		
-        return texture;
-    }
-
-	public static function loadTexture(rootUrl:String, parsedTexture:Dynamic, scene:Scene):Dynamic {		
-        if (parsedTexture.isCube != null && parsedTexture.isCube == true) {
-            return loadCubeTexture(rootUrl, parsedTexture, scene);
-        }
-		
-		if (parsedTexture.name == null && parsedTexture.isRenderTarget == false) {
-            return null;
-        }
-		
-        var texture:Texture = null;
-		
-        if (parsedTexture.mirrorPlane != null) {
-            texture = new MirrorTexture(parsedTexture.name, parsedTexture.renderTargetSize, scene);
-            cast(texture, MirrorTexture)._waitingRenderList = parsedTexture.renderList;
-            cast(texture, MirrorTexture).mirrorPlane = Plane.FromArray(parsedTexture.mirrorPlane);
-        } 
-		else if (parsedTexture.isRenderTarget) {
-            texture = new RenderTargetTexture(parsedTexture.name, parsedTexture.renderTargetSize, scene);
-            cast(texture, RenderTargetTexture)._waitingRenderList = parsedTexture.renderList;
-        } 
-		else {
-            texture = new Texture(rootUrl + parsedTexture.name, scene);
-        }
-		
-        texture.name = parsedTexture.name;
-        texture.hasAlpha = parsedTexture.hasAlpha;
-		texture.getAlphaFromRGB = parsedTexture.getAlphaFromRGB;
-        texture.level = parsedTexture.level;
-		
-        texture.coordinatesIndex = parsedTexture.coordinatesIndex;
-        texture.coordinatesMode = parsedTexture.coordinatesMode;
-        texture.uOffset = parsedTexture.uOffset;
-        texture.vOffset = parsedTexture.vOffset;
-        texture.uScale = parsedTexture.uScale;
-        texture.vScale = parsedTexture.vScale;
-        texture.uAng = parsedTexture.uAng;
-        texture.vAng = parsedTexture.vAng;
-        texture.wAng = parsedTexture.wAng;
-		
-        texture.wrapU = parsedTexture.wrapU;
-        texture.wrapV = parsedTexture.wrapV;
-		
-        // Animations
-        if (parsedTexture.animations != null) {
-            for (animationIndex in 0...parsedTexture.animations.length) {
-                var parsedAnimation = parsedTexture.animations[animationIndex];
-				
-                texture.animations.push(parseAnimation(parsedAnimation));
-            }
-        }
-		
-        return texture;
-    }
-
-    public static function parseSkeleton(parsedSkeleton:Dynamic, scene:Scene):Skeleton {
-        var skeleton = new Skeleton(parsedSkeleton.name, parsedSkeleton.id, scene);
-		try {
-			for (index in 0...parsedSkeleton.bones.length) {
-				var parsedBone = parsedSkeleton.bones[index];
-				
-				var parentBone = null;
-				if (parsedBone.parentBoneIndex > -1) {
-					parentBone = skeleton.bones[parsedBone.parentBoneIndex];
-				}
-				
-				var bone = new Bone(parsedBone.name, skeleton, parentBone, Matrix.FromArray(parsedBone.matrix));
-				
-				if (parsedBone.animation != null) {
-					bone.animations.push(parseAnimation(parsedBone.animation));
-				}
-			}
-		} catch (err:Dynamic) {
-			trace(err);
-		}
-		
-        return skeleton;
-    }
-
-    public static function parseFresnelParameters(parsedFresnelParameters:Dynamic):FresnelParameters {
-        var fresnelParameters = new FresnelParameters();
-		
-        fresnelParameters.isEnabled = parsedFresnelParameters.isEnabled;
-        fresnelParameters.leftColor = Color3.FromArray(parsedFresnelParameters.leftColor);
-        fresnelParameters.rightColor = Color3.FromArray(parsedFresnelParameters.rightColor);
-        fresnelParameters.bias = parsedFresnelParameters.bias;
-        fresnelParameters.power = parsedFresnelParameters.power != null ? parsedFresnelParameters.power : 1.0;
-		
-        return fresnelParameters;
-    }
-
-    public static function parseMaterial(parsedMaterial:Dynamic, scene:Scene, rootUrl:String):Material {
-        var material = new StandardMaterial(parsedMaterial.name, scene);
-		
-        material.ambientColor = Color3.FromArray(parsedMaterial.ambient);
-        material.diffuseColor = Color3.FromArray(parsedMaterial.diffuse);
-        material.specularColor = Color3.FromArray(parsedMaterial.specular);
-        material.specularPower = parsedMaterial.specularPower;
-        material.emissiveColor = Color3.FromArray(parsedMaterial.emissive);
-		material.useReflectionFresnelFromSpecular = parsedMaterial.useReflectionFresnelFromSpecular;
-        material.useEmissiveAsIllumination = parsedMaterial.useEmissiveAsIllumination;
-		
-        material.alpha = parsedMaterial.alpha;
-		
-        material.id = parsedMaterial.id;
-		
-		if (parsedMaterial.disableDepthWrite != null) {
-            material.disableDepthWrite = parsedMaterial.disableDepthWrite;
-        }
-		
-        Tags.AddTagsTo(material, parsedMaterial.tags);
-        material.backFaceCulling = parsedMaterial.backFaceCulling;
-        material.wireframe = parsedMaterial.wireframe;
-		
-        if (parsedMaterial.diffuseTexture != null) {
-            material.diffuseTexture = loadTexture(rootUrl, parsedMaterial.diffuseTexture, scene);
-        }
-		
-        if (parsedMaterial.diffuseFresnelParameters != null) {
-            material.diffuseFresnelParameters = parseFresnelParameters(parsedMaterial.diffuseFresnelParameters);
-        }
-		
-        if (parsedMaterial.ambientTexture != null) {
-            material.ambientTexture = loadTexture(rootUrl, parsedMaterial.ambientTexture, scene);
-        }
-		
-        if (parsedMaterial.opacityTexture != null) {
-            material.opacityTexture = loadTexture(rootUrl, parsedMaterial.opacityTexture, scene);
-        }
-		
-        if (parsedMaterial.opacityFresnelParameters != null) {
-            material.opacityFresnelParameters = parseFresnelParameters(parsedMaterial.opacityFresnelParameters);
-        }
-		
-        if (parsedMaterial.reflectionTexture != null) {
-            material.reflectionTexture = loadTexture(rootUrl, parsedMaterial.reflectionTexture, scene);
-        }
-		
-        if (parsedMaterial.reflectionFresnelParameters != null) {
-            material.reflectionFresnelParameters = parseFresnelParameters(parsedMaterial.reflectionFresnelParameters);
-        }
-		
-        if (parsedMaterial.emissiveTexture != null) {
-            material.emissiveTexture = loadTexture(rootUrl, parsedMaterial.emissiveTexture, scene);
-        }
-		
-		if (parsedMaterial.lightmapTexture != null) {
-            material.lightmapTexture = loadTexture(rootUrl, parsedMaterial.lightmapTexture, scene);
-            untyped material.lightmapThreshold = parsedMaterial.lightmapThreshold;
-        }
-		
-        if (parsedMaterial.emissiveFresnelParameters != null) {
-            material.emissiveFresnelParameters = parseFresnelParameters(parsedMaterial.emissiveFresnelParameters);
-        }
-		
-        if (parsedMaterial.specularTexture != null) {
-            material.specularTexture = loadTexture(rootUrl, parsedMaterial.specularTexture, scene);
-        }
-		
-        if (parsedMaterial.bumpTexture != null) {
-            material.bumpTexture = loadTexture(rootUrl, parsedMaterial.bumpTexture, scene);
-        }
-		
-		if (parsedMaterial.checkReadyOnlyOnce != null) {
-            material.checkReadyOnlyOnce = parsedMaterial.checkReadyOnlyOnce;
-        }
-		
-        return material;
-    }
-
     public static function parseMaterialById(id:String, parsedData:Dynamic, scene:Scene, rootUrl:String):Material {
         for (index in 0...parsedData.materials.length) {
             var parsedMaterial = parsedData.materials[index];
 			
             if (parsedMaterial.id == id) {
-                return parseMaterial(parsedMaterial, scene, rootUrl);
+                return StandardMaterial.Parse(parsedMaterial, scene, rootUrl);
             }
         }
 		
@@ -755,44 +571,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
         return shadowGenerator;
     }
 
-    private static function parseAnimation(parsedAnimation:Dynamic):Animation {
-        var animation = new Animation(parsedAnimation.name, parsedAnimation.property, parsedAnimation.framePerSecond, parsedAnimation.dataType, parsedAnimation.loopBehavior);
-		
-        var dataType = parsedAnimation.dataType;
-        var keys:Array<BabylonFrame> = [];
-        for (index in 0...parsedAnimation.keys.length) {
-            var key = parsedAnimation.keys[index];
-			
-            var data:Dynamic = null;
-			
-            switch (dataType) {
-                case Animation.ANIMATIONTYPE_FLOAT:
-                    data = key.values[0];
-                    
-                case Animation.ANIMATIONTYPE_QUATERNION:
-                    data = Quaternion.FromArray(key.values);
-                    
-                case Animation.ANIMATIONTYPE_MATRIX:
-                    data = Matrix.FromArray(key.values);
-                    
-                case Animation.ANIMATIONTYPE_VECTOR3:
-					data = Vector3.FromArray(key.values);
-					
-                default:
-                    data = Vector3.FromArray(key.values);
-                    
-            }
-			
-            keys.push({
-                frame:key.frame,
-                value:data
-            });
-        }
-		
-        animation.setKeys(keys);
-		
-        return animation;
-    }
+    
 
     public static function parseLight(parsedLight:Dynamic, scene:Scene):Light {
         var light:Light = null;
@@ -848,7 +627,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
         if (parsedLight.animations != null) {
             for (animationIndex in 0...parsedLight.animations.length) {
                 var parsedAnimation = parsedLight.animations[animationIndex];
-                light.animations.push(parseAnimation(parsedAnimation));
+                light.animations.push(Animation.Parse(parsedAnimation));
             }
         }
 		
@@ -970,7 +749,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
         if (parsedCamera.animations != null) {
             for (animationIndex in 0...parsedCamera.animations.length) {
                 var parsedAnimation = parsedCamera.animations[animationIndex];
-                camera.animations.push(parseAnimation(parsedAnimation));
+                camera.animations.push(Animation.Parse(parsedAnimation));
             }
         }
 		
@@ -987,352 +766,6 @@ import com.babylonhx.utils.typedarray.Int32Array;
         }
 		
         return camera;
-    }
-
-    public static function parseGeometry(parsedGeometry:Dynamic, scene:Scene):Geometry {
-        var id = parsedGeometry.id;
-		
-        return scene.getGeometryByID(id);
-    }
-
-    public static function parseBox(parsedBox:Dynamic, scene:Scene):Geometry {
-        if (parseGeometry(parsedBox, scene) != null) {
-            return null; // null since geometry could be something else than a box...
-        }
-		
-        var box = new Box(parsedBox.id, scene, parsedBox.size, parsedBox.canBeRegenerated, null);
-        Tags.AddTagsTo(box, parsedBox.tags);
-		
-        scene.pushGeometry(box, true);
-		
-        return box;
-    }
-
-    private static function parseSphere(parsedSphere:Dynamic, scene:Scene):Geometry {
-        if (parseGeometry(parsedSphere, scene) == null) {
-            return null; // null since geometry could be something else than a sphere...
-        }
-		
-        var sphere = new Sphere(parsedSphere.id, scene, parsedSphere.segments, parsedSphere.diameter, parsedSphere.canBeRegenerated, null);
-        Tags.AddTagsTo(sphere, parsedSphere.tags);
-		
-        scene.pushGeometry(sphere, true);
-		
-        return sphere;
-    }
-
-	private static function parseCylinder(parsedCylinder:Dynamic, scene:Scene):Geometry {
-        if (parseGeometry(parsedCylinder, scene) == null) {
-            return null; // null since geometry could be something else than a cylinder...
-        }
-		
-        var cylinder = new Cylinder(parsedCylinder.id, scene, parsedCylinder.height, parsedCylinder.diameterTop, parsedCylinder.diameterBottom, parsedCylinder.tessellation, parsedCylinder.subdivisions, parsedCylinder.canBeRegenerated, null);
-        Tags.AddTagsTo(cylinder, parsedCylinder.tags);
-		
-        scene.pushGeometry(cylinder, true);
-		
-        return cylinder;
-    }
-
-    private static function parseTorus(parsedTorus:Dynamic, scene:Scene):Geometry {
-        if (parseGeometry(parsedTorus, scene) == null) {
-            return null; // null since geometry could be something else than a torus...
-        }
-		
-        var torus = new Torus(parsedTorus.id, scene, parsedTorus.diameter, parsedTorus.thickness, parsedTorus.tessellation, parsedTorus.canBeRegenerated, null);
-        Tags.AddTagsTo(torus, parsedTorus.tags);
-		
-        scene.pushGeometry(torus, true);
-		
-        return torus;
-    }
-
-    private static function parseGround(parsedGround:Dynamic, scene:Scene):Dynamic {
-        if (parseGeometry(parsedGround, scene) == null) {
-            return null; // null since geometry could be something else than a ground...
-        }
-		
-        var ground = new Ground(parsedGround.id, scene, parsedGround.width, parsedGround.height, parsedGround.subdivisions, parsedGround.canBeRegenerated, null);
-        Tags.AddTagsTo(ground, parsedGround.tags);
-		
-        scene.pushGeometry(ground, true);
-		
-        return ground;
-    }
-
-    private static function parsePlane(parsedPlane:Dynamic, scene:Scene):Geometry {
-        if (parseGeometry(parsedPlane, scene) == null) {
-            return null; // null since geometry could be something else than a plane...
-        }
-		
-        var plane = new com.babylonhx.mesh.primitives.Plane(parsedPlane.id, scene, parsedPlane.size, parsedPlane.canBeRegenerated, null);
-        Tags.AddTagsTo(plane, parsedPlane.tags);
-		
-        scene.pushGeometry(plane, true);
-		
-        return plane;
-    }
-
-    private static function parseTorusKnot(parsedTorusKnot:Dynamic, scene:Scene):Geometry {
-        if (parseGeometry(parsedTorusKnot, scene) == null) {
-            return null; // null since geometry could be something else than a torusKnot...
-        }
-		
-        var torusKnot = new TorusKnot(parsedTorusKnot.id, scene, parsedTorusKnot.radius, parsedTorusKnot.tube, parsedTorusKnot.radialSegments, parsedTorusKnot.tubularSegments, parsedTorusKnot.p, parsedTorusKnot.q, parsedTorusKnot.canBeRegenerated, null);
-        Tags.AddTagsTo(torusKnot, parsedTorusKnot.tags);
-		
-        scene.pushGeometry(torusKnot, true);
-		
-        return torusKnot;
-    }
-
-    private static function parseVertexData(parsedVertexData:Dynamic, scene:Scene, rootUrl:String):Geometry {
-        if (parseGeometry(parsedVertexData, scene) == null) {
-            return null; // null since geometry could be a primitive
-        }
-		
-        var geometry = new Geometry(parsedVertexData.id, scene);
-		
-        Tags.AddTagsTo(geometry, parsedVertexData.tags);
-		
-        if (parsedVertexData.delayLoadingFile != null && parsedVertexData.delayLoadingFile != "") {
-            geometry.delayLoadState = Engine.DELAYLOADSTATE_NOTLOADED;
-            geometry.delayLoadingFile = rootUrl + parsedVertexData.delayLoadingFile;
-            geometry._boundingInfo = new BoundingInfo(Vector3.FromArray(parsedVertexData.boundingBoxMinimum), Vector3.FromArray(parsedVertexData.boundingBoxMaximum));
-			
-            geometry._delayInfo = [];
-            if (parsedVertexData.hasUVs) {
-                geometry._delayInfo.push(VertexBuffer.UVKind);
-            }
-			
-            if (parsedVertexData.hasUVs2) {
-                geometry._delayInfo.push(VertexBuffer.UV2Kind);
-            }
-			
-			if (parsedVertexData.hasUVs3) {
-                geometry._delayInfo.push(VertexBuffer.UV3Kind);
-            }
-			
-            if (parsedVertexData.hasUVs4) {
-                geometry._delayInfo.push(VertexBuffer.UV4Kind);
-            }
-			
-            if (parsedVertexData.hasUVs5) {
-                geometry._delayInfo.push(VertexBuffer.UV5Kind);
-            }
-			
-            if (parsedVertexData.hasUVs6) {
-                geometry._delayInfo.push(VertexBuffer.UV6Kind);
-            }
-			
-            if (parsedVertexData.hasColors) {
-                geometry._delayInfo.push(VertexBuffer.ColorKind);
-            }
-			
-            if (parsedVertexData.hasMatricesIndices) {
-                geometry._delayInfo.push(VertexBuffer.MatricesIndicesKind);
-            }
-			
-            if (parsedVertexData.hasMatricesWeights) {
-                geometry._delayInfo.push(VertexBuffer.MatricesWeightsKind);
-            }
-			
-            geometry._delayLoadingFunction = importVertexData;
-        } 
-		else {
-            importVertexData(parsedVertexData, geometry);
-        }
-		
-        scene.pushGeometry(geometry, true);
-		
-        return geometry;
-    }
-
-    private static function parseMesh(parsedMesh:Dynamic, scene:Scene, rootUrl:String):Mesh {
-        var mesh = new Mesh(parsedMesh.name, scene);
-        mesh.id = parsedMesh.id;
-		
-        Tags.AddTagsTo(mesh, parsedMesh.tags);
-		
-        mesh.position = Vector3.FromArray(parsedMesh.position);
-		
-        if (parsedMesh.rotationQuaternion != null) {
-            mesh.rotationQuaternion = Quaternion.FromArray(parsedMesh.rotationQuaternion);
-        } 
-		else if (parsedMesh.rotation != null) {
-            mesh.rotation = Vector3.FromArray(parsedMesh.rotation);
-        }
-		
-        mesh.scaling = Vector3.FromArray(parsedMesh.scaling);
-		
-        if (parsedMesh.localMatrix != null) {
-            mesh.setPivotMatrix(Matrix.FromArray(parsedMesh.localMatrix));
-        } 
-		else if (parsedMesh.pivotMatrix != null) {
-            mesh.setPivotMatrix(Matrix.FromArray(parsedMesh.pivotMatrix));
-        }
-		
-        mesh.setEnabled(parsedMesh.isEnabled);
-        mesh.isVisible = parsedMesh.isVisible;
-        mesh.infiniteDistance = parsedMesh.infiniteDistance;
-		
-        mesh.showBoundingBox = parsedMesh.showBoundingBox;
-        mesh.showSubMeshesBoundingBox = parsedMesh.showSubMeshesBoundingBox;
-		
-		if (parsedMesh.applyFog != null && parsedMesh.applyFog) {
-			mesh.applyFog = parsedMesh.applyFog;
-        }
-		
-        if (parsedMesh.pickable != null) {
-            mesh.isPickable = parsedMesh.pickable;
-        }
-		
-		if (parsedMesh.alphaIndex != null) {
-			mesh.alphaIndex = parsedMesh.alphaIndex;
-		}
-		
-        mesh.receiveShadows = parsedMesh.receiveShadows;
-        mesh.billboardMode = parsedMesh.billboardMode;
-		
-        if (parsedMesh.visibility != null) {
-            mesh.visibility = parsedMesh.visibility;
-        }
-		
-        mesh.checkCollisions = parsedMesh.checkCollisions;
-        mesh._shouldGenerateFlatShading = parsedMesh.useFlatShading;
-		
-        // Parent
-        if (parsedMesh.parentId != null) {
-            mesh._waitingParentId = parsedMesh.parentId;
-        }
-		
-		// Actions
-        if (parsedMesh.actions != null) {
-            mesh._waitingActions = parsedMesh.actions;
-        }
-		
-        // Geometry
-        mesh.hasVertexAlpha = parsedMesh.hasVertexAlpha;
-		
-        if (parsedMesh.delayLoadingFile != null && parsedMesh.delayLoadingFile == true) {
-            mesh.delayLoadState = Engine.DELAYLOADSTATE_NOTLOADED;
-            mesh.delayLoadingFile = rootUrl + parsedMesh.delayLoadingFile;
-            mesh._boundingInfo = new BoundingInfo(Vector3.FromArray(parsedMesh.boundingBoxMinimum), Vector3.FromArray(parsedMesh.boundingBoxMaximum));
-			
-            if (parsedMesh._binaryInfo != null) {
-                mesh._binaryInfo = parsedMesh._binaryInfo;
-            }
-			
-            mesh._delayInfo = [];
-            if (parsedMesh.hasUVs) {
-                mesh._delayInfo.push(VertexBuffer.UVKind);
-            }
-			
-            if (parsedMesh.hasUVs2) {
-                mesh._delayInfo.push(VertexBuffer.UV2Kind);
-            }
-			
-            if (parsedMesh.hasColors) {
-                mesh._delayInfo.push(VertexBuffer.ColorKind);
-            }
-			
-            if (parsedMesh.hasMatricesIndices) {
-                mesh._delayInfo.push(VertexBuffer.MatricesIndicesKind);
-            }
-			
-            if (parsedMesh.hasMatricesWeights) {
-                mesh._delayInfo.push(VertexBuffer.MatricesWeightsKind);
-            }
-			
-            mesh._delayLoadingFunction = importGeometry;
-			
-            if (SceneLoader.ForceFullSceneLoadingForIncremental) {
-                mesh._checkDelayState();
-            }
-			
-        } 
-		else {
-            importGeometry(parsedMesh, mesh);
-        }
-		
-        // Material
-        if (parsedMesh.materialId != null) {
-            mesh.setMaterialByID(parsedMesh.materialId);
-        } 
-		else {
-            mesh.material = null;
-        }
-		
-        // Skeleton
-        if (parsedMesh.skeletonId > -1) {
-            mesh.skeleton = scene.getLastSkeletonByID(parsedMesh.skeletonId);
-        }
-		
-        // Physics
-        if (parsedMesh.physicsImpostor != null) {
-            if (!scene.isPhysicsEnabled()) {
-                scene.enablePhysics();
-            }
-			
-			var physicsOptions:PhysicsBodyCreationOptions = new PhysicsBodyCreationOptions();
-			physicsOptions.mass = parsedMesh.physicsMass;
-			physicsOptions.friction = parsedMesh.physicsFriction;
-			physicsOptions.restitution = parsedMesh.physicsRestitution;
-				
-            mesh.setPhysicsState(parsedMesh.physicsImpostor, physicsOptions);
-        }
-		
-        // Animations
-        if (parsedMesh.animations != null) {
-            for (animationIndex in 0...parsedMesh.animations.length) {
-                var parsedAnimation = parsedMesh.animations[animationIndex];				
-                mesh.animations.push(parseAnimation(parsedAnimation));
-            }
-        }
-		
-        if (parsedMesh.autoAnimate != null) {
-            scene.beginAnimation(mesh, parsedMesh.autoAnimateFrom, parsedMesh.autoAnimateTo, parsedMesh.autoAnimateLoop, 1.0);
-        }
-		
-        // Layer Mask
-        if (parsedMesh.layerMask != null) {
-            mesh.layerMask = Std.int(Math.abs(parsedMesh.layerMask));
-        } 
-		else {
-            mesh.layerMask = 0xFFFFFFFF;
-        }
-		
-        // Instances
-        if (parsedMesh.instances != null) {
-            for (index in 0...parsedMesh.instances.length) {
-                var parsedInstance = parsedMesh.instances[index];
-                var instance = mesh.createInstance(parsedInstance.name);
-				
-                Tags.AddTagsTo(instance, parsedInstance.tags);
-				
-                instance.position = Vector3.FromArray(parsedInstance.position);
-				
-                if (parsedInstance.rotationQuaternion != null) {
-                    instance.rotationQuaternion = Quaternion.FromArray(parsedInstance.rotationQuaternion);
-                } 
-				else if (parsedInstance.rotation != null) {
-                    instance.rotation = Vector3.FromArray(parsedInstance.rotation);
-                }
-				
-                instance.scaling = Vector3.FromArray(parsedInstance.scaling);
-				
-                instance.checkCollisions = mesh.checkCollisions;
-				
-                if (parsedMesh.animations != null) {
-                    for (animationIndex in 0...parsedMesh.animations.length) {
-                        var parsedAnimation = parsedMesh.animations[animationIndex];
-                        instance.animations.push(parseAnimation(parsedAnimation));
-                    }
-                }
-            }
-        }
-		
-        return mesh;
     }
 	
 	private static function parseActions(parsedActions:Dynamic, object:AbstractMesh, scene:Scene) {

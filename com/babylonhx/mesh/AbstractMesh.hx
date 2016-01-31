@@ -205,6 +205,8 @@ import com.babylonhx.rendering.EdgesRenderer;
 	
 	private var _isWorldMatrixFrozen:Bool = false;
 	
+	public var _unIndexed:Bool = false;
+	
 	// Loading properties
 	public var _waitingActions:Dynamic;
 	public var _waitingFreezeWorldMatrix:Bool;
@@ -542,8 +544,10 @@ import com.babylonhx.rendering.EdgesRenderer;
 			return;
 		}
 		
-		for (subMesh in this.subMeshes) {			
-			subMesh.updateBoundingInfo(matrix);
+		for (subMesh in this.subMeshes) {	
+			if (!subMesh.IsGlobal) {
+				subMesh.updateBoundingInfo(matrix);
+			}
 		}
 	}
 
@@ -555,6 +559,7 @@ import com.babylonhx.rendering.EdgesRenderer;
         }
 		
 		if (!force && (this._currentRenderId == this.getScene().getRenderId() || this.isSynchronized(true))) {
+			this._currentRenderId = this.getScene().getRenderId();
 			return this._worldMatrix;
 		}
 		
@@ -1073,14 +1078,14 @@ import com.babylonhx.rendering.EdgesRenderer;
 	}
 
 	public function dispose(doNotRecurse:Bool = false) {
+		// Animations
+        this.getScene().stopAnimation(this);
+		
 		// Physics
 		if (this.getPhysicsImpostor() != PhysicsEngine.NoImpostor) {
 			this.setPhysicsState(PhysicsEngine.NoImpostor);
 		}
-		
-		// Animations
-        this.getScene().stopAnimation(this);
-		
+				
 		// Intersections in progress
 		for (index in 0...this._intersectionsInProgress.length) {
 			var other = this._intersectionsInProgress[index];
@@ -1089,6 +1094,12 @@ import com.babylonhx.rendering.EdgesRenderer;
 		}
 		
 		this._intersectionsInProgress = [];
+		
+		// Edges
+		if (this._edgesRenderer != null) {
+			this._edgesRenderer.dispose();
+			this._edgesRenderer = null;
+		}
 		
 		// SubMeshes
 		this.releaseSubMeshes();

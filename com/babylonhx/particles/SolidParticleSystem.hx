@@ -20,7 +20,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
  * @author Krtolica Vujadin
  */
 
-typedef SolidPartileOptions = {
+typedef SolidParticleOptions = {
 	?updatable:Bool,
 	?isPickable:Bool
 }
@@ -51,7 +51,7 @@ class SolidParticleSystem implements IDisposable {
 	private var _uvs:Array<Float> = [];
 	//private var _positions32:Float32Array;
 	//private var _normals32:Float32Array;		// updated normals for the VBO
-	private var _fixedNormal32:Float32Array;	// initial normal references
+	//private var _fixedNormal32:Float32Array;	// initial normal references
 	//private var _colors32:Float32Array;			
 	//private var _uvs32:Float32Array;			
 	private var _index:Int = 0;  // indices index
@@ -104,18 +104,14 @@ class SolidParticleSystem implements IDisposable {
 	public var computeParticleVertex(get, set):Bool;
 		
 
-	public function new(name:String, scene:Scene, ?options:SolidPartileOptions) {
+	public function new(name:String, scene:Scene, ?options:SolidParticleOptions) {
 		this.name = name;
 		this._scene = scene;
 		this._camera = scene.activeCamera;
 		
 		this._pickable = options != null && options.isPickable != null ? options.isPickable : false;
-		if (options != null && options.updatable != null) {
-			this._updatable = options.updatable;
-		} 
-		else {
-			this._updatable = true;
-		}
+		this._updatable = options != null && options.updatable != null ? options.updatable : true;
+		
 		if (this._pickable) {
 			this.pickedParticles = [];
 		}
@@ -134,7 +130,7 @@ class SolidParticleSystem implements IDisposable {
 		this._colors32 = new Float32Array(this._colors);*/
 		VertexData.ComputeNormals(this._positions, this._indices, this._normals);
 		/*this._normals32 = new Float32Array(this._normals);*/
-		this._fixedNormal32 = new Float32Array(this._normals);
+		//this._fixedNormal32 = new Float32Array(this._normals);
 		
 		var vertexData:VertexData = new VertexData();
 		vertexData.set(this._positions, VertexBuffer.PositionKind);
@@ -504,9 +500,9 @@ class SolidParticleSystem implements IDisposable {
 				
 				// normals : if the particles can't be morphed then just rotate the normals
 				if (!this._computeParticleVertex && !this.billboard) {
-					this._normal.x = this._fixedNormal32[idx];
-					this._normal.y = this._fixedNormal32[idx + 1];
-					this._normal.z = this._fixedNormal32[idx + 2];
+					this._normal.x = this._normals[idx];
+					this._normal.y = this._normals[idx + 1];
+					this._normal.z = this._normals[idx + 2];
 					
 					this._w = (this._normal.x * this._rotMatrix.m[3]) + (this._normal.y * this._rotMatrix.m[7]) + (this._normal.z * this._rotMatrix.m[11]) + this._rotMatrix.m[15];
 					this._rotated.x = ((this._normal.x * this._rotMatrix.m[0]) + (this._normal.y * this._rotMatrix.m[4]) + (this._normal.z * this._rotMatrix.m[8]) + this._rotMatrix.m[12]) / this._w;
@@ -548,9 +544,9 @@ class SolidParticleSystem implements IDisposable {
 				if (this._computeParticleVertex || this.billboard) {
 					// recompute the normals only if the particles can be morphed, update then the normal reference array
 					VertexData.ComputeNormals(this._positions, this._indices, this._normals);
-					for (i in 0...this._normals.length) {
-						this._fixedNormal32[i] = this._normals[i];
-					}
+					//for (i in 0...this._normals.length) {
+					//	this._fixedNormal32[i] = this._normals[i];
+					//}
 				}
 				this.mesh.updateVerticesData(VertexBuffer.NormalKind, this._normals, false, false);
 			}
@@ -605,7 +601,7 @@ class SolidParticleSystem implements IDisposable {
 		this._colors = null;
 		//this._positions32 = null;
 		//this._normals32 = null;
-		this._fixedNormal32 = null;
+		//this._fixedNormal32 = null;
 		//this._uvs32 = null;
 		//this._colors32 = null;
 		this.pickedParticles = null;
