@@ -335,8 +335,9 @@ import com.babylonhx.audio.*;
 		untyped __js__("Object.defineProperty(this, 'pointerX', { get: this.get_pointerX })");
 		untyped __js__("Object.defineProperty(this, 'pointerY', { get: this.get_pointerY })");
 		#end
-
+		#if (purejs || js)
 		 this.mainSoundTrack = new SoundTrack(this, { mainTrack: true });
+		 #end
 	}
 
 	// Properties 

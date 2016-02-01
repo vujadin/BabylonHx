@@ -23,12 +23,13 @@ import com.babylonhx.utils.typedarray.Int32Array;
 import com.babylonhx.utils.typedarray.Int16Array;
 import com.babylonhx.utils.typedarray.ArrayBufferView;
 import com.babylonhx.utils.Image;
-import com.babylonhx.audio.AudioEngine;
+
 
 import haxe.ds.Vector;
 
 
 #if (js || purejs)
+import com.babylonhx.audio.AudioEngine;
 import js.Browser;
 
 #end
