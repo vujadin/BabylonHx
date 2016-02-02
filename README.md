@@ -78,9 +78,6 @@ BabylonHx Demos
 	<a href="http://babylonhx.github.io/clouds/" target="_blank" />
 		<img src="http://babylonhx.github.io/clouds/clouds-sm.jpg" alt="clouds"   />
 	</a>
-	<a href="http://babylonhx.github.io/physics2/" target="_blank" />
-		<img src="http://babylonhx.github.io/physics2/physics2-sm.jpg" alt="physics2"   />
-	</a>
 	<a href="http://babylonhx.github.io/ForestOfPythagoras/" target="_blank" />
 		<img src="http://babylonhx.github.io/ForestOfPythagoras/ForestOfPythagoras-sm.jpg" alt="ForestOfPythagoras"   />
 	</a>
