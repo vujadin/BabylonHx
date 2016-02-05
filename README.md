@@ -38,7 +38,7 @@ BabylonHx Demos
 	<a href="http://babylonhx.github.io/basicscene/" target="_blank" />
 		<img src="http://babylonhx.github.io/basicscene/basicscene-sm.jpg" alt="basicscene"  />
 	</a>
-	<a href="http://babylonhx.github.io/bloom/" target="_blank" />
+	<a href="hhttp://babylonhx.github.io/bloom/" target="_blank" />
 		<img src="http://babylonhx.github.io/bloom/bloom-sm.jpg" alt="bloom"   />
 	</a>
 	<a href="http://babylonhx.github.io/bumpmap/" target="_blank" />
@@ -77,6 +77,21 @@ BabylonHx Demos
 	</a>
 	<a href="http://babylonhx.github.io/clouds/" target="_blank" />
 		<img src="http://babylonhx.github.io/clouds/clouds-sm.jpg" alt="clouds"   />
+	</a>
+	<a href="http://babylonhx.github.io/ForestOfPythagoras/" target="_blank" />
+		<img src="http://babylonhx.github.io/ForestOfPythagoras/ForestOfPythagoras-sm.jpg" alt="ForestOfPythagoras"   />
+	</a>
+	<a href="http://babylonhx.github.io/audioanalyzer/" target="_blank" />
+		<img src="http://babylonhx.github.io/audioanalyzer/audioanalyzer-sm.jpg" alt="audioanalyzer"   />
+	</a>
+	<a href="http://babylonhx.github.io/instances2/" target="_blank" />
+		<img src="http://babylonhx.github.io/instances2/instances2-sm.jpg" alt="instances2"   />
+	</a>
+	<a href="http://babylonhx.github.io/water/" target="_blank" />
+		<img src="http://babylonhx.github.io/water/water-sm.jpg"  alt="water"  />
+	</a>
+	<a href="http://babylonhx.github.io/instances/" target="_blank" />
+		<img src="http://babylonhx.github.io/instances/instances-sm.jpg" alt="instances"   />
 	</a>
 </div>
 
