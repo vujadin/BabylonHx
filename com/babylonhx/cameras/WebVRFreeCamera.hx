@@ -5,7 +5,7 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Quaternion;
 import com.babylonhx.cameras.VRCameraMetrics;
 
-#if (js || purejs || web || html5) {
+#if (js || purejs || web || html5) 
 import js.Browser;
 import js.html.Navigator;
 #end
