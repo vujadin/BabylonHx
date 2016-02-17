@@ -181,17 +181,19 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private function _prepareEffect(vertexSourceCode:String, fragmentSourceCode:String, attributesNames:Array<String>, defines:String, ?fallbacks:EffectFallbacks) {		
         try {
             var engine = this._engine;
-					
 			if (!engine.getCaps().highPrecisionShaderSupported) { // Moving highp to mediump
+				#if (js || purejs || web || html5)
                 vertexSourceCode = StringTools.replace(vertexSourceCode, "precision highp float", "precision mediump float");
                 fragmentSourceCode = StringTools.replace(fragmentSourceCode, "precision highp float", "precision mediump float");
+                #else
+                // native bug fix for neko / osx / etc http://community.openfl.org/t/lime-2-8-0-shader-issues/7060/2
+                vertexSourceCode = StringTools.replace(vertexSourceCode, "precision highp float;", "\n");
+                fragmentSourceCode = StringTools.replace(fragmentSourceCode, "precision highp float;", "\n");
+                #end
             }
-			
             this._program = engine.createShaderProgram(vertexSourceCode, fragmentSourceCode, defines);
-			
             this._uniforms = engine.getUniforms(this._program, this._uniformsNames);
             this._attributes = engine.getAttributes(this._program, attributesNames);
-			
 			var index:Int = 0;
 			while (index < this._samplers.length) {				
                 var sampler = this.getUniform(this._samplers[index]);	
@@ -206,7 +208,6 @@ import com.babylonhx.utils.typedarray.Float32Array;
 				
 				index++;
             }
-				
             engine.bindSamplers(this);
 			
             this._isReady = true;
