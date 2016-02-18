@@ -207,7 +207,7 @@ import com.babylonhx.animations.Animation;
 	}
 
 	// Controls
-	public function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true) {
+	public function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true, enableKeyboard:Bool = true) {
 		
 	}
 

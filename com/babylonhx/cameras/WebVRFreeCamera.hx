@@ -76,15 +76,15 @@ import js.html.Navigator;
 		super._checkInputs();
 	}
 	
-	override public function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = false) {
+	override public function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = false, enableKeyboard:Bool = true) {
 		super.attachControl(element, noPreventDefault);
-		#if (js || purejs || web || html5) {
+		#if (js || purejs || web || html5) 
 		var nav:Navigator = untyped Browser.window.navigator;
-		if (nav.getVRDevices != null) {
-			nav.getVRDevices().then(this._getWebVRDevices);
+		if (untyped nav.getVRDevices != null) {
+			untyped nav.getVRDevices().then(this._getWebVRDevices);
 		}
-		else if (nav.mozGetVRDevices != null) {
-			nav.mozGetVRDevices(this._getWebVRDevices);
+		else if (untyped nav.mozGetVRDevices != null) {
+			untyped nav.mozGetVRDevices(this._getWebVRDevices);
 		}
 		#end
 	}

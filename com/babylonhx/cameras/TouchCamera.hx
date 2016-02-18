@@ -25,7 +25,7 @@ import com.babylonhx.math.Vector3;
 		this.angularSensibility = 200000.0;
 	}
 
-	override public function attachControl(?canvas:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true) {
+	override public function attachControl(?canvas:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true, enableKeyboard:Bool = true) {
 		var previousPosition:Dynamic = null;// { x: 0, y: 0 };
 		
 		if (this._onPointerDown == null) {

@@ -1,30 +1,41 @@
 package;
 
-import snow.system.window.Window;
 import snow.types.Types;
 
 import com.babylonhx.Engine;
 import com.babylonhx.Scene;
+import com.babylonhx.tools.Tools;
+
+typedef UserConfig = { }
 
 
 class MainSnow extends snow.App {
 	
 	var engine:Engine;
 	var scene:Scene;
+	var window:WindowConfig;
+	
+	
+	function new() {}
 	
 	override function config(config:AppConfig):AppConfig {
 		config.window.title = 'BabylonHx_Snow';
+		this.window = config.window;
+		
+		Tools.app = app;
+		
 		return config;
 	}
 
 	override function ready() {
-				
-		engine = new Engine(SnowApp._snow.window);
+		
+		engine = new Engine(this.window);
 		scene = new Scene(engine);
 		
 		//new samples.BasicScene(scene);
 		//new samples.BasicElements(scene);
 		//new samples.DashedLinesMesh(scene);
+		//new samples.CandleLight(scene);
 		//new samples.RotationAndScaling(scene);
 		//new samples.Materials(scene);
 		//new samples.Lights(scene);
@@ -76,6 +87,7 @@ class MainSnow extends snow.App {
 		//new samples.PostprocessRefraction(scene);
 		//new samples.PostprocessConvolution(scene);
 		//new samples.GodRays(scene);
+		//new samples.GodRays2(scene);
 		//new samples.DepthOfField(scene);
 		//new samples.Actions(scene);
 		//new samples.Picking(scene);		
@@ -90,15 +102,34 @@ class MainSnow extends snow.App {
 		//new samples.BabylonHxWebsiteScene(scene);
 		//new samples.Water(scene);
 		//new samples.SolidParticles1(scene);
+		//new samples.SolidParticles2(scene);
+		//new samples.SolidParticles3(scene);
+		//new samples.SolidParticles4(scene);
+		//new samples.SolidParticles5(scene);
 		//new samples.PointLightShadow(scene);
+		//new samples.Labyrinth(scene);
 		//new samples.FireMat(scene);
 		//new samples.WaterMat(scene);
 		//new samples.LavaMat(scene);
 		//new samples.NormalMat(scene);
-        new samples.ForestOfPythagoras(scene);
+		//new samples.ForestOfPythagoras(scene);
 		//new samples.Particles4(scene);
-		
-		app.window.onrender = render;
+		//new samples.MaterialsLibTest(scene);	
+		new samples.ReflectionProbeTest(scene);
+		//new samples.IcoSphereTest(scene);
+		//new samples.PBRMaterialTest1(scene);
+		//new samples.PBRMaterialTest2(scene);	
+		//new samples.PBRMaterialTest3(scene);
+		//new samples.PBRMaterialTest4(scene);
+		//new samples.PBRMaterialTest5(scene);
+		//new samples.TorusThing(scene);
+		//new samples.StarfieldMaterialTest(scene);
+		//new samples.FeaturedDemo1(scene);
+		//new samples.GlosinessAndRoughness(scene);
+		//new samples.FurMat(scene);
+		//new samples.HaxedNES(scene);
+		//new samples.RefractionMaterial(scene);
+		//new samples.SponzaDynamicShadows(scene);
 	}
 		
 	override function onmousedown(x:Int, y:Int, button:Int, timestamp:Float, window_id:Int) {
@@ -119,13 +150,13 @@ class MainSnow extends snow.App {
 		}
 	}
 	
-	override function onmousewheel(x:Int, y:Int, timestamp:Float, window_id:Int) {
+	override function onmousewheel(x:Float, y:Float, timestamp:Float, window_id:Int) {
 		for (f in Engine.mouseWheel) {
 			f(y);
 		}
 	}
 	
-	override function ontouchdown(x:Float, y:Float, touch_id:Int, timestamp:Float) {
+	/*override function ontouchdown(x:Float, y:Float, touch_id:Int, timestamp:Float) {
 		for (f in Engine.touchDown) {
 			f(x, y, touch_id, timestamp);
 		}
@@ -135,7 +166,7 @@ class MainSnow extends snow.App {
 		for (f in Engine.touchUp) {
 			f(x, y, touch_id, timestamp);
 		}
-	}
+	}*/
 	
 	override function ontouchmove(x:Float, y:Float, dx:Float, dy:Float, touch_id:Int, timestamp:Float) {
 		for (f in Engine.touchMove) {
@@ -159,7 +190,7 @@ class MainSnow extends snow.App {
 		}
 	}
 
-	function render(window:Window) {
+	override function tick(delta:Float) {
 		engine._renderLoop();
 	}
 }

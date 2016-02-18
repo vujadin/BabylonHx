@@ -50,7 +50,7 @@ import js.Browser;
 		this.rotation.z = this._beta / 180.0 * Math.PI;     
 	}
 
-	public override function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true): Void {
+	public override function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true, enableKeyboard:Bool = true): Void {
 		super.attachControl(element, noPreventDefault);
 		
 		#if (js || web || html5 || purejs)

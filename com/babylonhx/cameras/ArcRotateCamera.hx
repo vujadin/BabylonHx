@@ -63,8 +63,8 @@ import com.babylonhx.utils.Keycodes;
 	private var _onPointerMove:Dynamic;
 	private var _wheel:Dynamic;
 	private var _onMouseMove:Dynamic;
-	private var _onKeyDown:Dynamic;
-	private var _onKeyUp:Dynamic;
+	private var _onKeyDown:Int->Void = function(keycode:Int) { };
+	private var _onKeyUp:Int->Void = function(keycode:Int) { };
 	private var _onLostFocus:Void->Void;
 	//public var _reset:Void->Void;
 	private var _onGestureStart:Dynamic;
@@ -72,6 +72,7 @@ import com.babylonhx.utils.Keycodes;
     private var _MSGestureHandler:Dynamic;
 	
 	// Panning
+	public var panningAxis:Vector3 = new Vector3(1, 1, 0);
 	private var _localDirection:Vector3;
 	private var _transformedDirection:Vector3;
 	private var _isRightClick:Bool = false;
@@ -148,7 +149,7 @@ import com.babylonhx.utils.Keycodes;
 	}
 
 	// Methods
-	override public function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true) {
+	override public function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true, enableKeyboard:Bool = true) {
 		#if purejs
 		var cacheSoloPointer:Dynamic; // cache pointer object for better perf on camera rotation
 		var previousPinchDistance:Float = 0.0;
@@ -345,31 +346,33 @@ import com.babylonhx.utils.Keycodes;
 			
 		#end			
 			
-			this._onKeyDown = function(keycode:Int) {
-				if (this.keysUp.indexOf(keycode) != -1 ||
-					this.keysDown.indexOf(keycode) != -1 ||
-					this.keysLeft.indexOf(keycode) != -1 ||
-					this.keysRight.indexOf(keycode) != -1) {
-					var index = this._keys.indexOf(keycode);
-					
-					if (index == -1) {
-						this._keys.push(keycode);
-					}					
-				}
-			};
-			
-			this._onKeyUp = function(keycode:Int) {
-				if (this.keysUp.indexOf(keycode) != -1 ||
-					this.keysDown.indexOf(keycode) != -1 ||
-					this.keysLeft.indexOf(keycode) != -1 ||
-					this.keysRight.indexOf(keycode) != -1) {
-					var index = this._keys.indexOf(keycode);
-					
-					if (index >= 0) {
-						this._keys.splice(index, 1);
-					}					
-				}
-			};
+			if (enableKeyboard) {
+				this._onKeyDown = function(keycode:Int) {
+					if (this.keysUp.indexOf(keycode) != -1 ||
+						this.keysDown.indexOf(keycode) != -1 ||
+						this.keysLeft.indexOf(keycode) != -1 ||
+						this.keysRight.indexOf(keycode) != -1) {
+						var index = this._keys.indexOf(keycode);
+						
+						if (index == -1) {
+							this._keys.push(keycode);
+						}					
+					}
+				};
+				
+				this._onKeyUp = function(keycode:Int) {
+					if (this.keysUp.indexOf(keycode) != -1 ||
+						this.keysDown.indexOf(keycode) != -1 ||
+						this.keysLeft.indexOf(keycode) != -1 ||
+						this.keysRight.indexOf(keycode) != -1) {
+						var index = this._keys.indexOf(keycode);
+						
+						if (index >= 0) {
+							this._keys.splice(index, 1);
+						}					
+					}
+				};
+			}
 			
 			this._onLostFocus = function() {
 				this._keys = [];				
@@ -576,13 +579,9 @@ import com.babylonhx.utils.Keycodes;
 			this.radius = this.upperRadiusLimit;
 		}
 	}
-
-	public function setPosition(position:Vector3) {
-		if (this.position.equals(position)) {
-            return;
-        }
-		
-		var radiusv3 = position.subtract(this._getTargetPosition());
+	
+	public function rebuildAnglesAndRadius() {
+		var radiusv3 = this.position.subtract(this._getTargetPosition());
 		this.radius = radiusv3.length();
 		
 		// Alpha
@@ -593,11 +592,27 @@ import com.babylonhx.utils.Keycodes;
 		}
 		
 		// Beta
-		this.beta = Math.acos(radiusv3.y / this.radius);		
+		this.beta = Math.acos(radiusv3.y / this.radius);
+		
+		this._checkLimits();
+	}
+
+	public function setPosition(position:Vector3) {
+		if (this.position.equals(position)) {
+            return;
+        }
+		
+		this.position = position;
+		
+		this.rebuildAnglesAndRadius();
 	}
 	
 	override public function setTarget(target:Vector3) {
+		if (this.target.equals(target)) {
+			return;
+		}
 		this.target = target;
+		this.rebuildAnglesAndRadius();
 	}
 
 	override public function _getViewMatrix_default():Matrix {
@@ -606,6 +621,9 @@ import com.babylonhx.utils.Keycodes;
 		var sina = Math.sin(this.alpha);
 		var cosb = Math.cos(this.beta);
 		var sinb = Math.sin(this.beta);
+		if (sinb == 0) {
+			sinb = 0.0001;
+		}
 		
 		var target = this._getTargetPosition();
 		

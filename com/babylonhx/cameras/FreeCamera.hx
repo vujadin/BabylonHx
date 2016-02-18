@@ -63,7 +63,7 @@ import com.babylonhx.utils.Keycodes;
 	}
 
 	// Controls
-	override public function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true) {
+	override public function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true, enableKeyboard:Bool = true) {
 		var previousPosition:Dynamic = null;// { x: 0, y: 0 };
 		var engine = this.getEngine();
 		
@@ -108,65 +108,69 @@ import com.babylonhx.utils.Keycodes;
 				};				
 			};
 			
-		#if purejs
-			
-			this._onKeyDown = function(evt:Dynamic) {
-				var keyCode = evt.keyCode;
-				if (this.keysUp.indexOf(keyCode) != -1 ||
-					this.keysDown.indexOf(keyCode) != -1 ||
-					this.keysLeft.indexOf(keyCode) != -1 ||
-					this.keysRight.indexOf(keyCode) != -1) {
-					var index = this._keys.indexOf(keyCode);
-					
-					if (index == -1) {
-						this._keys.push(keyCode);
+			if (enableKeyboard) {
+				
+			#if purejs
+				
+				this._onKeyDown = function(evt:Dynamic) {
+					var keyCode = evt.keyCode;
+					if (this.keysUp.indexOf(keyCode) != -1 ||
+						this.keysDown.indexOf(keyCode) != -1 ||
+						this.keysLeft.indexOf(keyCode) != -1 ||
+						this.keysRight.indexOf(keyCode) != -1) {
+						var index = this._keys.indexOf(keyCode);
+						
+						if (index == -1) {
+							this._keys.push(keyCode);
+						}
 					}
-				}
-			};
-			
-			this._onKeyUp = function(evt:Dynamic) {
-				var keyCode = evt.keyCode;
-				if (this.keysUp.indexOf(keyCode) != -1 ||
-					this.keysDown.indexOf(keyCode) != -1 ||
-					this.keysLeft.indexOf(keyCode) != -1 ||
-					this.keysRight.indexOf(keyCode) != -1) {
-					var index = this._keys.indexOf(keyCode);
-					
-					if (index >= 0) {
-						this._keys.splice(index, 1);
+				};
+				
+				this._onKeyUp = function(evt:Dynamic) {
+					var keyCode = evt.keyCode;
+					if (this.keysUp.indexOf(keyCode) != -1 ||
+						this.keysDown.indexOf(keyCode) != -1 ||
+						this.keysLeft.indexOf(keyCode) != -1 ||
+						this.keysRight.indexOf(keyCode) != -1) {
+						var index = this._keys.indexOf(keyCode);
+						
+						if (index >= 0) {
+							this._keys.splice(index, 1);
+						}
 					}
-				}
-			};
-			
-		#else
-			
-			this._onKeyDown = function(keyCode:Int) {
-				if (this.keysUp.indexOf(keyCode) != -1 ||
-					this.keysDown.indexOf(keyCode) != -1 ||
-					this.keysLeft.indexOf(keyCode) != -1 ||
-					this.keysRight.indexOf(keyCode) != -1) {
-					var index = this._keys.indexOf(keyCode);
-					
-					if (index == -1) {
-						this._keys.push(keyCode);
+				};
+				
+			#else
+				
+				this._onKeyDown = function(keyCode:Int) {
+					if (this.keysUp.indexOf(keyCode) != -1 ||
+						this.keysDown.indexOf(keyCode) != -1 ||
+						this.keysLeft.indexOf(keyCode) != -1 ||
+						this.keysRight.indexOf(keyCode) != -1) {
+						var index = this._keys.indexOf(keyCode);
+						
+						if (index == -1) {
+							this._keys.push(keyCode);
+						}
 					}
-				}
-			};
-			
-			this._onKeyUp = function(keyCode:Int) {
-				if (this.keysUp.indexOf(keyCode) != -1 ||
-					this.keysDown.indexOf(keyCode) != -1 ||
-					this.keysLeft.indexOf(keyCode) != -1 ||
-					this.keysRight.indexOf(keyCode) != -1) {
-					var index = this._keys.indexOf(keyCode);
-					
-					if (index >= 0) {
-						this._keys.splice(index, 1);
+				};
+				
+				this._onKeyUp = function(keyCode:Int) {
+					if (this.keysUp.indexOf(keyCode) != -1 ||
+						this.keysDown.indexOf(keyCode) != -1 ||
+						this.keysLeft.indexOf(keyCode) != -1 ||
+						this.keysRight.indexOf(keyCode) != -1) {
+						var index = this._keys.indexOf(keyCode);
+						
+						if (index >= 0) {
+							this._keys.splice(index, 1);
+						}
 					}
-				}
-			};
+				};
+				
+			#end
 			
-		#end
+			}
 			
 			this._onLostFocus = function() {
 				this._keys = [];
