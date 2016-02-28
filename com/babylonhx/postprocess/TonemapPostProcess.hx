@@ -19,16 +19,16 @@ abstract TonemappingOperator(Int) {
 class TonemapPostProcess extends PostProcess {
 
 	private var _operator:TonemappingOperator;
-	private var _exposureAdjustment:Float;
+	public var exposureAdjustment:Float;
 
 	
 	public function new(name:String, operator:TonemappingOperator, exposureAdjustment:Float, camera:Camera, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, ?engine:Engine, textureFormat:Int = Engine.TEXTURETYPE_UNSIGNED_INT) {
 		this._operator = operator;
-		this._exposureAdjustment = exposureAdjustment;
+		this.exposureAdjustment = exposureAdjustment;
 		
 		var params:Array<String> = ["_ExposureAdjustment"];
 		var defines:String = "#define ";
-
+		
 		if (operator == TonemappingOperator.Hable) {
 			defines += "HABLE_TONEMAPPING";
 		}
@@ -45,7 +45,7 @@ class TonemapPostProcess extends PostProcess {
 		super(name, "tonemap", params, null, 1.0, camera, samplingMode, engine, true, defines, textureFormat);
 		
 		this.onApply = function(effect:Effect) {
-			effect.setFloat("_ExposureAdjustment", this._exposureAdjustment);
+			effect.setFloat("_ExposureAdjustment", this.exposureAdjustment);
 		};
 	}
 	

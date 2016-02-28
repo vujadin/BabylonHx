@@ -14,7 +14,7 @@ import com.babylonhx.materials.textures.Texture;
 	public var kernelMatrix:Matrix;
 	
 	
-	public function new(name:String, kernelMatrix:Matrix, ratio:Float, ?camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false/*?reusable:Bool*/) {
+	public function new(name:String, kernelMatrix:Matrix, ratio:Float, ?camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
 		super(name, "filter", ["kernelMatrix"], null, ratio, camera, samplingMode, engine, reusable);
 
 		this.kernelMatrix = kernelMatrix;
