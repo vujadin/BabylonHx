@@ -41,6 +41,9 @@ import samples.Fresnel;
 	
 	static var serializedGeometries:Map<String, Geometry> = new Map<String, Geometry>();
 	
+	public static function ClearCache() {
+		serializedGeometries = [];
+	}
 		
 	public static function Serialize(scene:Scene):Dynamic {
 		var serializationObject:Dynamic = { };
@@ -79,6 +82,14 @@ import samples.Fresnel;
 		if (scene.activeCamera != null) {
 			serializationObject.activeCameraID = scene.activeCamera.id;
 		}
+		
+		// Animations
+        serializationObject.animations = [];
+        var animation:Animation = null;
+        for (index in 0...scene.animations.length) {
+            animation = scene.animations[index];
+            serializationObject.animations.push(animation.serialize());
+        }
 		
 		// Materials
 		serializationObject.materials = [];

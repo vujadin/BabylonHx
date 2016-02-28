@@ -154,4 +154,13 @@ import com.babylonhx.mesh.AbstractMesh;
 		return this._worldMatrix;
 	}
 	
+	override public function serialize():Dynamic {
+		var serializationObject = super.serialize();
+		serializationObject.type = 1;
+		serializationObject.position = this.position.asArray();
+		serializationObject.direction = this.direction.asArray();
+		
+		return serializationObject;
+	}
+	
 }

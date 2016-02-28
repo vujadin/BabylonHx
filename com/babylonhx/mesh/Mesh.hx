@@ -84,6 +84,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	public var _binaryInfo:Dynamic;
 	private var _LODLevels:Array<MeshLODLevel> = [];
 	public var onLODLevelSelection:Float->Mesh->Mesh->Void;
+	public var onBeforeDraw:Void->Void;
 
 	// Private
 	public var _geometry:Geometry;
@@ -140,7 +141,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	public function new(name:String, scene:Scene, parent:Node = null, ?source:Mesh, doNotCloneChildren:Bool = false) {
 		super(name, scene);
 		
-		if (source != null){
+		if (source != null) {
 			// Geometry
 			if (source._geometry != null) {
 				source._geometry.applyToMesh(this);
@@ -151,11 +152,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			
 			this.id = name + "." + source.id;
 			
-			if (source != null) {
-				// Material
-                this.material = source.material;
-			}
-						
+			// Material
+			this.material = source.material;
+			
 			if (!doNotCloneChildren) {
 				// Children
 				for (index in 0...scene.meshes.length) {
@@ -195,7 +194,6 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		dest._checkCollisions = source._checkCollisions;
 		dest._childrenFlag = source._childrenFlag;
 		dest._collider = source._collider;
-		dest.instances = source.instances.copy();
 		dest._collisionsScalingMatrix = source._collisionsScalingMatrix.clone();
 		dest._collisionsTransformMatrix = source._collisionsTransformMatrix.clone();
 		dest._diffPositionForCollisions = source._diffPositionForCollisions.clone();
@@ -215,7 +213,6 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		dest._localTranslation = source._localTranslation.clone();
 		dest._localWorld = source._localWorld;
 		dest._masterMesh = source._masterMesh;		// ??
-		//dest._material = source._material;
 		dest._newPositionForCollisions = source._newPositionForCollisions.clone();
 		dest._oldPositionForCollisions = source._oldPositionForCollisions.clone();
 		dest._onAfterRenderCallbacks = source._onAfterRenderCallbacks;
@@ -235,20 +232,15 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		dest._renderId = source._renderId;
 		dest._renderIdForInstances = source._renderIdForInstances.copy();
 		dest._rotateYByPI = source._rotateYByPI.clone();
-		//dest._savedMaterial = source._savedMaterial;
 		dest._scene = source._scene;
 		dest._shouldGenerateFlatShading = source._shouldGenerateFlatShading;
-		//dest._skeleton = source._skeleton.clone(Tools.uuid(), Tools.uuid());
 		dest._submeshesOctree = source._submeshesOctree;
 		dest._visibility = source._visibility;
 		dest._visibleInstances = source._visibleInstances;
 		dest._waitingActions = source._waitingActions;
 		dest._waitingParentId = source._waitingParentId;
-		//if(source._worldMatricesInstancesArray != null) dest._worldMatricesInstancesArray = source._worldMatricesInstancesArray.copy();
 		dest._worldMatricesInstancesBuffer = source._worldMatricesInstancesBuffer;
-		dest._worldMatrix = source._worldMatrix.clone();
-		
-				
+		dest._worldMatrix = source._worldMatrix.clone();				
 		dest.definedFacingForward = source.definedFacingForward;
 		dest.position = source.position.clone();
 		dest.rotation = source.rotation.clone();
@@ -688,6 +680,10 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		if (this._geometry == null || this._geometry.getVertexBuffers() == null || this._geometry.getIndexBuffer() == null) {
 			return;
 		}
+		
+		if (this.onBeforeDraw != null) {
+            this.onBeforeDraw();
+        }
 		
 		var engine:Engine = this.getScene().getEngine();
 		
@@ -1828,7 +1824,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
         var matricesIndicesExtraData = needExtras ? this.getVerticesData(VertexBuffer.MatricesIndicesExtraKind) : null;
         var matricesWeightsExtraData = needExtras ? this.getVerticesData(VertexBuffer.MatricesWeightsExtraKind) : null;
 		
-		var skeletonMatrices = skeleton.getTransformMatrices();
+		var skeletonMatrices = skeleton.getTransformMatrices(this);
 		
 		var tempVector3 = Vector3.Zero();
 		var finalMatrix = new Matrix();

@@ -362,29 +362,40 @@ class MeshBuilder {
 		return torusKnot;
 	}
 	
-	public static function CreateLines(name:String, options:Dynamic, scene:Scene):LinesMesh {
-		var linesInstance:LinesMesh = options.instance;
-		var points:Array<Vector3> = options.points;
-				
-		if (linesInstance != null) { // lines update
-			var positionFunction = function (positions:Array<Float>) {
-				var i:Int = 0;
-				for(p in 0...points.length) {
-					positions[i] = points[p].x;
-					positions[i + 1] = points[p].y;
-					positions[i + 2] = points[p].z;
-					i += 3;
+	// options: { lines: Array<Array<Vector3>>, updatable:Bool, ?instance:LinesMesh }
+	public static function CreateLineSystem(name:String, options:Dynamic, scene:Scene):LinesMesh {
+		var instance:LinesMesh = options.instance;
+		var lines:Array<Array<Vector3>> = options.lines;
+		
+		if (instance != null) { // lines update
+			var positionFunction = function(positions:Array<Float>) {
+				var i = 0;
+				for (l in 0...lines.length) {
+					var points = lines[l];
+					for (p in 0...points.length) {
+						positions[i] = points[p].x;
+						positions[i + 1] = points[p].y;
+						positions[i + 2] = points[p].z;
+						i += 3;
+					}
 				}
 			};
-			linesInstance.updateMeshPositions(positionFunction, false);
 			
-			return linesInstance;			
+			instance.updateMeshPositions(positionFunction, false);
+			
+			return instance;
 		}
 		
-		// lines creation
-		var lines = new LinesMesh(name, scene);
-		var vertexData = VertexData.CreateLines(options);
-		vertexData.applyToMesh(lines, options.updatable);
+		// line system creation
+		var lineSystem = new LinesMesh(name, scene);
+		var vertexData = VertexData.CreateLineSystem(options);
+		vertexData.applyToMesh(lineSystem, options.updatable);
+		
+		return lineSystem;
+	}
+	
+	public static function CreateLines(name:String, options:Dynamic, scene:Scene):LinesMesh {
+		var lines = MeshBuilder.CreateLineSystem(name, { lines: [options.points], updatable: options.updatable, instance: options.instance }, scene);
 		
 		return lines;
 	}

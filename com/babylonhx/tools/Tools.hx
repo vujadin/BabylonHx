@@ -14,15 +14,15 @@ import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.utils.Image;
 import com.babylonhx.utils.typedarray.UInt8Array;
 
+import haxe.io.Bytes;
 import haxe.crypto.Base64;
 import haxe.Json;
 import haxe.Timer;
 
-
-#if lime
-typedef Assets = lime.Assets;
-#elseif openfl
+#if openfl
 typedef Assets = openfl.Assets;
+#elseif lime
+typedef Assets = lime.Assets;
 #elseif nme
 typedef Assets = nme.Assets;
 #end
@@ -44,6 +44,10 @@ typedef Assets = nme.Assets;
 		
 	@:noCompletion private static var __startTime:Float = Timer.stamp();
 	
+	#if snow
+	@:noCompletion public static var app:snow.Snow;
+	#end
+	
 	
 	public static function ToHex(i:Int):String {
 		var str:String = StringTools.hex(i, 16); 
@@ -55,8 +59,18 @@ typedef Assets = nme.Assets;
 		
 		return str.toUpperCase();
 	}
+	
+	inline public static function IsExponentOfTwo(value:Int):Bool {
+		var count = 1;
+		
+		do {
+			count *= 2;
+		} while (count < value);
+		
+		return count == value;
+	}
 
-	inline public static function GetExponantOfTwo(value:Int, max:Int):Int {
+	inline public static function GetExponentOfTwo(value:Int, max:Int):Int {
 		var count = 1;
 		
 		do {
@@ -377,7 +391,7 @@ typedef Assets = nme.Assets;
 			//}
 		}
     }
-	#else // snow
+	#else //snow
 	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {	
 		if (type == "") {
 			//if (SnowApp._snow.assets.listed(path)) {
@@ -386,7 +400,7 @@ typedef Assets = nme.Assets;
 						function(result:Dynamic) {
 							callbackFn(result.bytes);
 						} : function(_) { };
-					SnowApp._host.app.assets.bytes(path).then(
+					app.assets.text(path).then(
 						function(asset:Dynamic) {
 							callBackFunction(asset);
 						}
@@ -397,16 +411,18 @@ typedef Assets = nme.Assets;
 						function(result:Dynamic) {
 							callbackFn(result.text);
 						} : function(_) { };
-					SnowApp._host.app.assets.text(path).then(
+					app.assets.text(path).then(
 						function(asset:Dynamic) {
 							callBackFunction(asset);
 						}
 					);
 				}
-			//} else {
+			//} 
+			//else {
 			//	trace("File '" + path + "' doesn't exist!");
 			//}
-		} else {
+		} 
+		else {
 			//if(SnowApp._snow.assets.listed(path)) {
 				switch(type) {
 					case "text":
@@ -414,7 +430,7 @@ typedef Assets = nme.Assets;
 							function(result:Dynamic) {
 								callbackFn(result.text);
 							} : function(_) { };
-						SnowApp._host.app.assets.text(path).then(
+						app.assets.text(path).then(
 							function(asset:Dynamic) {
 								callBackFunction(asset);
 							}
@@ -425,7 +441,7 @@ typedef Assets = nme.Assets;
 							function(result:Dynamic) {
 								callbackFn(result.bytes);
 							} : function(_) { };
-						SnowApp._host.app.assets.bytes(path).then(
+						app.assets.bytes(path).then(
 							function(asset:Dynamic) {
 								callBackFunction(asset);
 							}
@@ -437,7 +453,7 @@ typedef Assets = nme.Assets;
 								var i = new Image(img.image.pixels, img.image.width, img.image.height);
 								callbackFn(i);
 							} : function(_) { };
-						SnowApp._host.app.assets.image(path).then(
+						app.assets.image(path).then(
 							function(asset:Dynamic) {
 								callBackFunction(asset);
 							}
@@ -452,9 +468,18 @@ typedef Assets = nme.Assets;
 	#end // if luxe
 	
 	#elseif (lime || openfl || nme)
-	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {			
-		if (type == "" || type == "text") {
-			#if ((html5 || js) && (lime || openfl))
+	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {	
+		if (type == "hdr") {
+			var callBackFunction = callbackFn != null ?
+				function(result:Dynamic) {
+					callbackFn(result);
+				} : function(_) { };
+				
+			var data = Assets.getBytes(path);
+			callBackFunction(data);	
+		}
+		else if (type == "" || type == "text") {
+			/*#if ((html5 || js) && (lime || openfl))
 			if (Assets.exists(path)) {
 							
 				var callBackFunction = callbackFn != null ?
@@ -470,7 +495,7 @@ typedef Assets = nme.Assets;
 			else {
 				trace("File '" + path + "' doesn't exist!");
 			}
-			#else
+			#else*/
 			var callBackFunction = callbackFn != null ?
 					function(result:Dynamic) {
 						callbackFn(result);
@@ -478,7 +503,7 @@ typedef Assets = nme.Assets;
 					
 				var data = Assets.getText(path);
 				callBackFunction(data);			
-			#end
+			//#end
 		} 
 		else {
 			#if (lime || openfl)
@@ -486,18 +511,18 @@ typedef Assets = nme.Assets;
 			#end
 				switch(type) {						
 					case "img":
-						#if lime
-						var img = Assets.getImage(path);
-						var image = new Image(img.data, img.width, img.height);
-						if (callbackFn != null) {
-							callbackFn(image);
-						}
-						#elseif openfl
+						#if openfl
 						var img = Assets.getBitmapData(path);
 						var image = new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height);
 						if (callbackFn != null) {
 							callbackFn(image);
 						}
+						#elseif lime
+						var img = Assets.getImage(path);
+						var image = new Image(img.data, img.width, img.height);
+						if (callbackFn != null) {
+							callbackFn(image);
+						}						
 						#elseif nme
 						var img = Assets.getBitmapData(path);
 						var image = new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height);
@@ -617,7 +642,7 @@ typedef Assets = nme.Assets;
 			onload(i);
 		};
 		
-		SnowApp._host.app.assets.image(url).then(
+		app.assets.image(url).then(
 			function(asset:Dynamic) {
 				callBackFunction(asset);
 			}
@@ -627,24 +652,7 @@ typedef Assets = nme.Assets;
 	
 	#elseif (lime || openfl || nme)
 	public static function LoadImage(url:String, onload:Image-> Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
-		#if lime
-		if (Assets.exists(url)) {
-			#if (js || html5)
-			var future = Assets.loadImage(url);
-			future.onComplete(function(img:lime.graphics.Image):Void {
-				var image = new Image(img.data, img.width, img.height);
-				onload(image);
-			});		
-			#else
-			var img = Assets.getImage(url);
-			var image = new Image(img.data, img.width, img.height);
-			onload(image);
-			#end
-		} 
-		else {
-			trace("Image '" + url + "' doesn't exist!");
-		}
-		#elseif (openfl && !nme)
+		#if (openfl && !nme)
 		if (Assets.exists(url)) {
 			var img = Assets.getBitmapData(url); 
 			onload(new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height));			
@@ -652,6 +660,23 @@ typedef Assets = nme.Assets;
 		else {
 			trace("Image '" + url + "' doesn't exist!");
 		}
+		#elseif lime
+		if (Assets.exists(url)) {
+			/*#if (js || html5)
+			var future = Assets.loadImage(url);
+			future.onComplete(function(img:lime.graphics.Image):Void {
+				var image = new Image(img.data, img.width, img.height);
+				onload(image);
+			});		
+			#else*/
+			var img = Assets.getImage(url);
+			var image = new Image(img.data, img.width, img.height);
+			onload(image);
+			//#end
+		} 
+		else {
+			trace("Image '" + url + "' doesn't exist!");
+		}		
 		#elseif nme		
 		var img = Assets.getBitmapData(url); 
 		onload(new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height));		

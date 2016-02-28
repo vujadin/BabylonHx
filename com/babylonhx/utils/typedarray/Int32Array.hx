@@ -12,13 +12,13 @@ package com.babylonhx.utils.typedarray;
  
 	typedef Int32Array = snow.api.buffers.Int32Array;
 	
-#elseif lime
-
-	typedef Int32Array = lime.utils.Int32Array;
-	
 #elseif openfl
 
-	typedef Int32Array = openfl.utils.Int32Array;	
+	typedef Int32Array = openfl.utils.Int32Array;
+	
+#elseif lime
+
+	typedef Int32Array = lime.utils.Int32Array;	
 	
 #elseif nme
 

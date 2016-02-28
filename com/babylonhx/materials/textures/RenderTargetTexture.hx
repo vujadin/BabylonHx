@@ -29,7 +29,7 @@ import com.babylonhx.math.Matrix;
 	public var onAfterUnbind:Void->Void;
 	public var onClear:Engine->Void;
 	public var activeCamera:Camera;
-	public var customRenderFunction:Dynamic;//SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void->Void;
+	public var customRenderFunction:Dynamic;//SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void->Void->Void;
 	
 	public var refreshRate(get, set):Int;
 	public var canRescale(get, never):Bool;
@@ -64,7 +64,7 @@ import com.babylonhx.math.Matrix;
 		this.isCube = isCube;
 		
 		if (isCube) {
-			this._texture = scene.getEngine().createRenderTargetCubeTexture(this._size, { generateMipMaps: generateMipMaps, type: type } );
+			this._texture = scene.getEngine().createRenderTargetCubeTexture(this._size, { generateMipMaps: generateMipMaps } );
 			this.coordinatesMode = Texture.INVCUBIC_MODE;
             this._textureMatrix = Matrix.Identity();
 		}
@@ -212,7 +212,7 @@ import com.babylonhx.math.Matrix;
 		scene.resetCachedMaterial();
 	}
 	
-	public function renderToTarget(faceIndex:Int, currentRenderList:Array<AbstractMesh>, useCameraPostProcess:Bool) {
+	public function renderToTarget(faceIndex:Int, currentRenderList:Array<AbstractMesh>, useCameraPostProcess:Bool = false) {
 		var scene = this.getScene();
 		var engine = scene.getEngine();
 		

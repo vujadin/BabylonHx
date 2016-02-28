@@ -37,7 +37,7 @@ import com.babylonhx.mesh.AbstractMesh;
 			this._defines[rank] = new Array<String>();
 		}
 		
-		this._defines[rank].push(define);
+		this._defines[rank].push(define + "\n");
 	}
 	
 	public function addCPUSkinningFallback(rank:Int, mesh:AbstractMesh) {
@@ -53,7 +53,7 @@ import com.babylonhx.mesh.AbstractMesh;
 		var currentFallbacks = this._defines[this._currentRank];
 		
 		for (index in 0...currentFallbacks.length) {
-			currentDefines = StringTools.replace(currentDefines, "#define " + currentFallbacks[index], "");
+			currentDefines = StringTools.replace(currentDefines, "#define " + currentFallbacks[index] + "\n", "");
 		}
 		
 		if (this._mesh != null && this._currentRank == this._meshRank){

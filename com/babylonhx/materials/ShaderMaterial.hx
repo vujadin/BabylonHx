@@ -242,7 +242,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			
 			// Bones
 			if (mesh != null && mesh.useBones && mesh.computeBonesUsingShaders) {
-				this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices());
+				this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices(mesh));
             }
 			
 			// Texture

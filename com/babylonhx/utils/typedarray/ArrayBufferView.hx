@@ -12,13 +12,13 @@ package com.babylonhx.utils.typedarray;
 
 	typedef ArrayBufferView = snow.api.buffers.ArrayBufferView;
 	
-#elseif lime
-
-	typedef ArrayBufferView = lime.utils.ArrayBufferView;
-	
 #elseif openfl
 
-	typedef ArrayBufferView = openfl.utils.ArrayBufferView;	
+	typedef ArrayBufferView = openfl.utils.ArrayBufferView;
+	
+#elseif lime
+
+	typedef ArrayBufferView = lime.utils.ArrayBufferView;	
 	
 #elseif nme
 

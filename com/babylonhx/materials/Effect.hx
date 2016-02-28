@@ -90,7 +90,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			var _fragmentCode:String = "";
 			if (ShadersStore.Shaders.exists(fragment + ".fragment")) {
 				_fragmentCode = ShadersStore.Shaders.get(fragment + ".fragment");
-				prepareEffect(_fragmentCode);
+				this._processIncludes(_fragmentCode, function(fragmentCodeWithIncludes:String) {
+					_fragmentCode = fragmentCodeWithIncludes;
+					prepareEffect(_fragmentCode);
+				});
 			} 
 			else {
 				Tools.LoadFile(fragmentShaderUrl + ".fragment.fx", function(content:String) {
@@ -102,7 +105,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
         if (ShadersStore.Shaders.exists(vertex + ".vertex")) {
             _vertexCode = ShadersStore.Shaders.get(vertex + ".vertex");
-			getFragmentCode();
+			this._processIncludes(_vertexCode, function(vertexCodeWithIncludes:String) {
+				_vertexCode = vertexCodeWithIncludes;
+				getFragmentCode();
+			});
         } 
 		else {
 			Tools.LoadFile(vertexShaderUrl + ".vertex.fx", function(content:String) {
@@ -173,27 +179,98 @@ import com.babylonhx.utils.typedarray.Float32Array;
             callbackFn(ShadersStore.Shaders.get(fragment + "PixelShader"));
             return;
         }
-        		
+        
         // Fragment shader
 		Tools.LoadFile("assets/shaders/" + fragment + ".fragment.fx", callbackFn, "text");
     }
 	
+	private function _processIncludes(sourceCode:String, callback:Dynamic->Void) {
+		var regex:EReg = ~/#include<(.+)>(\((.*)\))*(\[(.*)\])*/g;
+		var match = regex.match(sourceCode);
+		
+		var returnValue = sourceCode;
+		
+		while (match) {
+			var includeFile:String = regex.matched(1);
+			
+			if (IncludesShadersStore.Shaders[includeFile] != null) {
+				sourceCode = StringTools.replace(sourceCode, regex.matched(0), IncludesShadersStore.Shaders[includeFile]);
+				
+				// Substitution
+				var includeContent = IncludesShadersStore.Shaders[includeFile];
+				var match2:String = regex.matched(2);
+				if (match2 != null) {
+					var splits = regex.matched(3).split(",");
+					
+					var index = 0;
+					while (index < splits.length) {
+						var source = new EReg(splits[index], "g");
+						var dest = splits[index + 1];
+						
+						includeContent = source.replace(includeContent, dest);
+						
+						index += 2;
+					}
+				}
+				
+				var match4:String = regex.matched(4);
+				if (match4 != null) {
+					var rx:EReg = ~/\{X\}/g;
+					var match5:String = regex.matched(5);
+					includeContent = rx.replace(includeContent, match5);
+				}
+				
+				// Replace
+				returnValue = StringTools.replace(returnValue, regex.matched(0), includeContent);
+			} 
+			else {
+				var includeShaderUrl = Engine.ShadersRepository + "ShadersInclude/" + includeFile + ".fx";
+				
+				Tools.LoadFile(includeShaderUrl, function(fileContent:Dynamic) {
+					IncludesShadersStore.Shaders[includeFile] = fileContent;
+					this._processIncludes(sourceCode, callback);
+				});
+				
+				return;
+			}
+			
+			match = regex.match(sourceCode);
+		}
+		
+		callback(returnValue);
+	}
+	
+	private function _processPrecision(source:String):String {
+		if (source.indexOf("precision highp float") == -1) {
+			if (!this._engine.getCaps().highPrecisionShaderSupported) {
+				source = "precision mediump float;\n" + source;
+			} 
+			else {
+				source = "precision highp float;\n" + source;
+			}
+		} 
+		else {
+			if (!this._engine.getCaps().highPrecisionShaderSupported) { // Moving highp to mediump
+				source = StringTools.replace(source, "precision highp float", "precision mediump float");
+			}
+		}
+		
+		return source;
+	}
+	
 	private function _prepareEffect(vertexSourceCode:String, fragmentSourceCode:String, attributesNames:Array<String>, defines:String, ?fallbacks:EffectFallbacks) {		
         try {
             var engine = this._engine;
-			if (!engine.getCaps().highPrecisionShaderSupported) { // Moving highp to mediump
-				#if (js || purejs || web || html5)
-                vertexSourceCode = StringTools.replace(vertexSourceCode, "precision highp float", "precision mediump float");
-                fragmentSourceCode = StringTools.replace(fragmentSourceCode, "precision highp float", "precision mediump float");
-                #else
-                // native bug fix for neko / osx / etc http://community.openfl.org/t/lime-2-8-0-shader-issues/7060/2
-                vertexSourceCode = StringTools.replace(vertexSourceCode, "precision highp float;", "\n");
-                fragmentSourceCode = StringTools.replace(fragmentSourceCode, "precision highp float;", "\n");
-                #end
-            }
+			
+			// Precision
+			vertexSourceCode = this._processPrecision(vertexSourceCode);
+			fragmentSourceCode = this._processPrecision(fragmentSourceCode);
+			
             this._program = engine.createShaderProgram(vertexSourceCode, fragmentSourceCode, defines);
+			
             this._uniforms = engine.getUniforms(this._program, this._uniformsNames);
             this._attributes = engine.getAttributes(this._program, attributesNames);
+			
 			var index:Int = 0;
 			while (index < this._samplers.length) {				
                 var sampler = this.getUniform(this._samplers[index]);	
@@ -208,6 +285,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 				
 				index++;
             }
+				
             engine.bindSamplers(this);
 			
             this._isReady = true;

@@ -37,7 +37,7 @@ import com.babylonhx.tools.SmartArray;
 		var engine = scene.getEngine();
 		
 		// Render target
-		this._depthMap = new RenderTargetTexture("depthMap", engine.getRenderWidth(), this._scene, false, true, type);
+		this._depthMap = new RenderTargetTexture("depthMap", { width: engine.getRenderWidth(), height: engine.getRenderHeight() }, this._scene, false, true, type);
 		this._depthMap.wrapU = Texture.CLAMP_ADDRESSMODE;
 		this._depthMap.wrapV = Texture.CLAMP_ADDRESSMODE;
 		this._depthMap.refreshRate = 1;
@@ -53,7 +53,7 @@ import com.babylonhx.tools.SmartArray;
 		var renderSubMesh = function(subMesh:SubMesh) {
 			var mesh:Mesh = subMesh.getRenderingMesh();
 			var scene = this._scene;
-			var engine = scene.getEngine();
+			//var engine = scene.getEngine();
 			
 			// Culling
 			engine.setState(subMesh.getMaterial().backFaceCulling);
@@ -85,7 +85,7 @@ import com.babylonhx.tools.SmartArray;
 				
 				// Bones				
 				if (mesh.useBones && mesh.computeBonesUsingShaders) {
-					this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices());
+					this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices(mesh));
 				}
 				
 				// Draw

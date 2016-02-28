@@ -37,8 +37,9 @@ import com.babylonhx.Node;
 	private var _offsetsCache:Array<Dynamic> = [];// { };
 	private var _highLimitsCache:Array<Dynamic> = []; // { };
 	private var _stopped:Bool = false;
-	private var _easingFunction:IEasingFunction;
 	public var _target:Dynamic;
+	private var _blendingFactor:Float = 0;
+	private var _easingFunction:IEasingFunction;
 	
 	// The set of event that will be linked to this animation
 	private var _events:Array<AnimationEvent> = [];
@@ -52,6 +53,11 @@ import com.babylonhx.Node;
 	public var currentFrame:Int;
 	
 	public var allowMatricesInterpolation:Bool = false;
+	
+	public var blendingSpeed:Float = 0.01;
+	private var _originalBlendValue:Dynamic;
+	
+	public var enableBlending:Bool;
 
 	private var _ranges:Map<String, AnimationRange> = new Map();
 	
@@ -107,13 +113,14 @@ import com.babylonhx.Node;
 		return node.getScene().beginAnimation(node, 0, totalFrame, (animation.loopMode == 1), 1.0, onAnimationEnd);
 	}
 
-	public function new(name:String, targetProperty:String, framePerSecond:Int, dataType:Int, loopMode:Int = -1) {
+	public function new(name:String, targetProperty:String, framePerSecond:Int, dataType:Int, loopMode:Int = -1, enableBlending:Bool = false) {
 		this.name = name;
         this.targetProperty = targetProperty;
         this.targetPropertyPath = targetProperty.split(".");
         this.framePerSecond = framePerSecond;
         this.dataType = dataType;
 		this.loopMode = loopMode == -1 ? Animation.ANIMATIONLOOPMODE_CYCLE : loopMode;
+		this.enableBlending = enableBlending;
 	}
 
 	// Methods 
@@ -139,12 +146,6 @@ import com.babylonhx.Node;
 			
 			++index;
 		}
-	}
-	
-	public function reset() {
-		this._offsetsCache = [];
-		this._highLimitsCache = [];
-		this.currentFrame = 0;
 	}
 	
 	public function createRange(name:String, from:Float, to:Float) {
@@ -175,6 +176,14 @@ import com.babylonhx.Node;
 
 	public function getRange(name:String):AnimationRange {		
 		return this._ranges[name];
+	}
+	
+	public function reset() {
+		this._offsetsCache = [];
+		this._highLimitsCache = [];
+		this.currentFrame = 0;
+		this._blendingFactor = 0;
+		this._originalBlendValue = null;
 	}
 	
 	inline public function isStopped():Bool {
@@ -225,33 +234,16 @@ import com.babylonhx.Node;
 		return Color3.Lerp(startValue, endValue, gradient);
 	}
 	
-	static var matrixInterpolateFunction_startScale:Vector3 = Vector3.Zero();
-	static var matrixInterpolateFunction_startRotation:Quaternion = new Quaternion();
-	static var matrixInterpolateFunction_startTranslation:Vector3 = Vector3.Zero();
-	static var matrixInterpolateFunction_endScale:Vector3 = Vector3.Zero();
-	static var matrixInterpolateFunction_endRotation:Quaternion = new Quaternion();
-	static var matrixInterpolateFunction_endTranslation:Vector3 = Vector3.Zero();
 	public function matrixInterpolateFunction(startValue:Matrix, endValue:Matrix, gradient:Float):Matrix {
-		matrixInterpolateFunction_startScale.set(0, 0, 0);
-		matrixInterpolateFunction_startRotation.set();
-		matrixInterpolateFunction_startTranslation.set(0, 0, 0);
-		startValue.decompose(matrixInterpolateFunction_startScale, matrixInterpolateFunction_startRotation, matrixInterpolateFunction_startTranslation);
-		
-		matrixInterpolateFunction_endScale.set(0, 0, 0);
-		matrixInterpolateFunction_endRotation.set();
-		matrixInterpolateFunction_endTranslation.set(0, 0, 0);
-		endValue.decompose(matrixInterpolateFunction_endScale, matrixInterpolateFunction_endRotation, matrixInterpolateFunction_endTranslation);
-		
-		var resultScale = this.vector3InterpolateFunction(matrixInterpolateFunction_startScale, matrixInterpolateFunction_endScale, gradient);
-		var resultRotation = this.quaternionInterpolateFunction(matrixInterpolateFunction_startRotation, matrixInterpolateFunction_endRotation, gradient);
-		var resultTranslation = this.vector3InterpolateFunction(matrixInterpolateFunction_startTranslation, matrixInterpolateFunction_endTranslation, gradient);
-		
-		return Matrix.Compose(resultScale, resultRotation, resultTranslation);
+		return Matrix.Lerp(startValue, endValue, gradient);
 	}
 
 	public function clone():Animation {
-		var clone = new Animation(this.name, this.targetPropertyPath.join("."), this.framePerSecond, this.dataType, this.loopMode);
-		clone.setKeys(this._keys);
+		var clone = new Animation(this.name, this.targetPropertyPath.join("."), this.framePerSecond, this.dataType, this.loopMode, this.enableBlending);
+		
+		if (this._keys != null) {
+			clone.setKeys(this._keys);
+		}
 		
 		return clone;
 	}
@@ -260,6 +252,14 @@ import com.babylonhx.Node;
 		this._keys = values.slice(0);
 		this._offsetsCache = [];
 		this._highLimitsCache = [];
+	}
+	
+	private function _getKeyValue(value:Dynamic):Dynamic {
+		if (Reflect.isFunction(value)) {
+			return value();
+		}
+		
+		return value;
 	}
 
 	private function _interpolate(currentFrame:Int, repeatCount:Int, loopMode:Int, ?offsetValue:Dynamic, ?highLimitValue:Dynamic):Dynamic {
@@ -342,11 +342,14 @@ import com.babylonhx.Node;
 					// Matrix
 					case Animation.ANIMATIONTYPE_MATRIX:
 						switch (loopMode) {
-							case Animation.ANIMATIONLOOPMODE_CYCLE, Animation.ANIMATIONLOOPMODE_CONSTANT, Animation.ANIMATIONLOOPMODE_RELATIVE:
-								//return this.matrixInterpolateFunction(startValue, endValue, gradient);
+							case Animation.ANIMATIONLOOPMODE_CYCLE, Animation.ANIMATIONLOOPMODE_CONSTANT:
+								return this.matrixInterpolateFunction(startValue, endValue, gradient);
 								
-							//case Animation.ANIMATIONLOOPMODE_RELATIVE:
+							case Animation.ANIMATIONLOOPMODE_RELATIVE:
 								return startValue;
+								
+							default:
+								//
 						}
 					default:
 						//
@@ -354,14 +357,17 @@ import com.babylonhx.Node;
 			}
 		}
 		
-		return this._keys[this._keys.length - 1].value;
+		return this._getKeyValue(this._keys[this._keys.length - 1].value);
 	}
 	
-	inline public function setValue(currentValue:Dynamic) {
+	inline public function setValue(currentValue:Dynamic, blend:Bool = false) {
 		// Set value
+		var path:Dynamic;
+		var destination:Dynamic;
+		
 		if (this.targetPropertyPath.length > 1) {
-			var property:Dynamic = null;
-			switch(this.targetPropertyPath[0]) {
+			var property = Reflect.getProperty(this._target, this.targetPropertyPath[0]);
+			/*switch(this.targetPropertyPath[0]) {
 				case "scaling":
 					property = untyped this._target.scaling;
 					
@@ -373,13 +379,16 @@ import com.babylonhx.Node;
 					
 				default: 
 					property = Reflect.getProperty(this._target, this.targetPropertyPath[0]);
-			}			
+			}*/			
 			
 			for (index in 1...this.targetPropertyPath.length - 1) {
 				property = Reflect.getProperty(property, this.targetPropertyPath[index]);
 			}
 			
-			switch(this.targetPropertyPath[this.targetPropertyPath.length - 1]) {					
+			path = this.targetPropertyPath[this.targetPropertyPath.length - 1];
+			destination = property;
+			
+			/*switch(this.targetPropertyPath[this.targetPropertyPath.length - 1]) {					
 				case "x":
 					untyped property.x = currentValue;
 					
@@ -391,10 +400,10 @@ import com.babylonhx.Node;
 					
 				default:
 					Reflect.setProperty(property, this.targetPropertyPath[this.targetPropertyPath.length - 1], currentValue);
-			}			
+			}*/	
 		} 
 		else {
-			switch(this.targetPropertyPath[0]) {
+			/*switch(this.targetPropertyPath[0]) {
 				case "_matrix":
 					untyped this._target._matrix = currentValue;
 					
@@ -406,10 +415,37 @@ import com.babylonhx.Node;
 					
 				case "scaling":
 					untyped this._target.scaling = currentValue;
-									
+				 
 				default:
 					Reflect.setProperty(this._target, this.targetPropertyPath[0], currentValue);
+			}*/
+			
+			path = this.targetPropertyPath[0];
+			destination = this._target;
+		}
+		
+		// Blending
+		if (this.enableBlending && this._blendingFactor <= 1.0) {
+			if (this._originalBlendValue == null) {
+				this._originalBlendValue = Reflect.getProperty(destination, path);
 			}
+			
+			if (!Std.is(this._originalBlendValue, Float) && !Std.is(this._originalBlendValue, Int)) { // Complex value				
+				if (Reflect.hasField(this._originalBlendValue, "Lerp")) { // Lerp supported
+					Reflect.setField(destination, path, this._originalBlendValue.Lerp(currentValue, this._originalBlendValue, this._blendingFactor));
+				} 
+				else { // Blending not supported
+					Reflect.setField(destination, path, currentValue);
+				}
+			} 
+			else { // Direct value
+				Reflect.setField(destination, path, this._originalBlendValue * (1.0 - this._blendingFactor) + this._blendingFactor * currentValue);
+			}
+			
+			this._blendingFactor += this.blendingSpeed;
+		} 
+		else {
+			Reflect.setField(destination, path, currentValue);
 		}
 		
 		if (this._target.markAsDirty != null) {
@@ -430,7 +466,7 @@ import com.babylonhx.Node;
 		this.setValue(currentValue);
 	}
 
-	public function animate(delay:Float, from:Int, to:Int, loop:Bool, speedRatio:Float):Bool {
+	public function animate(delay:Float, from:Int, to:Int, loop:Bool, speedRatio:Float, blend:Bool = false):Bool {
 		if (this.targetPropertyPath == null || this.targetPropertyPath.length < 1) {
 			this._stopped = true;
 			return false;
@@ -465,7 +501,7 @@ import com.babylonhx.Node;
 		
 		if (ratio > range && !loop) { // If we are out of range and not looping get back to caller
 			returnValue = false;
-			highLimitValue = this._keys[this._keys.length - 1].value;
+			highLimitValue = this._getKeyValue(this._keys[this._keys.length - 1].value);
 		} 
 		else {
 			// Get max value if required
@@ -537,6 +573,9 @@ import com.babylonhx.Node;
 		var currentFrame = cast (returnValue ? from + ratio % range : to);
 		var currentValue = this._interpolate(currentFrame, repeatCount, this.loopMode, offsetValue, highLimitValue);
 		
+		// Set value
+		this.setValue(currentValue);
+		
 		// Check events
 		var index:Int = 0;
 		while (index < this._events.length) {
@@ -559,9 +598,6 @@ import com.babylonhx.Node;
 			
 			++index;
 		}
-		
-		// Set value
-		this.setValue(currentValue);
 		
 		if (!returnValue) {
 			this._stopped = true;

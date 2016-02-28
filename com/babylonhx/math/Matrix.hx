@@ -28,7 +28,7 @@ import haxe.ds.Vector;
 	#end
 	
 	
-	public function new() {
+	inline public function new() {
 		#if (js || html5 || purejs)
 		m = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 		#else

@@ -9,6 +9,8 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.particles.Particle;
 import com.babylonhx.tools.Tools;
+import com.babylonhx.animations.IAnimatable;
+import com.babylonhx.animations.Animation;
 
 import com.babylonhx.utils.typedarray.Float32Array;
 
@@ -18,13 +20,14 @@ import com.babylonhx.utils.typedarray.Float32Array;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.ParticleSystem') class ParticleSystem implements IDisposable implements ISmartArrayCompatible {
+@:expose('BABYLON.ParticleSystem') class ParticleSystem implements IDisposable implements ISmartArrayCompatible implements IAnimatable {
 	
 	// Statics
 	public static var BLENDMODE_ONEONE:Int = 0;
 	public static var BLENDMODE_STANDARD:Int = 1;
 
 	// Members
+	public var animations:Array<Animation> = [];
 	public var name:String;
 	public var id:String;
 	public var renderingGroupId:Int = 0;
@@ -492,18 +495,25 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		var serializationObject:Dynamic = { };
 		
 		serializationObject.name = this.name;
+		
+		// Emitter
 		if (this.emitter.position != null) {
 			serializationObject.emitterId = this.emitter.id;
 		} 
 		else {
 			serializationObject.emitter = this.emitter.asArray();
 		}
+		
 		serializationObject.capacity = this.getCapacity();
 		
 		if (this.particleTexture != null) {
 			serializationObject.textureName = this.particleTexture.name;
 		}
 		
+		// Animations
+		Animation.AppendSerializedAnimations(this, serializationObject);
+		
+		// Particle system
 		serializationObject.minAngularSpeed = this.minAngularSpeed;
 		serializationObject.maxAngularSpeed = this.maxAngularSpeed;
 		serializationObject.minSize = this.minSize;
@@ -533,11 +543,14 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		var name = parsedParticleSystem.name;
 		
 		var particleSystem = new ParticleSystem(name, parsedParticleSystem.capacity, scene);
+		
+		// Texture
 		if (parsedParticleSystem.textureName != null) {
 			particleSystem.particleTexture = new Texture(rootUrl + parsedParticleSystem.textureName, scene);
 			particleSystem.particleTexture.name = parsedParticleSystem.textureName;
 		}
 		
+		// Emitter
 		if (parsedParticleSystem.emitterId != null) {
 			particleSystem.emitter = scene.getLastMeshByID(parsedParticleSystem.emitterId);
 		} 
@@ -545,6 +558,15 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			particleSystem.emitter = Vector3.FromArray(parsedParticleSystem.emitter);
 		}
 		
+		// Animations
+        if (parsedParticleSystem.animations != null) {
+            for (animationIndex in 0...parsedParticleSystem.animations.length) {
+                var parsedAnimation = parsedParticleSystem.animations[animationIndex];
+                particleSystem.animations.push(Animation.Parse(parsedAnimation));
+            }
+        }
+		
+		// Particle system
 		particleSystem.minAngularSpeed = parsedParticleSystem.minAngularSpeed;
 		particleSystem.maxAngularSpeed = parsedParticleSystem.maxAngularSpeed;
 		particleSystem.minSize = parsedParticleSystem.minSize;

@@ -18,7 +18,7 @@ import com.babylonhx.math.Vector3;
 	private var _savedViewMatrix:Matrix;
 	
 
-	public function new(name:String, size:Int, scene:Scene, ?generateMipMaps:Bool) {
+	public function new(name:String, size:Int, scene:Scene, generateMipMaps:Bool = false) {
 		super(name, size, scene, generateMipMaps, true);
 		
 		this.onBeforeRender = function(val:Int = 0) {

@@ -14,10 +14,9 @@ class FireMaterialDefines extends MaterialDefines {
 	public static inline var POINTSIZE:Int = 3;
 	public static inline var FOG:Int = 4;
 	public static inline var UV1:Int = 5;
-	public static inline var NORMAL:Int = 6;
-	public static inline var VERTEXCOLOR:Int = 7;
-	public static inline var VERTEXALPHA:Int = 8;
-	public static inline var INSTANCES:Int = 9;
+	public static inline var VERTEXCOLOR:Int = 6;
+	public static inline var VERTEXALPHA:Int = 7;
+	public static inline var INSTANCES:Int = 8;
 	
 	public var BonesPerMesh:Int = 0;
 	public var NUM_BONE_INFLUENCERS:Int = 0;
@@ -26,7 +25,7 @@ class FireMaterialDefines extends MaterialDefines {
 	public function new() {
 		super();
 		
-		this._keys = Vector.fromData(["DIFFUSE", "CLIPPLANE", "ALPHATEST", "POINTSIZE", "FOG", "UV1", "NORMAL", "VERTEXCOLOR", "VERTEXALPHA", "BONES", "BONES4", "INSTANCES"]);		
+		this._keys = Vector.fromArrayCopy(["DIFFUSE", "CLIPPLANE", "ALPHATEST", "POINTSIZE", "FOG", "UV1", "VERTEXCOLOR", "VERTEXALPHA", "INSTANCES"]);	
 		
 		defines = new Vector(this._keys.length);
 		for (i in 0...this._keys.length) {

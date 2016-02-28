@@ -75,6 +75,23 @@ package com.babylonhx.animations;
 		this._pausedDelay = -1;
 	}
 	
+	public function enableBlending(blendingSpeed:Float) {
+		var animations = this._animations;
+		
+		for (index in 0...animations.length) {
+			animations[index].enableBlending = true;
+			animations[index].blendingSpeed = blendingSpeed;
+		}
+	}
+
+	public function disableBlending() {
+		var animations = this._animations;
+		
+		for (index in 0...animations.length) {
+			animations[index].enableBlending = false;
+		}
+	}
+	
 	public function goToFrame(frame:Int) {
 		var animations = this._animations;
 		
@@ -96,10 +113,15 @@ package com.babylonhx.animations;
 		
 		if (index > -1) {
 			this._scene._activeAnimatables.splice(index, 1);
-		}
-		
-		if (this.onAnimationEnd != null) {
-			this.onAnimationEnd();
+			
+			var animations = this._animations;
+			for (index in 0...animations.length) {
+				animations[index].reset();
+			}
+			
+			if (this.onAnimationEnd != null) {
+				this.onAnimationEnd();
+			}
 		}
 	}
 
@@ -109,6 +131,7 @@ package com.babylonhx.animations;
 			if (this._pausedDelay == -1) {
 				this._pausedDelay = delay;
 			}
+			
 			return true;
 		}
 		
@@ -140,6 +163,7 @@ package com.babylonhx.animations;
 		
 		if (!running && this.onAnimationEnd != null) {
 			this.onAnimationEnd();
+			this.onAnimationEnd = null;
 		}
 		
 		return running;

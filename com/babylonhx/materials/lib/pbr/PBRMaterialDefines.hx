@@ -66,24 +66,44 @@ class PBRMaterialDefines extends MaterialDefines {
 	static public inline var VERTEXALPHA:Int = 55;
 	static public inline var INSTANCES:Int = 56;
 	static public inline var MICROSURFACEFROMREFLECTIVITYMAP:Int = 57;
-	static public inline var EMISSIVEASILLUMINATION:Int = 58;
-	static public inline var LINKEMISSIVEWITHALBEDO:Int = 59;
-	static public inline var LIGHTMAP:Int = 60;
-	static public inline var USELIGHTMAPASSHADOWMAP:Int = 61;
-	static public inline var REFLECTIONMAP_3D:Int = 62;
-	static public inline var REFLECTIONMAP_SPHERICAL:Int = 63;
-	static public inline var REFLECTIONMAP_PLANAR:Int = 64;
-	static public inline var REFLECTIONMAP_CUBIC:Int = 65;
-	static public inline var REFLECTIONMAP_PROJECTION:Int = 66;
-	static public inline var REFLECTIONMAP_SKYBOX:Int = 67;
-	static public inline var REFLECTIONMAP_EXPLICIT:Int = 68;
-	static public inline var REFLECTIONMAP_EQUIRECTANGULAR:Int = 69;
-	static public inline var INVERTCUBICMAP:Int = 70;
-	static public inline var LOGARITHMICDEPTH:Int = 71;
-	static public inline var CAMERATONEMAP:Int = 72;
-	static public inline var CAMERACONTRAST:Int = 73;
-	static public inline var OVERLOADEDVALUES:Int = 74;
-	static public inline var OVERLOADEDSHADOWVALUES:Int = 75;
+	static public inline var MICROSURFACEAUTOMATIC:Int = 58;
+	static public inline var EMISSIVEASILLUMINATION:Int = 59;
+	static public inline var LINKEMISSIVEWITHALBEDO:Int = 60;
+	static public inline var LIGHTMAP:Int = 61;
+	static public inline var USELIGHTMAPASSHADOWMAP:Int = 62;
+	static public inline var REFLECTIONMAP_3D:Int = 63;
+	static public inline var REFLECTIONMAP_SPHERICAL:Int = 64;
+	static public inline var REFLECTIONMAP_PLANAR:Int = 65;
+	static public inline var REFLECTIONMAP_CUBIC:Int = 66;
+	static public inline var REFLECTIONMAP_PROJECTION:Int = 67;
+	static public inline var REFLECTIONMAP_SKYBOX:Int = 68;
+	static public inline var REFLECTIONMAP_EXPLICIT:Int = 69;
+	static public inline var REFLECTIONMAP_EQUIRECTANGULAR:Int = 70;
+	static public inline var INVERTCUBICMAP:Int = 71;
+	static public inline var LOGARITHMICDEPTH:Int = 72;
+	static public inline var CAMERATONEMAP:Int = 73;
+	static public inline var CAMERACONTRAST:Int = 74;
+	static public inline var OVERLOADEDVALUES:Int = 75;
+	static public inline var OVERLOADEDSHADOWVALUES:Int = 76;
+	static public inline var USESPHERICALFROMREFLECTIONMAP:Int = 77;
+	static public inline var REFRACTION:Int = 78;
+	static public inline var REFRACTIONMAP_3D:Int = 79;
+	static public inline var LINKREFRACTIONTOTRANSPARENCY:Int = 80;
+	static public inline var REFRACTIONMAPINLINEARSPACE:Int = 81;
+	static public inline var LODBASEDMICROSFURACE:Int = 82;
+	static public inline var USEPHYSICALLIGHTFALLOFF:Int = 83;
+	static public inline var RADIANCEOVERALPHA:Int = 84;
+	static public inline var PARALLAX:Int = 85;
+	static public inline var PARALLAXOCCLUSION:Int = 86;
+	static public inline var USEPMREMREFLECTION:Int = 87;
+	static public inline var USEPMREMREFRACTION:Int = 88;
+	
+	public static var LIGHTS:Map<String, Array<Int>> = [
+		"POINTLIGHT" => [POINTLIGHT0, POINTLIGHT1, POINTLIGHT2, POINTLIGHT3],
+		"HEMILIGHT" => [HEMILIGHT0, HEMILIGHT1, HEMILIGHT2, HEMILIGHT3],
+		"DIRLIGHT" => [DIRLIGHT0, DIRLIGHT1, DIRLIGHT2, DIRLIGHT3],
+		"SPOTLIGHT" => [SPOTLIGHT0, SPOTLIGHT1, SPOTLIGHT2, SPOTLIGHT3]
+	];
 	
 	public var BonesPerMesh:Int = 0;
 	public var NUM_BONE_INFLUENCERS:Int = 0;
@@ -92,7 +112,7 @@ class PBRMaterialDefines extends MaterialDefines {
 	public function new() {
 		super();
 		
-		this._keys = Vector.fromData(["ALBEDO", "AMBIENT", "OPACITY", "OPACITYRGB", "REFLECTION", "EMISSIVE", "REFLECTIVITY", "BUMP", "SPECULAROVERALPHA", "CLIPPLANE", "ALPHATEST", "ALPHAFROMALBEDO", "POINTSIZE", "FOG", "LIGHT0", "LIGHT1", "LIGHT2", "LIGHT3", "SPOTLIGHT0", "SPOTLIGHT1", "SPOTLIGHT2", "SPOTLIGHT3", "HEMILIGHT0", "HEMILIGHT1", "HEMILIGHT2", "HEMILIGHT3", "POINTLIGHT0", "POINTLIGHT1", "POINTLIGHT2", "POINTLIGHT3", "DIRLIGHT0", "DIRLIGHT1", "DIRLIGHT2", "DIRLIGHT3", "SPECULARTERM", "SHADOW0", "SHADOW1", "SHADOW2", "SHADOW3", "SHADOWS", "SHADOWVSM0", "SHADOWVSM1", "SHADOWVSM2", "SHADOWVSM3", "SHADOWPCF0", "SHADOWPCF1", "SHADOWPCF2", "SHADOWPCF3", "OPACITYFRESNEL", "EMISSIVEFRESNEL", "FRESNEL", "NORMAL", "UV1", "UV2", "VERTEXCOLOR", "VERTEXALPHA", "INSTANCES", "MICROSURFACEFROMREFLECTIVITYMAP", "EMISSIVEASILLUMINATION", "LINKEMISSIVEWITHALBEDO", "LIGHTMAP", "USELIGHTMAPASSHADOWMAP", "REFLECTIONMAP_3D", "REFLECTIONMAP_SPHERICAL", "REFLECTIONMAP_PLANAR", "REFLECTIONMAP_CUBIC", "REFLECTIONMAP_PROJECTION", "REFLECTIONMAP_SKYBOX", "REFLECTIONMAP_EXPLICIT", "REFLECTIONMAP_EQUIRECTANGULAR", "INVERTCUBICMAP", "LOGARITHMICDEPTH", "CAMERATONEMAP", "CAMERACONTRAST", "OVERLOADEDVALUES", "OVERLOADEDSHADOWVALUES"]);
+		this._keys = Vector.fromArrayCopy(["ALBEDO", "AMBIENT", "OPACITY", "OPACITYRGB", "REFLECTION", "EMISSIVE", "REFLECTIVITY", "BUMP", "SPECULAROVERALPHA", "CLIPPLANE", "ALPHATEST", "ALPHAFROMALBEDO", "POINTSIZE", "FOG", "LIGHT0", "LIGHT1", "LIGHT2", "LIGHT3", "SPOTLIGHT0", "SPOTLIGHT1", "SPOTLIGHT2", "SPOTLIGHT3", "HEMILIGHT0", "HEMILIGHT1", "HEMILIGHT2", "HEMILIGHT3", "POINTLIGHT0", "POINTLIGHT1", "POINTLIGHT2", "POINTLIGHT3", "DIRLIGHT0", "DIRLIGHT1", "DIRLIGHT2", "DIRLIGHT3", "SPECULARTERM", "SHADOW0", "SHADOW1", "SHADOW2", "SHADOW3", "SHADOWS", "SHADOWVSM0", "SHADOWVSM1", "SHADOWVSM2", "SHADOWVSM3", "SHADOWPCF0", "SHADOWPCF1", "SHADOWPCF2", "SHADOWPCF3", "OPACITYFRESNEL", "EMISSIVEFRESNEL", "FRESNEL", "NORMAL", "UV1", "UV2", "VERTEXCOLOR", "VERTEXALPHA", "INSTANCES", "MICROSURFACEFROMREFLECTIVITYMAP", "MICROSURFACEAUTOMATIC", "EMISSIVEASILLUMINATION", "LINKEMISSIVEWITHALBEDO", "LIGHTMAP", "USELIGHTMAPASSHADOWMAP", "REFLECTIONMAP_3D", "REFLECTIONMAP_SPHERICAL", "REFLECTIONMAP_PLANAR", "REFLECTIONMAP_CUBIC", "REFLECTIONMAP_PROJECTION", "REFLECTIONMAP_SKYBOX", "REFLECTIONMAP_EXPLICIT", "REFLECTIONMAP_EQUIRECTANGULAR", "INVERTCUBICMAP", "LOGARITHMICDEPTH", "CAMERATONEMAP", "CAMERACONTRAST", "OVERLOADEDVALUES", "OVERLOADEDSHADOWVALUES", "USESPHERICALFROMREFLECTIONMAP", "REFRACTION", "REFRACTIONMAP_3D", "LINKREFRACTIONTOTRANSPARENCY", "REFRACTIONMAPINLINEARSPACE", "LODBASEDMICROSFURACE", "USEPHYSICALLIGHTFALLOFF", "RADIANCEOVERALPHA", "PARALLAX", "PARALLAXOCCLUSION", "USEPMREMREFLECTION", "USEPMREMREFRACTION"]);
 		
 		defines = new Vector(this._keys.length);
 		for (i in 0...this._keys.length) {
@@ -124,73 +144,6 @@ class PBRMaterialDefines extends MaterialDefines {
 		result += "#define NUM_BONE_INFLUENCERS " + this.NUM_BONE_INFLUENCERS + "\n";
 		
 		return result;
-	}
-	
-	public function getLight(lightType:String, lightIndex:Int):Int {
-		switch (lightType) {
-			case "POINTLIGHT":
-				switch (lightIndex) {
-					case 0:
-						return POINTLIGHT0;
-						
-					case 1:
-						return POINTLIGHT1;
-						
-					case 2:
-						return POINTLIGHT2;
-						
-					case 3:
-						return POINTLIGHT3;
-				}
-				
-			case "HEMILIGHT":
-				switch (lightIndex) {
-					case 0:
-						return HEMILIGHT0;
-						
-					case 1:
-						return HEMILIGHT1;
-						
-					case 2:
-						return HEMILIGHT2;
-						
-					case 3:
-						return HEMILIGHT3;
-				}
-				
-			case "DIRLIGHT":
-				switch (lightIndex) {
-					case 0:
-						return DIRLIGHT0;
-						
-					case 1:
-						return DIRLIGHT1;
-						
-					case 2:
-						return DIRLIGHT2;
-						
-					case 3:
-						return DIRLIGHT3;
-				}
-				
-			case "SPOTLIGHT":
-				switch (lightIndex) {
-					case 0:
-						return SPOTLIGHT0;
-						
-					case 1:
-						return SPOTLIGHT1;
-						
-					case 2:
-						return SPOTLIGHT2;
-						
-					case 3:
-						return SPOTLIGHT3;
-				}
-				
-		}
-		
-		return -1;
 	}
 	
 }

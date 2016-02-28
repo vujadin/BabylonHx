@@ -91,7 +91,7 @@ import com.babylonhx.utils.Keycodes;
 	private var _previousRadius:Float;
 	//due to async collision inspection
 	private var _collisionTriggered:Bool;
-		
+	
 	public var alpha:Float;
 	public var beta:Float;
 	public var radius:Float;
@@ -105,7 +105,7 @@ import com.babylonhx.utils.Keycodes;
 		this.beta = beta;
 		this.radius = radius;
 		this.target = target != null ? (target.position != null ? target.position.clone() : target.clone()) : Vector3.Zero();
-				
+		
 		this.getViewMatrix();	
 	}
 
@@ -172,8 +172,6 @@ import com.babylonhx.utils.Keycodes;
 			this._onPointerDown = function(evt:Dynamic) {
 				// Manage panning
 				this._isRightClick = evt.button == 2;
-				this._lastPanningPosition.x = evt.clientX;
-				this._lastPanningPosition.y = evt.clientY;
 				
 				// manage pointers
 				var _dummy = { dummy: 'dummy' };
@@ -212,30 +210,17 @@ import com.babylonhx.utils.Keycodes;
 					
 					case 1: //normal camera rotation
 						if (this.panningSensibility != 0 && ((this._isCtrlPushed && useCtrlForPanning) || (!useCtrlForPanning && this._isRightClick))) {
-							if (this._localDirection == null) {
-								this._localDirection = Vector3.Zero();
-								this._transformedDirection = Vector3.Zero();
-							}
-							
-							var diffx = (evt.clientX - this._lastPanningPosition.x) * this.panningSensibility;
-							var diffy = (evt.clientY - this._lastPanningPosition.y) * this.panningSensibility;
-							
-							this._localDirection.copyFromFloats(-diffx, diffy, 0);
-							this._viewMatrix.invertToRef(this._cameraTransformMatrix);
-							Vector3.TransformNormalToRef(this._localDirection, this._cameraTransformMatrix, this._transformedDirection);
-							this.target.addInPlace(this._transformedDirection);
-							
-							this._lastPanningPosition.x = evt.clientX;
-							this._lastPanningPosition.y = evt.clientY;
-						} 
-						else {
-							var offsetX = evt.clientX - cacheSoloPointer.x;
-							var offsetY = evt.clientY - cacheSoloPointer.y;
-							this.inertialAlphaOffset -= offsetX / this.angularSensibility;
-							this.inertialBetaOffset -= offsetY / this.angularSensibility;
-							cacheSoloPointer.x = evt.clientX;
-							cacheSoloPointer.y = evt.clientY;
-						}
+							this.inertialPanningX += -(evt.clientX - cacheSoloPointer.x) / this.panningSensibility;
+                                this.inertialPanningY += (evt.clientY - cacheSoloPointer.y) / this.panningSensibility;
+                            } 
+							else {
+                                var offsetX = evt.clientX - cacheSoloPointer.x;
+                                var offsetY = evt.clientY - cacheSoloPointer.y;
+                                this.inertialAlphaOffset -= offsetX / this.angularSensibilityX;
+                                this.inertialBetaOffset -= offsetY / this.angularSensibilityY;
+                            }
+                            cacheSoloPointer.x = evt.clientX;
+                            cacheSoloPointer.y = evt.clientY;
 						
 					case 2: //pinch
 						//if (noPreventDefault) { evt.preventDefault(); } //if pinch gesture, could be usefull to force preventDefault to avoid html page scroll/zoom in some mobile browsers
@@ -251,7 +236,7 @@ import com.babylonhx.utils.Keycodes;
 						}
 						
 						if (pinchSquaredDistance != previousPinchDistance) {
-							this.inertialRadiusOffset += (pinchSquaredDistance - previousPinchDistance) / (this.pinchPrecision * this.wheelPrecision * this.angularSensibility * direction);
+							this.inertialRadiusOffset += (pinchSquaredDistance - previousPinchDistance) / (this.pinchPrecision * this.wheelPrecision * this.angularSensibilityX * direction);
 							previousPinchDistance = pinchSquaredDistance;
 						}
 						

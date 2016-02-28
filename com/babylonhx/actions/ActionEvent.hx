@@ -42,11 +42,10 @@ import com.babylonhx.sprites.Sprite;
 	/**
 	 * Helper function to auto-create an ActionEvent from a source mesh.
 	 * @param source The source mesh that triggered the event
-	 * @param evt {Event} The original (browser) event
 	 */
-	public static function CreateNew(source:AbstractMesh):ActionEvent {
+	public static function CreateNew(source:AbstractMesh, ?additionalData:Dynamic):ActionEvent {
 		var scene = source.getScene();
-		return new ActionEvent(source, scene.pointerX, scene.pointerY, scene.meshUnderPointer);
+		return new ActionEvent(source, scene.pointerX, scene.pointerY, scene.meshUnderPointer, additionalData);
 	}
 	
 	/**

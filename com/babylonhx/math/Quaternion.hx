@@ -12,7 +12,7 @@ package com.babylonhx.math;
 	public var w:Float;
 	
 	
-	public function new(x:Float = 0, y:Float = 0, z:Float = 0, w:Float = 1) {
+	inline public function new(x:Float = 0, y:Float = 0, z:Float = 0, w:Float = 1) {
 		this.x = x;
 		this.y = y;
 		this.z = z;

@@ -33,19 +33,19 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		this.wrapV = Texture.CLAMP_ADDRESSMODE;
 		
 		this._generateMipMaps = generateMipMaps;
-				
-		/*if (options.getContext) {
-			this._canvas = options;
+		
+		if (options.data != null) {
+			this._canvas = new Image(options.data, options.width, options.height);
 			this._texture = scene.getEngine().createDynamicTexture(options.width, options.height, generateMipMaps, samplingMode);
-		} else {*/
-			if (Reflect.hasField(options, "width")) {
-				this._canvas = new Image(null, options.width, options.height);
-				this._texture = scene.getEngine().createDynamicTexture(options.width, options.height, generateMipMaps, samplingMode);
-			} else {
-				this._canvas = new Image(null, options, options);
-				this._texture = scene.getEngine().createDynamicTexture(options, options, generateMipMaps, samplingMode);
-			}
-		//}
+		}
+		else if (options.width != null) {
+			this._canvas = new Image(null, options.width, options.height);
+			this._texture = scene.getEngine().createDynamicTexture(options.width, options.height, generateMipMaps, samplingMode);
+		} 
+		else {
+			this._canvas = new Image(null, options, options);
+			this._texture = scene.getEngine().createDynamicTexture(options, options, generateMipMaps, samplingMode);
+		}
 		
 		var textureSize = this.getSize();
 	}

@@ -1425,6 +1425,35 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		
 		return vertexData;
 	}
+	
+	// options: { lines:Array<Array<Vector3>> }
+	public static function CreateLineSystem(options:Dynamic):VertexData {
+		var indices:Array<Int> = [];
+		var positions:Array<Float> = [];
+		var lines:Array<Array<Vector3>> = options.lines;
+		var idx:Int = 0;
+		
+		for (l in 0...lines.length) {
+			var points = lines[l];
+			for (index in 0...points.length) {
+				positions.push(points[index].x);
+				positions.push(points[index].y);
+				positions.push(points[index].z);
+				
+				if (index > 0) {
+					indices.push(idx - 1);
+					indices.push(idx);
+				}
+				idx ++;
+			}               
+		}
+		
+		var vertexData = new VertexData();
+		vertexData.indices = indices;
+		vertexData.positions = positions;
+		
+		return vertexData;
+	}
 
 	public static function CreateLines(options:Dynamic):VertexData {
 		var indices:Array<Int> = [];

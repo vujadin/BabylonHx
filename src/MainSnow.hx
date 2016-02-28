@@ -115,7 +115,7 @@ class MainSnow extends snow.App {
 		//new samples.ForestOfPythagoras(scene);
 		//new samples.Particles4(scene);
 		//new samples.MaterialsLibTest(scene);	
-		new samples.ReflectionProbeTest(scene);
+		//new samples.ReflectionProbeTest(scene);
 		//new samples.IcoSphereTest(scene);
 		//new samples.PBRMaterialTest1(scene);
 		//new samples.PBRMaterialTest2(scene);	
@@ -126,10 +126,11 @@ class MainSnow extends snow.App {
 		//new samples.StarfieldMaterialTest(scene);
 		//new samples.FeaturedDemo1(scene);
 		//new samples.GlosinessAndRoughness(scene);
-		//new samples.FurMat(scene);
+		new samples.FurMat(scene);
 		//new samples.HaxedNES(scene);
 		//new samples.RefractionMaterial(scene);
 		//new samples.SponzaDynamicShadows(scene);
+		//new samples.RefractReflect(scene);
 	}
 		
 	override function onmousedown(x:Int, y:Int, button:Int, timestamp:Float, window_id:Int) {
@@ -189,8 +190,23 @@ class MainSnow extends snow.App {
 			f(keycode);
 		}
 	}
+	
+	override public function onevent(event:SystemEvent) {
+        if(event.window != null) {
+            if (event.window.type == we_size_changed || event.window.type == we_resized) {
+				engine.width = event.window.x;
+				engine.height = event.window.y;
+				resize();
+            }
+        }
+    }
 
 	override function tick(delta:Float) {
 		engine._renderLoop();
 	}
+	
+	private function resize() {
+		engine.setSize(Std.int(engine.width / engine.getHardwareScalingLevel()), Std.int(engine.height / engine.getHardwareScalingLevel()));
+	}
+	
 }

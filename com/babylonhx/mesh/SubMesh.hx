@@ -103,6 +103,8 @@ import com.babylonhx.tools.Tools;
 
 	// Methods
 	public function refreshBoundingInfo() {
+		this._lastColliderWorldVertices = null;
+		
 		if (this.IsGlobal) {
 			return;
 		}

@@ -25,7 +25,12 @@ typedef IAMethods = {
 	public var textureAnisotropicFilterExtension:Dynamic;
 	public var highPrecisionShaderSupported:Bool;
 	public var fragmentDepthSupported:Bool;
+	public var textureFloatLinearFiltering:Bool;
+	public var drawBufferExtension:Dynamic;
 	public var maxAnisotropy:Int;
+	public var textureLOD:Bool;
+	public var textureLODExt:String = "";
+	public var textureCubeLodFnName:String = "textureCubeLod";
 	
 	#if (!mobile && cpp)
 	public var instancedArrays:IAMethods;
@@ -34,6 +39,7 @@ typedef IAMethods = {
 	#end
 	
 	public var uintIndices:Null<Bool>;
+	
 	
 	public function new() {
 		

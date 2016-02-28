@@ -12,13 +12,13 @@ package com.babylonhx.utils.typedarray;
 
 	typedef ArrayBuffer = snow.api.buffers.ArrayBuffer;
 	
-#elseif lime
-
-	typedef ArrayBuffer = lime.utils.ArrayBuffer;
-	
 #elseif openfl
 
 	typedef ArrayBuffer = openfl.utils.ArrayBuffer;	
+	
+#elseif lime
+
+	typedef ArrayBuffer = lime.utils.ArrayBuffer;
 	
 #elseif nme
 

@@ -59,32 +59,45 @@ class StandardMaterialDefines extends MaterialDefines {
 	public static inline var DIFFUSEFRESNEL:Int = 48;
 	public static inline var OPACITYFRESNEL:Int = 49;
 	public static inline var REFLECTIONFRESNEL:Int = 50;
-	public static inline var EMISSIVEFRESNEL:Int = 51;
-	public static inline var FRESNEL:Int = 52;
-	public static inline var NORMAL:Int = 53;
-	public static inline var UV1:Int = 54;
-	public static inline var UV2:Int = 55;
-	public static inline var VERTEXCOLOR:Int = 56;
-	public static inline var VERTEXALPHA:Int = 57;
-	public static inline var INSTANCES:Int = 58;
-	public static inline var GLOSSINESS:Int = 59;
-	public static inline var ROUGHNESS:Int = 60;
-	public static inline var EMISSIVEASILLUMINATION:Int = 61;
-	public static inline var LINKEMISSIVEWITHDIFFUSE:Int = 62;
-	public static inline var REFLECTIONFRESNELFROMSPECULAR:Int = 63;
-	public static inline var LIGHTMAP:Int = 64;
-	public static inline var USELIGHTMAPASSHADOWMAP:Int = 65;
-	public static inline var REFLECTIONMAP_3D:Int = 66;
-	public static inline var REFLECTIONMAP_SPHERICAL:Int = 67;
-	public static inline var REFLECTIONMAP_PLANAR:Int = 68;
-	public static inline var REFLECTIONMAP_CUBIC:Int = 69;
-	public static inline var REFLECTIONMAP_PROJECTION:Int = 70;
-	public static inline var REFLECTIONMAP_SKYBOX:Int = 71;
-	public static inline var REFLECTIONMAP_EXPLICIT:Int = 72;
-	public static inline var REFLECTIONMAP_EQUIRECTANGULAR:Int = 73;
-	public static inline var REFLECTIONMAP_EQUIRECTANGULAR_FIXED:Int = 74;
-	public static inline var INVERTCUBICMAP:Int = 75;
-	public static inline var LOGARITHMICDEPTH:Int = 76;
+	public static inline var REFRACTIONFRESNEL:Int = 51;
+	public static inline var EMISSIVEFRESNEL:Int = 52;
+	public static inline var FRESNEL:Int = 53;
+	public static inline var NORMAL:Int = 54;
+	public static inline var UV1:Int = 55;
+	public static inline var UV2:Int = 56;
+	public static inline var VERTEXCOLOR:Int = 57;
+	public static inline var VERTEXALPHA:Int = 58;
+	public static inline var INSTANCES:Int = 59;
+	public static inline var GLOSSINESS:Int = 60;
+	public static inline var ROUGHNESS:Int = 61;
+	public static inline var EMISSIVEASILLUMINATION:Int = 62;
+	public static inline var LINKEMISSIVEWITHDIFFUSE:Int = 63;
+	public static inline var REFLECTIONFRESNELFROMSPECULAR:Int = 64;
+	public static inline var LIGHTMAP:Int = 65;
+	public static inline var USELIGHTMAPASSHADOWMAP:Int = 66;
+	public static inline var REFLECTIONMAP_3D:Int = 67;
+	public static inline var REFLECTIONMAP_SPHERICAL:Int = 68;
+	public static inline var REFLECTIONMAP_PLANAR:Int = 69;
+	public static inline var REFLECTIONMAP_CUBIC:Int = 70;
+	public static inline var REFLECTIONMAP_PROJECTION:Int = 71;
+	public static inline var REFLECTIONMAP_SKYBOX:Int = 72;
+	public static inline var REFLECTIONMAP_EXPLICIT:Int = 73;
+	public static inline var REFLECTIONMAP_EQUIRECTANGULAR:Int = 74;
+	public static inline var REFLECTIONMAP_EQUIRECTANGULAR_FIXED:Int = 75;
+	public static inline var INVERTCUBICMAP:Int = 76;
+	public static inline var LOGARITHMICDEPTH:Int = 77;
+	public static inline var REFRACTION:Int = 78;
+	public static inline var REFRACTIONMAP_3D:Int = 79;
+	public static inline var REFLECTIONOVERALPHA:Int = 80;
+	public static inline var PARALLAX:Int = 81;
+	public static inline var PARALLAXOCCLUSION:Int = 82;
+	
+	public static var LIGHTS:Map<String, Array<Int>> = [
+		"POINTLIGHT" => [POINTLIGHT0, POINTLIGHT1, POINTLIGHT2, POINTLIGHT3],
+		"HEMILIGHT" => [HEMILIGHT0, HEMILIGHT1, HEMILIGHT2, HEMILIGHT3],
+		"DIRLIGHT" => [DIRLIGHT0, DIRLIGHT1, DIRLIGHT2, DIRLIGHT3],
+		"SPOTLIGHT" => [SPOTLIGHT0, SPOTLIGHT1, SPOTLIGHT2, SPOTLIGHT3]
+	];
 	
 	public var BonesPerMesh:Int = 0;
 	public var NUM_BONE_INFLUENCERS:Int = 0;
@@ -93,7 +106,7 @@ class StandardMaterialDefines extends MaterialDefines {
 	public function new() {
 		super();
 		
-		this._keys = Vector.fromArrayCopy(["DIFFUSE", "AMBIENT", "OPACITY", "OPACITYRGB", "REFLECTION", "EMISSIVE", "SPECULAR", "BUMP", "SPECULAROVERALPHA", "CLIPPLANE", "ALPHATEST", "ALPHAFROMDIFFUSE", "POINTSIZE", "FOG", "LIGHT0", "LIGHT1", "LIGHT2", "LIGHT3", "SPOTLIGHT0", "SPOTLIGHT1", "SPOTLIGHT2", "SPOTLIGHT3", "HEMILIGHT0", "HEMILIGHT1", "HEMILIGHT2", "HEMILIGHT3", "POINTLIGHT0", "POINTLIGHT1", "POINTLIGHT2", "POINTLIGHT3", "DIRLIGHT0", "DIRLIGHT1", "DIRLIGHT2", "DIRLIGHT3", "SPECULARTERM", "SHADOW0", "SHADOW1", "SHADOW2", "SHADOW3", "SHADOWS", "SHADOWVSM0", "SHADOWVSM1", "SHADOWVSM2", "SHADOWVSM3", "SHADOWPCF0", "SHADOWPCF1", "SHADOWPCF2", "SHADOWPCF3", "DIFFUSEFRESNEL", "OPACITYFRESNEL", "REFLECTIONFRESNEL", "EMISSIVEFRESNEL", "FRESNEL", "NORMAL", "UV1", "UV2", "VERTEXCOLOR", "VERTEXALPHA", "INSTANCES", "GLOSSINESS", "ROUGHNESS", "EMISSIVEASILLUMINATION", "LINKEMISSIVEWITHDIFFUSE", "REFLECTIONFRESNELFROMSPECULAR", "LIGHTMAP", "USELIGHTMAPASSHADOWMAP", "REFLECTIONMAP_3D", "REFLECTIONMAP_SPHERICAL", "REFLECTIONMAP_PLANAR", "REFLECTIONMAP_CUBIC", "REFLECTIONMAP_PROJECTION", "REFLECTIONMAP_SKYBOX", "REFLECTIONMAP_EXPLICIT", "REFLECTIONMAP_EQUIRECTANGULAR", "REFLECTIONMAP_EQUIRECTANGULAR_FIXED", "INVERTCUBICMAP", "LOGARITHMICDEPTH"]);
+		this._keys = Vector.fromArrayCopy(["DIFFUSE", "AMBIENT", "OPACITY", "OPACITYRGB", "REFLECTION", "EMISSIVE", "SPECULAR", "BUMP", "SPECULAROVERALPHA", "CLIPPLANE", "ALPHATEST", "ALPHAFROMDIFFUSE", "POINTSIZE", "FOG", "LIGHT0", "LIGHT1", "LIGHT2", "LIGHT3", "SPOTLIGHT0", "SPOTLIGHT1", "SPOTLIGHT2", "SPOTLIGHT3", "HEMILIGHT0", "HEMILIGHT1", "HEMILIGHT2", "HEMILIGHT3", "POINTLIGHT0", "POINTLIGHT1", "POINTLIGHT2", "POINTLIGHT3", "DIRLIGHT0", "DIRLIGHT1", "DIRLIGHT2", "DIRLIGHT3", "SPECULARTERM", "SHADOW0", "SHADOW1", "SHADOW2", "SHADOW3", "SHADOWS", "SHADOWVSM0", "SHADOWVSM1", "SHADOWVSM2", "SHADOWVSM3", "SHADOWPCF0", "SHADOWPCF1", "SHADOWPCF2", "SHADOWPCF3", "DIFFUSEFRESNEL", "OPACITYFRESNEL", "REFLECTIONFRESNEL", "REFRACTIONFRESNEL", "EMISSIVEFRESNEL", "FRESNEL", "NORMAL", "UV1", "UV2", "VERTEXCOLOR", "VERTEXALPHA", "INSTANCES", "GLOSSINESS", "ROUGHNESS", "EMISSIVEASILLUMINATION", "LINKEMISSIVEWITHDIFFUSE", "REFLECTIONFRESNELFROMSPECULAR", "LIGHTMAP", "USELIGHTMAPASSHADOWMAP", "REFLECTIONMAP_3D", "REFLECTIONMAP_SPHERICAL", "REFLECTIONMAP_PLANAR", "REFLECTIONMAP_CUBIC", "REFLECTIONMAP_PROJECTION", "REFLECTIONMAP_SKYBOX", "REFLECTIONMAP_EXPLICIT", "REFLECTIONMAP_EQUIRECTANGULAR", "REFLECTIONMAP_EQUIRECTANGULAR_FIXED", "INVERTCUBICMAP", "LOGARITHMICDEPTH", "REFRACTION", "REFRACTIONMAP_3D", "REFLECTIONOVERALPHA", "PARALLAX", "PARALLAXOCCLUSION"]);
 		
 		defines = new Vector(this._keys.length);
 		for (i in 0...this._keys.length) {

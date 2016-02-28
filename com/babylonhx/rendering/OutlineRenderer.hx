@@ -43,7 +43,7 @@ import com.babylonhx.math.Matrix;
 		
 		// Bones
 		if (mesh.useBones && mesh.computeBonesUsingShaders) {
-			this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices());
+			this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices(mesh));
 		}
 		
 		mesh._bind(subMesh, this._effect, Material.TriangleFillMode);

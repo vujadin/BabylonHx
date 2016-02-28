@@ -12,11 +12,17 @@ import com.babylonhx.math.Matrix;
 	public var url:String;
 	
 	private var _noMipmap:Bool;
+	private var _files:Array<String>;
 	private var _extensions:Array<String>;
 	private var _textureMatrix:Matrix;
+	
+	
+	public static function CreateFromImages(files:Array<String>, scene:Scene, noMipmap:Bool = false) {
+		return new CubeTexture("", scene, null, noMipmap, files);
+	}
 
 	
-	public function new(rootUrl:String, scene:Scene, ?extensions:Array<String>, noMipmap:Bool = false) {	
+	public function new(rootUrl:String, scene:Scene, ?extensions:Array<String>, noMipmap:Bool = false, ?files:Array<String>) {	
 		super(scene);
 		
 		this.coordinatesMode = Texture.CUBIC_MODE;
@@ -26,21 +32,31 @@ import com.babylonhx.math.Matrix;
 		this._noMipmap = noMipmap;
 		this.hasAlpha = false;
 		
-		if (rootUrl == null || rootUrl == "") {
+		if ((rootUrl == null || rootUrl == "") && files == null) {
 			return;
 		}
 		
 		//this._texture = this._getFromCache(rootUrl, noMipmap);
 		
-		if (extensions == null) {
-			extensions = ["_px.jpg", "_py.jpg", "_pz.jpg", "_nx.jpg", "_ny.jpg", "_nz.jpg"];
+		if (files == null) {
+			if (extensions == null) {
+				extensions = ["_px.jpg", "_py.jpg", "_pz.jpg", "_nx.jpg", "_ny.jpg", "_nz.jpg"];
+			}
+			
+			files = [];
+			
+			for (index in 0...extensions.length) {
+				files.push(rootUrl + extensions[index]);
+			}
+			
+			this._extensions = extensions;
 		}
 		
-		this._extensions = extensions;
+		this._files = files;
 		
 		if (this._texture == null) {
 			if (!scene.useDelayedTextureLoading) {
-				this._texture = scene.getEngine().createCubeTexture(rootUrl, scene, extensions, noMipmap);
+				this._texture = scene.getEngine().createCubeTexture(rootUrl, scene, files, noMipmap);
 			} 
 			else {
 				this.delayLoadState = Engine.DELAYLOADSTATE_NOTLOADED;
@@ -53,7 +69,7 @@ import com.babylonhx.math.Matrix;
 	}
 
 	override public function clone():CubeTexture {
-		var newTexture = new CubeTexture(this.url, this.getScene(), this._extensions, this._noMipmap);
+		var newTexture = new CubeTexture(this.url, this.getScene(), this._extensions, this._noMipmap, this._files);
 		
 		// Base texture
 		newTexture.level = this.level;

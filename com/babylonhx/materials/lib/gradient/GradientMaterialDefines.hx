@@ -51,9 +51,14 @@ class GradientMaterialDefines extends MaterialDefines {
 	public static inline var UV2:Int = 40;
 	public static inline var VERTEXCOLOR:Int = 41;
 	public static inline var VERTEXALPHA:Int = 42;
-	public static inline var BONES:Int = 43;
-	public static inline var BONES4:Int = 44;
-	public static inline var INSTANCES:Int = 45;
+	public static inline var INSTANCES:Int = 43;
+	
+	public static var LIGHTS:Map<String, Array<Int>> = [
+		"POINTLIGHT" => [POINTLIGHT0, POINTLIGHT1, POINTLIGHT2, POINTLIGHT3],
+		"HEMILIGHT" => [HEMILIGHT0, HEMILIGHT1, HEMILIGHT2, HEMILIGHT3],
+		"DIRLIGHT" => [DIRLIGHT0, DIRLIGHT1, DIRLIGHT2, DIRLIGHT3],
+		"SPOTLIGHT" => [SPOTLIGHT0, SPOTLIGHT1, SPOTLIGHT2, SPOTLIGHT3]
+	];
 	
 	public var BonesPerMesh:Int = 0;
 	public var NUM_BONE_INFLUENCERS:Int = 0;
@@ -62,7 +67,7 @@ class GradientMaterialDefines extends MaterialDefines {
 	public function new() {
 		super();
 		
-		this._keys = Vector.fromData(["DIFFUSE", "CLIPPLANE", "ALPHATEST", "POINTSIZE", "FOG", "LIGHT0", "LIGHT1", "LIGHT2", "LIGHT3", "SPOTLIGHT0", "SPOTLIGHT1", "SPOTLIGHT2", "SPOTLIGHT3", "HEMILIGHT0", "HEMILIGHT1", "HEMILIGHT2", "HEMILIGHT3", "DIRLIGHT0", "DIRLIGHT1", "DIRLIGHT2", "DIRLIGHT3", "POINTLIGHT0", "POINTLIGHT1", "POINTLIGHT2", "POINTLIGHT3", "SHADOW0", "SHADOW1", "SHADOW2", "SHADOW3", "SHADOWS", "SHADOWVSM0", "SHADOWVSM1", "SHADOWVSM2", "SHADOWVSM3", "SHADOWPCF0", "SHADOWPCF1", "SHADOWPCF2", "SHADOWPCF3", "NORMAL", "UV1", "UV2", "VERTEXCOLOR", "VERTEXALPHA", "BONES", "BONES4", "INSTANCES"]);
+		this._keys = Vector.fromData(["DIFFUSE", "CLIPPLANE", "ALPHATEST", "POINTSIZE", "FOG", "LIGHT0", "LIGHT1", "LIGHT2", "LIGHT3", "SPOTLIGHT0", "SPOTLIGHT1", "SPOTLIGHT2", "SPOTLIGHT3", "HEMILIGHT0", "HEMILIGHT1", "HEMILIGHT2", "HEMILIGHT3", "DIRLIGHT0", "DIRLIGHT1", "DIRLIGHT2", "DIRLIGHT3", "POINTLIGHT0", "POINTLIGHT1", "POINTLIGHT2", "POINTLIGHT3", "SHADOW0", "SHADOW1", "SHADOW2", "SHADOW3", "SHADOWS", "SHADOWVSM0", "SHADOWVSM1", "SHADOWVSM2", "SHADOWVSM3", "SHADOWPCF0", "SHADOWPCF1", "SHADOWPCF2", "SHADOWPCF3", "NORMAL", "UV1", "UV2", "VERTEXCOLOR", "VERTEXALPHA", "INSTANCES"]);
 		
 		defines = new Vector(this._keys.length);
 		for (i in 0...this._keys.length) {

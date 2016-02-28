@@ -12,13 +12,13 @@ package com.babylonhx.utils.typedarray;
 
 	typedef Int16Array = snow.api.buffers.Int16Array;
 	
-#elseif lime
-
-	typedef Int16Array = lime.utils.Int16Array;
-	
 #elseif openfl
 
-	typedef Int16Array = openfl.utils.Int16Array;	
+	typedef Int16Array = openfl.utils.Int16Array;
+	
+#elseif lime
+
+	typedef Int16Array = lime.utils.Int16Array;	
 	
 #elseif nme
 

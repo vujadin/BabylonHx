@@ -12,6 +12,7 @@ import com.babylonhx.mesh.AbstractMesh;
 
 @:expose('BABYLON.IShadowLight') interface IShadowLight {
   
+	var id:String;
 	var position:Vector3;
 	var transformedPosition:Vector3;
 	var name:String;

@@ -11,7 +11,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
  * ...
  * @author Krtolica Vujadin
  */
-class ReflectionProbe {
+@:expose('BABYLON.ReflectionProbe') class ReflectionProbe {
 	
 	private var _scene:Scene;
 	private var _renderTargetTexture:RenderTargetTexture;
@@ -41,22 +41,22 @@ class ReflectionProbe {
 		this._renderTargetTexture.onBeforeRender = function(faceIndex:Int) {
 			switch (faceIndex) {
 				case 0:
-					this._add.copyFromFloats(1, 0, 0);
+					this._add.set(1, 0, 0);
 					
 				case 1:
-					this._add.copyFromFloats(-1, 0, 0);
+					this._add.set(-1, 0, 0);
 					
 				case 2:
-					this._add.copyFromFloats(0, -1, 0);
+					this._add.set(0, -1, 0);
 					
 				case 3:
-					this._add.copyFromFloats(0, 1, 0);
+					this._add.set(0, 1, 0);
 					
 				case 4:
-					this._add.copyFromFloats(0, 0, 1);
+					this._add.set(0, 0, 1);
 					
 				case 5:
-					this._add.copyFromFloats(0, 0, -1);					
+					this._add.set(0, 0, -1);					
 			}
 			
 			if (this._attachedMesh != null) {

@@ -26,6 +26,8 @@ import com.babylonhx.Node.NodeCache;
 import com.babylonhx.physics.PhysicsEngine;
 import com.babylonhx.physics.PhysicsBodyCreationOptions;
 import com.babylonhx.rendering.EdgesRenderer;
+import com.babylonhx.math.Tmp;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 /**
  * ...
@@ -79,16 +81,6 @@ import com.babylonhx.rendering.EdgesRenderer;
 	public var onDispose:Void->Void = null;	
 	public var isBlocker:Bool = false;	
 	
-	private var _skeleton:Skeleton;
-	public var skeleton(get, set):Skeleton;
-	private function get_skeleton():Skeleton {
-		return _skeleton;
-	}
-	private function set_skeleton(val:Skeleton):Skeleton {
-		_skeleton = val;
-		return val;
-	}
-	
 	public var renderingGroupId:Int = 0;	
 	
 	private var _material:Material;
@@ -122,6 +114,7 @@ import com.babylonhx.rendering.EdgesRenderer;
 	public var useVertexColors:Bool = true;
 	public var applyFog:Bool = true;
 	public var computeBonesUsingShaders:Bool = true;
+	public var scalingDeterminant:Float = 1;
 	public var numBoneInfluencers:Int = 4;
 
 	public var useOctreeForRenderingSelection:Bool = true;
@@ -137,6 +130,7 @@ import com.babylonhx.rendering.EdgesRenderer;
 	public var _physicsMass:Float = 0;
 	public var _physicsFriction:Float = 0;
 	public var _physicRestitution:Float = 0;
+	public var onPhysicsCollide:AbstractMesh->Dynamic->Void; 
 
 	// Collisions
 	private var _checkCollisions:Bool = false;
@@ -147,6 +141,7 @@ import com.babylonhx.rendering.EdgesRenderer;
 	private var _diffPositionForCollisions:Vector3 = new Vector3(0, 0, 0);
 	private var _newPositionForCollisions:Vector3 = new Vector3(0, 0, 0);
 	public var onCollide:AbstractMesh->Void;
+	public var onCollisionPositionChange:Vector3->Void;
 	
 	// Attach to bone
     private var _meshToBoneReferal:AbstractMesh;
@@ -207,9 +202,37 @@ import com.babylonhx.rendering.EdgesRenderer;
 	
 	public var _unIndexed:Bool = false;
 	
+	public var _poseMatrix:Matrix;
+	
 	// Loading properties
 	public var _waitingActions:Dynamic;
 	public var _waitingFreezeWorldMatrix:Bool;
+	
+	// Skeleton
+	private var _skeleton:Skeleton;
+	public var skeleton(get, set):Skeleton;
+	public var _bonesTransformMatrices: #if (js || purejs || web || html5) Float32Array #else Array<Float> #end ;
+	
+	private function get_skeleton():Skeleton {
+		return this._skeleton;
+	}
+	private function set_skeleton(value:Skeleton):Skeleton {
+		if (this._skeleton != null && this._skeleton.needInitialSkinMatrix) {
+			this._skeleton._unregisterMeshWithPoseMatrix(this);
+		}
+		
+		if (value != null && value.needInitialSkinMatrix) {
+			value._registerMeshWithPoseMatrix(this);
+		}
+		
+		this._skeleton = value;
+		
+		if (this._skeleton == null) {
+			this._bonesTransformMatrices = null;
+		}
+		
+		return value;
+	}
 	
 
 	public function new(name:String, scene:Scene) {
@@ -233,6 +256,14 @@ import com.babylonhx.rendering.EdgesRenderer;
 	}
 
 	// Methods
+	public function updatePoseMatrix(matrix:Matrix) {
+		this._poseMatrix.copyFrom(matrix);
+	}
+
+	public function getPoseMatrix():Matrix {
+		return this._poseMatrix;
+	}
+	
 	public function disableEdgesRendering() {
         if (this._edgesRenderer != null) {
             this._edgesRenderer.dispose();
@@ -353,7 +384,7 @@ import com.babylonhx.rendering.EdgesRenderer;
 		}
 	}
 
-	public function translate(axis:Vector3, distance:Float, space:Space) {
+	public function translate(axis:Vector3, distance:Float, ?space:Space) {
 		var displacementVector = axis.scale(distance);
 		
 		if (space == null || space == Space.LOCAL) {
@@ -508,7 +539,7 @@ import com.babylonhx.rendering.EdgesRenderer;
 		if (!this._cache.scaling.equals(this.scaling)) {
 			return false;
 		}
-			
+		
 		return true;
 	}
 
@@ -551,12 +582,10 @@ import com.babylonhx.rendering.EdgesRenderer;
 		}
 	}
 
-	static var cameraWorldMatrix:Matrix;
-	static var cameraGlobalPosition:Vector3 = new Vector3();
 	public function computeWorldMatrix(force:Bool = false):Matrix {
 		if (this._isWorldMatrixFrozen) {
-            return this._worldMatrix;
-        }
+			return this._worldMatrix;
+		}
 		
 		if (!force && (this._currentRenderId == this.getScene().getRenderId() || this.isSynchronized(true))) {
 			this._currentRenderId = this.getScene().getRenderId();
@@ -571,37 +600,37 @@ import com.babylonhx.rendering.EdgesRenderer;
 		this._isDirty = false;
 		
 		// Scaling
-		Matrix.ScalingToRef(this.scaling.x, this.scaling.y, this.scaling.z, this._localScaling);
+		Matrix.ScalingToRef(this.scaling.x * this.scalingDeterminant, this.scaling.y * this.scalingDeterminant, this.scaling.z * this.scalingDeterminant, Tmp.matrix[1]);
 		
 		// Rotation
 		if (this.rotationQuaternion != null) {
-			this.rotationQuaternion.toRotationMatrix(this._localRotation);
+			this.rotationQuaternion.toRotationMatrix(Tmp.matrix[0]);
 			this._cache.rotationQuaternion.copyFrom(this.rotationQuaternion);
 		} 
 		else {
-			Matrix.RotationYawPitchRollToRef(this.rotation.y, this.rotation.x, this.rotation.z, this._localRotation);
+			Matrix.RotationYawPitchRollToRef(this.rotation.y, this.rotation.x, this.rotation.z, Tmp.matrix[0]);
 			this._cache.rotation.copyFrom(this.rotation);
 		}
 		
 		// Translation
 		if (this.infiniteDistance && this.parent == null) {
 			var camera = this.getScene().activeCamera;
-			if(camera != null) {
-				cameraWorldMatrix = camera.getWorldMatrix();
+			if (camera != null) {
+				var cameraWorldMatrix = camera.getWorldMatrix();
 				
-				cameraGlobalPosition.copyFromFloats(cameraWorldMatrix.m[12], cameraWorldMatrix.m[13], cameraWorldMatrix.m[14]);
+				var cameraGlobalPosition = new Vector3(cameraWorldMatrix.m[12], cameraWorldMatrix.m[13], cameraWorldMatrix.m[14]);
 				
 				Matrix.TranslationToRef(this.position.x + cameraGlobalPosition.x, this.position.y + cameraGlobalPosition.y,
-												this.position.z + cameraGlobalPosition.z, this._localTranslation);
+					this.position.z + cameraGlobalPosition.z, Tmp.matrix[2]);
 			}
 		} 
 		else {
-			Matrix.TranslationToRef(this.position.x, this.position.y, this.position.z, this._localTranslation);
+			Matrix.TranslationToRef(this.position.x, this.position.y, this.position.z, Tmp.matrix[2]);
 		}
 		
 		// Composing transformations
-		this._pivotMatrix.multiplyToRef(this._localScaling, this._localPivotScaling);
-		this._localPivotScaling.multiplyToRef(this._localRotation, this._localPivotScalingRotation);
+		this._pivotMatrix.multiplyToRef(Tmp.matrix[1], Tmp.matrix[4]);
+		Tmp.matrix[4].multiplyToRef(Tmp.matrix[0], Tmp.matrix[5]);
 		
 		// Billboarding
 		if (this.billboardMode != AbstractMesh.BILLBOARDMODE_NONE && this.getScene().activeCamera != null) {
@@ -610,13 +639,10 @@ import com.babylonhx.rendering.EdgesRenderer;
 			
 			if (this.parent != null && Reflect.hasField(this.parent, "position")) {
 				localPosition.addInPlace(untyped this.parent.position);
-				Matrix.TranslationToRef(localPosition.x, localPosition.y, localPosition.z, this._localTranslation);
+				Matrix.TranslationToRef(localPosition.x, localPosition.y, localPosition.z, Tmp.matrix[2]);
 			}
 			
 			if ((this.billboardMode & AbstractMesh.BILLBOARDMODE_ALL) != AbstractMesh.BILLBOARDMODE_ALL) {
-				zero = this.getScene().activeCamera.position;
-			} 
-			else {
 				if (this.billboardMode & AbstractMesh.BILLBOARDMODE_X != 0) {
 					zero.x = localPosition.x + Engine.Epsilon;
 				}
@@ -628,31 +654,27 @@ import com.babylonhx.rendering.EdgesRenderer;
 				}
 			}
 			
-			Matrix.LookAtLHToRef(localPosition, zero, Vector3.Up(), this._localBillboard);
-			this._localBillboard.m[12] = 0;
-			this._localBillboard.m[13] = 0;
-			this._localBillboard.m[14] = 0;
+			Matrix.LookAtLHToRef(localPosition, zero, Vector3.Up(), Tmp.matrix[3]);
+			Tmp.matrix[3].m[12] = 0;
+			Tmp.matrix[3].m[13] = 0;
+			Tmp.matrix[3].m[14] = 0;
 			
-			this._localBillboard.invert();
+			Tmp.matrix[3].invert();
 			
-			this._localPivotScalingRotation.multiplyToRef(this._localBillboard, this._localWorld);
-			this._rotateYByPI.multiplyToRef(this._localWorld, this._localPivotScalingRotation);
+			Tmp.matrix[5].multiplyToRef(Tmp.matrix[3], this._localWorld);
+			this._rotateYByPI.multiplyToRef(this._localWorld, Tmp.matrix[5]);
 		}
 		
 		// Local world
-		this._localPivotScalingRotation.multiplyToRef(this._localTranslation, this._localWorld);
+		Tmp.matrix[5].multiplyToRef(Tmp.matrix[2], this._localWorld);
 		
 		// Parent
-		if (this.parent != null && this.parent.getWorldMatrix() != null && this.billboardMode == AbstractMesh.BILLBOARDMODE_NONE) {
+		if (this.parent != null && this.billboardMode == AbstractMesh.BILLBOARDMODE_NONE) {
 			this._markSyncedWithParent();
 			
 			if (this._meshToBoneReferal != null) {
-				if (this._localMeshReferalTransform == null) {
-					this._localMeshReferalTransform = Matrix.Zero();
-				}
-				
-				this._localWorld.multiplyToRef(this.parent.getWorldMatrix(), this._localMeshReferalTransform);
-				this._localMeshReferalTransform.multiplyToRef(this._meshToBoneReferal.getWorldMatrix(), this._worldMatrix);
+				this._localWorld.multiplyToRef(this.parent.getWorldMatrix(), Tmp.matrix[6]);
+				Tmp.matrix[6].multiplyToRef(this._meshToBoneReferal.getWorldMatrix(), this._worldMatrix);
 			} 
 			else {
 				this._localWorld.multiplyToRef(this.parent.getWorldMatrix(), this._worldMatrix);
@@ -672,6 +694,10 @@ import com.babylonhx.rendering.EdgesRenderer;
 		for (callbackIndex in this._onAfterWorldMatrixUpdate) {
 			callbackIndex(this);
         }
+		
+		if (this._poseMatrix == null) {
+			this._poseMatrix = Matrix.Invert(this._worldMatrix);
+		}
 		
 		return this._worldMatrix;
 	}

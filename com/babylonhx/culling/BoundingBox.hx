@@ -75,6 +75,12 @@ import haxe.ds.Vector;
 	inline public function getWorldMatrix():Matrix {
 		return this._worldMatrix;
 	}
+	
+	inline public function setWorldMatrix(matrix:Matrix):BoundingBox {
+        this._worldMatrix.copyFrom(matrix);
+		
+        return this;
+    }
 
 	static var v_update:Vector3;
 	inline public function _update(world:Matrix) {
@@ -195,8 +201,9 @@ import haxe.ds.Vector;
 					break;
 				}
 			}
-			if (inCount == 0)
+			if (inCount == 0) {
 				return false;
+			}
 		}
 		return true;
 	}

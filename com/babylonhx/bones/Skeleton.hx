@@ -3,6 +3,7 @@ package com.babylonhx.bones;
 import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.tools.Tools;
+import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.animations.AnimationRange;
@@ -21,10 +22,13 @@ import haxe.ds.Vector;
 	public var id:String;
 	public var name:String;
 	public var bones:Array<Bone>;
+	
+	public var needInitialSkinMatrix:Bool = false;
 
 	private var _scene:Scene;
 	private var _isDirty:Bool = true;
 	private var _transformMatrices: #if (js || purejs || web || html5) Float32Array #else Array<Float> #end ;
+	private var _meshesWithPoseMatrix:Array<AbstractMesh> = [];
 	private var _animatables:Array<IAnimatable>;
 	private var _identity:Matrix = Matrix.Identity();
 	
@@ -110,6 +114,12 @@ import haxe.ds.Vector;
 		return ret;
 	}
 	
+	public function returnToRest() {
+		for (index in 0...this.bones.length) {
+			this.bones[index].returnToRest();
+		}
+	}
+	
 	private function _getHighestAnimationFrame():Float {
 		var ret:Float = 0; 
 		for (i in 0...this.bones.length) {
@@ -124,7 +134,11 @@ import haxe.ds.Vector;
 		return ret;
 	}
 	
-	inline public function getTransformMatrices(): #if (js || purejs || web || html5) Float32Array #else Array<Float> #end {
+	inline public function getTransformMatrices(mesh:AbstractMesh): #if (js || purejs || web || html5) Float32Array #else Array<Float> #end {
+		if (this.needInitialSkinMatrix && mesh._bonesTransformMatrices != null) {
+			return mesh._bonesTransformMatrices;
+		}
+		
 		return this._transformMatrices;
 	}
 	
@@ -135,6 +149,18 @@ import haxe.ds.Vector;
 	// Methods
 	inline public function _markAsDirty():Void {
 		this._isDirty = true;
+	}
+	
+	public function _registerMeshWithPoseMatrix(mesh:AbstractMesh) {
+		this._meshesWithPoseMatrix.push(mesh);
+	}
+
+	public function _unregisterMeshWithPoseMatrix(mesh:AbstractMesh) {
+		var index = this._meshesWithPoseMatrix.indexOf(mesh);
+		
+		if (index > -1) {
+			this._meshesWithPoseMatrix.splice(index, 1);
+		}
 	}
 
 	public function prepare() {
@@ -221,7 +247,8 @@ import haxe.ds.Vector;
 			var serializedBone:Dynamic = {
 				parentBoneIndex: bone.getParent() != null ? this.bones.indexOf(bone.getParent()) : -1,
 				name: bone.name,
-				matrix: bone.getLocalMatrix().toArray()
+				matrix: bone.getLocalMatrix().toArray(),
+				rest: bone.getRestPose().toArray()
 			};
 			
 			serializationObject.bones.push(serializedBone);
@@ -258,7 +285,8 @@ import haxe.ds.Vector;
 					parentBone = skeleton.bones[parsedBone.parentBoneIndex];
 				}
 				
-				var bone = new Bone(parsedBone.name, skeleton, parentBone, Matrix.FromArray(parsedBone.matrix));
+				var rest:Matrix = parsedBone.rest != null ? Matrix.FromArray(parsedBone.rest) : null;
+				var bone = new Bone(parsedBone.name, skeleton, parentBone, Matrix.FromArray(parsedBone.matrix), rest);
 				
 				if (parsedBone.length != 0) {
 					bone.length = parsedBone.length;

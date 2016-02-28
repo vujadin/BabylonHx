@@ -53,6 +53,13 @@ class LavaMaterialDefines extends MaterialDefines {
 	public static inline var VERTEXALPHA:Int = 42;
 	public static inline var INSTANCES:Int = 43;
 	
+	public static var LIGHTS:Map<String, Array<Int>> = [
+		"POINTLIGHT" => [POINTLIGHT0, POINTLIGHT1, POINTLIGHT2, POINTLIGHT3],
+		"HEMILIGHT" => [HEMILIGHT0, HEMILIGHT1, HEMILIGHT2, HEMILIGHT3],
+		"DIRLIGHT" => [DIRLIGHT0, DIRLIGHT1, DIRLIGHT2, DIRLIGHT3],
+		"SPOTLIGHT" => [SPOTLIGHT0, SPOTLIGHT1, SPOTLIGHT2, SPOTLIGHT3]
+	];
+	
 	public var BonesPerMesh:Int = 0;
 	public var NUM_BONE_INFLUENCERS:Int = 0;
 	

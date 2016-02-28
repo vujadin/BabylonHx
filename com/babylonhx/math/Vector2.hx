@@ -12,7 +12,7 @@ import com.babylonhx.tools.Tools;
 	public var y:Float;
 	
 	
-	public function new(x:Float, y:Float) {
+	inline public function new(x:Float, y:Float) {
 		this.x = x;
 		this.y = y;
 	}

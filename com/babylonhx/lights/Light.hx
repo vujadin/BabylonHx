@@ -24,6 +24,9 @@ import com.babylonhx.animations.Animation;
 	public var includedOnlyMeshes:Array<AbstractMesh> = [];
 	public var excludedMeshes:Array<AbstractMesh> = [];
 	public var excludeWithLayerMask:Int = 0;
+	
+	// PBR Properties.
+	public var radius:Float = 0.00001;
 
 	public var _shadowGenerator:ShadowGenerator;
 	private var _parentedWorldMatrix:Matrix;
@@ -62,7 +65,7 @@ import com.babylonhx.animations.Animation;
 		return Matrix.Identity();
 	}
 
-	public function canAffectMesh(mesh:AbstractMesh):Bool {
+	inline public function canAffectMesh(mesh:AbstractMesh):Bool {
 		if (mesh == null) {
 			return true;
 		}
@@ -75,11 +78,11 @@ import com.babylonhx.animations.Animation;
 			return false;
 		}
 		
-		if (this.includeOnlyWithLayerMask != 0 && this.includeOnlyWithLayerMask != mesh.layerMask){
+		if (this.includeOnlyWithLayerMask != 0 && (this.includeOnlyWithLayerMask & mesh.layerMask) == 0){
             return false;
         }
 		
-		if (this.excludeWithLayerMask != 0 && cast(this.excludeWithLayerMask & mesh.layerMask, Bool)) {
+		if (this.excludeWithLayerMask != 0 && (this.excludeWithLayerMask & mesh.layerMask != 0)) {
             return false;
         }
 		
@@ -125,9 +128,14 @@ import com.babylonhx.animations.Animation;
 		serializationObject.id = this.id;
 		serializationObject.tags = Tags.GetTags(this);
 		
-		//if (this.intensity != 0) {
+		if (this.intensity != 0) {
 			serializationObject.intensity = this.intensity;
-		//}
+		}
+		
+		// Parent
+		if (this.parent != null) {
+			serializationObject.parentId = this.parent.id;
+		}
 		
 		serializationObject.range = this.range;
 		
