@@ -257,10 +257,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		#if (!js && !purejs && !web && !html5)	// TODO !mobile ??
 		// native bug fix for neko / osx / etc http://community.openfl.org/t/lime-2-8-0-shader-issues/7060/2
-		vertexSourceCode = StringTools.replace(vertexSourceCode, "precision highp float;", "\n");
-		fragmentSourceCode = StringTools.replace(fragmentSourceCode, "precision highp float;", "\n");
-		vertexSourceCode = StringTools.replace(vertexSourceCode, "precision mediump float;", "\n");
-		fragmentSourceCode = StringTools.replace(fragmentSourceCode, "precision mediump float;", "\n");
+		source = StringTools.replace(source, "precision highp float;", "\n");
+		source = StringTools.replace(source, "precision highp float;", "\n");
+		source = StringTools.replace(source, "precision mediump float;", "\n");
+		source = StringTools.replace(source, "precision mediump float;", "\n");
 		#end
 		
 		return source;
