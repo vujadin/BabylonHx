@@ -36,7 +36,12 @@ import com.babylonhx.utils.GL;
 	public var _cachedCoordinatesMode:Int;
 	public var _isDisabled:Bool;
 	public var _cubeFaces:Array<WebGLTexture>;
-	
+
+    #if (html5 && js)
+    public var _workingCanvas:js.html.CanvasElement;
+    public var _workingContext:js.html.CanvasRenderingContext2D;
+	#end
+
 	public var __smartArrayFlags:Array<Int>;
 	
 	

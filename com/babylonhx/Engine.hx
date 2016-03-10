@@ -118,6 +118,8 @@ import nme.display.OpenGLView;
 	private var _glExtensions:Array<String>;
     private var _glRenderer:String;
     private var _glVendor:String;
+
+    private var _videoTextureSupported:Null<Bool>;
 	
 	private var _renderingQueueLaunched:Bool = false;
 	private var _activeRenderLoops:Array<Dynamic> = [];
@@ -1506,11 +1508,13 @@ import nme.display.OpenGLView;
 		texture.isReady = true;
 	}
 
-	public function createDynamicTexture(width:Int, height:Int, generateMipMaps:Bool, samplingMode:Int):WebGLTexture {
+	public function createDynamicTexture(width:Int, height:Int, generateMipMaps:Bool, samplingMode:Int, forceExponantOfTwo:Bool = true):WebGLTexture {
 		var texture = new WebGLTexture("", GL.createTexture());
-		
-		width = Tools.GetExponentOfTwo(width, this._caps.maxTextureSize);
-		height = Tools.GetExponentOfTwo(height, this._caps.maxTextureSize);
+
+        if(forceExponantOfTwo) {
+		    width = Tools.GetExponentOfTwo(width, this._caps.maxTextureSize);
+		    height = Tools.GetExponentOfTwo(height, this._caps.maxTextureSize);
+        }
 		
 		this.resetTextureCache();
 		texture._baseWidth = width;
@@ -1561,32 +1565,57 @@ import nme.display.OpenGLView;
 	}
 
 	public function updateVideoTexture(texture:WebGLTexture, video:Dynamic, invertY:Bool) {
-		/*GL.bindTexture(GL.TEXTURE_2D, texture);
-		GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 0 :1); // Video are upside down by default
+        #if (html5 && js)
 
-		// Scale the video if it is a NPOT using the current working canvas
-		if (video.videoWidth !== texture._width || video.videoHeight !== texture._height) {
-			if (!texture._workingCanvas) {
-				texture._workingCanvas = document.createElement("canvas");
-				texture._workingContext = texture._workingCanvas.getContext("2d");
-				texture._workingCanvas.width = texture._width;
-				texture._workingCanvas.height = texture._height;
-			}
+        if (texture._isDisabled)
+            return;
 
-			texture._workingContext.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, texture._width, texture._height);
+        GL.bindTexture(GL.TEXTURE_2D, texture.data);
+        GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 0 : 1); // Video are upside down by default
 
-			GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, GL.RGBA, GL.UNSIGNED_BYTE, texture._workingCanvas);
-		} else {
-			GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, GL.RGBA, GL.UNSIGNED_BYTE, video);
-		}
+        try {
+            // Testing video texture support
+            if(_videoTextureSupported == null)
+            {
+                untyped GL.context.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, GL.RGBA, GL.UNSIGNED_BYTE, video);
+                if(GL.getError() != 0)
+                    _videoTextureSupported = false;
+                else
+                    _videoTextureSupported = true;
+            }
 
-		if (texture.generateMipMaps) {
-			GL.generateMipmap(GL.TEXTURE_2D);
-		}
+            // Copy video through the current working canvas if video texture is not supported
+            if(!_videoTextureSupported) {
+                if(texture._workingCanvas == null) {
+                    texture._workingCanvas = cast(Browser.document.createElement("canvas"), js.html.CanvasElement);
+                    texture._workingContext = texture._workingCanvas.getContext("2d");
+                    texture._workingCanvas.width = texture._width;
+                    texture._workingCanvas.height = texture._height;
+                }
 
-		GL.bindTexture(GL.TEXTURE_2D, null);
-		this._activeTexturesCache = [];
-		texture.isReady = true;*/
+                texture._workingContext.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, texture._width, texture._height);
+
+                untyped GL.context.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, GL.RGBA, GL.UNSIGNED_BYTE, texture._workingCanvas);
+            }
+            else {
+                untyped GL.context.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, GL.RGBA, GL.UNSIGNED_BYTE, cast(video, js.html.VideoElement));
+            }
+
+            if(texture.generateMipMaps) {
+                GL.generateMipmap(GL.TEXTURE_2D);
+            }
+
+            GL.bindTexture(GL.TEXTURE_2D, null);
+            resetTextureCache();
+            texture.isReady = true;
+        }
+        catch(e:Dynamic) {
+            // Something unexpected
+            // Let's disable the texture
+            texture._isDisabled = true;
+        }
+
+        #end
 	}
 
 	public function createRenderTargetTexture(size:Dynamic, options:Dynamic):WebGLTexture {
@@ -1925,10 +1954,11 @@ import nme.display.OpenGLView;
 		}
 		
 		// Video
+        var alreadyActivated = false;
 		if (Std.is(texture, VideoTexture)) {
-			/*if (cast(texture, VideoTexture).update()) {
-				this._activeTexturesCache[channel] = null;
-			}*/
+            GL.activeTexture(getGLTexture(channel));
+            alreadyActivated = true;
+            cast(texture, VideoTexture).update();
 		} 
 		else if (texture.delayLoadState == Engine.DELAYLOADSTATE_NOTLOADED) { // Delay loading
 			texture.delayLoad();
@@ -1941,8 +1971,11 @@ import nme.display.OpenGLView;
 		this._activeTexturesCache[channel] = texture;
 		
 		var internalTexture = texture.getInternalTexture();
-		GL.activeTexture(getGLTexture(channel));
-		
+
+        if(!alreadyActivated) {
+            GL.activeTexture(getGLTexture(channel));
+        }
+
 		if (internalTexture.isCube) {
 			GL.bindTexture(GL.TEXTURE_CUBE_MAP, internalTexture.data);
 			
