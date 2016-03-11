@@ -75,5 +75,9 @@ import com.babylonhx.Scene;
         super(null, scene, !generateMipMaps, invertY);
 	}
 
+    public function update():Bool {
+        return false;
+    }
+
 	#end
 }
