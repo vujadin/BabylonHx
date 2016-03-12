@@ -93,8 +93,8 @@ import com.babylonhx.utils.GL;
 		var desiredWidth:Int = Std.int((sourceTexture != null ? sourceTexture._width : this._engine.getRenderWidth()) * this._renderRatio);
         var desiredHeight:Int = Std.int((sourceTexture != null ? sourceTexture._height : this._engine.getRenderHeight()) * this._renderRatio);
         
-		desiredWidth = this._renderRatio.width != null ? this._renderRatio.width : Tools.GetExponentOfTwo(Std.int(desiredWidth), maxSize);
-		desiredHeight = this._renderRatio.height != null ? this._renderRatio.height : Tools.GetExponentOfTwo(Std.int(desiredHeight), maxSize);
+		desiredWidth = this._renderRatio.width != null ? this._renderRatio.width : com.babylonhx.math.Tools.GetExponentOfTwo(Std.int(desiredWidth), maxSize);
+		desiredHeight = this._renderRatio.height != null ? this._renderRatio.height : com.babylonhx.math.Tools.GetExponentOfTwo(Std.int(desiredHeight), maxSize);
 		
 		if (this.width != desiredWidth || this.height != desiredHeight) {
 			if (this._textures.length > 0) {

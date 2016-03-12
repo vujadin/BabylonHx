@@ -1,7 +1,7 @@
 package com.babylonhx.lensflare;
 
 import com.babylonhx.materials.Effect;
-import com.babylonhx.math.Ray;
+import com.babylonhx.culling.Ray;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Viewport;
@@ -145,7 +145,7 @@ import com.babylonhx.mesh.Mesh;
 		
 		var engine = this._scene.getEngine();
 		var viewport = this._scene.activeCamera.viewport;
-		var globalViewport = viewport.toScreenGlobal(engine);
+		var globalViewport = viewport.toGlobal(engine.getRenderWidth(true), engine.getRenderHeight(true));
 		
 		// Position
 		if (!this.computeEffectivePosition(globalViewport)) {

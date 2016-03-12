@@ -298,7 +298,7 @@ import com.babylonhx.tools.Tools;
 		this._grainTexture = new DynamicTexture("LensNoiseTexture", { width: size, height: size }, this._scene, false, Texture.BILINEAR_SAMPLINGMODE);
 		this._grainTexture.wrapU = Texture.WRAP_ADDRESSMODE;
 		this._grainTexture.wrapV = Texture.WRAP_ADDRESSMODE;
-				
+		
 		var rand = function(min:Float, max:Float):Float {
 			return Math.random() * (max - min) + min;
 		};

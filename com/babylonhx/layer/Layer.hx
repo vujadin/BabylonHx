@@ -21,7 +21,10 @@ import com.babylonhx.utils.GL;
 	public var scale:Vector2 = new Vector2(1, 1);
     public var offset:Vector2 = new Vector2(0, 0);
 	public var onDispose:Void->Void;
+	public var onBeforeRender:Void->Void;
+	public var onAfterRender:Void->Void;
 	public var alphaBlendingMode:Int = Engine.ALPHA_COMBINE;
+	public var alphaTest:Bool = false;
 	
 	public var vertices:Array<Float> = [];
 	public var indices:Array<Int> = [];
@@ -32,6 +35,8 @@ import com.babylonhx.utils.GL;
 	private var _vertexBuffer:WebGLBuffer;
 	private var _indexBuffer:WebGLBuffer;
 	private var _effect:Effect;
+	private var _alphaTestEffect:Effect;
+	
 
 	public function new(name:String, imgUrl:String, scene:Scene, isBackground:Bool = true, ?color:Color4) {
 		this.name = name;
@@ -71,38 +76,58 @@ import com.babylonhx.utils.GL;
 			["position"],
 			["textureMatrix", "color", "scale", "offset"],
 			["textureSampler"], "");
+			
+		this._alphaTestEffect = this._scene.getEngine().createEffect("layer",
+			["position"],
+			["textureMatrix", "color", "scale", "offset"],
+			["textureSampler"], "#define ALPHATEST");
 	}
 
 	public function render() {
+		var currentEffect = this.alphaTest ? this._alphaTestEffect : this._effect;
+		
 		// Check
-		if (!this._effect.isReady() || this.texture == null || !this.texture.isReady()) {
+		if (!currentEffect.isReady() || this.texture == null || !this.texture.isReady()) {
 			return;
 		}
-			
+		
 		var engine = this._scene.getEngine();
 		
+		if (this.onBeforeRender != null) {
+			this.onBeforeRender();
+		}
+		
 		// Render
-		engine.enableEffect(this._effect);
+		engine.enableEffect(currentEffect);
 		engine.setState(false);
 		
 		// Texture
-		this._effect.setTexture("textureSampler", this.texture);
-		this._effect.setMatrix("textureMatrix", this.texture.getTextureMatrix());
+		currentEffect.setTexture("textureSampler", this.texture);
+		currentEffect.setMatrix("textureMatrix", this.texture.getTextureMatrix());
 		
 		// Color
-		this._effect.setFloat4("color", this.color.r, this.color.g, this.color.b, this.color.a);
+		currentEffect.setFloat4("color", this.color.r, this.color.g, this.color.b, this.color.a);
 		
 		// Scale / offset
-        this._effect.setVector2("offset", this.offset);
-        this._effect.setVector2("scale", this.scale);
+        currentEffect.setVector2("offset", this.offset);
+        currentEffect.setVector2("scale", this.scale);
 		
 		// VBOs
-		engine.bindBuffers(this._vertexBuffer, this._indexBuffer, this._vertexDeclaration, this._vertexStrideSize, this._effect);
+		engine.bindBuffers(this._vertexBuffer, this._indexBuffer, this._vertexDeclaration, this._vertexStrideSize, currentEffect);
 		
 		// Draw order
-		engine.setAlphaMode(this.alphaBlendingMode);
-		engine.draw(true, 0, 6);
-		engine.setAlphaMode(Engine.ALPHA_DISABLE);
+		if (this._alphaTestEffect == null) {
+			engine.setAlphaMode(this.alphaBlendingMode);
+			engine.draw(true, 0, 6);
+			engine.setAlphaMode(Engine.ALPHA_DISABLE);
+		}
+		else {
+			engine.draw(true, 0, 6);
+		}
+		
+		if (this.onAfterRender != null) {
+			this.onAfterRender();
+		}
 	}
 
 	public function dispose() {

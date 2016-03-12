@@ -98,7 +98,8 @@ import com.babylonhx.tools.SmartArray;
 			scene = camera.getScene();
 		} 
 		
-		this._viewPort = new Viewport(0, 0, 1, 1).toGlobal(scene.getEngine());
+		var engine = scene.getEngine();
+		this._viewPort = new Viewport(0, 0, 1, 1).toGlobal(engine.getRenderWidth(), engine.getRenderHeight());
 		
 		// Configure mesh
 		this.mesh = (mesh != null) ? mesh : VolumetricLightScatteringPostProcess.CreateDefaultMesh("VolumetricLightScatteringMesh", scene);
