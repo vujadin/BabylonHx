@@ -79,8 +79,6 @@ class HDRCubeTexture extends BaseTexture {
 	
 	private function loadTexture() {
 		var callback = function(buffer:Dynamic):Array<ArrayBufferView> {
-			trace(buffer);
-			trace("buffer.length: " + buffer.length);
 			// Extract the raw linear data.
 			var data = HDRTools.GetCubeMapTextureData(buffer, this._size);
 			

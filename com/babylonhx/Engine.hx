@@ -1494,7 +1494,6 @@ import nme.display.OpenGLView;
 		
 		GL.bindTexture(GL.TEXTURE_2D, texture.data);
 		//GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 1 : 0);           
-		//GL.texImage2D(GL.TEXTURE_2D, 0, internalFormat, texture._width, texture._height, 0, internalFormat, GL.UNSIGNED_BYTE, data);
 		
 		if (compression != "") {
             GL.compressedTexImage2D(GL.TEXTURE_2D, 0, Reflect.getProperty(this.getCaps().s3tc, compression), texture._width, texture._height, 0, data);
@@ -1513,7 +1512,7 @@ import nme.display.OpenGLView;
 
 	public function createDynamicTexture(width:Int, height:Int, generateMipMaps:Bool, samplingMode:Int, forceExponantOfTwo:Bool = true):WebGLTexture {
 		var texture = new WebGLTexture("", GL.createTexture());
-
+		
         if(forceExponantOfTwo) {
 		    width = com.babylonhx.math.Tools.GetExponentOfTwo(width, this._caps.maxTextureSize);
 		    height = com.babylonhx.math.Tools.GetExponentOfTwo(height, this._caps.maxTextureSize);
@@ -1568,46 +1567,48 @@ import nme.display.OpenGLView;
 	}
 
 	public function updateVideoTexture(texture:WebGLTexture, video:Dynamic, invertY:Bool) {
-        #if (html5 && js)
-
-        if (texture._isDisabled)
+        #if (html5 || js || web || purejs)
+		
+        if (texture._isDisabled) {
             return;
-
+		}
+		
         GL.bindTexture(GL.TEXTURE_2D, texture.data);
         GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 0 : 1); // Video are upside down by default
-
+		
         try {
             // Testing video texture support
-            if(_videoTextureSupported == null)
-            {
+            if(_videoTextureSupported == null) {
                 untyped GL.context.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, GL.RGBA, GL.UNSIGNED_BYTE, video);
-                if(GL.getError() != 0)
+                if(GL.getError() != 0) {
                     _videoTextureSupported = false;
-                else
+				}
+                else {
                     _videoTextureSupported = true;
+				}
             }
-
+			
             // Copy video through the current working canvas if video texture is not supported
-            if(!_videoTextureSupported) {
+            if (!_videoTextureSupported) {
                 if(texture._workingCanvas == null) {
                     texture._workingCanvas = cast(Browser.document.createElement("canvas"), js.html.CanvasElement);
                     texture._workingContext = texture._workingCanvas.getContext("2d");
                     texture._workingCanvas.width = texture._width;
                     texture._workingCanvas.height = texture._height;
                 }
-
+				
                 texture._workingContext.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, texture._width, texture._height);
-
+				
                 untyped GL.context.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, GL.RGBA, GL.UNSIGNED_BYTE, texture._workingCanvas);
             }
             else {
                 untyped GL.context.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, GL.RGBA, GL.UNSIGNED_BYTE, cast(video, js.html.VideoElement));
             }
-
+			
             if(texture.generateMipMaps) {
                 GL.generateMipmap(GL.TEXTURE_2D);
             }
-
+			
             GL.bindTexture(GL.TEXTURE_2D, null);
             resetTextureCache();
             texture.isReady = true;
@@ -1617,7 +1618,7 @@ import nme.display.OpenGLView;
             // Let's disable the texture
             texture._isDisabled = true;
         }
-
+		
         #end
 	}
 
