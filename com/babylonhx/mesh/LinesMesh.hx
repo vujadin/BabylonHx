@@ -5,7 +5,7 @@ import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.ShaderMaterial;
 import com.babylonhx.materials.Material;
 import com.babylonhx.math.Color3;
-import com.babylonhx.math.Ray;
+import com.babylonhx.culling.Ray;
 
 /**
  * ...

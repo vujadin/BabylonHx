@@ -16,8 +16,9 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
 import com.babylonhx.math.Axis;
 import com.babylonhx.math.Quaternion;
-import com.babylonhx.math.Ray;
+import com.babylonhx.culling.Ray;
 import com.babylonhx.math.Space;
+import com.babylonhx.math.Tools;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Color4;
@@ -47,10 +48,14 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	// Properties
 	public var definedFacingForward:Bool = true; // orientation for POV movement & rotation
 	public var position:Vector3 = new Vector3(0, 0, 0);
-	public var rotation:Vector3 = new Vector3(0, 0, 0);
-	public var rotationQuaternion:Quaternion;
-	public var scaling:Vector3 = new Vector3(1, 1, 1);
+	public var rotation(get, set):Vector3;
+	public var rotationQuaternion(get, set):Quaternion;
+	public var scaling(get, set):Vector3;
 	public var billboardMode:Int = AbstractMesh.BILLBOARDMODE_NONE;
+	
+	private var _rotation:Vector3 = new Vector3(0, 0, 0);
+	private var _scaling:Vector3 = new Vector3(1, 1, 1);
+	private var _rotationQuaternion:Quaternion;
 	
 	private var _visibility:Float = 1.0;
 	public var visibility(get, set):Float;
@@ -253,6 +258,42 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		untyped __js__("Object.defineProperty(this, 'absolutePosition', { get: this.get_absolutePosition })");
 		untyped __js__("Object.defineProperty(this, 'isWorldMatrixFrozen', { get: this.get_isWorldMatrixFrozen })");
 		#end
+	}
+	
+	/**
+	 * Getting the rotation object. 
+	 * If rotation quaternion is set, this vector will (almost always) be the Zero vector!
+	 */
+	private function get_rotation():Vector3 {
+		return this._rotation;
+	}
+	private function set_rotation(newRotation:Vector3):Vector3 {
+		return this._rotation = newRotation;
+	}
+
+	private function get_scaling():Vector3 {
+		return this._scaling;
+	}
+	private function set_scaling(newScaling:Vector3):Vector3 {
+		this._scaling = newScaling;
+		/*if (this.physicsImpostor != null) {
+			this.physicsImpostor.forceUpdate();
+		}*/
+		
+		return newScaling;
+	}
+
+	private function get_rotationQuaternion():Quaternion {
+		return this._rotationQuaternion;
+	} 
+	private function set_rotationQuaternion(?quaternion:Quaternion):Quaternion {
+        this._rotationQuaternion = quaternion;
+        //reset the rotation vector. 
+		if (quaternion != null && this.rotation.length() > 0) {
+			this.rotation.copyFromFloats(0, 0, 0);
+		}
+		
+		return quaternion;
 	}
 
 	// Methods
@@ -524,17 +565,16 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		if (!this._cache.position.equals(this.position)) {
 			return false;
 		}
-			
+		
+		if (!this._cache.rotation.equals(this.rotation)) {
+			return false;
+		}
+		
 		if (this.rotationQuaternion != null) {
 			if (!this._cache.rotationQuaternion.equals(this.rotationQuaternion)) {
 				return false;
 			}
 		} 
-		else {
-			if (!this._cache.rotation.equals(this.rotation)) {
-				return false;
-			}
-		}
 		
 		if (!this._cache.scaling.equals(this.scaling)) {
 			return false;
@@ -644,7 +684,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			
 			if ((this.billboardMode & AbstractMesh.BILLBOARDMODE_ALL) != AbstractMesh.BILLBOARDMODE_ALL) {
 				if (this.billboardMode & AbstractMesh.BILLBOARDMODE_X != 0) {
-					zero.x = localPosition.x + Engine.Epsilon;
+					zero.x = localPosition.x + Tools.Epsilon;
 				}
 				if (this.billboardMode & AbstractMesh.BILLBOARDMODE_Y != 0) {
 					zero.y = localPosition.y + 0.001;

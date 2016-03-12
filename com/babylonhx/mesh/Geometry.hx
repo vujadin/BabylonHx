@@ -138,8 +138,6 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		
 		if (kind == VertexBuffer.PositionKind) {
 			
-			var extend:BabylonMinMax = null;
-			
 			var stride = vertexBuffer.getStrideSize();
 			this._totalVertices = cast data.length / stride;
 			
@@ -158,6 +156,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 					
 					for (subIndex in 0...mesh.subMeshes.length) {
                         var subMesh = mesh.subMeshes[subIndex];
+						
                         subMesh.refreshBoundingInfo();
                     }
 				}
@@ -396,6 +395,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			if (onLoaded != null) {
 				onLoaded();
 			}
+			
 			return;
 		}
 		

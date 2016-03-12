@@ -78,7 +78,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
     public static inline var CAP_ALL:Int = 3;
 	
 	// Members
-	public var delayLoadState = Engine.DELAYLOADSTATE_NONE;
+	public var delayLoadState:Int = Engine.DELAYLOADSTATE_NONE;
 	public var instances:Array<InstancedMesh> = [];
 	public var delayLoadingFile:String;
 	public var _binaryInfo:Dynamic;
@@ -87,7 +87,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	public var onBeforeDraw:Void->Void;
 
 	// Private
-	public var _geometry:Geometry;
+	@:allow(com.babylonhx.mesh.Geometry) 
+	private var _geometry:Geometry;
+	
 	private var _onBeforeRenderCallbacks:Array<AbstractMesh->Void> = [];
 	private var _onAfterRenderCallbacks:Array<AbstractMesh->Void> = [];
 	public var _delayInfo:Array<String>; //ANY
@@ -184,64 +186,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 	}
 	
-	static private function _deepCopy(source:Mesh, dest:Mesh) {
-		dest.__smartArrayFlags = source.__smartArrayFlags.copy();
-		dest._LODLevels = source._LODLevels.copy();
-		dest._absolutePosition = source._absolutePosition.clone();
-		dest._batchCache = source._batchCache;
-		dest._boundingInfo = source._boundingInfo;
-		dest._cache = source._cache;
-		dest._checkCollisions = source._checkCollisions;
-		dest._childrenFlag = source._childrenFlag;
-		dest._collider = source._collider;
-		dest._collisionsScalingMatrix = source._collisionsScalingMatrix.clone();
-		dest._collisionsTransformMatrix = source._collisionsTransformMatrix.clone();
-		dest._diffPositionForCollisions = source._diffPositionForCollisions.clone();
-		dest._geometry = source._geometry;
-		dest._instancesBufferSize = source._instancesBufferSize;
-		dest._intersectionsInProgress = source._intersectionsInProgress.copy();
-		dest._isBlocked	= source._isBlocked;
-		dest._isDirty = source._isDirty;
-		dest._isDisposed = source._isDisposed;
-		dest._isEnabled = source._isEnabled;
-		dest._isPickable = source._isPickable;
-		dest._isReady = source._isReady;
-		dest._localBillboard = source._localBillboard.clone();
-		dest._localPivotScaling = source._localPivotScaling.clone();
-		dest._localRotation = source._localRotation.clone();
-		dest._localScaling = source._localScaling.clone();
-		dest._localTranslation = source._localTranslation.clone();
-		dest._localWorld = source._localWorld;
-		dest._masterMesh = source._masterMesh;		// ??
-		dest._newPositionForCollisions = source._newPositionForCollisions.clone();
-		dest._oldPositionForCollisions = source._oldPositionForCollisions.clone();
-		dest._onAfterRenderCallbacks = source._onAfterRenderCallbacks;
-		dest._onAfterWorldMatrixUpdate = source._onAfterWorldMatrixUpdate;
-		dest._onBeforeRenderCallbacks = source._onBeforeRenderCallbacks;
-		dest._parentRenderId = source._parentRenderId;
-		dest._physicImpostor = source._physicImpostor;
-		dest._physicRestitution = source._physicRestitution;
-		dest._physicsFriction = source._physicsFriction;
-		dest._physicsMass = source._physicsMass;
-		dest._pivotMatrix = source._pivotMatrix.clone();
-		if (source._positions != null) {
-			dest._positions = source._positions.copy();
-		}
-		dest._preActivateId = source._preActivateId;
-		dest._receiveShadows = source._receiveShadows;
-		dest._renderId = source._renderId;
-		dest._renderIdForInstances = source._renderIdForInstances.copy();
-		dest._rotateYByPI = source._rotateYByPI.clone();
-		dest._scene = source._scene;
-		dest._shouldGenerateFlatShading = source._shouldGenerateFlatShading;
-		dest._submeshesOctree = source._submeshesOctree;
-		dest._visibility = source._visibility;
-		dest._visibleInstances = source._visibleInstances;
-		dest._waitingActions = source._waitingActions;
-		dest._waitingParentId = source._waitingParentId;
-		dest._worldMatricesInstancesBuffer = source._worldMatricesInstancesBuffer;
-		dest._worldMatrix = source._worldMatrix.clone();				
-		dest.definedFacingForward = source.definedFacingForward;
+	static private function _deepCopy(source:Mesh, dest:Mesh) {	
 		dest.position = source.position.clone();
 		dest.rotation = source.rotation.clone();
 		if (source.rotationQuaternion != null) {
@@ -272,7 +217,33 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		dest.useOctreeForCollisions = source.useOctreeForCollisions;
 		dest.layerMask = source.layerMask;
 		dest.ellipsoid = source.ellipsoid.clone();
-		dest.ellipsoidOffset = source.ellipsoidOffset.clone();
+		dest.ellipsoidOffset = source.ellipsoidOffset.clone();		
+		dest.state = source.state;
+		dest.definedFacingForward = source.definedFacingForward;
+		dest.animations = source.animations.copy();
+		dest.visibility = source.visibility;
+		dest.isPickable = source.isPickable;
+		dest.receiveShadows = source.receiveShadows;
+		dest.computeBonesUsingShaders = source.computeBonesUsingShaders;
+		dest.scalingDeterminant = source.scalingDeterminant;
+		dest.numBoneInfluencers = source.numBoneInfluencers;		
+		dest.alwaysSelectAsActiveMesh = source.alwaysSelectAsActiveMesh;
+		dest.edgesWidth = source.edgesWidth;
+		dest.edgesColor = source.edgesColor.clone();
+		dest.delayLoadState = source.delayLoadState;
+		dest.sideOrientation = source.sideOrientation;
+		dest.checkCollisions = source.checkCollisions;
+		
+		dest.__smartArrayFlags = source.__smartArrayFlags.copy();
+		
+		/*
+		dest.isBlocked = source.isBlocked;		
+		dest.areNormalsFrozen = source.areNormalsFrozen;
+		dest.useBones = source.useBones;
+		dest.worldMatrixFromCache = source.worldMatrixFromCache.clone();
+		dest.absolutePosition = source.absolutePosition.clone();
+		dest.isWorldMatrixFrozen = source.isWorldMatrixFrozen;		
+		*/	
 	}
 
 	// Methods
@@ -282,7 +253,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	}
 	
 	private function _sortLODLevels() {
-		this._LODLevels.sort(function(a:MeshLODLevel, b:MeshLODLevel) {
+		this._LODLevels.sort(function(a:MeshLODLevel, b:MeshLODLevel):Int {
 			if (a.distance < b.distance) {
 				return 1;
 			}
@@ -347,6 +318,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 		
 		this._sortLODLevels();
+		
 		return this;
 	}
 
@@ -361,6 +333,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			if (this.onLODLevelSelection != null) {
                 this.onLODLevelSelection(distanceToCamera, this, this._LODLevels[this._LODLevels.length - 1].mesh);
             }
+			
 			return this;
 		}
 		
@@ -376,6 +349,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 				if (this.onLODLevelSelection != null) {
                     this.onLODLevelSelection(distanceToCamera, this, level.mesh);
                 }
+				
 				return level.mesh;
 			}
 		}
@@ -383,6 +357,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		if (this.onLODLevelSelection != null) {
             this.onLODLevelSelection(distanceToCamera, this, this);
         }
+		
 		return this;
 	}
 	
@@ -395,6 +370,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		if (this._geometry == null) {
 			return 0;
 		}
+		
 		return this._geometry.getTotalVertices();
 	}
 
@@ -402,6 +378,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		if (this._geometry == null) {
 			return null;
 		}
+		
 		return this._geometry.getVerticesData(kind, copyWhenShared);
 	}
 
@@ -409,6 +386,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		if (this._geometry == null) {
 			return null;
 		}
+		
 		return this._geometry.getVertexBuffer(kind);
 	}
 
@@ -417,8 +395,10 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			if (this._delayInfo != null) {
 				return this._delayInfo.indexOf(kind) != -1;
 			}
+			
 			return false;
 		}
+		
 		return this._geometry.isVerticesDataPresent(kind);
 	}
 
@@ -430,8 +410,10 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 					result.push(kind);
 				}
 			}
+			
 			return result;
 		}
+		
 		return this._geometry.getVerticesDataKinds();
 	}
 
@@ -439,6 +421,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		if (this._geometry == null) {
 			return 0;
 		}
+		
 		return this._geometry.getTotalIndices();
 	}
 
@@ -446,6 +429,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		if (this._geometry == null) {
 			return [];
 		}
+		
 		return this._geometry.getIndices(copyWhenShared);
 	}
 
@@ -471,6 +455,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	
 	inline private function set_sideOrientation(value:Int):Int {
 		this._sideOrientation = value;
+		
 		return value;
 	}
 	
@@ -518,6 +503,10 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	}
 
 	inline public function refreshBoundingInfo() {
+		if (this._boundingInfo.isLocked) {
+			return;
+		}
+		
 		var data = this.getVerticesData(VertexBuffer.PositionKind);
 		
 		if (data != null) {
@@ -541,6 +530,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 		
 		this.releaseSubMeshes();
+		
 		return new SubMesh(0, 0, totalVertices, 0, this.getTotalIndices(), this);
 	}
 
@@ -666,9 +656,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 					
 				case Material.TriangleFillMode:
 					indexBufferToBind = this._geometry.getIndexBuffer();
-									
-				default:
-					indexBufferToBind = this._geometry.getIndexBuffer();
+					
+				//default:
+				//	indexBufferToBind = this._geometry.getIndexBuffer();
 			}
 		}
 		
@@ -728,6 +718,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 
 	public function unregisterAfterRender(func:AbstractMesh->Void) {
 		var index = this._onAfterRenderCallbacks.indexOf(func);
+		
 		if (index > -1) {
 			this._onAfterRenderCallbacks.splice(index, 1);
 		}
@@ -753,6 +744,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			if (this._batchCache.visibleInstances[subMeshId] != null && this._batchCache.visibleInstances[subMeshId].length > 0) {
 				if (this._renderIdForInstances[subMeshId] == currentRenderId) {
 					this._batchCache.mustReturn = true;
+					
 					return this._batchCache;
 				}
 				
@@ -854,7 +846,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 
 	public function render(subMesh:SubMesh, enableAlphaMode:Bool) {
 		var scene = this.getScene();
-				
+		
 		// Managing instances
 		var batch = this._getInstancesRenderList(subMesh._id);
 		
@@ -958,18 +950,6 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			var particleSystem = this.getScene().particleSystems[index];
 			if (descendants.indexOf(particleSystem.emitter) != -1) {
 				results.push(particleSystem);
-			}
-		}
-		
-		return results;
-	}
-
-	inline public function getChildren():Array<Node> {
-		var results:Array<Node> = [];
-		for (index in 0...this.getScene().meshes.length) {
-			var mesh = this.getScene().meshes[index];
-			if (mesh.parent == this) {
-				results.push(mesh);
 			}
 		}
 		
@@ -1111,9 +1091,10 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	}
 
 	override public function _generatePointsArray():Bool {
-		if (this._positions != null)
+		if (this._positions != null) {
 			return true;
-			
+		}
+		
 		this._positions = [];
 		
 		var data = this.getVerticesData(VertexBuffer.PositionKind);
@@ -1968,7 +1949,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return meshSubclass;
 	}
 	
-	public static function ParseMesh(parsedMesh:Dynamic, scene:Scene, rootUrl:String):Mesh {
+	public static function Parse(parsedMesh:Dynamic, scene:Scene, rootUrl:String):Mesh {
         var mesh = new Mesh(parsedMesh.name, scene);
         mesh.id = parsedMesh.id;
 		
