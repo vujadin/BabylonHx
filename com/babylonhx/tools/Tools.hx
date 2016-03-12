@@ -513,7 +513,12 @@ typedef Assets = nme.Assets;
 					case "img":
 						#if openfl
 						var img = Assets.getBitmapData(path);
+						#if openfl_legacy
 						var image = new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height);
+						#else
+						var image = new Image(img.image.data, img.width, img.height);
+						#end
+
 						if (callbackFn != null) {
 							callbackFn(image);
 						}
@@ -655,24 +660,29 @@ typedef Assets = nme.Assets;
 		#if (openfl && !nme)
 		if (Assets.exists(url)) {
 			var img = Assets.getBitmapData(url); 
-			onload(new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height));			
+
+			#if openfl_legacy
+			onload(new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height));		
+			#else
+			onload(new Image(img.image.data, img.width, img.height));	
+			#end
 		} 
 		else {
 			trace("Image '" + url + "' doesn't exist!");
 		}
 		#elseif lime
 		if (Assets.exists(url)) {
-			/*#if (js || html5)
+			#if (js || html5)
 			var future = Assets.loadImage(url);
 			future.onComplete(function(img:lime.graphics.Image):Void {
 				var image = new Image(img.data, img.width, img.height);
 				onload(image);
 			});		
-			#else*/
+			#else
 			var img = Assets.getImage(url);
 			var image = new Image(img.data, img.width, img.height);
 			onload(image);
-			//#end
+			#end
 		} 
 		else {
 			trace("Image '" + url + "' doesn't exist!");
