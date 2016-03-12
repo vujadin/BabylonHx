@@ -3,7 +3,7 @@ package com.babylonhx.cameras;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.postprocess.AnaglyphPostProcess;
 import com.babylonhx.postprocess.PassPostProcess;
-import com.babylonhx.tools.Tools;
+import com.babylonhx.math.Tools;
 
 /**
  * ...

@@ -3,7 +3,9 @@ package com.babylonhx.culling;
 import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
+import com.babylonhx.math.Tools;
 import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Tmp;
 import haxe.ds.Vector;
 
 /**
@@ -27,7 +29,7 @@ import haxe.ds.Vector;
 
 	private var _worldMatrix:Matrix;
 	
-	public var __smartArrayFlags:Array<Int>;
+	public var __smartArrayFlags:Array<Int> = [];
 	
 
 	public function new(minimum:Vector3, maximum:Vector3) {
@@ -87,23 +89,31 @@ import haxe.ds.Vector;
 		Vector3.FromFloatsToRef(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, this.minimumWorld);
 		Vector3.FromFloatsToRef(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, this.maximumWorld);
 		
+		var vx:Float = 0;
+		var vy:Float = 0;
+		var vz:Float = 0;
+		
 		for (index in 0...this.vectors.length) {
 			v_update = this.vectorsWorld[index];
 			Vector3.TransformCoordinatesToRef(this.vectors[index], world, v_update);
 			
-			if (v_update.x < this.minimumWorld.x)
-				this.minimumWorld.x = v_update.x;
-			if (v_update.y < this.minimumWorld.y)
-				this.minimumWorld.y = v_update.y;
-			if (v_update.z < this.minimumWorld.z)
-				this.minimumWorld.z = v_update.z;
+			vx = v_update.x;
+			vy = v_update.y;
+			vz = v_update.z;
+			
+			if (vx < this.minimumWorld.x)
+				this.minimumWorld.x = vx;
+			if (vy < this.minimumWorld.y)
+				this.minimumWorld.y = vy;
+			if (vz < this.minimumWorld.z)
+				this.minimumWorld.z = vz;
 				
-			if (v_update.x > this.maximumWorld.x)
-				this.maximumWorld.x = v_update.x;
-			if (v_update.y > this.maximumWorld.y)
-				this.maximumWorld.y = v_update.y;
-			if (v_update.z > this.maximumWorld.z)
-				this.maximumWorld.z = v_update.z;
+			if (vx > this.maximumWorld.x)
+				this.maximumWorld.x = vx;
+			if (vy > this.maximumWorld.y)
+				this.maximumWorld.y = vy;
+			if (vz > this.maximumWorld.z)
+				this.maximumWorld.z = vz;
 		}
 		
 		// OBB
@@ -126,7 +136,7 @@ import haxe.ds.Vector;
 	}
 
 	public function intersectsPoint(point:Vector3):Bool {
-		var delta = -Engine.Epsilon;
+		var delta = -Tools.Epsilon;
 		
 		if (this.maximumWorld.x - point.x < delta || delta > point.x - this.minimumWorld.x)
 			return false;
@@ -171,10 +181,11 @@ import haxe.ds.Vector;
 		return true;
 	}
 
-	static var IntersectsSphere_vector:Vector3 = new Vector3();
 	inline public static function IntersectsSphere(minPoint:Vector3, maxPoint:Vector3, sphereCenter:Vector3, sphereRadius:Float):Bool {
-		IntersectsSphere_vector = Vector3.Clamp(sphereCenter, minPoint, maxPoint);
-		var num = Vector3.DistanceSquared(sphereCenter, IntersectsSphere_vector);
+		Tmp.vector3[0] = Vector3.Clamp(sphereCenter, minPoint, maxPoint);
+		
+		var num = Vector3.DistanceSquared(sphereCenter, Tmp.vector3[0]);
+		
 		return (num <= (sphereRadius * sphereRadius));
 	}
 

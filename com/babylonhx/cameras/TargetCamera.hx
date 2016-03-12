@@ -3,7 +3,7 @@ package com.babylonhx.cameras;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
-import com.babylonhx.tools.Tools;
+import com.babylonhx.math.Tools;
 
 /**
 * ...
@@ -176,26 +176,26 @@ import com.babylonhx.tools.Tools;
 		
 		// Inertia
 		if (needToMove) {
-			if (Math.abs(this.cameraDirection.x) < Engine.Epsilon) {
+			if (Math.abs(this.cameraDirection.x) < Tools.Epsilon) {
 				this.cameraDirection.x = 0;
 			}
 			
-			if (Math.abs(this.cameraDirection.y) < Engine.Epsilon) {
+			if (Math.abs(this.cameraDirection.y) < Tools.Epsilon) {
 				this.cameraDirection.y = 0;
 			}
 			
-			if (Math.abs(this.cameraDirection.z) < Engine.Epsilon) {
+			if (Math.abs(this.cameraDirection.z) < Tools.Epsilon) {
 				this.cameraDirection.z = 0;
 			}
 			
 			this.cameraDirection.scaleInPlace(this.inertia);
 		}
 		if (needToRotate) {
-			if (Math.abs(this.cameraRotation.x) < Engine.Epsilon) {
+			if (Math.abs(this.cameraRotation.x) < Tools.Epsilon) {
 				this.cameraRotation.x = 0;
 			}
 			
-			if (Math.abs(this.cameraRotation.y) < Engine.Epsilon) {
+			if (Math.abs(this.cameraRotation.y) < Tools.Epsilon) {
 				this.cameraRotation.y = 0;
 			}
 			this.cameraRotation.scaleInPlace(this.inertia);

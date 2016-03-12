@@ -4,9 +4,10 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Viewport;
 import com.babylonhx.mesh.Mesh;
+import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.postprocess.PostProcess;
 import com.babylonhx.tools.SmartArray;
-import com.babylonhx.tools.Tools;
+import com.babylonhx.math.Tools;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.postprocess.AnaglyphPostProcess;
 import com.babylonhx.postprocess.StereoscopicInterlacePostProcess;
@@ -67,14 +68,14 @@ import com.babylonhx.animations.Animation;
 	public var _postProcesses:Array<PostProcess> = [];
 	public var _postProcessesTakenIndices:Array<Int> = [];
 	
-	public var _activeMeshes:SmartArray<Mesh> = new SmartArray<Mesh>(256);
+	public var _activeMeshes:SmartArray<AbstractMesh> = new SmartArray<AbstractMesh>(256);
 	
 	private var _globalPosition:Vector3 = Vector3.Zero();
 	public var globalPosition(get, never):Vector3;
 	
 	// VK: do not delete these !!!
 	public var _getViewMatrix:Void->Matrix;
-	public var getProjectionMatrix:Bool->Matrix;
+	public var getProjectionMatrix:Null<Bool>->Matrix;
 	
 	
 	#if purejs
@@ -96,7 +97,7 @@ import com.babylonhx.animations.Animation;
 		this._getViewMatrix = _getViewMatrix_default;
 		
 		#if purejs
-		eventPrefix = Tools.GetPointerPrefix();
+		eventPrefix = com.babylonhx.tools.Tools.GetPointerPrefix();
 		#end
 	}
 	
@@ -104,7 +105,7 @@ import com.babylonhx.animations.Animation;
 		return this._globalPosition;
 	}
 	
-	public function getActiveMeshes():SmartArray<Mesh> {
+	public function getActiveMeshes():SmartArray<AbstractMesh> {
         return this._activeMeshes;
     }
 
@@ -316,6 +317,7 @@ import com.babylonhx.animations.Animation;
 				this._postProcessesTakenIndices.splice(index, 1);
 			}
 		}
+		
 		return result;
 	}
 
@@ -387,7 +389,7 @@ import com.babylonhx.animations.Animation;
 				this.minZ = 0.1;
 			}
 			
-			Matrix.PerspectiveFovLHToRef(this.fov, engine.getAspectRatio(this), this.minZ, this.maxZ, this._projectionMatrix, this.fovMode);
+			Matrix.PerspectiveFovLHToRef(this.fov, engine.getAspectRatio(this), this.minZ, this.maxZ, this._projectionMatrix, this.fovMode == Camera.FOVMODE_VERTICAL_FIXED);
 			return this._projectionMatrix;
 		}
 		

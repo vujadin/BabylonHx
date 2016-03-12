@@ -79,6 +79,21 @@ import haxe.ds.Vector;
 		return this._ranges[name];
 	}
 	
+	/**
+	 *  Returns as an Array, all AnimationRanges defined on this skeleton
+	 */
+	public function getAnimationRanges():Array<AnimationRange> {
+		var animationRanges:Array<AnimationRange> = [];
+		var name:String;
+		var i:Int = 0;
+		for (name in this._ranges.keys()){
+			animationRanges[i] = this._ranges[name];
+			i++;
+		}
+		
+		return animationRanges;
+	}
+	
 	/** 
 	 *  note: This is not for a complete retargeting, only between very similar skeleton's with only possible bone length differences
 	 */
@@ -207,6 +222,8 @@ import haxe.ds.Vector;
 	public function clone(name:String, ?id:String):Skeleton {
 		var result = new Skeleton(name, id != null ? id : name, this._scene);
 		
+		result.needInitialSkinMatrix = this.needInitialSkinMatrix;
+		
 		for (index in 0...this.bones.length) {
 			var source = this.bones[index];
 			var parentBone = null;
@@ -221,6 +238,15 @@ import haxe.ds.Vector;
 				bone.animations.push(anim.clone());
 			}
 		}
+		
+		if (this._ranges != null) {
+			result._ranges = new Map();
+			for (name in this._ranges.keys()) {
+				result._ranges[name] = this._ranges[name].clone();
+			}
+		}
+		
+		this._isDirty = true;
 		
 		return result;
 	}

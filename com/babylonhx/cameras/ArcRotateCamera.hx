@@ -7,7 +7,7 @@ import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.Mesh;
-import com.babylonhx.tools.Tools;
+import com.babylonhx.math.Tools;
 import com.babylonhx.utils.Keycodes;
 
 
@@ -403,7 +403,7 @@ import com.babylonhx.utils.Keycodes;
 		Engine.app.addEventListener('mousewheel', this._wheel, false);
 		Engine.app.addEventListener('DOMMouseScroll', this._wheel, false);
 				
-		Tools.RegisterTopRootEvents([
+		com.babylonhx.tools.Tools.RegisterTopRootEvents([
 			{ name: "keydown", handler: this._onKeyDown },
 			{ name: "keyup", handler: this._onKeyUp },
 			{ name: "blur", handler: this._onLostFocus }
@@ -435,7 +435,7 @@ import com.babylonhx.utils.Keycodes;
 		Engine.app.removeEventListener('mousewheel', this._wheel, false);
 		Engine.app.removeEventListener('DOMMouseScroll', this._wheel, false);
 				
-		Tools.UnregisterTopRootEvents([
+		com.babylonhx.tools.Tools.UnregisterTopRootEvents([
 			{ name: "keydown", handler: this._onKeyDown },
 			{ name: "keyup", handler: this._onKeyUp },
 			{ name: "blur", handler: this._onLostFocus }
@@ -487,13 +487,13 @@ import com.babylonhx.utils.Keycodes;
 			this.inertialAlphaOffset *= this.inertia;
 			this.inertialBetaOffset *= this.inertia;
 			this.inertialRadiusOffset *= this.inertia;
-			if (Math.abs(this.inertialAlphaOffset) < Engine.Epsilon) {
+			if (Math.abs(this.inertialAlphaOffset) < Tools.Epsilon) {
 				this.inertialAlphaOffset = 0;
 			}
-			if (Math.abs(this.inertialBetaOffset) < Engine.Epsilon) {
+			if (Math.abs(this.inertialBetaOffset) < Tools.Epsilon) {
 				this.inertialBetaOffset = 0;
 			}
-			if (Math.abs(this.inertialRadiusOffset) < Engine.Epsilon) {
+			if (Math.abs(this.inertialRadiusOffset) < Tools.Epsilon) {
 				this.inertialRadiusOffset = 0;
 			}
 		}
@@ -508,10 +508,10 @@ import com.babylonhx.utils.Keycodes;
 			this.inertialPanningX *= this.inertia;
 			this.inertialPanningY *= this.inertia;
 			
-			if (Math.abs(this.inertialPanningX) < Engine.Epsilon) {
+			if (Math.abs(this.inertialPanningX) < Tools.Epsilon) {
 				this.inertialPanningX = 0;
 			}
-			if (Math.abs(this.inertialPanningY) < Engine.Epsilon) {
+			if (Math.abs(this.inertialPanningY) < Tools.Epsilon) {
 				this.inertialPanningY = 0;
 			}
 			

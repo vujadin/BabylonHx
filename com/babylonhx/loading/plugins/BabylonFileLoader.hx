@@ -180,7 +180,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
                             parseMaterialById(cast parsedMesh.materialId, parsedData, scene, rootUrl);
                         }
                     }
-										
+						
                     // Skeleton ?
                     if (parsedMesh.skeletonId > -1 && scene.skeletons != null) {
                         var skeletonAlreadyLoaded = (loadedSkeletonsIds.indexOf(parsedMesh.skeletonId) > -1);
@@ -198,7 +198,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
                         }
                     }
 					
-                    var mesh = Mesh.ParseMesh(parsedMesh, scene, rootUrl);
+                    var mesh = Mesh.Parse(parsedMesh, scene, rootUrl);
                     meshes.push(mesh);
                 }
             }
@@ -357,7 +357,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			var pdm:Array<Dynamic> = cast parsedData.meshes;
             for (index in 0...pdm.length) {
                 var parsedMesh = pdm[index];
-                Mesh.ParseMesh(parsedMesh, scene, rootUrl);
+                Mesh.Parse(parsedMesh, scene, rootUrl);
             }
 			
             // Cameras

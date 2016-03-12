@@ -1,7 +1,7 @@
 package com.babylonhx.culling.octrees;
 
 import com.babylonhx.math.Plane;
-import com.babylonhx.math.Ray;
+import com.babylonhx.culling.Ray;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.SubMesh;

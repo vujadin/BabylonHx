@@ -19,7 +19,7 @@ import com.babylonhx.mesh.AbstractMesh;
 	public static inline var OnPickUpTrigger:Int = 6;
 	public static inline var OnLongPressTrigger:Int = 7;
 	public static inline var OnPointerOverTrigger:Int = 8;
-	public static inline var OnPointerOutTrigger = 9;
+	public static inline var OnPointerOutTrigger:Int = 9;
 	public static inline var OnEveryFrameTrigger:Int = 10;
 	public static inline var OnIntersectionEnterTrigger:Int = 11;
 	public static inline var OnIntersectionExitTrigger:Int = 12;
@@ -29,7 +29,6 @@ import com.babylonhx.mesh.AbstractMesh;
 	
 	public static inline var DragMovementThreshold:Int = 10; // in pixels
     public static inline var LongPressDelay:Int = 500; 	  // in milliseconds
-
 	
 	// Members
 	public var actions:Array<Action> = [];
@@ -89,7 +88,11 @@ import com.babylonhx.mesh.AbstractMesh;
 		return false;
 	}
 
-	public var hasPointerTriggers(get, null):Bool;
+	/**
+	 * Does this action manager has pointer triggers
+	 * @return {boolean} whether or not it has pointer triggers
+	 */
+	public var hasPointerTriggers(get, never):Bool;
 	private function get_hasPointerTriggers():Bool {
 		for (index in 0...this.actions.length) {
 			var action = this.actions[index];
@@ -102,7 +105,11 @@ import com.babylonhx.mesh.AbstractMesh;
 		return false;
 	}
 
-	public var hasPickTriggers(get, null):Bool;
+	/**
+	 * Does this action manager has pick triggers
+	 * @return {boolean} whether or not it has pick triggers
+	 */
+	public var hasPickTriggers(get, never):Bool;
 	private function get_hasPickTriggers():Bool {
 		for (index in 0...this.actions.length) {
 			var action = this.actions[index];

@@ -245,6 +245,13 @@ import com.babylonhx.Node;
 			clone.setKeys(this._keys);
 		}
 		
+		if (this._ranges != null) {
+			clone._ranges = new Map();
+			for (name in this._ranges.keys()) {
+				clone._ranges[name] = this._ranges[name].clone();
+			}
+		}
+		
 		return clone;
 	}
 

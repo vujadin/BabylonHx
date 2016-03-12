@@ -2,6 +2,7 @@ package com.babylonhx.culling;
 
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
+import com.babylonhx.math.Tools;
 import com.babylonhx.math.Vector3;
 
 /**
@@ -31,9 +32,11 @@ import com.babylonhx.math.Vector3;
 
 	// Methods
 	inline public function _update(world:Matrix):Void {
+		var mmax = Math.max;
+		var mabs = Math.abs;
 		Vector3.TransformCoordinatesToRef(this.center, world, this.centerWorld);
 		Vector3.TransformNormalFromFloatsToRef(1.0, 1.0, 1.0, world, this._tempRadiusVector);
-		this.radiusWorld = Math.max(Math.max(Math.abs(this._tempRadiusVector.x), Math.abs(this._tempRadiusVector.y)), Math.abs(this._tempRadiusVector.z)) * this.radius;
+		this.radiusWorld = mmax(mmax(mabs(this._tempRadiusVector.x), mabs(this._tempRadiusVector.y)), mabs(this._tempRadiusVector.z)) * this.radius;
 	}
 
 	public function isInFrustum(frustumPlanes:Array<Plane>):Bool {
@@ -52,7 +55,7 @@ import com.babylonhx.math.Vector3;
 		
 		var distance = Math.sqrt((x * x) + (y * y) + (z * z));
 		
-		if (Math.abs(this.radiusWorld - distance) < Engine.Epsilon) {
+		if (Math.abs(this.radiusWorld - distance) < Tools.Epsilon) {
 			return false;
 		}
 			

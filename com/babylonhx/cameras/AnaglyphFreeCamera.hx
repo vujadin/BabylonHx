@@ -2,7 +2,7 @@ package com.babylonhx.cameras;
 
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
-import com.babylonhx.tools.Tools;
+import com.babylonhx.math.Tools;
 
 /**
  * ...
