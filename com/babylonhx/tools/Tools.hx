@@ -513,7 +513,12 @@ typedef Assets = nme.Assets;
 					case "img":
 						#if openfl
 						var img = Assets.getBitmapData(path);
+						#if openfl_legacy
 						var image = new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height);
+						#else
+						var image = new Image(img.image.data, img.width, img.height);
+						#end
+
 						if (callbackFn != null) {
 							callbackFn(image);
 						}
@@ -655,7 +660,12 @@ typedef Assets = nme.Assets;
 		#if (openfl && !nme)
 		if (Assets.exists(url)) {
 			var img = Assets.getBitmapData(url); 
-			onload(new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height));			
+
+			#if openfl_legacy
+			onload(new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height));		
+			#else
+			onload(new Image(img.image.data, img.width, img.height));	
+			#end
 		} 
 		else {
 			trace("Image '" + url + "' doesn't exist!");
