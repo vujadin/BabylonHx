@@ -662,17 +662,17 @@ typedef Assets = nme.Assets;
 		}
 		#elseif lime
 		if (Assets.exists(url)) {
-			/*#if (js || html5)
+			#if (js || html5)
 			var future = Assets.loadImage(url);
 			future.onComplete(function(img:lime.graphics.Image):Void {
 				var image = new Image(img.data, img.width, img.height);
 				onload(image);
 			});		
-			#else*/
+			#else
 			var img = Assets.getImage(url);
 			var image = new Image(img.data, img.width, img.height);
 			onload(image);
-			//#end
+			#end
 		} 
 		else {
 			trace("Image '" + url + "' doesn't exist!");
