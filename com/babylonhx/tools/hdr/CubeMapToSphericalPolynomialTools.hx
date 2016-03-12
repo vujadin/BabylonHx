@@ -20,12 +20,7 @@ class CubeMapToSphericalPolynomialTools {
         new FileFaceOrientation("down", new Vector3(0, -1, 0), new Vector3(1, 0, 0), new Vector3(0, 0, -1)), // -Y south
 		new FileFaceOrientation("front", new Vector3(0, 0, 1), new Vector3(1, 0, 0), new Vector3(0, -1, 0)), // +Z top
 		new FileFaceOrientation("back", new Vector3(0, 0, -1), new Vector3(-1, 0, 0), new Vector3(0, -1, 0))// -Z bottom
-	];
-	
-
-	public function new() {
-		
-	}
+	];	
 	
 	public static function ConvertCubeMapToSphericalPolynomial(cubeInfo:CubeMapInfo):SphericalPolynomial {
 		var sphericalHarmonics = new SphericalHarmonics();
