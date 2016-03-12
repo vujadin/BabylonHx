@@ -5,7 +5,7 @@ import com.babylonhx.materials.MultiMaterial;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Plane;
-import com.babylonhx.math.Ray;
+import com.babylonhx.culling.Ray;
 import com.babylonhx.collisions.Collider;
 import com.babylonhx.collisions.IntersectionInfo;
 import com.babylonhx.culling.BoundingInfo;
@@ -29,7 +29,7 @@ import com.babylonhx.tools.Tools;
 	public var _trianglePlanes:Array<Plane>;
 	public var _lastColliderTransformMatrix:Matrix;
 	
-	public var __smartArrayFlags:Array<Int>;
+	public var __smartArrayFlags:Array<Int> = [];
 
 	public var _renderId:Int = 0;
 	public var _alphaIndex:Float;

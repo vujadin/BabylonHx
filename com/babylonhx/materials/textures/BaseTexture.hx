@@ -30,7 +30,7 @@ import com.babylonhx.utils.GL;
 	public var anisotropicFilteringLevel:Int = 4;
 	public var _cachedAnisotropicFilteringLevel:Int;
 	
-	public var __smartArrayFlags:Array<Int>;
+	public var __smartArrayFlags:Array<Int> = [];
 
 	private var _scene:Scene;
 	public var _texture:WebGLTexture;

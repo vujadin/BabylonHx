@@ -13,7 +13,7 @@ import com.babylonhx.lights.IShadowLight;
  */
 class MaterialHelper {
 	
-	static var maxSimultaneousLights:Int = 4;
+	static public var maxSimultaneousLights:Int = 4;
 	
 
 	public static function PrepareDefinesForLights(scene:Scene, mesh:AbstractMesh, defines:MaterialDefines, LIGHT0:Int, SPECULARTERM:Int, SHADOW0:Int, SHADOWS:Int, SHADOWVSM0:Int, SHADOWPCF0:Int, lights:Map<String, Array<Int>>):Bool {		

@@ -22,7 +22,7 @@ import com.babylonhx.math.Matrix;
 	}
 
 	
-	public function new(rootUrl:String, scene:Scene, ?extensions:Array<String>, noMipmap:Bool = false, ?files:Array<String>) {	
+	public function new(rootUrl:String, scene:Scene, ?extensions:Array<String>, noMipmap:Bool = false, ?files:Array<String>) {				
 		super(scene);
 		
 		this.coordinatesMode = Texture.CUBIC_MODE;

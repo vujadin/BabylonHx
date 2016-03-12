@@ -11,11 +11,10 @@ class MaterialDefines {
 	public var defines:Vector<Bool>;
 	public var _keys:Vector<String>;
 	
+	var finalString:String = "";
+	
 
-	public function new() {
-		//defines = [];
-		//_keys = [];
-	}
+	public function new() {	}
 	
 	var ret:Bool = true;
 	inline public function isEqual(other:MaterialDefines):Bool {
@@ -42,16 +41,15 @@ class MaterialDefines {
 		}
 	}
 
-	var result:String = "";
 	public function toString():String {
-		result = "";
+		finalString = "";
 		for (i in 0...this.defines.length) {
 			if (this.defines[i] == true) {
-				result += "#define " + this._keys[i] + "\n";
+				finalString += "#define " + this._keys[i] + "\n";
 			}
 		}
 		
-		return result;
+		return finalString;
 	}
 	
 }

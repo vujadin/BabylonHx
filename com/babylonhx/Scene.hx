@@ -26,7 +26,7 @@ import com.babylonhx.math.Color3;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
-import com.babylonhx.math.Ray;
+import com.babylonhx.culling.Ray;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Frustum;
@@ -101,19 +101,20 @@ import com.babylonhx.audio.*;
 	public var animationsEnabled:Bool = true;
 	public var constantlyUpdateMeshUnderPointer:Bool = false;
 	
-	public var frustumCullingEnabled:Bool = true;
-	
 	// Animations
 	public var animations:Array<Animation> = [];
 
 	// Pointers
-	public var _onPointerMove:Dynamic;	// MouseEvent->Void
-	public var onPointerMove:Dynamic;	// MouseEvent->PickingInfo->Void
-	public var _onPointerDown:Dynamic;	// MouseEvent->Void
-	public var onPointerDown:Dynamic;   // MouseEvent->PickingInfo->Void
-	public var _onPointerUp:Dynamic;	// MouseEvent->Void
-	public var onPointerUp:Dynamic;		// MouseEvent->PickingInfo->Void
-	public var onPointerPick:Dynamic;
+	public var pointerDownPredicate:Mesh->AbstractMesh->Bool;
+	public var pointerUpPredicate:Mesh->AbstractMesh->Bool;
+	public var pointerMovePredicate:Mesh->AbstractMesh->Bool;
+	private var _onPointerMove:Int->Int->Void;
+	private var _onPointerDown:Int->Int->Int->Void;
+	private var _onPointerUp:Int->Int->Int->Void;
+	public var onPointerMove:PickingInfo->Void;
+	public var onPointerDown:Int->Int->Int->PickingInfo->Void;
+	public var onPointerUp:Int->Int->Int->PickingInfo->Void;
+	public var onPointerPick:PickingInfo->Void;
 	public var cameraToUseForPointers:Camera = null; // Define this parameter if you are using multiple cameras and you want to specify which one should be used for pointer position
 	private var _pointerX:Int;
 	private var _pointerY:Int;
@@ -137,7 +138,7 @@ import com.babylonhx.audio.*;
 	*/
 	public var fogEnabled:Bool = true;
 	public var fogMode:Int = Scene.FOGMODE_NONE;
-	public var fogColor:Color3 = new Color3(0.2, 0.2, 0.2);
+	public var fogColor:Color3 = new Color3(0.2, 0.2, 0.3);
 	public var fogDensity:Float = 0.1;
 	public var fogStart:Float = 0;
 	public var fogEnd:Float = 1000.0;
@@ -318,7 +319,7 @@ import com.babylonhx.audio.*;
 	private var _onBeforeRenderCallbacks:Array<Void->Void> = [];
 	private var _onAfterRenderCallbacks:Array<Void->Void> = [];
 
-	private var _activeMeshes:SmartArray<Mesh> = new SmartArray<Mesh>(256);				
+	private var _activeMeshes:SmartArray<AbstractMesh> = new SmartArray<AbstractMesh>(256);				
 	private var _processedMaterials:SmartArray<Material> = new SmartArray<Material>(256);		
 	private var _renderTargets:SmartArray<RenderTargetTexture> = new SmartArray<RenderTargetTexture>(256);			
 	public var _activeParticleSystems:SmartArray<ParticleSystem> = new SmartArray<ParticleSystem>(256);		
@@ -586,7 +587,7 @@ import com.babylonhx.audio.*;
 		return this._evaluateActiveMeshesDuration;
 	}
 
-	inline public function getActiveMeshes():SmartArray<Mesh> {
+	inline public function getActiveMeshes():SmartArray<AbstractMesh> {
 		return this._activeMeshes;
 	}
 
@@ -1647,9 +1648,7 @@ import com.babylonhx.audio.*;
 		}
 	}
 
-	static var _activeMeshes_:Array<Mesh> = [];
-	static var _activeMesh_:Mesh = null;
-	inline private function _evaluateActiveMeshes() {
+	private function _evaluateActiveMeshes() {
 		this.activeCamera._activeMeshes.reset();
 		this._activeMeshes.reset();
 		this._renderingManager.reset();
@@ -1668,61 +1667,60 @@ import com.babylonhx.audio.*;
 		}
 		
 		// Meshes
-		_activeMeshes_ = [];
-		var len:Int = -1;
+		var meshes:Array<AbstractMesh> = [];
+		var len:Int = 0;
 		
 		if (this._selectionOctree != null) { // Octree
 			var selection = this._selectionOctree.select(this._frustumPlanes);
-			_activeMeshes_ = cast selection.data;
+			meshes = selection.data;
 			len = selection.length;
 		} 
 		else { // Full scene traversal
 			len = this.meshes.length;
-			_activeMeshes_ = cast this.meshes;
+			meshes = this.meshes;
 		}
 		
 		for (meshIndex in 0...len) {
-			_activeMesh_ = _activeMeshes_[meshIndex];
+			var mesh = meshes[meshIndex];
 			
-			if (_activeMesh_.isBlocked) {
+			if (mesh.isBlocked) {
 				continue;
 			}
 			
-			this._totalVertices += _activeMesh_.getTotalVertices();
+			this._totalVertices += mesh.getTotalVertices();
 			
-			if (!_activeMesh_.isReady() || !_activeMesh_.isEnabled()) {
+			if (!mesh.isReady() || !mesh.isEnabled()) {
 				continue;
 			}
 			
-			_activeMesh_.computeWorldMatrix();
+			mesh.computeWorldMatrix();
 			
 			// Intersections
-			if (_activeMesh_.actionManager != null && _activeMesh_.actionManager.hasSpecificTriggers([ActionManager.OnIntersectionEnterTrigger, ActionManager.OnIntersectionExitTrigger])) {
-				this._meshesForIntersections.pushNoDuplicate(_activeMesh_);
+			if (mesh.actionManager != null && mesh.actionManager.hasSpecificTriggers([ActionManager.OnIntersectionEnterTrigger, ActionManager.OnIntersectionExitTrigger])) {
+				this._meshesForIntersections.pushNoDuplicate(mesh);
 			}
 			
 			// Switch to current LOD
-			var meshLOD = _activeMesh_.getLOD(this.activeCamera);
+			var meshLOD = mesh.getLOD(this.activeCamera);
 			
 			if (meshLOD == null) {
 				continue;
 			}
 			
-			_activeMesh_._preActivate();			
+			mesh._preActivate();
 			
-			if (_activeMesh_.alwaysSelectAsActiveMesh || _activeMesh_.isVisible && _activeMesh_.visibility > 0 && ((_activeMesh_.layerMask & this.activeCamera.layerMask) != 0) && _activeMesh_.isInFrustum(this._frustumPlanes)) {				
-				this._activeMeshes.push(_activeMesh_);
-				this.activeCamera._activeMeshes.push(_activeMesh_);
-				_activeMesh_._activate(this._renderId);
-			 
+			if (mesh.alwaysSelectAsActiveMesh || mesh.isVisible && mesh.visibility > 0 && ((mesh.layerMask & this.activeCamera.layerMask) != 0) && mesh.isInFrustum(this._frustumPlanes)) {
+				this._activeMeshes.push(mesh);
+				this.activeCamera._activeMeshes.push(mesh);
+				mesh._activate(this._renderId);
+				
 				this._activeMesh(meshLOD);
 			}
 		}
 		
 		// Particle systems
-		//var beforeParticlesDate = Tools.Now();
+		var beforeParticlesDate = Tools.Now();
 		if (this.particlesEnabled) {
-			//Tools.StartPerformanceCounter("Particles", this.particleSystems.length > 0);
 			for (particleIndex in 0...this.particleSystems.length) {
 				var particleSystem = this.particleSystems[particleIndex];
 				
@@ -1735,9 +1733,7 @@ import com.babylonhx.audio.*;
 					particleSystem.animate();
 				}
 			}
-			//Tools.EndPerformanceCounter("Particles", this.particleSystems.length > 0);
 		}
-		//this._particlesDuration += Tools.Now() - beforeParticlesDate;
 	}
 
 	private function _activeMesh(mesh:AbstractMesh) {
@@ -2321,8 +2317,8 @@ import com.babylonhx.audio.*;
 			var minBox = mesh.getBoundingInfo().boundingBox.minimumWorld;
 			var maxBox = mesh.getBoundingInfo().boundingBox.maximumWorld;
 			
-			Tools.CheckExtends(minBox, min, max);
-			Tools.CheckExtends(maxBox, min, max);
+			com.babylonhx.math.Tools.CheckExtends(minBox, min, max);
+			com.babylonhx.math.Tools.CheckExtends(maxBox, min, max);
 		}
 		
 		return {
@@ -2357,7 +2353,7 @@ import com.babylonhx.audio.*;
 		}
 		
 		var cameraViewport = camera.viewport;
-		var viewport = cameraViewport.toGlobal(engine);
+		var viewport = cameraViewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight());
 		
 		// Moving coordinates to local viewport world
 		x = x / this._engine.getHardwareScalingLevel() - viewport.x;
@@ -2378,7 +2374,7 @@ import com.babylonhx.audio.*;
 		}
 		
 		var cameraViewport = camera.viewport;
-		var viewport = cameraViewport.toGlobal(engine);
+		var viewport = cameraViewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight());
 		var identity = Matrix.Identity();
 		
 		// Moving coordinates to local viewport world

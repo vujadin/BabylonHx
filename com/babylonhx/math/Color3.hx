@@ -1,7 +1,5 @@
 package com.babylonhx.math;
 
-import com.babylonhx.tools.Tools;
-
 /**
  * ...
  * @author Krtolica Vujadin

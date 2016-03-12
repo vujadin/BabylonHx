@@ -7,6 +7,7 @@ import com.babylonhx.animations.AnimationRange;
 import com.babylonhx.math.Quaternion;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
+import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.Node.NodeCache;
 
 /**
@@ -59,12 +60,23 @@ class NodeCache {
 	
 }
 
+/**
+ * Node is the basic class for all scene objects (Mesh, Light Camera).
+ */
 @:expose('BABYLON.Node') class Node implements ISmartArrayCompatible {
 	
 	public var parent:Node;
+	
+	@serialize()
 	public var name:String;
+	
+	@serialize()
 	public var id:String;
+	
+	@serialize()
 	public var uniqueId:Int;
+	
+	@serialize()
 	public var state:String = "";
 
 	public var animations:Array<Animation> = [];
@@ -119,6 +131,7 @@ class NodeCache {
 		}
 		
 		this._cache.parent = this.parent;
+		
 		this._updateCache();
 	}
 
@@ -145,14 +158,16 @@ class NodeCache {
 		if (this._parentRenderId != this.parent._currentRenderId) {
 			return false;
 		}
-			
+		
 		return this.parent.isSynchronized();
 	}
 
 	inline public function isSynchronized(updateCache:Bool = false):Bool {
 		var check = this.hasNewParent();
+		
 		check = check || !this.isSynchronizedWithParent();
 		check = check || !this._isSynchronized();
+		
 		if (updateCache) {
 			this.updateCache(true);
 		}
@@ -172,10 +187,20 @@ class NodeCache {
 		return true;
 	}
 
+	/**
+	 * Is this node ready to be used/rendered
+	 * @return {boolean} is it ready
+	 */
 	public function isReady():Bool {
 		return this._isReady;
 	}
 
+	/**
+	 * Is this node enabled. 
+	 * If the node has a parent and is enabled, the parent will be inspected as well.
+	 * @return {boolean} whether this node (and its parent) is enabled.
+	 * @see setEnabled
+	 */
 	public function isEnabled():Bool {
 		if (!this._isEnabled) {
 			return false;
@@ -211,13 +236,25 @@ class NodeCache {
 			
 			return this.parent.isDescendantOf(ancestor);
 		}
+		
 		return false;
 	}
 
-	inline public function _getDescendants(list:Array<Node>, results:Array<Node>) {
+	/**
+	 * Evaluate a list of nodes and determine if they should be considered as descendants 
+	 * considering the given criterias
+	 * @param {BABYLON.Node[]} list the input array of nodes to evaluate
+	 * @param {BABYLON.Node[]} results the result array containing the nodes matching the given criterias
+	 * @param {boolean} directDecendantsOnly if true only direct descendants of 'this' will be considered,
+	 * if false direct and also indirect (children of children, an so on in a recursive manner) descendants
+	 * of 'this' will be considered.
+	 * @param predicate: an optional predicate that will be called on every evaluated children, the
+	 * predicate must return true for a given child to be part of the result, otherwise it will be ignored.
+	 */
+	inline public function _getDescendants(list:Array<Node>, results:Array<Node>, directDecendantsOnly:Bool = false, ?predicate:Node->Bool) {
 		for (index in 0...list.length) {
 			var item = list[index];
-			if (item.isDescendantOf(this)) {
+			if (((directDecendantsOnly && item.parent == this) || (!directDecendantsOnly && item.isDescendantOf(this))) && (predicate == null || predicate(item))) {
 				results.push(item);
 			}
 		}
@@ -225,13 +262,38 @@ class NodeCache {
 
 	/**
 	 * Will return all nodes that have this node as parent.
+	 * @param {boolean} directDecendantsOnly if true only direct descendants of 'this' will be considered,
+	 * if false direct and also indirect (children of children, an so on in a recursive manner) descendants
+	 * of 'this' will be considered.
+     * @param predicate: an optional predicate that will be called on every evaluated children, the
+	 * predicate must return true for a given child to be part of the result, otherwise it will be ignored.
 	 * @return {BABYLON.Node[]} all children nodes of all types.
 	 */
-	inline public function getDescendants():Array<Node> {
+	inline public function getDescendants(directDecendantsOnly:Bool = false, ?predicate:Node->Bool):Array<Node> {
 		var results:Array<Node> = [];
-		this._getDescendants(cast this._scene.meshes, results);
-		this._getDescendants(cast this._scene.lights, results);
-		this._getDescendants(cast this._scene.cameras, results);
+		this._getDescendants(cast this._scene.meshes, results, directDecendantsOnly, predicate);
+		this._getDescendants(cast this._scene.lights, results, directDecendantsOnly, predicate);
+		this._getDescendants(cast this._scene.cameras, results, directDecendantsOnly, predicate);
+		
+		return results;
+	}
+	
+	/**
+	 * @param predicate: an optional predicate that will be called on every evaluated children, the predicate must return true for a given child to be part of the result, otherwise it will be ignored.
+	 * @Deprecated, legacy support.
+	 * use getDecendants instead.
+	 */
+	public function getChildren(?predicate:Node->Bool):Array<Node> {
+		return this.getDescendants(true, predicate);
+	}
+	
+	/**
+	 * Get all child-meshes of this node.
+	 */
+	public function getChildMeshes(directDecendantsOnly:Bool = false, ?predicate:Node->Bool):Array<AbstractMesh> {
+		var results:Array<AbstractMesh> = [];
+		
+		this._getDescendants(cast this._scene.meshes, cast results, directDecendantsOnly, predicate);
 		
 		return results;
 	}

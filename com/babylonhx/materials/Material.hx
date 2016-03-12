@@ -26,7 +26,7 @@ import com.babylonhx.mesh.Mesh;
 	
 	public static inline var maxSimultaneousLights:Int = 4;
 
-
+	
 	public var id:String;
 	public var name:String;
 	public var checkReadyOnEveryCall:Bool = false;
@@ -38,19 +38,12 @@ import com.babylonhx.mesh.Mesh;
 	public var onCompiled:Effect->Void;
 	public var onError:Effect->String->Void;
 	public var onDispose:Void->Void;
-	public var onBind:Material->Void;
+	public var onBind:Material->Mesh->Void;
 	public var getRenderTargetTextures:Void->SmartArray<RenderTargetTexture>;
+	
 	public var alphaMode:Int = Engine.ALPHA_COMBINE;
 	public var disableDepthWrite:Bool = false;
 	public var fogEnabled:Bool = true;
-	
-	public var __smartArrayFlags:Array<Int>;
-
-	public var _effect:Effect;
-	public var _wasPreviouslyReady:Bool = false;
-	private var _scene:Scene;
-	private var _fillMode:Int = Material.TriangleFillMode;
-	private var _cachedDepthWriteState:Bool;
 
 	public var pointSize:Float = 1.0;
 	public var zOffset:Float = 0.0;
@@ -83,7 +76,15 @@ import com.babylonhx.mesh.Mesh;
 		this._fillMode = value;
 		return value;
 	}
-		
+
+	public var _effect:Effect;
+	public var _wasPreviouslyReady:Bool = false;
+	private var _scene:Scene;
+	private var _fillMode:Int = Material.TriangleFillMode;
+	private var _cachedDepthWriteState:Bool;
+	
+	public var __smartArrayFlags:Array<Int> = [];
+	
 
 	public function new(name:String, scene:Scene, doNotAdd:Bool = false) {
 		this.id = name;
@@ -139,9 +140,7 @@ import com.babylonhx.mesh.Mesh;
 		return null;
 	}
 
-	public function trackCreation(onCompiled:Effect->Void, onError:Effect->String->Void) {
-		
-	}
+	public function trackCreation(onCompiled:Effect->Void, onError:Effect->String->Void) { }
 	
 	public function markDirty() {
 		this._wasPreviouslyReady = false;
@@ -158,7 +157,7 @@ import com.babylonhx.mesh.Mesh;
 		this._scene._cachedMaterial = this;
 		
         if (this.onBind != null) {
-            this.onBind(this);
+            this.onBind(this, mesh);
         }
 		
 		if (this.disableDepthWrite) {
@@ -168,8 +167,7 @@ import com.babylonhx.mesh.Mesh;
         }
 	}
 
-	public function bindOnlyWorldMatrix(world:Matrix) {
-	}
+	public function bindOnlyWorldMatrix(world:Matrix) { }
 
 	public function unbind():Void {
 		if (this.disableDepthWrite) {

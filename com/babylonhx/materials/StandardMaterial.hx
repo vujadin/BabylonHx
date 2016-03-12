@@ -122,6 +122,7 @@ typedef SMD = StandardMaterialDefines
 	}
 	private function set_useLogarithmicDepth(value:Bool):Bool {
 		this._useLogarithmicDepth = value && this.getScene().getEngine().getCaps().fragmentDepthSupported;
+		
 		return this._useLogarithmicDepth;
 	}
 
@@ -551,7 +552,7 @@ typedef SMD = StandardMaterialDefines
 					"vLightData2", "vLightDiffuse2", "vLightSpecular2", "vLightDirection2", "vLightGround2", "lightMatrix2",
 					"vLightData3", "vLightDiffuse3", "vLightSpecular3", "vLightDirection3", "vLightGround3", "lightMatrix3",
 					"vFogInfos", "vFogColor", "pointSize",
-					"vDiffuseInfos", "vAmbientInfos", "vOpacityInfos", "vReflectionInfos", "vEmissiveInfos", "vSpecularInfos", "vBumpInfos",  "vLightmapInfos", "vRefractionInfos",
+					"vDiffuseInfos", "vAmbientInfos", "vOpacityInfos", "vReflectionInfos", "vEmissiveInfos", "vSpecularInfos", "vBumpInfos", "vLightmapInfos", "vRefractionInfos",
 					"mBones",
 					"vClipPlane", "diffuseMatrix", "ambientMatrix", "opacityMatrix", "reflectionMatrix", "emissiveMatrix", "specularMatrix", "bumpMatrix", "lightmapMatrix", "refractionMatrix",
 					"shadowsInfo0", "shadowsInfo1", "shadowsInfo2", "shadowsInfo3", "depthValues",

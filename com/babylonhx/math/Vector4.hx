@@ -1,7 +1,6 @@
 package com.babylonhx.math;
 
 import com.babylonhx.utils.typedarray.Float32Array;
-import com.babylonhx.tools.Tools;
 
 /**
 * ...
@@ -141,7 +140,7 @@ import com.babylonhx.tools.Tools;
 		return (otherVector != null && this.x == otherVector.x && this.y == otherVector.y && this.z == otherVector.z && this.w == otherVector.w);
 	}
 
-	inline public function equalsWithEpsilon(otherVector:Vector4, epsilon:Float = Engine.Epsilon):Bool {
+	inline public function equalsWithEpsilon(otherVector:Vector4, epsilon:Float = Tools.Epsilon):Bool {
 		return otherVector != null  
 		&& Tools.WithinEpsilon(this.x, otherVector.x, epsilon) 
 		&& Tools.WithinEpsilon(this.y, otherVector.y, epsilon) 

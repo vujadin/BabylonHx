@@ -78,7 +78,6 @@ import nme.display.OpenGLView;
 	public static var Version:String = "2.0.0";
 
 	// Updatable statics so stick with vars here
-	public static inline var Epsilon:Float = 0.001;
 	public static var CollisionsEpsilon:Float = 0.001;
 	public static var ShadersRepository:String = "assets/shaders/";
 
@@ -230,9 +229,10 @@ import nme.display.OpenGLView;
 		this._glVendor = GL.getParameter(GL.VENDOR);
 		this._glRenderer = GL.getParameter(GL.RENDERER);
 		this._glExtensions = GL.getSupportedExtensions();
-		for (ext in this._glExtensions) {
-			trace(ext);
-		}
+		//for (ext in this._glExtensions) {
+			//trace(ext);
+		//}
+		//trace(this._glExtensions);
 		
 		#if (!snow || (js && snow))
 		// Extensions
@@ -335,6 +335,7 @@ import nme.display.OpenGLView;
 			this._caps.textureLODExt = "GL_ARB_shader_texture_lod";
 			this._caps.textureCubeLodFnName = "textureCubeLod";
 		}
+		trace(this._caps.textureLODExt);
 		this._caps.instancedArrays = null;
 		#end
 		
@@ -895,6 +896,7 @@ import nme.display.OpenGLView;
 	public function drawUnIndexed(useTriangles:Bool, verticesStart:Int, verticesCount:Int, instancesCount:Int = -1) {
         // Apply states
         this.applyStates();
+		
         this._drawCalls++;
 		
         if (instancesCount != -1) {
@@ -1017,6 +1019,7 @@ import nme.display.OpenGLView;
 			if (effect != null && effect.onBind != null) {
 				effect.onBind(effect);
 			}
+			
 			return;
 		}
 		
@@ -1379,7 +1382,7 @@ import nme.display.OpenGLView;
 		
 		var width = size;
 		var height = width;
-		var isPot = (Tools.IsExponentOfTwo(width) && Tools.IsExponentOfTwo(height));
+		var isPot = (com.babylonhx.math.Tools.IsExponentOfTwo(width) && com.babylonhx.math.Tools.IsExponentOfTwo(height));
 		
 		texture._width = width;
 		texture._height = height;
@@ -1388,7 +1391,7 @@ import nme.display.OpenGLView;
 			scene._removePendingData(texture);
 		};
 		
-		var internalCallback = function(data:ArrayBuffer) {
+		var internalCallback = function(data:Dynamic) {
 			var rgbeDataArrays = callback(data);
 			
 			var facesIndex = [
@@ -1430,7 +1433,7 @@ import nme.display.OpenGLView;
 			scene._removePendingData(texture);
 		};
 		
-		Tools.LoadFile(url, function(data:ArrayBuffer) {
+		Tools.LoadFile(url, function(data:Dynamic) {
 			internalCallback(data);
 		}, "hdr");
 		
@@ -1512,8 +1515,8 @@ import nme.display.OpenGLView;
 		var texture = new WebGLTexture("", GL.createTexture());
 
         if(forceExponantOfTwo) {
-		    width = Tools.GetExponentOfTwo(width, this._caps.maxTextureSize);
-		    height = Tools.GetExponentOfTwo(height, this._caps.maxTextureSize);
+		    width = com.babylonhx.math.Tools.GetExponentOfTwo(width, this._caps.maxTextureSize);
+		    height = com.babylonhx.math.Tools.GetExponentOfTwo(height, this._caps.maxTextureSize);
         }
 		
 		this.resetTextureCache();
@@ -1718,9 +1721,7 @@ import nme.display.OpenGLView;
 		texture.references = 1;
 		texture.samplingMode = samplingMode;
 		
-		trace(generateMipMaps);
 		var filters = getSamplingParameters(samplingMode, generateMipMaps);
-		trace(filters);
 		
 		GL.bindTexture(GL.TEXTURE_CUBE_MAP, texture.data);
 		
@@ -1829,7 +1830,7 @@ import nme.display.OpenGLView;
 			}
 			
 			function generate() {
-				var width = Tools.GetExponentOfTwo(imgs[0].width, this._caps.maxCubemapTextureSize);
+				var width = com.babylonhx.math.Tools.GetExponentOfTwo(imgs[0].width, this._caps.maxCubemapTextureSize);
 				var height = width;
 				
 				GL.bindTexture(GL.TEXTURE_CUBE_MAP, texture.data);
@@ -2120,8 +2121,8 @@ import nme.display.OpenGLView;
 
     public function prepareTexture(texture:WebGLTexture, scene:Scene, width:Int, height:Int, invertY:Bool, noMipmap:Bool, isCompressed:Bool, processFunction:Int->Int->Void, ?onLoad:Void->Void, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE) {
         var engine = scene.getEngine();
-        var potWidth = Tools.GetExponentOfTwo(width, engine.getCaps().maxTextureSize);
-        var potHeight = Tools.GetExponentOfTwo(height, engine.getCaps().maxTextureSize);
+        var potWidth = com.babylonhx.math.Tools.GetExponentOfTwo(width, engine.getCaps().maxTextureSize);
+        var potHeight = com.babylonhx.math.Tools.GetExponentOfTwo(height, engine.getCaps().maxTextureSize);
 				
 		if (potWidth != width || potHeight != height) {
 			trace("Texture '" + texture.url + "' is not power of two !");

@@ -98,7 +98,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		if (data == null && this._buffer != null) {
 			return; // nothing to do
 		}
-				
+		
 		data = data != null ? data : this._data;
 		
 		if (this._buffer == null) { // create buffer
