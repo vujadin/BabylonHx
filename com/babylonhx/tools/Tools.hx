@@ -47,46 +47,7 @@ typedef Assets = nme.Assets;
 	#if snow
 	@:noCompletion public static var app:snow.Snow;
 	#end
-	
-	
-	public static function ToHex(i:Int):String {
-		var str:String = StringTools.hex(i, 16); 
-		
-		if (i <= 15) {
-			var ret:String = "0" + str;
-			return ret.toUpperCase();
-		}
-		
-		return str.toUpperCase();
-	}
-	
-	inline public static function IsExponentOfTwo(value:Int):Bool {
-		var count = 1;
-		
-		do {
-			count *= 2;
-		} while (count < value);
-		
-		return count == value;
-	}
 
-	inline public static function GetExponentOfTwo(value:Int, max:Int):Int {
-		var count = 1;
-		
-		do {
-			count *= 2;
-		} while (count < value);
-		
-		if (count > max) {
-			count = max;
-		}
-		
-		return count;
-	}
-	
-	inline public static function Lerp(v0:Float, v1:Float, t:Float):Float {
-		return (1 - t) * v0 + t * v1;
-	}
 
 	public static function GetFilename(path:String):String {
 		var index = path.lastIndexOf("/");
@@ -95,14 +56,6 @@ typedef Assets = nme.Assets;
 		}
 		
 		return path.substring(index + 1);
-	}
-
-	inline public static function ToDegrees(angle:Float):Float {
-		return angle * 180 / Math.PI;
-	}
-
-	inline public static function ToRadians(angle:Float):Float {
-		return angle * Math.PI / 180;
 	}
 	
 	// Snow build gives an error that haxe.Timer has no delay method...
@@ -393,7 +346,20 @@ typedef Assets = nme.Assets;
     }
 	#else //snow
 	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {	
-		if (type == "") {
+		if (type == "hdr") {
+			var callBackFunction = callbackFn != null ?
+				function(result:Dynamic) {
+					callbackFn(result);
+				} : function(_) { };
+				
+			app.assets.bytes(path).then(
+				function(result:Dynamic) {
+					trace(result.bytes);
+					callBackFunction(result.bytes);	
+				}
+			);
+		}
+		else if (type == "") {
 			//if (SnowApp._snow.assets.listed(path)) {
 				if (StringTools.endsWith(path, "bbin")) {
 					var callBackFunction = callbackFn != null ?
@@ -672,17 +638,17 @@ typedef Assets = nme.Assets;
 		}
 		#elseif lime
 		if (Assets.exists(url)) {
-			#if (js || html5)
+			/*#if (js || html5)
 			var future = Assets.loadImage(url);
 			future.onComplete(function(img:lime.graphics.Image):Void {
 				var image = new Image(img.data, img.width, img.height);
 				onload(image);
 			});		
-			#else
+			#else*/
 			var img = Assets.getImage(url);
 			var image = new Image(img.data, img.width, img.height);
 			onload(image);
-			#end
+			//#end
 		} 
 		else {
 			trace("Image '" + url + "' doesn't exist!");
@@ -695,25 +661,6 @@ typedef Assets = nme.Assets;
 	#elseif kha
 	
 	#end
-
-	// Misc. 
-	inline public static function Clamp(value:Float, min:Float = 0, max:Float = 1):Float {
-		return Math.min(max, Math.max(min, value));
-	}  
-	
-	inline public static function Clamp2(x:Float, a:Float, b:Float):Float {
-		return (x < a) ? a : ((x > b) ? b : x);
-	}
-	
-	// Returns -1 when value is a negative number and
-	// +1 when value is a positive number. 
-	inline public static function Sign(value:Dynamic):Int {
-		if (value == 0) {
-			return 0;
-		}
-			
-		return value > 0 ? 1 : -1;
-	}
 
 	public static function Format(value:Float, decimals:Int = 2):String {
 		value = Math.round(value * Math.pow(10, decimals));
@@ -730,28 +677,7 @@ typedef Assets = nme.Assets;
 			return str.substr(0, str.length - decimals) + (decimals == 0 ? '' : '.') + str.substr(str.length - decimals);
 		}
 	}
-
-	inline public static function CheckExtends(v:Vector3, min:Vector3, max:Vector3) {
-		if (v.x < min.x)
-			min.x = v.x;
-		if (v.y < min.y)
-			min.y = v.y;
-		if (v.z < min.z)
-			min.z = v.z;
-			
-		if (v.x > max.x)
-			max.x = v.x;
-		if (v.y > max.y)
-			max.y = v.y;
-		if (v.z > max.z)
-			max.z = v.z;
-	}
-
-	inline public static function WithinEpsilon(a:Float, b:Float, epsilon:Float = 1.401298E-45):Bool {
-		var num = a - b;
-		return -epsilon <= num && num <= epsilon;
-	}
-		
+	
 	public static function cloneValue(source:Dynamic, destinationObject:Dynamic):Dynamic {
         if (source == null)
             return null;

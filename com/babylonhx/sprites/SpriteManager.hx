@@ -7,7 +7,7 @@ import com.babylonhx.tools.Tools;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.collisions.PickingInfo;
-import com.babylonhx.math.Ray;
+import com.babylonhx.culling.Ray;
 import com.babylonhx.cameras.Camera;
 
 import com.babylonhx.utils.typedarray.Float32Array;

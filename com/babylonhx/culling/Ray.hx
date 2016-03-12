@@ -1,8 +1,8 @@
-package com.babylonhx.math;
+package com.babylonhx.culling;
 
+import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Matrix;
 import com.babylonhx.collisions.IntersectionInfo;
-import com.babylonhx.culling.BoundingBox;
-import com.babylonhx.culling.BoundingSphere;
 
 /**
 * ...
@@ -21,7 +21,7 @@ import com.babylonhx.culling.BoundingSphere;
 	private var _qvec:Vector3;
 	
 
-	public function new(origin:Vector3, direction:Vector3, ?length:Float) {
+	inline public function new(origin:Vector3, direction:Vector3, ?length:Float) {
 		this.origin = origin;
 		this.direction = direction;
 		this.length = length != null ? length : Math.POSITIVE_INFINITY;
@@ -215,7 +215,7 @@ import com.babylonhx.culling.BoundingSphere;
 		var newOrigin = Vector3.TransformCoordinates(ray.origin, matrix);
 		var newDirection = Vector3.TransformNormal(ray.direction, matrix);
 		
-		return new Ray(newOrigin, newDirection);
+		return new Ray(newOrigin, newDirection, ray.length);
 	}
 	
 }

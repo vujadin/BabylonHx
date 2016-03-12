@@ -17,6 +17,7 @@ package com.babylonhx.utils;
     typedef GLTexture           = js.html.webgl.Texture;
     typedef GLUniformLocation   = js.html.webgl.UniformLocation;
 	
+	
 	@:allow(com.babylonhx.Engine)
 	class GL {	
 		
@@ -320,547 +321,547 @@ package com.babylonhx.utils;
 		private static var context:js.html.webgl.RenderingContext;
 		
 		
-		public static inline function activeTexture(texture:Int) {
+		inline public static function activeTexture(texture:Int) {
 			context.activeTexture(texture);
 		}	
 		
-		public static inline function attachShader(program:GLProgram, shader:js.html.webgl.Shader) {
+		inline public static function attachShader(program:GLProgram, shader:js.html.webgl.Shader) {
 			context.attachShader(program, shader);
 		}	
 		
-		public static inline function bindAttribLocation(program:GLProgram, index:Int, name:String) {
+		inline public static function bindAttribLocation(program:GLProgram, index:Int, name:String) {
 			context.bindAttribLocation(program, index, name);
 		}	
 		
-		public static inline function bindBuffer(target:Int, buffer:GLBuffer) {
+		inline public static function bindBuffer(target:Int, buffer:GLBuffer) {
 			context.bindBuffer(target, buffer);
 		}	
 		
-		public static inline function bindFramebuffer(target:Int, framebuffer:js.html.webgl.Framebuffer) {
+		inline public static function bindFramebuffer(target:Int, framebuffer:js.html.webgl.Framebuffer) {
 			context.bindFramebuffer(target, framebuffer);
 		}	
 		
-		public static inline function bindRenderbuffer(target:Int, renderbuffer:js.html.webgl.Renderbuffer) {
+		inline public static function bindRenderbuffer(target:Int, renderbuffer:js.html.webgl.Renderbuffer) {
 			context.bindRenderbuffer(target, renderbuffer);
 		}	
 		
-		public static inline function bindTexture(target:Int, texture:GLTexture) {
+		inline public static function bindTexture(target:Int, texture:GLTexture) {
 			context.bindTexture(target, texture);
 		}	
 		
-		public static inline function blendColor(red:Float, green:Float, blue:Float, alpha:Float) {
+		inline public static function blendColor(red:Float, green:Float, blue:Float, alpha:Float) {
 			context.blendColor(red, green, blue, alpha);
 		}	
 		
-		public static inline function blendEquation(mode:Int) {
+		inline public static function blendEquation(mode:Int) {
 			context.blendEquation(mode);
 		}	
 		
-		public static inline function blendEquationSeparate(modeRGB:Int, modeAlpha:Int) {
+		inline public static function blendEquationSeparate(modeRGB:Int, modeAlpha:Int) {
 			context.blendEquationSeparate(modeRGB, modeAlpha);
 		}	
 		
-		public static inline function blendFunc(sfactor:Int, dfactor:Int) {
+		inline public static function blendFunc(sfactor:Int, dfactor:Int) {
 			context.blendFunc(sfactor, dfactor);
 		}	
 		
-		public static inline function blendFuncSeparate(srcRGB:Int, dstRGB:Int, srcAlpha:Int, dstAlpha:Int) {
+		inline public static function blendFuncSeparate(srcRGB:Int, dstRGB:Int, srcAlpha:Int, dstAlpha:Int) {
 			context.blendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha);
 		}	
 		
-		public static inline function bufferData(target:Int, data:js.html.ArrayBufferView, usage:Int) {
+		inline public static function bufferData(target:Int, data:js.html.ArrayBufferView, usage:Int) {
 			context.bufferData(target, data, usage);
 		}	
 		
-		public static inline function bufferSubData(target:Int, offset:Int, data:js.html.ArrayBufferView) {
+		inline public static function bufferSubData(target:Int, offset:Int, data:js.html.ArrayBufferView) {
 			context.bufferSubData(target, offset, data);
 		}	
 		
-		public static inline function checkFramebufferStatus(target:Int):Int {
+		inline public static function checkFramebufferStatus(target:Int):Int {
 			return context.checkFramebufferStatus(target);
 		}	
 		
-		public static inline function clear(mask:Int) {
+		inline public static function clear(mask:Int) {
 			context.clear(mask);
 		}	
 		
-		public static inline function clearColor(red:Float, green:Float, blue:Float, alpha:Float) {
+		inline public static function clearColor(red:Float, green:Float, blue:Float, alpha:Float) {
 			context.clearColor(red, green, blue, alpha);
 		}	
 		
-		public static inline function clearDepth(depth:Float) {
+		inline public static function clearDepth(depth:Float) {
 			context.clearDepth(depth);
 		}	
 		
-		public static inline function clearStencil(s:Int) {
+		inline public static function clearStencil(s:Int) {
 			context.clearStencil(s);
 		}	
 		
-		public static inline function colorMask(red:Bool, green:Bool, blue:Bool, alpha:Bool) {
+		inline public static function colorMask(red:Bool, green:Bool, blue:Bool, alpha:Bool) {
 			context.colorMask(red, green, blue, alpha);
 		}	
 		
-		public static inline function compileShader(shader:js.html.webgl.Shader) {
+		inline public static function compileShader(shader:js.html.webgl.Shader) {
 			context.compileShader(shader);
 		}	
 		
-		public static inline function compressedTexImage2D(target:Int, level:Int, internalformat:Int, width:Int, height:Int, border:Int, data:js.html.ArrayBufferView) {
+		inline public static function compressedTexImage2D(target:Int, level:Int, internalformat:Int, width:Int, height:Int, border:Int, data:js.html.ArrayBufferView) {
 			context.compressedTexImage2D(target, level, internalformat, width, height, border, data);
 		}	
 		
-		public static inline function compressedTexSubImage2D(target:Int, level:Int, xoffset:Int, yoffset:Int, width:Int, height:Int, format:Int, data:js.html.ArrayBufferView) {
+		inline public static function compressedTexSubImage2D(target:Int, level:Int, xoffset:Int, yoffset:Int, width:Int, height:Int, format:Int, data:js.html.ArrayBufferView) {
 			context.compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, data);
 		}	
 		
-		public static inline function copyTexImage2D(target:Int, level:Int, internalformat:Int, x:Int, y:Int, width:Int, height:Int, border:Int) {
+		inline public static function copyTexImage2D(target:Int, level:Int, internalformat:Int, x:Int, y:Int, width:Int, height:Int, border:Int) {
 			context.copyTexImage2D(target, level, internalformat, x, y, width, height, border);
 		}	
 		
-		public static inline function copyTexSubImage2D(target:Int, level:Int, xoffset:Int, yoffset:Int, x:Int, y:Int, width:Int, height:Int) {
+		inline public static function copyTexSubImage2D(target:Int, level:Int, xoffset:Int, yoffset:Int, x:Int, y:Int, width:Int, height:Int) {
 			context.copyTexSubImage2D(target, level, xoffset, yoffset, x, y, width, height);
 		}	
 		
-		public static inline function createBuffer():GLBuffer {
+		inline public static function createBuffer():GLBuffer {
 			return context.createBuffer();
 		}	
 		
-		public static inline function createFramebuffer():js.html.webgl.Framebuffer {
+		inline public static function createFramebuffer():js.html.webgl.Framebuffer {
 			return context.createFramebuffer();
 		}	
 		
-		public static inline function createProgram():GLProgram {
+		inline public static function createProgram():GLProgram {
 			return context.createProgram();
 		}	
 		
-		public static inline function createRenderbuffer():js.html.webgl.Renderbuffer {
+		inline public static function createRenderbuffer():js.html.webgl.Renderbuffer {
 			return context.createRenderbuffer();
 		}	
 		
-		public static inline function createShader(type:Int):js.html.webgl.Shader {
+		inline public static function createShader(type:Int):js.html.webgl.Shader {
 			return context.createShader(type);
 		}	
 		
-		public static inline function createTexture():GLTexture {
+		inline public static function createTexture():GLTexture {
 			return context.createTexture();
 		}	
 		
-		public static inline function cullFace(mode:Int) {
+		inline public static function cullFace(mode:Int) {
 			context.cullFace(mode);
 		}	
 		
-		public static inline function deleteBuffer(buffer:GLBuffer) {
+		inline public static function deleteBuffer(buffer:GLBuffer) {
 			context.deleteBuffer(buffer);
 		}	
 		
-		public static inline function deleteFramebuffer(framebuffer:js.html.webgl.Framebuffer) {
+		inline public static function deleteFramebuffer(framebuffer:js.html.webgl.Framebuffer) {
 			context.deleteFramebuffer(framebuffer);
 		}	
 		
-		public static inline function deleteProgram(program:GLProgram) {
+		inline public static function deleteProgram(program:GLProgram) {
 			context.deleteProgram(program);
 		}	
 		
-		public static inline function deleteRenderbuffer(renderbuffer:js.html.webgl.Renderbuffer) {
+		inline public static function deleteRenderbuffer(renderbuffer:js.html.webgl.Renderbuffer) {
 			context.deleteRenderbuffer(renderbuffer);
 		}	
 		
-		public static inline function deleteShader(shader:js.html.webgl.Shader) {
+		inline public static function deleteShader(shader:js.html.webgl.Shader) {
 			context.deleteShader(shader);
 		}	
 		
-		public static inline function deleteTexture(texture:GLTexture) {
+		inline public static function deleteTexture(texture:GLTexture) {
 			context.deleteTexture(texture);
 		}	
 		
-		public static inline function depthFunc(func:Int) {
+		inline public static function depthFunc(func:Int) {
 			context.depthFunc(func);
 		}	
 		
-		public static inline function depthMask(flag:Bool) {
+		inline public static function depthMask(flag:Bool) {
 			context.depthMask(flag);
 		}	
 		
-		public static inline function depthRange(zNear:Float, zFar:Float) {
+		inline public static function depthRange(zNear:Float, zFar:Float) {
 			context.depthRange(zNear, zFar);
 		}	
 		
-		public static inline function detachShader(program:GLProgram, shader:js.html.webgl.Shader) {
+		inline public static function detachShader(program:GLProgram, shader:js.html.webgl.Shader) {
 			context.detachShader(program, shader);		
 		}	
 		
-		public static inline function disable(cap:Int) {
+		inline public static function disable(cap:Int) {
 			context.disable(cap);
 		}	
 		
-		public static inline function disableVertexAttribArray(index:Int) {
+		inline public static function disableVertexAttribArray(index:Int) {
 			context.disableVertexAttribArray(index);
 		}	
 		
-		public static inline function drawArrays(mode:Int, first:Int, count:Int) {
+		inline public static function drawArrays(mode:Int, first:Int, count:Int) {
 			context.drawArrays(mode, first, count);
 		}	
 		
-		public static inline function drawElements(mode:Int, count:Int, type:Int, offset:Int) {
+		inline public static function drawElements(mode:Int, count:Int, type:Int, offset:Int) {
 			context.drawElements(mode, count, type, offset);
 		}	
 		
-		public static inline function enable(cap:Int) {
+		inline public static function enable(cap:Int) {
 			context.enable(cap);
 		}	
 		
-		public static inline function enableVertexAttribArray(index:Int) {
+		inline public static function enableVertexAttribArray(index:Int) {
 			context.enableVertexAttribArray(index);
 		}	
 		
-		public static inline function finish() {
+		inline public static function finish() {
 			context.finish();
 		}	
 		
-		public static inline function flush() {
+		inline public static function flush() {
 			context.flush();
 		}	
 		
-		public static inline function framebufferRenderbuffer(target:Int, attachment:Int, renderbuffertarget:Int, renderbuffer:js.html.webgl.Renderbuffer) {
+		inline public static function framebufferRenderbuffer(target:Int, attachment:Int, renderbuffertarget:Int, renderbuffer:js.html.webgl.Renderbuffer) {
 			context.framebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer);
 		}	
 		
-		public static inline function framebufferTexture2D(target:Int, attachment:Int, textarget:Int, texture:GLTexture, level:Int) {
+		inline public static function framebufferTexture2D(target:Int, attachment:Int, textarget:Int, texture:GLTexture, level:Int) {
 			context.framebufferTexture2D(target, attachment, textarget, texture, level);
 		}	
 		
-		public static inline function frontFace(mode:Int) {
+		inline public static function frontFace(mode:Int) {
 			context.frontFace(mode);
 		}	
 		
-		public static inline function generateMipmap(target:Int) {
+		inline public static function generateMipmap(target:Int) {
 			context.generateMipmap(target);
 		}	
 		
-		public static inline function getActiveAttrib(program:GLProgram, index:Int):js.html.webgl.ActiveInfo {
+		inline public static function getActiveAttrib(program:GLProgram, index:Int):js.html.webgl.ActiveInfo {
 			return context.getActiveAttrib(program, index);
 		}	
 		
-		public static inline function getActiveUniform(program:GLProgram, index:Int):js.html.webgl.ActiveInfo {
+		inline public static function getActiveUniform(program:GLProgram, index:Int):js.html.webgl.ActiveInfo {
 			return context.getActiveUniform(program, index);
 		}	
 		
-		public static inline function getAttachedShaders(program:GLProgram):Array<js.html.webgl.Shader> {
+		inline public static function getAttachedShaders(program:GLProgram):Array<js.html.webgl.Shader> {
 			return context.getAttachedShaders(program);
 		}	
 		
-		public static inline function getAttribLocation(program:GLProgram, name:String):Int {
+		inline public static function getAttribLocation(program:GLProgram, name:String):Int {
 			return context.getAttribLocation(program, name);
 		}	
 		
-		public static inline function getBufferParameter(target:Int, pname:Int):Int {
+		inline public static function getBufferParameter(target:Int, pname:Int):Int {
 			return context.getBufferParameter(target, pname);
 		}	
 		
-		public static inline function getContextAttributes():js.html.webgl.ContextAttributes {
+		inline public static function getContextAttributes():js.html.webgl.ContextAttributes {
 			return context.getContextAttributes();
 		}	
 		
-		public static inline function getError():Int {
+		inline public static function getError():Int {
 			return context.getError();
 		}	
 		
-		public static inline function getExtension(name:String):Dynamic {
+		inline public static function getExtension(name:String):Dynamic {
 			return context.getExtension(name);
 		}	
 		
-		public static inline function getFramebufferAttachmentParameter(target:Int, attachment:Int, pname:Int):Int {
+		inline public static function getFramebufferAttachmentParameter(target:Int, attachment:Int, pname:Int):Int {
 			return context.getFramebufferAttachmentParameter(target, attachment, pname);
 		}	
 		
-		public static inline function getParameter(pname:Int):Dynamic {
+		inline public static function getParameter(pname:Int):Dynamic {
 			return context.getParameter(pname);
 		}	
 		
-		public static inline function getProgramInfoLog(program:GLProgram):String {
+		inline public static function getProgramInfoLog(program:GLProgram):String {
 			return context.getProgramInfoLog(program);
 		}	
 		
-		public static inline function getProgramParameter(program:GLProgram, pname:Int):Int {
+		inline public static function getProgramParameter(program:GLProgram, pname:Int):Int {
 			return context.getProgramParameter(program, pname);
 		}	
 		
-		public static inline function getRenderbufferParameter(target:Int, pname:Int):Int {
+		inline public static function getRenderbufferParameter(target:Int, pname:Int):Int {
 			return context.getRenderbufferParameter(target, pname);
 		}	
 		
-		public static inline function getShaderInfoLog(shader:js.html.webgl.Shader):String {
+		inline public static function getShaderInfoLog(shader:js.html.webgl.Shader):String {
 			return context.getShaderInfoLog(shader);
 		}	
 		
-		public static inline function getShaderParameter(shader:js.html.webgl.Shader, pname:Int):Int {
+		inline public static function getShaderParameter(shader:js.html.webgl.Shader, pname:Int):Int {
 			return context.getShaderParameter(shader, pname);
 		}	
 		
-		public static inline function getShaderPrecisionFormat(shadertype:Int, precisiontype:Int):js.html.webgl.ShaderPrecisionFormat {
+		inline public static function getShaderPrecisionFormat(shadertype:Int, precisiontype:Int):js.html.webgl.ShaderPrecisionFormat {
 			return context.getShaderPrecisionFormat(shadertype, precisiontype);
 		}	
 		
-		public static inline function getShaderSource(shader:js.html.webgl.Shader):String {
+		inline public static function getShaderSource(shader:js.html.webgl.Shader):String {
 			return context.getShaderSource(shader);
 		}	
 		
-		public static inline function getSupportedExtensions():Array<String> {
+		inline public static function getSupportedExtensions():Array<String> {
 			return context.getSupportedExtensions();
 		}	
 		
-		public static inline function getTexParameter(target:Int, pname:Int):Int {
+		inline public static function getTexParameter(target:Int, pname:Int):Int {
 			return context.getTexParameter(target, pname);
 		}	
 		
-		public static inline function getUniform(program:GLProgram, location:GLUniformLocation):Dynamic {
+		inline public static function getUniform(program:GLProgram, location:GLUniformLocation):Dynamic {
 			return context.getUniform(program, location);
 		}	
 		
-		public static inline function getUniformLocation(program:GLProgram, name:String):GLUniformLocation {
+		inline public static function getUniformLocation(program:GLProgram, name:String):GLUniformLocation {
 			return context.getUniformLocation(program, name);
 		}	
 		
-		public static inline function getVertexAttrib(index:Int, pname:Int):Int {
+		inline public static function getVertexAttrib(index:Int, pname:Int):Int {
 			return context.getVertexAttrib(index, pname);
 		}	
 		
-		public static inline function getVertexAttribOffset(index:Int, pname:Int):Int {
+		inline public static function getVertexAttribOffset(index:Int, pname:Int):Int {
 			return context.getVertexAttribOffset(index, pname);
 		}	
 		
-		public static inline function hint(target:Int, mode:Int) {
+		inline public static function hint(target:Int, mode:Int) {
 			context.hint(target, mode);
 		}	
 		
-		public static inline function isBuffer(buffer:GLBuffer):Bool {
+		inline public static function isBuffer(buffer:GLBuffer):Bool {
 			return context.isBuffer(buffer);
 		}	
 		
-		public static inline function isContextLost():Bool {
+		inline public static function isContextLost():Bool {
 			return context.isContextLost();
 		}	
 		
-		public static inline function isEnabled(cap:Int):Bool {
+		inline public static function isEnabled(cap:Int):Bool {
 			return context.isEnabled(cap);
 		}	
 		
-		public static inline function isFramebuffer(framebuffer:js.html.webgl.Framebuffer):Bool {
+		inline public static function isFramebuffer(framebuffer:js.html.webgl.Framebuffer):Bool {
 			return context.isFramebuffer(framebuffer);
 		}	
 		
-		public static inline function isProgram(program:GLProgram):Bool {
+		inline public static function isProgram(program:GLProgram):Bool {
 			return context.isProgram(program);
 		}	
 		
-		public static inline function isRenderbuffer(renderbuffer:js.html.webgl.Renderbuffer):Bool {
+		inline public static function isRenderbuffer(renderbuffer:js.html.webgl.Renderbuffer):Bool {
 			return context.isRenderbuffer(renderbuffer);
 		}	
 		
-		public static inline function isShader(shader:js.html.webgl.Shader):Bool {
+		inline public static function isShader(shader:js.html.webgl.Shader):Bool {
 			return context.isShader(shader);
 		}	
 		
-		public static inline function isTexture(texture:GLTexture):Bool {
+		inline public static function isTexture(texture:GLTexture):Bool {
 			return context.isTexture(texture);
 		}	
 		
-		public static inline function lineWidth(width:Float) {
+		inline public static function lineWidth(width:Float) {
 			context.lineWidth(width);
 		}	
 		
-		public static inline function linkProgram(program:GLProgram) {
+		inline public static function linkProgram(program:GLProgram) {
 			context.linkProgram(program);
 		}	
 		
-		public static inline function pixelStorei(pname:Int, param:Int) {
+		inline public static function pixelStorei(pname:Int, param:Int) {
 			context.pixelStorei(pname, param);
 		}	
 		
-		public static inline function polygonOffset(factor:Float, units:Float) {
+		inline public static function polygonOffset(factor:Float, units:Float) {
 			context.polygonOffset(factor, units);
 		}	
 		
-		public static inline function readPixels(x:Int, y:Int, width:Int, height:Int, format:Int, type:Int, pixels:js.html.ArrayBufferView) {
+		inline public static function readPixels(x:Int, y:Int, width:Int, height:Int, format:Int, type:Int, pixels:js.html.ArrayBufferView) {
 			context.readPixels(x, y, width, height, format, type, pixels);
 		}	
 		
-		public static inline function renderbufferStorage(target:Int, internalformat:Int, width:Int, height:Int) {
+		inline public static function renderbufferStorage(target:Int, internalformat:Int, width:Int, height:Int) {
 			context.renderbufferStorage(target, internalformat, width, height);
 		}	
 		
-		public static inline function sampleCoverage(value:Float, invert:Bool) {
+		inline public static function sampleCoverage(value:Float, invert:Bool) {
 			context.sampleCoverage(value, invert);
 		}	
 		
-		public static inline function scissor(x:Int, y:Int, width:Int, height:Int) {
+		inline public static function scissor(x:Int, y:Int, width:Int, height:Int) {
 			context.scissor(x, y, width, height);
 		}	
 		
-		public static inline function shaderSource(shader:js.html.webgl.Shader, source:String) {
+		inline public static function shaderSource(shader:js.html.webgl.Shader, source:String) {
 			context.shaderSource(shader, source);
 		}	
 		
-		public static inline function stencilFunc(func:Int, ref:Int, mask:Int) {
+		inline public static function stencilFunc(func:Int, ref:Int, mask:Int) {
 			context.stencilFunc(func, ref, mask);
 		}	
 		
-		public static inline function stencilFuncSeparate(face:Int, func:Int, ref:Int, mask:Int) {
+		inline public static function stencilFuncSeparate(face:Int, func:Int, ref:Int, mask:Int) {
 			context.stencilFuncSeparate(face, func, ref, mask);
 		}	
 		
-		public static inline function stencilMask(mask:Int) {
+		inline public static function stencilMask(mask:Int) {
 			context.stencilMask(mask);
 		}	
 		
-		public static inline function stencilMaskSeparate(face:Int, mask:Int) {
+		inline public static function stencilMaskSeparate(face:Int, mask:Int) {
 			context.stencilMaskSeparate(face, mask);
 		}	
 		
-		public static inline function stencilOp(fail:Int, zfail:Int, zpass:Int) {
+		inline public static function stencilOp(fail:Int, zfail:Int, zpass:Int) {
 			context.stencilOp(fail, zfail, zpass);
 		}	
 		
-		public static inline function stencilOpSeparate(face:Int, fail:Int, zfail:Int, zpass:Int) {
+		inline public static function stencilOpSeparate(face:Int, fail:Int, zfail:Int, zpass:Int) {
 			context.stencilOpSeparate(face, fail, zfail, zpass);
 		}	
 		
-		public static inline function texImage2D(target:Int, level:Int, internalformat:Int, width:Int, height:Int, border:Int, format:Int, type:Int, pixels:js.html.ArrayBufferView) {
+		inline public static function texImage2D(target:Int, level:Int, internalformat:Int, width:Int, height:Int, border:Int, format:Int, type:Int, pixels:js.html.ArrayBufferView) {
 			context.texImage2D(target, level, internalformat, width, height, border, format, type, pixels);
 		}	
 		
-		public static inline function texParameterf(target:Int, pname:Int, param:Float) {
+		inline public static function texParameterf(target:Int, pname:Int, param:Float) {
 			context.texParameterf(target, pname, param);
 		}	
 		
-		public static inline function texParameteri(target:Int, pname:Int, param:Int) {
+		inline public static function texParameteri(target:Int, pname:Int, param:Int) {
 			context.texParameteri(target, pname, param);
 		}	
 		
-		public static inline function texSubImage2D(target:Int, level:Int, xoffset:Int, yoffset:Int, width:Int, height:Int, format:Int, type:Int, pixels:js.html.ArrayBufferView) {
+		inline public static function texSubImage2D(target:Int, level:Int, xoffset:Int, yoffset:Int, width:Int, height:Int, format:Int, type:Int, pixels:js.html.ArrayBufferView) {
 			context.texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels);
 		}	
 		
-		public static inline function uniform1f(location:GLUniformLocation, x:Float) {
+		inline public static function uniform1f(location:GLUniformLocation, x:Float) {
 			context.uniform1f(location, x);
 		}	
 		
-		public static inline function uniform1fv(location:GLUniformLocation, x:js.html.Float32Array) {
+		inline public static function uniform1fv(location:GLUniformLocation, x:js.html.Float32Array) {
 			context.uniform1fv(location, x);
 		}	
 		
-		public static inline function uniform1i(location:GLUniformLocation, x:Int) {
+		inline public static function uniform1i(location:GLUniformLocation, x:Int) {
 			context.uniform1i(location, x);
 		}	
 		
-		public static inline function uniform1iv(location:GLUniformLocation, v:js.html.Int32Array) {
+		inline public static function uniform1iv(location:GLUniformLocation, v:js.html.Int32Array) {
 			context.uniform1iv(location, v);
 		}	
 		
-		public static inline function uniform2f(location:GLUniformLocation, x:Float, y:Float) {
+		inline public static function uniform2f(location:GLUniformLocation, x:Float, y:Float) {
 			context.uniform2f(location, x, y);
 		}	
 		
-		public static inline function uniform2fv(location:GLUniformLocation, v:js.html.Float32Array) {
+		inline public static function uniform2fv(location:GLUniformLocation, v:js.html.Float32Array) {
 			context.uniform2fv(location, v);
 		}	
 		
-		public static inline function uniform2i(location:GLUniformLocation, x:Int, y:Int) {
+		inline public static function uniform2i(location:GLUniformLocation, x:Int, y:Int) {
 			context.uniform2i(location, x, y);
 		}	
 		
-		public static inline function uniform2iv(location:GLUniformLocation, v:js.html.Int32Array) {
+		inline public static function uniform2iv(location:GLUniformLocation, v:js.html.Int32Array) {
 			context.uniform2iv(location, v);
 		}	
 		
-		public static inline function uniform3f(location:GLUniformLocation, x:Float, y:Float, z:Float) {
+		inline public static function uniform3f(location:GLUniformLocation, x:Float, y:Float, z:Float) {
 			context.uniform3f(location, x, y, z);
 		}	
 		
-		public static inline function uniform3fv(location:GLUniformLocation, v:js.html.Float32Array) {
+		inline public static function uniform3fv(location:GLUniformLocation, v:js.html.Float32Array) {
 			context.uniform3fv(location, v);
 		}	
 		
-		public static inline function uniform3i(location:GLUniformLocation, x:Int, y:Int, z:Int) {
+		inline public static function uniform3i(location:GLUniformLocation, x:Int, y:Int, z:Int) {
 			context.uniform3i(location, x, y, z);
 		}	
 		
-		public static inline function uniform3iv(location:GLUniformLocation, v:js.html.Int32Array) {
+		inline public static function uniform3iv(location:GLUniformLocation, v:js.html.Int32Array) {
 			context.uniform3iv(location, v);
 		}	
 		
-		public static inline function uniform4f(location:GLUniformLocation, x:Float, y:Float, z:Float, w:Float) {
+		inline public static function uniform4f(location:GLUniformLocation, x:Float, y:Float, z:Float, w:Float) {
 			context.uniform4f(location, x, y, z, w);
 		}	
 		
-		public static inline function uniform4fv(location:GLUniformLocation, v:js.html.Float32Array) {
+		inline public static function uniform4fv(location:GLUniformLocation, v:js.html.Float32Array) {
 			context.uniform4fv(location, v);
 		}	
 		
-		public static inline function uniform4i(location:GLUniformLocation, x:Int, y:Int, z:Int, w:Int) {
+		inline public static function uniform4i(location:GLUniformLocation, x:Int, y:Int, z:Int, w:Int) {
 			context.uniform4i(location, x, y, z, w);
 		}	
 		
-		public static inline function uniform4iv(location:GLUniformLocation, v:js.html.Int32Array) {
+		inline public static function uniform4iv(location:GLUniformLocation, v:js.html.Int32Array) {
 			context.uniform4iv(location, v);
 		}	
 		
-		public static inline function uniformMatrix2fv(location:GLUniformLocation, transpose:Bool, v:js.html.Float32Array) {
+		inline public static function uniformMatrix2fv(location:GLUniformLocation, transpose:Bool, v:js.html.Float32Array) {
 			context.uniformMatrix2fv(location, transpose, v);
 		}	
 		
-		public static inline function uniformMatrix3fv(location:GLUniformLocation, transpose:Bool, v:js.html.Float32Array) {
+		inline public static function uniformMatrix3fv(location:GLUniformLocation, transpose:Bool, v:js.html.Float32Array) {
 			context.uniformMatrix3fv(location, transpose, v);
 		}	
 		
-		public static inline function uniformMatrix4fv(location:GLUniformLocation, transpose:Bool, v:js.html.Float32Array) {
+		inline public static function uniformMatrix4fv(location:GLUniformLocation, transpose:Bool, v:js.html.Float32Array) {
 			context.uniformMatrix4fv(location, transpose, v);
 		}
 		
-		public static inline function useProgram(program:GLProgram) {
+		inline public static function useProgram(program:GLProgram) {
 			context.useProgram(program);
 		}	
 		
-		public static inline function validateProgram(program:GLProgram) {
+		inline public static function validateProgram(program:GLProgram) {
 			context.validateProgram(program);
 		}	
 		
-		public static inline function vertexAttrib1f(indx:Int, x:Float) {
+		inline public static function vertexAttrib1f(indx:Int, x:Float) {
 			context.vertexAttrib1f(indx, x);
 		}	
 		
-		public static inline function vertexAttrib1fv(indx:Int, values:js.html.Float32Array) {
+		inline public static function vertexAttrib1fv(indx:Int, values:js.html.Float32Array) {
 			context.vertexAttrib1fv(indx, values);
 		}	
 		
-		public static inline function vertexAttrib2f(indx:Int, x:Float, y:Float) {
+		inline public static function vertexAttrib2f(indx:Int, x:Float, y:Float) {
 			context.vertexAttrib2f(indx, x, y);
 		}	
 		
-		public static inline function vertexAttrib2fv(indx:Int, values:js.html.Float32Array) {
+		inline public static function vertexAttrib2fv(indx:Int, values:js.html.Float32Array) {
 			context.vertexAttrib2fv(indx, values);
 		}	
 		
-		public static inline function vertexAttrib3f(indx:Int, x:Float, y:Float, z:Float) {
+		inline public static function vertexAttrib3f(indx:Int, x:Float, y:Float, z:Float) {
 			context.vertexAttrib3f(indx, x, y, z);		
 		}	
 		
-		public static inline function vertexAttrib3fv(indx:Int, values:js.html.Float32Array) {
+		inline public static function vertexAttrib3fv(indx:Int, values:js.html.Float32Array) {
 			context.vertexAttrib3fv(indx, values);
 		}	
 		
-		public static inline function vertexAttrib4f(indx:Int, x:Float, y:Float, z:Float, w:Float) {
+		inline public static function vertexAttrib4f(indx:Int, x:Float, y:Float, z:Float, w:Float) {
 			context.vertexAttrib4f(indx, x, y, z, w);
 		}	
 		
-		public static inline function vertexAttrib4fv(indx:Int, values:js.html.Float32Array) {
+		inline public static function vertexAttrib4fv(indx:Int, values:js.html.Float32Array) {
 			context.vertexAttrib4fv(indx, values);	
 		}	
 		
-		public static inline function vertexAttribPointer(indx:Int, size:Int, type:Int, normalized:Bool, stride:Int, offset:Int) {
+		inline public static function vertexAttribPointer(indx:Int, size:Int, type:Int, normalized:Bool, stride:Int, offset:Int) {
 			context.vertexAttribPointer(indx, size, type, normalized, stride, offset);		
 		}	
 		
-		public static inline function viewport(x:Int, y:Int, width:Int, height:Int) {
+		inline public static function viewport(x:Int, y:Int, width:Int, height:Int) {
 			context.viewport(x, y, width, height);		
 		}	
 		
