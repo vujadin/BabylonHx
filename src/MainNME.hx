@@ -25,7 +25,6 @@ import com.babylonhx.lights.HemisphericLight;
 import com.babylonhx.lights.DirectionalLight;
 import com.babylonhx.lights.PointLight;
 import com.babylonhx.materials.StandardMaterial;
-import com.babylonhx.materials.PBRMaterial;
 import com.babylonhx.sprites.Sprite;
 import com.babylonhx.sprites.SpriteManager;
 import com.babylonhx.animations.Animation;
@@ -53,17 +52,7 @@ class MainNME extends nme.display.Sprite {
 	
 	var scene:Scene;
 	var engine:Engine;
-	var followCam:ArcRotateCamera;
-	
-	var randomActors:Array<Actor> = [];
-	var keys = { left: false, right: false, up: false, space: false };
-	var player:Actor;
-	var jumpPower:Sprite;
-	var actors:Array<Actor> = [];
-	var game:Game;
-	
-	var gravity:Int = 800;
-	
+		
 	
 	public function new() {
 		super();
@@ -97,7 +86,7 @@ class MainNME extends nme.display.Sprite {
 	function createDemo() {
 		//new samples.BasicScene(scene);
 		//new samples.BasicElements(scene);
-		//new samples.CandleLight(scene);
+		//new samples.DashedLinesMesh(scene);
 		//new samples.RotationAndScaling(scene);
 		//new samples.Materials(scene);
 		//new samples.Lights(scene);
@@ -119,6 +108,8 @@ class MainNME extends nme.display.Sprite {
 		//new samples.Physics2(scene);
 		//new samples.Physics_Pyramid(scene);
 		//new samples.PhysicsSimple(scene);
+		//new samples.PhysicsCar(scene);
+		//new samples.PhysicsNew(scene);
 		//new samples.PolygonMesh1(scene);
 		//new samples.PolygonMesh2(scene);
 		//new samples.PolygonMesh3(scene);
@@ -147,6 +138,7 @@ class MainNME extends nme.display.Sprite {
 		//new samples.PostprocessRefraction(scene);
 		//new samples.PostprocessConvolution(scene);
 		//new samples.GodRays(scene);
+		//new samples.GodRays2(scene);
 		//new samples.DepthOfField(scene);
 		//new samples.Actions(scene);
 		//new samples.Picking(scene);		
@@ -156,196 +148,43 @@ class MainNME extends nme.display.Sprite {
 		//new samples.InstancedBones(scene);				
 		//new samples.AdvancedShadows(scene);
 		//new samples.Ribbons(scene);
+		//new samples.RibbonTest2(scene);
 		//new samples.SoftShadows(scene);		
 		//new samples.BabylonHxWebsiteScene(scene);
-		new samples.PointLightShadow(scene);
-	}
-	
-	function initGame(newMeshes:Array<AbstractMesh>, newParticles:Array<ParticleSystem>, newSkeletons:Array<Skeleton>) {
-		scene.beginAnimation(newSkeletons[0], 14, 86, true, 0.8);
+		//new samples.Water(scene);
+		//new samples.SolidParticles1(scene);
+		//new samples.SolidParticles2(scene);
+		//new samples.SolidParticles3(scene);
+		//new samples.SolidParticles4(scene);
+		//new samples.SolidParticles5(scene);
+		//new samples.PointLightShadow(scene);
+		//new samples.Labyrinth(scene);
+		//new samples.FireMat(scene);
+		//new samples.WaterMat(scene);
+		//new samples.LavaMat(scene);
+		//new samples.NormalMat(scene);
+		//new samples.ForestOfPythagoras(scene);
+		//new samples.Particles4(scene);
+		//new samples.MaterialsLibTest(scene);	
+		//new samples.ReflectionProbeTest(scene);
+		//new samples.IcoSphereTest(scene);
+		//new samples.PBRMaterialTest1(scene);
+		//new samples.PBRMaterialTest2(scene);	
+		//new samples.PBRMaterialTest3(scene);
+		//new samples.PBRMaterialTest4(scene);
+		//new samples.PBRMaterialTest5(scene);
+		//new samples.TorusThing(scene);
+		//new samples.StarfieldMaterialTest(scene);
+		//new samples.FeaturedDemo1(scene);
+		new samples.GlosinessAndRoughness(scene);
+		//new samples.FurMat(scene);
+		//new samples.HaxedNES(scene);
+		//new samples.RefractionMaterial(scene);
+		//new samples.SponzaDynamicShadows(scene);
+		//new samples.RefractReflect(scene);
+		//new samples.AnimationBlending(scene);
 		
-		//new Layer("background", "assets/img/bkg.jpg", scene, true);
-		
-		var light = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);
-		//var light = new DirectionalLight("dir01", new Vector3(0, -1, -0.8), scene);
-		//var light0 = new PointLight("Omni0", new Vector3(21.84, 50, -28.26), scene);
-		//light0.intensity = 5;
-				
-		var ac = new org.collisionhaxe.Actor(new org.collisionhaxe.BoundingBox(520, 380, 30, 5), 0, 0, true);
-		ac.mesh = Mesh.CreateBox("box", { width: 30, height: 5, depth: 20 }, scene);
-		randomActors.push(ac);
-		
-		var minPoleGap = 80;
-		var maxPoleGap = 250;
-		
-		var lastPoleX = 520;
-		for (i in 0...200) {
-			var xOffset = getRandomInt(minPoleGap, maxPoleGap);
-			var x = lastPoleX - xOffset;
-			lastPoleX -= xOffset;
-			var y = getRandomInt(250, 380);
-			var w = 30;
-			var h = 5;
-			var actor = new org.collisionhaxe.Actor(new org.collisionhaxe.BoundingBox(x, y, w, h), 0, 0, true);
-			actor.mesh = cast(ac.mesh, Mesh).createInstance("inst" + i);
-			actor.mesh.position.x = x;
-			actor.mesh.position.y = y;
-			randomActors.push(actor);
-		}		
-		
-		player = new org.collisionhaxe.Actor(new org.collisionhaxe.BoundingBox(520, 1100, 20, 30), 0, 0, false);
-		player.mesh = newMeshes[0];
-		//player.mesh = Mesh.CreateBox("player", { width: 20, height: 30, depth: 10 }, scene);
-		player.mesh.rotation.y = Math.PI / 2;
-		player.mesh.scaling.scaleInPlace(0.2);
-		player.mesh.setPositionWithLocalVector(new Vector3(0, 0, -100));
-		
-		actors = randomActors.concat([player]);
-		
-		/*var playerMaterial = new StandardMaterial("playermat", scene);
-		playerMaterial.diffuseColor = Color3.Green();
-		player.mesh.material = playerMaterial;*/
-		
-		var spriteManager = new SpriteManager("powerbarmanager", "assets/img/disp2.jpg", 8, 8, scene); 
-		jumpPower = new Sprite("jumpPower", spriteManager);
-		jumpPower.width = 0;
-		jumpPower.height = 4;
-		
-		followCam = new ArcRotateCamera("cam", 1.75, 1.4, 350, player.mesh, scene);
-		
-		//var followCam = new ArcFollowCamera("Camera", 1.650, 1.1, 350, player.mesh, scene);
-		//followCam.position = new Vector3(530.92, 483.27, 1417.86);
-		
-		// Let's add a Follow Camera.
-		// It is set initially very far from the roller-coaster
-		// in order to get an "approach"" effect on start 
-		/*followCam = new FollowCamera("fcam", new Vector3(20, 800, -800), scene);
-		followCam.target = player.mesh;
-		followCam.maxCameraSpeed = 1;
-		followCam.rotationOffset = 250;
-		followCam.radius = 450;
-		followCam.cameraAcceleration = 0.02;
-		followCam.maxCameraSpeed = 3;
-		followCam.heightOffset = 60;*/
-		
-		/*var camera = new FreeCamera("Camera", new Vector3(530.92, 483.27, 1417.86), scene);
-		camera.rotation = new Vector3(0.0, 3.18, 0);
-		*/
-		followCam.attachControl();
-		
-		// Skybox
-		/*var skybox = Mesh.CreateBox("skyBox", 1000.0, scene);
-		var skyboxMaterial = new StandardMaterial("skyBox", scene);
-		skyboxMaterial.diffuseColor = Color3.Yellow();
-		skyboxMaterial.backFaceCulling = false;
-		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/skybox", scene);
-		skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
-		skyboxMaterial.diffuseColor = new Color3(0, 0, 0);
-		skyboxMaterial.specularColor = new Color3(0, 0, 0);
-		skybox.material = skyboxMaterial;
-		skybox.infiniteDistance = true;*/
-		
-		
-		//var a = new Animation("a", "rotation.z", 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE); 
-		//var keys:Array<BabylonFrame> = [];
-		//keys.push({ frame: 0, value: 0 });
-		//keys.push({ frame: 20, value: 2 * Math.PI });
-		//a.setKeys(keys);	   
-		//var easingFunction = new CircleEase();
-		//easingFunction.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
-		//a.setEasingFunction(easingFunction); 
-		//player.mesh.animations.push(a);	
-	   
-				
-		game = new org.collisionhaxe.Game(actors);
-		
-		Engine.mouseDown.push(jumpPrepare);
-		Engine.mouseUp.push(jump);
-		#if mobile
-		Engine.touchDown.push(jumpPrepare);
-		Engine.touchUp.push(jump);
-		#end
-		
-		trace(" ok ");
-		
-		scene.getEngine().runRenderLoop(function () {
-			game.loop(engine.getDeltaTime() / 1000);
-			
-			player.velocityY -= gravity * (engine.getDeltaTime() / 1000);
-			
-			for(actor in game.actors) {
-				actor.mesh.position.x = actor.boundingBox.x;
-				actor.mesh.position.y = actor.boundingBox.y;
-			}
-			
-			if (keys.left) {
-				player.velocityX += 10;
-				if (player.velocityX > 200) {
-					player.velocityX = 200;
-				}
-			}
-			else if (keys.right || player.isJumping) {
-				/*player.velocityX -= 10;
-				if (player.velocityX < -200) {
-					player.velocityX = -200;
-				}*/
-				if (!player.isFalling) {
-					player.velocityX = -finalXForce;
-				}
-			}
-			else {
-				player.velocityX = 0;
-			}
-			
-			player.mesh.position.x = player.boundingBox.x;
-			player.mesh.position.y = player.boundingBox.y - 15;
-			
-			if (player.mesh.position.y < -500) {
-				player.isFalling = true;
-				player.boundingBox.y = 700;
-				player.boundingBox.x = 520;
-				player.velocityX = 0;
-				followCam.position.set(366, 442, 422);
-			}
-			
-			jumpPower.position.x = player.mesh.position.x + 5 - (jumpPower.width / 2);
-			jumpPower.position.y = player.mesh.position.y + 40;
-			
-			if (isMouseDown) {
-				if (jumpPower.width < 30) {
-					jumpPower.width += 0.3;
-				}
-			}
-			
-			if (followCam != null) {
-				cast(followCam, ArcRotateCamera).target = player.mesh.position;// .subtract(offVec);
-			}
-			
-			scene.render();
-		});
-	}
-	
-	var isMouseDown:Bool = false;
-	function jumpPrepare() {
-		if (!player.isJumping) {
-			isMouseDown = true;
-		}
-	}
-	
-	var finalXForce:Float = 0;
-	function jump() {		
-		if (!player.isJumping) {
-			//scene.beginAnimation(player.mesh, 0, 20, false);
-			isMouseDown = false;
-			player.isJumping = true;			
-			finalXForce = (jumpPower.width / 0.2) * 4.7;
-			player.velocityY = 200 + finalXForce;
-			jumpPower.width = 0;
-		}
-	}
-	
-	function getRandomInt(min:Int, max:Int):Int {
-		return Math.floor(Math.random() * (max - min + 1)) + min;
+		stage.addEventListener(Event.ENTER_FRAME, engine._renderLoop);
 	}
 	
 	function resize(e){
