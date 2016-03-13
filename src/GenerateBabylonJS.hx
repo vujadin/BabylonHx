@@ -7,7 +7,6 @@ import com.babylonhx.math.Space;
 import com.babylonhx.math.BezierCurve;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Color4;
-import com.babylonhx.math.ColorMatrix;
 import com.babylonhx.math.Curve3;
 import com.babylonhx.math.Frustum;
 import com.babylonhx.math.Matrix;
@@ -17,11 +16,11 @@ import com.babylonhx.math.Plane;
 import com.babylonhx.math.PositionNormalTextureVertex;
 import com.babylonhx.math.PositionNormalVertex;
 import com.babylonhx.math.Quaternion;
-import com.babylonhx.math.Ray;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Viewport;
+import com.babylonhx.math.Tools;
 
 import com.babylonhx.actions.Action;
 import com.babylonhx.actions.ActionEvent;
@@ -47,6 +46,9 @@ import com.babylonhx.actions.ValueCondition;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.animations.Animatable;
 import com.babylonhx.animations.Animation;
+import com.babylonhx.animations.AnimationEvent;
+import com.babylonhx.animations.AnimationRange;
+import com.babylonhx.animations.PathCursor;
 
 import com.babylonhx.animations.easing.IEasingFunction;
 import com.babylonhx.animations.easing.BackEase;
@@ -62,6 +64,11 @@ import com.babylonhx.animations.easing.QuarticEase;
 import com.babylonhx.animations.easing.QuinticEase;
 import com.babylonhx.animations.easing.SineEase;
 
+import com.babylonhx.audio.Analyser;
+import com.babylonhx.audio.AudioEngine;
+import com.babylonhx.audio.Sound;
+import com.babylonhx.audio.SoundTrack;
+
 import com.babylonhx.bones.Bone;
 import com.babylonhx.bones.Skeleton;
 
@@ -74,16 +81,19 @@ import com.babylonhx.cameras.FreeCamera;
 import com.babylonhx.cameras.TargetCamera;
 import com.babylonhx.cameras.TouchCamera;
 import com.babylonhx.cameras.VRCameraMetrics;
+import com.babylonhx.cameras.WebVRFreeCamera;
 
 import com.babylonhx.collisions.Collider;
 import com.babylonhx.collisions.CollisionCoordinator;
 import com.babylonhx.collisions.CollisionCoordinatorLegacy;
 import com.babylonhx.collisions.ICollisionCoordinator;
+import com.babylonhx.collisions.IntersectionInfo;
 import com.babylonhx.collisions.PickingInfo;
 
 import com.babylonhx.culling.BoundingBox;
 import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.culling.BoundingSphere;
+import com.babylonhx.culling.Ray;
 
 import com.babylonhx.culling.octrees.IOctreeContainer;
 import com.babylonhx.culling.octrees.Octree;
@@ -114,12 +124,15 @@ import com.babylonhx.materials.Material;
 import com.babylonhx.materials.ShaderMaterial;
 import com.babylonhx.materials.ShadersStore;
 import com.babylonhx.materials.StandardMaterial;
+import com.babylonhx.materials.StandardMaterialDefines;
 
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.materials.textures.CubeTexture;
 import com.babylonhx.materials.textures.DynamicTexture;
+import com.babylonhx.materials.textures.HDRCubeTexture;
 import com.babylonhx.materials.textures.MirrorTexture;
 import com.babylonhx.materials.textures.RawTexture;
+import com.babylonhx.materials.textures.RefractionTexture;
 import com.babylonhx.materials.textures.RenderTargetTexture;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.materials.textures.VideoTexture;
@@ -133,6 +146,7 @@ import com.babylonhx.materials.textures.procedurals.standard.FireProceduralTextu
 import com.babylonhx.materials.textures.procedurals.standard.GrassProceduralTexture;
 import com.babylonhx.materials.textures.procedurals.standard.MarbleProceduralTexture;
 import com.babylonhx.materials.textures.procedurals.standard.RoadProceduralTexture;
+import com.babylonhx.materials.textures.procedurals.standard.StarfieldProceduralTexture;
 import com.babylonhx.materials.textures.procedurals.standard.WoodProceduralTexture;
 
 import com.babylonhx.mesh._InstancesBatch;
@@ -186,6 +200,9 @@ import com.babylonhx.mesh.simplification.SimplificationTask;
 
 import com.babylonhx.particles.Particle;
 import com.babylonhx.particles.ParticleSystem;
+import com.babylonhx.particles.ModelShape;
+import com.babylonhx.particles.SolidParticle;
+import com.babylonhx.particles.SolidParticleSystem;
 
 import com.babylonhx.physics.IPhysicsEnginePlugin;
 import com.babylonhx.physics.PhysicsBodyCreationOptions;
@@ -221,6 +238,8 @@ import com.babylonhx.postprocess.renderpipeline.PostProcessRenderPass;
 import com.babylonhx.postprocess.renderpipeline.PostProcessRenderPipeline;
 import com.babylonhx.postprocess.renderpipeline.PostProcessRenderPipelineManager;
 
+import com.babylonhx.probes.ReflectionProbe;
+
 import com.babylonhx.rendering.BoundingBoxRenderer;
 import com.babylonhx.rendering.DepthRenderer;
 import com.babylonhx.rendering.OutlineRenderer;
@@ -230,14 +249,23 @@ import com.babylonhx.rendering.RenderingManager;
 import com.babylonhx.sprites.Sprite;
 import com.babylonhx.sprites.SpriteManager;
 
+import com.babylonhx.states._AlphaState;
+import com.babylonhx.states._DepthCullingState;
+
 import com.babylonhx.tools.AsyncLoop;
 import com.babylonhx.tools.ColorTools;
-//import com.babylonhx.tools.ISize;
 import com.babylonhx.tools.SceneSerializer;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.SmartCollection;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.tools.Tools;
+
+import com.babylonhx.tools.hdr.CMGBoundinBox;
+import com.babylonhx.tools.hdr.CubeMapToSphericalPolynomialTools;
+import com.babylonhx.tools.hdr.FileFaceOrientation;
+import com.babylonhx.tools.hdr.HDRTools;
+import com.babylonhx.tools.hdr.PanoramaToCubeMapTools;
+import com.babylonhx.tools.hdr.PMREMGenerator;
 
 import com.babylonhx.tools.sceneoptimizer.HardwareScalingOptimization;
 import com.babylonhx.tools.sceneoptimizer.LensFlaresOptimization;
@@ -257,8 +285,6 @@ import com.babylonhx.IDisposable;
 import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.Node;
 import com.babylonhx.Scene;
-import com.babylonhx._AlphaState;
-import com.babylonhx._DepthCullingState;
 
 
 /**
@@ -266,7 +292,7 @@ import com.babylonhx._DepthCullingState;
  * @author Krtolica Vujadin
  */
 class GenerateBabylonJS {
-		
+	
 	public function new() {
 		
 	}
