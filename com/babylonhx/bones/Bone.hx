@@ -15,7 +15,7 @@ import com.babylonhx.animations.AnimationRange;
 @:expose('BABYLON.Bone') class Bone extends Node implements IAnimatable {
 	
 	public var children:Array<Bone> = [];
-	public var length:Int;
+	public var length:Int = -1;
 
 	private var _skeleton:Skeleton;
 	private var _matrix:Matrix;
@@ -88,6 +88,10 @@ import com.babylonhx.animations.AnimationRange;
 		
 		return matrix;
 	}
+	
+	inline public function getAbsoluteTransform():Matrix {
+		return this._absoluteTransform;
+	}
 
 	// Methods
 	inline public function updateMatrix(matrix:Matrix) {
@@ -121,6 +125,7 @@ import com.babylonhx.animations.AnimationRange;
 		// all animation may be coming from a library skeleton, so may need to create animation
 		if (this.animations.length == 0){
 			this.animations.push(new Animation(this.name, "_matrix", source.animations[0].framePerSecond, Animation.ANIMATIONTYPE_MATRIX, 0)); 
+			this.animations[0].setKeys([{ frame: 0, value: 0 }]);
 		}
 		
 		// get animation info / verify there is such a range from the source bone

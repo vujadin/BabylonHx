@@ -61,7 +61,7 @@ class GridMaterial extends Material {
 	 * The grid opacity outside of the lines.
 	 */
 	@serialize()
-	public var opacity:Float = 0.1;
+	public var opacity:Float = 1.0;
 	
 	private var _gridControl:Vector4;
 	

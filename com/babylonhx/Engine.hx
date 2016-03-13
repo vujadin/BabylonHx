@@ -155,8 +155,6 @@ import nme.display.OpenGLView;
 	public var _workingContext:OpenGLView; 
 	#end
 	
-	public static var app:Dynamic;
-	
 	// quick and dirty solution to handle mouse/keyboard 
 	public static var mouseDown:Array<Dynamic> = [];
 	public static var mouseUp:Array<Dynamic> = [];
@@ -175,9 +173,8 @@ import nme.display.OpenGLView;
 	public var audioEngine:AudioEngine = new AudioEngine();
 	#end
 	
-		
+	
 	public function new(canvas:Dynamic, antialias:Bool = false, ?options:Dynamic, adaptToDeviceRatio:Bool = false) {		
-		Engine.app = canvas;
 		this._renderingCanvas = canvas;
 		this._canvasClientRect.width = 960;// canvas.width;
 		this._canvasClientRect.height = 640;// canvas.height;
@@ -195,6 +192,7 @@ import nme.display.OpenGLView;
 		
 		#if (openfl || nme)
 		this._workingContext = new OpenGLView();
+		this._workingContext.render = this._renderLoop;
 		canvas.addChild(this._workingContext);
 		#end
 		
@@ -540,7 +538,11 @@ import nme.display.OpenGLView;
 	inline public function endFrame() {
 		//this.flushFramebuffer();
 		#if openfl
-		GL.activeTexture(GL.TEXTURE0);
+		// Depth buffer
+		//this.setDepthBuffer(true);
+		//this.setDepthFunctionToLessOrEqual();
+		//this.setDepthWrite(true);		
+		//this._activeTexturesCache = new Vector<BaseTexture>(this._maxTextureChannels);
 		#end
 	}
 	

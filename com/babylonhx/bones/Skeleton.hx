@@ -34,7 +34,7 @@ import haxe.ds.Vector;
 	
 	private var _ranges:Map<String, AnimationRange> = new Map();
 	
-	public var __smartArrayFlags:Array<Int>;
+	public var __smartArrayFlags:Array<Int> = [];
 	
 
 	public function new(name:String, id:String, scene:Scene) {
