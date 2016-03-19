@@ -8,9 +8,9 @@ package com.babylonhx.animations.easing;
 @:expose('BABYLON.EasingFunction') class EasingFunction implements IEasingFunction {
 	
 	//Statics
-	public static var EASINGMODE_EASEIN:Int = 0;
-	public static var EASINGMODE_EASEOUT:Int = 1;
-	public static var EASINGMODE_EASEINOUT:Int = 2;	
+	public static inline var EASINGMODE_EASEIN:Int = 0;
+	public static inline var EASINGMODE_EASEOUT:Int = 1;
+	public static inline var EASINGMODE_EASEINOUT:Int = 2;
 
 	// Properties
 	private var _easingMode:Int = EasingFunction.EASINGMODE_EASEIN;
