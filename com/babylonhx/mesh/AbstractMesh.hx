@@ -355,10 +355,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return this._boundingInfo;
 	}
 	
-	public function _preActivate() {
-		
-	}
-
+	public function _preActivate() { }
+	
+	public function _preActivateForIntermediateRendering(renderId:Int) { }
+	
 	public function _activate(renderId:Int) {
 		this._renderId = renderId;
 	}

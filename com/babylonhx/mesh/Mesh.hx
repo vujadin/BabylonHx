@@ -489,6 +489,12 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		this._preActivateId = sceneRenderId;
 		this._visibleInstances = null;
 	}
+	
+	override public function _preActivateForIntermediateRendering(renderId:Int) {
+        if (this._visibleInstances != null) {
+            this._visibleInstances.intermediateDefaultRenderId = renderId;
+        }
+    }
 
 	public function _registerInstanceForRenderId(instance:InstancedMesh, renderId:Int) {
 		if (this._visibleInstances == null) {
@@ -732,12 +738,13 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		
 		if (this._visibleInstances != null) {
 			var currentRenderId:Int = scene.getRenderId();
+			var defaultRenderId = (scene._isInIntermediateRendering() ? this._visibleInstances.intermediateDefaultRenderId : this._visibleInstances.defaultRenderId);
 			this._batchCache.visibleInstances[subMeshId] = this._visibleInstances.map[currentRenderId];
 			var selfRenderId:Int = this._renderId;
 			
-			if (this._batchCache.visibleInstances[subMeshId] == null && this._visibleInstances.defaultRenderId > 0) {
-				this._batchCache.visibleInstances[subMeshId] = this._visibleInstances.map[this._visibleInstances.defaultRenderId];
-				currentRenderId = cast Math.max(this._visibleInstances.defaultRenderId, currentRenderId);
+			if (this._batchCache.visibleInstances[subMeshId] == null && defaultRenderId > 0) {
+                this._batchCache.visibleInstances[subMeshId] = this._visibleInstances.map[defaultRenderId];
+                currentRenderId = cast Math.max(defaultRenderId, currentRenderId);
 				selfRenderId = cast Math.max(this._visibleInstances.selfDefaultRenderId, currentRenderId);
 			}
 			

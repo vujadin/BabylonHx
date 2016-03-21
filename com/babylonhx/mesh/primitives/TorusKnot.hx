@@ -39,8 +39,8 @@ import com.babylonhx.tools.Tags;
 		return new TorusKnot(id, this.getScene(), this.radius, this.tube, this.radialSegments, this.tubularSegments, this.p, this.q, this.canBeRegenerated(), null, this.side);
 	}
 	
-	public static function ParseTorusKnot(parsedTorusKnot:Dynamic, scene:Scene):TorusKnot {
-        if (Geometry.ParseGeometry(parsedTorusKnot, scene) == null) {
+	public static function Parse(parsedTorusKnot:Dynamic, scene:Scene):TorusKnot {
+        if (Geometry.Parse(parsedTorusKnot, scene) == null) {
             return null; // null since geometry could be something else than a torusKnot...
         }
 		

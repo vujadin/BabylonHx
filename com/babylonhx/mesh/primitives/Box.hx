@@ -29,8 +29,8 @@ import com.babylonhx.tools.Tags;
 		return new Box(id, this.getScene(), this.size, this.canBeRegenerated(), null, this.side);
 	}
 	
-	public static function ParseBox(parsedBox:Dynamic, scene:Scene):Box {
-        if (Geometry.ParseGeometry(parsedBox, scene) != null) {
+	public static function Parse(parsedBox:Dynamic, scene:Scene):Box {
+        if (Geometry.Parse(parsedBox, scene) != null) {
             return null; // null since geometry could be something else than a box...
         }
 		

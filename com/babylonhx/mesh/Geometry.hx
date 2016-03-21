@@ -721,7 +721,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		}
 	}
 	
-	public static function ParseGeometry(parsedVertexData:Dynamic, scene:Scene, rootUrl:String = ""):Geometry {
+	public static function Parse(parsedVertexData:Dynamic, scene:Scene, rootUrl:String = ""):Geometry {
         if (scene.getGeometryByID(parsedVertexData.id) != null) {
             return null; // null since geometry could be a primitive
         }

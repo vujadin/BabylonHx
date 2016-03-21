@@ -3,10 +3,12 @@ package com.babylonhx.lensflare;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.culling.Ray;
 import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Color3;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Viewport;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.mesh.Mesh;
+import com.babylonhx.tools.Tools;
 
 /**
  * ...
@@ -262,6 +264,42 @@ import com.babylonhx.mesh.Mesh;
 		
 		// Remove from scene
 		this._scene.lensFlareSystems.remove(this);
+	}
+	
+	public static function Parse(parsedLensFlareSystem:Dynamic, scene:Scene, rootUrl:String):LensFlareSystem {
+		var emitter = scene.getLastEntryByID(parsedLensFlareSystem.emitterId);
+		
+		var lensFlareSystem = new LensFlareSystem("lensFlareSystem#" + parsedLensFlareSystem.emitterId, emitter, scene);
+		lensFlareSystem.borderLimit = parsedLensFlareSystem.borderLimit;
+		
+		var _flares:Array<Dynamic> = cast parsedLensFlareSystem.flares;
+		for (index in 0..._flares.length) {
+			var parsedFlare = _flares[index];
+			var flare = new LensFlare(parsedFlare.size, parsedFlare.position, Color3.FromArray(parsedFlare.color), rootUrl + parsedFlare.textureName, lensFlareSystem);
+		}
+		
+		return lensFlareSystem;
+	}
+
+	public function serialize():Dynamic {
+		var serializationObject:Dynamic = { };
+		
+		serializationObject.emitterId = this.getEmitter().id;
+		serializationObject.borderLimit = this.borderLimit;
+		
+		serializationObject.flares = [];
+		for (index in 0...this.lensFlares.length) {
+			var flare = this.lensFlares[index];
+			
+			serializationObject.flares.push({
+				size: flare.size,
+				position: flare.position,
+				color: flare.color.asArray(),
+				textureName: Tools.GetFilename(flare.texture.name)
+			});
+		}
+		
+		return serializationObject;
 	}
 	
 }
