@@ -310,6 +310,7 @@ import com.babylonhx.audio.*;
 
 	private var _renderId:Int = 0;
 	private var _executeWhenReadyTimeoutId:Int = -1;
+	private var _intermediateRendering:Bool = false;
 
 	public var _toBeDisposed:SmartArray<IDisposable> = new SmartArray<IDisposable>(256);
 
@@ -1647,6 +1648,10 @@ import com.babylonhx.audio.*;
 			}
 		}
 	}
+	
+	public function _isInIntermediateRendering():Bool {
+        return this._intermediateRendering;
+    }
 
 	private function _evaluateActiveMeshes() {
 		this.activeCamera._activeMeshes.reset();
@@ -1827,6 +1832,7 @@ import com.babylonhx.audio.*;
 		// Render targets
 		var beforeRenderTargetDate = Tools.Now();
 		if (this.renderTargetsEnabled && this._renderTargets.length > 0) {
+			this._intermediateRendering = true;
 			//Tools.StartPerformanceCounter("Render targets", this._renderTargets.length > 0);
 			for (renderIndex in 0...this._renderTargets.length) {
 				var renderTarget:RenderTargetTexture = this._renderTargets.data[renderIndex];
@@ -1836,7 +1842,10 @@ import com.babylonhx.audio.*;
 					renderTarget.render(hasSpecialRenderTargetCamera);
 				}
 			}
+			
 			//Tools.EndPerformanceCounter("Render targets", this._renderTargets.length > 0);
+			
+			this._intermediateRendering = false;
 			this._renderId++;
 			
             engine.restoreDefaultFramebuffer();  // Restore back buffer
