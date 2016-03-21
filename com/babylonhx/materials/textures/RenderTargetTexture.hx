@@ -172,6 +172,7 @@ import com.babylonhx.math.Matrix;
 		
 		var currentRenderList:Array<AbstractMesh> = cast this.renderList != null ? this.renderList : cast scene.getActiveMeshes().data;
 		
+		var sceneRenderId = scene.getRenderId();
 		for (mesh in currentRenderList) {
 			if (mesh != null) {
 				if (!mesh.isReady()) {
@@ -180,8 +181,10 @@ import com.babylonhx.math.Matrix;
 					continue;
 				}
 				
+				mesh._preActivateForIntermediateRendering(sceneRenderId);
+				
 				if (mesh.isEnabled() && mesh.isVisible && mesh.subMeshes != null && ((mesh.layerMask & scene.activeCamera.layerMask) != 0)) {
-					mesh._activate(scene.getRenderId());
+					mesh._activate(sceneRenderId);
 					
 					for (subMesh in mesh.subMeshes) {
 						scene._activeIndices += subMesh.indexCount;
@@ -195,6 +198,7 @@ import com.babylonhx.math.Matrix;
 			for (face in 0...6) {
 				this.renderToTarget(face, currentRenderList, useCameraPostProcess);
 				scene.incrementRenderId();
+				scene.resetCachedMaterial();
 			}
 		} 
 		else {

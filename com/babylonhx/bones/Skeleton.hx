@@ -51,6 +51,21 @@ import haxe.ds.Vector;
         //make sure it will recalculate the matrix next time prepare is called.
         this._isDirty = true;
 	}
+	
+	/**
+	* Get bone's index searching by name
+	* @param {string} name is bone's name to search for
+	* @return {number} Indice of the bone. Returns -1 if not found
+	*/
+	public function getBoneIndexByName(name:String):Int {
+		for (boneIndex in 0...this.bones.length) {
+			if (this.bones[boneIndex].name == name) {
+				return boneIndex;
+			}
+		}
+		
+		return -1;
+	}
 
 	// Members
 	public function createAnimationRange(name:String, from:Float, to:Float) {
