@@ -4,7 +4,7 @@ import com.babylonhx.cameras.Camera;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.materials.ShadersStore;
-import com.babylonhx.tools.Tools;
+import com.babylonhx.math.Tools;
 
 /**
  * ...

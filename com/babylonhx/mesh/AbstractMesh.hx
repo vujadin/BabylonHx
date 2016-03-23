@@ -1143,7 +1143,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 	}
 
-	public function dispose(doNotRecurse:Bool = false) {
+	override public function dispose(doNotRecurse:Bool = false) {
 		// Animations
         this.getScene().stopAnimation(this);
 		
@@ -1151,7 +1151,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		if (this.getPhysicsImpostor() != PhysicsEngine.NoImpostor) {
 			this.setPhysicsState(PhysicsEngine.NoImpostor);
 		}
-				
+		
 		// Intersections in progress
 		for (index in 0...this._intersectionsInProgress.length) {
 			var other = this._intersectionsInProgress[index];
@@ -1160,6 +1160,23 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 		
 		this._intersectionsInProgress = [];
+		
+		// Lights
+		var lights = this.getScene().lights;
+		
+		for (light in lights) {
+			var meshIndex = light.includedOnlyMeshes.indexOf(this);
+			
+			if (meshIndex != -1) {
+				light.includedOnlyMeshes.splice(meshIndex, 1);
+			}
+			
+			meshIndex = light.excludedMeshes.indexOf(this);
+			
+			if (meshIndex != -1) {
+				light.excludedMeshes.splice(meshIndex, 1);
+			}
+		}
 		
 		// Edges
 		if (this._edgesRenderer != null) {
@@ -1209,6 +1226,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		if (this.onDispose != null) {
 			this.onDispose();
 		}
+		
+		super.dispose();
 	}
 	
 }

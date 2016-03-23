@@ -65,8 +65,6 @@ class NodeCache {
  */
 @:expose('BABYLON.Node') class Node implements ISmartArrayCompatible {
 	
-	public var parent:Node;
-	
 	@serialize()
 	public var name:String;
 	
@@ -97,12 +95,49 @@ class NodeCache {
 	private var _scene:Scene;
 	public var _cache:NodeCache;
 	
+	public var parent(get, set):Node;
+	private var _parentNode:Node;
+	private var _children:Array<Node>;
+	
 
+	/**
+	 * @constructor
+	 * @param {string} name - the name and id to be given to this node
+	 * @param {BABYLON.Scene} the scene this node will be added to
+	 */
 	public function new(name:String, scene:Scene) {
 		this.name = name;
 		this.id = name;
 		this._scene = scene;
 		this._initCache();
+	}
+	
+	private function set_parent(parent:Node):Node {
+		if (this._parentNode == parent) {
+			return parent;
+		}
+		
+		if (this._parentNode != null) {
+			var index = this._parentNode._children.indexOf(this);
+			if (index != -1) {
+				this._parentNode._children.splice(index, 1);
+			}
+		}
+		
+		this._parentNode = parent;
+		
+		if (this._parentNode != null) {
+			if (this._parentNode._children == null) {
+				this._parentNode._children = new Array<Node>();
+			}
+			this._parentNode._children.push(this);
+		}
+		
+		return parent;
+	}
+
+	private function get_parent():Node {
+		return this._parentNode;
 	}
 	
 	inline public function getScene():Scene {
@@ -137,9 +172,7 @@ class NodeCache {
 
 	// override it in derived class if you add new variables to the cache
 	// and call the parent class method if !ignoreParentClass
-	public function _updateCache(ignoreParentClass:Bool = false) {
-		
-	}
+	public function _updateCache(ignoreParentClass:Bool = false) { }
 
 	// override it in derived class if you add new variables to the cache
 	public function _isSynchronized():Bool {
@@ -241,21 +274,25 @@ class NodeCache {
 	}
 
 	/**
-	 * Evaluate a list of nodes and determine if they should be considered as descendants 
-	 * considering the given criterias
-	 * @param {BABYLON.Node[]} list the input array of nodes to evaluate
+	 * Evaluate the list of children and determine if they should be considered as descendants considering the given criterias
 	 * @param {BABYLON.Node[]} results the result array containing the nodes matching the given criterias
-	 * @param {boolean} directDecendantsOnly if true only direct descendants of 'this' will be considered,
-	 * if false direct and also indirect (children of children, an so on in a recursive manner) descendants
-	 * of 'this' will be considered.
-	 * @param predicate: an optional predicate that will be called on every evaluated children, the
-	 * predicate must return true for a given child to be part of the result, otherwise it will be ignored.
+	 * @param {boolean} directDescendantsOnly if true only direct descendants of 'this' will be considered, if false direct and also indirect (children of children, an so on in a recursive manner) descendants of 'this' will be considered.
+	 * @param predicate: an optional predicate that will be called on every evaluated children, the predicate must return true for a given child to be part of the result, otherwise it will be ignored.
 	 */
-	inline public function _getDescendants(list:Array<Node>, results:Array<Node>, directDecendantsOnly:Bool = false, ?predicate:Node->Bool) {
-		for (index in 0...list.length) {
-			var item = list[index];
-			if (((directDecendantsOnly && item.parent == this) || (!directDecendantsOnly && item.isDescendantOf(this))) && (predicate == null || predicate(item))) {
+	public function _getDescendants(results:Array<Node>, directDescendantsOnly:Bool = false, ?predicate:Node->Bool) {
+		if (this._children != null) {
+			return;
+		}
+		
+		for (index in 0...this._children.length) {
+			var item = this._children[index];
+			
+			if (predicate == null || predicate(item)) {
 				results.push(item);
+			}
+			
+			if (!directDescendantsOnly) {
+				item._getDescendants(results, false, predicate);
 			}
 		}
 	}
@@ -269,11 +306,10 @@ class NodeCache {
 	 * predicate must return true for a given child to be part of the result, otherwise it will be ignored.
 	 * @return {BABYLON.Node[]} all children nodes of all types.
 	 */
-	inline public function getDescendants(directDecendantsOnly:Bool = false, ?predicate:Node->Bool):Array<Node> {
+	inline public function getDescendants(directDescendantsOnly:Bool = false, ?predicate:Node->Bool):Array<Node> {
 		var results:Array<Node> = [];
-		this._getDescendants(cast this._scene.meshes, results, directDecendantsOnly, predicate);
-		this._getDescendants(cast this._scene.lights, results, directDecendantsOnly, predicate);
-		this._getDescendants(cast this._scene.cameras, results, directDecendantsOnly, predicate);
+		
+		this._getDescendants(results, directDescendantsOnly, predicate);
 		
 		return results;
 	}
@@ -293,7 +329,9 @@ class NodeCache {
 	public function getChildMeshes(directDecendantsOnly:Bool = false, ?predicate:Node->Bool):Array<AbstractMesh> {
 		var results:Array<AbstractMesh> = [];
 		
-		this._getDescendants(cast this._scene.meshes, cast results, directDecendantsOnly, predicate);
+		this._getDescendants(cast results, directDecendantsOnly, function(node:Node):Bool {
+			return ((predicate == null || predicate(node)) && Std.is(node, AbstractMesh));
+		});
 		
 		return results;
 	}
@@ -373,6 +411,10 @@ class NodeCache {
 		}
 		
 		return serializationRanges;
+	}
+	
+	public function dispose(doNotRecurse:Bool = false) {
+		this.parent = null;
 	}
 	
 	public static function ParseAnimationRanges(node:Node, parsedNode:Dynamic, scene:Scene) {

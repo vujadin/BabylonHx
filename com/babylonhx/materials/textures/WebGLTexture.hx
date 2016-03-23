@@ -42,7 +42,7 @@ import com.babylonhx.utils.GL;
     public var _workingContext:js.html.CanvasRenderingContext2D;
 	#end
 
-	public var __smartArrayFlags:Array<Int>;
+	public var __smartArrayFlags:Array<Int> = [];
 	
 	
 	public function new(url:String, data:GLTexture) {

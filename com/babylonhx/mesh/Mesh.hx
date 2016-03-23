@@ -43,6 +43,8 @@ import com.babylonhx.cameras.Camera;
 import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.particles.ParticleSystem;
 import com.babylonhx.tools.AsyncLoop;
+import com.babylonhx.tools.Observable;
+import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.loading.SceneLoader;
@@ -77,6 +79,38 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
     public static inline var CAP_END:Int = 2;
     public static inline var CAP_ALL:Int = 3;
 	
+	// Events 
+
+	/**
+	 * An event triggered before rendering the mesh
+	 * @type {BABYLON.Observable}
+	 */
+	public var onBeforeRenderObservable:Observable<Mesh> = new Observable<Mesh>();
+
+	/**
+	* An event triggered after rendering the mesh
+	* @type {BABYLON.Observable}
+	*/
+	public var onAfterRenderObservable:Observable<Mesh> = new Observable<Mesh>();
+
+	/**
+	* An event triggered before drawing the mesh
+	* @type {BABYLON.Observable}
+	*/
+	public var onBeforeDrawObservable:Observable<Mesh> = new Observable<Mesh>();
+
+	public var onBeforeDraw(never, set):Mesh->Void;
+	private var _onBeforeDrawObserver:Observer<Mesh>;
+	private function set_onBeforeDraw(callback:Mesh->Void):Mesh->Void {
+		if (this._onBeforeDrawObserver != null) {
+			this.onBeforeDrawObservable.remove(this._onBeforeDrawObserver);
+		}
+		
+		this._onBeforeDrawObserver = this.onBeforeDrawObservable.add(callback);
+		
+		return callback;
+	}
+	
 	// Members
 	public var delayLoadState:Int = Engine.DELAYLOADSTATE_NONE;
 	public var instances:Array<InstancedMesh> = [];
@@ -84,14 +118,11 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	public var _binaryInfo:Dynamic;
 	private var _LODLevels:Array<MeshLODLevel> = [];
 	public var onLODLevelSelection:Float->Mesh->Mesh->Void;
-	public var onBeforeDraw:Void->Void;
 
 	// Private
 	@:allow(com.babylonhx.mesh.Geometry) 
 	private var _geometry:Geometry;
 	
-	private var _onBeforeRenderCallbacks:Array<AbstractMesh->Void> = [];
-	private var _onAfterRenderCallbacks:Array<AbstractMesh->Void> = [];
 	public var _delayInfo:Array<String>; //ANY
 	public var _delayLoadingFunction:Dynamic->Mesh->Void;
 	public var _visibleInstances:_VisibleInstances;
@@ -677,9 +708,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			return;
 		}
 		
-		if (this.onBeforeDraw != null) {
-            this.onBeforeDraw();
-        }
+		this.onBeforeDrawObservable.notifyObservers(this);
 		
 		var engine:Engine = this.getScene().getEngine();
 		
@@ -707,27 +736,19 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	}
 
 	public function registerBeforeRender(func:AbstractMesh->Void) {
-		this._onBeforeRenderCallbacks.push(func);
+		this.onBeforeRenderObservable.add(func);
 	}
 
 	public function unregisterBeforeRender(func:AbstractMesh->Void) {
-		var index = this._onBeforeRenderCallbacks.indexOf(func);
-		
-		if (index > -1) {
-			this._onBeforeRenderCallbacks.splice(index, 1);
-		}
+		this.onBeforeRenderObservable.removeCallback(func);
 	}
 
 	public function registerAfterRender(func:AbstractMesh->Void) {
-		this._onAfterRenderCallbacks.push(func);
+		this.onAfterRenderObservable.add(func);
 	}
 
 	public function unregisterAfterRender(func:AbstractMesh->Void) {
-		var index = this._onAfterRenderCallbacks.indexOf(func);
-		
-		if (index > -1) {
-			this._onAfterRenderCallbacks.splice(index, 1);
-		}
+		this.onAfterRenderObservable.removeCallback(func);
 	}
 
 	public function _getInstancesRenderList(subMeshId:Int):_InstancesBatch {
@@ -866,9 +887,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			return;
 		}
 		
-		for (callbackIndex in 0...this._onBeforeRenderCallbacks.length) {
-			this._onBeforeRenderCallbacks[callbackIndex](this);
-		}
+		this.onBeforeRenderObservable.notifyObservers(this);
 		
 		var engine = scene.getEngine();
 		var hardwareInstancedRendering = (engine.getCaps().instancedArrays != null) && (batch.visibleInstances[subMesh._id] != null) && (batch.visibleInstances.length > subMesh._id && batch.visibleInstances[subMesh._id] != null);
@@ -931,9 +950,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
             engine.setAlphaMode(currentMode);
         }
 		
-		for (callbackIndex in 0...this._onAfterRenderCallbacks.length) {
-			this._onAfterRenderCallbacks[callbackIndex](this);
-		}
+		this.onAfterRenderObservable.notifyObservers(this);
 	}
 
 	inline public function getEmittedParticleSystems():Array<ParticleSystem> {
