@@ -6,10 +6,10 @@ package com.babylonhx.tools;
  */
 class Observer<T> {
 	
-	public var callback:T->Void;
+	public var callback:T->Null<EventState>->Void;
 	
 
-	public function new(callback:T->Void) {
+	public function new(callback:T->Null<EventState>->Void) {
 		this.callback = callback;
 	}
 	

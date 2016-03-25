@@ -16,11 +16,17 @@ class Observable<T> {
 	/**
 	 * Create a new Observer with the specified callback
 	 * @param callback the callback that will be executed for that Observer
+	 * * @param insertFirst if true the callback will be inserted at the first position, hence executed before the others ones. If false (default behavior) the callback will be inserted at the last position, executed after all the others already present.
 	 */
-	public function add(callback:T->Void): Observer<T> {
+	public function add(callback:T->Null<EventState>->Void, insertFirst:Bool = false):Observer<T> {
 		var observer = new Observer(callback);
 		
-		this._observers.push(observer);
+		if (insertFirst) {
+            this._observers.unshift(observer);
+        } 
+		else {
+            this._observers.push(observer);
+        }
 		
 		return observer;
 	}
@@ -45,7 +51,7 @@ class Observable<T> {
 	 * Remove a callback from the Observable object
 	 * @param callback the callback to remove. If it doesn't belong to this Observable, false will be returned.
 	*/
-	public function removeCallback(callback:T->Void):Bool {
+	public function removeCallback(callback:T->Null<EventState>->Void):Bool {
 		for (index in 0...this._observers.length) {
 			if (this._observers[index].callback == callback) {
 				this._observers.splice(index, 1);
@@ -62,9 +68,14 @@ class Observable<T> {
 	 * @param eventData
 	 */
 	public function notifyObservers(eventData:T) {
-		for (observer in this._observers) {
-			observer.callback(eventData);
-		}
+		var state:EventState = new EventState();
+		
+        for (obs in this._observers) {
+            obs.callback(eventData, state);
+            if (state.skipNextObervers) {
+                break;
+            }
+        }
 	}
 
 	/**

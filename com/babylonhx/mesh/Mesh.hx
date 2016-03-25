@@ -45,6 +45,7 @@ import com.babylonhx.particles.ParticleSystem;
 import com.babylonhx.tools.AsyncLoop;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
+import com.babylonhx.tools.EventState;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.loading.SceneLoader;
@@ -99,9 +100,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	*/
 	public var onBeforeDrawObservable:Observable<Mesh> = new Observable<Mesh>();
 
-	public var onBeforeDraw(never, set):Mesh->Void;
+	public var onBeforeDraw(never, set):Mesh->Null<EventState>->Void;
 	private var _onBeforeDrawObserver:Observer<Mesh>;
-	private function set_onBeforeDraw(callback:Mesh->Void):Mesh->Void {
+	private function set_onBeforeDraw(callback:Mesh->Null<EventState>->Void):Mesh->Null<EventState>->Void {
 		if (this._onBeforeDrawObserver != null) {
 			this.onBeforeDrawObservable.remove(this._onBeforeDrawObserver);
 		}
@@ -735,19 +736,19 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 	}
 
-	public function registerBeforeRender(func:AbstractMesh->Void) {
+	public function registerBeforeRender(func:AbstractMesh->Null<EventState>->Void) {
 		this.onBeforeRenderObservable.add(func);
 	}
 
-	public function unregisterBeforeRender(func:AbstractMesh->Void) {
+	public function unregisterBeforeRender(func:AbstractMesh->Null<EventState>->Void) {
 		this.onBeforeRenderObservable.removeCallback(func);
 	}
 
-	public function registerAfterRender(func:AbstractMesh->Void) {
+	public function registerAfterRender(func:AbstractMesh->Null<EventState>->Void) {
 		this.onAfterRenderObservable.add(func);
 	}
 
-	public function unregisterAfterRender(func:AbstractMesh->Void) {
+	public function unregisterAfterRender(func:AbstractMesh->Null<EventState>->Void) {
 		this.onAfterRenderObservable.removeCallback(func);
 	}
 

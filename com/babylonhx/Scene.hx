@@ -55,6 +55,8 @@ import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
+import com.babylonhx.tools.EventState;
+
 #if (purejs || js)
 import com.babylonhx.audio.*;
 #end
@@ -95,9 +97,9 @@ import com.babylonhx.audio.*;
 	*/
 	public var onDisposeObservable:Observable<Scene> = new Observable<Scene>();
 
-	public var onDispose(never, set):Scene->Void;
+	public var onDispose(never, set):Scene->Null<EventState>->Void;
 	private var _onDisposeObserver:Observer<Scene>;
-	private function set_onDispose(callback:Scene->Void):Scene->Void {
+	private function set_onDispose(callback:Scene->Null<EventState>->Void):Scene->Null<EventState>->Void {
 		if (this._onDisposeObserver != null) {
 			this.onDisposeObservable.remove(this._onDisposeObserver);
 		}
@@ -113,9 +115,9 @@ import com.babylonhx.audio.*;
 	*/
 	public var onBeforeRenderObservable:Observable<Scene> = new Observable<Scene>();
 	
-	public var beforeRender(never, set):Scene->Void;
+	public var beforeRender(never, set):Scene->Null<EventState>->Void;
 	private var _onBeforeRenderObserver:Observer<Scene>;
-	private function set_beforeRender(callback:Scene->Void):Scene->Void {
+	private function set_beforeRender(callback:Scene->Null<EventState>->Void):Scene->Null<EventState>->Void {
 		if (this._onBeforeRenderObserver != null) {
 			this.onBeforeRenderObservable.remove(this._onBeforeRenderObserver);
 		}
@@ -131,9 +133,9 @@ import com.babylonhx.audio.*;
 	*/
 	public var onAfterRenderObservable:Observable<Scene> = new Observable<Scene>();
 
-	public var afterRender(never, set):Scene->Void;
+	public var afterRender(never, set):Scene->Null<EventState>->Void;
 	private var _onAfterRenderObserver:Observer<Scene>;
-	private function set_afterRender(callback:Scene->Void):Scene->Void {
+	private function set_afterRender(callback:Scene->Null<EventState>->Void):Scene->Null<EventState>->Void {
 		if (this._onAfterRenderObserver != null) {
 			this.onAfterRenderObservable.remove(this._onAfterRenderObserver);
 		}
@@ -155,8 +157,9 @@ import com.babylonhx.audio.*;
 	*/
 	public var onBeforeCameraRenderObservable:Observable<Camera> = new Observable<Camera>();
 
+	public var beforeCameraRender(never, set):Camera->Null<EventState>->Void;
 	private var _onBeforeCameraRenderObserver:Observer<Camera>;
-	private function set_beforeCameraRender(callback:Camera->Void):Camera->Void {
+	private function set_beforeCameraRender(callback:Camera->Null<EventState>->Void):Camera->Null<EventState>->Void {
 		if (this._onBeforeCameraRenderObserver != null) {
 			this.onBeforeCameraRenderObservable.remove(this._onBeforeCameraRenderObserver);
 		}
@@ -172,9 +175,9 @@ import com.babylonhx.audio.*;
 	*/
 	public var onAfterCameraRenderObservable:Observable<Camera> = new Observable<Camera>();
 	
-	public var afterCameraRender(never, set):Camera->Void;
+	public var afterCameraRender(never, set):Camera->EventState->Void;
 	private var _onAfterCameraRenderObserver:Observer<Camera>;
-	public function set_afterCameraRender(callback:Camera->Void) {
+	private function set_afterCameraRender(callback:Camera->EventState->Void) {
 		if (this._onAfterCameraRenderObserver != null) {
 			this.onAfterCameraRenderObservable.remove(this._onAfterCameraRenderObserver);
 		}
@@ -1021,19 +1024,19 @@ import com.babylonhx.audio.*;
         this._cachedMaterial = null;
     }
 	
-	public function registerBeforeRender(func:Scene->Void) {
+	public function registerBeforeRender(func:Scene->Null<EventState>->Void) {
 		this.onBeforeRenderObservable.add(func);
 	}
 
-	public function unregisterBeforeRender(func:Scene->Void) {
+	public function unregisterBeforeRender(func:Scene->Null<EventState>->Void) {
 		this.onBeforeRenderObservable.removeCallback(func);
 	}
 	
-	public function registerAfterRender(func:Scene->Void) {
+	public function registerAfterRender(func:Scene->Null<EventState>->Void) {
 		this.onAfterRenderObservable.add(func);
     }
 	
-    public function unregisterAfterRender(func:Scene->Void) {
+    public function unregisterAfterRender(func:Scene->Null<EventState>->Void) {
         this.onAfterRenderObservable.removeCallback(func);
     }
 
@@ -1049,7 +1052,7 @@ import com.babylonhx.audio.*;
 		return this._pendingData.length;
 	}
 
-	public function executeWhenReady(func:Scene->Void) {
+	public function executeWhenReady(func:Scene->Null<EventState>->Void) {
 		this.onReadyObservable.add(func);
 		
 		if (this._executeWhenReadyTimeoutId != -1) {

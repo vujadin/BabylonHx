@@ -400,7 +400,7 @@ import com.babylonhx.animations.Animation;
 		return this._projectionMatrix;
 	}
 	
-	public function dispose() {
+	override public function dispose(doNotRecurse:Bool = false) {
 		// Animations
         this.getScene().stopAnimation(this);
 		
@@ -414,6 +414,8 @@ import com.babylonhx.animations.Animation;
 		for (i in 0...this._postProcessesTakenIndices.length) {
 			this._postProcesses[this._postProcessesTakenIndices[i]].dispose(this);
 		}
+		
+		super.dispose();
 	}
 	
 	// ---- Camera rigs section ----

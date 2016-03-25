@@ -16,16 +16,29 @@ import com.babylonhx.animations.Animation;
 
 @:expose('BABYLON.Light') class Light extends Node {
 	
+	@serializeAsColor3()
 	public var diffuse:Color3 = new Color3(1.0, 1.0, 1.0);
+	
+	@serializeAsColor3()
 	public var specular:Color3 = new Color3(1.0, 1.0, 1.0);
+	
+	@serialize()
 	public var intensity:Float = 1.0;
+	
+	@serialize()
 	public var range:Float = Math.POSITIVE_INFINITY;
+	
+	@serialize()
 	public var includeOnlyWithLayerMask:Int = 0;
+	
 	public var includedOnlyMeshes:Array<AbstractMesh> = [];
 	public var excludedMeshes:Array<AbstractMesh> = [];
+	
+	@serialize()
 	public var excludeWithLayerMask:Int = 0;
 	
 	// PBR Properties.
+	@serialize()
 	public var radius:Float = 0.00001;
 
 	public var _shadowGenerator:ShadowGenerator;
@@ -63,6 +76,10 @@ import com.babylonhx.animations.Animation;
 
 	public function _getWorldMatrix():Matrix {
 		return Matrix.Identity();
+	}
+	
+	public function getTypeID():Int {
+		return 0;
 	}
 
 	inline public function canAffectMesh(mesh:AbstractMesh):Bool {
@@ -109,7 +126,7 @@ import com.babylonhx.animations.Animation;
 		return worldMatrix;
 	}
 
-	public function dispose() {
+	override public function dispose(doNotRecurse:Bool = false) {
 		if (this._shadowGenerator != null) {
 			this._shadowGenerator.dispose();
 			this._shadowGenerator = null;
@@ -120,6 +137,8 @@ import com.babylonhx.animations.Animation;
 		
 		// Remove from scene
 		this.getScene().removeLight(this);
+		
+		super.dispose();
 	}
 	
 	public function serialize():Dynamic {
@@ -128,6 +147,9 @@ import com.babylonhx.animations.Animation;
 		serializationObject.id = this.id;
 		serializationObject.tags = Tags.GetTags(this);
 		
+		// Type
+		serializationObject.type = this.getTypeID();
+		
 		if (this.intensity != 0) {
 			serializationObject.intensity = this.intensity;
 		}
@@ -135,6 +157,21 @@ import com.babylonhx.animations.Animation;
 		// Parent
 		if (this.parent != null) {
 			serializationObject.parentId = this.parent.id;
+		}
+		
+		// Inclusion / exclusions
+		if (this.excludedMeshes.length > 0) {
+			serializationObject.excludedMeshesIds = [];
+			for (mesh in this.excludedMeshes) {
+				serializationObject.excludedMeshesIds.push(mesh.id);
+			}
+		}
+
+		if (this.includedOnlyMeshes.length > 0) {
+			serializationObject.includedOnlyMeshesIds = [];
+			for (mesh in this.includedOnlyMeshes) {
+				serializationObject.includedOnlyMeshesIds.push(mesh.id);
+			}
 		}
 		
 		serializationObject.range = this.range;
@@ -184,13 +221,13 @@ import com.babylonhx.animations.Animation;
 			light._excludedMeshesIds = parsedLight.excludedMeshesIds;
 		}
 		
+		if (parsedLight.includedOnlyMeshesIds != null) {
+			light._includedOnlyMeshesIds = parsedLight.includedOnlyMeshesIds;
+		}
+		
 		// Parent
 		if (parsedLight.parentId != null) {
 			light._waitingParentId = parsedLight.parentId;
-		}
-		
-		if (parsedLight.includedOnlyMeshesIds != null) {
-			light._includedOnlyMeshesIds = parsedLight.includedOnlyMeshesIds;
 		}
 		
 		// Animations
