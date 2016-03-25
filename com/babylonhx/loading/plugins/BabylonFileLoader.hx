@@ -55,7 +55,7 @@ import com.babylonhx.physics.PhysicsBodyCreationOptions;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.physics.IPhysicsEnginePlugin;
 import com.babylonhx.physics.plugins.OimoPlugin;
-import com.babylonhx.physics.plugins.CannonPlugin;
+//import com.babylonhx.physics.plugins.CannonPlugin;
 import com.babylonhx.actions.*;
 
 import haxe.io.Bytes;
@@ -286,12 +286,12 @@ import com.babylonhx.utils.typedarray.Int32Array;
 				if (parsedData.physicsEnabled == true) {
 					var physicsPlugin:IPhysicsEnginePlugin = null;
 					if (parsedData.physicsEngine != null) {
-						if (parsedData.physicsEngine == "cannon") {
-							physicsPlugin = new CannonPlugin();
-						} 
-						else if (parsedData.physicsEngine == "oimo") {
+						//if (parsedData.physicsEngine == "cannon") {
+						//	physicsPlugin = new CannonPlugin();
+						//} 
+						//else if (parsedData.physicsEngine == "oimo") {
 							physicsPlugin = new OimoPlugin();
-						}
+						//}
 						log = "\tPhysics engine " + parsedData.physicsEngine + " enabled\n";
 					}
 					
