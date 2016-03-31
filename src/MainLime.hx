@@ -27,7 +27,7 @@ class MainLime extends Application {
 		super();
 	}
 		
-	public override function onWindowCreate(window:Window):Void {
+	override public function onPreloadComplete():Void {
 		engine = new Engine(window, false);	
 		scene = new Scene(engine);
 				
