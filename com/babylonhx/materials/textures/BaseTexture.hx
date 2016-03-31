@@ -82,9 +82,10 @@ import com.babylonhx.utils.GL;
 	}
 
 	public function getBaseSize():Dynamic {
-		if (!this.isReady())
+		if (!this.isReady() || this._texture == null) {
 			return { width: 0, height: 0 };
-			
+		}
+		
 		if (this._texture._size != null) {
 			return { width: this._texture._size, height: this._texture._size };
 		}
@@ -92,8 +93,7 @@ import com.babylonhx.utils.GL;
 		return { width: this._texture._baseWidth, height: this._texture._baseHeight };
 	}
 
-	public function scale(ratio:Float) {
-	}
+	public function scale(ratio:Float) { }
 
 	/*public var canRescale(get, never):Bool;
 	private function get_canRescale():Bool {

@@ -239,9 +239,9 @@ import com.babylonhx.audio.*;
 	public var animations:Array<Animation> = [];
 
 	// Pointers
-	public var pointerDownPredicate:Mesh->AbstractMesh->Bool;
-	public var pointerUpPredicate:Mesh->AbstractMesh->Bool;
-	public var pointerMovePredicate:Mesh->AbstractMesh->Bool;
+	public var pointerDownPredicate:AbstractMesh->Bool;
+	public var pointerUpPredicate:AbstractMesh->Bool;
+	public var pointerMovePredicate:AbstractMesh->Bool;
 	private var _onPointerMove:Int->Int->Void;
 	private var _onPointerDown:Int->Int->Int->Void;
 	private var _onPointerUp:Int->Int->Int->Void;
@@ -821,20 +821,20 @@ import com.babylonhx.audio.*;
 			this._startingPointerPosition.y = this._pointerY;
 			this._startingPointerTime = Date.now().getTime();
 			
-			var predicate = null;
-			
-			// Meshes
-			if (this.onPointerDown == null && this.onPointerPick != null) {
-				predicate = function(mesh:AbstractMesh):Bool {
-					return mesh.isPickable && mesh.isVisible && mesh.isReady() && mesh.actionManager != null && mesh.actionManager.hasPointerTriggers;
+			if (this.pointerDownPredicate == null) {
+				this.pointerDownPredicate = function(mesh:AbstractMesh):Bool {
+					return mesh.isPickable && mesh.isVisible && mesh.isReady() && (mesh.actionManager == null || mesh.actionManager.hasPointerTriggers);
 				};
 			}
 			
-			var pickResult:PickingInfo = this.pick(this._unTranslatedPointerX, this._unTranslatedPointerY, predicate, false, this.cameraToUseForPointers);
+			// Meshes
+			this._pickedDownMesh = null;			
+			var pickResult:PickingInfo = this.pick(this._unTranslatedPointerX, this._unTranslatedPointerY, this.pointerDownPredicate, false, this.cameraToUseForPointers);
 			
 			if (pickResult.hit && pickResult.pickedMesh != null) {
 				if (pickResult.pickedMesh.actionManager != null) {
 					this._pickedDownMesh = pickResult.pickedMesh;
+					
 					if (pickResult.pickedMesh.actionManager.hasPickTriggers) {
 						switch (button) {
 							case 0:
@@ -1111,6 +1111,8 @@ import com.babylonhx.audio.*;
 			}
 		}
 		
+		animatable.reset();
+		
 		return animatable;
 	}
 
@@ -1130,6 +1132,11 @@ import com.babylonhx.audio.*;
 		return null;
 	}
 
+	/**
+	 * Will stop the animation of the given target
+	 * @param target - the target 
+	 * @see beginAnimation 
+	 */
 	public function stopAnimation(target:Dynamic) {
 		var animatable = this.getAnimatableByTarget(target);
 		
@@ -1156,7 +1163,7 @@ import com.babylonhx.audio.*;
 		var delay = now - this._animationStartDate;
 		
 		for (index in 0...this._activeAnimatables.length) {
-			// TODO: inspect this, last item in array is null sometimes
+			// VK TODO: inspect this, last item in array is null sometimes
 			if(this._activeAnimatables[index] != null) {
 				this._activeAnimatables[index]._animate(delay);
 			}
@@ -2510,11 +2517,11 @@ import com.babylonhx.audio.*;
 			if (result == null || !result.hit) {
 				continue;
 			}
-				
+			
 			if (!fastCheck && pickingInfo != null && result.distance >= pickingInfo.distance) {
 				continue;
 			}
-				
+			
 			pickingInfo = result;
 			
 			if (fastCheck) {

@@ -33,45 +33,63 @@ import com.babylonhx.tools.SmartArray;
 	private var _viewPort:Viewport;
 	private var _screenCoordinates:Vector2 = Vector2.Zero();
 	private var _cachedDefines:String;
-	private var _customMeshPosition:Vector3;
+	
+	/**
+    * If not undefined, the mesh position is computed from the attached node position
+    * @type {{position: Vector3}}
+    */
+    public var attachedNode:Vector3 = null;
+
+    /**
+    * Custom position of the mesh. Used if "useCustomMeshPosition" is set to "true"
+    * @type {Vector3}
+    */
+    @serializeAsVector3()
+    public var customMeshPosition:Vector3 = Vector3.Zero();
 
 	/**
 	* Set if the post-process should use a custom position for the light source (true) or the internal mesh position (false)
 	*/
+	@serialize()
 	public var useCustomMeshPosition:Bool = false;
+	
 	/**
 	* If the post-process should inverse the light scattering direction
 	*/
+	@serialize()
 	public var invert:Bool = true;
+	
 	/**
 	* The internal mesh used by the post-process
 	*/
-	public var mesh:Mesh;	
-	/**
-	* Set to true to use the diffuseColor instead of the diffuseTexture
-	*/
-	public var useDiffuseColor:Bool = false;
-	
+	@serializeAsMeshReference()
+	public var mesh:Mesh;
+		
 	/**
     * Array containing the excluded meshes not rendered in the internal pass
     */
+	@serialize()
     public var excludedMeshes:Array<AbstractMesh> = [];
 
 	/**
 	* Controls the overall intensity of the post-process
 	*/
+	@serialize()
     public var exposure:Float = 0.3;
 	/**
 	* Dissipates each sample's contribution in range [0, 1]
 	*/
+	@serialize()
     public var decay:Float = 0.96815;
 	/**
 	* Controls the overall intensity of each sample
 	*/
+	@serialize()
     public var weight:Float = 0.58767;
 	/**
 	* Controls the density of each sample
 	*/
+	@serialize()
     public var density:Float = 0.926;
 	
 
@@ -125,42 +143,20 @@ import com.babylonhx.tools.SmartArray;
 	public function isReady(subMesh:SubMesh, useInstances:Bool):Bool {
 		var mesh:Mesh = cast subMesh.getMesh();
 		
+		// Render this.mesh as default
+        if (mesh == this.mesh) {
+            return mesh.material.isReady(mesh);
+        }
+		
 		var defines:Array<String> = [];
 		var attribs:Array<String> = [VertexBuffer.PositionKind];
 		var material:Material = subMesh.getMaterial();
 		var needUV:Bool = false;
 		
-		// Render this.mesh as default
-		if (mesh == this.mesh) {
-			if (this.useDiffuseColor) {
-				defines.push("#define DIFFUSE_COLOR_RENDER");
-			} 
-			else if (material != null) {
-				if (cast(material, StandardMaterial).diffuseTexture != null) {
-					defines.push("#define BASIC_RENDER");
-				} 
-				else {
-					defines.push("#define DIFFUSE_COLOR_RENDER");
-				}
-			}
-			defines.push("#define NEED_UV");
-			needUV = true;
-		}
-		
 		// Alpha test
 		if (material != null) {
 			if (material.needAlphaTesting()) {
 				defines.push("#define ALPHATEST");
-			}
-			
-			if (cast(material, StandardMaterial).opacityTexture != null) {
-                defines.push("#define OPACITY");
-				if (cast(material, StandardMaterial).opacityTexture.getAlphaFromRGB) {
-                    defines.push("#define OPACITYRGB");
-				}
-				if (!needUV) {
-					defines.push("#define NEED_UV");
-				}
 			}
 			
 			if (mesh.isVerticesDataPresent(VertexBuffer.UVKind)) {
@@ -201,8 +197,8 @@ import com.babylonhx.tools.SmartArray;
 			this._volumetricLightScatteringPass = mesh.getScene().getEngine().createEffect(
 				{ vertex: "depth", fragment: "volumetricLightScatteringPass" },
 				attribs,
-				["world", "mBones", "viewProjection", "diffuseMatrix", "opacityLevel", "color"],
-				["diffuseSampler", "opacitySampler"], join);
+				["world", "mBones", "viewProjection", "diffuseMatrix"],
+				["diffuseSampler"], join);
 		}
 		
 		return this._volumetricLightScatteringPass.isReady();
@@ -213,7 +209,7 @@ import com.babylonhx.tools.SmartArray;
 	 * @param {BABYLON.Vector3} The new custom light position
 	 */
 	public function setCustomMeshPosition(position:Vector3) {
-		this._customMeshPosition = position;
+		this.customMeshPosition = position;
 	}
 
 	/**
@@ -221,7 +217,7 @@ import com.babylonhx.tools.SmartArray;
 	 * @return {BABYLON.Vector3} The custom light position
 	 */
 	public function getCustomMeshPosition():Vector3 {
-		return this._customMeshPosition;
+		return this.customMeshPosition;
 	}
 
 	/**
@@ -288,39 +284,42 @@ import com.babylonhx.tools.SmartArray;
 			var hardwareInstancedRendering:Bool = (engine.getCaps().instancedArrays != null) && (batch.visibleInstances[subMesh._id] != null);
 			
 			if (this.isReady(subMesh, hardwareInstancedRendering)) {
-				engine.enableEffect(this._volumetricLightScatteringPass);
-				mesh._bind(subMesh, this._volumetricLightScatteringPass, Material.TriangleFillMode);
-				var material:Material = subMesh.getMaterial();
+				var effect:Effect = this._volumetricLightScatteringPass;
+                if (mesh == this.mesh) {
+                    effect = subMesh.getMaterial().getEffect();
+                }
 				
-				this._volumetricLightScatteringPass.setMatrix("viewProjection", scene.getTransformMatrix());
+				engine.enableEffect(effect);
+                mesh._bind(subMesh, effect, Material.TriangleFillMode);
 				
 				// Alpha test
-				if (material != null && (mesh == this.mesh || material.needAlphaTesting() || cast(material, StandardMaterial).opacityTexture != null)) {
-					var alphaTexture = material.getAlphaTestTexture();
+				if (mesh == this.mesh) {
+                    subMesh.getMaterial().bind(mesh.getWorldMatrix(), mesh);
+                }
+                else {
+                    var material:Material = subMesh.getMaterial();
 					
-					if ((this.useDiffuseColor && alphaTexture == null) && mesh == this.mesh) {
-						this._volumetricLightScatteringPass.setColor3("color", cast(material, StandardMaterial).diffuseColor);
-					} 
-					if (material.needAlphaTesting() || (mesh == this.mesh && alphaTexture != null && !this.useDiffuseColor)) {
+					this._volumetricLightScatteringPass.setMatrix("viewProjection", scene.getTransformMatrix());
+					
+					// Alpha test
+					if (material != null && material.needAlphaTesting()) {
+						var alphaTexture = material.getAlphaTestTexture();
+						
 						this._volumetricLightScatteringPass.setTexture("diffuseSampler", alphaTexture);
+						
 						if (alphaTexture != null) {
 							this._volumetricLightScatteringPass.setMatrix("diffuseMatrix", alphaTexture.getTextureMatrix());
 						}
 					}
 					
-					if (cast(material, StandardMaterial).opacityTexture != null) {
-						this._volumetricLightScatteringPass.setTexture("opacitySampler", cast(material, StandardMaterial).opacityTexture);
-						this._volumetricLightScatteringPass.setFloat("opacityLevel", cast(material, StandardMaterial).opacityTexture.level);
+					// Bones
+					if (mesh.useBones && mesh.computeBonesUsingShaders) {
+						this._volumetricLightScatteringPass.setMatrices("mBones", mesh.skeleton.getTransformMatrices(mesh));
 					}
-				}
-				
-				// Bones
-				if (mesh.useBones) {
-					this._volumetricLightScatteringPass.setMatrices("mBones", mesh.skeleton.getTransformMatrices(mesh));
-				}
+				}				
 				
 				// Draw
-				mesh._processRendering(subMesh, this._volumetricLightScatteringPass, Material.TriangleFillMode, batch, hardwareInstancedRendering, function(isInstance:Bool, world:Matrix) this._volumetricLightScatteringPass.setMatrix("world", world));
+				mesh._processRendering(subMesh, this._volumetricLightScatteringPass, Material.TriangleFillMode, batch, hardwareInstancedRendering, function(isInstance:Bool, world:Matrix) effect.setMatrix("world", world));
 			}
 		};
 		
@@ -392,8 +391,19 @@ import com.babylonhx.tools.SmartArray;
 
 	private function _updateMeshScreenCoordinates(scene:Scene) {
 		var transform:Matrix = scene.getTransformMatrix();
-		var meshPosition = this.mesh.parent != null ? this.mesh.getAbsolutePosition() : this.mesh.position;
-        var pos = Vector3.Project(this.useCustomMeshPosition ? this._customMeshPosition : meshPosition, Matrix.Identity(), transform, this._viewPort);
+		var meshPosition:Vector3 = null;
+		
+		if (this.useCustomMeshPosition) {
+			meshPosition = this.customMeshPosition;
+		}
+		else if (this.attachedNode != null) {
+			meshPosition = this.attachedNode;
+		}
+		else {
+			meshPosition = this.mesh.parent != null ? this.mesh.getAbsolutePosition() : this.mesh.position;
+		}
+		
+		var pos = Vector3.Project(meshPosition, Matrix.Identity(), transform, this._viewPort);
 		
 		this._screenCoordinates.x = pos.x / this._viewPort.width;
 		this._screenCoordinates.y = pos.y / this._viewPort.height;

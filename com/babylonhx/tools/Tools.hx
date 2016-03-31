@@ -8,6 +8,7 @@ import js.html.XMLHttpRequestResponseType;
 #end
 
 import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Vector2;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.AbstractMesh;
@@ -74,7 +75,7 @@ typedef Assets = nme.Assets;
 		return t;
 	}
 
-	inline public static function ExtractMinAndMaxIndexed(positions:Array<Float>, indices:Array<Int>, indexStart:Int, indexCount:Int):BabylonMinMax {
+	inline public static function ExtractMinAndMaxIndexed(positions:Array<Float>, indices:Array<Int>, indexStart:Int, indexCount:Int, bias:Vector2 = null):BabylonMinMax {
 		var minimum = new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY);
 		var maximum = new Vector3(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY);
 		
@@ -84,13 +85,22 @@ typedef Assets = nme.Assets;
 			maximum = Vector3.Maximize(current, maximum);
 		}
 		
+		if (bias != null) {
+			minimum.x -= minimum.x * bias.x + bias.y;
+			minimum.y -= minimum.y * bias.x + bias.y;
+			minimum.z -= minimum.z * bias.x + bias.y;
+			maximum.x += maximum.x * bias.x + bias.y;
+			maximum.y += maximum.y * bias.x + bias.y;
+			maximum.z += maximum.z * bias.x + bias.y;
+		}
+		
 		return {
 			minimum: minimum,
 			maximum: maximum
 		};
 	}
 
-	inline public static function ExtractMinAndMax(positions:Array<Float>, start:Int, count:Int):BabylonMinMax {
+	inline public static function ExtractMinAndMax(positions:Array<Float>, start:Int, count:Int, bias:Vector2 = null):BabylonMinMax {
 		var minimum = new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY);
 		var maximum = new Vector3(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY);
 		
@@ -99,6 +109,15 @@ typedef Assets = nme.Assets;
 			
 			minimum = Vector3.Minimize(current, minimum);
 			maximum = Vector3.Maximize(current, maximum);
+		}
+		
+		if (bias != null) {
+			minimum.x -= minimum.x * bias.x + bias.y;
+			minimum.y -= minimum.y * bias.x + bias.y;
+			minimum.z -= minimum.z * bias.x + bias.y;
+			maximum.x += maximum.x * bias.x + bias.y;
+			maximum.y += maximum.y * bias.x + bias.y;
+			maximum.z += maximum.z * bias.x + bias.y;
 		}
 		
 		return {

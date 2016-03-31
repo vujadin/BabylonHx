@@ -37,7 +37,7 @@ import com.babylonhx.utils.GL;
 	public var _isDisabled:Bool;
 	public var _cubeFaces:Array<WebGLTexture>;
 
-    #if (html5 && js)
+    #if (js || purejs)
     public var _workingCanvas:js.html.CanvasElement;
     public var _workingContext:js.html.CanvasRenderingContext2D;
 	#end

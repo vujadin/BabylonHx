@@ -674,7 +674,25 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		// Billboarding
 		if (this.billboardMode != AbstractMesh.BILLBOARDMODE_NONE && this.getScene().activeCamera != null) {
-			var localPosition = this.position.clone();
+			Tmp.vector3[0].copyFrom(this.position);
+			var localPosition = Tmp.vector3[0];
+			
+			if (this.parent != null && this.parent.getWorldMatrix() != null) {
+				this._markSyncedWithParent();
+				
+				var parentMatrix:Matrix = null;
+				if (this._meshToBoneReferal != null) {
+					this.parent.getWorldMatrix().multiplyToRef(this._meshToBoneReferal.getWorldMatrix(), Tmp.matrix[6]);
+					parentMatrix = Tmp.matrix[6];
+				} 
+				else {
+					parentMatrix = this.parent.getWorldMatrix();
+				}
+				
+				Vector3.TransformCoordinatesToRef(localPosition, parentMatrix, Tmp.vector3[1]);
+				localPosition = Tmp.vector3[1];
+			}
+			
 			var zero = this.getScene().activeCamera.globalPosition.clone();
 			
 			if (this.parent != null && Reflect.hasField(this.parent, "position")) {
@@ -1087,9 +1105,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			var subMesh = subMeshes[index];
 			
 			// Bounding test
-			if (len > 1 && !subMesh.canIntersects(ray))
+			if (len > 1 && !subMesh.canIntersects(ray)) {
 				continue;
-				
+			}
+			
 			var currentIntersectInfo = subMesh.intersects(ray, this._positions, this.getIndices(), fastCheck);
 			
 			if (currentIntersectInfo != null) {

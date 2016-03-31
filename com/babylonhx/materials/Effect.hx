@@ -168,7 +168,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
             callbackFn(ShadersStore.Shaders.get(vertex + "VertexShader"));
             return;
         }
-        		
+        
         // Vertex shader
 		Tools.LoadFile("assets/shaders/" + vertex + ".vertex.fx", callbackFn, "text");
     }
@@ -255,7 +255,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			}
 		}		
 		
-		#if (!js && !purejs && !web && !html5)	// TODO !mobile ??
+		#if (!android && !js && !purejs && !web && !html5)	// TODO !mobile ??
 		// native bug fix for neko / osx / etc http://community.openfl.org/t/lime-2-8-0-shader-issues/7060/2
 		source = StringTools.replace(source, "precision highp float;", "\n");
 		source = StringTools.replace(source, "precision highp float;", "\n");

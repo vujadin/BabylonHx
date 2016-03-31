@@ -5,7 +5,9 @@ import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.ShaderMaterial;
 import com.babylonhx.materials.Material;
 import com.babylonhx.math.Color3;
+import com.babylonhx.math.Vector2;
 import com.babylonhx.culling.Ray;
+
 
 /**
  * ...
@@ -20,6 +22,8 @@ import com.babylonhx.culling.Ray;
 	public var dashSize:Float = 0;
 	public var gapSize:Float = 0;
 
+	public var intersectionThreshold(get, set):Float;
+	private var _intersectionThreshold:Float;
 	private var _colorShader:ShaderMaterial;
 	
 
@@ -32,6 +36,34 @@ import com.babylonhx.culling.Ray;
 				uniforms: ["worldViewProjection", "color"],
 				needAlphaBlending: true
 			});
+	}
+	
+	/**
+	 * The intersection Threshold is the margin applied when intersection a segment of the LinesMesh with a Ray.
+	 * This margin is expressed in world space coordinates, so its value may vary.
+	 * Default value is 0.1
+	 * @returns the intersection Threshold value.
+	 */
+	private function get_intersectionThreshold():Float {
+		return this._intersectionThreshold;
+	}
+
+	/**
+	 * The intersection Threshold is the margin applied when intersection a segment of the LinesMesh with a Ray.
+	 * This margin is expressed in world space coordinates, so its value may vary.
+	 * @param value the new threshold to apply
+	 */
+	public function set_intersectionThreshold(value:Float):Float {
+		if (this._intersectionThreshold == value) {
+			return value;
+		}
+		
+		this._intersectionThreshold = value;
+		if (this.geometry != null) {
+			this.geometry.boundingBias = new Vector2(0, value);
+		}
+		
+		return value;
 	}
 
 	override private function get_material():Material {

@@ -3,6 +3,7 @@ package com.babylonhx.mesh;
 import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Color4;
 import com.babylonhx.tools.Tags;
 
@@ -35,12 +36,14 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	private var _vertexBuffers:Map<String, VertexBuffer>;
 	private var _isDisposed:Bool = false;
 	private var _extend:BabylonMinMax;
+	private var _boundingBias:Vector2;
 	public var _delayInfo:Array<String> = []; //ANY
 	private var _indexBuffer:WebGLBuffer;
 	public var _boundingInfo:BoundingInfo;
 	public var _delayLoadingFunction:Dynamic->Geometry->Void;
 	public var _softwareSkinningRenderId:Int = 0;
 	
+	public var boundingBias(get, set):Vector2;
 	public var extend(get, never):BabylonMinMax;
 	
 
@@ -64,9 +67,32 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		
 		// applyToMesh
 		if (mesh != null) {
+			if (Std.is(mesh, LinesMesh)) {
+				this.boundingBias = new Vector2(0, cast(mesh, LinesMesh).intersectionThreshold);
+				this.updateExtend();
+			}
+			
 			this.applyToMesh(mesh);
 			mesh.computeWorldMatrix(true);
 		}
+	}
+	
+	/**
+	 *  The Bias Vector to apply on the bounding elements (box/sphere), the max extend is computed as v += v * bias.x + bias.y, the min is computed as v -= v * bias.x + bias.y 
+	 * @returns The Bias Vector 
+	 */
+	private function get_boundingBias():Vector2 {
+		return this._boundingBias;
+	}
+	private function set_boundingBias(value:Vector2):Vector2 {
+		if (this._boundingBias != null && this._boundingBias.equals(value)) {
+			return value;
+		}
+		
+		this._boundingBias = value.clone();
+		this.updateExtend();
+		
+		return value;
 	}
 	
 	private function get_extend():BabylonMinMax {
@@ -102,7 +128,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			
 			this._totalVertices = cast data.length / stride;
 			
-			this._extend = Tools.ExtractMinAndMax(data, 0, this._totalVertices);
+			this.updateExtend(data);
 			
 			var meshes = this._meshes;
 			var numOfMeshes = meshes.length;
@@ -115,7 +141,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 				mesh.computeWorldMatrix(true);
 			}
 		}
-		this.notifyUpdate();
+		
+		this.notifyUpdate(kind);
 	}
 
 	inline public function updateVerticesDataDirectly(kind:String, data:Float32Array, offset:Int) {
@@ -142,7 +169,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			this._totalVertices = cast data.length / stride;
 			
 			if (updateExtends) {
-				this._extend = Tools.ExtractMinAndMax(data, 0, this._totalVertices);
+				this.updateExtend(data);
 			}
 			
 			var meshes = this._meshes;
@@ -162,7 +189,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 				}
 			}
 		}
-		this.notifyUpdate();
+		
+		this.notifyUpdate(kind);
 	}
 
 	public function getTotalVertices():Int {
@@ -345,6 +373,14 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			mesh._boundingInfo = this._boundingInfo;
 		}
 	}
+	
+	private function updateExtend(data:Array<Float> = null) {
+		if (data == null) {
+			data = this._vertexBuffers[VertexBuffer.PositionKind].getData();
+		}
+		
+		this._extend = Tools.ExtractMinAndMax(data, 0, this._totalVertices, this.boundingBias);
+	}
 
 	private function _applyToMesh(mesh:Mesh) {
 		var numOfMeshes = this._meshes.length;
@@ -360,7 +396,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 				mesh._resetPointsArrayCache();
 				
 				if (this._extend == null) {
-                    this._extend = Tools.ExtractMinAndMax(this._vertexBuffers[kind].getData(), 0, this._totalVertices);
+                    this.updateExtend(this._vertexBuffers[kind].getData());
                 }
                 mesh._boundingInfo = new BoundingInfo(this._extend.minimum, this._extend.maximum);
 				
