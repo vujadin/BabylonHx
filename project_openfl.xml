@@ -4,20 +4,16 @@
 	<meta title="BabylonHx_OpenFL" package="com.babylonhx" version="1.0.0" company="Krtolica Vujadin" />
 	<app main="MainOpenFL" file="BabylonHx_OpenFL" path="bin_openfl" />
 	
-	<window fps="60" require-shaders="true" hardware="true" depth-buffer="true" stencil-buffer="true" antialiasing="0" />
+	<window fps="30" require-shaders="true" hardware="true" depth-buffer="true" stencil-buffer="true" antialiasing="0" />
 	
 	<source path="src" />
 	
 	<set name="webgl" if="html5" />
-	<set name="next" />
-			
+	
 	<haxelib name="openfl" />
 	<haxelib name="actuate" />
 	<haxelib name="poly2trihx" />
-	<haxelib name="flixel" />
-	<haxelib name="flixel-addons" />
-	<haxelib name="flixel-ui" />
-		
+	
 	<assets path="assets" exclude="*.svg" />
 	<icon path="assets/lime.svg" />
 	

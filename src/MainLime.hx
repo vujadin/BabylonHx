@@ -1,12 +1,19 @@
 package;
 
+#if cpp
+//import hxtelemetry.HxTelemetry;
+#end
+
 import lime.app.Application;
 import lime.Assets;
+import lime.audio.AudioSource;
 import lime.ui.KeyCode;
 import lime.ui.KeyModifier;
 import lime.graphics.RenderContext;
+import lime.graphics.Renderer;
 import lime.ui.Touch;
 import lime.ui.Window;
+import mario.def.SoundManager;
 
 import com.babylonhx.Engine;
 import com.babylonhx.Scene;
@@ -22,19 +29,22 @@ class MainLime extends Application {
 	var scene:Scene;
 	var engine:Engine;
 	
+	#if cpp
+	//var hxt = new HxTelemetry();
+	#end
+	
 	
 	public function new() {
 		super();
 	}
-		
+	
 	override public function onPreloadComplete():Void {
-		engine = new Engine(window, false);	
+		engine = new Engine(window, true);	
 		scene = new Scene(engine);
-				
-        new samples.BasicScene(scene);
-		//new samples.BasicElements(scene);
+		
+		//new samples.BasicScene(scene);
+		new samples.BasicElements(scene);
 		//new samples.DashedLinesMesh(scene);
-		//new samples.CandleLight(scene);
 		//new samples.RotationAndScaling(scene);
 		//new samples.Materials(scene);
 		//new samples.Lights(scene);
@@ -86,6 +96,7 @@ class MainLime extends Application {
 		//new samples.PostprocessRefraction(scene);
 		//new samples.PostprocessConvolution(scene);
 		//new samples.GodRays(scene);
+		//new samples.GodRays2(scene);
 		//new samples.DepthOfField(scene);
 		//new samples.Actions(scene);
 		//new samples.Picking(scene);		
@@ -102,19 +113,41 @@ class MainLime extends Application {
 		//new samples.SolidParticles1(scene);
 		//new samples.SolidParticles2(scene);
 		//new samples.SolidParticles3(scene);
+		//new samples.SolidParticles4(scene);
+		//new samples.SolidParticles5(scene);
 		//new samples.PointLightShadow(scene);
+		//new samples.Labyrinth(scene);
 		//new samples.FireMat(scene);
 		//new samples.WaterMat(scene);
 		//new samples.LavaMat(scene);
 		//new samples.NormalMat(scene);
-        //new samples.ForestOfPythagoras(scene);
+		//new samples.ForestOfPythagoras(scene);
 		//new samples.Particles4(scene);
 		//new samples.MaterialsLibTest(scene);	
 		//new samples.ReflectionProbeTest(scene);
 		//new samples.IcoSphereTest(scene);
-				
-		engine.width = this.window.width;
-		engine.height = this.window.height;
+		//new samples.PBRMaterialTest1(scene);
+		//new samples.PBRMaterialTest2(scene);	
+		//new samples.PBRMaterialTest3(scene);
+		//new samples.PBRMaterialTest4(scene);
+		//new samples.PBRMaterialTest5(scene);
+		//new samples.TorusThing(scene);
+		//new samples.StarfieldMaterialTest(scene);
+		//new samples.FeaturedDemo1(scene);
+		//new samples.GlosinessAndRoughness(scene);
+		//new samples.FurMat(scene);
+		//new samples.HaxedNES(scene);
+		//new samples.RefractionMaterial(scene);
+		//new samples.SponzaDynamicShadows(scene);
+		//new samples.RefractReflect(scene);
+		//new samples.AnimationBlending(scene);
+		//new samples.GridMaterialTest(scene);
+		//new samples.SkeletonViewerTest(scene);
+		//new samples.Mario(scene);
+		//new samples.LogarithmicDepth(scene);
+		
+		Engine.width = this.window.width;
+		Engine.height = this.window.height;
 	}
 	
 	override function onMouseDown(window:Window, x:Float, y:Float, button:Int) {
@@ -123,11 +156,13 @@ class MainLime extends Application {
 		}
 	}
 	
+	#if !neko
 	override function onMouseUp(window:Window, x:Float, y:Float, button:Int) {
 		for(f in Engine.mouseUp) {
 			f();
 		}
 	}
+	#end
 	
 	override function onMouseMove(window:Window, x:Float, y:Float) {
 		for(f in Engine.mouseMove) {
@@ -137,7 +172,7 @@ class MainLime extends Application {
 	
 	override function onMouseWheel(window:Window, deltaX:Float, deltaY:Float) {
 		for (f in Engine.mouseWheel) {
-			f(deltaY / 2);
+			f(deltaY);
 		}
 	}
 	
@@ -172,14 +207,19 @@ class MainLime extends Application {
 	}
 	
 	override public function onWindowResize(window:Window, width:Int, height:Int) {
-		engine.width = this.window.width;
-		engine.height = this.window.height;
+		Engine.width = this.window.width;
+		Engine.height = this.window.height;
+		engine.resize();
 	}
 	
 	override function update(deltaTime:Int) {
-		if(engine != null) {
-			engine._renderLoop();		
-		}
+		#if cpp
+		//hxt.advance_frame();
+		#end
+	}
+	
+	override public function render(renderer:Renderer) {
+		engine._renderLoop();
 	}
 	
 }
