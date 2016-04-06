@@ -30,7 +30,7 @@ import com.babylonhx.sprites.Sprite;
 	 * @param meshUnderPointer The mesh that is currently pointed at (can be null)
 	 * @param sourceEvent the original (browser) event that triggered the ActionEvent
 	 */
-	public function new(source:Dynamic, pointerX:Float, pointerY:Float, meshUnderPointer:Dynamic, ?sourceEvent:Dynamic, ?additionalData:Dynamic) {
+	public function new(source:Dynamic, pointerX:Float, pointerY:Float, meshUnderPointer:AbstractMesh, ?sourceEvent:Dynamic, ?additionalData:Dynamic) {
 		this.source = source;
 		this.pointerX = pointerX;
 		this.pointerY = pointerY;
@@ -43,7 +43,7 @@ import com.babylonhx.sprites.Sprite;
 	 * Helper function to auto-create an ActionEvent from a source mesh.
 	 * @param source The source mesh that triggered the event
 	 */
-	public static function CreateNew(source:AbstractMesh, ?additionalData:Dynamic):ActionEvent {
+	public static function CreateNew(source:AbstractMesh, ?evt:Dynamic, ?additionalData:Dynamic):ActionEvent {
 		var scene = source.getScene();
 		return new ActionEvent(source, scene.pointerX, scene.pointerY, scene.meshUnderPointer, additionalData);
 	}

@@ -52,6 +52,7 @@ package com.babylonhx.actions;
 				
 				if (!condition.isValid()) {
 					condition._currentResult = false;
+					
 					return;
 				}
 				

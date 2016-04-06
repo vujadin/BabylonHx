@@ -409,12 +409,18 @@ import com.babylonhx.utils.Keycodes;
 			{ name: "blur", handler: this._onLostFocus }
 		]);
 		#else
+		#if !mobile
 		Engine.keyDown.push(_onKeyDown);
 		Engine.keyUp.push(_onKeyUp);
 		Engine.mouseDown.push(_onPointerDown);
 		Engine.mouseUp.push(_onPointerUp);
 		Engine.mouseMove.push(_onMouseMove);
 		Engine.mouseWheel.push(_wheel);	
+		#else
+		Engine.touchDown.push(_onPointerDown);
+		Engine.touchUp.push(_onPointerUp);
+		Engine.touchMove.push(_onPointerMove);
+		#end
 		#end
 	}
 	
@@ -441,12 +447,18 @@ import com.babylonhx.utils.Keycodes;
 			{ name: "blur", handler: this._onLostFocus }
 		]);
 		#else
+		#if !mobile
 		Engine.keyDown.remove(_onKeyDown);
 		Engine.keyUp.remove(_onKeyUp);
 		Engine.mouseDown.remove(_onPointerDown);
 		Engine.mouseUp.remove(_onPointerUp);
 		Engine.mouseMove.remove(_onMouseMove);
 		Engine.mouseWheel.remove(_wheel);
+		#else
+		Engine.touchDown.remove(_onPointerDown);
+		Engine.touchUp.remove(_onPointerUp);
+		Engine.touchMove.remove(_onPointerMove);
+		#end
 		#end
 		
 		this._attachedElement = null;

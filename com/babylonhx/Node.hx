@@ -280,7 +280,7 @@ class NodeCache {
 	 * @param predicate: an optional predicate that will be called on every evaluated children, the predicate must return true for a given child to be part of the result, otherwise it will be ignored.
 	 */
 	public function _getDescendants(results:Array<Node>, directDescendantsOnly:Bool = false, ?predicate:Node->Bool) {
-		if (this._children != null) {
+		if (this._children == null) {
 			return;
 		}
 		
@@ -315,7 +315,8 @@ class NodeCache {
 	}
 	
 	/**
-	 * @param predicate: an optional predicate that will be called on every evaluated children, the predicate must return true for a given child to be part of the result, otherwise it will be ignored.
+	 * @param predicate: an optional predicate that will be called on every evaluated children, 
+	 * the predicate must return true for a given child to be part of the result, otherwise it will be ignored.
 	 * @Deprecated, legacy support.
 	 * use getDecendants instead.
 	 */

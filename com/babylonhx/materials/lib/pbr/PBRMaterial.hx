@@ -1260,44 +1260,46 @@ class PBRMaterial extends Material {
 		return results;
 	}
 
-	override public function dispose(forceDisposeEffect:Bool = false) {
-		if (this.albedoTexture != null) {
-			this.albedoTexture.dispose();
+	override public function dispose(forceDisposeEffect:Bool = false, forceDisposeTextures:Bool = true) {
+		if (forceDisposeTextures) {
+			if (this.albedoTexture != null) {
+				this.albedoTexture.dispose();
+			}
+			
+			if (this.ambientTexture != null) {
+				this.ambientTexture.dispose();
+			}
+			
+			if (this.opacityTexture != null) {
+				this.opacityTexture.dispose();
+			}
+			
+			if (this.reflectionTexture != null) {
+				this.reflectionTexture.dispose();
+			}
+			
+			if (this.emissiveTexture != null) {
+				this.emissiveTexture.dispose();
+			}
+			
+			if (this.reflectivityTexture != null) {
+				this.reflectivityTexture.dispose();
+			}
+			
+			if (this.bumpTexture != null) {
+				this.bumpTexture.dispose();
+			}
+			
+			if (this.lightmapTexture != null) {
+				this.lightmapTexture.dispose();
+			}
+			
+			if (this.refractionTexture != null) {
+				this.refractionTexture.dispose();
+			}
 		}
 		
-		if (this.ambientTexture != null) {
-			this.ambientTexture.dispose();
-		}
-		
-		if (this.opacityTexture != null) {
-			this.opacityTexture.dispose();
-		}
-		
-		if (this.reflectionTexture != null) {
-			this.reflectionTexture.dispose();
-		}
-		
-		if (this.emissiveTexture != null) {
-			this.emissiveTexture.dispose();
-		}
-		
-		if (this.reflectivityTexture != null) {
-			this.reflectivityTexture.dispose();
-		}
-		
-		if (this.bumpTexture != null) {
-			this.bumpTexture.dispose();
-		}
-		
-		if (this.lightmapTexture != null) {
-			this.lightmapTexture.dispose();
-		}
-		
-		if (this.refractionTexture != null) {
-			this.refractionTexture.dispose();
-		}
-		
-		super.dispose(forceDisposeEffect);
+		super.dispose(forceDisposeEffect, forceDisposeTextures);
 	}
 
 	override public function clone(name:String, cloneChildren:Bool = false):PBRMaterial {

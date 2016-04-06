@@ -306,14 +306,16 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return newShaderMaterial;
 	} 
 
-	override public function dispose(forceDisposeEffect:Bool = false) {
-		for (name in this._textures.keys()) {
-			this._textures[name].dispose();
+	override public function dispose(forceDisposeEffect:Bool = false, forceDisposeTextures:Bool = true) {
+		if (forceDisposeTextures) {
+			for (name in this._textures.keys()) {
+				this._textures[name].dispose();
+			}
 		}
 		
 		this._textures = null;
 		
-		super.dispose(forceDisposeEffect);
+		super.dispose(forceDisposeEffect, forceDisposeTextures);
 	}
 	
 	override public function serialize():Dynamic {

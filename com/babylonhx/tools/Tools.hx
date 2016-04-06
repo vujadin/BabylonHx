@@ -42,7 +42,7 @@ typedef Assets = nme.Assets;
 @:expose('BABYLON.Tools') class Tools {
 	
 	public static var BaseUrl:String = "";
-		
+	
 	@:noCompletion private static var __startTime:Float = Timer.stamp();
 	
 	#if snow
@@ -645,10 +645,13 @@ typedef Assets = nme.Assets;
 		#if (openfl && !nme)
 		if (Assets.exists(url)) {
 			var img = Assets.getBitmapData(url); 
-
+			
 			#if openfl_legacy
 			onload(new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height));		
 			#else
+			if (img.image.format != lime.graphics.PixelFormat.RGBA32) {
+				img.image.format = lime.graphics.PixelFormat.RGBA32;
+			}
 			onload(new Image(img.image.data, img.width, img.height));	
 			#end
 		} 

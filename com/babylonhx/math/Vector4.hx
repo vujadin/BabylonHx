@@ -239,6 +239,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		return this;
 	}
+	
+	inline public function toVector3():Vector3 {
+		return new Vector3(this.x, this.y, this.z);
+	}
 
 	inline public function clone():Vector4 {
 		return new Vector4(this.x, this.y, this.z, this.w);

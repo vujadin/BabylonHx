@@ -12,6 +12,8 @@ package com.babylonhx.actions;
 	
 	public function new(triggerOptions:Dynamic, children:Array<Action>, ?condition:Condition) {
 		super(triggerOptions, condition);
+		
+		this.children = children;
 	}
 
 	override public function _prepare() {

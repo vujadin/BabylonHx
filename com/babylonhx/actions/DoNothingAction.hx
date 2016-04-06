@@ -7,7 +7,7 @@ package com.babylonhx.actions;
 
 @:expose('BABYLON.DoNothingAction') class DoNothingAction extends Action {
 	
-	public function new(triggerOptions:Dynamic = 0/*ActionManager.NothingTrigger*/, ?condition:Condition) {
+	public function new(triggerOptions:Dynamic = ActionManager.NothingTrigger, ?condition:Condition) {
 		super(triggerOptions, condition);
 	}
 	

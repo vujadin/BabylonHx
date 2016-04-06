@@ -72,7 +72,7 @@ class Observable<T> {
 		
         for (obs in this._observers) {
             obs.callback(eventData, state);
-            if (state.skipNextObervers) {
+            if (state.skipNextObservers) {
                 break;
             }
         }

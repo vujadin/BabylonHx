@@ -69,7 +69,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		if (mesh != null) {
 			if (Std.is(mesh, LinesMesh)) {
 				this.boundingBias = new Vector2(0, cast(mesh, LinesMesh).intersectionThreshold);
-				this.updateExtend();
+				
+				this.updateBoundingInfo(true, null);
 			}
 			
 			this.applyToMesh(mesh);
@@ -172,25 +173,33 @@ import com.babylonhx.utils.typedarray.Int32Array;
 				this.updateExtend(data);
 			}
 			
-			var meshes = this._meshes;
-			var numOfMeshes = meshes.length;
-			
-			for (index in 0...numOfMeshes) {
-				var mesh = meshes[index];
-				mesh._resetPointsArrayCache();
-				if (updateExtends) {
-					mesh._boundingInfo = new BoundingInfo(this._extend.minimum, this._extend.maximum);
-					
-					for (subIndex in 0...mesh.subMeshes.length) {
-                        var subMesh = mesh.subMeshes[subIndex];
-						
-                        subMesh.refreshBoundingInfo();
-                    }
-				}
-			}
+			this.updateBoundingInfo(updateExtends, data);
 		}
 		
 		this.notifyUpdate(kind);
+	}
+	
+	private function updateBoundingInfo(updateExtends:Bool, ?data:Array<Float>) {
+		if (updateExtends) {
+			this.updateExtend(data);
+		}
+		
+		var meshes = this._meshes;
+		var numOfMeshes = meshes.length;
+		
+		for (index in 0...numOfMeshes) {
+			var mesh = meshes[index];
+			mesh._resetPointsArrayCache();
+			if (updateExtends) {
+				mesh._boundingInfo = new BoundingInfo(this._extend.minimum, this._extend.maximum);
+				
+				for (subIndex in 0...mesh.subMeshes.length) {
+					var subMesh = mesh.subMeshes[subIndex];
+					
+					subMesh.refreshBoundingInfo();
+				}
+			}
+		}            
 	}
 
 	public function getTotalVertices():Int {

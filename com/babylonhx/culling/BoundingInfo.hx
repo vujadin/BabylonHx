@@ -78,7 +78,7 @@ import com.babylonhx.math.Vector3;
 		return true;
 	}
 
-	public function intersects(boundingInfo:BoundingInfo, precise:Bool = false/*?precise:Bool*/):Bool {
+	public function intersects(boundingInfo:BoundingInfo, precise:Bool = false):Bool {
 		if (this.boundingSphere.centerWorld == null || boundingInfo.boundingSphere.centerWorld == null) {
 			return false;
 		}

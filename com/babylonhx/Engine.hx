@@ -166,8 +166,9 @@ import nme.display.OpenGLView;
 	public static var keyUp:Array<Dynamic> = [];
 	public static var keyDown:Array<Dynamic> = [];
 	
-	public var width:Int;
-	public var height:Int;
+	public static var width:Int;
+	public static var height:Int;
+	public static var onResize:Array<Void->Void> = [];
 	
 	#if (js || purejs)
 	public var audioEngine:AudioEngine = new AudioEngine();
@@ -196,8 +197,8 @@ import nme.display.OpenGLView;
 		canvas.addChild(this._workingContext);
 		#end
 		
-		this.width = 960;
-		this.height = 640;		
+		width = 960;
+		height = 640;		
 		
 		this._onBlur = function() {
 			this._windowIsBackground = true;
@@ -536,13 +537,14 @@ import nme.display.OpenGLView;
 	}
 
 	inline public function endFrame() {
-		//this.flushFramebuffer();
+		this.flushFramebuffer();
 		#if openfl
 		// Depth buffer
 		//this.setDepthBuffer(true);
 		//this.setDepthFunctionToLessOrEqual();
 		//this.setDepthWrite(true);		
 		//this._activeTexturesCache = new Vector<BaseTexture>(this._maxTextureChannels);
+		// Release effects
 		#end
 	}
 	
@@ -587,12 +589,16 @@ import nme.display.OpenGLView;
 	 *   });
 	 */
 	public function resize() {
-		#if (purejs || js)
+		#if (purejs)
 		width = untyped Browser.navigator.isCocoonJS ? Browser.window.innerWidth : this._renderingCanvas.clientWidth;
 		height = untyped Browser.navigator.isCocoonJS ? Browser.window.innerHeight : this._renderingCanvas.clientHeight;
 		
 		this.setSize(Std.int(width / this._hardwareScalingLevel), Std.int(height / this._hardwareScalingLevel));
 		#end
+		
+		for (fn in onResize) {
+			fn();
+		}
 	}
 	
 	/**
@@ -1449,19 +1455,11 @@ import nme.display.OpenGLView;
 		texture._baseHeight = height;
 		texture._width = width;
 		texture._height = height;
+		texture.generateMipMaps = generateMipMaps;
+		texture.samplingMode = samplingMode;
 		texture.references = 1;
 		
 		this.updateRawTexture(texture, data, format, invertY, compression);
-		GL.bindTexture(GL.TEXTURE_2D, texture.data);
-		
-		// Filters
-		var filters = getSamplingParameters(samplingMode, generateMipMaps);
-		
-		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, filters.mag);
-		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, filters.min);
-		GL.bindTexture(GL.TEXTURE_2D, null);
-		
-		texture.samplingMode = samplingMode;
 		
 		this._loadedTexturesCache.push(texture);
 		
@@ -1503,6 +1501,10 @@ import nme.display.OpenGLView;
 		else {
             GL.texImage2D(GL.TEXTURE_2D, 0, internalFormat, texture._width, texture._height, 0, internalFormat, GL.UNSIGNED_BYTE, data);
         }
+		// Filters
+		var filters = getSamplingParameters(texture.samplingMode, texture.generateMipMaps);		
+		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, filters.mag);
+		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, filters.min);
 		
 		if (texture.generateMipMaps) {
 			GL.generateMipmap(GL.TEXTURE_2D);
@@ -2126,11 +2128,11 @@ import nme.display.OpenGLView;
         var engine = scene.getEngine();
         var potWidth = com.babylonhx.math.Tools.GetExponentOfTwo(width, engine.getCaps().maxTextureSize);
         var potHeight = com.babylonhx.math.Tools.GetExponentOfTwo(height, engine.getCaps().maxTextureSize);
-				
+		
 		if (potWidth != width || potHeight != height) {
 			trace("Texture '" + texture.url + "' is not power of two !");
 		}
-				
+		
         GL.bindTexture(GL.TEXTURE_2D, texture.data);
 		/*#if js
         GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY == null ? 1 : (invertY ? 1 : 0));

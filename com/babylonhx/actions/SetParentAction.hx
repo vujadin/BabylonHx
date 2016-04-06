@@ -15,6 +15,7 @@ import com.babylonhx.math.Vector3;
 
 	public function new(triggerOptions:Dynamic, target:Dynamic, parent:Dynamic, ?condition:Condition) {
 		super(triggerOptions, condition);
+		
 		this._target = target;
 		this._parent = parent;
 	}

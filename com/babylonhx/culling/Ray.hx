@@ -289,12 +289,13 @@ import com.babylonhx.collisions.IntersectionInfo;
 		tc = (Math.abs(tN) < Ray.smallnum ? 0.0 : tN / tD);
 		
 		// get the difference of the two closest points
-		var dP = w.add(u.multiplyByFloats(sc, sc, sc)).subtract(v.multiplyByFloats(tc, tc, tc));  // = S1(sc) - S2(tc)
+		var qtc = v.multiplyByFloats(tc, tc, tc);
+        var dP = w.add(u.multiplyByFloats(sc, sc, sc)).subtract(qtc);  // = S1(sc) - S2(tc)
 		
 		var isIntersected = (tc > 0) && (tc <= this.length) && (dP.lengthSquared() < (threshold * threshold));   // return intersection result
 		
 		if (isIntersected) {
-			return tc;
+			return qtc.length();
 		}
 		
 		return -1;

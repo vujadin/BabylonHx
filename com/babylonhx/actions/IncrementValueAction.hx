@@ -16,7 +16,9 @@ package com.babylonhx.actions;
 
 	public function new(triggerOptions:Dynamic, target:Dynamic, propertyPath:String, value:Dynamic, ?condition:Condition) {
 		super(triggerOptions, condition);
+		
 		this._target = target;
+		
 		this.propertyPath = propertyPath;
 		this.value = value;
 	}

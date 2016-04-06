@@ -22,6 +22,7 @@ import com.babylonhx.tools.Tools;
 	public var borderLimit:Float = 300;
 	public var meshesSelectionPredicate:Mesh->Bool;
 	public var layerMask:Int = 0x0FFFFFFF;
+	public var id:String;
 
 	private var _scene:Scene;
 	private var _emitter:Dynamic;
@@ -35,9 +36,9 @@ import com.babylonhx.tools.Tools;
 	private var _isEnabled:Bool = true;	
 	
 
-	public function new(name:String, emitter:Dynamic, scene:Scene) {
-		
+	public function new(name:String, emitter:Dynamic, scene:Scene) {		
 		this.name = name;
+		this.id = name;
 		this._scene = scene;
 		this._emitter = emitter;
 		scene.lensFlareSystems.push(this);
@@ -269,7 +270,12 @@ import com.babylonhx.tools.Tools;
 	public static function Parse(parsedLensFlareSystem:Dynamic, scene:Scene, rootUrl:String):LensFlareSystem {
 		var emitter = scene.getLastEntryByID(parsedLensFlareSystem.emitterId);
 		
-		var lensFlareSystem = new LensFlareSystem("lensFlareSystem#" + parsedLensFlareSystem.emitterId, emitter, scene);
+		var _name = parsedLensFlareSystem.name != null ? parsedLensFlareSystem.name : "lensFlareSystem#" + parsedLensFlareSystem.emitterId;
+		
+		var lensFlareSystem = new LensFlareSystem(_name, emitter, scene);
+		if (parsedLensFlareSystem.id != null) {
+            lensFlareSystem.id = parsedLensFlareSystem.id;
+        }
 		lensFlareSystem.borderLimit = parsedLensFlareSystem.borderLimit;
 		
 		var _flares:Array<Dynamic> = cast parsedLensFlareSystem.flares;
@@ -283,6 +289,9 @@ import com.babylonhx.tools.Tools;
 
 	public function serialize():Dynamic {
 		var serializationObject:Dynamic = { };
+		
+		serializationObject.id = this.id;
+        serializationObject.name = this.name;
 		
 		serializationObject.emitterId = this.getEmitter().id;
 		serializationObject.borderLimit = this.borderLimit;

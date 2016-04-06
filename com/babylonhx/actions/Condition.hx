@@ -10,7 +10,7 @@ package com.babylonhx.actions;
 	public var _actionManager:ActionManager;
 
 	public var _evaluationId:Int;
-	public var _currentResult:Bool;
+	public var _currentResult:Bool = false;
 	
 	
 	public function new(actionManager:ActionManager) {

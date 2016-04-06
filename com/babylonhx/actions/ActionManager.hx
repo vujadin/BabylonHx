@@ -7,31 +7,36 @@ import com.babylonhx.mesh.AbstractMesh;
  * @author Krtolica Vujadin
  */
 
+/**
+ * Action Manager manages all events to be triggered on a given mesh or the global scene.
+ * A single scene can have many Action Managers to handle predefined actions on specific meshes.
+ */
 @:expose('BABYLON.ActionManager') class ActionManager {
 	
 	// Statics
-	public static inline var NothingTrigger:Int = 0;
-	public static inline var OnPickTrigger:Int = 1;
-	public static inline var OnLeftPickTrigger:Int = 2;
-	public static inline var OnRightPickTrigger:Int = 3;
-	public static inline var OnCenterPickTrigger:Int = 4;
-	public static inline var OnPickDownTrigger:Int = 5;
-	public static inline var OnPickUpTrigger:Int = 6;
-	public static inline var OnLongPressTrigger:Int = 7;
-	public static inline var OnPointerOverTrigger:Int = 8;
-	public static inline var OnPointerOutTrigger:Int = 9;
-	public static inline var OnEveryFrameTrigger:Int = 10;
-	public static inline var OnIntersectionEnterTrigger:Int = 11;
-	public static inline var OnIntersectionExitTrigger:Int = 12;
-	public static inline var OnKeyDownTrigger:Int = 13;
-	public static inline var OnKeyUpTrigger:Int = 14;
-	public static inline var OnPickOutTrigger:Int = 15;
+	public static var NothingTrigger:Int = 0;
+	public static var OnPickTrigger:Int = 1;
+	public static var OnLeftPickTrigger:Int = 2;
+	public static var OnRightPickTrigger:Int = 3;
+	public static var OnCenterPickTrigger:Int = 4;
+	public static var OnPickDownTrigger:Int = 5;
+	public static var OnPickUpTrigger:Int = 6;
+	public static var OnLongPressTrigger:Int = 7;
+	public static var OnPointerOverTrigger:Int = 8;
+	public static var OnPointerOutTrigger:Int = 9;
+	public static var OnEveryFrameTrigger:Int = 10;
+	public static var OnIntersectionEnterTrigger:Int = 11;
+	public static var OnIntersectionExitTrigger:Int = 12;
+	public static var OnKeyDownTrigger:Int = 13;
+	public static var OnKeyUpTrigger:Int = 14;
+	public static var OnPickOutTrigger:Int = 15;
 	
 	public static inline var DragMovementThreshold:Int = 10; // in pixels
     public static inline var LongPressDelay:Int = 500; 	  // in milliseconds
 	
 	// Members
 	public var actions:Array<Action> = [];
+	
 	private var _scene:Scene;
 	
 
@@ -131,6 +136,7 @@ import com.babylonhx.mesh.AbstractMesh;
 		if (action.trigger == ActionManager.OnEveryFrameTrigger) {
 			if (this.getScene().actionManager != this) {
 				trace("OnEveryFrameTrigger can only be used with scene.actionManager");
+				
 				return null;
 			}
 		}

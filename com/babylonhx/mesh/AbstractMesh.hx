@@ -128,6 +128,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 
 	public var layerMask:Int = 0x0FFFFFFF;
 	
+	// for bGUI
+	public var __gui:Bool = false;
+	
 	public var alwaysSelectAsActiveMesh:Bool = false;
 
 	// Physics

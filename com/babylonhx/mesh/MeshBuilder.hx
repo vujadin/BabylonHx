@@ -625,7 +625,7 @@ class MeshBuilder {
 			var normal:Vector3 = Vector3.Zero();
 			var rotated:Vector3 = Vector3.Zero();
 			var rotationMatrix:Matrix = Tmp.matrix[0];
-			var index:Int = (cap == Mesh.NO_CAP || cap == Mesh.CAP_END) ? 0 : 2;
+			var index:Int = (cap == Mesh.NO_CAP || cap == Mesh.CAP_END) ? 2 : 0;
 			for (i in 0...path.length) {
 				rad = radiusFunctionFinal(i, distances[i]); // current radius
 				circlePath = [];              				// current circle array
@@ -662,7 +662,7 @@ class MeshBuilder {
                 case Mesh.CAP_ALL:
                     circlePaths.unshift(capPath(tessellation + 1, 0));
                     circlePaths.push(capPath(tessellation + 1, path.length - 1));
-                     
+                    
                 default:
                     //                   
             }

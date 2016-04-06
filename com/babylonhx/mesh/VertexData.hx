@@ -508,6 +508,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			uTotalDistance[p] = 0;
 			us[p] = [0];
 			path = pathArray[p];
+			
 			l = path.length;
 			minlg = (minlg < l) ? minlg : l;
 			
@@ -568,6 +569,9 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			if (closeArray) {
 				path1 = pathArray[p];
 				path2 = pathArray[0];
+				if (i == minlg) {   // closePath
+					vertex2 = path2[0];
+				}
 				vectlg = path2[i].subtract(path1[i]).length();
 				dist = vectlg + vTotalDistance[i];
 				vTotalDistance[i] = dist;

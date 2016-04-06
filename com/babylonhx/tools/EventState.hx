@@ -13,11 +13,11 @@ class EventState {
 	/**
 	 * If the callback of a given Observer set this member to true the following observers will be ignored
 	 */
-	public var skipNextObervers:Bool;
+	public var skipNextObservers:Bool;
 	
 	
 	public function new() {
-		this.skipNextObervers = false;
+		this.skipNextObservers = false;
 	}
 	
 }

@@ -180,6 +180,10 @@ import haxe.ds.Vector;
 		
 		return this;
 	}
+	
+	inline public function getTranslation():Vector3 {
+        return new Vector3(this.m[12], this.m[13], this.m[14]);
+    }
 
 	inline public function multiply(other:Matrix):Matrix {
 		var result = new Matrix();
@@ -323,6 +327,31 @@ import haxe.ds.Vector;
 		result.m[13] = initialM42;
 		result.m[14] = initialM43;
 		result.m[15] = initialM44;
+	}
+	
+	public function getRow(index:Int):Vector4 {
+		if (index < 0 || index > 3) {
+			return null;
+		}
+		
+		var i = Std.int(index * 4);
+		
+		return new Vector4(this.m[i + 0], this.m[i + 1], this.m[i + 2], this.m[i + 3]);
+	}
+
+	public function setRow(index:Int, row:Vector4):Matrix {
+		if (index < 0 || index > 3) {
+			return null;
+		}
+		
+		var i = Std.int(index * 4);
+		
+		this.m[i + 0] = row.x;
+		this.m[i + 1] = row.y;
+		this.m[i + 2] = row.z;
+		this.m[i + 3] = row.w;
+		
+		return this;
 	}
 
 	inline public static function FromValues(initialM11:Float, initialM12:Float, initialM13:Float, initialM14:Float,

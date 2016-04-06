@@ -89,9 +89,15 @@ import com.babylonhx.animations.Animation;
 		this.position = position;
 		scene.addCamera(this);
 		
+		#if (openfl || nme)
+		if (name != "openfl_nme_dummycamera") {
+		#end
 		if (scene.activeCamera == null) {
 			scene.activeCamera = this;
 		}
+		#if (openfl || nme)
+		}
+		#end
 		
 		this.getProjectionMatrix = getProjectionMatrix_default;
 		this._getViewMatrix = _getViewMatrix_default;

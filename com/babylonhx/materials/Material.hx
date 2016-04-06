@@ -194,7 +194,7 @@ import com.babylonhx.mesh.Mesh;
 		return result;
 	}
 
-	public function dispose(forceDisposeEffect:Bool = false) {	
+	public function dispose(forceDisposeEffect:Bool = false, forceDisposeTextures:Bool = true) {	
 		// Animations
         this.getScene().stopAnimation(this);
 		
