@@ -7,6 +7,7 @@ import nme.events.MouseEvent;
 import nme.events.KeyboardEvent;
 import nme.events.TouchEvent;
 import nme.display.OpenGLView;
+import nme.display.FPS;
 import nme.Lib;
 
 import com.babylonhx.Engine;
@@ -39,10 +40,6 @@ import com.babylonhx.materials.textures.CubeTexture;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.layer.Layer;
 
-import org.collisionhaxe.Actor;
-import org.collisionhaxe.Game;
-import org.collisionhaxe.BoundingBox;
-
 /**
  * ...
  * @author Krtolica Vujadin
@@ -52,7 +49,7 @@ class MainNME extends nme.display.Sprite {
 	
 	var scene:Scene;
 	var engine:Engine;
-		
+	
 	
 	public function new() {
 		super();
@@ -62,8 +59,8 @@ class MainNME extends nme.display.Sprite {
 		engine = new Engine(this, false);	
 		scene = new Scene(engine);
 		
-		engine.width = Lib.current.stage.stageWidth;
-		engine.height = Lib.current.stage.stageHeight;
+		Engine.width = Lib.current.stage.stageWidth;
+		Engine.height = Lib.current.stage.stageHeight;
 		
 		Lib.current.stage.addEventListener(Event.RESIZE, resize);
 		
@@ -81,10 +78,30 @@ class MainNME extends nme.display.Sprite {
 		#end
 		
 		createDemo();
+		
+		// currently needed to render bhx scene, doesn't actualy enables 2D rendering...
+		enableNME2D();
+	}
+	
+	private function enableNME2D():Void {
+		var openflCameraMask:Int = 0xF0E1D2;
+		var mainCamera = scene.activeCamera;
+		if (scene.activeCameras.indexOf(mainCamera) == -1) {
+			scene.activeCameras.push(mainCamera);
+		}
+		var openflCamera = new FreeCamera("openfl_nme_dummycamera", new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY), scene);
+		openflCamera.fov = 0;
+        openflCamera.layerMask = openflCameraMask; 
+		var openflDummyMesh = Mesh.CreatePlane("openfl_nme_dummymesh", 0.1, scene);
+		var openflDummyMaterial = new StandardMaterial("openfl_nme_DummyMaterial", scene);
+        openflDummyMaterial.backFaceCulling = false;
+		openflDummyMesh.material = openflDummyMaterial;
+		openflDummyMesh.layerMask = openflCameraMask;
+		scene.activeCameras.push(openflCamera);
 	}
 	
 	function createDemo() {
-		//new samples.BasicScene(scene);
+		new samples.BasicScene(scene);
 		//new samples.BasicElements(scene);
 		//new samples.DashedLinesMesh(scene);
 		//new samples.RotationAndScaling(scene);
@@ -176,20 +193,18 @@ class MainNME extends nme.display.Sprite {
 		//new samples.TorusThing(scene);
 		//new samples.StarfieldMaterialTest(scene);
 		//new samples.FeaturedDemo1(scene);
-		new samples.GlosinessAndRoughness(scene);
+		//new samples.GlosinessAndRoughness(scene);
 		//new samples.FurMat(scene);
 		//new samples.HaxedNES(scene);
 		//new samples.RefractionMaterial(scene);
 		//new samples.SponzaDynamicShadows(scene);
 		//new samples.RefractReflect(scene);
-		//new samples.AnimationBlending(scene);
-		
-		stage.addEventListener(Event.ENTER_FRAME, engine._renderLoop);
+		//new samples.AnimationBlending(scene);		
 	}
 	
 	function resize(e){
-		engine.width = Lib.current.stage.stageWidth;
-		engine.height = Lib.current.stage.stageHeight;
+		Engine.width = Lib.current.stage.stageWidth;
+		Engine.height = Lib.current.stage.stageHeight;
 	}
 	
 	function onKeyDown(e:KeyboardEvent) {

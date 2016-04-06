@@ -32,7 +32,7 @@ class MainSnow extends snow.App {
 		engine = new Engine(this.window);
 		scene = new Scene(engine);
 		
-		//new samples.BasicScene(scene);
+		new samples.BasicScene(scene);
 		//new samples.BasicElements(scene);
 		//new samples.DashedLinesMesh(scene);
 		//new samples.CandleLight(scene);
@@ -126,11 +126,12 @@ class MainSnow extends snow.App {
 		//new samples.StarfieldMaterialTest(scene);
 		//new samples.FeaturedDemo1(scene);
 		//new samples.GlosinessAndRoughness(scene);
-		new samples.FurMat(scene);
+		//new samples.FurMat(scene);
 		//new samples.HaxedNES(scene);
 		//new samples.RefractionMaterial(scene);
 		//new samples.SponzaDynamicShadows(scene);
 		//new samples.RefractReflect(scene);
+		//new samples.Mario(scene);
 	}
 		
 	override function onmousedown(x:Int, y:Int, button:Int, timestamp:Float, window_id:Int) {
@@ -194,8 +195,8 @@ class MainSnow extends snow.App {
 	override public function onevent(event:SystemEvent) {
         if(event.window != null) {
             if (event.window.type == we_size_changed || event.window.type == we_resized) {
-				engine.width = event.window.x;
-				engine.height = event.window.y;
+				Engine.width = event.window.x;
+				Engine.height = event.window.y;
 				resize();
             }
         }
@@ -206,7 +207,7 @@ class MainSnow extends snow.App {
 	}
 	
 	private function resize() {
-		engine.setSize(Std.int(engine.width / engine.getHardwareScalingLevel()), Std.int(engine.height / engine.getHardwareScalingLevel()));
+		engine.setSize(Std.int(Engine.width / engine.getHardwareScalingLevel()), Std.int(Engine.height / engine.getHardwareScalingLevel()));
 	}
 	
 }
