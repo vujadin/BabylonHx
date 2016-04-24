@@ -170,10 +170,10 @@ package com.babylonhx.math;
 			return new Color3(0, 0, 0);
 		}
 		
-		var r = Std.parseInt(hex.substring(1, 3));
-		var g = Std.parseInt(hex.substring(3, 5));
-		var b = Std.parseInt(hex.substring(5, 7));
-		
+		var r = Std.parseInt("0x" + hex.substring(1, 3));
+		var g = Std.parseInt("0x" + hex.substring(3, 5));
+		var b = Std.parseInt("0x" + hex.substring(5, 7));
+
 		return Color3.FromInts(r, g, b);
 	}
 

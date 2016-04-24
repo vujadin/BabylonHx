@@ -111,10 +111,10 @@ import com.babylonhx.tools.Tools;
 			return new Color4(0, 0, 0, 0);
 		}
 		
-		var r = Std.parseInt(hex.substring(1, 3));
-		var g = Std.parseInt(hex.substring(3, 5));
-		var b = Std.parseInt(hex.substring(5, 7));
-		var a = Std.parseInt(hex.substring(7, 9));
+		var r = Std.parseInt("0x" + hex.substring(1, 3));
+		var g = Std.parseInt("0x" + hex.substring(3, 5));
+		var b = Std.parseInt("0x" + hex.substring(5, 7));
+		var a = Std.parseInt("0x" + hex.substring(7, 9));
 		
 		return Color4.FromInts(r, g, b, a);
 	}
