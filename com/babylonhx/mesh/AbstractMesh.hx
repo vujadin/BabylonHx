@@ -423,7 +423,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 				
 				axis = Vector3.TransformNormal(axis, invertParentWorldMatrix);
 			}
-			rotationQuaternion = Quaternion.RotationAxis(axis, amount);
+			var rotationQuaternion = Quaternion.RotationAxis(axis, amount);
 			this.rotationQuaternion = rotationQuaternion.multiply(this.rotationQuaternion);
 		}
 	}
