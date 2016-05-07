@@ -110,6 +110,7 @@ import com.babylonhx.tools.SmartArray;
 		var attribs:Array<String> = [VertexBuffer.PositionKind];
 		
 		var mesh:Mesh = cast subMesh.getMesh();
+		
 		var scene:Scene = mesh.getScene();
 		var material:Material = subMesh.getMaterial();
 		

@@ -622,7 +622,7 @@ import nme.display.OpenGLView;
 		#end
 	}
 
-	public function bindFramebuffer(texture:WebGLTexture, faceIndex:Int = 0) {
+	public function bindFramebuffer(texture:WebGLTexture, faceIndex:Int = 0, ?requiredWidth:Int, ?requiredHeight:Int) {
 		this._currentRenderTarget = texture;
 		
 		GL.bindFramebuffer(GL.FRAMEBUFFER, texture._framebuffer);
@@ -634,7 +634,7 @@ import nme.display.OpenGLView;
             GL.framebufferTexture2D(GL.FRAMEBUFFER, GL.COLOR_ATTACHMENT0, GL.TEXTURE_2D, texture.data, 0);
         }
 		
-		GL.viewport(0, 0, texture._width, texture._height);
+		GL.viewport(0, 0, requiredWidth != null ? requiredWidth : texture._width, requiredHeight != null ? requiredHeight : texture._height);
 		
 		this.wipeCaches();
 	}
@@ -1501,6 +1501,7 @@ import nme.display.OpenGLView;
 		else {
             GL.texImage2D(GL.TEXTURE_2D, 0, internalFormat, texture._width, texture._height, 0, internalFormat, GL.UNSIGNED_BYTE, data);
         }
+		
 		// Filters
 		var filters = getSamplingParameters(texture.samplingMode, texture.generateMipMaps);		
 		GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, filters.mag);
@@ -1509,6 +1510,7 @@ import nme.display.OpenGLView;
 		if (texture.generateMipMaps) {
 			GL.generateMipmap(GL.TEXTURE_2D);
 		}
+		
 		GL.bindTexture(GL.TEXTURE_2D, null);
 		this.resetTextureCache();
 		texture.isReady = true;

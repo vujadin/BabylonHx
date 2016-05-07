@@ -307,9 +307,11 @@ class NormalMaterial extends Material {
 		return results;
 	}
 
-	override public function dispose(forceDisposeEffect:Bool = false) {
-		if (this.diffuseTexture != null) {
-			this.diffuseTexture.dispose();
+	override public function dispose(forceDisposeEffect:Bool = false, forceDisposeTextures:Bool = true) {
+		if (forceDisposeTextures) {
+			if (this.diffuseTexture != null) {
+				this.diffuseTexture.dispose();
+			}
 		}
 		
 		super.dispose(forceDisposeEffect);

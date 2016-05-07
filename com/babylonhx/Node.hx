@@ -274,10 +274,14 @@ class NodeCache {
 	}
 
 	/**
-	 * Evaluate the list of children and determine if they should be considered as descendants considering the given criterias
+	 * Evaluate the list of children and determine if they should be considered as descendants 
+	 * considering the given criterias
 	 * @param {BABYLON.Node[]} results the result array containing the nodes matching the given criterias
-	 * @param {boolean} directDescendantsOnly if true only direct descendants of 'this' will be considered, if false direct and also indirect (children of children, an so on in a recursive manner) descendants of 'this' will be considered.
-	 * @param predicate: an optional predicate that will be called on every evaluated children, the predicate must return true for a given child to be part of the result, otherwise it will be ignored.
+	 * @param {boolean} directDescendantsOnly if true only direct descendants of 'this' will be considered, 
+	 * if false direct and also indirect (children of children, an so on in a recursive manner) descendants 
+	 * of 'this' will be considered.
+	 * @param predicate: an optional predicate that will be called on every evaluated children, the predicate 
+	 * must return true for a given child to be part of the result, otherwise it will be ignored.
 	 */
 	public function _getDescendants(results:Array<Node>, directDescendantsOnly:Bool = false, ?predicate:Node->Bool) {
 		if (this._children == null) {

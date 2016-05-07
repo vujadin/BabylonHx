@@ -412,8 +412,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			this.rotation = Vector3.Zero();
 		}
 		
+		var rotationQuaternion = Quaternion.RotationAxis(axis, amount);
 		if (space == null || space == Space.LOCAL) {
-			var rotationQuaternion = Quaternion.RotationAxis(axis, amount);
 			this.rotationQuaternion = this.rotationQuaternion.multiply(rotationQuaternion);
 		}
 		else {
@@ -423,7 +423,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 				
 				axis = Vector3.TransformNormal(axis, invertParentWorldMatrix);
 			}
-			var rotationQuaternion = Quaternion.RotationAxis(axis, amount);
+			rotationQuaternion = Quaternion.RotationAxis(axis, amount);
 			this.rotationQuaternion = rotationQuaternion.multiply(this.rotationQuaternion);
 		}
 	}
@@ -646,6 +646,16 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		Matrix.ScalingToRef(this.scaling.x * this.scalingDeterminant, this.scaling.y * this.scalingDeterminant, this.scaling.z * this.scalingDeterminant, Tmp.matrix[1]);
 		
 		// Rotation
+		
+		//rotate, if quaternion is set and rotation was used
+		if (this.rotationQuaternion != null) {
+			var len = this.rotation.length();
+			if (len != 0) {
+				this.rotationQuaternion.multiplyInPlace(Quaternion.RotationYawPitchRoll(this.rotation.y, this.rotation.x, this.rotation.z));
+				this.rotation.copyFromFloats(0, 0, 0);
+			}
+		}
+		
 		if (this.rotationQuaternion != null) {
 			this.rotationQuaternion.toRotationMatrix(Tmp.matrix[0]);
 			this._cache.rotationQuaternion.copyFrom(this.rotationQuaternion);
@@ -692,7 +702,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 					parentMatrix = this.parent.getWorldMatrix();
 				}
 				
-				Vector3.TransformCoordinatesToRef(localPosition, parentMatrix, Tmp.vector3[1]);
+				Vector3.TransformNormalToRef(localPosition, parentMatrix, Tmp.vector3[1]);
 				localPosition = Tmp.vector3[1];
 			}
 			

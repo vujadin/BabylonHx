@@ -442,7 +442,7 @@ typedef SMD = StandardMaterialDefines
 		}
 		
 		// Get correct effect      
-		if (!this._defines.isEqual(this._cachedDefines)) {
+		if (!this._defines.isEqual(this._cachedDefines) || this._effect == null) {
 			this._defines.cloneTo(this._cachedDefines);
 			
 			scene.resetCachedMaterial();

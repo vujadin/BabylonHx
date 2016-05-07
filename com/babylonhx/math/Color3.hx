@@ -173,7 +173,7 @@ package com.babylonhx.math;
 		var r = Std.parseInt("0x" + hex.substring(1, 3));
 		var g = Std.parseInt("0x" + hex.substring(3, 5));
 		var b = Std.parseInt("0x" + hex.substring(5, 7));
-
+		
 		return Color3.FromInts(r, g, b);
 	}
 

@@ -670,9 +670,11 @@ class WaterMaterial extends Material {
 		return results;
 	}
 
-	override public function dispose(forceDisposeEffect:Bool = false) {
-		if (this.bumpTexture != null) {
-			this.bumpTexture.dispose();
+	override public function dispose(forceDisposeEffect:Bool = false, forceDisposeTextures:Bool = true) {
+		if (forceDisposeTextures) {
+			if (this.bumpTexture != null) {
+				this.bumpTexture.dispose();
+			}
 		}
 		
 		var index:Int = this.getScene().customRenderTargets.indexOf(this._refractionRTT);

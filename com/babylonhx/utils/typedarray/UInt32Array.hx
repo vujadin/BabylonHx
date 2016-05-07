@@ -10,7 +10,7 @@ package com.babylonhx.utils.typedarray;
 
 #elseif snow
  
-	typedef UInt32Array = snow.api.buffers.UInt32Array;
+	typedef UInt32Array = snow.api.buffers.Uint32Array;
 	
 #elseif openfl
 

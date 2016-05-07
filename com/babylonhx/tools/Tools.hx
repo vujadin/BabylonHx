@@ -14,6 +14,7 @@ import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.utils.Image;
 import com.babylonhx.utils.typedarray.UInt8Array;
+import haxe.io.BytesInput;
 
 import haxe.io.Bytes;
 import haxe.crypto.Base64;
@@ -443,6 +444,17 @@ typedef Assets = nme.Assets;
 								callBackFunction(asset);
 							}
 						);
+						
+					case "ctm":
+						var callBackFunction = callbackFn != null ?
+							function(result:Dynamic) {
+								callbackFn(result.bytes);
+							} : function(_) { };
+						app.assets.bytes(path).then(
+							function(asset:Dynamic) {
+								callBackFunction(asset);
+							}
+						);
 				}
 			//} 
 			//else {
@@ -518,6 +530,14 @@ typedef Assets = nme.Assets;
 						var image = new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height);
 						if (callbackFn != null) {
 							callbackFn(image);
+						}
+						#end
+						
+					case "ctm":
+						#if lime
+						var file = Assets.getBytes(path);
+						if (callbackFn != null) {
+							callbackFn(file);
 						}
 						#end
 				}

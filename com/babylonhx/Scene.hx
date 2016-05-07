@@ -251,7 +251,7 @@ import com.babylonhx.audio.*;
 	 */
 	//public var onPointerObservable:Observable = new Observable();
 	
-	public var onPointerMove:PickingInfo->Void;
+	public var onPointerMove:Int->Int->PickingInfo->Void;
 	public var onPointerDown:Int->Int->Int->PickingInfo->Void;
 	public var onPointerUp:Int->Int->Int->PickingInfo->Void;
 	public var onPointerPick:PickingInfo->Void;
@@ -826,7 +826,7 @@ import com.babylonhx.audio.*;
 			}
 			
 			if (this.onPointerMove != null) {
-				this.onPointerMove(pickResult);
+				this.onPointerMove(x, y, pickResult);
 			}
 			
 			/*if (this.onPointerObservable.hasObservers()) {
@@ -1630,6 +1630,12 @@ import com.babylonhx.audio.*;
 		
 		return null;
 	}
+	
+	public function getMeshesByID(id:String):Array<AbstractMesh> {
+        return this.meshes.filter(function (m:AbstractMesh):Bool {
+            return m.id == id;
+        });
+    }
 	
 	/**
 	 * Get a mesh with its auto-generated unique id
