@@ -896,13 +896,13 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		// default face colors and UV if undefined
 		var quadNb:Int = (arc != 1 && enclose) ? 2 : 0;
 		var ringNb:Int = (hasRings) ? subdivisions : 1;
-		var colorNb:Int = 2 + (1 + quadNb) * ringNb;
-		for (f in 0...colorNb) {
+		var surfaceNb:Int = 2 + (1 + quadNb) * ringNb;
+		for (f in 0...surfaceNb) {
 			if (faceColors != null && faceColors[f] == null) {
 				faceColors[f] = new Color4(1, 1, 1, 1);
 			}
 		}
-		for (f in 0...3) {
+		for (f in 0...surfaceNb) {
 			if (faceUV != null && faceUV[f] == null) {
 				faceUV[f] = new Vector4(0, 0, 1, 1);
 			}
@@ -928,7 +928,9 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		
 		// positions, normals, uvs
 		var ringIdx:Int = 1;
-		var c:Int = 1;
+		var s:Int = 1;			// surface index
+		var cs:Float = 0;
+		var v:Float = 0;
 		
 		for (i in 0...subdivisions + 1) {
 			h = i / subdivisions;
@@ -936,10 +938,10 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			ringIdx = (hasRings && i != 0 && i != subdivisions) ? 2 : 1;
 			for (r in 0...ringIdx) {
 				if (hasRings) {
-					c += r;
+					s += r;
 				}
 				if (enclose) {
-					c += 2 * r;
+					s += 2 * r;
 				}
 				for (j in 0...tessellation + 1) {
 					angle = j * angle_step;
@@ -975,13 +977,19 @@ import com.babylonhx.utils.typedarray.Int32Array;
 					normals.push(ringNormal.x);
 					normals.push(ringNormal.y);
 					normals.push(ringNormal.z);
-					uvs.push(faceUV[1].x + (faceUV[1].z - faceUV[1].x) * j / tessellation);
-					uvs.push(faceUV[1].y + (faceUV[1].w - faceUV[1].y) * h);
+					if (hasRings) {
+						v = (cs != s) ? faceUV[s].y : faceUV[s].w;
+					} 
+					else {
+						v = faceUV[s].y + (faceUV[s].w - faceUV[s].y) * h;
+					}
+					uvs.push(faceUV[s].x + (faceUV[s].z - faceUV[s].x) * j / tessellation);
+					uvs.push(v);
 					if (faceColors != null) {
-						colors.push(faceColors[c].r);
-						colors.push(faceColors[c].g);
-						colors.push(faceColors[c].b);
-						colors.push(faceColors[c].a);
+						colors.push(faceColors[s].r);
+						colors.push(faceColors[s].g);
+						colors.push(faceColors[s].b);
+						colors.push(faceColors[s].a);
 					}
 				}
 				
@@ -1015,30 +1023,44 @@ import com.babylonhx.utils.typedarray.Int32Array;
 					normals.push(quadNormal.x);
 					normals.push(quadNormal.y);
 					normals.push(quadNormal.z);
-					uvs.push(faceUV[1].x + (faceUV[1].z - faceUV[1].x));
-					uvs.push(faceUV[1].y + (faceUV[1].w - faceUV[1].y));
-					uvs.push(faceUV[1].x + (faceUV[1].z - faceUV[1].x));
-					uvs.push(faceUV[1].y + (faceUV[1].w - faceUV[1].y));
-					uvs.push(faceUV[1].x + (faceUV[1].z - faceUV[1].x));
-					uvs.push(faceUV[1].y + (faceUV[1].w - faceUV[1].y));
-					uvs.push(faceUV[1].x + (faceUV[1].z - faceUV[1].x));
-					uvs.push(faceUV[1].y + (faceUV[1].w - faceUV[1].y));
-					colors.push(faceColors[c + 1].r);
-					colors.push(faceColors[c + 1].g);
-					colors.push(faceColors[c + 1].b);
-					colors.push(faceColors[c + 1].a);
-					colors.push(faceColors[c + 1].r);
-					colors.push(faceColors[c + 1].g);
-					colors.push(faceColors[c + 1].b);
-					colors.push(faceColors[c + 1].a);
-					colors.push(faceColors[c + 2].r);
-					colors.push(faceColors[c + 2].g);
-					colors.push(faceColors[c + 2].b);
-					colors.push(faceColors[c + 2].a);
-					colors.push(faceColors[c + 2].r);
-					colors.push(faceColors[c + 2].g);
-					colors.push(faceColors[c + 2].b);
-					colors.push(faceColors[c + 2].a);
+					if (hasRings) {
+						v = (cs != s) ? faceUV[s + 1].y : faceUV[s + 1].w;
+					} 
+					else {
+						v = faceUV[s + 1].y + (faceUV[s + 1].w - faceUV[s + 1].y) * h;
+					}
+					uvs.push(faceUV[s + 1].x);
+					uvs.push(v);
+					uvs.push(faceUV[s + 1].z);
+					uvs.push(v);
+					if (hasRings) {
+						v = (cs != s) ? faceUV[s + 2].y : faceUV[s + 2].w;
+					} 
+					else {
+						v = faceUV[s + 2].y + (faceUV[s + 2].w - faceUV[s + 2].y) * h;
+					}
+					uvs.push(faceUV[s + 2].x);
+					uvs.push(v);
+					uvs.push(faceUV[s + 2].z);
+					uvs.push(v);
+					if (faceColors.length > 0) {
+						colors.push(faceColors[s + 1].r);
+						colors.push(faceColors[s + 1].g);
+						colors.push(faceColors[s + 1].b);
+						colors.push(faceColors[s + 1].a);
+						colors.push(faceColors[s + 1].r);
+						colors.push(faceColors[s + 1].g);
+						colors.push(faceColors[s + 1].b);
+						colors.push(faceColors[s + 1].a);
+						colors.push(faceColors[s + 2].r);
+						colors.push(faceColors[s + 2].g);
+						colors.push(faceColors[s + 2].b);
+						colors.push(faceColors[s + 2].a);
+						colors.push(faceColors[s + 2].r);
+						colors.push(faceColors[s + 2].g);
+						colors.push(faceColors[s + 2].b);
+						colors.push(faceColors[s + 2].a);
+					}
 				}
 			}
 		}
@@ -1052,10 +1074,10 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		var i3:Int = 0;
 		for (s in 0...subdivisions) {
 			for (j in 0...tessellation) {
-				var i0 = i * (e + 1) + j;
-				var i1 = (i + 1) * (e + 1) + j;
-				var i2 = i * (e + 1) + (j + 1);
-				var i3 = (i + 1) * (e + 1) + (j + 1);
+				i0 = i * (e + 1) + j;
+				i1 = (i + 1) * (e + 1) + j;
+				i2 = i * (e + 1) + (j + 1);
+				i3 = (i + 1) * (e + 1) + (j + 1);
 				indices.push(i0);
 				indices.push(i1);
 				indices.push(i2);
@@ -1152,8 +1174,10 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		};
 		
 		// add caps to geometry
-		createCylinderCap(false);
-		createCylinderCap(true);
+		if (enclose) {
+			createCylinderCap(false);
+			createCylinderCap(true);
+		}
 		
 		// Sides
 		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);

@@ -197,7 +197,7 @@ class MeshBuilder {
 		return box;
 	}
 	
-	public static function CreateSphere(name:String, options:Dynamic, scene:Scene):Mesh {		
+	public static function CreateSphere(name:String, options:SphereOptions, scene:Scene):Mesh {		
 		var sphere = new Mesh(name, scene);
 		var vertexData = VertexData.CreateSphere(options);
 		
@@ -329,7 +329,7 @@ class MeshBuilder {
 	}	
 
 	// Cylinder and cone (Code inspired by SharpDX.org)
-	public static function CreateCylinder(name:String, options:Dynamic, scene:Scene):Mesh {		
+	public static function CreateCylinder(name:String, options:CylinderOptions, scene:Scene):Mesh {		
 		var cylinder = new Mesh(name, scene);
 		var vertexData = VertexData.CreateCylinder(options);
 		
@@ -340,7 +340,7 @@ class MeshBuilder {
 		}
 		
 		vertexData.applyToMesh(cylinder, options.updatable);
-			
+		
 		return cylinder;
 	}
 	

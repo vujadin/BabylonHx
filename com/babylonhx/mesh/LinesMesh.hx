@@ -27,9 +27,15 @@ import com.babylonhx.culling.Ray;
 	private var _colorShader:ShaderMaterial;
 	
 
-	public function new(name:String, scene:Scene, parent:Node = null, ?source:Mesh, doNotCloneChildren:Bool = false) {
+	public function new(name:String, scene:Scene, parent:Node = null, ?source:LinesMesh, doNotCloneChildren:Bool = false) {
 		super(name, scene, parent, source, doNotCloneChildren);
 		
+		if (source != null) {
+            this.color = source.color.clone();
+            this.alpha = source.alpha;
+        }
+		
+		this._intersectionThreshold = 0.1;
 		this._colorShader = new ShaderMaterial("colorShader", scene, "color",
 			{
 				attributes: ["position"],
@@ -76,6 +82,12 @@ import com.babylonhx.culling.Ray;
 
 	override private function get_checkCollisions():Bool {
 		return false;
+	}
+	
+	override public function createInstance(name:String):InstancedMesh {
+		trace("LinesMeshes do not support createInstance.");
+		
+		return null;
 	}
 
 	override public function _bind(subMesh:SubMesh, effect:Effect, fillMode:Int) {

@@ -5,6 +5,7 @@ import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.textures.WebGLTexture;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color4;
+import com.babylonhx.math.Vector2;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.Tools;
 
@@ -30,6 +31,12 @@ import com.babylonhx.utils.GL;
 	public var renderTargetSamplingMode:Int;
 	public var clearColor:Color4;
 	
+	/*
+        Enable Pixel Perfect mode where texture is not scaled to be power of 2.
+        Can only be used on a single postprocess or on the last one of a chain.
+    */ 
+    public var enablePixelPerfectMode:Bool = false;
+	
 	public var isSupported(get, never):Bool;
 
 	private var _camera:Camera;
@@ -40,10 +47,14 @@ import com.babylonhx.utils.GL;
 	private var _textureType:Int;
 	public var _textures:SmartArray<WebGLTexture> = new SmartArray<WebGLTexture>(2);
 	public var _currentRenderTextureInd:Int = 0;
+	
+	@:allow(com.babylonhx.shaderbuilder.ShaderMaterialHelper)
 	private var _effect:Effect;
+	
 	private var _samplers:Array<String>;
     private var _fragmentUrl:String;
     private var _parameters:Array<String>;
+	private var _scaleRatio:Vector2 = new Vector2(1, 1);
 	
 
 	public function new(name:String, fragmentUrl:String, parameters:Array<String>, samplers:Array<String>, ratio:Dynamic, camera:Camera, samplingMode:Int = Texture.NEAREST_SAMPLINGMODE, ?engine:Engine, reusable:Bool = false, defines:String = "", textureType:Int = Engine.TEXTURETYPE_UNSIGNED_INT) {
@@ -70,6 +81,8 @@ import com.babylonhx.utils.GL;
 		this._fragmentUrl = fragmentUrl;
 		this._parameters = parameters != null ? parameters : [];
 		
+		this._parameters.push("scale");
+		
 		this.updateEffect(defines);
 	}
 	
@@ -90,11 +103,21 @@ import com.babylonhx.utils.GL;
 		var scene = camera.getScene();
 		var maxSize = camera.getEngine().getCaps().maxTextureSize;
 		
-		var desiredWidth:Int = Std.int((sourceTexture != null ? sourceTexture._width : this._engine.getRenderWidth()) * this._renderRatio);
-        var desiredHeight:Int = Std.int((sourceTexture != null ? sourceTexture._height : this._engine.getRenderHeight()) * this._renderRatio);
-        
-		desiredWidth = this._renderRatio.width != null ? this._renderRatio.width : com.babylonhx.math.Tools.GetExponentOfTwo(Std.int(desiredWidth), maxSize);
-		desiredHeight = this._renderRatio.height != null ? this._renderRatio.height : com.babylonhx.math.Tools.GetExponentOfTwo(Std.int(desiredHeight), maxSize);
+		var requiredWidth:Int = cast ((sourceTexture != null ? sourceTexture._width : this._engine.getRenderWidth()) * this._renderRatio);
+        var requiredHeight:Int = cast ((sourceTexture != null ? sourceTexture._height : this._engine.getRenderHeight()) * this._renderRatio);
+
+        var desiredWidth = this._renderRatio.width != null ? this._renderRatio.width : requiredWidth;
+        var desiredHeight = this._renderRatio.height != null ? this._renderRatio.height : requiredHeight;
+		
+		if (this.renderTargetSamplingMode != Texture.NEAREST_SAMPLINGMODE) {
+            if (this._renderRatio.width == null) {
+                desiredWidth = com.babylonhx.math.Tools.GetExponentOfTwo(desiredWidth, maxSize);
+            }
+			
+            if (this._renderRatio.height == null) {
+                desiredHeight = com.babylonhx.math.Tools.GetExponentOfTwo(desiredHeight, maxSize);
+            }
+        }
 		
 		if (this.width != desiredWidth || this.height != desiredHeight) {
 			if (this._textures.length > 0) {
@@ -117,7 +140,14 @@ import com.babylonhx.utils.GL;
 			}			
 		}
 		
-		this._engine.bindFramebuffer(this._textures.data[this._currentRenderTextureInd]);
+		if (this.enablePixelPerfectMode) {
+            this._scaleRatio.copyFromFloats(requiredWidth / desiredWidth, requiredHeight / desiredHeight);
+            this._engine.bindFramebuffer(this._textures.data[this._currentRenderTextureInd], 0, requiredWidth, requiredHeight);
+        }
+        else {
+            this._scaleRatio.copyFromFloats(1, 1);
+            this._engine.bindFramebuffer(this._textures.data[this._currentRenderTextureInd]);
+        }
 		
 		if (this.onActivate != null) {
 			this.onActivate(camera);
@@ -159,6 +189,7 @@ import com.babylonhx.utils.GL;
 		}
 		
 		// Parameters
+		this._effect.setVector2("scale", this._scaleRatio);
 		if (this.onApply != null) {
 			this.onApply(this._effect);
 		}

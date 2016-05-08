@@ -106,7 +106,7 @@ import com.babylonhx.tools.SmartArray;
 	 * @param {BABYLON.Scene} scene - The constructor needs a scene reference to initialize internal components. If "camera" is null "scene" must be provided
 	 */
 	public function new(name:String, ratio:Dynamic, ?camera:Camera, ?mesh:Mesh, samples:Int = 100, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, ?engine:Engine, ?reusable:Bool, ?scene:Scene) {
-		super(name, "volumetricLightScattering", ["decay", "exposure", "weight", "meshPositionOnScreen", "density"], ["lightScatteringSampler"], ratio.postProcessRatio != null ? ratio.postProcessRatio : ratio, camera, samplingMode, engine, reusable, "#define NUM_SAMPLES " + samples);
+		super(name, "volumetricLightScattering", ["decay", "exposure", "weight", "meshPositionOnScreen", "density"], ["lightScatteringSampler"], Reflect.hasField(ratio, "passRatio") ? ratio.postProcessRatio : ratio, camera, samplingMode, engine, reusable, "#define NUM_SAMPLES " + samples);
 		if(camera != null) {
 			scene = camera.getScene();
 		} 
@@ -118,7 +118,7 @@ import com.babylonhx.tools.SmartArray;
 		this.mesh = (mesh != null) ? mesh : VolumetricLightScatteringPostProcess.CreateDefaultMesh("VolumetricLightScatteringMesh", scene);
 		
 		// Configure
-		this._createPass(scene, ratio.passRatio != null ? ratio.passRatio : ratio);
+		this._createPass(scene, Reflect.hasField(ratio, "passRatio") ? ratio.passRatio : ratio);
 		
 		this.onActivate = function(camera:Camera) {
             if (!this.isSupported) {
@@ -254,7 +254,7 @@ import com.babylonhx.tools.SmartArray;
 	private function _createPass(scene:Scene, ratio:Float) {
 		var engine = scene.getEngine();
 		
-		this._volumetricLightScatteringRTT = new RenderTargetTexture("volumetricLightScatteringMap", Std.int(engine.getRenderWidth() * ratio), scene, false, true, Engine.TEXTURETYPE_UNSIGNED_INT);
+		this._volumetricLightScatteringRTT = new RenderTargetTexture("volumetricLightScatteringMap", { width: Std.int(engine.getRenderWidth() * ratio), height: Std.int(engine.getRenderHeight() * ratio) }, scene, false, true, Engine.TEXTURETYPE_UNSIGNED_INT);
 		this._volumetricLightScatteringRTT.wrapU = Texture.CLAMP_ADDRESSMODE;
 		this._volumetricLightScatteringRTT.wrapV = Texture.CLAMP_ADDRESSMODE;
 		this._volumetricLightScatteringRTT.renderList = null;
@@ -423,8 +423,12 @@ import com.babylonhx.tools.SmartArray;
 	*/
 	public static function CreateDefaultMesh(name:String, scene:Scene):Mesh {
 		var mesh = Mesh.CreatePlane(name, 1, scene);
-		mesh.billboardMode = AbstractMesh.BILLBOARDMODE_Z;
-		mesh.material = new StandardMaterial(name + "Material", scene);
+		mesh.billboardMode = AbstractMesh.BILLBOARDMODE_ALL;
+		
+		var material = new StandardMaterial(name + "Material", scene);
+		material.emissiveColor = new Color3(1, 1, 1);
+		
+		mesh.material = material;
 		
 		return mesh;
 	}

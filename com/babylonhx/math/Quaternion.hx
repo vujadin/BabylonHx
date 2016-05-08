@@ -234,8 +234,7 @@ package com.babylonhx.math;
 		var _trace = m11 + m22 + m33;
 		var s:Float = 0;
 		
-		if (_trace > 0) {
-			
+		if (_trace > 0) {			
 			s = 0.5 / Math.sqrt(_trace + 1.0);
 			
 			result.w = 0.25 / s;
@@ -243,8 +242,8 @@ package com.babylonhx.math;
 			result.y = (m13 - m31) * s;
 			result.z = (m21 - m12) * s;
 			
-		} else if (m11 > m22 && m11 > m33) {
-			
+		} 
+		else if (m11 > m22 && m11 > m33) {			
 			s = 2.0 * Math.sqrt(1.0 + m11 - m22 - m33);
 			
 			result.w = (m32 - m23) / s;
@@ -252,8 +251,8 @@ package com.babylonhx.math;
 			result.y = (m12 + m21) / s;
 			result.z = (m13 + m31) / s;
 			
-		} else if (m22 > m33) {
-			
+		} 
+		else if (m22 > m33) {			
 			s = 2.0 * Math.sqrt(1.0 + m22 - m11 - m33);
 			
 			result.w = (m13 - m31) / s;
@@ -262,8 +261,7 @@ package com.babylonhx.math;
 			result.z = (m23 + m32) / s;
 			
 		} 
-		else {
-			
+		else {			
 			s = 2.0 * Math.sqrt(1.0 + m33 - m11 - m22);
 			
 			result.w = (m21 - m12) / s;
