@@ -459,9 +459,10 @@ import com.babylonhx.Scene;
 		var shadowGenerator:ShadowGenerator = new ShadowGenerator(parsedShadowGenerator.mapSize, cast light);
 		
 		for (meshIndex in 0...parsedShadowGenerator.renderList.length) {
-			var mesh = scene.getMeshByID(parsedShadowGenerator.renderList[meshIndex]);
-			
-			shadowGenerator.getShadowMap().renderList.push(mesh);
+			var meshes = scene.getMeshesByID(parsedShadowGenerator.renderList[meshIndex]);
+			for (mesh in meshes) {
+				shadowGenerator.getShadowMap().renderList.push(mesh);
+			}
 		}
 		
 		if (parsedShadowGenerator.usePoissonSampling == true) {

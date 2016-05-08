@@ -102,7 +102,7 @@ import com.babylonhx.tools.Tools;
 	}
 
 	public function getEmitterPosition():Vector3 {
-		return this._emitter.getAbsolutePosition != null ? this._emitter.getAbsolutePosition() :this._emitter.position;
+		return this._emitter.getAbsolutePosition != null ? this._emitter.getAbsolutePosition() : this._emitter.position;
 	}
 
 	public function computeEffectivePosition(globalViewport:Viewport):Bool {

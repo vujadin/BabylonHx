@@ -7,6 +7,7 @@ import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Matrix;
+import com.babylonhx.shaderbuilder.ShaderSetting;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.AbstractMesh;
@@ -26,6 +27,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	?defines:Array<String>
 }
 
+@:allow(com.babylonhx.shaderbuilder.ShaderBuilder)
 @:expose('BABYLON.ShaderMaterial') class ShaderMaterial extends Material {
 	
 	private var _shaderPath:String;
@@ -43,6 +45,13 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _matrices2x2:Map<String, Float32Array> = new Map<String, Float32Array>();
 	private var _cachedWorldViewMatrix:Matrix = new Matrix();
 	private var _renderId:Int;
+	
+	// for ShaderBuilder
+	private var shaderSetting:ShaderSetting;
+	private var setFlags:Array<String>->Void;
+	private var flagNumber:Float;
+	private var flagUp:Float->Void;
+	private var flagDown:Float->Void;
 	
 
 	public function new(name:String, scene:Scene, shaderPath:Dynamic, options:ShaderMaterialOptions) {
