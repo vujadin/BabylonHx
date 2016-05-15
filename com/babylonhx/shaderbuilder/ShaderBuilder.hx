@@ -455,7 +455,7 @@ class ShaderBuilder {
 		return this.PrepareMaterial(shaderMaterial, scene);
 	}
 
-	public function BuildPostProcess(camera:Camera, scene:Scene, scale:Float, option:IPostProcess):PostProcess {
+	public function BuildPostProcess(camera:Camera, scene:Scene, scale:Float, option:Dynamic/*IPostProcess*/):PostProcess {
 		this.Setting.Screen = true;
 		this.Setting.Mouse = true;
 		this.Setting.Time = true;
@@ -465,8 +465,10 @@ class ShaderBuilder {
 		
 		Shader.ShaderIdentity++;
 		var samplers:Array<String> = [];
-		for (s in 0...this.Setting.Texture2Ds.length) {
-			samplers.push(ShaderMaterialHelperStatics.Texture2D + s);
+		if (this.Setting.Texture2Ds != null) {
+			for (s in 0...this.Setting.Texture2Ds.length) {
+				samplers.push(ShaderMaterialHelperStatics.Texture2D + s);
+			}
 		}
 		
 		if (this.PPSSamplers != null) {
@@ -565,14 +567,14 @@ class ShaderBuilder {
 		return this;
 	}
 
-	public function VertexShader(mat:String):ShaderBuilder {
+	public function VertexShader(mat:String = ""):ShaderBuilder {
 		this.VertexBody = Shader.Def(this.VertexBody, "");
 		this.VertexBody += mat;
 		
 		return this;
 	}
 
-	public function Solid(color:Dynamic/*IColor*/) {
+	public function Solid(?color:Dynamic/*IColor*/) {
 		color = Shader.Def(color, { r: 0.0, g: 0.0, b: 0.0, a: 1.0 });
 		color.a = Shader.Def(color.a, 1.0);
 		color.r = Shader.Def(color.r, 0.0);
@@ -683,9 +685,8 @@ class ShaderBuilder {
 
 	public function Map(option:Dynamic):ShaderBuilder {
 		Shader.Indexer++;
-		trace(option);
 		option = Shader.Def(option, { path: 'assets/img/color.png' });
-		trace(option);
+		
 		var s = 0;
 		var refInd = '';
 		if (option.index == null) {
@@ -842,7 +843,7 @@ class ShaderBuilder {
 		return this;
 	}
 
-	public function Multi(mats:Array<Dynamic>, combine:Bool):ShaderBuilder {
+	public function Multi(mats:Array<Dynamic>, combine:Bool = true):ShaderBuilder {
 		combine = Shader.Def(combine, true);
 		Shader.Indexer++;
 		var pre = "";
@@ -882,23 +883,20 @@ class ShaderBuilder {
 
 	public function Back(mat:String = ""):ShaderBuilder {
 		Shader.Me.Setting.Back = true;
-		mat = Shader.Def(mat, '');
 		this.Body = Shader.Def(this.Body, "");
 		this.Body += 'if(' + ShaderMaterialHelperStatics.face_back + '){' + mat + ';}';
 		
 		return this;
 	}
 
-	public function InLine(mat:String):ShaderBuilder {
-		mat = Shader.Def(mat, '');
+	public function InLine(mat:String = ""):ShaderBuilder {
 		this.Body = Shader.Def(this.Body, "");
 		this.Body += mat;
 		
 		return this;
 	}
 
-	public function Front(mat:String):ShaderBuilder {
-		mat = Shader.Def(mat, '');
+	public function Front(mat:String = ""):ShaderBuilder {
 		this.Body = Shader.Def(this.Body, "");
 		this.Body += 'if(' + ShaderMaterialHelperStatics.face_front + '){' + mat + ';}';
 		
@@ -1035,28 +1033,28 @@ class ShaderBuilder {
 		return this;
 	}
 
-	public function Blue(index:Int, mat:String, option:Dynamic/*IReplaceColor*/):ShaderBuilder {
+	public function Blue(index:Int, mat:String, ?option:Dynamic/*IReplaceColor*/):ShaderBuilder {
 		return this.ReplaceColor(index, Helper.Blue, mat, option);
 	}
-	public function Cyan(index:Int, mat:String, option:Dynamic/*IReplaceColor*/):ShaderBuilder {
+	public function Cyan(index:Int, mat:String, ?option:Dynamic/*IReplaceColor*/):ShaderBuilder {
 		return this.ReplaceColor(index, Helper.Cyan, mat, option);
 	}
-	public function Red(index:Int, mat:String, option:Dynamic/*IReplaceColor*/):ShaderBuilder {
+	public function Red(index:Int, mat:String, ?option:Dynamic/*IReplaceColor*/):ShaderBuilder {
 		return this.ReplaceColor(index, Helper.Red, mat, option);
 	}
-	public function Yellow(index:Int, mat:String, option:Dynamic/*IReplaceColor*/):ShaderBuilder {
+	public function Yellow(index:Int, mat:String, ?option:Dynamic/*IReplaceColor*/):ShaderBuilder {
 		return this.ReplaceColor(index, Helper.Yellow, mat, option);
 	}
-	public function Green(index:Int, mat:String, option:Dynamic/*IReplaceColor*/):ShaderBuilder {
+	public function Green(index:Int, mat:String, ?option:Dynamic/*IReplaceColor*/):ShaderBuilder {
 		return this.ReplaceColor(index, Helper.Green, mat, option);
 	}
-	public function Pink(index:Int, mat:String, option:Dynamic/*IReplaceColor*/):ShaderBuilder {
+	public function Pink(index:Int, mat:String, ?option:Dynamic/*IReplaceColor*/):ShaderBuilder {
 		return this.ReplaceColor(index, Helper.Pink, mat, option);
 	}
-	public function White(index:Int, mat:String, option:Dynamic/*IReplaceColor*/):ShaderBuilder {
+	public function White(index:Int, mat:String, ?option:Dynamic/*IReplaceColor*/):ShaderBuilder {
 		return this.ReplaceColor(index, Helper.White, mat, option);
 	}
-	public function Black(index:Int, mat:String, option:Dynamic/*IReplaceColor*/) {
+	public function Black(index:Int, mat:String, ?option:Dynamic/*IReplaceColor*/) {
 		return this.ReplaceColor(index, Helper.Black, mat, option);
 	}
 
@@ -1239,7 +1237,7 @@ class ShaderBuilder {
 		return this;
 	}
 
-	public function Effect(option:Dynamic/*IEffect*/):ShaderBuilder {
+	public function Effect(?option:Dynamic/*IEffect*/):ShaderBuilder {
 		var op = Shader.Def(option, {});
 		Shader.Indexer++;
 		var sresult = [

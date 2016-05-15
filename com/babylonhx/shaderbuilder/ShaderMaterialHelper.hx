@@ -13,6 +13,7 @@ import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.materials.textures.CubeTexture;
 import com.babylonhx.postprocess.PostProcess;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -81,6 +82,7 @@ class ShaderMaterialHelper {
 	}
 	
 	static public function PostProcessTextures(pps:PostProcess, name:String, txt:BaseTexture) { 
+		trace(name);
 		pps._effect.setTexture(name, txt);
 	}
 	
@@ -100,12 +102,12 @@ class ShaderMaterialHelper {
 		ShadersStore.Shaders[name + ".fragment"] = shader.Pixel;
 		
 		var pps = new PostProcess(name, name, helpers.uniforms, samplers, scale, camera, option.samplingMode);
-		pps.onApply = function (effect:Effect) {
+		pps.onApply = function (effect:Effect, es:EventState = null) {
 			//effect.setFloat("time", time); 
 			effect.setVector2("screen", new Vector2(pps.width, pps.height)); 
 			effect.setVector3("camera", camera.position); 
 			
-			if (option != null && option.onApply != null) {
+			if (option.onApply != null) {
 				option.onApply(effect); 
 			}
 		};

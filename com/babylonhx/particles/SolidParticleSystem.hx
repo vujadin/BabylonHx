@@ -207,7 +207,7 @@ class SolidParticleSystem implements IDisposable {
 		this._colors = null;*/
 		
 		if (!this._updatable) {
-			this.particles.splice(0, this.particles.length - 1s); // = [];
+			this.particles.splice(0, this.particles.length - 1); // = [];
 		}
 		
 		return mesh;
@@ -906,7 +906,7 @@ class SolidParticleSystem implements IDisposable {
 	/**
 	* Tells to setParticles() to compute or not the mesh bounding box when computing the particle positions.
 	*/
-	public set_computeBoundingBox(val:Bool) {
+	public function set_computeBoundingBox(val:Bool) {
 		return this._computeBoundingBox = val;
 	}
 
@@ -927,7 +927,7 @@ class SolidParticleSystem implements IDisposable {
 		return this._computeParticleVertex;
 	} 
 	
-	private get_computeBoundingBox():Bool {
+	private function get_computeBoundingBox():Bool {
 		return this._computeBoundingBox;
 	}
    
