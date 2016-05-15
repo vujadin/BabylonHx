@@ -610,7 +610,7 @@ import haxe.ds.Vector;
 		return result;
 	}
 
-	public static function TranslationToRef(x:Float, y:Float, z:Float, result:Matrix) {
+	inline public static function TranslationToRef(x:Float, y:Float, z:Float, result:Matrix) {
 		Matrix.FromValuesToRef(
 			1.0, 0, 0, 0,
 			0, 1.0, 0, 0,
@@ -618,11 +618,11 @@ import haxe.ds.Vector;
 			x, y, z, 1.0, result);
 	}
 	
-	public static function Lerp(startValue:Matrix, endValue:Matrix, gradient:Float):Matrix {
+	inline public static function Lerp(startValue:Matrix, endValue:Matrix, gradient:Float):Matrix {
 		var result = Matrix.Zero();
 		
 		for (index in 0...16) {
-			result.m[index] = startValue.m[index] * gradient + endValue.m[index] * (1.0 - gradient);
+			result.m[index] = startValue.m[index] * (1.0 - gradient) + endValue.m[index] * gradient;
 		}
 		
 		return result;

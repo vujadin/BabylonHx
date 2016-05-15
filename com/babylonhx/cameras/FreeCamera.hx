@@ -186,17 +186,17 @@ import com.babylonhx.utils.Keycodes;
 		
 	#if purejs
 		
-		Engine.app.addEventListener(eventPrefix + "down", function(e) {
+		this.getScene().getEngine().getRenderingCanvas().addEventListener(eventPrefix + "down", function(e) {
 			this._onMouseDown(e.clientX, e.clientY, e.button);
 		}, false);
-		Engine.app.addEventListener(eventPrefix + "up", function(e) {
+		this.getScene().getEngine().getRenderingCanvas().addEventListener(eventPrefix + "up", function(e) {
 			this._onMouseUp(e.clientX, e.clientY, e.button);
 		}, false);
 		//Engine.app.addEventListener(eventPrefix + "out", this._onMouseUp, false);
-		Engine.app.addEventListener(eventPrefix + "move", function(e) {
+		this.getScene().getEngine().getRenderingCanvas().addEventListener(eventPrefix + "move", function(e) {
 			this._onMouseMove(e.clientX, e.clientY);
 		}, false);
-		Engine.app.addEventListener("mousemove", function(e) {
+		this.getScene().getEngine().getRenderingCanvas().addEventListener("mousemove", function(e) {
 			this._onMouseMove(e.clientX, e.clientY);
 		}, false);
 		/*Engine.app.addEventListener("MSPointerDown", this._onGestureStart, false);
@@ -222,11 +222,11 @@ import com.babylonhx.utils.Keycodes;
 	override public function detachControl(?element:Dynamic) {	
 	#if purejs
 	
-		Engine.app.removeEventListener(eventPrefix + "down", this._onMouseDown, false);
-		Engine.app.removeEventListener(eventPrefix + "up", this._onMouseUp, false);
-		Engine.app.removeEventListener(eventPrefix + "out", this._onMouseUp, false);
-		Engine.app.removeEventListener(eventPrefix + "move", this._onMouseMove, false);
-		Engine.app.removeEventListener("mousemove", this._onMouseMove, false);
+		this.getScene().getEngine().getRenderingCanvas().removeEventListener(eventPrefix + "down", this._onMouseDown, false);
+		this.getScene().getEngine().getRenderingCanvas().removeEventListener(eventPrefix + "up", this._onMouseUp, false);
+		this.getScene().getEngine().getRenderingCanvas().removeEventListener(eventPrefix + "out", this._onMouseUp, false);
+		this.getScene().getEngine().getRenderingCanvas().removeEventListener(eventPrefix + "move", this._onMouseMove, false);
+		this.getScene().getEngine().getRenderingCanvas().removeEventListener("mousemove", this._onMouseMove, false);
 		/*Engine.app.addEventListener("MSPointerDown", this._onGestureStart, false);
 		Engine.app.addEventListener("MSGestureChange", this._onGesture, false);*/
 				
@@ -272,7 +272,7 @@ import com.babylonhx.utils.Keycodes;
 			//this prevents mending with cameraDirection, a global variable of the free camera class.
 			actualVelocity = velocity.add(this.getScene().gravity);
 		}
-				
+		
 		this.getScene().collisionCoordinator.getNewPosition(this._oldPosition, actualVelocity, this._collider, 3, null, this._onCollisionPositionChange, this.uniqueId);		
 	}
 	

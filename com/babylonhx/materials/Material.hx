@@ -8,6 +8,9 @@ import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.mesh.Mesh;
+import com.babylonhx.tools.Observable;
+import com.babylonhx.tools.Observer;
+import com.babylonhx.tools.EventState;
 
 
 /**
@@ -35,11 +38,42 @@ import com.babylonhx.mesh.Mesh;
 	public var alpha:Float = 1.0;
 	public var backFaceCulling:Bool = true;
 	public var sideOrientation:Int = Material.CounterClockWiseSideOrientation;
+	
 	public var onCompiled:Effect->Void;
 	public var onError:Effect->String->Void;
-	public var onDispose:Void->Void;
-	public var onBind:Material->Mesh->Void;
 	public var getRenderTargetTextures:Void->SmartArray<RenderTargetTexture>;
+	
+	/**
+	* An event triggered when the material is disposed.
+	* @type {BABYLON.Observable}
+	*/
+	public var onDisposeObservable:Observable<Material> = new Observable<Material>();
+	private var _onDisposeObserver:Observer<Material>;
+	public var onDispose(never, set):Material->Null<EventState>->Void;
+	private function set_onDispose(callback:Material->Null<EventState>->Void):Material->Null<EventState>->Void {
+		if (this._onDisposeObserver != null) {
+			this.onDisposeObservable.remove(this._onDisposeObserver);
+		}
+		this._onDisposeObserver = this.onDisposeObservable.add(callback);
+		
+		return callback;
+	}
+
+	/**
+	* An event triggered when the material is compiled.
+	* @type {BABYLON.Observable}
+	*/
+	public var onBindObservable:Observable<AbstractMesh> = new Observable<AbstractMesh>();
+	private var _onBindObserver:Observer<AbstractMesh>;
+	public var onBind(never, set):AbstractMesh->Null<EventState>->Void;
+	private function set_onBind(callback:AbstractMesh->Null<EventState>->Void):AbstractMesh->Null<EventState>->Void {
+		if (this._onBindObserver != null) {
+			this.onBindObservable.remove(this._onBindObserver);
+		}
+		this._onBindObserver = this.onBindObservable.add(callback);
+		
+		return callback;
+	}
 	
 	public var alphaMode:Int = Engine.ALPHA_COMBINE;
 	public var disableDepthWrite:Bool = false;
@@ -139,8 +173,6 @@ import com.babylonhx.mesh.Mesh;
 	public function getAlphaTestTexture():BaseTexture {
 		return null;
 	}
-
-	public function trackCreation(onCompiled:Effect->Void, onError:Effect->String->Void) { }
 	
 	public function markDirty() {
 		this._wasPreviouslyReady = false;
@@ -156,9 +188,7 @@ import com.babylonhx.mesh.Mesh;
 	public function bind(world:Matrix, ?mesh:Mesh) {
 		this._scene._cachedMaterial = this;
 		
-        if (this.onBind != null) {
-            this.onBind(this, mesh);
-        }
+        this.onBindObservable.notifyObservers(mesh);
 		
 		if (this.disableDepthWrite) {
             var engine = this._scene.getEngine();
@@ -220,9 +250,10 @@ import com.babylonhx.mesh.Mesh;
 		}
 		
 		// Callback
-		if (this.onDispose != null) {
-			this.onDispose();
-		}
+		this.onDisposeObservable.notifyObservers(this);
+		
+		this.onDisposeObservable.clear();
+        this.onBindObservable.clear();
 	}
 	
 	public function copyTo(other:Material) {

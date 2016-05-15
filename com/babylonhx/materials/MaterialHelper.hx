@@ -11,14 +11,13 @@ import com.babylonhx.lights.IShadowLight;
  * ...
  * @author Krtolica Vujadin
  */
-class MaterialHelper {
-	
-	static public var maxSimultaneousLights:Int = 4;
-	
+class MaterialHelper {	
 
-	public static function PrepareDefinesForLights(scene:Scene, mesh:AbstractMesh, defines:MaterialDefines, LIGHT0:Int, SPECULARTERM:Int, SHADOW0:Int, SHADOWS:Int, SHADOWVSM0:Int, SHADOWPCF0:Int, lights:Map<String, Array<Int>>):Bool {		
+	public static function PrepareDefinesForLights(scene:Scene, mesh:AbstractMesh, defines:MaterialDefines, maxSimultaneousLights:Int = 4):Bool {		
 		var lightIndex:Int = 0;
 		var needNormals:Bool = false;
+		var needRebuild:Bool = false;
+		
 		for (index in 0...scene.lights.length) {
 			var light = scene.lights[index];
 			
@@ -56,30 +55,49 @@ class MaterialHelper {
 				continue;
 			}
 			needNormals = true;
-			defines.defines[LIGHT0 + lightIndex] = true;
 			
-			var type:Int = lights[light.type][lightIndex];			
+			/*if (defines.defines["LIGHT" + lightIndex] == null) {
+				needRebuild = true;
+			}*/
+			
+			defines.defines["LIGHT" + lightIndex] = true;
+			
+			var type:String = "";
+			switch (light.type) {
+				case "SPOTLIGHT":
+					type = "SPOTLIGHT" + lightIndex;
+					
+				case "HEMILIGHT":
+					type = "HEMILIGHT" + lightIndex;
+					
+				case "POINTLIGHT":
+					type = "POINTLIGHT" + lightIndex;
+					
+				case "DIRLIGHT":
+					type = "DIRLIGHT" + lightIndex;
+			}
+			
 			defines.defines[type] = true;
 			
 			// Specular
-			if (!light.specular.equalsFloats(0, 0, 0) && SPECULARTERM > -1) {
-				defines.defines[SPECULARTERM] = true;
+			if (!light.specular.equalsFloats(0, 0, 0) && defines.defines["SPECULARTERM"] != null) {
+				defines.defines["SPECULARTERM"] = true;
 			}
 			
 			// Shadows
 			if (scene.shadowsEnabled) {
 				var shadowGenerator = light.getShadowGenerator();
 				if (mesh != null && mesh.receiveShadows && shadowGenerator != null) {
-					defines.defines[SHADOW0 + lightIndex] = true; 
+					defines.defines["SHADOW" + lightIndex] = true;
 					
-					defines.defines[SHADOWS] = true;
+					defines.defines["SHADOWS"] = true;
 					
 					if (shadowGenerator.useVarianceShadowMap || shadowGenerator.useBlurVarianceShadowMap) {
-						defines.defines[SHADOWVSM0 + lightIndex] = true;
+						defines.defines["SHADOWVSM" + lightIndex] = true;
 					}
 					
 					if (shadowGenerator.usePoissonSampling) {
-						defines.defines[SHADOWPCF0 + lightIndex] = true;
+						defines.defines["SHADOWPCF" + lightIndex] = true;
 					}
 				}
 			}
@@ -90,12 +108,34 @@ class MaterialHelper {
 			}
 		}
 		
+		/*if (needRebuild) {
+			defines.rebuild();
+		}*/
+		
 		return needNormals;
 	}
-
-	public static function HandleFallbacksForShadows(defines:MaterialDefines, fallbacks:EffectFallbacks, LIGHT0:Int, SHADOW0:Int, SHADOWPCF0:Int, SHADOWVSM0:Int) {
+	
+	public static function PrepareUniformsAndSamplersList(uniformsList:Array<String>, samplersList:Array<String>, defines:MaterialDefines, maxSimultaneousLights:Int = 4) {
 		for (lightIndex in 0...maxSimultaneousLights) {
-			if (!defines.defines[LIGHT0 + lightIndex]) {
+			if (!defines.defines["LIGHT" + lightIndex]) {
+				break;
+			}
+			
+			uniformsList.push("vLightData" + lightIndex);
+			uniformsList.push("vLightDiffuse" + lightIndex);
+			uniformsList.push("vLightSpecular" + lightIndex);
+			uniformsList.push("vLightDirection" + lightIndex);
+			uniformsList.push("vLightGround" + lightIndex);
+			uniformsList.push("lightMatrix" + lightIndex);
+			uniformsList.push("shadowsInfo" + lightIndex);
+			
+			samplersList.push("shadowSampler" + lightIndex);
+		}
+	}
+
+	public static function HandleFallbacksForShadows(defines:MaterialDefines, fallbacks:EffectFallbacks, maxSimultaneousLights:Int = 4) {
+		for (lightIndex in 0...maxSimultaneousLights) {
+			if (!defines.defines["LIGHT" + lightIndex]) {
 				continue;
 			}
 			
@@ -103,15 +143,15 @@ class MaterialHelper {
 				fallbacks.addFallback(lightIndex, "LIGHT" + lightIndex);
 			}
 			
-			if (defines.defines[SHADOW0 + lightIndex]) {
+			if (defines.defines["SHADOW" + lightIndex]) {
 				fallbacks.addFallback(0, "SHADOW" + lightIndex);
 			}
 			
-			if (defines.defines[SHADOWPCF0 + lightIndex]) {
+			if (defines.defines["SHADOWPCF" + lightIndex]) {
 				fallbacks.addFallback(0, "SHADOWPCF" + lightIndex);
 			}
 			
-			if (defines.defines[SHADOWVSM0 + lightIndex]) {
+			if (defines.defines["SHADOWVSM" + lightIndex]) {
 				fallbacks.addFallback(0, "SHADOWVSM" + lightIndex);
 			}
 		}
@@ -130,8 +170,8 @@ class MaterialHelper {
 		}
 	}
 
-	public static function PrepareAttributesForInstances(attribs:Array<String>, defines:MaterialDefines, INSTANCES:Int) {
-		if (defines.defines[INSTANCES]) {
+	public static function PrepareAttributesForInstances(attribs:Array<String>, defines:MaterialDefines) {
+		if (defines.defines["INSTANCES"]) {
 			attribs.push("world0");
 			attribs.push("world1");
 			attribs.push("world2");
@@ -176,7 +216,7 @@ class MaterialHelper {
 		}
 	}
 
-	public static function BindLights(scene:Scene, mesh:AbstractMesh, effect:Effect, defines:MaterialDefines, SPECULARTERM:Int) {
+	public static function BindLights(scene:Scene, mesh:AbstractMesh, effect:Effect, defines:MaterialDefines, maxSimultaneousLights:Int = 4) {
 		var lightIndex:Int = 0;
 		var depthValuesAlreadySet:Bool = false;
 		for (index in 0...scene.lights.length) {
@@ -194,7 +234,7 @@ class MaterialHelper {
 			
 			light.diffuse.scaleToRef(light.intensity, Tmp.color3[0]);
 			effect.setColor4("vLightDiffuse" + lightIndex, Tmp.color3[0], light.range);
-			if (SPECULARTERM > -1 && defines.defines[SPECULARTERM]) {
+			if (defines.defines["SPECULARTERM"]) {
 				light.specular.scaleToRef(light.intensity, Tmp.color3[1]);
 				effect.setColor3("vLightSpecular" + lightIndex, Tmp.color3[1]);
 			}
@@ -225,8 +265,8 @@ class MaterialHelper {
 		}
 	}
 	
-	inline public static function BindLogDepth(defines:MaterialDefines, effect:Effect, scene:Scene, LOGARITHMICDEPTH:Int) {
-        if (defines.defines[LOGARITHMICDEPTH]) {
+	inline public static function BindLogDepth(defines:MaterialDefines, effect:Effect, scene:Scene) {
+        if (defines.defines["LOGARITHMICDEPTH"]) {
             effect.setFloat("logarithmicDepthConstant", 2.0 / (Math.log(scene.activeCamera.maxZ + 1.0) / 0.6931471805599453));  // Math.LN2
         }
     }

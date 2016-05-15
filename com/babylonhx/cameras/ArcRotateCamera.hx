@@ -390,19 +390,20 @@ import com.babylonhx.utils.Keycodes;
 		}
 		
 		#if purejs
+		var canvas = this.getScene().getEngine().getRenderingCanvas();
 		if (!useCtrlForPanning) {
-			Engine.app.addEventListener("contextmenu", this._onContextMenu, false);
+			canvas.addEventListener("contextmenu", this._onContextMenu, false);
 		}
-		Engine.app.addEventListener(eventPrefix + "down", this._onPointerDown, false);
-		Engine.app.addEventListener(eventPrefix + "up", this._onPointerUp, false);
-		Engine.app.addEventListener(eventPrefix + "out", this._onPointerUp, false);
-		Engine.app.addEventListener(eventPrefix + "move", this._onPointerMove, false);
-		Engine.app.addEventListener("mousemove", this._onMouseMove, false);
-		/*Engine.app.addEventListener("MSPointerDown", this._onGestureStart, false);
-		Engine.app.addEventListener("MSGestureChange", this._onGesture, false);*/
-		Engine.app.addEventListener('mousewheel', this._wheel, false);
-		Engine.app.addEventListener('DOMMouseScroll', this._wheel, false);
-				
+		canvas.addEventListener(eventPrefix + "down", this._onPointerDown, false);
+		canvas.addEventListener(eventPrefix + "up", this._onPointerUp, false);
+		canvas.addEventListener(eventPrefix + "out", this._onPointerUp, false);
+		canvas.addEventListener(eventPrefix + "move", this._onPointerMove, false);
+		canvas.addEventListener("mousemove", this._onMouseMove, false);
+		/*canvas.addEventListener("MSPointerDown", this._onGestureStart, false);
+		canvas.addEventListener("MSGestureChange", this._onGesture, false);*/
+		canvas.addEventListener('mousewheel', this._wheel, false);
+		canvas.addEventListener('DOMMouseScroll', this._wheel, false);
+		
 		com.babylonhx.tools.Tools.RegisterTopRootEvents([
 			{ name: "keydown", handler: this._onKeyDown },
 			{ name: "keyup", handler: this._onKeyUp },
@@ -430,17 +431,18 @@ import com.babylonhx.utils.Keycodes;
 		}
 		
 		#if purejs
-		Engine.app.removeEventListener("contextmenu", this._onContextMenu, false);
-		Engine.app.removeEventListener(eventPrefix + "down", this._onPointerDown, false);
-		Engine.app.removeEventListener(eventPrefix + "up", this._onPointerUp, false);
-		Engine.app.removeEventListener(eventPrefix + "out", this._onPointerUp, false);
-		Engine.app.removeEventListener(eventPrefix + "move", this._onPointerMove, false);
-		Engine.app.removeEventListener("mousemove", this._onMouseMove, false);
-		/*Engine.app.addEventListener("MSPointerDown", this._onGestureStart, false);
-		Engine.app.addEventListener("MSGestureChange", this._onGesture, false);*/
-		Engine.app.removeEventListener('mousewheel', this._wheel, false);
-		Engine.app.removeEventListener('DOMMouseScroll', this._wheel, false);
-				
+		var canvas = this.getScene().getEngine().getRenderingCanvas();
+		canvas.removeEventListener("contextmenu", this._onContextMenu, false);
+		canvas.removeEventListener(eventPrefix + "down", this._onPointerDown, false);
+		canvas.removeEventListener(eventPrefix + "up", this._onPointerUp, false);
+		canvas.removeEventListener(eventPrefix + "out", this._onPointerUp, false);
+		canvas.removeEventListener(eventPrefix + "move", this._onPointerMove, false);
+		canvas.removeEventListener("mousemove", this._onMouseMove, false);
+		/*canvas.addEventListener("MSPointerDown", this._onGestureStart, false);
+		canvas.addEventListener("MSGestureChange", this._onGesture, false);*/
+		canvas.removeEventListener('mousewheel', this._wheel, false);
+		canvas.removeEventListener('DOMMouseScroll', this._wheel, false);
+		
 		com.babylonhx.tools.Tools.UnregisterTopRootEvents([
 			{ name: "keydown", handler: this._onKeyDown },
 			{ name: "keyup", handler: this._onKeyUp },
@@ -530,7 +532,9 @@ import com.babylonhx.utils.Keycodes;
 			this._localDirection.copyFromFloats(this.inertialPanningX, this.inertialPanningY, 0);
 			this._viewMatrix.invertToRef(this._cameraTransformMatrix);
 			Vector3.TransformNormalToRef(this._localDirection, this._cameraTransformMatrix, this._transformedDirection);
-			this.target.addInPlace(this._transformedDirection);
+			if (this.target.getAbsolutePosition() != null) {
+                this.target.addInPlace(this._transformedDirection);
+            }
 		}
 		
 		// Limits
@@ -720,31 +724,44 @@ import com.babylonhx.utils.Keycodes;
 	}
 	
 	override public function createRigCamera(name:String, cameraIndex:Int):Camera {
+		var alphaShift:Float = 0;
 		switch (this.cameraRigMode) {
 			case Camera.RIG_MODE_STEREOSCOPIC_ANAGLYPH, 
-				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_PARALLEL,
-				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED, 
+				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_PARALLEL, 
 				 Camera.RIG_MODE_STEREOSCOPIC_OVERUNDER,
 				 Camera.RIG_MODE_VR:
-				var alphaShift = this._cameraRigParams.stereoHalfAngle * (cameraIndex == 0 ? 1 : -1);
-				return new ArcRotateCamera(name, this.alpha + alphaShift, this.beta, this.radius, this.target, this.getScene());
+				alphaShift = this._cameraRigParams.stereoHalfAngle * (cameraIndex == 0 ? 1 : -1);
+				
+			case Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED:
+				alphaShift = this._cameraRigParams.stereoHalfAngle * (cameraIndex == 0 ? -1 : 1);
+				
 		}
 		
-		return null;
+		var rigCam = new ArcRotateCamera(name, this.alpha + alphaShift, this.beta, this.radius, this.target, this.getScene());
+		rigCam._cameraRigParams = {};
+        
+		return rigCam;
 	}
 	
 	override public function _updateRigCameras() {
+		var camLeft:ArcRotateCamera  = cast this._rigCameras[0];
+		var camRight:ArcRotateCamera = cast this._rigCameras[1];
+		
+		camLeft.beta = camRight.beta = this.beta;
+		camLeft.radius = camRight.radius = this.radius;
+		
 		switch (this.cameraRigMode) {
 			case Camera.RIG_MODE_STEREOSCOPIC_ANAGLYPH,
-				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_PARALLEL,
-				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED,
-				 Camera.RIG_MODE_STEREOSCOPIC_OVERUNDER, Camera.RIG_MODE_VR:
-				var camLeft:ArcRotateCamera = cast this._rigCameras[0];
-				var camRight:ArcRotateCamera = cast this._rigCameras[1];
+				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_PARALLEL,				 
+				 Camera.RIG_MODE_STEREOSCOPIC_OVERUNDER, 
+				 Camera.RIG_MODE_VR:
 				camLeft.alpha = this.alpha - this._cameraRigParams.stereoHalfAngle;
 				camRight.alpha = this.alpha + this._cameraRigParams.stereoHalfAngle;
-				camLeft.beta = camRight.beta = this.beta;
-				camLeft.radius = camRight.radius = this.radius;
+				
+			case Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED:
+				camLeft.alpha  = this.alpha + this._cameraRigParams.stereoHalfAngle;
+				camRight.alpha = this.alpha - this._cameraRigParams.stereoHalfAngle;
+				
 		}
 		
 		super._updateRigCameras();

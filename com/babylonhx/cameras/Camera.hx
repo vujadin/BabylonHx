@@ -39,34 +39,70 @@ import com.babylonhx.animations.Animation;
 	public static inline var RIG_MODE_VR:Int = 20;
 
 	// Members
+	@serializeAsVector3()
 	public var position:Vector3 = Vector3.Zero();
+	
+	@serializeAsVector3()
 	public var upVector:Vector3 = Vector3.Up();
+	
+	@serialize()
 	public var orthoLeft:Null<Float> = null;
+	
+	@serialize()
     public var orthoRight:Null<Float> = null;
+	
+	@serialize()
     public var orthoBottom:Null<Float> = null;
+	
+	@serialize()
     public var orthoTop:Null<Float> = null;
+	
+	@serialize()
 	public var fov:Float = 0.8;
+	
+	@serialize()
 	public var minZ:Float = 1.0;
+	
+	@serialize()
 	public var maxZ:Float = 10000.0;
+	
+	@serialize()
 	public var inertia:Float = 0.9;
+	
+	@serialize()
 	public var mode:Int = Camera.PERSPECTIVE_CAMERA;
+	
 	public var isIntermediate:Bool = false;
+	
 	public var viewport:Viewport = new Viewport(0, 0, 1, 1);
+	
 	public var subCameras:Array<Camera> = [];
+	
+	@serialize()
 	public var layerMask:Int = 0xFFFFFFFF;
+	
+	@serialize()
 	public var fovMode:Int = Camera.FOVMODE_VERTICAL_FIXED;
 	
 	// Camera rig members
+	@serialize()
 	public var cameraRigMode:Int = Camera.RIG_MODE_NONE;
+	
+	@serialize()
+	public var interaxialDistance:Float;
+	
+	@serialize()
+	public var isStereoscopicSideBySide:Bool;
+	
 	public var _cameraRigParams:Dynamic;
 	public var _rigCameras:Array<Camera> = [];
+	public var _rigPostProcess:PostProcess;
 
 	// Cache
 	private var _computedViewMatrix = Matrix.Identity();
 	public var _projectionMatrix = new Matrix();
 	private var _worldMatrix:Matrix;
 	public var _postProcesses:Array<PostProcess> = [];
-	public var _postProcessesTakenIndices:Array<Int> = [];
 	
 	public var _activeMeshes:SmartArray<AbstractMesh> = new SmartArray<AbstractMesh>(256);
 	
@@ -232,6 +268,31 @@ import com.babylonhx.animations.Animation;
 	public function _checkInputs() {
     
 	}
+	
+	private function _cascadePostProcessesToRigCams() {
+		// invalidate framebuffer
+		if (this._postProcesses.length > 0){
+			this._postProcesses[0].markTextureDirty();
+		}
+		
+		// glue the rigPostProcess to the end of the user postprocesses & assign to each sub-camera
+		for (i in 0...this._rigCameras.length) {
+			var cam = this._rigCameras[i];
+			var rigPostProcess = cam._rigPostProcess;
+			
+			// for VR rig, there does not have to be a post process 
+			if (rigPostProcess != null) {
+				var isPass = Std.is(rigPostProcess, PassPostProcess);
+				if (isPass) {
+					// any rig which has a PassPostProcess for rig[0], cannot be isIntermediate when there are also user postProcesses
+					cam.isIntermediate = this._postProcesses.length == 0;
+				}   
+				
+				cam._postProcesses = this._postProcesses.slice(0).concat([rigPostProcess]);
+				rigPostProcess.markTextureDirty();
+			}
+		}
+	}
 
 	public function attachPostProcess(postProcess:PostProcess, ?insertAt:Int):Int {
 		if (!postProcess.isReusable() && this._postProcesses.indexOf(postProcess) > -1) {
@@ -241,88 +302,40 @@ import com.babylonhx.animations.Animation;
 		
 		if (insertAt == null || insertAt < 0) {
 			this._postProcesses.push(postProcess);
-			this._postProcessesTakenIndices.push(this._postProcesses.length - 1);
 			
-			return this._postProcesses.length - 1;
 		}
-		
-		var add:Int = 0;
-		
-		if (this._postProcesses[insertAt] != null) {
-			
-			var start = this._postProcesses.length - 1;
-			
-			var i = start;
-			while(i >= insertAt + 1) {
-				this._postProcesses[i + 1] = this._postProcesses[i];
-				--i;
-			}
-			
-			add = 1;
+		else {
+			this._postProcesses.insert(insertAt, postProcess);
 		}
+		this._cascadePostProcessesToRigCams(); // also ensures framebuffer invalidated   
 		
-		for (i in 0...this._postProcessesTakenIndices.length) {
-			if (this._postProcessesTakenIndices[i] < insertAt) {
-				continue;
-			}
-			
-			var start = this._postProcessesTakenIndices.length - 1;
-			var j = start;
-			while(j >= i) {
-				this._postProcessesTakenIndices[j + 1] = this._postProcessesTakenIndices[j] + add;
-				--j;
-			}
-			this._postProcessesTakenIndices[i] = insertAt;
-			break;
-		}
-		
-		if (add == 0 && this._postProcessesTakenIndices.indexOf(insertAt) == -1) {
-			this._postProcessesTakenIndices.push(insertAt);
-		}
-		
-		var result = insertAt + add;
-		
-		this._postProcesses[result] = postProcess;
-		
-		return result;
+		return this._postProcesses.indexOf(postProcess);
 	}
 
 	public function detachPostProcess(postProcess:PostProcess, atIndices:Dynamic = null):Array<Int> {
 		var result:Array<Int> = [];
 		
 		if (atIndices == null) {
-			
-			for (i in 0...this._postProcesses.length) {
-				
-				if (this._postProcesses[i] != postProcess) {
-					continue;
-				}
-				
-				this._postProcesses[i] = null;
-				this._postProcesses.splice(i, 1);
-				
-				var index = this._postProcessesTakenIndices.indexOf(i);
-				this._postProcessesTakenIndices.splice(index, 1);
+			var idx = this._postProcesses.indexOf(postProcess);
+			if (idx != -1){
+				this._postProcesses.splice(idx, 1);
 			}
-			
-		}
+		} 
 		else {
 			atIndices = Std.is(atIndices, Array) ? atIndices : [atIndices];
-			for (i in 0...atIndices.length) {
-				var foundPostProcess = this._postProcesses[atIndices[i]];
-				
-				if (foundPostProcess != postProcess) {
+			// iterate descending, so can just splice as we go
+			var i:Int = cast atIndices.length - 1;
+			while (i >= 0) {
+				if (this._postProcesses[atIndices[i]] != postProcess) {
 					result.push(i);
 					continue;
 				}
+				this._postProcesses.splice(i, 1);
 				
-				this._postProcesses[i] = null;
-				this._postProcesses.splice(atIndices[i], 1);
-				
-				var index = this._postProcessesTakenIndices.indexOf(atIndices[i]);
-				this._postProcessesTakenIndices.splice(index, 1);
+				--i;
 			}
 		}
+		this._cascadePostProcessesToRigCams(); // also ensures framebuffer invalidated
 		
 		return result;
 	}
@@ -350,7 +363,7 @@ import com.babylonhx.animations.Animation;
 			return this._computedViewMatrix;
 		}
 		
-		if (this.parent == null || this.parent.getWorldMatrix == null) {
+		if (this.parent == null || this.parent.getWorldMatrix() == null) {
 			this._globalPosition.copyFrom(this.position);
 		} 
 		else {
@@ -417,8 +430,8 @@ import com.babylonhx.animations.Animation;
 		}
 		
 		// Postprocesses
-		for (i in 0...this._postProcessesTakenIndices.length) {
-			this._postProcesses[this._postProcessesTakenIndices[i]].dispose(this);
+		for (i in 0...this._postProcesses.length) {
+			this._postProcesses[i].dispose(this);
 		}
 		
 		super.dispose();
@@ -429,78 +442,62 @@ import com.babylonhx.animations.Animation;
 		while (this._rigCameras.length > 0) {
 			this._rigCameras.pop().dispose();
 		}
+		
+		if (rigParams == null) {
+			rigParams = { };
+		}
+		
 		this.cameraRigMode = mode;
 		this._cameraRigParams = { };
 		
-		switch (this.cameraRigMode) {
-			case Camera.RIG_MODE_STEREOSCOPIC_ANAGLYPH, 
-				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_PARALLEL, 
-				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED, 
-				 Camera.RIG_MODE_STEREOSCOPIC_OVERUNDER:
-				
-				this._cameraRigParams.interaxialDistance = rigParams.interaxialDistance != null ? rigParams.interaxialDistance : 0.0637;
-				//we have to implement stereo camera calcultating left and right viewpoints from interaxialDistance and target, 
-				//not from a given angle as it is now, but until that complete code rewriting provisional stereoHalfAngle value is introduced
-				this._cameraRigParams.stereoHalfAngle = Tools.ToRadians(this._cameraRigParams.interaxialDistance / 0.0637);
-				
-				this._rigCameras.push(this.createRigCamera(this.name + "_L", 0));
-				this._rigCameras.push(this.createRigCamera(this.name + "_R", 1));
-		}
+		//we have to implement stereo camera calcultating left and right viewpoints from interaxialDistance and target, 
+		//not from a given angle as it is now, but until that complete code rewriting provisional stereoHalfAngle value is introduced
+		this._cameraRigParams.interaxialDistance = rigParams.interaxialDistance != null ? rigParams.interaxialDistance : 0.0637;
+		this._cameraRigParams.stereoHalfAngle = Tools.ToRadians(this._cameraRigParams.interaxialDistance / 0.0637);
 		
-		var postProcesses:Array<PostProcess> = [];
+		// create the rig cameras, unless none
+		if (this.cameraRigMode != Camera.RIG_MODE_NONE){
+			this._rigCameras.push(this.createRigCamera(this.name + "_L", 0));
+			this._rigCameras.push(this.createRigCamera(this.name + "_R", 1));
+		}
 		
 		switch (this.cameraRigMode) {
 			case Camera.RIG_MODE_STEREOSCOPIC_ANAGLYPH:
-				postProcesses.push(new PassPostProcess(this.name + "_passthru", 1.0, this._rigCameras[0]));
-				this._rigCameras[0].isIntermediate = true;
-				
-				postProcesses.push(new AnaglyphPostProcess(this.name + "_anaglyph", 1.0, this._rigCameras[1]));
-				postProcesses[1].onApply = function(effect:Effect) {
-					effect.setTextureFromPostProcess("leftSampler", postProcesses[0]);
-				};
+				this._rigCameras[0]._rigPostProcess = new PassPostProcess(this.name + "_passthru", 1.0, this._rigCameras[0]);
+				this._rigCameras[1]._rigPostProcess = new AnaglyphPostProcess(this.name + "_anaglyph", 1.0, this._rigCameras);
 				
 			case Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_PARALLEL,
 				 Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED,
 				 Camera.RIG_MODE_STEREOSCOPIC_OVERUNDER:
-				var isStereoscopicHoriz = (this.cameraRigMode == Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_PARALLEL || this.cameraRigMode == Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED);
-				var firstCamIndex = (this.cameraRigMode == Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED) ? 1 : 0;
-				var secondCamIndex = 1 - firstCamIndex;
+				var isStereoscopicHoriz = this.cameraRigMode == Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_PARALLEL || this.cameraRigMode == Camera.RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED;
 				
-				postProcesses.push(new PassPostProcess(this.name + "_passthru", 1.0, this._rigCameras[firstCamIndex]));
-				this._rigCameras[firstCamIndex].isIntermediate = true;
-				
-				postProcesses.push(new StereoscopicInterlacePostProcess(this.name + "_stereoInterlace", this._rigCameras[secondCamIndex], postProcesses[0], isStereoscopicHoriz));	
+				this._rigCameras[0]._rigPostProcess = new PassPostProcess(this.name + "_passthru", 1.0, this._rigCameras[0]);
+				this._rigCameras[1]._rigPostProcess = new StereoscopicInterlacePostProcess(this.name + "_stereoInterlace", this._rigCameras, isStereoscopicHoriz);
 				
 			case Camera.RIG_MODE_VR:
-				this._rigCameras.push(this.createRigCamera(this.name + "_L", 0));
-				this._rigCameras.push(this.createRigCamera(this.name + "_R", 1));
-				
 				var metrics = rigParams.vrCameraMetrics != null ? rigParams.vrCameraMetrics : VRCameraMetrics.GetDefault();
+				
 				this._rigCameras[0]._cameraRigParams.vrMetrics = metrics;
 				this._rigCameras[0].viewport = new Viewport(0, 0, 0.5, 1.0);
 				this._rigCameras[0]._cameraRigParams.vrWorkMatrix = new Matrix();
-				
 				this._rigCameras[0]._cameraRigParams.vrHMatrix = metrics.leftHMatrix;
 				this._rigCameras[0]._cameraRigParams.vrPreViewMatrix = metrics.leftPreViewMatrix;
 				this._rigCameras[0].getProjectionMatrix = this._rigCameras[0]._getVRProjectionMatrix;
 				
-				if (metrics.compensateDistortion) {
-					postProcesses.push(new VRDistortionCorrectionPostProcess("VR_Distort_Compensation_Left", this._rigCameras[0], false, metrics));
-				}
-				
-				this._rigCameras[1]._cameraRigParams.vrMetrics = this._rigCameras[0]._cameraRigParams.vrMetrics;
+				this._rigCameras[1]._cameraRigParams.vrMetrics = metrics;
 				this._rigCameras[1].viewport = new Viewport(0.5, 0, 0.5, 1.0);
 				this._rigCameras[1]._cameraRigParams.vrWorkMatrix = new Matrix();
 				this._rigCameras[1]._cameraRigParams.vrHMatrix = metrics.rightHMatrix;
 				this._rigCameras[1]._cameraRigParams.vrPreViewMatrix = metrics.rightPreViewMatrix;
-				
 				this._rigCameras[1].getProjectionMatrix = this._rigCameras[1]._getVRProjectionMatrix;
 				
 				if (metrics.compensateDistortion) {
-					postProcesses.push(new VRDistortionCorrectionPostProcess("VR_Distort_Compensation_Right", this._rigCameras[1], true, metrics));
+					this._rigCameras[0]._rigPostProcess = new VRDistortionCorrectionPostProcess("VR_Distort_Compensation_Left", this._rigCameras[0], false, metrics);
+					this._rigCameras[1]._rigPostProcess = new VRDistortionCorrectionPostProcess("VR_Distort_Compensation_Right", this._rigCameras[1], true, metrics);
 				}
 		}
 		
+		this._cascadePostProcessesToRigCams(); 
 		this._update();
 	}
 
@@ -511,7 +508,10 @@ import com.babylonhx.animations.Animation;
 	}
 
 	public function setCameraRigParameter(name:String, value:Dynamic) {
-		// VK TODO
+		if (this._cameraRigParams == null) {
+            this._cameraRigParams = { }; 
+        }
+		
 		Reflect.setProperty(this._cameraRigParams, name, value);
 		//provisionnally:
 		if (name == "interaxialDistance") {
