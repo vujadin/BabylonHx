@@ -5,6 +5,10 @@ import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.mesh.WebGLBuffer;
+import com.babylonhx.tools.Observable;
+import com.babylonhx.tools.Observer;
+import com.babylonhx.tools.EventState;
+
 import com.babylonhx.utils.GL;
 
 /**
@@ -20,9 +24,7 @@ import com.babylonhx.utils.GL;
 	public var color:Color4;
 	public var scale:Vector2 = new Vector2(1, 1);
     public var offset:Vector2 = new Vector2(0, 0);
-	public var onDispose:Void->Void;
-	public var onBeforeRender:Void->Void;
-	public var onAfterRender:Void->Void;
+	
 	public var alphaBlendingMode:Int = Engine.ALPHA_COMBINE;
 	public var alphaTest:Bool = false;
 	
@@ -36,6 +38,56 @@ import com.babylonhx.utils.GL;
 	private var _indexBuffer:WebGLBuffer;
 	private var _effect:Effect;
 	private var _alphaTestEffect:Effect;
+	
+	// Events
+
+	/**
+	* An event triggered when the layer is disposed.
+	* @type {BABYLON.Observable}
+	*/
+	public var onDisposeObservable:Observable<Layer> = new Observable<Layer>();
+	private var _onDisposeObserver:Observer<Layer>;
+	public var onDispose(never, set):Layer->Null<EventState>->Void;
+	private function set_onDispose(callback:Layer->Null<EventState>->Void):Layer->Null<EventState>->Void {
+		if (this._onDisposeObserver != null) {
+			this.onDisposeObservable.remove(this._onDisposeObserver);
+		}
+		this._onDisposeObserver = this.onDisposeObservable.add(callback);
+		
+		return callback;
+	}
+
+	/**
+	* An event triggered before rendering the scene
+	* @type {BABYLON.Observable}
+	*/
+	public var onBeforeRenderObservable:Observable<Layer> = new Observable<Layer>();
+	private var _onBeforeRenderObserver:Observer<Layer>;
+	public var onBeforeRender(never, set):Layer->Null<EventState>->Void;
+	private function set_onBeforeRender(callback:Layer->Null<EventState>->Void):Layer->Null<EventState>->Void {
+		if (this._onBeforeRenderObserver != null) {
+			this.onBeforeRenderObservable.remove(this._onBeforeRenderObserver);
+		}
+		this._onBeforeRenderObserver = this.onBeforeRenderObservable.add(callback);
+		
+		return callback;
+	}
+
+	/**
+	* An event triggered after rendering the scene
+	* @type {BABYLON.Observable}
+	*/
+	public var onAfterRenderObservable:Observable<Layer> = new Observable<Layer>();
+	private var _onAfterRenderObserver:Observer<Layer>;
+	public var onAfterRender(never, set):Layer->Null<EventState>->Void;
+	private function set_onAfterRender(callback:Layer->Null<EventState>->Void):Layer->Null<EventState>->Void {
+		if (this._onAfterRenderObserver != null) {
+			this.onAfterRenderObservable.remove(this._onAfterRenderObserver);
+		}
+		this._onAfterRenderObserver = this.onAfterRenderObservable.add(callback);
+		
+		return callback;
+	}
 	
 
 	public function new(name:String, imgUrl:String, scene:Scene, isBackground:Bool = true, ?color:Color4) {
@@ -57,8 +109,7 @@ import com.babylonhx.utils.GL;
 		this.vertices.push(1);
 		this.vertices.push( -1);
 		this._vertexDeclaration = [2];
-        this._vertexBuffer = scene.getEngine().createVertexBuffer(this.vertices);
-		
+        this._vertexBuffer = scene.getEngine().createVertexBuffer(this.vertices);		
 		
 		// Indices
 		this.indices.push(0);
@@ -93,9 +144,7 @@ import com.babylonhx.utils.GL;
 		
 		var engine = this._scene.getEngine();
 		
-		if (this.onBeforeRender != null) {
-			this.onBeforeRender();
-		}
+		this.onBeforeRenderObservable.notifyObservers(this);
 		
 		// Render
 		engine.enableEffect(currentEffect);
@@ -125,9 +174,7 @@ import com.babylonhx.utils.GL;
 			engine.draw(true, 0, 6);
 		}
 		
-		if (this.onAfterRender != null) {
-			this.onAfterRender();
-		}
+		this.onAfterRenderObservable.notifyObservers(this);
 	}
 
 	public function dispose() {
@@ -151,9 +198,11 @@ import com.babylonhx.utils.GL;
 		this._scene.layers.splice(index, 1);
 		
 		// Callback
-		if (this.onDispose != null) {
-			this.onDispose();
-		}
+		this.onDisposeObservable.notifyObservers(this);
+		
+        this.onDisposeObservable.clear();
+        this.onAfterRenderObservable.clear();
+        this.onBeforeRenderObservable.clear();
 	}
 	
 }

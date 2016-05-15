@@ -71,11 +71,7 @@ import com.babylonhx.animations.AnimationRange;
 
 	override public function getWorldMatrix():Matrix {
 		return this._worldTransform;
-	}
-
-	inline public function getInvertedAbsoluteTransform():Matrix {
-		return this._invertedAbsoluteTransform;
-	}
+	}	
 
 	inline public function getAbsoluteMatrix():Matrix {
 		var matrix = this._matrix.clone();
@@ -89,24 +85,35 @@ import com.babylonhx.animations.AnimationRange;
 		return matrix;
 	}
 	
+	inline public function getInvertedAbsoluteTransform():Matrix {
+		return this._invertedAbsoluteTransform;
+	}
+	
 	inline public function getAbsoluteTransform():Matrix {
 		return this._absoluteTransform;
 	}
 
 	// Methods
 	inline public function updateMatrix(matrix:Matrix) {
-		this._matrix = matrix;
+		this._baseMatrix = matrix.clone();
+		this._matrix = matrix.clone();
+		
 		this._skeleton._markAsDirty();
 		
 		this._updateDifferenceMatrix();
 	}
 
-	inline private function _updateDifferenceMatrix() {
+	@:allow(com.babylonhx.bones.Skeleton)
+	inline private function _updateDifferenceMatrix(?rootMatrix:Matrix) {
+		if (rootMatrix == null) {
+			rootMatrix = this._baseMatrix;
+		}
+		
 		if (this._parent != null) {
-			this._matrix.multiplyToRef(this._parent._absoluteTransform, this._absoluteTransform);
+			rootMatrix.multiplyToRef(this._parent._absoluteTransform, this._absoluteTransform);
 		} 
 		else {
-			this._absoluteTransform.copyFrom(this._matrix);
+			this._absoluteTransform.copyFrom(rootMatrix);
 		}
 		
 		this._absoluteTransform.invertToRef(this._invertedAbsoluteTransform);

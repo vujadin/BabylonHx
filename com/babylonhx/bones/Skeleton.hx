@@ -6,6 +6,7 @@ import com.babylonhx.tools.Tools;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.animations.Animation;
+import com.babylonhx.animations.Animatable;
 import com.babylonhx.animations.AnimationRange;
 import com.babylonhx.utils.typedarray.Float32Array;
 
@@ -47,9 +48,21 @@ import haxe.ds.Vector;
 		
 		scene.skeletons.push(this);
 		
-		this.prepare();
         //make sure it will recalculate the matrix next time prepare is called.
         this._isDirty = true;
+	}
+	
+	// Members
+	inline public function getTransformMatrices(mesh:AbstractMesh): #if (js || purejs || web || html5) Float32Array #else Array<Float> #end {
+		if (this.needInitialSkinMatrix && mesh._bonesTransformMatrices != null) {
+			return mesh._bonesTransformMatrices;
+		}
+		
+		return this._transformMatrices;
+	}
+	
+	public function getScene():Scene {
+		return this._scene;
 	}
 	
 	/**
@@ -126,6 +139,11 @@ import haxe.ds.Vector;
 			boneDict[sourceBones[i].name] = sourceBones[i];
 		}
 		
+		if (this.bones.length != sourceBones.length){
+			trace("copyAnimationRange: this rig has $this.bones.length bones, while source as $sourceBones.length");
+			ret = false;
+		}
+		
 		for (i in 0...this.bones.length) {
 			var boneName = this.bones[i].name;
 			var sourceBone = boneDict[boneName];
@@ -164,16 +182,14 @@ import haxe.ds.Vector;
 		return ret;
 	}
 	
-	inline public function getTransformMatrices(mesh:AbstractMesh): #if (js || purejs || web || html5) Float32Array #else Array<Float> #end {
-		if (this.needInitialSkinMatrix && mesh._bonesTransformMatrices != null) {
-			return mesh._bonesTransformMatrices;
+	public function beginAnimation(name:String, loop:Bool = false, speedRatio:Float = 1.0, ?onAnimationEnd:Void->Void):Animatable {
+		var range = this.getAnimationRange(name);
+		
+		if (range != null) {
+			return null;
 		}
 		
-		return this._transformMatrices;
-	}
-	
-	public function getScene():Scene {
-		return this._scene;
+		return this._scene.beginAnimation(this, cast range.from, cast range.to, loop, speedRatio, onAnimationEnd);
 	}
 
 	// Methods
@@ -192,16 +208,8 @@ import haxe.ds.Vector;
 			this._meshesWithPoseMatrix.splice(index, 1);
 		}
 	}
-
-	public function prepare() {
-		if (!this._isDirty) {
-			return;
-		}
-		
-		if (this._transformMatrices == null || this._transformMatrices.length != 16 * (this.bones.length + 1)) {
-			this._transformMatrices = #if (js || html5 || purejs) new Float32Array(16 * (this.bones.length + 1)) #else [] #end ;
-		}
-		
+	
+	public function _computeTransformMatrices(targetMatrix: #if js Float32Array #else Array<Float> #end, ?initialSkinMatrix:Matrix) {
 		for (index in 0...this.bones.length) {
 			var bone = this.bones[index];
 			var parentBone = bone.getParent();
@@ -210,13 +218,57 @@ import haxe.ds.Vector;
 				bone.getLocalMatrix().multiplyToRef(parentBone.getWorldMatrix(), bone.getWorldMatrix());
 			} 
 			else {
-				bone.getWorldMatrix().copyFrom(bone.getLocalMatrix());
+				if (initialSkinMatrix != null) {
+					bone.getLocalMatrix().multiplyToRef(initialSkinMatrix, bone.getWorldMatrix());
+				} 
+				else {
+					bone.getWorldMatrix().copyFrom(bone.getLocalMatrix());
+				}
 			}
 			
-			bone.getInvertedAbsoluteTransform().multiplyToArray(bone.getWorldMatrix(), this._transformMatrices, index * 16);
+			bone.getInvertedAbsoluteTransform().multiplyToArray(bone.getWorldMatrix(), targetMatrix, cast (index * 16));
 		}
 		
-		this._identity.copyToArray(this._transformMatrices, this.bones.length * 16);
+		this._identity.copyToArray(targetMatrix, this.bones.length * 16);
+	}
+
+	public function prepare() {
+		if (!this._isDirty) {
+			return;
+		}
+		
+		if (this.needInitialSkinMatrix) {
+			for (index in 0...this._meshesWithPoseMatrix.length) {
+				var mesh = this._meshesWithPoseMatrix[index];
+				
+				if (mesh._bonesTransformMatrices == null || mesh._bonesTransformMatrices.length != 16 * (this.bones.length + 1)) {
+					mesh._bonesTransformMatrices = #if (js || html5 || purejs) new Float32Array(16 * (this.bones.length + 1)) #else [] #end ;
+				}
+				
+				var poseMatrix = mesh.getPoseMatrix();
+				
+				// Prepare bones
+				for (boneIndex in 0...this.bones.length) {
+					var bone = this.bones[boneIndex];
+					
+					if (bone.getParent() == null) {
+						var matrix = bone.getBaseMatrix();
+						matrix.multiplyToRef(poseMatrix, com.babylonhx.math.Tmp.matrix[0]);
+						bone._updateDifferenceMatrix(com.babylonhx.math.Tmp.matrix[0]);
+					}
+				}
+				
+				this._computeTransformMatrices(mesh._bonesTransformMatrices, poseMatrix);
+			}
+		} 
+		else {
+			if (this._transformMatrices == null || this._transformMatrices.length != 16 * (this.bones.length + 1)) {
+				this._transformMatrices = #if (js || html5 || purejs) new Float32Array(16 * (this.bones.length + 1)) #else [] #end ;
+			}
+			
+			this._computeTransformMatrices(this._transformMatrices, null);
+		}
+		
 		this._isDirty = false;
 		
 		this._scene._activeBones += this.bones.length;
@@ -266,7 +318,18 @@ import haxe.ds.Vector;
 		return result;
 	}
 	
+	public function enableBlending(blendingSpeed:Float = 0.01) {
+		for (bone in this.bones) {
+			for (animation in bone.animations) {
+				animation.enableBlending = true;
+				animation.blendingSpeed = blendingSpeed;
+			}
+		}
+	}
+	
 	public function dispose() {
+		this._meshesWithPoseMatrix = [];
+		
         // Animations
         this.getScene().stopAnimation(this);
 		
@@ -281,6 +344,8 @@ import haxe.ds.Vector;
 		serializationObject.id = this.id;
 		
 		serializationObject.bones = [];
+		
+		serializationObject.needInitialSkinMatrix = this.needInitialSkinMatrix;
 		
 		for (index in 0...this.bones.length) {
 			var bone = this.bones[index];
@@ -317,6 +382,9 @@ import haxe.ds.Vector;
 	
 	public static function Parse(parsedSkeleton:Dynamic, scene:Scene):Skeleton {
         var skeleton = new Skeleton(parsedSkeleton.name, parsedSkeleton.id, scene);
+		
+		skeleton.needInitialSkinMatrix = parsedSkeleton.needInitialSkinMatrix;
+		
 		try {
 			for (index in 0...parsedSkeleton.bones.length) {
 				var parsedBone = parsedSkeleton.bones[index];

@@ -9,6 +9,9 @@ import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.math.Matrix;
+import com.babylonhx.tools.Observable;
+import com.babylonhx.tools.Observer;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -24,12 +27,74 @@ import com.babylonhx.math.Matrix;
 	public var renderList:Array<AbstractMesh> = [];
 	public var renderParticles:Bool = true;
 	public var renderSprites:Bool = false;
-	public var onBeforeRender:Int->Void;
-	public var onAfterRender:Int->Void;
-	public var onAfterUnbind:Void->Void;
-	public var onClear:Engine->Void;
 	public var activeCamera:Camera;
 	public var customRenderFunction:Dynamic;//SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void->Void->Void;
+	
+	// Events
+
+	/**
+	* An event triggered when the texture is unbind.
+	* @type {BABYLON.Observable}
+	*/
+	public var onAfterUnbindObservable:Observable<RenderTargetTexture> = new Observable<RenderTargetTexture>();
+	private var _onAfterUnbindObserver:Observer<RenderTargetTexture>;
+	public var onAfterUnbind(never, set):RenderTargetTexture->Null<EventState>->Void;
+	private  function set_onAfterUnbind(callback:RenderTargetTexture->Null<EventState>->Void):RenderTargetTexture->Null<EventState>->Void {
+		if (this._onAfterUnbindObserver != null) {
+			this.onAfterUnbindObservable.remove(this._onAfterUnbindObserver);
+		}
+		this._onAfterUnbindObserver = this.onAfterUnbindObservable.add(callback);
+		
+		return callback;
+	}
+
+	/**
+	* An event triggered before rendering the texture
+	* @type {BABYLON.Observable}
+	*/
+	public var onBeforeRenderObservable:Observable<Int> = new Observable<Int>();
+	private var _onBeforeRenderObserver:Observer<Int>;
+	public var onBeforeRender(never, set):Int->Null<EventState>->Void;
+	private function set_onBeforeRender(callback:Int->Null<EventState>->Void):Int->Null<EventState>->Void {
+		if (this._onBeforeRenderObserver != null) {
+			this.onBeforeRenderObservable.remove(this._onBeforeRenderObserver);
+		}
+		this._onBeforeRenderObserver = this.onBeforeRenderObservable.add(callback);
+		
+		return callback;
+	}
+
+	/**
+	* An event triggered after rendering the texture
+	* @type {BABYLON.Observable}
+	*/
+	public var onAfterRenderObservable:Observable<Int> = new Observable<Int>();
+	private var _onAfterRenderObserver:Observer<Int>;
+	public var onAfterRender(never, set):Int->Null<EventState>->Void;
+	private function set_onAfterRender(callback:Int->Null<EventState>->Void):Int->Null<EventState>->Void {
+		if (this._onAfterRenderObserver != null) {
+			this.onAfterRenderObservable.remove(this._onAfterRenderObserver);
+		}
+		this._onAfterRenderObserver = this.onAfterRenderObservable.add(callback);
+		
+		return callback;
+	}
+
+	/**
+	* An event triggered after the texture clear
+	* @type {BABYLON.Observable}
+	*/
+	public var onClearObservable:Observable<Engine> = new Observable<Engine>();
+	private var _onClearObserver:Observer<Engine>;
+	public var onClear(never, set):Engine->Null<EventState>->Void;
+	private function set_onClear(callback:Engine->Null<EventState>->Void):Engine->Null<EventState>->Void {
+		if (this._onClearObserver != null) {
+			this.onClearObservable.remove(this._onClearObserver);
+		}
+		this._onClearObserver = this.onClearObservable.add(callback);
+		
+		return callback;
+	}
 	
 	public var refreshRate(get, set):Int;
 	public var canRescale(get, never):Bool;
@@ -205,9 +270,7 @@ import com.babylonhx.math.Matrix;
 			this.renderToTarget(0, currentRenderList, useCameraPostProcess);
 		}
 		
-		if (this.onAfterUnbind != null) {
-			this.onAfterUnbind();
-		}
+		this.onAfterUnbindObservable.notifyObservers(this);
 		
 		if (this.activeCamera != null && this.activeCamera != scene.activeCamera) {
     		scene.setTransformMatrix(scene.activeCamera.getViewMatrix(), scene.activeCamera.getProjectionMatrix(true));
@@ -230,13 +293,11 @@ import com.babylonhx.math.Matrix;
 			}
 		}
 		
-		if (this.onBeforeRender != null) {
-			this.onBeforeRender(faceIndex);
-		}
+		this.onBeforeRenderObservable.notifyObservers(faceIndex);
 		
 		// Clear
-		if (this.onClear != null) {
-			this.onClear(engine);
+		if (this.onClearObservable.hasObservers()) {
+			this.onClearObservable.notifyObservers(engine);
 		} 
 		else {
 			engine.clear(scene.clearColor, true, true);
@@ -257,9 +318,7 @@ import com.babylonhx.math.Matrix;
 			scene.updateTransformMatrix(true);
 		}
 		
-		if (this.onAfterRender != null) {
-			this.onAfterRender(faceIndex);
-		}
+		this.onAfterRenderObservable.notifyObservers(faceIndex);
 		
 		// Unbind
 		if (!this.isCube || faceIndex == 5) {

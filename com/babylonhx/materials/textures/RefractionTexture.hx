@@ -1,6 +1,7 @@
 package com.babylonhx.materials.textures;
 
 import com.babylonhx.math.Plane;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -22,13 +23,13 @@ class RefractionTexture extends RenderTargetTexture {
 	public function new(name:String, size:Int, scene:Scene, generateMipMaps:Bool = true) {
 		super(name, size, scene, generateMipMaps, true);
 		
-		this.onBeforeRender = function(val:Int) {
+		this.onBeforeRenderObservable.add(function(val:Int, eventState:EventState = null) {
 			scene.clipPlane = this.refractionPlane;
-		}
+		});
 		
-		this.onAfterRender = function(val:Int) {
+		this.onAfterRenderObservable.add(function(val:Int, eventState:EventState = null) {
 			scene.clipPlane = null;
-		}
+		});
 	}
 	
 	override public function clone():RefractionTexture {
