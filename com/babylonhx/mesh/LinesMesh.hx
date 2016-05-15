@@ -76,10 +76,6 @@ import com.babylonhx.culling.Ray;
 		return this._colorShader;
 	}
 
-	override private function get_isPickable():Bool {
-		return false;
-	}
-
 	override private function get_checkCollisions():Bool {
 		return false;
 	}
@@ -111,10 +107,6 @@ import com.babylonhx.culling.Ray;
 		
 		// Draw order
 		engine.draw(false, subMesh.indexStart, subMesh.indexCount);
-	}
-
-	override public function intersects(ray:Ray, fastCheck:Bool = false):PickingInfo {
-		return null;
 	}
 
 	override public function dispose(doNotRecurse:Bool = false) {

@@ -4,6 +4,7 @@ import com.babylonhx.cameras.Camera;
 import com.babylonhx.math.Color3;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.materials.Effect;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -26,17 +27,17 @@ import com.babylonhx.materials.Effect;
 		this.depth = depth;
 		this.colorLevel = colorLevel;
 		
-		this.onActivate = function(cam:Camera) {
+		this.onActivateObservable.add(function(cam:Camera, es:EventState = null) {
 			this._refTexture = this._refTexture != null ? this._refTexture : new Texture(refractionTextureUrl, cam.getScene());
-		};
+		});
 		
-		this.onApply = function(effect:Effect) {
+		this.onApplyObservable.add(function(effect:Effect, es:EventState = null) {
 			effect.setColor3("baseColor", this.color);
 			effect.setFloat("depth", this.depth);
 			effect.setFloat("colorLevel", this.colorLevel);
 			
 			effect.setTexture("refractionSampler", this._refTexture);
-		};
+		});
 	}
 
 	// Methods

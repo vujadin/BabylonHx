@@ -3,6 +3,7 @@ package com.babylonhx.postprocess.renderpipeline;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.tools.Tools;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -213,9 +214,9 @@ import com.babylonhx.tools.Tools;
 				this.applyParameters(this._postProcesses[index]);
 			}
 			
-			this._postProcesses[index].onBeforeRender = function(effect:Effect) {
+			this._postProcesses[index].onBeforeRenderObservable.add(function(effect:Effect, es:EventState = null) {
 				this._linkTextures(effect);
-			};
+			});
 		}
 	}
 

@@ -128,7 +128,7 @@ import com.babylonhx.tools.SmartArray;
             this.onActivate = null;
         };
 		
-		this.onApply = function(effect:Effect) {
+		this.onApplyObservable.add(function(effect:Effect) {
 			this._updateMeshScreenCoordinates(scene);
 			
 			effect.setTexture("lightScatteringSampler", this._volumetricLightScatteringRTT);
@@ -137,7 +137,7 @@ import com.babylonhx.tools.SmartArray;
 			effect.setFloat("weight", this.weight);
 			effect.setFloat("density", this.density);
 			effect.setVector2("meshPositionOnScreen", this._screenCoordinates);
-		};
+		});
 	}
 
 	public function isReady(subMesh:SubMesh, useInstances:Bool):Bool {
@@ -327,14 +327,14 @@ import com.babylonhx.tools.SmartArray;
 		var savedSceneClearColor:Color3 = new Color3(0.0, 0.0, 0.0);
 		var sceneClearColor:Color3 = new Color3(0.0, 0.0, 0.0);
 		
-		this._volumetricLightScatteringRTT.onBeforeRender = function(i:Int) {
+		this._volumetricLightScatteringRTT.onBeforeRenderObservable.add(function(i:Int) {
 			savedSceneClearColor = scene.clearColor;
 			scene.clearColor = sceneClearColor;
-		};
+		});
 		
-		this._volumetricLightScatteringRTT.onAfterRender = function(i:Int) {
+		this._volumetricLightScatteringRTT.onAfterRenderObservable.add(function(i:Int) {
 			scene.clearColor = savedSceneClearColor;
-		};
+		});
 		
 		this._volumetricLightScatteringRTT.customRenderFunction = function(opaqueSubMeshes:SmartArray<SubMesh>, alphaTestSubMeshes:SmartArray<SubMesh>, transparentSubMeshes:SmartArray<SubMesh>) {
 			var engine = scene.getEngine();

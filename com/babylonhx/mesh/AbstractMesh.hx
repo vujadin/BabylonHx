@@ -28,6 +28,9 @@ import com.babylonhx.physics.PhysicsEngine;
 import com.babylonhx.physics.PhysicsBodyCreationOptions;
 import com.babylonhx.rendering.EdgesRenderer;
 import com.babylonhx.math.Tmp;
+import com.babylonhx.tools.Observable;
+import com.babylonhx.tools.Observer;
+import com.babylonhx.tools.EventState;
 import com.babylonhx.utils.typedarray.Float32Array;
 
 /**
@@ -43,6 +46,62 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public static var BILLBOARDMODE_Y:Int = 2;
 	public static var BILLBOARDMODE_Z:Int = 4;
 	public static var BILLBOARDMODE_ALL:Int = 7;
+	
+	// Events
+
+	/**
+	* An event triggered when the mesh is disposed.
+	* @type {BABYLON.Observable}
+	*/
+	public var onDisposeObservable:Observable<AbstractMesh> = new Observable<AbstractMesh>();
+	private var _onDisposeObserver:Observer<AbstractMesh>;
+	public var onDispose(never, set):AbstractMesh->Null<EventState>->Void;
+	private function set_onDispose(callback:AbstractMesh->Null<EventState>->Void):AbstractMesh->Null<EventState>->Void {
+		if (this._onDisposeObserver != null) {
+			this.onDisposeObservable.remove(this._onDisposeObserver);
+		}
+		this._onDisposeObserver = this.onDisposeObservable.add(callback);
+		
+		return callback;
+	}
+
+	/**
+	* An event triggered when this mesh collides with another one
+	* @type {BABYLON.Observable}
+	*/
+	public var onCollideObservable:Observable<AbstractMesh> = new Observable<AbstractMesh>();
+	private var _onCollideObserver:Observer<AbstractMesh>;
+	public var onCollide(never, set):AbstractMesh->Null<EventState>->Void;
+	private function set_onCollide(callback:AbstractMesh->Null<EventState>->Void):AbstractMesh->Null<EventState>->Void {
+		if (this._onCollideObserver != null) {
+			this.onCollideObservable.remove(this._onCollideObserver);
+		}
+		this._onCollideObserver = this.onCollideObservable.add(callback);
+		
+		return callback;
+	}
+
+	/**
+	* An event triggered when the collision's position changes
+	* @type {BABYLON.Observable}
+	*/
+	public var onCollisionPositionChangeObservable:Observable<Vector3> = new Observable<Vector3>();
+	private var _onCollisionPositionChangeObserver:Observer<Vector3>;
+	public var onCollisionPositionChange(never, set):Vector3->Null<EventState>->Void;
+	private function set_onCollisionPositionChange(callback:Vector3->Null<EventState>->Void):Vector3->Null<EventState>->Void {
+		if (this._onCollisionPositionChangeObserver != null) {
+			this.onCollisionPositionChangeObservable.remove(this._onCollisionPositionChangeObserver);
+		}
+		this._onCollisionPositionChangeObserver = this.onCollisionPositionChangeObservable.add(callback);
+		
+		return callback;
+	}
+
+	/**
+	* An event triggered after the world matrix is updated
+	* @type {BABYLON.Observable}
+	*/
+	public var onAfterWorldMatrixUpdateObservable:Observable<AbstractMesh> = new Observable<AbstractMesh>();
 
 
 	// Properties
@@ -83,7 +142,6 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	
 	public var showBoundingBox:Bool = false;
 	public var showSubMeshesBoundingBox:Bool = false;
-	public var onDispose:Void->Void = null;	
 	public var isBlocker:Bool = false;	
 	
 	public var renderingGroupId:Int = 0;	
@@ -148,8 +206,6 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _oldPositionForCollisions:Vector3 = new Vector3(0, 0, 0);
 	private var _diffPositionForCollisions:Vector3 = new Vector3(0, 0, 0);
 	private var _newPositionForCollisions:Vector3 = new Vector3(0, 0, 0);
-	public var onCollide:AbstractMesh->Void;
-	public var onCollisionPositionChange:Vector3->Void;
 	
 	// Attach to bone
     private var _meshToBoneReferal:AbstractMesh;
@@ -762,9 +818,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._absolutePosition.copyFromFloats(this._worldMatrix.m[12], this._worldMatrix.m[13], this._worldMatrix.m[14]);
 		
 		// Callbacks
-		for (callbackIndex in this._onAfterWorldMatrixUpdate) {
-			callbackIndex(this);
-        }
+		this.onAfterWorldMatrixUpdateObservable.notifyObservers(this);
 		
 		if (this._poseMatrix == null) {
 			this._poseMatrix = Matrix.Invert(this._worldMatrix);
@@ -777,16 +831,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
      * If you'd like to be callbacked after the mesh position, rotation or scaling has been updated
      * @param func: callback function to add
      */
-    public function registerAfterWorldMatrixUpdate(func:AbstractMesh->Void) {
-        this._onAfterWorldMatrixUpdate.push(func);
+    public function registerAfterWorldMatrixUpdate(func:AbstractMesh->Null<EventState>->Void) {
+        this.onAfterWorldMatrixUpdateObservable.add(func);
     }
 
-    public function unregisterAfterWorldMatrixUpdate(func:AbstractMesh->Void) {
-        var index = this._onAfterWorldMatrixUpdate.indexOf(func);
-		
-        if (index > -1) {
-            this._onAfterWorldMatrixUpdate.splice(index, 1);
-        }
+    public function unregisterAfterWorldMatrixUpdate(func:AbstractMesh->Null<EventState>->Void) {
+        this.onAfterWorldMatrixUpdateObservable.removeCallback(func);
     }
 
 	inline public function setPositionWithLocalVector(vector3:Vector3) {
@@ -991,9 +1041,11 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			this.position.addInPlace(this._diffPositionForCollisions);
 		}
 		
-		if (this.onCollide != null && collidedMesh != null) {
-			this.onCollide(collidedMesh);
+		if (collidedMesh != null) {
+			this.onCollideObservable.notifyObservers(collidedMesh);
 		}
+
+		this.onCollisionPositionChangeObservable.notifyObservers(this.position);
 	}
 
 	// Submeshes octree
@@ -1176,17 +1228,27 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	override public function dispose(doNotRecurse:Bool = false) {
+		// Action manager
+		if (this.actionManager != null) {
+			this.actionManager.dispose();
+			this.actionManager = null;
+		}
+		
+		// Skeleton
+		this.skeleton = null;
+		
 		// Animations
-        this.getScene().stopAnimation(this);
+		this.getScene().stopAnimation(this);
 		
 		// Physics
-		if (this.getPhysicsImpostor() != PhysicsEngine.NoImpostor) {
-			this.setPhysicsState(PhysicsEngine.NoImpostor);
-		}
+		/*if (this.physicsImpostor != null) {
+			this.physicsImpostor.dispose();
+		}*/
 		
 		// Intersections in progress
 		for (index in 0...this._intersectionsInProgress.length) {
 			var other = this._intersectionsInProgress[index];
+			
 			var pos = other._intersectionsInProgress.indexOf(this);
 			other._intersectionsInProgress.splice(pos, 1);
 		}
@@ -1223,43 +1285,41 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this.getScene().removeMesh(this);
 		
 		if (!doNotRecurse) {
+			// Particles
 			var index:Int = 0;
-			while(index < this.getScene().particleSystems.length) {
+			while (index < this.getScene().particleSystems.length) {
 				if (this.getScene().particleSystems[index].emitter == this) {
 					this.getScene().particleSystems[index].dispose();
 					index--;
 				}
-				++index;
 			}
 			
 			// Children
-			var objects = this.getScene().meshes.slice(0);
+			var objects = this.getDescendants(true);
 			for (index in 0...objects.length) {
-				if (objects[index].parent == this) {
-					objects[index].dispose();
-				}
+				objects[index].dispose();
 			}
 		} 
 		else {
-			for (index in 0...this.getScene().meshes.length) {
-				var obj = this.getScene().meshes[index];
-				if (obj.parent == this) {
-					obj.parent = null;
-					obj.computeWorldMatrix(true);
-				}
+			var childMeshes = this.getChildMeshes(true);
+			for (index in 0...childMeshes.length) {
+				var child = childMeshes[index];
+				child.parent = null;
+				child.computeWorldMatrix(true);
 			}
 		}
 		
-		this._onAfterWorldMatrixUpdate = [];
+		super.dispose();
+		
+		this.onAfterWorldMatrixUpdateObservable.clear();
+		this.onCollideObservable.clear();
+		this.onCollisionPositionChangeObservable.clear();
 		
 		this._isDisposed = true;
 		
 		// Callback
-		if (this.onDispose != null) {
-			this.onDispose();
-		}
-		
-		super.dispose();
+		this.onDisposeObservable.notifyObservers(this);
+		this.onDisposeObservable.clear();
 	}
 	
 }

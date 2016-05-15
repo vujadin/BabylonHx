@@ -17,14 +17,14 @@ import com.babylonhx.materials.textures.Texture;
 	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
 		super(name, "fxaa", ["texelSize"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onSizeChanged = function() {
+		this.onSizeChangedObservable.add(function() {
 			this.texelWidth = 1.0 / this.width;
 			this.texelHeight = 1.0 / this.height;
-		};
+		});
 		
-		this.onApply = function(effect:Effect) {
+		this.onApplyObservable.add(function(effect:Effect) {
 			effect.setFloat2("texelSize", this.texelWidth, this.texelHeight);
-		}
+		});
 	}
 	
 }

@@ -12,6 +12,7 @@ import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.Scene;
 import com.babylonhx.tools.SmartArray;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -45,9 +46,9 @@ import com.babylonhx.tools.SmartArray;
 		this._depthMap.renderList = null;
 		
 		// set default depth value to 1.0 (far away)
-		this._depthMap.onClear = function(engine:Engine) {
+		this._depthMap.onClearObservable.add(function(engine:Engine, es:EventState = null) {
 			engine.clear(new Color4(1.0, 1.0, 1.0, 1.0), true, true);
-		}
+		});
 		
 		// Custom render function
 		var renderSubMesh = function(subMesh:SubMesh) {

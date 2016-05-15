@@ -11,6 +11,9 @@ import com.babylonhx.particles.Particle;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.animations.Animation;
+import com.babylonhx.tools.Observable;
+import com.babylonhx.tools.Observer;
+import com.babylonhx.tools.EventState;
 
 import com.babylonhx.utils.typedarray.Float32Array;
 
@@ -55,7 +58,22 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	
 	public var layerMask:Int = 0x0FFFFFFF;
 
-	public var onDispose:Void->Void;
+	/**
+	* An event triggered when the system is disposed.
+	* @type {BABYLON.Observable}
+	*/
+	public var onDisposeObservable:Observable<ParticleSystem> = new Observable<ParticleSystem>();
+	private var _onDisposeObserver:Observer<ParticleSystem>;
+	public var onDispose:ParticleSystem->Null<EventState>->Void;
+	private function set_onDispose(callback:ParticleSystem->Null<EventState>->Void):ParticleSystem->Null<EventState>->Void {
+		if (this._onDisposeObserver != null) {
+			this.onDisposeObservable.remove(this._onDisposeObserver);
+		}
+		this._onDisposeObserver = this.onDisposeObservable.add(callback);
+		
+		return callback;
+	}
+		
 	public var updateFunction:Array<Particle>->Void;
 
 	public var blendMode:Int = ParticleSystem.BLENDMODE_ONEONE;
@@ -452,9 +470,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._scene.particleSystems.remove(this);
 		
 		// Callback
-		if (this.onDispose != null) {
-			this.onDispose();
-		}
+		this.onDisposeObservable.notifyObservers(this);
+        this.onDisposeObservable.clear();
 	}
 
 	// Clone

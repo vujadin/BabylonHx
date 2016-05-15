@@ -231,7 +231,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		dest.isVisible = source.isVisible;
 		dest.showBoundingBox = source.showBoundingBox;
 		dest.showSubMeshesBoundingBox = source.showSubMeshesBoundingBox;
-		dest.onDispose = source.onDispose;
+		//dest.onDispose = source.onDispose;
 		dest.isBlocker = source.isBlocker;
 		dest.renderingGroupId = source.renderingGroupId;
 		dest.actionManager = source.actionManager;
