@@ -72,18 +72,6 @@ import com.babylonhx.animations.AnimationRange;
 	override public function getWorldMatrix():Matrix {
 		return this._worldTransform;
 	}	
-
-	inline public function getAbsoluteMatrix():Matrix {
-		var matrix = this._matrix.clone();
-		var parent = this._parent;
-		
-		while(parent != null) {
-			matrix = matrix.multiply(parent.getLocalMatrix());
-			parent = parent.getParent();
-		}
-		
-		return matrix;
-	}
 	
 	inline public function getInvertedAbsoluteTransform():Matrix {
 		return this._invertedAbsoluteTransform;
@@ -148,7 +136,7 @@ import com.babylonhx.animations.AnimationRange;
 		// rescaling prep
 		var sourceBoneLength:Int = source.length;
 		var scalingReqd:Bool = rescaleAsRequired && sourceBoneLength > 0 && this.length > 0 && sourceBoneLength != this.length;
-		var ratio:Float = scalingReqd ? this.length / sourceBoneLength : 1;
+		var ratio:Float = scalingReqd ? this.length / sourceBoneLength : 0;
 		
 		var destKeys = this.animations[0].getKeys();
 		

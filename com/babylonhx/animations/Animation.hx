@@ -433,17 +433,17 @@ import com.babylonhx.Node;
 		
 		// Blending
 		if (this.enableBlending && this._blendingFactor <= 1.0) {
-			if (this._originalBlendValue == null) {
-				this._originalBlendValue = Reflect.getProperty(destination, path);
+			if (this._originalBlendValue == null) {				
+				if (path == "_matrix") {
+					this._originalBlendValue = destination._matrix.clone();
+				} 
+				else {
+					this._originalBlendValue = Reflect.getProperty(destination, path);
+				}
 			}
 			
-			if (!Std.is(this._originalBlendValue, Float) && !Std.is(this._originalBlendValue, Int)) { // Complex value				
-				if (Reflect.hasField(this._originalBlendValue, "Lerp")) { // Lerp supported
-					Reflect.setField(destination, path, this._originalBlendValue.Lerp(currentValue, this._originalBlendValue, this._blendingFactor));
-				} 
-				else { // Blending not supported
-					Reflect.setField(destination, path, currentValue);
-				}
+			if (path == "_matrix") { 				
+				untyped destination._matrix = Matrix.Lerp(this._originalBlendValue, currentValue, this._blendingFactor);
 			} 
 			else { // Direct value
 				Reflect.setField(destination, path, this._originalBlendValue * (1.0 - this._blendingFactor) + this._blendingFactor * currentValue);

@@ -185,7 +185,7 @@ import haxe.ds.Vector;
 	public function beginAnimation(name:String, loop:Bool = false, speedRatio:Float = 1.0, ?onAnimationEnd:Void->Void):Animatable {
 		var range = this.getAnimationRange(name);
 		
-		if (range != null) {
+		if (range == null) {
 			return null;
 		}
 		
