@@ -2368,6 +2368,7 @@ import com.babylonhx.audio.*;
 		
 		this.detachControl();
 		
+		this.onDisposeObservable.clear();
 		this.onBeforeRenderObservable.clear();
         this.onAfterRenderObservable.clear();
 		

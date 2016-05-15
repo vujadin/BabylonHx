@@ -276,8 +276,10 @@ import nme.display.OpenGLView;
 				this._caps.s3tc = this._glExtensions.indexOf("GL_EXT_texture_compression_s3tc") != -1;
 			}
 			if (this._caps.textureAnisotropicFilterExtension == null || this._caps.textureAnisotropicFilterExtension == false) {
-				
-				this._caps.textureAnisotropicFilterExtension = this._glExtensions.indexOf("GL_EXT_texture_filter_anisotropic") != -1;
+				if (this._glExtensions.indexOf("GL_EXT_texture_filter_anisotropic") != -1) {
+					this._caps.textureAnisotropicFilterExtension = { };
+					this._caps.textureAnisotropicFilterExtension.TEXTURE_MAX_ANISOTROPY_EXT = 0x84FF;
+				}
 			}
 			if (this._caps.maxRenderTextureSize == 0) {
 				this._caps.maxRenderTextureSize = 16384;
@@ -537,7 +539,7 @@ import nme.display.OpenGLView;
 	}
 
 	inline public function endFrame() {
-		this.flushFramebuffer();
+		//this.flushFramebuffer();
 		#if openfl
 		// Depth buffer
 		//this.setDepthBuffer(true);
@@ -926,16 +928,16 @@ import nme.display.OpenGLView;
 		}
 	}
 
-	public function createEffect(baseName:Dynamic, attributesNames:Array<String>, uniformsNames:Array<String>, samplers:Array<String>, defines:String, ?fallbacks:EffectFallbacks, ?onCompiled:Effect->Void, ?onError:Effect->String->Void):Effect {
+	public function createEffect(baseName:Dynamic, attributesNames:Array<String>, uniformsNames:Array<String>, samplers:Array<String>, defines:String, ?fallbacks:EffectFallbacks, ?onCompiled:Effect->Void, ?onError:Effect->String->Void, ?indexParameters:Dynamic):Effect {
 		var vertex = baseName.vertexElement != null ? baseName.vertexElement : (baseName.vertex != null ? baseName.vertex : baseName);
 		var fragment = baseName.fragmentElement != null ? baseName.fragmentElement : (baseName.fragment != null ? baseName.fragment : baseName);
-						
+		
 		var name = vertex + "+" + fragment + "@" + defines;
 		if (this._compiledEffects.exists(name)) {
             return this._compiledEffects.get(name);
         }
 		
-		var effect = new Effect(baseName, attributesNames, uniformsNames, samplers, this, defines, fallbacks, onCompiled, onError);
+		var effect = new Effect(baseName, attributesNames, uniformsNames, samplers, this, defines, fallbacks, onCompiled, onError, indexParameters);
 		effect._key = name;
 		this._compiledEffects.set(name, effect);
 		
@@ -1062,68 +1064,143 @@ import nme.display.OpenGLView;
 	}
 
 	inline public function setArray(uniform:GLUniformLocation, array:Array<Float>) {
+		/*#if (cpp && lime)
+		if (uniform == 0) return;
+		#else
+		if (uniform == null) return; 
+		#end*/
 		GL.uniform1fv(uniform, new Float32Array(array));
 	}
 	
 	inline public function setArray2(uniform:GLUniformLocation, array:Array<Float>) {
+		/*#if (cpp && lime)
+		if (uniform == 0) return;
+		#else
+		if (uniform == null) return; 
+		#end*/
         if (array.length % 2 == 0) {
 			GL.uniform2fv(uniform, new Float32Array(array));
 		}
     }
 
     inline public function setArray3(uniform:GLUniformLocation, array:Array<Float>) {
+		/*#if (cpp && lime)
+		if (uniform == 0) return;
+		#else
+		if (uniform == null) return; 
+		#end*/
         if (array.length % 3 == 0) {			
 			GL.uniform3fv(uniform, new Float32Array(array));
 		}
     }
 
     inline public function setArray4(uniform:GLUniformLocation, array:Array<Float>) {
+		/*#if (cpp && lime)
+		if (uniform == 0) return;
+		#else
+		if (uniform == null) return; 
+		#end*/
         if (array.length % 4 == 0) {			
 			GL.uniform4fv(uniform, new Float32Array(array));
 		}
     }
 
 	inline public function setMatrices(uniform:GLUniformLocation, matrices: #if (js || purejs) Float32Array #else Array<Float> #end ) {
+		/*#if (cpp && lime)
+		if (uniform == 0) return;
+		#else
+		if (uniform == null) return; 
+		#end*/
 		GL.uniformMatrix4fv(uniform, false, #if (js || purejs) matrices #else new Float32Array(matrices) #end);
 	}
 
 	inline public function setMatrix(uniform:GLUniformLocation, matrix:Matrix) {	
+		/*#if (cpp && lime)
+		if (uniform == 0) return;
+		#else
+		if (uniform == null) return; 
+		#end*/
 		GL.uniformMatrix4fv(uniform, false, #if (js || purejs) matrix.m #else new Float32Array(matrix.m) #end );
 	}
 	
 	inline public function setMatrix3x3(uniform:GLUniformLocation, matrix:Float32Array) {
+		/*#if (cpp && lime)
+		if (uniform == 0) return;
+		#else
+		if (uniform == null) return; 
+		#end*/
 		GL.uniformMatrix3fv(uniform, false, matrix);
 	}
 
 	inline public function setMatrix2x2(uniform:GLUniformLocation, matrix:Float32Array) {
+		/*#if (cpp && lime)
+		if (uniform == 0) return;
+		#else
+		if (uniform == null) return; 
+		#end*/
 		GL.uniformMatrix2fv(uniform, false, matrix);
 	}
 
 	inline public function setFloat(uniform:GLUniformLocation, value:Float) {
+		/*#if (cpp && lime)
+		if (uniform == 0) return;
+		#else
+		if (uniform == null) return; 
+		#end*/
 		GL.uniform1f(uniform, value);
 	}
 
 	inline public function setFloat2(uniform:GLUniformLocation, x:Float, y:Float) {
+		/*#if (cpp && lime)
+		if (uniform == 0) return;
+		#else
+		if (uniform == null) return; 
+		#end*/
 		GL.uniform2f(uniform, x, y);
 	}
 
 	inline public function setFloat3(uniform:GLUniformLocation, x:Float, y:Float, z:Float) {
+		/*#if (cpp && lime)
+		if (uniform == 0) return;
+		#else
+		if (uniform == null) return; 
+		#end*/
 		GL.uniform3f(uniform, x, y, z);
 	}
 
 	inline public function setBool(uniform:GLUniformLocation, bool:Bool) {
+		/*#if (cpp && lime)
+		if (uniform == 0) return;
+		#else
+		if (uniform == null) return; 
+		#end*/
 		GL.uniform1i(uniform, bool ? 1 : 0);
 	}
 
 	public function setFloat4(uniform:GLUniformLocation, x:Float, y:Float, z:Float, w:Float) {
+		/*#if (cpp && lime)
+		if (uniform == 0) return;
+		#else
+		if (uniform == null) return; 
+		#end*/
 		GL.uniform4f(uniform, x, y, z, w);
 	}
 
 	inline public function setColor3(uniform:GLUniformLocation, color3:Color3) {
+		/*#if (cpp && lime)
+		if (uniform == 0) return;
+		#else
+		if (uniform == null) return; 
+		#end*/
 		GL.uniform3f(uniform, color3.r, color3.g, color3.b);
 	}
 
 	inline public function setColor4(uniform:GLUniformLocation, color3:Color3, alpha:Float) {
+		/*#if (cpp && lime)
+		if (uniform == 0) return;
+		#else
+		if (uniform == null) return; 
+		#end*/
 		GL.uniform4f(uniform, color3.r, color3.g, color3.b, alpha);
 	}
 
@@ -1374,7 +1451,15 @@ import nme.display.OpenGLView;
 		return bd;
 	}*/
 	
-	public function createRawCubeTexture(url:String, scene:Scene, size:Int, format:Int, type:Int, noMipmap:Bool = false, callback:ArrayBuffer->Array<ArrayBufferView>):WebGLTexture {
+	public function updateTextureSize(texture:WebGLTexture, width:Int, height:Int) {
+		texture._width = width;
+		texture._height = height;
+		texture._size = width * height;
+		texture._baseWidth = width;
+		texture._baseHeight = height;
+	}
+	
+	public function createRawCubeTexture(url:String, scene:Scene, size:Int, format:Int, type:Int, noMipmap:Bool = false, callback:ArrayBuffer->Array<ArrayBufferView>, mipmmapGenerator:Array<ArrayBufferView>->Array<Array<ArrayBufferView>>):WebGLTexture {
 		var texture = new WebGLTexture("", GL.createTexture());
 		scene._addPendingData(texture);
 		texture.isCube = true;
@@ -1407,16 +1492,47 @@ import nme.display.OpenGLView;
 				GL.TEXTURE_CUBE_MAP_NEGATIVE_X, GL.TEXTURE_CUBE_MAP_NEGATIVE_Y, GL.TEXTURE_CUBE_MAP_NEGATIVE_Z
 			];
 			
-			GL.bindTexture(GL.TEXTURE_CUBE_MAP, texture.data);
-			GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, 0);
+			width = texture._width;
+			height = texture._height;
+			isPot = (com.babylonhx.math.Tools.IsExponentOfTwo(width) && com.babylonhx.math.Tools.IsExponentOfTwo(height));
 			
-			for (index in 0...facesIndex.length) {
-				var faceData = rgbeDataArrays[index];
-				GL.texImage2D(facesIndex[index], 0, internalFormat, width, height, 0, internalFormat, textureType, faceData);
-			}
+			GL.bindTexture(GL.TEXTURE_CUBE_MAP, texture.data);
+			//GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, 0);
 			
 			if (!noMipmap && isPot) {
-				GL.generateMipmap(GL.TEXTURE_CUBE_MAP);
+				if (mipmmapGenerator != null) {
+					var arrayTemp:Array<ArrayBufferView> = [];
+					// Data are known to be in +X +Y +Z -X -Y -Z
+					// mipmmapGenerator data is expected to be order in +X -X +Y -Y +Z -Z
+					arrayTemp.push(rgbeDataArrays[0]); // +X
+					arrayTemp.push(rgbeDataArrays[3]); // -X
+					arrayTemp.push(rgbeDataArrays[1]); // +Y
+					arrayTemp.push(rgbeDataArrays[4]); // -Y
+					arrayTemp.push(rgbeDataArrays[2]); // +Z
+					arrayTemp.push(rgbeDataArrays[5]); // -Z
+					
+					var mipData = mipmmapGenerator(arrayTemp);
+					for (level in 0...mipData.length) {
+						var mipSize = width >> level;
+						
+						// mipData is order in +X -X +Y -Y +Z -Z
+						GL.texImage2D(facesIndex[0], level, internalFormat, mipSize, mipSize, 0, internalFormat, textureType, mipData[level][0]);
+						GL.texImage2D(facesIndex[1], level, internalFormat, mipSize, mipSize, 0, internalFormat, textureType, mipData[level][2]);
+						GL.texImage2D(facesIndex[2], level, internalFormat, mipSize, mipSize, 0, internalFormat, textureType, mipData[level][4]);
+						GL.texImage2D(facesIndex[3], level, internalFormat, mipSize, mipSize, 0, internalFormat, textureType, mipData[level][1]);
+						GL.texImage2D(facesIndex[4], level, internalFormat, mipSize, mipSize, 0, internalFormat, textureType, mipData[level][3]);
+						GL.texImage2D(facesIndex[5], level, internalFormat, mipSize, mipSize, 0, internalFormat, textureType, mipData[level][5]);
+					}
+				}
+				else {
+					// Data are known to be in +X +Y +Z -X -Y -Z
+					for (index in 0...facesIndex.length) {
+						var faceData = rgbeDataArrays[index];
+						GL.texImage2D(facesIndex[index], 0, internalFormat, width, height, 0, internalFormat, textureType, faceData);
+					}
+					
+					GL.generateMipmap(GL.TEXTURE_CUBE_MAP);
+				}
 			}
 			else {
 				noMipmap = true;
@@ -1493,7 +1609,11 @@ import nme.display.OpenGLView;
 		var internalFormat = this._getInternalFormat(format);
 		
 		GL.bindTexture(GL.TEXTURE_2D, texture.data);
-		//GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 1 : 0);           
+		//GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 1 : 0);      
+		
+		if (texture._width % 4 != 0) {
+            GL.pixelStorei(GL.UNPACK_ALIGNMENT, 1);
+        }
 		
 		if (compression != "") {
             GL.compressedTexImage2D(GL.TEXTURE_2D, 0, Reflect.getProperty(this.getCaps().s3tc, compression), texture._width, texture._height, 0, data);
@@ -1926,6 +2046,7 @@ import nme.display.OpenGLView;
 	inline public function bindSamplers(effect:Effect) {
 		GL.useProgram(effect.getProgram());
 		var samplers = effect.getSamplers();
+		
 		for (index in 0...samplers.length) {
 			var uniform = effect.getUniform(samplers[index]);
 			GL.uniform1i(uniform, index);

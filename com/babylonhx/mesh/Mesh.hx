@@ -1785,7 +1785,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		aCSG = null;
 		bCSG = null;
 		
-		var cyl2 = MeshBuilder.CreateCylinder("capsuleCylinder", { height: height, diameterTop: diameter, diameterBottom: diameter, tessellation: tess, subdivisions: 1, enclose: false }, scene);
+		var cyl2 = MeshBuilder.CreateCylinder("capsuleCylinder", { height: height, diameterTop: diameter, diameterBottom: diameter, tessellation: tess, subdivisions: 6, enclose: false }, scene);
 		
 		// rotate uvs 90 degrees
 		/*var uvs = cyl2.getVerticesData(VertexBuffer.UVKind);

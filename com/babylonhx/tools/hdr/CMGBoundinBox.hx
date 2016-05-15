@@ -16,7 +16,7 @@ class CMGBoundinBox {
 		this.min = new Vector3(0, 0, 0);
 		this.max = new Vector3(0, 0, 0);
 		
-		this.clear()
+		this.clear();
 	}
 	
 	public function clear() {

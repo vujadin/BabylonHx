@@ -9,6 +9,9 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.collisions.PickingInfo;
 import com.babylonhx.culling.Ray;
 import com.babylonhx.cameras.Camera;
+import com.babylonhx.tools.Observable;
+import com.babylonhx.tools.Observer;
+import com.babylonhx.tools.EventState;
 
 import com.babylonhx.utils.typedarray.Float32Array;
 
@@ -24,10 +27,26 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public var sprites:Array<Sprite> = [];
 	public var renderingGroupId:Int = 0;
 	public var layerMask:Int = 0x0FFFFFFF;
-	public var onDispose:Void->Void;
 	public var fogEnabled:Bool = true;
 	public var isPickable = false;
 	public var cellSize:Float;
+	
+	/**
+	* An event triggered when the manager is disposed.
+	* @type {BABYLON.Observable}
+	*/
+	public var onDisposeObservable = new Observable<SpriteManager>();
+
+	private var _onDisposeObserver:Observer<SpriteManager>;
+	public var onDispose(never, set):SpriteManager->Null<EventState>->Void;
+	private function set_onDispose(callback:SpriteManager->Null<EventState>->Void):SpriteManager->Null<EventState>->Void {
+		if (this._onDisposeObserver != null) {
+			this.onDisposeObservable.remove(this._onDisposeObserver);
+		}
+		this._onDisposeObserver = this.onDisposeObservable.add(callback);
+		
+		return callback;
+	}
 
 	private var _capacity:Int;
 	private var _spriteTexture:Texture;
@@ -281,10 +300,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		// Remove from scene
 		this._scene.spriteManagers.remove(this);
 		
-		// Callback
-		if (this.onDispose != null) {
-			this.onDispose();
-		}
+		this.onDisposeObservable.notifyObservers(this);
+        this.onDisposeObservable.clear();
 	}
 	
 }

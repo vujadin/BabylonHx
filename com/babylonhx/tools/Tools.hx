@@ -767,21 +767,13 @@ typedef Assets = nme.Assets;
 			radix                  = (radix > 61) ? 61 : radix;
 			
 			while (length-- > 0) {
-				id.push(characters[randomInt(0, radix)]);
+				id.push(characters[com.babylonhx.math.Tools.randomInt(0, radix)]);
 			}
 			
 			return id.join('');
 		}
 		
-		return createRandomIdentifier(8, 15) + '-' + createRandomIdentifier(4, 15) + '-4' + createRandomIdentifier(3, 15) + '-' + randomInt(0, 3) + createRandomIdentifier(3, 15) + '-' + createRandomIdentifier(12, 15);
-	}
-	
-	public static inline function randomInt(from:Int, to:Int):Int {
-		return from + Math.floor(((to - from + 1) * Math.random()));
-	}
-	
-	public static inline function randomFloat(from:Float, to:Float):Float {
-		return from + ((to - from + 1) * Math.random());
-	}
+		return createRandomIdentifier(8, 15) + '-' + createRandomIdentifier(4, 15) + '-4' + createRandomIdentifier(3, 15) + '-' + com.babylonhx.math.Tools.randomInt(0, 3) + createRandomIdentifier(3, 15) + '-' + createRandomIdentifier(12, 15);
+	}	
 	
 }

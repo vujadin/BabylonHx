@@ -7,6 +7,7 @@ package com.babylonhx.math;
 @:expose('BABYLON.MathTools') class Tools {
 	
 	static public inline var Epsilon:Float = 0.001;
+	static public inline var LOG2E:Float = 1.4426950408889634;
 	
 
 	public static function ToHex(i:Int):String {
@@ -93,6 +94,14 @@ package com.babylonhx.math;
 	inline public static function WithinEpsilon(a:Float, b:Float, epsilon:Float = 1.401298E-45):Bool {
 		var num = a - b;
 		return -epsilon <= num && num <= epsilon;
+	}
+	
+	inline public static function randomInt(from:Int, to:Int):Int {
+		return from + Math.floor(((to - from + 1) * Math.random()));
+	}
+	
+	inline public static function randomFloat(from:Float, to:Float):Float {
+		return from + ((to - from + 1) * Math.random());
 	}
 	
 }

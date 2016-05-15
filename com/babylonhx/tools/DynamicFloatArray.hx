@@ -53,7 +53,8 @@ class DynamicFloatArray {
 	public function new(stride:Int, initialEntryCount:Int) {
 		this._stride = stride;
 		this.buffer = new Float32Array(stride * initialEntryCount);
-		
+		this._lastUsed = 0;
+		this._firstFree = 0;
 		this._allEntries = new Array<DynamicFloatArrayElementInfo>(initialEntryCount);
 		this._freeEntries = new Array<DynamicFloatArrayElementInfo>(initialEntryCount);
 		
@@ -131,9 +132,16 @@ class DynamicFloatArray {
 		
 		var firstFreeSlotOffset = sortedFree[0].offset;
 		var freeZoneSize = 1;
+		var occupiedZoneSize = this.usedElementCount * s;
 		
 		var prevOffset = sortedFree[0].offset;
 		for (i in 1...sortedFree.length) {
+			// If the first free (which means everything before is occupied) is greater or equal the occupied zone size, 
+			// it means everything is defragmented, we can quit
+			if (firstFreeSlotOffset >= occupiedZoneSize) {
+				break;
+			}
+			
 			var curFree = sortedFree[i];
 			var curOffset = curFree.offset;
 			
@@ -165,10 +173,10 @@ class DynamicFloatArray {
 				
 				var moveEntry = sortedAll[curI];
 				this._moveEntry(moveEntry, firstFreeSlotOffset);
-				var replacedEntry = sortedAll[freeI];
+				var replacedEl = sortedAll[freeI];
 				
-				// set the offset of the element entry we replace with a value that will make it discard at the end of the method
-				replacedEntry.offset = curMoveOffset;
+				// set the offset of the element we replaced with a value that will make it discard at the end of the method
+				replacedEl.offset = curMoveOffset;
 				
 				// Swap the entry we moved and the one it replaced in the sorted array to reflect the action we've made
 				sortedAll[freeI] = moveEntry;
@@ -180,11 +188,11 @@ class DynamicFloatArray {
 			
 			if (freeZoneSize <= occupiedRange) {
 				// Free Zone is smaller or equal so it's no longer a free zone, set the new one to the current location
-				firstFreeSlotOffset = curOffset;
+				firstFreeSlotOffset = curMoveOffset + s;
 				freeZoneSize = 1;
 			}				
 			else {
-				// Free Zone was bigger, the firstFreeSlotOffset is already up to date, but we need to update the its size
+				// Free Zone was bigger, the firstFreeSlotOffset is already up to date, but we need to update its size
 				freeZoneSize = ((curOffset - firstFreeSlotOffset) / s) + 1;
 			}
 			
@@ -204,7 +212,7 @@ class DynamicFloatArray {
 		return elementsBuffer;
 	}
 
-	private function _moveEntry(entry:DynamicFloatArrayElementInfo, destOffset:Int) {
+	private function _moveElement(entry:DynamicFloatArrayElementInfo, destOffset:Int) {
 		for (i in 0...this._stride) {
 			this.buffer[destOffset + i] = this.buffer[entry.offset + i];
 		}
@@ -214,22 +222,22 @@ class DynamicFloatArray {
 
 	private function _growBuffer() {
 		// Allocate the new buffer with 50% more entries, copy the content of the current one
-		var newElCount = this.entryCount * 1.5;
+		var newElCount = Math.floor(this.totalElementCount * 1.5);
 		var newBuffer = new Float32Array(newEntryCount * this._stride);
 		newBuffer.set(this.buffer);
 		
-		var addedCount = newEntryCount - this.entryCount;
-		this._allEntries.length += addedCount;
-		this._freeEntries.length += addedCount;
+		var curCount = this.totalElementCount;
+		var addedCount = newElCount - this.totalElementCount;
 		
-		for (i in this.entryCount...newElCount) {
-			var el = new DynamicFloatArrayElementInfo();
-			el.offset = i * this._stride;
+		for (i in 0...addedCount) {
+			var element = new DynamicFloatArrayElementInfo();
+			element.offset = (curCount + i) * this.stride;
 			
-			this._allEntries[i] = el;
-			this._freeEntries[i] = el;
+			this._allEntries.push(element);
+			this._freeEntries[addedCount - i - 1] = element;
 		}
 		
+		this._firstFree = Std.int(curCount * this.stride);
 		this.buffer = newBuffer;
 	}
 	

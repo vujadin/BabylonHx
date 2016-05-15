@@ -41,6 +41,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _attributes:Array<Int>;
 	private var _uniforms:Map<String, GLUniformLocation>;
 	public var _key:String;
+	private var _indexParameters:Dynamic;
 	
 	@:allow(com.babylonhx.Engine.dispose) 
 	private var _program:GLProgram;
@@ -49,13 +50,14 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _valueCacheMatrix:Map<String, Matrix>;	// VK: special map for matrices
 	
 
-	public function new(baseName:Dynamic, attributesNames:Array<String>, uniformsNames:Array<String>, samplers:Array<String>, engine:Engine, ?defines:String, ?fallbacks:EffectFallbacks, ?onCompiled:Effect->Void, ?onError:Effect->String->Void) {
+	public function new(baseName:Dynamic, attributesNames:Array<String>, uniformsNames:Array<String>, samplers:Array<String>, engine:Engine, ?defines:String, ?fallbacks:EffectFallbacks, ?onCompiled:Effect->Void, ?onError:Effect->String->Void, ?indexParameters:Dynamic) {
 		this._engine = engine;
 		this.name = baseName;
 		this.defines = defines;
 		this._uniformsNames = uniformsNames.concat(samplers);
 		this._samplers = samplers;
 		this._attributesNames = attributesNames;
+		this._indexParameters = indexParameters;
 		
 		this.onError = onError;
 		this.onCompiled = onCompiled;
@@ -150,7 +152,11 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	inline public function getUniform(uniformName:String):GLUniformLocation {
+		#if (cpp && lime)
+		return (this._uniforms.exists(uniformName) ? this._uniforms[uniformName] : -1);
+		#else
 		return this._uniforms[uniformName];
+		#end
 	}
 
 	inline public function getSamplers():Array<String> {
@@ -216,8 +222,26 @@ import com.babylonhx.utils.typedarray.Float32Array;
 				var match4:String = regex.matched(4);
 				if (match4 != null) {
 					var rx:EReg = ~/\{X\}/g;
-					var match5:String = regex.matched(5);
-					includeContent = rx.replace(includeContent, match5);
+					var indexString:String = regex.matched(5);
+					
+					if (indexString.indexOf("..") != -1) {
+						var indexSplits = indexString.split("..");
+						var minIndex = Std.parseInt(indexSplits[0]);
+						var maxIndex = Std.parseInt(indexSplits[1]);
+						var sourceIncludeContent = includeContent.substr(0);
+						includeContent = "";
+						
+						if (maxIndex == null || Math.isNaN(maxIndex)) {
+							maxIndex = Std.int(Reflect.getProperty(this._indexParameters, indexSplits[1]));
+						}
+						
+						for (i in minIndex...maxIndex + 1) {
+							includeContent += rx.replace(sourceIncludeContent, i + "") + "\n";
+						}
+					} 
+					else {
+						includeContent = rx.replace(includeContent, indexString);
+					}
 				}
 				
 				// Replace
@@ -293,7 +317,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 				
 				index++;
             }
-				
+			
             engine.bindSamplers(this);
 			
             this._isReady = true;

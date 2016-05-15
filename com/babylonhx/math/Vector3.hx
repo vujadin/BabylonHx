@@ -47,6 +47,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		array[index + 2] = this.z;
 	}
 	
+	inline public function toFloat32Array(array:Float32Array, index:Int = 0) {
+		array[index] = this.x;
+		array[index + 1] = this.y;
+		array[index + 2] = this.z;
+	}
+	
 	public function toQuaternion():Quaternion {
 		var result = new Quaternion(0, 0, 0, 1);
 		
