@@ -11,6 +11,7 @@ import com.babylonhx.mesh.Mesh;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
+import com.babylonhx.tools.serialization.SerializationHelper;
 
 
 /**
@@ -27,16 +28,28 @@ import com.babylonhx.tools.EventState;
 	public static inline var ClockWiseSideOrientation:Int = 0;
 	public static inline var CounterClockWiseSideOrientation:Int = 1;
 	
-	public static inline var maxSimultaneousLights:Int = 4;
-
-	
+	@serialize()
 	public var id:String;
+	
+	@serialize()
 	public var name:String;
+	
+	@serialize()
 	public var checkReadyOnEveryCall:Bool = false;
+	
+	@serialize()
 	public var checkReadyOnlyOnce:Bool = false;
+	
+	@serialize()
 	public var state:String = "";
+	
+	@serialize()
 	public var alpha:Float = 1.0;
+	
+	@serialize()
 	public var backFaceCulling:Bool = true;
+	
+	@serialize()
 	public var sideOrientation:Int = Material.CounterClockWiseSideOrientation;
 	
 	public var onCompiled:Effect->Void;
@@ -75,15 +88,22 @@ import com.babylonhx.tools.EventState;
 		return callback;
 	}
 	
+	@serialize()
 	public var alphaMode:Int = Engine.ALPHA_COMBINE;
+	
+	@serialize()
 	public var disableDepthWrite:Bool = false;
+	
+	@serialize()
 	public var fogEnabled:Bool = true;
 
+	@serialize()
 	public var pointSize:Float = 1.0;
-	public var zOffset:Float = 0.0;
 	
-	public var isFrozen(get, never):Bool;
+	@serialize()
+	public var zOffset:Float = 0.0;
 
+	@serialize()
 	public var wireframe(get, set):Bool;
 	private function get_wireframe():Bool {
 		return this._fillMode == Material.WireFrameFillMode;
@@ -93,6 +113,7 @@ import com.babylonhx.tools.EventState;
 		return value;
 	}
 	
+	@serialize()
 	public var pointsCloud(get, set):Bool;
 	private function get_pointsCloud():Bool {
 		return this._fillMode == Material.PointFillMode;
@@ -102,6 +123,7 @@ import com.babylonhx.tools.EventState;
 		return value;
 	}
 
+	@serialize()
 	public var fillMode(get, set):Int;
 	private function get_fillMode():Int {
 		return this._fillMode;
@@ -110,6 +132,8 @@ import com.babylonhx.tools.EventState;
 		this._fillMode = value;
 		return value;
 	}
+	
+	public var isFrozen(get, never):Bool;
 
 	public var _effect:Effect;
 	public var _wasPreviouslyReady:Bool = false;
@@ -274,16 +298,7 @@ import com.babylonhx.tools.EventState;
 	}
 	
 	public function serialize():Dynamic {
-		var serializationObject:Dynamic = { };
-		
-		serializationObject.name = this.name;
-		serializationObject.alpha = this.alpha;
-		
-		serializationObject.id = this.id;
-		serializationObject.tags = Tags.GetTags(this);
-		serializationObject.backFaceCulling = this.backFaceCulling;
-		
-		return serializationObject;
+		return SerializationHelper.Serialize(Material, this);
 	}
 	
 	public static function ParseMultiMaterial(parsedMultiMaterial:Dynamic, scene:Scene):MultiMaterial {

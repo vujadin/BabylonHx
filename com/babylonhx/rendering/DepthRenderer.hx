@@ -106,14 +106,17 @@ import com.babylonhx.tools.EventState;
 	}
 
 	public function isReady(subMesh:SubMesh, useInstances:Bool):Bool {
+		var material:Material = subMesh.getMaterial();
+		if (material.disableDepthWrite) {
+			return false;
+		}
+		
 		var defines:Array<String> = [];
 		
-		var attribs:Array<String> = [VertexBuffer.PositionKind];
+		var attribs = [VertexBuffer.PositionKind];
 		
-		var mesh:Mesh = cast subMesh.getMesh();
-		
-		var scene:Scene = mesh.getScene();
-		var material:Material = subMesh.getMaterial();
+		var mesh = subMesh.getMesh();
+		var scene = mesh.getScene();
 		
 		// Alpha test
 		if (material != null && material.needAlphaTesting()) {
