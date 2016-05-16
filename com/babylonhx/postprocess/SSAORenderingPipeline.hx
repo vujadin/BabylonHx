@@ -9,6 +9,7 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.postprocess.renderpipeline.PostProcessRenderEffect;
 import com.babylonhx.postprocess.renderpipeline.PostProcessRenderPipeline;
 import com.babylonhx.materials.textures.RenderTargetTexture;
+import com.babylonhx.tools.EventState;
 
 
 /**
@@ -200,8 +201,8 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 			ratio, null, Texture.BILINEAR_SAMPLINGMODE,
 			this._scene.getEngine(), false,
 			"#define SAMPLES " + numSamples);
-												
-		this._ssaoPostProcess.onApply = function(effect:Effect) {
+			
+		this._ssaoPostProcess.onApply = function(effect:Effect, es:EventState = null) {
 			if (this._firstUpdate) {
 				effect.setArray3("sampleSphere", sampleSphere);
 				effect.setFloat("samplesFactor", samplesFactor);
@@ -227,7 +228,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 													   ratio, null, Texture.BILINEAR_SAMPLINGMODE,
 													   this._scene.getEngine(), false);
 													   
-		this._ssaoCombinePostProcess.onApply = function(effect:Effect) {
+		this._ssaoCombinePostProcess.onApply = function(effect:Effect, es:EventState = null) {
 			effect.setTextureFromPostProcess("originalColor", this._originalColorPostProcess);
 		};
 		

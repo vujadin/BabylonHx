@@ -18,6 +18,7 @@ import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.tools.SmartArray;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -120,7 +121,7 @@ import com.babylonhx.tools.SmartArray;
 		// Configure
 		this._createPass(scene, Reflect.hasField(ratio, "passRatio") ? ratio.passRatio : ratio);
 		
-		this.onActivate = function(camera:Camera) {
+		this.onActivate = function(camera:Camera, es:EventState = null) {
             if (!this.isSupported) {
                 this.dispose(camera);
             }
@@ -128,7 +129,7 @@ import com.babylonhx.tools.SmartArray;
             this.onActivate = null;
         };
 		
-		this.onApplyObservable.add(function(effect:Effect) {
+		this.onApplyObservable.add(function(effect:Effect, es:EventState = null) {
 			this._updateMeshScreenCoordinates(scene);
 			
 			effect.setTexture("lightScatteringSampler", this._volumetricLightScatteringRTT);
@@ -327,12 +328,12 @@ import com.babylonhx.tools.SmartArray;
 		var savedSceneClearColor:Color3 = new Color3(0.0, 0.0, 0.0);
 		var sceneClearColor:Color3 = new Color3(0.0, 0.0, 0.0);
 		
-		this._volumetricLightScatteringRTT.onBeforeRenderObservable.add(function(i:Int) {
+		this._volumetricLightScatteringRTT.onBeforeRenderObservable.add(function(i:Int, es:EventState = null) {
 			savedSceneClearColor = scene.clearColor;
 			scene.clearColor = sceneClearColor;
 		});
 		
-		this._volumetricLightScatteringRTT.onAfterRenderObservable.add(function(i:Int) {
+		this._volumetricLightScatteringRTT.onAfterRenderObservable.add(function(i:Int, es:EventState = null) {
 			scene.clearColor = savedSceneClearColor;
 		});
 		
