@@ -8,6 +8,7 @@ import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.tools.Tags;
+import com.babylonhx.tools.serialization.SerializationHelper;
 
 /**
  * ...
@@ -277,19 +278,7 @@ class SkyMaterial extends Material {
 	}
 	
 	override public function serialize():Dynamic {		
-		var serializationObject = super.serialize();
-		serializationObject.customType = "SkyMaterial";
-		
-		serializationObject.luminance = this.luminance;
-		serializationObject.turbidity = this.turbidity;
-		serializationObject.rayleigh = this.rayleigh;
-		serializationObject.mieCoefficient = this.mieCoefficient;
-		serializationObject.mieDirectionalG = this.mieDirectionalG;
-		serializationObject.distance = this.distance;
-		serializationObject.inclination = this.inclination;
-		serializationObject.azimuth = this.azimuth;
-		
-		return serializationObject;
+		return SerializationHelper.Serialize(SkyMaterial, this, super.serialize());
 	}
 
 	public static function Parse(source:Dynamic, scene:Scene, rootUrl:String):SkyMaterial {

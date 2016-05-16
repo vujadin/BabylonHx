@@ -26,6 +26,7 @@ import com.babylonhx.lights.HemisphericLight;
 import com.babylonhx.lights.PointLight;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.tools.Tags;
+import com.babylonhx.tools.serialization.SerializationHelper;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.math.Tools in MathTools;
 
@@ -1370,11 +1371,7 @@ class PBRMaterial extends Material {
 	}
 
 	override public function serialize():Dynamic {
-		// TODO
-		/*var serializationObject = SerializationHelper.Serialize(this);
-		serializationObject.customType = "BABYLON.PBRMaterial";
-		return serializationObject;*/
-		return null;
+		return SerializationHelper.Serialize(PBRMaterial, this, super.serialize());
 	}
 
 	// Statics

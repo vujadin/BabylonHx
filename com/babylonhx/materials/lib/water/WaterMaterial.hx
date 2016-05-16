@@ -572,12 +572,7 @@ class WaterMaterial extends Material {
 	}
 
 	override public function serialize():Dynamic {
-		/*var serializationObject = SerializationHelper.Serialize(this);
-		serializationObject.customType = "BABYLON.WaterMaterial";
-		serializationObject.reflectionTexture.isRenderTarget = true;
-		serializationObject.refractionTexture.isRenderTarget = true;
-		return serializationObject;*/
-		return null;
+		return SerializationHelper.Serialize(WaterMaterial, this, super.serialize());
 	}
 
 	// Statics

@@ -19,6 +19,7 @@ import com.babylonhx.lights.HemisphericLight;
 import com.babylonhx.lights.PointLight;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.tools.Tags;
+import com.babylonhx.tools.serialization.SerializationHelper;
 import com.babylonhx.animations.IAnimatable;
 
 /**
@@ -42,61 +43,122 @@ typedef SMD = StandardMaterialDefines
 	public static var LightmapTextureEnabled:Bool = true;
 	public static var RefractionTextureEnabled:Bool = true;
 	
+	@serializeAsTexture()
 	public var diffuseTexture:BaseTexture = null;
+	
+	@serializeAsTexture()
 	public var ambientTexture:BaseTexture = null;
+	
+	@serializeAsTexture()
 	public var opacityTexture:BaseTexture = null;
+	
+	@serializeAsTexture()
 	public var reflectionTexture:BaseTexture = null;
+	
+	@serializeAsTexture()
 	public var emissiveTexture:BaseTexture = null;
+	
+	@serializeAsTexture()
 	public var specularTexture:BaseTexture = null;
+	
+	@serializeAsTexture()
 	public var bumpTexture:BaseTexture = null;
+	
+	@serializeAsTexture()
 	public var lightmapTexture:BaseTexture = null;
+	
+	@serializeAsTexture()
 	public var refractionTexture:BaseTexture = null;
 
+	@serializeAsColor3("ambient")
 	public var ambientColor:Color3 = new Color3(0, 0, 0);
+	
+	@serializeAsColor3("diffuse")
 	public var diffuseColor:Color3 = new Color3(1, 1, 1);
+	
+	@serializeAsColor3("specular")
 	public var specularColor:Color3 = new Color3(1, 1, 1);
-	public var specularPower:Float = 64;
+	
+	@serializeAsColor3("emissive")
 	public var emissiveColor:Color3 = new Color3(0, 0, 0);
+	
+	@serialize()
+	public var specularPower:Float = 64;
+	
+	@serialize()
 	public var useAlphaFromDiffuseTexture:Bool = false;
+	
+	@serialize()
 	public var useEmissiveAsIllumination:Bool = false;
+	
+	@serialize()
 	public var linkEmissiveWithDiffuse:Bool = false;
+	
+	@serialize()
 	public var useReflectionFresnelFromSpecular:Bool = false;
-	public var useSpecularOverAlpha:Bool = false;	
+	
+	@serialize()
+	public var useSpecularOverAlpha:Bool = false;
+	
+	@serialize()
 	public var useReflectionOverAlpha:Bool = false;
 	
+	@serialize()	
 	public var disableLighting:Bool = false;
 	
+	@serialize()
 	public var useParallax:Bool = false;
+	
+	@serialize()
 	public var useParallaxOcclusion:Bool = false;
+	
+	@serialize()
 	public var parallaxScaleBias:Float = 0.05;
 	
+	@serialize()
 	public var roughness:Float = 0;
 	
+	@serialize()
 	public var indexOfRefraction:Float = 0.98;
+	
+	@serialize()
 	public var invertRefractionY:Bool = true;
 	
+	@serialize()
 	public var useLightmapAsShadowmap:Bool = false;
 
+	@serializeAsFresnelParameters()
 	public var diffuseFresnelParameters:FresnelParameters;
+	
+	@serializeAsFresnelParameters()
 	public var opacityFresnelParameters:FresnelParameters;
+	
+	@serializeAsFresnelParameters()
 	public var reflectionFresnelParameters:FresnelParameters;
+	
+	@serializeAsFresnelParameters()
 	public var refractionFresnelParameters:FresnelParameters;
+	
+	@serializeAsFresnelParameters()
 	public var emissiveFresnelParameters:FresnelParameters;
 	
+	@serialize()
 	public var useGlossinessFromSpecularMapAlpha:Bool = false;
 	
+	@serialize()
 	public var maxSimultaneousLights:Int = 4;
 
 	private var _renderTargets:SmartArray<RenderTargetTexture> = new SmartArray<RenderTargetTexture>(16);
 	private var _worldViewProjectionMatrix:Matrix = Matrix.Zero();
 	private var _globalAmbientColor:Color3 = new Color3(0, 0, 0);
 	private var _renderId:Int = 0;
-		
+	
 	private var _defines:StandardMaterialDefines = new StandardMaterialDefines();
 	private var _cachedDefines:StandardMaterialDefines = new StandardMaterialDefines();
 	
-	private var _useLogarithmicDepth:Bool;
+	@serialize()
 	public var useLogarithmicDepth(get, set):Bool;
+	private var _useLogarithmicDepth:Bool = false;
 	
 
 	public function new(name:String, scene:Scene) {
@@ -903,74 +965,7 @@ typedef SMD = StandardMaterialDefines
 	}
 	
 	override public function serialize():Dynamic {
-		var serializationObject = super.serialize();
-		
-		serializationObject.ambient = this.ambientColor.asArray();
-		serializationObject.diffuse = this.diffuseColor.asArray();
-		serializationObject.specular = this.specularColor.asArray();
-		serializationObject.specularPower = this.specularPower;
-		serializationObject.emissive = this.emissiveColor.asArray();
-		serializationObject.useReflectionFresnelFromSpecular = this.useReflectionFresnelFromSpecular;
-        serializationObject.useEmissiveAsIllumination = this.useEmissiveAsIllumination;
-        serializationObject.indexOfRefraction = this.indexOfRefraction;
-        serializationObject.invertRefractionY = this.invertRefractionY;
-		serializationObject.useSpecularOverAlpha = this.useSpecularOverAlpha;
-		serializationObject.useReflectionOverAlpha = this.useReflectionOverAlpha;
-		
-		if (this.diffuseTexture != null) {
-			serializationObject.diffuseTexture = this.diffuseTexture.serialize();
-		}
-		
-		if (this.diffuseFresnelParameters != null) {
-			serializationObject.diffuseFresnelParameters = this.diffuseFresnelParameters.serialize();
-		}
-		
-		if (this.ambientTexture != null) {
-			serializationObject.ambientTexture = this.ambientTexture.serialize();
-		}
-		
-		if (this.opacityTexture != null) {
-			serializationObject.opacityTexture = this.opacityTexture.serialize();
-		}
-		
-		if (this.opacityFresnelParameters != null) {
-			serializationObject.opacityFresnelParameters = this.diffuseFresnelParameters.serialize();
-		}
-		
-		if (this.reflectionTexture != null) {
-			serializationObject.reflectionTexture = this.reflectionTexture.serialize();
-		}
-		
-		if (this.reflectionFresnelParameters != null) {
-			serializationObject.reflectionFresnelParameters = this.reflectionFresnelParameters.serialize();
-		}
-		
-		if (this.emissiveTexture != null) {
-			serializationObject.emissiveTexture = this.emissiveTexture.serialize();
-		}
-		
-		if (this.lightmapTexture != null) {
-			serializationObject.lightmapTexture = this.lightmapTexture.serialize();
-			serializationObject.useLightmapAsShadowmap = this.useLightmapAsShadowmap;
-		}
-		
-		if (this.emissiveFresnelParameters != null) {
-			serializationObject.emissiveFresnelParameters = this.emissiveFresnelParameters.serialize();
-		}
-		
-		if (this.specularTexture != null) {
-			serializationObject.specularTexture = this.specularTexture.serialize();
-		}
-		
-		if (this.bumpTexture != null) {
-			serializationObject.bumpTexture = this.bumpTexture.serialize();
-		}
-		
-		if (this.refractionTexture != null) {
-			serializationObject.refractionTexture = this.refractionTexture.serialize();
-		}
-		
-		return serializationObject;
+		return SerializationHelper.Serialize(StandardMaterial, this, super.serialize());
 	}
 	
 	

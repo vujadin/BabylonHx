@@ -24,6 +24,7 @@ import com.babylonhx.lights.PointLight;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.animations.IAnimatable;
+import com.babylonhx.tools.serialization.SerializationHelper;
 
 /**
  * ...
@@ -466,29 +467,7 @@ class FurMaterial extends Material {
 	}
 	
 	override public function serialize():Dynamic {		
-		var serializationObject = super.serialize();
-		serializationObject.customType      = "BABYLON.FurMaterial";
-		serializationObject.diffuseColor    = this.diffuseColor.asArray();
-		serializationObject.disableLighting = this.disableLighting;
-		
-		serializationObject.furLength = this.furLength;
-		serializationObject.furAngle  = this.furAngle;
-		serializationObject.furColor  = this.furColor.asArray();
-		
-		serializationObject.furGravity = this.furGravity.asArray();
-		serializationObject.furSpacing = this.furSpacing;
-		serializationObject.furSpeed   = this.furSpeed;
-		serializationObject.furDensity = this.furDensity;
-		
-		if (this.diffuseTexture != null) {
-			serializationObject.diffuseTexture = this.diffuseTexture.serialize();
-		}
-		
-		if (this.heightTexture != null) {
-			serializationObject.heightTexture = this.heightTexture.serialize();
-		}
-		
-		return serializationObject;
+		return SerializationHelper.Serialize(FurMaterial, this, super.serialize());
 	}
 
 	public static function Parse(source:Dynamic, scene:Scene, rootUrl:String):FurMaterial {

@@ -10,6 +10,7 @@ import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.animations.IAnimatable;
+import com.babylonhx.tools.serialization.SerializationHelper;
 
 
 /**
@@ -381,10 +382,7 @@ class TriPlanarMaterial extends Material {
 	}
 
 	override public function serialize():Dynamic {
-		/*var serializationObject = SerializationHelper.Serialize(this);
-		serializationObject.customType = "BABYLON.TriPlanarMaterial";
-		return serializationObject;*/
-		return null;
+		return SerializationHelper.Serialize(TriPlanarMaterial, this, super.serialize());
 	}
 
 	// Statics
