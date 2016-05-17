@@ -366,6 +366,7 @@ import com.babylonhx.Scene;
 		}
 		
 		this._currentRenderID = scene.getRenderId();
+		this._currentFaceIndexCache = this._currentFaceIndex;
 		
 		var lightPosition = this._light.position;
 		Vector3.NormalizeToRef(this._light.getShadowDirection(this._currentFaceIndex), this._lightDirection);

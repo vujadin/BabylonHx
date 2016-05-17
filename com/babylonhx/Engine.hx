@@ -528,10 +528,13 @@ import nme.display.OpenGLView;
 		GL.viewport(Std.int(x * width), Std.int(y * height), Std.int(width * viewport.width), Std.int(height * viewport.height));
 	}
 
-	inline public function setDirectViewport(x:Int, y:Int, width:Int, height:Int) {
+	inline public function setDirectViewport(x:Int, y:Int, width:Int, height:Int):Viewport {
+		var currentViewport = this._cachedViewport;
 		this._cachedViewport = null;
 		
 		GL.viewport(x, y, width, height);
+		
+		return currentViewport;
 	}
 
 	inline public function beginFrame() {

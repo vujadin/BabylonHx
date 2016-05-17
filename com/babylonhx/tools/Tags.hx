@@ -12,7 +12,7 @@ package com.babylonhx.tools;
 	public static function EnableFor(obj:Dynamic) {
 		obj._tags = obj._tags != null ? obj._tags : {};
 
-		obj.hasTags = function():Dynamic {
+		obj.hasTags = function():Bool {
 			return Tags.HasTags(obj);
 		};
 
@@ -67,19 +67,19 @@ package com.babylonhx.tools;
 
 	public static function _AddTagTo(obj:Dynamic, tag:String) {
 		tag = StringTools.trim(tag);
-
+		
 		if (tag == "" || tag == "true" || tag == "false") {
 			return;
 		}
-
+		
 		var regex = ~/[\s]/;
 		var regex2 = ~/^([!]|([|]|[&]){2})/;
 		if(regex.match(tag) || regex2.match(tag)) {
 			return;
 		}
-
+		
 		Tags.EnableFor(obj);
-		//obj._tags[tag] = true;
+		Reflect.setProperty(obj._tags, tag, true);
 	}
 
 	public static function RemoveTagsFrom(obj:Dynamic, tagsString:String) {
