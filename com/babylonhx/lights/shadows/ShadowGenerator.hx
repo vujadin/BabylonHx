@@ -168,7 +168,7 @@ import com.babylonhx.Scene;
 			this._currentFaceIndex = faceIndex;
 		});
 		
-		this._shadowMap.onBeforeRenderObservable.add(function(faceIndex:Int, eventState:EventState = null) {
+		this._shadowMap.onAfterUnbindObservable.add(function(rtt:RenderTargetTexture, eventState:EventState = null) {
 			if (!this.useBlurVarianceShadowMap) {
 				return;
 			}

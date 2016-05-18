@@ -10,7 +10,7 @@ class Observer<T> {
 	public var mask:Int;
 	
 
-	public function new(callback:T->Null<EventState>->Void, mask:Int) {
+	inline public function new(callback:T->Null<EventState>->Void, mask:Int) {
 		this.callback = callback;
 		this.mask = mask;
 	}

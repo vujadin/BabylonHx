@@ -318,7 +318,7 @@ import com.babylonhx.tools.EventState;
 			
 			i += 4;
 		}
-			
+		
 		this._grainTexture.update(false);
 	}
 

@@ -16,7 +16,7 @@ class EventState {
 	public var skipNextObservers:Bool;
 	
 	
-	public function new() {
+	inline public function new() {
 		this.skipNextObservers = false;
 	}
 	

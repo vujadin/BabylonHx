@@ -132,7 +132,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	private var _worldMatricesInstancesBuffer:WebGLBuffer;
 	private var _worldMatricesInstancesArray: #if (js || purejs) Float32Array #else Array<Float> #end;
 	private var _instancesBufferSize:Int = 32 * 16 * 4; // let's start with a maximum of 32 instances
-	public var _shouldGenerateFlatShading:Bool;
+	public var _shouldGenerateFlatShading:Bool = false;
 	private var _preActivateId:Int = -1;
 	private var _sideOrientation:Int = Mesh.DEFAULTSIDE;
 	public var sideOrientation(get, set):Int;
@@ -143,6 +143,15 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
     private var _sourceNormals:Array<Float>; 	// Will be used to save original normals when using software skinning
 	
 	public var cap:Int = Mesh.NO_CAP;
+	
+	@:noCompletion
+	public var _tags:String;
+	@:noCompletion
+	public var hasTags:Void->Bool;
+	@:noCompletion
+	public var addTags:String->Void;
+	@:noCompletion
+	public var removeTags:String->Void;
 	
 	// exposing physics...
 	public var rigidBody:Dynamic;

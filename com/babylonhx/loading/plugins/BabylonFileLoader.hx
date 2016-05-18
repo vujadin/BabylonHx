@@ -94,6 +94,9 @@ import com.babylonhx.utils.typedarray.Int32Array;
             var hierarchyIds:Array<Int> = [];
 			
 			var pdm:Array<Dynamic> = cast parsedData.meshes;
+			if (Std.string(pdm[0]).indexOf(".ctm") == -1) {
+				// VK TODO
+			}
             for (index in 0...pdm.length) {
                 var parsedMesh = pdm[index];
 				
@@ -148,6 +151,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
                                     }
                                 }
                             }
+							
                             if (!found) {
 								trace("Geometry not found for mesh " + parsedMesh.id);
                             }
@@ -184,7 +188,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
                             parseMaterialById(cast parsedMesh.materialId, parsedData, scene, rootUrl);
                         }
                     }
-						
+					
                     // Skeleton ?
                     if (parsedMesh.skeletonId > -1 && scene.skeletons != null) {
                         var skeletonAlreadyLoaded = (loadedSkeletonsIds.indexOf(parsedMesh.skeletonId) > -1);
@@ -248,7 +252,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
             // and avoid problems with multiple concurrent .babylon loads.
             var log:String = "importScene has failed JSON parse";
             try {
-				var parsedData = Json.parse(data);
+				var parsedData:Dynamic = Json.parse(data);
                 log = "";
                 var fullDetails:Bool = true;
                 
@@ -262,8 +266,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
                 }
                 
                 // Fog
-                if (parsedData.fogMode != 0) {
-                    scene.fogMode = parsedData.fogMode;
+                if (parsedData.fogMode != null && parsedData.fogColor != null) {
+                    scene.fogMode = Std.int(parsedData.fogMode);
                     scene.fogColor = Color3.FromArray(parsedData.fogColor);
                     scene.fogStart = parsedData.fogStart;
                     scene.fogEnd = parsedData.fogEnd;

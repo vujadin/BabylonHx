@@ -655,8 +655,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 					var subMesh = new SubMesh(materialIndex, verticesStart, verticesCount, indexStart, indexCount, mesh);
 				}
 			}
-		} 
-		else*/ if (parsedGeometry.positions != null && parsedGeometry.normals != null && parsedGeometry.indices != null) {
+		} */
+		else if (parsedGeometry.positions != null && parsedGeometry.normals != null && parsedGeometry.indices != null) {
 			mesh.setVerticesData(VertexBuffer.PositionKind, parsedGeometry.positions, false);
 			mesh.setVerticesData(VertexBuffer.NormalKind, parsedGeometry.normals, false);
 			

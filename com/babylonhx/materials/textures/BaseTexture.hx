@@ -49,6 +49,8 @@ import com.babylonhx.utils.GL;
 	}
 	
 	public var __smartArrayFlags:Array<Int> = [];
+	
+	public var __serializableMembers:Dynamic;
 
 	private var _scene:Scene;
 	public var _texture:WebGLTexture;

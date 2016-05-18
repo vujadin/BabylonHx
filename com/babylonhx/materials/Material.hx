@@ -143,6 +143,8 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	
 	public var __smartArrayFlags:Array<Int> = [];
 	
+	public var __serializableMembers:Dynamic;
+	
 
 	public function new(name:String, scene:Scene, doNotAdd:Bool = false) {
 		this.id = name;

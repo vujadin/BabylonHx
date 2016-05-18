@@ -2483,7 +2483,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	}
 	
 	public static function ImportVertexData(parsedVertexData:Dynamic, geometry:Geometry) {
-		var vertexData:VertexData = new VertexData();
+		var vertexData = new VertexData();
 		
 		// positions
 		var positions = parsedVertexData.positions;

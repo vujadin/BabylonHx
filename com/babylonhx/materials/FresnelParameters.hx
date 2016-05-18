@@ -15,6 +15,7 @@ import com.babylonhx.math.Color3;
 	public var bias:Float = 0;
 	public var power:Float = 1;
 	
+	
 	public function new() {
 		
 	}
