@@ -130,8 +130,8 @@ class SolidParticleSystem implements IDisposable {
 	private var _sinYaw:Float = 0.0;
 	private var _cosYaw:Float = 0.0;
 	private var _w:Float = 0.0;
-	private var _minimum:Vector3 = Tmp.Vector3[0];
-    private var _maximum:Vector3 = Tmp.Vector3[1];
+	private var _minimum:Vector3 = Tmp.vector3[0];
+    private var _maximum:Vector3 = Tmp.vector3[1];
 	
 	public var isAlwaysVisible(get, set):Bool;
 	
@@ -196,7 +196,7 @@ class SolidParticleSystem implements IDisposable {
 			vertexData.set(this._colors, VertexBuffer.ColorKind);
 		}
 		var mesh = new Mesh(name, this._scene);
-		vertexData.applyToMesh(mesh, updatable);
+		vertexData.applyToMesh(mesh, this._updatable);
 		this.mesh = mesh;
 		this.mesh.isPickable = this._pickable;
 		
@@ -247,12 +247,12 @@ class SolidParticleSystem implements IDisposable {
 		var facetInd:Array<Int> = [];        // submesh indices
 		var facetUV:Array<Float> = [];       // submesh UV
 		var facetCol:Array<Float> = [];      // submesh colors
-		var barycenter:Vector3 = Tmp.Vector3[0];
+		var barycenter:Vector3 = Tmp.vector3[0];
 		var rand:Int = 0;
 		var size0:Int = size;
 		
 		while (f < totalFacets) {
-			size = sizeO + Math.floor((1 + delta) * Math.random());
+			size = size0 + Math.floor((1 + delta) * Math.random());
 			if (f > totalFacets - size) {
 				size = totalFacets - f;
 			}
@@ -750,7 +750,7 @@ class SolidParticleSystem implements IDisposable {
 		
 		if (this._computeBoundingBox) {
 			this.mesh._boundingInfo = new BoundingInfo(this._minimum, this._maximum);
-			this.mesh._boundingInfo.update(this.mesh._worldMatrix);
+			this.mesh._boundingInfo._update(this.mesh._worldMatrix);
 		}
 		
 		this.afterUpdateParticles(start, end, update);

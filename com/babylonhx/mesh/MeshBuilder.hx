@@ -183,7 +183,7 @@ typedef LatheOptions = {
  
 class MeshBuilder {
 	
-	public static function CreateBox(name:String, options:Dynamic, scene:Scene):Mesh {
+	public static function CreateBox(name:String, options:BoxOptions, scene:Scene):Mesh {
 		var box = new Mesh(name, scene);
 		var vertexData = VertexData.CreateBox(options);
 		

@@ -147,6 +147,12 @@ typedef SMD = StandardMaterialDefines
 	
 	@serialize()
 	public var maxSimultaneousLights:Int = 4;
+	
+	/**
+     * If sets to true, normal map will be considered following OpenGL convention.
+     */
+    @serialize()
+    public var useOpenGLNormalMap:Bool = false;
 
 	private var _renderTargets:SmartArray<RenderTargetTexture> = new SmartArray<RenderTargetTexture>(16);
 	private var _worldViewProjectionMatrix:Matrix = Matrix.Zero();
@@ -159,6 +165,8 @@ typedef SMD = StandardMaterialDefines
 	@serialize()
 	public var useLogarithmicDepth(get, set):Bool;
 	private var _useLogarithmicDepth:Bool = false;
+	
+	private var defs:Map<String, Bool>;
 	
 
 	public function new(name:String, scene:Scene) {
@@ -179,6 +187,8 @@ typedef SMD = StandardMaterialDefines
 			
 			return this._renderTargets;
 		}
+		
+		this.defs = this._defines.defines;
 	}
 	
 	private function get_useLogarithmicDepth():Bool {
@@ -212,7 +222,7 @@ typedef SMD = StandardMaterialDefines
 			return true;
 		}
 		
-		if (this._defines.defines["INSTANCES"] != useInstances) {
+		if (this.defs["INSTANCES"] != useInstances) {
 			return false;
 		}
 		
@@ -254,7 +264,7 @@ typedef SMD = StandardMaterialDefines
 				} 
 				else {
 					needUVs = true;
-					this._defines.defines["DIFFUSE"] = true;
+					this.defs["DIFFUSE"] = true;
 				}
 			}
 			
@@ -264,7 +274,7 @@ typedef SMD = StandardMaterialDefines
 				} 
 				else {
 					needUVs = true;
-					this._defines.defines["AMBIENT"] = true;
+					this.defs["AMBIENT"] = true;
 				}
 			}
 			
@@ -274,10 +284,10 @@ typedef SMD = StandardMaterialDefines
 				} 
 				else {
 					needUVs = true;
-					this._defines.defines["OPACITY"] = true;
+					this.defs["OPACITY"] = true;
 					
 					if (this.opacityTexture.getAlphaFromRGB) {
-						this._defines.defines["OPACITYRGB"] = true;
+						this.defs["OPACITYRGB"] = true;
 					}
 				}
 			}
@@ -288,46 +298,46 @@ typedef SMD = StandardMaterialDefines
 				} 
 				else {
 					needNormals = true;
-					this._defines.defines["REFLECTION"] = true;
+					this.defs["REFLECTION"] = true;
 					
 					if (this.roughness > 0) {
-						this._defines.defines["ROUGHNESS"] = true;
+						this.defs["ROUGHNESS"] = true;
 					}
 					
 					if (this.useReflectionOverAlpha) {
-						this._defines.defines["REFLECTIONOVERALPHA"] = true;
+						this.defs["REFLECTIONOVERALPHA"] = true;
 					}
 					
 					if (this.reflectionTexture.coordinatesMode == Texture.INVCUBIC_MODE) {
-						this._defines.defines["INVERTCUBICMAP"] = true;
+						this.defs["INVERTCUBICMAP"] = true;
 					}
 					
-					this._defines.defines["REFLECTIONMAP_3D"] = this.reflectionTexture.isCube;
+					this.defs["REFLECTIONMAP_3D"] = this.reflectionTexture.isCube;
 					
 					switch (this.reflectionTexture.coordinatesMode) {
 						case Texture.CUBIC_MODE, Texture.INVCUBIC_MODE:
-							this._defines.defines["REFLECTIONMAP_CUBIC"] = true;
+							this.defs["REFLECTIONMAP_CUBIC"] = true;
 							
 						case Texture.EXPLICIT_MODE:
-							this._defines.defines["REFLECTIONMAP_EXPLICIT"] = true;
+							this.defs["REFLECTIONMAP_EXPLICIT"] = true;
 							
 						case Texture.PLANAR_MODE:
-							this._defines.defines["REFLECTIONMAP_PLANAR"] = true;
+							this.defs["REFLECTIONMAP_PLANAR"] = true;
 							
 						case Texture.PROJECTION_MODE:
-							this._defines.defines["REFLECTIONMAP_PROJECTION"] = true;
+							this.defs["REFLECTIONMAP_PROJECTION"] = true;
 							
 						case Texture.SKYBOX_MODE:
-							this._defines.defines["REFLECTIONMAP_SKYBOX"] = true;
+							this.defs["REFLECTIONMAP_SKYBOX"] = true;
 							
 						case Texture.SPHERICAL_MODE:
-							this._defines.defines["REFLECTIONMAP_SPHERICAL"] = true;
+							this.defs["REFLECTIONMAP_SPHERICAL"] = true;
 							
 						case Texture.EQUIRECTANGULAR_MODE:
-							this._defines.defines["REFLECTIONMAP_EQUIRECTANGULAR"] = true;	
+							this.defs["REFLECTIONMAP_EQUIRECTANGULAR"] = true;	
 							
 						case Texture.FIXED_EQUIRECTANGULAR_MODE:
-                            this._defines.defines["REFLECTIONMAP_EQUIRECTANGULAR_FIXED"] = true;
+                            this.defs["REFLECTIONMAP_EQUIRECTANGULAR_FIXED"] = true;
 					}
 				}
 			}
@@ -338,7 +348,7 @@ typedef SMD = StandardMaterialDefines
 				} 
 				else {
 					needUVs = true;
-					this._defines.defines["EMISSIVE"] = true;
+					this.defs["EMISSIVE"] = true;
 				}
 			}
 			
@@ -348,8 +358,8 @@ typedef SMD = StandardMaterialDefines
 				} 
 				else {
 					needUVs = true;
-					this._defines.defines["LIGHTMAP"] = true;
-					this._defines.defines["USELIGHTMAPASSHADOWMAP"] = this.useLightmapAsShadowmap;
+					this.defs["LIGHTMAP"] = true;
+					this.defs["USELIGHTMAPASSHADOWMAP"] = this.useLightmapAsShadowmap;
 				}
 			}
 			
@@ -359,8 +369,8 @@ typedef SMD = StandardMaterialDefines
 				} 
 				else {
 					needUVs = true;
-					this._defines.defines["SPECULAR"] = true;
-					this._defines.defines["GLOSSINESS"] = this.useGlossinessFromSpecularMapAlpha;
+					this.defs["SPECULAR"] = true;
+					this.defs["GLOSSINESS"] = this.useGlossinessFromSpecularMapAlpha;
 				}
 			}
 			
@@ -370,14 +380,18 @@ typedef SMD = StandardMaterialDefines
 				} 
 				else {
 					needUVs = true;
-					this._defines.defines["BUMP"] = true;
+					this.defs["BUMP"] = true;
 					
 					if (this.useParallax) {
-						this._defines.defines["PARALLAX"] = true;
+						this.defs["PARALLAX"] = true;
 						if (this.useParallaxOcclusion) {
-							this._defines.defines["PARALLAXOCCLUSION"] = true;
+							this.defs["PARALLAXOCCLUSION"] = true;
 						}
 					}
+					
+					if (this.useOpenGLNormalMap) {
+                        this.defs["OPENGLNORMALMAP"] = true;
+                    }
 				}
 			}
 			
@@ -387,46 +401,46 @@ typedef SMD = StandardMaterialDefines
 				} 
 				else {
 					needUVs = true;
-					this._defines.defines["REFRACTION"] = true;
+					this.defs["REFRACTION"] = true;
 					
-					this._defines.defines["REFRACTIONMAP_3D"] = this.refractionTexture.isCube;
+					this.defs["REFRACTIONMAP_3D"] = this.refractionTexture.isCube;
 				}
 			}
 		}		
 		
 		// Effect
 		if (scene.clipPlane != null) {
-			this._defines.defines["CLIPPLANE"] = true;
+			this.defs["CLIPPLANE"] = true;
 		}
 		
 		if (engine.getAlphaTesting()) {
-			this._defines.defines["ALPHATEST"] = true;
+			this.defs["ALPHATEST"] = true;
 		}
 		
 		if (this._shouldUseAlphaFromDiffuseTexture()) {
-			this._defines.defines["ALPHAFROMDIFFUSE"] = true;
+			this.defs["ALPHAFROMDIFFUSE"] = true;
 		}
 		
 		if (this.useEmissiveAsIllumination) {
-			this._defines.defines["EMISSIVEASILLUMINATION"] = true;
+			this.defs["EMISSIVEASILLUMINATION"] = true;
 		}
 		
 		if (this.linkEmissiveWithDiffuse) {
-			this._defines.defines["LINKEMISSIVEWITHDIFFUSE"] = true;
+			this.defs["LINKEMISSIVEWITHDIFFUSE"] = true;
 		}
 		
 		if (this.useLogarithmicDepth) {
-            this._defines.defines["LOGARITHMICDEPTH"] = true;
+            this.defs["LOGARITHMICDEPTH"] = true;
         }
 		
 		// Point size
 		if (this.pointsCloud || scene.forcePointsCloud) {
-			this._defines.defines["POINTSIZE"] = true;
+			this.defs["POINTSIZE"] = true;
 		}
 		
 		// Fog
 		if (scene.fogEnabled && mesh != null && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
-			this._defines.defines["FOG"] = true;
+			this.defs["FOG"] = true;
 		}
 		
 		if (scene.lightsEnabled && !this.disableLighting) {
@@ -436,62 +450,62 @@ typedef SMD = StandardMaterialDefines
 		if (StandardMaterial.FresnelEnabled) {
 			// Fresnel
 			if (this.diffuseFresnelParameters != null && this.diffuseFresnelParameters.isEnabled) {
-				this._defines.defines["DIFFUSEFRESNEL"] = true;
+				this.defs["DIFFUSEFRESNEL"] = true;
 			}
 			
 			if (this.opacityFresnelParameters != null && this.opacityFresnelParameters.isEnabled) {
-				this._defines.defines["OPACITYFRESNEL"] = true;
+				this.defs["OPACITYFRESNEL"] = true;
 			}
 			
 			if (this.reflectionFresnelParameters != null && this.reflectionFresnelParameters.isEnabled) {
-				this._defines.defines["REFLECTIONFRESNEL"] = true;
+				this.defs["REFLECTIONFRESNEL"] = true;
 				
 				if (this.useReflectionFresnelFromSpecular) {
-					this._defines.defines["REFLECTIONFRESNELFROMSPECULAR"] = true;
+					this.defs["REFLECTIONFRESNELFROMSPECULAR"] = true;
 				}
 			}
 			
 			if (this.refractionFresnelParameters != null && this.refractionFresnelParameters.isEnabled) {
-				this._defines.defines["REFRACTIONFRESNEL"] = true;
+				this.defs["REFRACTIONFRESNEL"] = true;
 			}
 			
 			if (this.emissiveFresnelParameters != null && this.emissiveFresnelParameters.isEnabled) {
-				this._defines.defines["EMISSIVEFRESNEL"] = true;
+				this.defs["EMISSIVEFRESNEL"] = true;
 			}
 			
-			if (this._defines.defines["DIFFUSEFRESNEL"] ||
-				this._defines.defines["OPACITYFRESNEL"] ||
-				this._defines.defines["REFLECTIONFRESNEL"] ||
-				this._defines.defines["EMISSIVEFRESNEL"] ||
-				this._defines.defines["REFRACTIONFRESNEL"]) {	
+			if (this.defs["DIFFUSEFRESNEL"] ||
+				this.defs["OPACITYFRESNEL"] ||
+				this.defs["REFLECTIONFRESNEL"] ||
+				this.defs["EMISSIVEFRESNEL"] ||
+				this.defs["REFRACTIONFRESNEL"]) {	
 				
 				needNormals = true;
-				this._defines.defines["FRESNEL"] = true;
+				this.defs["FRESNEL"] = true;
 			}
 		}
 		
-		if (this._defines.defines["SPECULARTERM"] && this.useSpecularOverAlpha) {
-			this._defines.defines["SPECULAROVERALPHA"] = true;
+		if (this.defs["SPECULARTERM"] && this.useSpecularOverAlpha) {
+			this.defs["SPECULAROVERALPHA"] = true;
 		}
 		
 		// Attribs
 		if (mesh != null) {
 			if (needNormals && mesh.isVerticesDataPresent(VertexBuffer.NormalKind)) {
-				this._defines.defines["NORMAL"] = true;
+				this.defs["NORMAL"] = true;
 			}
 			if (needUVs) {
 				if (mesh.isVerticesDataPresent(VertexBuffer.UVKind)) {
-					this._defines.defines["UV1"] = true;
+					this.defs["UV1"] = true;
 				}
 				if (mesh.isVerticesDataPresent(VertexBuffer.UV2Kind)) {
-					this._defines.defines["UV2"] = true;
+					this.defs["UV2"] = true;
 				}
 			}
 			if (mesh.useVertexColors && mesh.isVerticesDataPresent(VertexBuffer.ColorKind)) {
-				this._defines.defines["VERTEXCOLOR"] = true;
+				this.defs["VERTEXCOLOR"] = true;
 				
 				if (mesh.hasVertexAlpha) {
-					this._defines.defines["VERTEXALPHA"] = true;
+					this.defs["VERTEXALPHA"] = true;
 				}
 			}
 			if (mesh.useBones && mesh.computeBonesUsingShaders) {
@@ -501,7 +515,7 @@ typedef SMD = StandardMaterialDefines
 			
 			// Instances
 			if (useInstances) {
-				this._defines.defines["INSTANCES"] = true;
+				this.defs["INSTANCES"] = true;
 			}
 		}
 		
@@ -513,84 +527,84 @@ typedef SMD = StandardMaterialDefines
 			
 			// Fallbacks
 			var fallbacks = new EffectFallbacks();
-			if (this._defines.defines["REFLECTION"]) {
+			if (this.defs["REFLECTION"]) {
 				fallbacks.addFallback(0, "REFLECTION");
 			}
 			
-			if (this._defines.defines["SPECULAR"]) {
+			if (this.defs["SPECULAR"]) {
 				fallbacks.addFallback(0, "SPECULAR");
 			}
 			
-			if (this._defines.defines["BUMP"]) {
+			if (this.defs["BUMP"]) {
 				fallbacks.addFallback(0, "BUMP");
 			}
 			
-			if (this._defines.defines["PARALLAX"]) {
+			if (this.defs["PARALLAX"]) {
 				fallbacks.addFallback(1, "PARALLAX");
 			}
 			
-			if (this._defines.defines["PARALLAXOCCLUSION"]) {
+			if (this.defs["PARALLAXOCCLUSION"]) {
 				fallbacks.addFallback(0, "PARALLAXOCCLUSION");
 			}
 			
-			if (this._defines.defines["SPECULAROVERALPHA"]) {
+			if (this.defs["SPECULAROVERALPHA"]) {
 				fallbacks.addFallback(0, "SPECULAROVERALPHA");
 			}
 			
-			if (this._defines.defines["FOG"]) {
+			if (this.defs["FOG"]) {
 				fallbacks.addFallback(1, "FOG");
 			}
 			
-			if (this._defines.defines["POINTSIZE"]) {
+			if (this.defs["POINTSIZE"]) {
                 fallbacks.addFallback(0, "POINTSIZE");
             }
 			
-			if (this._defines.defines["LOGARITHMICDEPTH"]) {
+			if (this.defs["LOGARITHMICDEPTH"]) {
                 fallbacks.addFallback(0, "LOGARITHMICDEPTH");
             }
 			
 			MaterialHelper.HandleFallbacksForShadows(this._defines, fallbacks, this.maxSimultaneousLights);
 			
-			if (this._defines.defines["SPECULARTERM"]) {
+			if (this.defs["SPECULARTERM"]) {
 				fallbacks.addFallback(0, "SPECULARTERM");
 			}
 			
-			if (this._defines.defines["DIFFUSEFRESNEL"]) {
+			if (this.defs["DIFFUSEFRESNEL"]) {
 				fallbacks.addFallback(1, "DIFFUSEFRESNEL");
 			}
 			
-			if (this._defines.defines["OPACITYFRESNEL"]) {
+			if (this.defs["OPACITYFRESNEL"]) {
 				fallbacks.addFallback(2, "OPACITYFRESNEL");
 			}
 			
-			if (this._defines.defines["REFLECTIONFRESNEL"]) {
+			if (this.defs["REFLECTIONFRESNEL"]) {
 				fallbacks.addFallback(3, "REFLECTIONFRESNEL");
 			}
 			
-			if (this._defines.defines["EMISSIVEFRESNEL"]) {
+			if (this.defs["EMISSIVEFRESNEL"]) {
 				fallbacks.addFallback(4, "EMISSIVEFRESNEL");
 			}
 			
-			if (this._defines.defines["FRESNEL"]) {
+			if (this.defs["FRESNEL"]) {
 				fallbacks.addFallback(4, "FRESNEL");
 			}
 			
 			//Attributes
 			var attribs:Array<String> = [VertexBuffer.PositionKind];
 			
-			if (this._defines.defines["NORMAL"]) {
+			if (this.defs["NORMAL"]) {
 				attribs.push(VertexBuffer.NormalKind);
 			}
 			
-			if (this._defines.defines["UV1"]) {
+			if (this.defs["UV1"]) {
 				attribs.push(VertexBuffer.UVKind);
 			}
 			
-			if (this._defines.defines["UV2"]) {
+			if (this.defs["UV2"]) {
 				attribs.push(VertexBuffer.UV2Kind);
 			}
 			
-			if (this._defines.defines["VERTEXCOLOR"]) {
+			if (this.defs["VERTEXCOLOR"]) {
 				attribs.push(VertexBuffer.ColorKind);
 			}
 			
@@ -788,7 +802,7 @@ typedef SMD = StandardMaterialDefines
 			this._effect.setVector3("vEyePosition", scene._mirroredCameraPosition != null ? scene._mirroredCameraPosition : scene.activeCamera.position);
 			this._effect.setColor3("vAmbientColor", this._globalAmbientColor);
 			
-			if (this._defines.defines["SPECULARTERM"]) {
+			if (this.defs["SPECULARTERM"]) {
 				this._effect.setColor4("vSpecularColor", this.specularColor, this.specularPower);
 			}
 			this._effect.setColor3("vEmissiveColor", this.emissiveColor);

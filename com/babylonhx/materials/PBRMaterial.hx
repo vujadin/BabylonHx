@@ -35,16 +35,9 @@ import com.babylonhx.math.Tools in MathTools;
  * ...
  * @author Krtolica Vujadin
  */
-
-typedef PBRM = PBRMaterialDefines
  
 class PBRMaterial extends Material {
 	
-	public static var fragmentShader:String = "#ifdef BUMP\n#extension GL_OES_standard_derivatives : enable\n#endif\n#ifdef LODBASEDMICROSFURACE\n#extension GL_EXT_shader_texture_lod : enable\n#endif\n#ifdef LOGARITHMICDEPTH\n#extension GL_EXT_frag_depth : enable\n#endif\nprecision highp float;\nuniform vec3 vEyePosition;\nuniform vec3 vAmbientColor;\nuniform vec3 vReflectionColor;\nuniform vec4 vAlbedoColor;\n\nuniform vec4 vLightingIntensity;\nuniform vec4 vCameraInfos;\n#ifdef OVERLOADEDVALUES\nuniform vec4 vOverloadedIntensity;\nuniform vec3 vOverloadedAmbient;\nuniform vec3 vOverloadedAlbedo;\nuniform vec3 vOverloadedReflectivity;\nuniform vec3 vOverloadedEmissive;\nuniform vec3 vOverloadedReflection;\nuniform vec3 vOverloadedMicroSurface;\n#endif\n#ifdef OVERLOADEDSHADOWVALUES\nuniform vec4 vOverloadedShadowIntensity;\n#endif\n#if defined(REFLECTION) || defined(REFRACTION)\nuniform vec2 vMicrosurfaceTextureLods;\n#endif\nuniform vec4 vReflectivityColor;\nuniform vec3 vEmissiveColor;\n\nvarying vec3 vPositionW;\n#ifdef NORMAL\nvarying vec3 vNormalW;\n#endif\n#ifdef VERTEXCOLOR\nvarying vec4 vColor;\n#endif\n\n#include<lightFragmentDeclaration>[0..maxSimultaneousLights]\n\n#ifdef ALBEDO\nvarying vec2 vAlbedoUV;\nuniform sampler2D albedoSampler;\nuniform vec2 vAlbedoInfos;\n#endif\n#ifdef AMBIENT\nvarying vec2 vAmbientUV;\nuniform sampler2D ambientSampler;\nuniform vec2 vAmbientInfos;\n#endif\n#ifdef OPACITY \nvarying vec2 vOpacityUV;\nuniform sampler2D opacitySampler;\nuniform vec2 vOpacityInfos;\n#endif\n#ifdef EMISSIVE\nvarying vec2 vEmissiveUV;\nuniform vec2 vEmissiveInfos;\nuniform sampler2D emissiveSampler;\n#endif\n#ifdef LIGHTMAP\nvarying vec2 vLightmapUV;\nuniform vec2 vLightmapInfos;\nuniform sampler2D lightmapSampler;\n#endif\n#if defined(REFLECTIVITY)\nvarying vec2 vReflectivityUV;\nuniform vec2 vReflectivityInfos;\nuniform sampler2D reflectivitySampler;\n#endif\n\n#include<fresnelFunction>\n#ifdef OPACITYFRESNEL\nuniform vec4 opacityParts;\n#endif\n#ifdef EMISSIVEFRESNEL\nuniform vec4 emissiveLeftColor;\nuniform vec4 emissiveRightColor;\n#endif\n\n#if defined(REFLECTIONMAP_SPHERICAL) || defined(REFLECTIONMAP_PROJECTION) || defined(REFRACTION)\nuniform mat4 view;\n#endif\n\n#ifdef REFRACTION\nuniform vec4 vRefractionInfos;\n#ifdef REFRACTIONMAP_3D\nuniform samplerCube refractionCubeSampler;\n#else\nuniform sampler2D refraction2DSampler;\nuniform mat4 refractionMatrix;\n#endif\n#endif\n\n#ifdef REFLECTION\nuniform vec2 vReflectionInfos;\n#ifdef REFLECTIONMAP_3D\nuniform samplerCube reflectionCubeSampler;\n#else\nuniform sampler2D reflection2DSampler;\n#endif\n#ifdef REFLECTIONMAP_SKYBOX\nvarying vec3 vPositionUVW;\n#else\n#ifdef REFLECTIONMAP_EQUIRECTANGULAR_FIXED\nvarying vec3 vDirectionW;\n#endif\n#if defined(REFLECTIONMAP_PLANAR) || defined(REFLECTIONMAP_CUBIC) || defined(REFLECTIONMAP_PROJECTION)\nuniform mat4 reflectionMatrix;\n#endif\n#endif\n#include<reflectionFunction>\n#endif\n#ifdef CAMERACOLORGRADING\nuniform sampler2D cameraColorGrading2DSampler;\nuniform vec4 vCameraColorGradingInfos;\nuniform vec4 vCameraColorGradingScaleOffset;\n#endif\n\n#include<pbrShadowFunctions>\n#include<pbrFunctions>\n#include<harmonicsFunctions>\n#include<pbrLightFunctions>\n#include<bumpFragmentFunctions>\n#include<clipPlaneFragmentDeclaration>\n#include<logDepthDeclaration>\n\n#include<fogFragmentDeclaration>\nvoid main(void) {\n#include<clipPlaneFragment>\nvec3 viewDirectionW=normalize(vEyePosition-vPositionW);\n\nvec4 surfaceAlbedo=vec4(1.,1.,1.,1.);\nvec3 surfaceAlbedoContribution=vAlbedoColor.rgb;\n\nfloat alpha=vAlbedoColor.a;\n#ifdef ALBEDO\nsurfaceAlbedo=texture2D(albedoSampler,vAlbedoUV);\nsurfaceAlbedo=vec4(toLinearSpace(surfaceAlbedo.rgb),surfaceAlbedo.a);\n#ifndef LINKREFRACTIONTOTRANSPARENCY\n#ifdef ALPHATEST\nif (surfaceAlbedo.a<0.4)\ndiscard;\n#endif\n#endif\n#ifdef ALPHAFROMALBEDO\nalpha*=surfaceAlbedo.a;\n#endif\nsurfaceAlbedo.rgb*=vAlbedoInfos.y;\n#else\n\nsurfaceAlbedo.rgb=surfaceAlbedoContribution;\nsurfaceAlbedoContribution=vec3(1.,1.,1.);\n#endif\n#ifdef VERTEXCOLOR\nsurfaceAlbedo.rgb*=vColor.rgb;\n#endif\n#ifdef OVERLOADEDVALUES\nsurfaceAlbedo.rgb=mix(surfaceAlbedo.rgb,vOverloadedAlbedo,vOverloadedIntensity.y);\n#endif\n\n#ifdef NORMAL\nvec3 normalW=normalize(vNormalW);\n#else\nvec3 normalW=vec3(1.0,1.0,1.0);\n#endif\n#include<bumpFragment>\n\nvec3 ambientColor=vec3(1.,1.,1.);\n#ifdef AMBIENT\nambientColor=texture2D(ambientSampler,vAmbientUV).rgb*vAmbientInfos.y;\n#ifdef OVERLOADEDVALUES\nambientColor.rgb=mix(ambientColor.rgb,vOverloadedAmbient,vOverloadedIntensity.x);\n#endif\n#endif\n\nfloat microSurface=vReflectivityColor.a;\nvec3 surfaceReflectivityColor=vReflectivityColor.rgb;\n#ifdef OVERLOADEDVALUES\nsurfaceReflectivityColor.rgb=mix(surfaceReflectivityColor.rgb,vOverloadedReflectivity,vOverloadedIntensity.z);\n#endif\n#ifdef REFLECTIVITY\nvec4 surfaceReflectivityColorMap=texture2D(reflectivitySampler,vReflectivityUV);\nsurfaceReflectivityColor=surfaceReflectivityColorMap.rgb;\nsurfaceReflectivityColor=toLinearSpace(surfaceReflectivityColor);\n#ifdef OVERLOADEDVALUES\nsurfaceReflectivityColor=mix(surfaceReflectivityColor,vOverloadedReflectivity,vOverloadedIntensity.z);\n#endif\n#ifdef MICROSURFACEFROMREFLECTIVITYMAP\nmicroSurface=surfaceReflectivityColorMap.a;\n#else\n#ifdef MICROSURFACEAUTOMATIC\nmicroSurface=computeDefaultMicroSurface(microSurface,surfaceReflectivityColor);\n#endif\n#endif\n#endif\n#ifdef OVERLOADEDVALUES\nmicroSurface=mix(microSurface,vOverloadedMicroSurface.x,vOverloadedMicroSurface.y);\n#endif\n\nfloat NdotV=max(0.00000000001,dot(normalW,viewDirectionW));\n\nmicroSurface=clamp(microSurface,0.,1.)*0.98;\n\nfloat roughness=clamp(1.-microSurface,0.000001,1.0);\n\nvec3 lightDiffuseContribution=vec3(0.,0.,0.);\n#ifdef OVERLOADEDSHADOWVALUES\nvec3 shadowedOnlyLightDiffuseContribution=vec3(1.,1.,1.);\n#endif\n#ifdef SPECULARTERM\nvec3 lightSpecularContribution=vec3(0.,0.,0.);\n#endif\nfloat notShadowLevel=1.; \nfloat NdotL=-1.;\nlightingInfo info;\n#include<pbrLightFunctionsCall>[0..maxSimultaneousLights]\n#ifdef SPECULARTERM\nlightSpecularContribution*=vLightingIntensity.w;\n#endif\n#ifdef OPACITY\nvec4 opacityMap=texture2D(opacitySampler,vOpacityUV);\n#ifdef OPACITYRGB\nopacityMap.rgb=opacityMap.rgb*vec3(0.3,0.59,0.11);\nalpha*=(opacityMap.x+opacityMap.y+opacityMap.z)* vOpacityInfos.y;\n#else\nalpha*=opacityMap.a*vOpacityInfos.y;\n#endif\n#endif\n#ifdef VERTEXALPHA\nalpha*=vColor.a;\n#endif\n#ifdef OPACITYFRESNEL\nfloat opacityFresnelTerm=computeFresnelTerm(viewDirectionW,normalW,opacityParts.z,opacityParts.w);\nalpha+=opacityParts.x*(1.0-opacityFresnelTerm)+opacityFresnelTerm*opacityParts.y;\n#endif\n\nvec3 surfaceRefractionColor=vec3(0.,0.,0.);\n\n#ifdef LODBASEDMICROSFURACE\nfloat alphaG=convertRoughnessToAverageSlope(roughness);\n#endif\n#ifdef REFRACTION\nvec3 refractionVector=refract(-viewDirectionW,normalW,vRefractionInfos.y);\n#ifdef LODBASEDMICROSFURACE\n#ifdef USEPMREMREFRACTION\nfloat lodRefraction=getMipMapIndexFromAverageSlopeWithPMREM(vMicrosurfaceTextureLods.y,alphaG);\n#else\nfloat lodRefraction=getMipMapIndexFromAverageSlope(vMicrosurfaceTextureLods.y,alphaG);\n#endif\n#else\nfloat biasRefraction=(vMicrosurfaceTextureLods.y+2.)*(1.0-microSurface);\n#endif\n#ifdef REFRACTIONMAP_3D\nrefractionVector.y=refractionVector.y*vRefractionInfos.w;\nif (dot(refractionVector,viewDirectionW)<1.0)\n{\n#ifdef LODBASEDMICROSFURACE\n#ifdef USEPMREMREFRACTION\n\nif ((vMicrosurfaceTextureLods.y-lodRefraction)>4.0)\n{\n\nfloat scaleRefraction=1.-exp2(lodRefraction)/exp2(vMicrosurfaceTextureLods.y); \nfloat maxRefraction=max(max(abs(refractionVector.x),abs(refractionVector.y)),abs(refractionVector.z));\nif (abs(refractionVector.x) != maxRefraction) refractionVector.x*=scaleRefraction;\nif (abs(refractionVector.y) != maxRefraction) refractionVector.y*=scaleRefraction;\nif (abs(refractionVector.z) != maxRefraction) refractionVector.z*=scaleRefraction;\n}\n#endif\nsurfaceRefractionColor=textureCubeLodEXT(refractionCubeSampler,refractionVector,lodRefraction).rgb*vRefractionInfos.x;\n#else\nsurfaceRefractionColor=textureCube(refractionCubeSampler,refractionVector,biasRefraction).rgb*vRefractionInfos.x;\n#endif\n}\n#ifndef REFRACTIONMAPINLINEARSPACE\nsurfaceRefractionColor=toLinearSpace(surfaceRefractionColor.rgb);\n#endif\n#else\nvec3 vRefractionUVW=vec3(refractionMatrix*(view*vec4(vPositionW+refractionVector*vRefractionInfos.z,1.0)));\nvec2 refractionCoords=vRefractionUVW.xy/vRefractionUVW.z;\nrefractionCoords.y=1.0-refractionCoords.y;\n#ifdef LODBASEDMICROSFURACE\nsurfaceRefractionColor=texture2DLodEXT(refraction2DSampler,refractionCoords,lodRefraction).rgb*vRefractionInfos.x;\n#else\nsurfaceRefractionColor=texture2D(refraction2DSampler,refractionCoords,biasRefraction).rgb*vRefractionInfos.x;\n#endif \nsurfaceRefractionColor=toLinearSpace(surfaceRefractionColor.rgb);\n#endif\n#endif\n\nvec3 environmentRadiance=vReflectionColor.rgb;\nvec3 environmentIrradiance=vReflectionColor.rgb;\n#ifdef REFLECTION\nvec3 vReflectionUVW=computeReflectionCoords(vec4(vPositionW,1.0),normalW);\n#ifdef LODBASEDMICROSFURACE\n#ifdef USEPMREMREFLECTION\nfloat lodReflection=getMipMapIndexFromAverageSlopeWithPMREM(vMicrosurfaceTextureLods.x,alphaG);\n#else\nfloat lodReflection=getMipMapIndexFromAverageSlope(vMicrosurfaceTextureLods.x,alphaG);\n#endif\n#else\nfloat biasReflection=(vMicrosurfaceTextureLods.x+2.)*(1.0-microSurface);\n#endif\n#ifdef REFLECTIONMAP_3D\n#ifdef LODBASEDMICROSFURACE\n#ifdef USEPMREMREFLECTION\n\nif ((vMicrosurfaceTextureLods.y-lodReflection)>4.0)\n{\n\nfloat scaleReflection=1.-exp2(lodReflection)/exp2(vMicrosurfaceTextureLods.x); \nfloat maxReflection=max(max(abs(vReflectionUVW.x),abs(vReflectionUVW.y)),abs(vReflectionUVW.z));\nif (abs(vReflectionUVW.x) != maxReflection) vReflectionUVW.x*=scaleReflection;\nif (abs(vReflectionUVW.y) != maxReflection) vReflectionUVW.y*=scaleReflection;\nif (abs(vReflectionUVW.z) != maxReflection) vReflectionUVW.z*=scaleReflection;\n}\n#endif\nenvironmentRadiance=textureCubeLodEXT(reflectionCubeSampler,vReflectionUVW,lodReflection).rgb*vReflectionInfos.x;\n#else\nenvironmentRadiance=textureCube(reflectionCubeSampler,vReflectionUVW,biasReflection).rgb*vReflectionInfos.x;\n#endif\n#ifdef USESPHERICALFROMREFLECTIONMAP\n#ifndef REFLECTIONMAP_SKYBOX\nvec3 normalEnvironmentSpace=(reflectionMatrix*vec4(normalW,1)).xyz;\nenvironmentIrradiance=EnvironmentIrradiance(normalEnvironmentSpace);\n#endif\n#else\nenvironmentRadiance=toLinearSpace(environmentRadiance.rgb);\nenvironmentIrradiance=textureCube(reflectionCubeSampler,normalW,20.).rgb*vReflectionInfos.x;\nenvironmentIrradiance=toLinearSpace(environmentIrradiance.rgb);\nenvironmentIrradiance*=0.2; \n#endif\n#else\nvec2 coords=vReflectionUVW.xy;\n#ifdef REFLECTIONMAP_PROJECTION\ncoords/=vReflectionUVW.z;\n#endif\ncoords.y=1.0-coords.y;\n#ifdef LODBASEDMICROSFURACE\nenvironmentRadiance=texture2DLodEXT(reflection2DSampler,coords,lodReflection).rgb*vReflectionInfos.x;\n#else\nenvironmentRadiance=texture2D(reflection2DSampler,coords,biasReflection).rgb*vReflectionInfos.x;\n#endif\nenvironmentRadiance=toLinearSpace(environmentRadiance.rgb);\nenvironmentIrradiance=texture2D(reflection2DSampler,coords,20.).rgb*vReflectionInfos.x;\nenvironmentIrradiance=toLinearSpace(environmentIrradiance.rgb);\n#endif\n#endif\n#ifdef OVERLOADEDVALUES\nenvironmentIrradiance=mix(environmentIrradiance,vOverloadedReflection,vOverloadedMicroSurface.z);\nenvironmentRadiance=mix(environmentRadiance,vOverloadedReflection,vOverloadedMicroSurface.z);\n#endif\nenvironmentRadiance*=vLightingIntensity.z;\nenvironmentIrradiance*=vLightingIntensity.z;\n\nvec3 specularEnvironmentR0=surfaceReflectivityColor.rgb;\nvec3 specularEnvironmentR90=vec3(1.0,1.0,1.0);\nvec3 specularEnvironmentReflectance=FresnelSchlickEnvironmentGGX(clamp(NdotV,0.,1.),specularEnvironmentR0,specularEnvironmentR90,sqrt(microSurface));\n\nvec3 refractance=vec3(0.0,0.0,0.0);\n#ifdef REFRACTION\nvec3 transmission=vec3(1.0,1.0,1.0);\n#ifdef LINKREFRACTIONTOTRANSPARENCY\n\ntransmission*=(1.0-alpha);\n\n\nvec3 mixedAlbedo=surfaceAlbedoContribution.rgb*surfaceAlbedo.rgb;\nfloat maxChannel=max(max(mixedAlbedo.r,mixedAlbedo.g),mixedAlbedo.b);\nvec3 tint=clamp(maxChannel*mixedAlbedo,0.0,1.0);\n\nsurfaceAlbedoContribution*=alpha;\n\nenvironmentIrradiance*=alpha;\n\nsurfaceRefractionColor*=tint;\n\nalpha=1.0;\n#endif\n\nvec3 bounceSpecularEnvironmentReflectance=(2.0*specularEnvironmentReflectance)/(1.0+specularEnvironmentReflectance);\nspecularEnvironmentReflectance=mix(bounceSpecularEnvironmentReflectance,specularEnvironmentReflectance,alpha);\n\ntransmission*=1.0-specularEnvironmentReflectance;\n\nrefractance=surfaceRefractionColor*transmission;\n#endif\n\nfloat reflectance=max(max(surfaceReflectivityColor.r,surfaceReflectivityColor.g),surfaceReflectivityColor.b);\nsurfaceAlbedo.rgb=(1.-reflectance)*surfaceAlbedo.rgb;\nrefractance*=vLightingIntensity.z;\nenvironmentRadiance*=specularEnvironmentReflectance;\n\nvec3 surfaceEmissiveColor=vEmissiveColor;\n#ifdef EMISSIVE\nvec3 emissiveColorTex=texture2D(emissiveSampler,vEmissiveUV).rgb;\nsurfaceEmissiveColor=toLinearSpace(emissiveColorTex.rgb)*surfaceEmissiveColor*vEmissiveInfos.y;\n#endif\n#ifdef OVERLOADEDVALUES\nsurfaceEmissiveColor=mix(surfaceEmissiveColor,vOverloadedEmissive,vOverloadedIntensity.w);\n#endif\n#ifdef EMISSIVEFRESNEL\nfloat emissiveFresnelTerm=computeFresnelTerm(viewDirectionW,normalW,emissiveRightColor.a,emissiveLeftColor.a);\nsurfaceEmissiveColor*=emissiveLeftColor.rgb*(1.0-emissiveFresnelTerm)+emissiveFresnelTerm*emissiveRightColor.rgb;\n#endif\n\n#ifdef EMISSIVEASILLUMINATION\nvec3 finalDiffuse=max(lightDiffuseContribution*surfaceAlbedoContribution+vAmbientColor,0.0)*surfaceAlbedo.rgb;\n#ifdef OVERLOADEDSHADOWVALUES\nshadowedOnlyLightDiffuseContribution=max(shadowedOnlyLightDiffuseContribution*surfaceAlbedoContribution+vAmbientColor,0.0)*surfaceAlbedo.rgb;\n#endif\n#else\n#ifdef LINKEMISSIVEWITHALBEDO\nvec3 finalDiffuse=max((lightDiffuseContribution+surfaceEmissiveColor)*surfaceAlbedoContribution+vAmbientColor,0.0)*surfaceAlbedo.rgb;\n#ifdef OVERLOADEDSHADOWVALUES\nshadowedOnlyLightDiffuseContribution=max((shadowedOnlyLightDiffuseContribution+surfaceEmissiveColor)*surfaceAlbedoContribution+vAmbientColor,0.0)*surfaceAlbedo.rgb;\n#endif\n#else\nvec3 finalDiffuse=max(lightDiffuseContribution*surfaceAlbedoContribution+surfaceEmissiveColor+vAmbientColor,0.0)*surfaceAlbedo.rgb;\n#ifdef OVERLOADEDSHADOWVALUES\nshadowedOnlyLightDiffuseContribution=max(shadowedOnlyLightDiffuseContribution*surfaceAlbedoContribution+surfaceEmissiveColor+vAmbientColor,0.0)*surfaceAlbedo.rgb;\n#endif\n#endif\n#endif\n#ifdef OVERLOADEDSHADOWVALUES\nfinalDiffuse=mix(finalDiffuse,shadowedOnlyLightDiffuseContribution,(1.0-vOverloadedShadowIntensity.y));\n#endif\n#ifdef SPECULARTERM\nvec3 finalSpecular=lightSpecularContribution*surfaceReflectivityColor;\n#else\nvec3 finalSpecular=vec3(0.0);\n#endif\n#ifdef SPECULAROVERALPHA\nalpha=clamp(alpha+getLuminance(finalSpecular),0.,1.);\n#endif\n#ifdef RADIANCEOVERALPHA\nalpha=clamp(alpha+getLuminance(environmentRadiance),0.,1.);\n#endif\n\n\n#ifdef EMISSIVEASILLUMINATION\nvec4 finalColor=vec4(finalDiffuse*ambientColor*vLightingIntensity.x+surfaceAlbedo.rgb*environmentIrradiance+finalSpecular*vLightingIntensity.x+environmentRadiance+surfaceEmissiveColor*vLightingIntensity.y+refractance,alpha);\n#else\nvec4 finalColor=vec4(finalDiffuse*ambientColor*vLightingIntensity.x+surfaceAlbedo.rgb*environmentIrradiance+finalSpecular*vLightingIntensity.x+environmentRadiance+refractance,alpha);\n#endif\n#ifdef LIGHTMAP\nvec3 lightmapColor=texture2D(lightmapSampler,vLightmapUV).rgb*vLightmapInfos.y;\n#ifdef USELIGHTMAPASSHADOWMAP\nfinalColor.rgb*=lightmapColor;\n#else\nfinalColor.rgb+=lightmapColor;\n#endif\n#endif\nfinalColor=max(finalColor,0.0);\n#ifdef CAMERATONEMAP\nfinalColor.rgb=toneMaps(finalColor.rgb);\n#endif\nfinalColor.rgb=toGammaSpace(finalColor.rgb);\n#include<logDepthFragment>\n#include<fogFragment>(color,finalColor)\n#ifdef CAMERACONTRAST\nfinalColor=contrasts(finalColor);\n#endif\nfinalColor.rgb=clamp(finalColor.rgb,0.,1.);\n#ifdef CAMERACOLORGRADING\nfinalColor=colorGrades(finalColor,cameraColorGrading2DSampler,vCameraColorGradingInfos,vCameraColorGradingScaleOffset);\n#endif\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\ngl_FragColor=finalColor;\n}";
-	
-	public static var vertexShader:String = "precision highp float;\n\nattribute vec3 position;\n#ifdef NORMAL\nattribute vec3 normal;\n#endif\n#ifdef UV1\nattribute vec2 uv;\n#endif\n#ifdef UV2\nattribute vec2 uv2;\n#endif\n#ifdef VERTEXCOLOR\nattribute vec4 color;\n#endif\n#include<bonesDeclaration>\n\n#include<instancesDeclaration>\nuniform mat4 view;\nuniform mat4 viewProjection;\n#ifdef ALBEDO\nvarying vec2 vAlbedoUV;\nuniform mat4 albedoMatrix;\nuniform vec2 vAlbedoInfos;\n#endif\n#ifdef AMBIENT\nvarying vec2 vAmbientUV;\nuniform mat4 ambientMatrix;\nuniform vec2 vAmbientInfos;\n#endif\n#ifdef OPACITY\nvarying vec2 vOpacityUV;\nuniform mat4 opacityMatrix;\nuniform vec2 vOpacityInfos;\n#endif\n#ifdef EMISSIVE\nvarying vec2 vEmissiveUV;\nuniform vec2 vEmissiveInfos;\nuniform mat4 emissiveMatrix;\n#endif\n#ifdef LIGHTMAP\nvarying vec2 vLightmapUV;\nuniform vec2 vLightmapInfos;\nuniform mat4 lightmapMatrix;\n#endif\n#if defined(REFLECTIVITY)\nvarying vec2 vReflectivityUV;\nuniform vec2 vReflectivityInfos;\nuniform mat4 reflectivityMatrix;\n#endif\n#ifdef BUMP\nvarying vec2 vBumpUV;\nuniform vec3 vBumpInfos;\nuniform mat4 bumpMatrix;\n#endif\n#ifdef POINTSIZE\nuniform float pointSize;\n#endif\n\nvarying vec3 vPositionW;\n#ifdef NORMAL\nvarying vec3 vNormalW;\n#endif\n#ifdef VERTEXCOLOR\nvarying vec4 vColor;\n#endif\n#include<clipPlaneVertexDeclaration>\n#include<fogVertexDeclaration>\n#include<shadowsVertexDeclaration>\n#ifdef REFLECTIONMAP_SKYBOX\nvarying vec3 vPositionUVW;\n#endif\n#ifdef REFLECTIONMAP_EQUIRECTANGULAR_FIXED\nvarying vec3 vDirectionW;\n#endif\n#include<logDepthDeclaration>\nvoid main(void) {\n#ifdef REFLECTIONMAP_SKYBOX\nvPositionUVW=position;\n#endif \n#include<instancesVertex>\n#include<bonesVertex>\ngl_Position=viewProjection*finalWorld*vec4(position,1.0);\nvec4 worldPos=finalWorld*vec4(position,1.0);\nvPositionW=vec3(worldPos);\n#ifdef NORMAL\nvNormalW=normalize(vec3(finalWorld*vec4(normal,0.0)));\n#endif\n#ifdef REFLECTIONMAP_EQUIRECTANGULAR_FIXED\nvDirectionW=normalize(vec3(finalWorld*vec4(position,0.0)));\n#endif\n\n#ifndef UV1\nvec2 uv=vec2(0.,0.);\n#endif\n#ifndef UV2\nvec2 uv2=vec2(0.,0.);\n#endif\n#ifdef ALBEDO\nif (vAlbedoInfos.x == 0.)\n{\nvAlbedoUV=vec2(albedoMatrix*vec4(uv,1.0,0.0));\n}\nelse\n{\nvAlbedoUV=vec2(albedoMatrix*vec4(uv2,1.0,0.0));\n}\n#endif\n#ifdef AMBIENT\nif (vAmbientInfos.x == 0.)\n{\nvAmbientUV=vec2(ambientMatrix*vec4(uv,1.0,0.0));\n}\nelse\n{\nvAmbientUV=vec2(ambientMatrix*vec4(uv2,1.0,0.0));\n}\n#endif\n#ifdef OPACITY\nif (vOpacityInfos.x == 0.)\n{\nvOpacityUV=vec2(opacityMatrix*vec4(uv,1.0,0.0));\n}\nelse\n{\nvOpacityUV=vec2(opacityMatrix*vec4(uv2,1.0,0.0));\n}\n#endif\n#ifdef EMISSIVE\nif (vEmissiveInfos.x == 0.)\n{\nvEmissiveUV=vec2(emissiveMatrix*vec4(uv,1.0,0.0));\n}\nelse\n{\nvEmissiveUV=vec2(emissiveMatrix*vec4(uv2,1.0,0.0));\n}\n#endif\n#ifdef LIGHTMAP\nif (vLightmapInfos.x == 0.)\n{\nvLightmapUV=vec2(lightmapMatrix*vec4(uv,1.0,0.0));\n}\nelse\n{\nvLightmapUV=vec2(lightmapMatrix*vec4(uv2,1.0,0.0));\n}\n#endif\n#if defined(REFLECTIVITY)\nif (vReflectivityInfos.x == 0.)\n{\nvReflectivityUV=vec2(reflectivityMatrix*vec4(uv,1.0,0.0));\n}\nelse\n{\nvReflectivityUV=vec2(reflectivityMatrix*vec4(uv2,1.0,0.0));\n}\n#endif\n#ifdef BUMP\nif (vBumpInfos.x == 0.)\n{\nvBumpUV=vec2(bumpMatrix*vec4(uv,1.0,0.0));\n}\nelse\n{\nvBumpUV=vec2(bumpMatrix*vec4(uv2,1.0,0.0));\n}\n#endif\n\n#include<clipPlaneVertex>\n\n#include<fogVertex>\n\n#include<shadowsVertex>\n\n#ifdef VERTEXCOLOR\nvColor=color;\n#endif\n\n#ifdef POINTSIZE\ngl_PointSize=pointSize;\n#endif\n\n#include<logDepthVertex>\n}";
-	
-
 	/**
 	 * Intensity of the direct lights e.g. the four lights available in your scene.
 	 * This impacts both the direct diffuse and specular highlights.
@@ -388,7 +381,13 @@ class PBRMaterial extends Material {
 	 * Number of Simultaneous lights allowed on the material.
 	 */
 	@serialize()
-	public var maxSimultaneousLights:Int = 4;  
+	public var maxSimultaneousLights:Int = 4; 
+	
+	/**
+     * If sets to true, normal map will be considered following OpenGL convention.
+     */
+    @serialize()
+    public var useOpenGLNormalMap:Bool = false;
 
 	private var _renderTargets:SmartArray<RenderTargetTexture> = new SmartArray<RenderTargetTexture>(16);
 	private var _worldViewProjectionMatrix:Matrix = Matrix.Zero();
@@ -403,21 +402,28 @@ class PBRMaterial extends Material {
 	private var _useLogarithmicDepth:Bool;
 	public var useLogarithmicDepth(get, set):Bool;
 	
+	private var defs:Map<String, Bool>;
+	
 
 	public function new(name:String, scene:Scene) {
 		super(name, scene);
 		
 		this._cachedDefines.BonesPerMesh = -1;
 		
-		if (!ShadersStore.Shaders.exists("pbrmat.fragment")) {
+		if (ShadersStore.Shaders.exists("pbr.fragment")) {
+			var fragmentShader = ShadersStore.Shaders["pbr.fragment"];
+			
 			var textureLODExt = scene.getEngine().getCaps().textureLODExt;
-			var textureCubeLod = scene.getEngine().getCaps().textureCubeLodFnName;			
+			var textureCubeLod = scene.getEngine().getCaps().textureCubeLodFnName;
+			
 			fragmentShader = StringTools.replace(fragmentShader, "GL_EXT_shader_texture_lod", textureLODExt);
 			fragmentShader = StringTools.replace(fragmentShader, "textureCubeLodEXT", textureCubeLod);
 			//fragmentShader = StringTools.replace(fragmentShader, "texture2DLodEXT", "textureLod");
 			
-			ShadersStore.Shaders.set("pbrmat.fragment", fragmentShader);
-			ShadersStore.Shaders.set("pbrmat.vertex", vertexShader);
+			ShadersStore.Shaders.set("pbr.fragment", fragmentShader);
+		}
+		else {
+			throw "No pbr shaders !";
 		}
 		
 		this._lightingInfos = new Vector4(this.directIntensity, this.emissiveIntensity, this.environmentIntensity, this.specularIntensity);
@@ -438,6 +444,8 @@ class PBRMaterial extends Material {
 			
 			return this._renderTargets;
 		};
+		
+		this.defs = this._defines.defines;
 	}
 
 	private function get_useLogarithmicDepth():Bool {
@@ -478,7 +486,7 @@ class PBRMaterial extends Material {
 			return true;
 		}
 		
-		if (this._defines.defines["INSTANCES"] != useInstances) {
+		if (this.defs["INSTANCES"] != useInstances) {
 			return false;
 		}
 		
@@ -578,7 +586,7 @@ class PBRMaterial extends Material {
 			// Textures
 			if (scene.texturesEnabled) {
 				if (scene.getEngine().getCaps().textureLOD) {
-					this._defines.defines["LODBASEDMICROSFURACE"] = true;
+					this.defs["LODBASEDMICROSFURACE"] = true;
 				}
 				
 				if (this.albedoTexture != null && StandardMaterial.DiffuseTextureEnabled) {
@@ -587,7 +595,7 @@ class PBRMaterial extends Material {
 					} 
 					else {
 						needUVs = true;
-						this._defines.defines["ALBEDO"] = true;
+						this.defs["ALBEDO"] = true;
 					}
 				}
 				
@@ -597,7 +605,7 @@ class PBRMaterial extends Material {
 					} 
 					else {
 						needUVs = true;
-						this._defines.defines["AMBIENT"] = true;
+						this.defs["AMBIENT"] = true;
 					}
 				}
 				
@@ -607,10 +615,10 @@ class PBRMaterial extends Material {
 					} 
 					else {
 						needUVs = true;
-						this._defines.defines["OPACITY"] = true;
+						this.defs["OPACITY"] = true;
 						
 						if (this.opacityTexture.getAlphaFromRGB) {
-							this._defines.defines["OPACITYRGB"] = true;
+							this.defs["OPACITYRGB"] = true;
 						}
 					}
 				}
@@ -621,44 +629,44 @@ class PBRMaterial extends Material {
 					} 
 					else {
 						needNormals = true;
-						this._defines.defines["REFLECTION"] = true;
+						this.defs["REFLECTION"] = true;
 						
 						if (this.reflectionTexture.coordinatesMode == Texture.INVCUBIC_MODE) {
-							this._defines.defines["INVERTCUBICMAP"] = true;
+							this.defs["INVERTCUBICMAP"] = true;
 						}
 						
-						this._defines.defines["REFLECTIONMAP_3D"] = this.reflectionTexture.isCube;
+						this.defs["REFLECTIONMAP_3D"] = this.reflectionTexture.isCube;
 						
 						switch (this.reflectionTexture.coordinatesMode) {
 							case Texture.CUBIC_MODE, Texture.INVCUBIC_MODE:
-								this._defines.defines["REFLECTIONMAP_CUBIC"] = true;
+								this.defs["REFLECTIONMAP_CUBIC"] = true;
 								
 							case Texture.EXPLICIT_MODE:
-								this._defines.defines["REFLECTIONMAP_EXPLICIT"] = true;
+								this.defs["REFLECTIONMAP_EXPLICIT"] = true;
 								
 							case Texture.PLANAR_MODE:
-								this._defines.defines["REFLECTIONMAP_PLANAR"] = true;
+								this.defs["REFLECTIONMAP_PLANAR"] = true;
 								
 							case Texture.PROJECTION_MODE:
-								this._defines.defines["REFLECTIONMAP_PROJECTION"] = true;
+								this.defs["REFLECTIONMAP_PROJECTION"] = true;
 								
 							case Texture.SKYBOX_MODE:
-								this._defines.defines["REFLECTIONMAP_SKYBOX"] = true;
+								this.defs["REFLECTIONMAP_SKYBOX"] = true;
 								
 							case Texture.SPHERICAL_MODE:
-								this._defines.defines["REFLECTIONMAP_SPHERICAL"] = true;
+								this.defs["REFLECTIONMAP_SPHERICAL"] = true;
 								
 							case Texture.EQUIRECTANGULAR_MODE:
-								this._defines.defines["REFLECTIONMAP_EQUIRECTANGULAR"] = true;
+								this.defs["REFLECTIONMAP_EQUIRECTANGULAR"] = true;
 								
 						}
 						
 						if (Std.is(this.reflectionTexture, HDRCubeTexture)) {
-							this._defines.defines["USESPHERICALFROMREFLECTIONMAP"] = true;
+							this.defs["USESPHERICALFROMREFLECTIONMAP"] = true;
 							needNormals = true;
 							
 							if (untyped this.reflectionTexture.isPMREM) {
-								this._defines.defines["USEPMREMREFLECTION"] = true;
+								this.defs["USEPMREMREFLECTION"] = true;
 							}
 						}
 					}
@@ -670,8 +678,8 @@ class PBRMaterial extends Material {
 					} 
 					else {
 						needUVs = true;
-						this._defines.defines["LIGHTMAP"] = true;
-						this._defines.defines["USELIGHTMAPASSHADOWMAP"] = this.useLightmapAsShadowmap;
+						this.defs["LIGHTMAP"] = true;
+						this.defs["USELIGHTMAPASSHADOWMAP"] = this.useLightmapAsShadowmap;
 					}
 				}
 				
@@ -681,7 +689,7 @@ class PBRMaterial extends Material {
 					} 
 					else {
 						needUVs = true;
-						this._defines.defines["EMISSIVE"] = true;
+						this.defs["EMISSIVE"] = true;
 					}
 				}
 				
@@ -691,9 +699,9 @@ class PBRMaterial extends Material {
 					} 
 					else {
 						needUVs = true;
-						this._defines.defines["REFLECTIVITY"] = true;
-						this._defines.defines["MICROSURFACEFROMREFLECTIVITYMAP"] = this.useMicroSurfaceFromReflectivityMapAlpha;
-						this._defines.defines["MICROSURFACEAUTOMATIC"] = this.useAutoMicroSurfaceFromReflectivityMap;
+						this.defs["REFLECTIVITY"] = true;
+						this.defs["MICROSURFACEFROMREFLECTIVITYMAP"] = this.useMicroSurfaceFromReflectivityMapAlpha;
+						this.defs["MICROSURFACEAUTOMATIC"] = this.useAutoMicroSurfaceFromReflectivityMap;
 					}
 				}
 			}
@@ -704,14 +712,18 @@ class PBRMaterial extends Material {
 				} 
 				else {
 					needUVs = true;
-					this._defines.defines["BUMP"] = true;
+					this.defs["BUMP"] = true;
 					
 					if (this.useParallax) {
-						this._defines.defines["PARALLAX"] = true;
+						this.defs["PARALLAX"] = true;
 						if (this.useParallaxOcclusion) {
-							this._defines.defines["PARALLAXOCCLUSION"] = true;
+							this.defs["PARALLAXOCCLUSION"] = true;
 						}
 					}
+					
+					if (this.useOpenGLNormalMap) {
+                        this.defs["OPENGLNORMALMAP"] = true;
+                    }
 				}
 			}
 			
@@ -721,17 +733,17 @@ class PBRMaterial extends Material {
 				} 
 				else {
 					needUVs = true;
-					this._defines.defines["REFRACTION"] = true;
-					this._defines.defines["REFRACTIONMAP_3D"] = this.refractionTexture.isCube;
+					this.defs["REFRACTION"] = true;
+					this.defs["REFRACTIONMAP_3D"] = this.refractionTexture.isCube;
 					
 					if (this.linkRefractionWithTransparency) {
-						this._defines.defines["LINKREFRACTIONTOTRANSPARENCY"] = true;
+						this.defs["LINKREFRACTIONTOTRANSPARENCY"] = true;
 					}
 					if (Std.is(this.refractionTexture, HDRCubeTexture)) {
-						this._defines.defines["REFRACTIONMAPINLINEARSPACE"] = true;
+						this.defs["REFRACTIONMAPINLINEARSPACE"] = true;
 						
 						if (untyped this.refractionTexture.isPMREM) {
-							this._defines.defines["USEPMREMREFRACTION"] = true;
+							this.defs["USEPMREMREFRACTION"] = true;
 						}
 					}
 				}
@@ -742,47 +754,47 @@ class PBRMaterial extends Material {
 					return false;
 				} 
 				else {
-					this._defines.defines["CAMERACOLORGRADING"] = true;
+					this.defs["CAMERACOLORGRADING"] = true;
 				}
 			}
 		}
 		
 		// Effect
 		if (scene.clipPlane != null) {
-			this._defines.defines["CLIPPLANE"] = true;
+			this.defs["CLIPPLANE"] = true;
 		}
 		
 		if (engine.getAlphaTesting()) {
-			this._defines.defines["ALPHATEST"] = true;
+			this.defs["ALPHATEST"] = true;
 		}
 		
 		if (this._shouldUseAlphaFromAlbedoTexture()) {
-			this._defines.defines["ALPHAFROMALBEDO"] = true;
+			this.defs["ALPHAFROMALBEDO"] = true;
 		}
 		
 		if (this.useEmissiveAsIllumination) {
-			this._defines.defines["EMISSIVEASILLUMINATION"] = true;
+			this.defs["EMISSIVEASILLUMINATION"] = true;
 		}
 		
 		if (this.linkEmissiveWithAlbedo) {
-			this._defines.defines["LINKEMISSIVEWITHALBEDO"] = true;
+			this.defs["LINKEMISSIVEWITHALBEDO"] = true;
 		}
 		
 		if (this.useLogarithmicDepth) {
-			this._defines.defines["LOGARITHMICDEPTH"] = true;
+			this.defs["LOGARITHMICDEPTH"] = true;
 		}
 		
 		if (this.cameraContrast != 1) {
-			this._defines.defines["CAMERACONTRAST"] = true;
+			this.defs["CAMERACONTRAST"] = true;
 		}
 		
 		if (this.cameraExposure != 1) {
-			this._defines.defines["CAMERATONEMAP"] = true;
+			this.defs["CAMERATONEMAP"] = true;
 		}
 		
 		if (this.overloadedShadeIntensity != 1 ||
 			this.overloadedShadowIntensity != 1) {
-			this._defines.defines["OVERLOADEDSHADOWVALUES"] = true;
+			this.defs["OVERLOADEDSHADOWVALUES"] = true;
 		}
 		
 		if (this.overloadedMicroSurfaceIntensity > 0 ||
@@ -791,17 +803,17 @@ class PBRMaterial extends Material {
 			this.overloadedAlbedoIntensity > 0 ||
 			this.overloadedAmbientIntensity > 0 ||
 			this.overloadedReflectionIntensity > 0) {
-			this._defines.defines["OVERLOADEDVALUES"] = true;
+			this.defs["OVERLOADEDVALUES"] = true;
 		}
 		
 		// Point size
 		if (this.pointsCloud || scene.forcePointsCloud) {
-			this._defines.defines["POINTSIZE"] = true;
+			this.defs["POINTSIZE"] = true;
 		}
 		
 		// Fog
 		if (scene.fogEnabled && mesh != null && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
-			this._defines.defines["FOG"] = true;
+			this.defs["FOG"] = true;
 		}
 		
 		if (scene.lightsEnabled && !this.disableLighting) {
@@ -814,48 +826,48 @@ class PBRMaterial extends Material {
 				this.emissiveFresnelParameters != null && this.emissiveFresnelParameters.isEnabled) {
 				
 				if (this.opacityFresnelParameters != null && this.opacityFresnelParameters.isEnabled) {
-					this._defines.defines["OPACITYFRESNEL"] = true;
+					this.defs["OPACITYFRESNEL"] = true;
 				}
 				
 				if (this.emissiveFresnelParameters != null && this.emissiveFresnelParameters.isEnabled) {
-					this._defines.defines["EMISSIVEFRESNEL"] = true;
+					this.defs["EMISSIVEFRESNEL"] = true;
 				}
 				
 				needNormals = true;
-				this._defines.defines["FRESNEL"] = true;
+				this.defs["FRESNEL"] = true;
 			}
 		}
 		
-		if (this._defines.defines["SPECULARTERM"] && this.useSpecularOverAlpha) {
-			this._defines.defines["SPECULAROVERALPHA"] = true;
+		if (this.defs["SPECULARTERM"] && this.useSpecularOverAlpha) {
+			this.defs["SPECULAROVERALPHA"] = true;
 		}
 		
 		if (this.usePhysicalLightFalloff) {
-			this._defines.defines["USEPHYSICALLIGHTFALLOFF"] = true;
+			this.defs["USEPHYSICALLIGHTFALLOFF"] = true;
 		}
 		
 		if (this.useRadianceOverAlpha) {
-			this._defines.defines["RADIANCEOVERALPHA"] = true;
+			this.defs["RADIANCEOVERALPHA"] = true;
 		}
 		
 		// Attribs
 		if (mesh != null) {
 			if (needNormals && mesh.isVerticesDataPresent(VertexBuffer.NormalKind)) {
-				this._defines.defines["NORMAL"] = true;
+				this.defs["NORMAL"] = true;
 			}
 			if (needUVs) {
 				if (mesh.isVerticesDataPresent(VertexBuffer.UVKind)) {
-					this._defines.defines["UV1"] = true;
+					this.defs["UV1"] = true;
 				}
 				if (mesh.isVerticesDataPresent(VertexBuffer.UV2Kind)) {
-					this._defines.defines["UV2"] = true;
+					this.defs["UV2"] = true;
 				}
 			}
 			if (mesh.useVertexColors && mesh.isVerticesDataPresent(VertexBuffer.ColorKind)) {
-				this._defines.defines["VERTEXCOLOR"] = true;
+				this.defs["VERTEXCOLOR"] = true;
 				
 				if (mesh.hasVertexAlpha) {
-					this._defines.defines["VERTEXALPHA"] = true;
+					this.defs["VERTEXALPHA"] = true;
 				}
 			}
 			if (mesh.useBones && mesh.computeBonesUsingShaders) {
@@ -865,7 +877,7 @@ class PBRMaterial extends Material {
 			
 			// Instances
 			if (useInstances) {
-				this._defines.defines["INSTANCES"] = true;
+				this.defs["INSTANCES"] = true;
 			}
 		}
 		
@@ -877,61 +889,61 @@ class PBRMaterial extends Material {
 			
 			// Fallbacks
 			var fallbacks = new EffectFallbacks();
-			if (this._defines.defines["REFLECTION"]) {
+			if (this.defs["REFLECTION"]) {
 				fallbacks.addFallback(0, "REFLECTION");
 			}
 			
-			if (this._defines.defines["REFRACTION"]) {
+			if (this.defs["REFRACTION"]) {
 				fallbacks.addFallback(0, "REFRACTION");
 			}
 			
-			if (this._defines.defines["REFLECTIVITY"]) {
+			if (this.defs["REFLECTIVITY"]) {
 				fallbacks.addFallback(0, "REFLECTIVITY");
 			}
 			
-			if (this._defines.defines["BUMP"]) {
+			if (this.defs["BUMP"]) {
 				fallbacks.addFallback(0, "BUMP");
 			}
 			
-			if (this._defines.defines["PARALLAX"]) {
+			if (this.defs["PARALLAX"]) {
 				fallbacks.addFallback(1, "PARALLAX");
 			}
 			
-			if (this._defines.defines["PARALLAXOCCLUSION"]) {
+			if (this.defs["PARALLAXOCCLUSION"]) {
 				fallbacks.addFallback(0, "PARALLAXOCCLUSION");
 			}
 			
-			if (this._defines.defines["SPECULAROVERALPHA"]) {
+			if (this.defs["SPECULAROVERALPHA"]) {
 				fallbacks.addFallback(0, "SPECULAROVERALPHA");
 			}
 			
-			if (this._defines.defines["FOG"]) {
+			if (this.defs["FOG"]) {
 				fallbacks.addFallback(1, "FOG");
 			}
 			
-			if (this._defines.defines["POINTSIZE"]) {
+			if (this.defs["POINTSIZE"]) {
 				fallbacks.addFallback(0, "POINTSIZE");
 			}
 			
-			if (this._defines.defines["LOGARITHMICDEPTH"]) {
+			if (this.defs["LOGARITHMICDEPTH"]) {
 				fallbacks.addFallback(0, "LOGARITHMICDEPTH");
 			}
 			
 			MaterialHelper.HandleFallbacksForShadows(this._defines, fallbacks, this.maxSimultaneousLights);
 			
-			if (this._defines.defines["SPECULARTERM"]) {
+			if (this.defs["SPECULARTERM"]) {
 				fallbacks.addFallback(0, "SPECULARTERM");
 			}
 			
-			if (this._defines.defines["OPACITYFRESNEL"]) {
+			if (this.defs["OPACITYFRESNEL"]) {
 				fallbacks.addFallback(1, "OPACITYFRESNEL");
 			}
 			
-			if (this._defines.defines["EMISSIVEFRESNEL"]) {
+			if (this.defs["EMISSIVEFRESNEL"]) {
 				fallbacks.addFallback(2, "EMISSIVEFRESNEL");
 			}
 			
-			if (this._defines.defines["FRESNEL"]) {
+			if (this.defs["FRESNEL"]) {
 				fallbacks.addFallback(3, "FRESNEL");
 			}
 			
@@ -942,19 +954,19 @@ class PBRMaterial extends Material {
 			//Attributes
 			var attribs:Array<String> = [VertexBuffer.PositionKind];
 			
-			if (this._defines.defines["NORMAL"]) {
+			if (this.defs["NORMAL"]) {
 				attribs.push(VertexBuffer.NormalKind);
 			}
 			
-			if (this._defines.defines["UV1"]) {
+			if (this.defs["UV1"]) {
 				attribs.push(VertexBuffer.UVKind);
 			}
 			
-			if (this._defines.defines["UV2"]) {
+			if (this.defs["UV2"]) {
 				attribs.push(VertexBuffer.UV2Kind);
 			}
 			
-			if (this._defines.defines["VERTEXCOLOR"]) {
+			if (this.defs["VERTEXCOLOR"]) {
 				attribs.push(VertexBuffer.ColorKind);
 			}
 			
@@ -962,9 +974,9 @@ class PBRMaterial extends Material {
 			MaterialHelper.PrepareAttributesForInstances(attribs, this._defines);
 			
 			// Legacy browser patch
-			var shaderName:String = "pbrmat";
+			var shaderName:String = "pbr";
 			if (!scene.getEngine().getCaps().standardDerivatives) {
-				shaderName = "legacypbrmat";
+				shaderName = "legacypbr";
 			}
 			var join:String = this._defines.toString();
 			
@@ -1089,7 +1101,7 @@ class PBRMaterial extends Material {
 					this._effect.setMatrix("reflectionMatrix", this.reflectionTexture.getReflectionTextureMatrix());
 					this._effect.setFloat2("vReflectionInfos", this.reflectionTexture.level, 0);
 					
-					if (this._defines.defines["USESPHERICALFROMREFLECTIONMAP"]) {
+					if (this.defs["USESPHERICALFROMREFLECTIONMAP"]) {
 						var sp = cast (this.reflectionTexture, HDRCubeTexture).sphericalPolynomial;
 						this._effect.setFloat3("vSphericalX", sp.x.x, sp.x.y, sp.x.z);
 						this._effect.setFloat3("vSphericalY", sp.y.x, sp.y.y, sp.y.z);
