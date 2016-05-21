@@ -71,7 +71,8 @@ class PBRMaterialDefines extends MaterialDefines {
 			"RADIANCEOVERALPHA" => false, 
 			"USEPMREMREFLECTION" => false, 
 			"USEPMREMREFRACTION" => false,
-			"OPENGLNORMALMAP" => false
+			"INVERTNORMALMAPX" => false,
+			"INVERTNORMALMAPY" => false
 		];
 		
 		BonesPerMesh = 0;

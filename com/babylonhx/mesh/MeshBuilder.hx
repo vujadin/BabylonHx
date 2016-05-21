@@ -578,6 +578,13 @@ class MeshBuilder {
 		
 		var ground = new GroundMesh(name, scene);
 		ground._subdivisions = subdivisions;
+		ground._width = width;
+		ground._height = height;
+		ground._maxX = ground._width / 2;
+		ground._maxZ = ground._height / 2;
+		ground._minX = -ground._maxX;
+		ground._minZ = -ground._maxZ;
+		
 		ground._setReady(false);
 		
 		var onload = function(img:Image) {
@@ -585,6 +592,7 @@ class MeshBuilder {
 			options.bufferWidth = img.width;
 			options.bufferHeight = img.height;
 			var vertexData = VertexData.CreateGroundFromHeightMap(options);
+			
 			vertexData.applyToMesh(ground, updatable);
 			
 			ground._setReady(true);

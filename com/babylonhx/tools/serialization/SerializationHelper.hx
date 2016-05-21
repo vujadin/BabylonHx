@@ -110,6 +110,7 @@ class SerializationHelper {
 						}
 						
 					case "serializeAsMeshReference":
+						// TODO: 
 						var pName:String = Reflect.getProperty(fs, f).serializeAsMeshReference;
 						if (pName == null) {
 							pName = f;

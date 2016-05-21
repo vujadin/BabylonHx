@@ -64,7 +64,8 @@ class StandardMaterialDefines extends MaterialDefines {
 			"REFRACTION" => false, 
 			"REFRACTIONMAP_3D" => false, 
 			"REFLECTIONOVERALPHA" => false,
-			"OPENGLNORMALMAP" => false
+			"INVERTNORMALMAPX" => false,
+			"INVERTNORMALMAPY" => false
 		];
 		
 		BonesPerMesh = 0;

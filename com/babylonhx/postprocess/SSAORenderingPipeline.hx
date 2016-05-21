@@ -63,7 +63,7 @@ import com.babylonhx.tools.EventState;
 	* Default value is 0.0075
 	* @type {number}
 	*/
-	public var area:Float = 0.975;
+	public var area:Float = 0.0075;
 
 	/**
 	* Related to area, used to interpolate SSAO samples (second interpolate function input) based on the occlusion difference of each pixel
@@ -137,7 +137,7 @@ import com.babylonhx.tools.EventState;
 	 * Returns the horizontal blur PostProcess
 	 * @return {BABYLON.BlurPostProcess} The horizontal blur post-process
 	 */
-	public function getBlurHPostProcess():BlurPostProcess {
+	inline public function getBlurHPostProcess():BlurPostProcess {
 		return this._blurHPostProcess;
 	}
 
@@ -145,7 +145,7 @@ import com.babylonhx.tools.EventState;
 	 * Returns the vertical blur PostProcess
 	 * @return {BABYLON.BlurPostProcess} The vertical blur post-process
 	 */
-	public function getBlurVPostProcess():BlurPostProcess {
+	inline public function getBlurVPostProcess():BlurPostProcess {
 		return this._blurVPostProcess;
 	}
 	
@@ -169,7 +169,7 @@ import com.babylonhx.tools.EventState;
 	}
 
 	// Private Methods
-	private function _createSSAOPostProcess(ratio:Float):PostProcess {
+	private function _createSSAOPostProcess(ratio:Float) {
 		var numSamples:Int = 16;
 		var sampleSphere = [
 			0.5381, 0.1856, -0.4319,
@@ -219,11 +219,9 @@ import com.babylonhx.tools.EventState;
 			effect.setTexture("textureSampler", this._depthTexture);
 			effect.setTexture("randomSampler", this._randomTexture);
 		};
-		
-		return this._ssaoPostProcess;
 	}
 
-	private function _createSSAOCombinePostProcess(ratio:Float):PostProcess {
+	private function _createSSAOCombinePostProcess(ratio:Float) {
 		this._ssaoCombinePostProcess = new PostProcess("ssaoCombine", "ssaoCombine", [], ["originalColor"],
 													   ratio, null, Texture.BILINEAR_SAMPLINGMODE,
 													   this._scene.getEngine(), false);
@@ -231,8 +229,6 @@ import com.babylonhx.tools.EventState;
 		this._ssaoCombinePostProcess.onApply = function(effect:Effect, es:EventState = null) {
 			effect.setTextureFromPostProcess("originalColor", this._originalColorPostProcess);
 		};
-		
-		return this._ssaoCombinePostProcess;
 	}
 
 	private function _createRandomTexture() {

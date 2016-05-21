@@ -1,6 +1,7 @@
 package com.babylonhx.actions;
 
 import com.babylonhx.mesh.AbstractMesh;
+import com.babylonhx.utils.Keycodes;
 
 /**
  * ...
@@ -161,9 +162,8 @@ import com.babylonhx.mesh.AbstractMesh;
 			if (action.trigger == trigger) {
 				if (trigger == ActionManager.OnKeyUpTrigger || trigger == ActionManager.OnKeyDownTrigger) {
 					var parameter = action.getTriggerParameter();
-					
 					if (parameter != null) {
-						if (evt.sourceEvent.key != parameter) {
+						if (Keycodes.name(evt.sourceEvent) != parameter) {
 							continue;
 						}
 					}

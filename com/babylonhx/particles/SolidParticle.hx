@@ -17,11 +17,12 @@ class SolidParticle {
 	public var color:Color4 = new Color4(1, 1, 1, 1);  		// color
 	public var position:Vector3 = Vector3.Zero();       	// position
 	public var rotation:Vector3 = Vector3.Zero();       	// rotation
-	public var quaternion:Quaternion;          				// quaternion, will overwrite rotation
-	public var scale:Vector3 = new Vector3(1, 1, 1);    	// scale
+	public var rotationQuaternion:Quaternion;    			// quaternion, will overwrite rotation
+	public var scaling:Vector3 = new Vector3(1, 1, 1);  	// scaling
 	public var uvs:Vector4 = new Vector4(0, 0, 1, 1);   	// uvs
 	public var velocity:Vector3 = Vector3.Zero();       	// velocity
 	public var alive:Bool = true;                    		// alive
+	public var isVisible:Bool = true;                		// visibility
 	public var _pos:Int;                    				// index of this particle in the global "positions" array
 	public var _model:ModelShape;							// model shape reference
 	public var shapeId:Int;                 				// model shape id

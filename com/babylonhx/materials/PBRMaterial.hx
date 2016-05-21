@@ -384,10 +384,16 @@ class PBRMaterial extends Material {
 	public var maxSimultaneousLights:Int = 4; 
 	
 	/**
-     * If sets to true, normal map will be considered following OpenGL convention.
+     * If sets to true, x component of normal map value will invert (x = 1.0 - x).
      */
     @serialize()
-    public var useOpenGLNormalMap:Bool = false;
+    public var invertNormalMapX:Bool = false;
+	
+	/**
+	 * If sets to true, y component of normal map value will invert (y = 1.0 - y).
+	 */
+	@serialize()
+	public var invertNormalMapY:Bool = false;
 
 	private var _renderTargets:SmartArray<RenderTargetTexture> = new SmartArray<RenderTargetTexture>(16);
 	private var _worldViewProjectionMatrix:Matrix = Matrix.Zero();
@@ -721,8 +727,12 @@ class PBRMaterial extends Material {
 						}
 					}
 					
-					if (this.useOpenGLNormalMap) {
-                        this.defs["OPENGLNORMALMAP"] = true;
+					if (this.invertNormalMapX) {
+                        this.defs["INVERTNORMALMAPX"] = true;
+                    }
+					
+					if (this.invertNormalMapY) {
+                        this.defs["INVERTNORMALMAPY"] = true;
                     }
 				}
 			}

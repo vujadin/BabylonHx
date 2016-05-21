@@ -24,6 +24,15 @@ import com.babylonhx.tools.EventState;
     public static inline var REFRESHRATE_RENDER_ONEVERYFRAME:Int = 1;
     public static inline var REFRESHRATE_RENDER_ONEVERYTWOFRAMES:Int = 2;
 	
+	/**
+	* Use this predicate to dynamically define the list of mesh you want to render.
+	* If set, the renderList property will be overwritten.
+	*/
+	public var renderListPredicate:AbstractMesh->Bool;
+
+	/**
+	* Use this list to define the list of mesh you want to render.
+	*/	
 	public var renderList:Array<AbstractMesh> = [];
 	public var renderParticles:Bool = true;
 	public var renderSprites:Bool = false;
@@ -226,6 +235,20 @@ import com.babylonhx.tools.EventState;
 			}
 			
 			this._waitingRenderList = null;
+		}
+		
+		// Is predicate defined?
+		if (this.renderListPredicate != null) {
+			this.renderList.splice(0, this.renderList.length - 1); // Clear previous renderList
+			
+			var sceneMeshes = this.getScene().meshes;
+			
+			for (index in 0...sceneMeshes.length) {
+				var mesh = sceneMeshes[index];
+				if (this.renderListPredicate(mesh)) {
+					this.renderList.push(mesh);
+				}
+			}
 		}
 		
 		if (this.renderList != null && this.renderList.length == 0) {

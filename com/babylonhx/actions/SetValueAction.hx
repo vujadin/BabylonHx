@@ -30,5 +30,9 @@ package com.babylonhx.actions;
 
 	override public function execute(?evt:ActionEvent) {
 		Reflect.setProperty(this._target, this._property, this.value);
+		
+		if (this._target.markAsDirty != null) {
+			this._target.markAsDirty(this._property);
+        }
 	}
 }

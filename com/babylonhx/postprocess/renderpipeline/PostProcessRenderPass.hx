@@ -55,17 +55,17 @@ import com.babylonhx.mesh.Mesh;
 		return this._refCount;
 	}
 
-	public function _update():Void {
+	inline public function _update():Void {
 		this.setRenderList(this._renderList);
 	}
 
 	// public
 
-	public function setRenderList(renderList:Array<Mesh>):Void {
+	inline public function setRenderList(renderList:Array<Mesh>):Void {
 		this._renderTexture.renderList = cast renderList;
 	}
 
-	public function getRenderTexture():RenderTargetTexture {
+	inline public function getRenderTexture():RenderTargetTexture {
 		return this._renderTexture;
 	}
 	
