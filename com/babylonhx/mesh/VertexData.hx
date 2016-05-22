@@ -1704,8 +1704,6 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		var bufferWidth:Float = options.bufferWidth;
 		var bufferHeight:Float = options.bufferHeight;
 		
-		trace(buffer.length);
-		
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
 		var normals:Array<Float> = [];

@@ -1,6 +1,7 @@
 package com.babylonhx;
 
 import com.babylonhx.collisions.PickingInfo;
+import com.babylonhx.math.Vector2;
 
 /**
  * ...
@@ -10,7 +11,7 @@ import com.babylonhx.collisions.PickingInfo;
 /**
  * This type contains all the data related to a pointer event in Babylon.js.
  * The event member is an instance of PointerEvent for all types except PointerWheel 
- * and is of type MouseWheelEvent when type equals PointerWheel. The differents event 
+ * and is of type MouseWheelEvent when type equals PointerWheel. The different event 
  * types can be found in the PointerEventTypes class.
  */
 

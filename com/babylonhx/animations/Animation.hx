@@ -555,7 +555,7 @@ import com.babylonhx.Node;
 							this._offsetsCache[keyOffset] = cast(toValue, Vector2).subtract(cast(fromValue, Vector2));
 						// Size
                         case Animation.ANIMATIONTYPE_SIZE:
-                            this._offsetsCache[keyOffset] = cast(toValue, Size).subtract(cast fromValue); 
+                            this._offsetsCache[keyOffset] = cast(toValue, Size).subtract(cast(fromValue, Size)); 
 						// Color3
 						case Animation.ANIMATIONTYPE_COLOR3:
 							this._offsetsCache[keyOffset] = cast(toValue, Color3).subtract(cast(fromValue, Color3));

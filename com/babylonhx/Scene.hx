@@ -1,5 +1,6 @@
 package com.babylonhx;
 
+import com.babylonhx.PointerInfoPre;
 import com.babylonhx.actions.Action;
 import com.babylonhx.actions.ActionManager;
 import com.babylonhx.actions.ActionEvent;
@@ -246,15 +247,28 @@ import com.babylonhx.audio.*;
 	private var _onPointerDown:Int->Int->Int->Void;
 	private var _onPointerUp:Int->Int->Int->Void;
 	
-	/**
-	 * Observable event triggered each time an input event is received from the rendering canvas
-	 */
-	//public var onPointerObservable:Observable = new Observable();
-	
 	public var onPointerMove:Int->Int->PickingInfo->Void;
 	public var onPointerDown:Int->Int->Int->PickingInfo->Void;
 	public var onPointerUp:Int->Int->Int->PickingInfo->Void;
 	public var onPointerPick:PickingInfo->Void;
+	
+	/**
+     * This observable event is triggered when any mouse event registered during Scene.attach() is called 
+	 * BEFORE the 3D engine to process anything (mesh/sprite picking for instance).
+     * You have the possibility to skip the 3D Engine process and the call to onPointerObservable by setting 
+	 * PointerInfoBase.skipOnPointerObservable to true
+     */
+    public var onPrePointerObservable:Observable<PointerInfoPre> = new Observable<PointerInfoPre>();
+	
+	/**
+	 * Observable event triggered each time an input event is received from the rendering canvas
+	 */
+	public var onPointerObservable:Observable<PointerInfo> = new Observable<PointerInfo>();
+	
+	public var unTranslatedPointer(get, never):Vector2;
+	private function get_unTranslatedPointer():Vector2 {
+		return new Vector2(this._unTranslatedPointerX, this._unTranslatedPointerY);
+	}
 	
 	// Define this parameter if you are using multiple cameras and you want to 
 	// specify which one should be used for pointer position
@@ -777,13 +791,23 @@ import com.babylonhx.audio.*;
 		};
 		 
 		this._onPointerMove = function(x:Int, y:Int) {
+			this._updatePointerPosition(x, y);
+			
+			// PreObservable support
+            if (this.onPrePointerObservable.hasObservers()) {
+                var type = PointerEventTypes.POINTERMOVE;
+                var pi = new PointerInfoPre(type, { x: x, y: y, button: null }, this._unTranslatedPointerX, this._unTranslatedPointerY);
+                this.onPrePointerObservable.notifyObservers(pi, type);
+                if (pi.skipOnPointerObservable) {
+                    return;
+                }
+            }
+			
 			if (this.cameraToUseForPointers == null && this.activeCamera == null) {
                 return;
             }
 			
 			//var canvas = this._engine.getRenderingCanvas();
-			
-			this._updatePointerPosition(x, y);
 			
 			if (this.pointerMovePredicate == null) {
 				this.pointerMovePredicate = function(mesh:AbstractMesh):Bool { 
@@ -829,19 +853,30 @@ import com.babylonhx.audio.*;
 				this.onPointerMove(x, y, pickResult);
 			}
 			
-			/*if (this.onPointerObservable.hasObservers()) {
-				let type = evt.type == "mousewheel" ? PointerEventTypes.POINTERWHEEL : PointerEventTypes.POINTERMOVE;
-				let pi = new PointerInfo(type, evt, pickResult);
+			if (this.onPointerObservable.hasObservers()) {
+				var type = PointerEventTypes.POINTERMOVE;
+				var pi = new PointerInfo(type, { x: x, y: y, button: null }, pickResult);
 				this.onPointerObservable.notifyObservers(pi, type);
-			}*/
+			}
 		};
 		
-		this._onPointerDown = function(x:Int, y:Int, button:Int) {			
+		this._onPointerDown = function(x:Int, y:Int, button:Int) {
+			this._updatePointerPosition(x, y);
+			
+			// PreObservable support
+            if (this.onPrePointerObservable.hasObservers()) {
+                var type = PointerEventTypes.POINTERDOWN;
+                var pi = new PointerInfoPre(type, { x: x, y: y, button: button }, this._unTranslatedPointerX, this._unTranslatedPointerY);
+                this.onPrePointerObservable.notifyObservers(pi, type);
+                if (pi.skipOnPointerObservable) {
+                    return;
+                }
+            }
+			
 			if (this.cameraToUseForPointers == null && this.activeCamera == null) {
                 return;
             }
 			
-			this._updatePointerPosition(x, y);
 			this._startingPointerPosition.x = this._pointerX;
 			this._startingPointerPosition.y = this._pointerY;
 			this._startingPointerTime = Tools.Now();
@@ -900,11 +935,11 @@ import com.babylonhx.audio.*;
 				this.onPointerDown(x, y, button, pickResult);
 			}
 			
-			/*if (this.onPointerObservable.hasObservers()) {
-				let type = PointerEventTypes.POINTERDOWN;
-				let pi = new PointerInfo(type, evt, pickResult);
+			if (this.onPointerObservable.hasObservers()) {
+				var type = PointerEventTypes.POINTERDOWN;
+				var pi = new PointerInfo(type, { x: x, y: y, button: button }, pickResult);
 				this.onPointerObservable.notifyObservers(pi, type);
-			}*/
+			}
 			
 			// Sprites
 			this._pickedDownSprite = null;
@@ -935,11 +970,21 @@ import com.babylonhx.audio.*;
 		};
 		
 		this._onPointerUp = function(x:Int, y:Int, button:Int) {
+			this._updatePointerPosition(x, y);
+			
+			// PreObservable support
+            if (this.onPrePointerObservable.hasObservers()) {
+                var type = PointerEventTypes.POINTERUP;
+                var pi = new PointerInfoPre(type, { x: x, y: y, button: button }, this._unTranslatedPointerX, this._unTranslatedPointerY);
+                this.onPrePointerObservable.notifyObservers(pi, type);
+                if (pi.skipOnPointerObservable) {
+                    return;
+                }
+            }
+			
 			if (this.cameraToUseForPointers == null && this.activeCamera == null) {
                 return;
             }
-			
-			this._updatePointerPosition(x, y);
 			
 			if (this.pointerUpPredicate == null) {
 				this.pointerUpPredicate = function(mesh:AbstractMesh):Bool {
@@ -955,11 +1000,11 @@ import com.babylonhx.audio.*;
 					if (this.onPointerPick != null) {
 						this.onPointerPick(pickResult);
 					}
-					/*if (this.onPointerObservable.hasObservers()) {
-						let type = PointerEventTypes.POINTERPICK;
-						let pi = new PointerInfo(type, evt, pickResult);
+					if (this.onPointerObservable.hasObservers()) {
+						var type = PointerEventTypes.POINTERPICK;
+						var pi = new PointerInfo(type, { x: x, y: y, button: button }, pickResult);
 						this.onPointerObservable.notifyObservers(pi, type);
-					}*/
+					}
 				}
 				if (pickResult.pickedMesh.actionManager != null) {
 					pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnPickUpTrigger, ActionEvent.CreateNew(pickResult.pickedMesh, button));
@@ -977,11 +1022,11 @@ import com.babylonhx.audio.*;
 				this.onPointerUp(x, y, button, pickResult);
 			}
 			
-			/*if (this.onPointerObservable.hasObservers()) {
-				let type = PointerEventTypes.POINTERUP;
-				let pi = new PointerInfo(type, evt, pickResult);
+			if (this.onPointerObservable.hasObservers()) {
+				var type = PointerEventTypes.POINTERUP;
+				var pi = new PointerInfo(type, { x: x, y: y, button: button }, pickResult);
 				this.onPointerObservable.notifyObservers(pi, type);
-			}*/
+			}
 			
 			this._startingPointerTime = 0;
 			
