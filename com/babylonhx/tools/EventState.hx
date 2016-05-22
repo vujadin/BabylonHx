@@ -11,13 +11,21 @@ package com.babylonhx.tools;
 class EventState {
 	
 	/**
+     * An Observer can set this property to true to prevent subsequent observers of being notified
+     */
+	public var skipNextObservers:Bool;
+	/**
+     * Get the mask value that were used to trigger the event corresponding to this EventState object
+     */
+	public var mask:Int;
+	
+	
+	/**
 	 * If the callback of a given Observer set this member to true the following observers will be ignored
 	 */
-	public var skipNextObservers:Bool;
-	
-	
-	inline public function new() {
-		this.skipNextObservers = false;
+	inline public function new(mask:Int, skipNextObservers:Bool = false) {
+		this.skipNextObservers = skipNextObservers;
+		this.mask = mask;
 	}
 	
 }

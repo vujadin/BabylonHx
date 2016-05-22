@@ -55,7 +55,8 @@ class PackedRect {
 	}
 
 	/**
-	 * Compute the UV of the top/left, top/right, bottom/right, bottom/left points of the rectangle this node handles into the map
+	 * Compute the UV of the top/left, top/right, bottom/right, bottom/left points of the rectangle this node 
+	 * handles into the map
 	 * @returns And array of 4 Vector2, containing UV coordinates for the four corners of the Rectangle into the map
 	 */
 	private function get_UVs():Array<Vector2> {
@@ -95,7 +96,7 @@ class PackedRect {
 	private function findAndSplitNode(contentSize:Size):PackedRect {
 		var node = this.findNode(contentSize);
 		
-		// Not enought space...
+		// Not enough space...
 		if (node == null) {
 			return null;
 		}

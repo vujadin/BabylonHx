@@ -38,6 +38,19 @@ import haxe.ds.Vector;
 	public function toString():String {
 		return m + "";
 	}
+	
+	public function getClassName():String {
+        return "Matrix";
+    }
+
+    public function getHashCode():Int {
+        var hash = Std.int(this.m[0]);
+        for (i in 1...16) {
+            hash = Std.int(hash * 397) ^ Std.int(this.m[i]);
+        }
+		
+        return hash;
+    }
 
 	// Properties
 	public function isIdentity():Bool {

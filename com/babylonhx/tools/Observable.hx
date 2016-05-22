@@ -4,6 +4,17 @@ package com.babylonhx.tools;
  * ...
  * @author Krtolica Vujadin
  */
+
+/**
+ * The Observable class is a simple implementation of the Observable pattern.
+ * There's one slight particularity though: a given Observable can notify its observer using a particular mask value, 
+ * only the Observers registered with this mask value will be notified.
+ * This enable a more fine grained execution without having to rely on multiple different Observable objects.
+ * For instance you may have a given Observable that have four different types of notifications: 
+ * Move (mask = 0x01), Stop (mask = 0x02), Turn Right (mask = 0X04), Turn Left (mask = 0X08).
+ * A given observer can register itself with only Move and Stop (mask = 0x03), then it will only be notified when 
+ * one of these two occurs and will never be for Turn Left/Right.
+ */
 class Observable<T> {
 	
 	private var _observers:Array<Observer<T>>;
@@ -17,7 +28,8 @@ class Observable<T> {
 	 * Create a new Observer with the specified callback
 	 * @param callback the callback that will be executed for that Observer
 	 * @param insertFirst if true the callback will be inserted at the first position, hence executed before the others ones.
-	 * If false (default behavior) the callback will be inserted at the last position, executed after all the others already present.
+	 * If false (default behavior) the callback will be inserted at the last position, executed after all the others 
+	 * already present.
 	 */
 	public function add(callback:T->Null<EventState>->Void, mask:Int = -1, insertFirst:Bool = false):Observer<T> {
 		if (callback == null) {
@@ -73,7 +85,7 @@ class Observable<T> {
 	 * @param eventData
 	 */
 	public function notifyObservers(eventData:T, mask:Int = -1) {
-		var state:EventState = new EventState();
+		var state:EventState = new EventState(mask);
 		
         for (obs in this._observers) {
             if (obs.mask & mask != 0) {

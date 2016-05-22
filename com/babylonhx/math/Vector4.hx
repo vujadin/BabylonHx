@@ -26,6 +26,19 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public function toString():String {
 		return "{X:" + this.x + " Y:" + this.y + " Z:" + this.z + "W:" + this.w + "}";
 	}
+	
+	inline public function getClassName():String {
+        return "Vector4";
+    }
+	
+	public function getHashCode():Int {
+        var hash = Std.int(this.x);
+        hash = Std.int(hash * 397) ^ Std.int(this.y);
+		hash = Std.int(hash * 397) ^ Std.int(this.z);
+		hash = Std.int(hash * 397) ^ Std.int(this.w);
+		
+        return hash;
+    }
 
 	// Operators
 	inline public function asArray():Array<Float> {

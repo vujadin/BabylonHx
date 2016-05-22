@@ -26,6 +26,18 @@ import haxe.ds.Vector;
 	inline public function toString():String {
 		return "{X:" + this.x + " Y:" + this.y + " Z:" + this.z + "}";
 	}
+	
+	inline public function getClassName():String {
+        return "Vector3";
+    }
+	
+	public function getHashCode():Int {
+        var hash = Std.int(this.x);
+        hash = Std.int(hash * 397) ^ Std.int(this.y);
+		hash = Std.int(hash * 397) ^ Std.int(this.z);
+		
+        return hash;
+    }
 
 	// Operators
 	inline public function asArray():Array<Float> {

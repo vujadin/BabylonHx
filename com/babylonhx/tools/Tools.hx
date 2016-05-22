@@ -776,4 +776,49 @@ typedef Assets = nme.Assets;
 		return createRandomIdentifier(8, 15) + '-' + createRandomIdentifier(4, 15) + '-4' + createRandomIdentifier(3, 15) + '-' + com.babylonhx.math.Tools.randomInt(0, 3) + createRandomIdentifier(3, 15) + '-' + createRandomIdentifier(12, 15);
 	}	
 	
+	/**
+	 * This method can be used with hashCodeFromStream when your input is an array of values that are either: 
+	 * number, string, boolean or custom type implementing the getHashCode():number method.
+	 * @param array
+	 */
+	public static function arrayOrStringFeeder(array:Dynamic):Int->Int {
+		return function(index:Int):Int {
+			if (index >= array.length) {
+				return -9999;
+			}
+			
+			var val:Dynamic = array.charCodeAt != null ? array.charCodeAt(index) : array[index];
+			if (val != null && val.getHashCode != null) {
+				val = val.getHashCode();
+			}
+			if (Std.is(val, String)) {
+				return Tools.hashCodeFromStream(Tools.arrayOrStringFeeder(val));
+			}
+			
+			return val;
+		};
+	}
+
+	/**
+	 * Compute the hashCode of a stream of number
+	 * To compute the HashCode on a string or an Array of data types implementing the getHashCode() method, 
+	 * use the arrayOrStringFeeder method.
+	 * @param feeder a callback that will be called until it returns null, each valid returned values will 
+	 * be used to compute the hash code.
+	 * @return the hash code computed
+	 */
+	public static function hashCodeFromStream(feeder:Int->Int):Int {
+		// Based from here: http://stackoverflow.com/a/7616484/802124
+		var hash = 0;
+		var index = 0;
+		var chr = feeder(index++);
+		while (chr != -9999) {
+			hash = Std.int(((hash << 5) - hash) + chr);
+			//hash |= 0;                          // Convert to 32bit integer
+			chr = feeder(index++);
+		}
+		
+		return hash;
+	}
+	
 }

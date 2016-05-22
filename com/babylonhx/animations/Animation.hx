@@ -5,6 +5,7 @@ import com.babylonhx.animations.easing.IEasingFunction;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Quaternion;
+import com.babylonhx.math.Size;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
@@ -28,6 +29,7 @@ import com.babylonhx.Node;
 	public static inline var ANIMATIONTYPE_MATRIX:Int = 3;
 	public static inline var ANIMATIONTYPE_COLOR3:Int = 4;
 	public static inline var ANIMATIONTYPE_VECTOR2:Int = 5;
+	public static inline var ANIMATIONTYPE_SIZE:Int = 6;
 
 	public static inline var ANIMATIONLOOPMODE_RELATIVE:Int = 0;
 	public static inline var ANIMATIONLOOPMODE_CYCLE:Int = 1;
@@ -79,6 +81,9 @@ import com.babylonhx.Node;
 		} 
 		else if (Std.is(from, Color3)) {
 			dataType = Animation.ANIMATIONTYPE_COLOR3;
+		}
+		else if (Std.is(from, Size)) {
+			dataType = Animation.ANIMATIONTYPE_SIZE;
 		}
 		
 		if (dataType == -1) {
@@ -229,12 +234,16 @@ import com.babylonhx.Node;
 	inline public function vector2InterpolateFunction(startValue:Vector2, endValue:Vector2, gradient:Float):Vector2 {
 		return Vector2.Lerp(startValue, endValue, gradient);
 	}
+	
+	inline public function sizeInterpolateFunction(startValue:Size, endValue:Size, gradient:Float):Size {
+        return Size.Lerp(startValue, endValue, gradient);
+    }
 
 	inline public function color3InterpolateFunction(startValue:Color3, endValue:Color3, gradient:Float):Color3 {
 		return Color3.Lerp(startValue, endValue, gradient);
 	}
 	
-	public function matrixInterpolateFunction(startValue:Matrix, endValue:Matrix, gradient:Float):Matrix {
+	inline public function matrixInterpolateFunction(startValue:Matrix, endValue:Matrix, gradient:Float):Matrix {
 		return Matrix.Lerp(startValue, endValue, gradient);
 	}
 
@@ -338,6 +347,16 @@ import com.babylonhx.Node;
 							case Animation.ANIMATIONLOOPMODE_RELATIVE:
 								return this.vector2InterpolateFunction(cast startValue, cast endValue, gradient).add(offsetValue.scale(repeatCount));
 						}
+					// Size	
+					case Animation.ANIMATIONTYPE_SIZE:
+                        switch (loopMode) {
+                            case Animation.ANIMATIONLOOPMODE_CYCLE, Animation.ANIMATIONLOOPMODE_CONSTANT:
+                                return this.sizeInterpolateFunction(startValue, endValue, gradient);
+								
+                            case Animation.ANIMATIONLOOPMODE_RELATIVE:
+                                return this.sizeInterpolateFunction(startValue, endValue, gradient).add(offsetValue.scale(repeatCount));
+                        }
+						
 					// Color3
 					case Animation.ANIMATIONTYPE_COLOR3:
 						switch (loopMode) {
@@ -534,7 +553,9 @@ import com.babylonhx.Node;
 						// Vector2
 						case Animation.ANIMATIONTYPE_VECTOR2:
 							this._offsetsCache[keyOffset] = cast(toValue, Vector2).subtract(cast(fromValue, Vector2));
-							
+						// Size
+                        case Animation.ANIMATIONTYPE_SIZE:
+                            this._offsetsCache[keyOffset] = cast(toValue, Size).subtract(cast fromValue); 
 						// Color3
 						case Animation.ANIMATIONTYPE_COLOR3:
 							this._offsetsCache[keyOffset] = cast(toValue, Color3).subtract(cast(fromValue, Color3));
@@ -568,6 +589,10 @@ import com.babylonhx.Node;
 				// Vector2
 				case Animation.ANIMATIONTYPE_VECTOR2:
 					offsetValue = Vector2.Zero();
+					
+				// Size
+                case Animation.ANIMATIONTYPE_SIZE:
+                    offsetValue = Size.Zero();
 					
 				// Color3
 				case Animation.ANIMATIONTYPE_COLOR3:

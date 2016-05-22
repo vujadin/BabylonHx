@@ -23,6 +23,18 @@ package com.babylonhx.math;
 	public function toString():String {
 		return "{R:" + this.r + " G:" + this.g + " B:" + this.b + "}";
 	}
+	
+	public function getClassName():String {
+        return "Color3";
+    }
+	
+	public function getHashCode():Int {
+        var hash = Std.int(this.r);
+        hash = Std.int(hash * 397) ^ Std.int(this.g);
+        hash = Std.int(hash * 397) ^ Std.int(this.b);
+		
+        return hash;
+    }
 
 	// Operators
 	inline public function toArray(array:Array<Float>, index:Int = 0):Color3 {

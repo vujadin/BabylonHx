@@ -22,6 +22,19 @@ package com.babylonhx.math;
 	public function toString():String {
 		return "{X:" + this.x + " Y:" + this.y + " Z:" + this.z + " W:" + this.w + "}";
 	}
+	
+	public function getClassName():String {
+        return "Quaternion";
+    }
+
+    public function getHashCode():Float {
+        var hash = Std.int(this.x);
+        hash = Std.int(hash * 397) ^ Std.int(this.y);
+        hash = Std.int(hash * 397) ^ Std.int(this.z);
+        hash = Std.int(hash * 397) ^ Std.int(this.w);
+		
+        return hash;
+    }
 
 	inline public function asArray():Array<Float> {
 		return [this.x, this.y, this.z, this.w];

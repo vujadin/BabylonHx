@@ -24,6 +24,17 @@ package com.babylonhx.math;
 	public function clone():Plane {
 		return new Plane(this.normal.x, this.normal.y, this.normal.z, this.d);
 	}
+	
+	public function getClassName():String {
+        return "Plane";
+    }
+
+    public function getHashCode():Int {
+        var hash = Std.int(this.normal.getHashCode());
+        hash = Std.int(hash * 397) ^ Std.int(this.d);
+		
+        return hash;
+    }
 
 	inline public function normalize():Void {
 		var norm = (Math.sqrt((this.normal.x * this.normal.x) + (this.normal.y * this.normal.y) + (this.normal.z * this.normal.z)));

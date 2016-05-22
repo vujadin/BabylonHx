@@ -20,6 +20,10 @@ import com.babylonhx.tools.Tools;
 		this.b = b;
 		this.a = a;
 	}
+	
+	inline public function getClassName():String {
+        return "Color4";
+    }
 
 	// Operators
 	public function addInPlace(right:Color4):Color4 {
@@ -30,12 +34,21 @@ import com.babylonhx.tools.Tools;
 		
 		return this;
 	}
+	
+	public function getHashCode():Int {
+        var hash = Std.int(this.r);
+        hash = Std.int(hash * 397) ^ Std.int(this.g);
+        hash = Std.int(hash * 397) ^ Std.int(this.b);
+        hash = Std.int(hash * 397) ^ Std.int(this.a);
+		
+        return hash;
+    }
 
 	public function asArray():Array<Float> {
 		var result:Array<Float> = [];
-
+		
 		this.toArray(result, 0);
-
+		
 		return result;
 	}
 

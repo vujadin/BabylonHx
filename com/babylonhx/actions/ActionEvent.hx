@@ -1,5 +1,6 @@
 package com.babylonhx.actions;
 
+import com.babylonhx.math.Vector2;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.sprites.Sprite;
 
@@ -65,6 +66,10 @@ import com.babylonhx.sprites.Sprite;
 	 */
 	public static function CreateNewFromScene(scene:Scene, evt:Dynamic):ActionEvent {
 		return new ActionEvent(null, scene.pointerX, scene.pointerY, scene.meshUnderPointer, evt);
+	}
+	
+	public static function CreateNewFromPrimitive(prim:Dynamic, pointerPos:Vector2, ?evt:Dynamic, ?additionalData:Dynamic): ActionEvent {
+        return new ActionEvent(prim, pointerPos.x, pointerPos.y, null, evt, additionalData);
 	}
 	
 }
