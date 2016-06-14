@@ -121,7 +121,7 @@ To build for Lime run from command line:
 
 To build for NME run from command line:
 
-***haxelib run nme run build.xml windows***
+***haxelib run nme run project.nmml windows***
 
 You should see this in your browser when build is done:
 ![Alt text](scrshot.jpg?raw=true "Basic scene")
