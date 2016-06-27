@@ -8,14 +8,12 @@ import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
 
-import com.babylonhx.utils.GL;
-
 /**
  * ...
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.BaseTexture') class BaseTexture implements IAnimatable {
+@:expose('BABYLON.BaseTexture') class BaseTexture implements IAnimatable implements ISmartArrayCompatible {
 	
 	public var name:String;
 	public var delayLoadState:Int = Engine.DELAYLOADSTATE_NONE;

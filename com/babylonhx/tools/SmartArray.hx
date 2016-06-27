@@ -5,14 +5,12 @@ package com.babylonhx.tools;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.SmartArray') class SmartArray<T> {
+@:expose('BABYLON.SmartArray') class SmartArray<T:ISmartArrayCompatible> {
 	
 	private static var _GlobalId:Int = 0;
 	
 	public var data:Array<T>;
 	public var length:Int = 0;
-	
-	public var __smartArrayFlags:Array<Int>;
 
 	private var _id:Int;
 	private var _duplicateId:Int = 0;
@@ -25,16 +23,16 @@ package com.babylonhx.tools;
 
 	inline public function push(value:T):Void {
 		this.data[this.length++] = value;
-		
-		/*if (untyped value.__smartArrayFlags == null) {
-			untyped value.__smartArrayFlags = [];
+
+		/*if (value.__smartArrayFlags == null) {
+			value.__smartArrayFlags = [];
 		}*/
-		
-		untyped value.__smartArrayFlags[this._id] = this._duplicateId;
+
+		value.__smartArrayFlags[this._id] = this._duplicateId;
 	}
 
 	public function pushNoDuplicate(value:T) {
-		if(untyped /*value.__smartArrayFlags != null &&*/ value.__smartArrayFlags[this._id] == this._duplicateId) {
+		if(/*value.__smartArrayFlags != null &&*/ value.__smartArrayFlags[this._id] == this._duplicateId) {
 			return;
 		}
 		
@@ -87,7 +85,7 @@ package com.babylonhx.tools;
 	inline public function indexOf(value:T):Int {
 		var position = this.data.indexOf(value);
 		
-		return (position >= this.length) ? return -1 : position;
+		return (position >= this.length) ? -1 : position;
 	}
 
 }
