@@ -211,9 +211,8 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		engine.setState(this.backFaceCulling, this.zOffset, false, this.sideOrientation == Material.ClockWiseSideOrientation);
 	}
 
-	public function bind(world:Matrix, ?mesh:Mesh) {
-		this._scene._cachedMaterial = this;
-		
+	public function bind(world:Matrix, ?mesh:Mesh) {		
+		this._scene._cachedMaterial = this;		
         this.onBindObservable.notifyObservers(mesh);
 		
 		if (this.disableDepthWrite) {
@@ -324,7 +323,7 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		return multiMaterial;
 	}
 
-	public static function Parse(parsedMaterial:Dynamic, scene:Scene, rootUrl:String) {
+	public static function Parse(parsedMaterial:Dynamic, scene:Scene, rootUrl:String):Material {
 		if (parsedMaterial.customType == null) {
 			return StandardMaterial.Parse(parsedMaterial, scene, rootUrl);
 		}

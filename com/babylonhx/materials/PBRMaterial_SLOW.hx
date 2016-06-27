@@ -29,15 +29,12 @@ import com.babylonhx.tools.Tags;
 import com.babylonhx.tools.serialization.SerializationHelper;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.math.Tools in MathTools;
-import haxe.ds.Vector;
 
 
 /**
  * ...
  * @author Krtolica Vujadin
  */
-
-typedef PBD = PBRMaterialDefines
  
 class PBRMaterial extends Material {
 	
@@ -420,7 +417,7 @@ class PBRMaterial extends Material {
 	private var _useLogarithmicDepth:Bool;
 	public var useLogarithmicDepth(get, set):Bool;
 	
-	private var defs:Vector<Bool>;
+	private var defs:Map<String, Bool>;
 	
 
 	public function new(name:String, scene:Scene) {
@@ -504,7 +501,7 @@ class PBRMaterial extends Material {
 			return true;
 		}
 		
-		if (this.defs[PBD.INSTANCES] != useInstances) {
+		if (this.defs["INSTANCES"] != useInstances) {
 			return false;
 		}
 		
@@ -535,7 +532,7 @@ class PBRMaterial extends Material {
 	private static var _scaledEmissive = new Color3();
 	private static var _scaledReflection = new Color3();
 
-	public static function BindLights(scene:Scene, mesh:AbstractMesh, effect:Effect, defines:MaterialDefines, useScalarInLinearSpace:Bool, maxSimultaneousLights:Int, usePhysicalLightFalloff:Bool, SPECULARTERM:Int) {
+	public static function BindLights(scene:Scene, mesh:AbstractMesh, effect:Effect, defines:MaterialDefines, useScalarInLinearSpace:Bool, maxSimultaneousLights:Int, usePhysicalLightFalloff:Bool) {
 		var lightIndex:Int = 0;
 		var depthValuesAlreadySet:Bool = false;
 		for (index in 0...scene.lights.length) {
@@ -557,7 +554,7 @@ class PBRMaterial extends Material {
 			PBRMaterial._scaledAlbedo.scaleToRef(light.intensity, PBRMaterial._scaledAlbedo);
 			effect.setColor4("vLightDiffuse" + lightIndex, PBRMaterial._scaledAlbedo, usePhysicalLightFalloff ? light.radius : light.range);
 			
-			if (SPECULARTERM > -1 && defines.defines[SPECULARTERM]) {
+			if (defines.defines["SPECULARTERM"]) {
 				_convertColorToLinearSpaceToRef(light.specular, PBRMaterial._scaledReflectivity, useScalarInLinearSpace);
 				
 				PBRMaterial._scaledReflectivity.scaleToRef(light.intensity, PBRMaterial._scaledReflectivity);
@@ -604,7 +601,7 @@ class PBRMaterial extends Material {
 			// Textures
 			if (scene.texturesEnabled) {
 				if (scene.getEngine().getCaps().textureLOD) {
-					this.defs[PBD.LODBASEDMICROSFURACE] = true;
+					this.defs["LODBASEDMICROSFURACE"] = true;
 				}
 				
 				if (this.albedoTexture != null && StandardMaterial.DiffuseTextureEnabled) {
@@ -613,7 +610,7 @@ class PBRMaterial extends Material {
 					} 
 					else {
 						needUVs = true;
-						this.defs[PBD.ALBEDO] = true;
+						this.defs["ALBEDO"] = true;
 					}
 				}
 				
@@ -623,7 +620,7 @@ class PBRMaterial extends Material {
 					} 
 					else {
 						needUVs = true;
-						this.defs[PBD.AMBIENT] = true;
+						this.defs["AMBIENT"] = true;
 					}
 				}
 				
@@ -633,10 +630,10 @@ class PBRMaterial extends Material {
 					} 
 					else {
 						needUVs = true;
-						this.defs[PBD.OPACITY] = true;
+						this.defs["OPACITY"] = true;
 						
 						if (this.opacityTexture.getAlphaFromRGB) {
-							this.defs[PBD.OPACITYRGB] = true;
+							this.defs["OPACITYRGB"] = true;
 						}
 					}
 				}
@@ -647,44 +644,44 @@ class PBRMaterial extends Material {
 					} 
 					else {
 						needNormals = true;
-						this.defs[PBD.REFLECTION] = true;
+						this.defs["REFLECTION"] = true;
 						
 						if (this.reflectionTexture.coordinatesMode == Texture.INVCUBIC_MODE) {
-							this.defs[PBD.INVERTCUBICMAP] = true;
+							this.defs["INVERTCUBICMAP"] = true;
 						}
 						
-						this.defs[PBD.REFLECTIONMAP_3D] = this.reflectionTexture.isCube;
+						this.defs["REFLECTIONMAP_3D"] = this.reflectionTexture.isCube;
 						
 						switch (this.reflectionTexture.coordinatesMode) {
 							case Texture.CUBIC_MODE, Texture.INVCUBIC_MODE:
-								this.defs[PBD.REFLECTIONMAP_CUBIC] = true;
+								this.defs["REFLECTIONMAP_CUBIC"] = true;
 								
 							case Texture.EXPLICIT_MODE:
-								this.defs[PBD.REFLECTIONMAP_EXPLICIT] = true;
+								this.defs["REFLECTIONMAP_EXPLICIT"] = true;
 								
 							case Texture.PLANAR_MODE:
-								this.defs[PBD.REFLECTIONMAP_PLANAR] = true;
+								this.defs["REFLECTIONMAP_PLANAR"] = true;
 								
 							case Texture.PROJECTION_MODE:
-								this.defs[PBD.REFLECTIONMAP_PROJECTION] = true;
+								this.defs["REFLECTIONMAP_PROJECTION"] = true;
 								
 							case Texture.SKYBOX_MODE:
-								this.defs[PBD.REFLECTIONMAP_SKYBOX] = true;
+								this.defs["REFLECTIONMAP_SKYBOX"] = true;
 								
 							case Texture.SPHERICAL_MODE:
-								this.defs[PBD.REFLECTIONMAP_SPHERICAL] = true;
+								this.defs["REFLECTIONMAP_SPHERICAL"] = true;
 								
 							case Texture.EQUIRECTANGULAR_MODE:
-								this.defs[PBD.REFLECTIONMAP_EQUIRECTANGULAR] = true;
+								this.defs["REFLECTIONMAP_EQUIRECTANGULAR"] = true;
 								
 						}
 						
 						if (Std.is(this.reflectionTexture, HDRCubeTexture)) {
-							this.defs[PBD.USESPHERICALFROMREFLECTIONMAP] = true;
+							this.defs["USESPHERICALFROMREFLECTIONMAP"] = true;
 							needNormals = true;
 							
 							if (untyped this.reflectionTexture.isPMREM) {
-								this.defs[PBD.USEPMREMREFLECTION] = true;
+								this.defs["USEPMREMREFLECTION"] = true;
 							}
 						}
 					}
@@ -696,8 +693,8 @@ class PBRMaterial extends Material {
 					} 
 					else {
 						needUVs = true;
-						this.defs[PBD.LIGHTMAP] = true;
-						this.defs[PBD.USELIGHTMAPASSHADOWMAP] = this.useLightmapAsShadowmap;
+						this.defs["LIGHTMAP"] = true;
+						this.defs["USELIGHTMAPASSHADOWMAP"] = this.useLightmapAsShadowmap;
 					}
 				}
 				
@@ -707,7 +704,7 @@ class PBRMaterial extends Material {
 					} 
 					else {
 						needUVs = true;
-						this.defs[PBD.EMISSIVE] = true;
+						this.defs["EMISSIVE"] = true;
 					}
 				}
 				
@@ -717,9 +714,9 @@ class PBRMaterial extends Material {
 					} 
 					else {
 						needUVs = true;
-						this.defs[PBD.REFLECTIVITY] = true;
-						this.defs[PBD.MICROSURFACEFROMREFLECTIVITYMAP] = this.useMicroSurfaceFromReflectivityMapAlpha;
-						this.defs[PBD.MICROSURFACEAUTOMATIC] = this.useAutoMicroSurfaceFromReflectivityMap;
+						this.defs["REFLECTIVITY"] = true;
+						this.defs["MICROSURFACEFROMREFLECTIVITYMAP"] = this.useMicroSurfaceFromReflectivityMapAlpha;
+						this.defs["MICROSURFACEAUTOMATIC"] = this.useAutoMicroSurfaceFromReflectivityMap;
 					}
 				}
 			}
@@ -730,21 +727,21 @@ class PBRMaterial extends Material {
 				} 
 				else {
 					needUVs = true;
-					this.defs[PBD.BUMP] = true;
+					this.defs["BUMP"] = true;
 					
 					if (this.useParallax) {
-						this.defs[PBD.PARALLAX] = true;
+						this.defs["PARALLAX"] = true;
 						if (this.useParallaxOcclusion) {
-							this.defs[PBD.PARALLAXOCCLUSION] = true;
+							this.defs["PARALLAXOCCLUSION"] = true;
 						}
 					}
 					
 					if (this.invertNormalMapX) {
-                        this.defs[PBD.INVERTNORMALMAPX] = true;
+                        this.defs["INVERTNORMALMAPX"] = true;
                     }
 					
 					if (this.invertNormalMapY) {
-                        this.defs[PBD.INVERTNORMALMAPY] = true;
+                        this.defs["INVERTNORMALMAPY"] = true;
                     }
 				}
 			}
@@ -755,17 +752,17 @@ class PBRMaterial extends Material {
 				} 
 				else {
 					needUVs = true;
-					this.defs[PBD.REFRACTION] = true;
-					this.defs[PBD.REFRACTIONMAP_3D] = this.refractionTexture.isCube;
+					this.defs["REFRACTION"] = true;
+					this.defs["REFRACTIONMAP_3D"] = this.refractionTexture.isCube;
 					
 					if (this.linkRefractionWithTransparency) {
-						this.defs[PBD.LINKREFRACTIONTOTRANSPARENCY] = true;
+						this.defs["LINKREFRACTIONTOTRANSPARENCY"] = true;
 					}
 					if (Std.is(this.refractionTexture, HDRCubeTexture)) {
-						this.defs[PBD.REFRACTIONMAPINLINEARSPACE] = true;
+						this.defs["REFRACTIONMAPINLINEARSPACE"] = true;
 						
 						if (untyped this.refractionTexture.isPMREM) {
-							this.defs[PBD.USEPMREMREFRACTION] = true;
+							this.defs["USEPMREMREFRACTION"] = true;
 						}
 					}
 				}
@@ -776,51 +773,51 @@ class PBRMaterial extends Material {
 					return false;
 				} 
 				else {
-					this.defs[PBD.CAMERACOLORGRADING] = true;
+					this.defs["CAMERACOLORGRADING"] = true;
 				}
 			}
 		}
 		
 		// Effect
 		if (scene.clipPlane != null) {
-			this.defs[PBD.CLIPPLANE] = true;
+			this.defs["CLIPPLANE"] = true;
 		}
 		
 		if (engine.getAlphaTesting()) {
-			this.defs[PBD.ALPHATEST] = true;
+			this.defs["ALPHATEST"] = true;
 		}
 		
 		if (this._shouldUseAlphaFromAlbedoTexture()) {
-			this.defs[PBD.ALPHAFROMALBEDO] = true;
+			this.defs["ALPHAFROMALBEDO"] = true;
 		}
 		
 		if (this.useEmissiveAsIllumination) {
-			this.defs[PBD.EMISSIVEASILLUMINATION] = true;
+			this.defs["EMISSIVEASILLUMINATION"] = true;
 		}
 		
 		if (this.linkEmissiveWithAlbedo) {
-			this.defs[PBD.LINKEMISSIVEWITHALBEDO] = true;
+			this.defs["LINKEMISSIVEWITHALBEDO"] = true;
 		}
 		
 		if (this.useLogarithmicDepth) {
-			this.defs[PBD.LOGARITHMICDEPTH] = true;
+			this.defs["LOGARITHMICDEPTH"] = true;
 		}
 		
 		if (this.cameraContrast != 1) {
-			this.defs[PBD.CAMERACONTRAST] = true;
+			this.defs["CAMERACONTRAST"] = true;
 		}
 		
 		if (this.cameraExposure != 1) {
-			this.defs[PBD.CAMERATONEMAP] = true;
+			this.defs["CAMERATONEMAP"] = true;
 		}
 		
 		if (this.cameraColorCurves != null) {
-			this.defs[PBD.CAMERACOLORCURVES] = true;
+			this.defs["CAMERACOLORCURVES"] = true;
 		}
 		
 		if (this.overloadedShadeIntensity != 1 ||
 			this.overloadedShadowIntensity != 1) {
-			this.defs[PBD.OVERLOADEDSHADOWVALUES] = true;
+			this.defs["OVERLOADEDSHADOWVALUES"] = true;
 		}
 		
 		if (this.overloadedMicroSurfaceIntensity > 0 ||
@@ -829,21 +826,21 @@ class PBRMaterial extends Material {
 			this.overloadedAlbedoIntensity > 0 ||
 			this.overloadedAmbientIntensity > 0 ||
 			this.overloadedReflectionIntensity > 0) {
-			this.defs[PBD.OVERLOADEDVALUES] = true;
+			this.defs["OVERLOADEDVALUES"] = true;
 		}
 		
 		// Point size
 		if (this.pointsCloud || scene.forcePointsCloud) {
-			this.defs[PBD.POINTSIZE] = true;
+			this.defs["POINTSIZE"] = true;
 		}
 		
 		// Fog
 		if (scene.fogEnabled && mesh != null && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
-			this.defs[PBD.FOG] = true;
+			this.defs["FOG"] = true;
 		}
 		
 		if (scene.lightsEnabled && !this.disableLighting) {
-			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this._defines, this.maxSimultaneousLights, PBD.SPECULARTERM);
+			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this._defines, this.maxSimultaneousLights);
 		}
 		
 		if (StandardMaterial.FresnelEnabled) {
@@ -852,48 +849,48 @@ class PBRMaterial extends Material {
 				this.emissiveFresnelParameters != null && this.emissiveFresnelParameters.isEnabled) {
 				
 				if (this.opacityFresnelParameters != null && this.opacityFresnelParameters.isEnabled) {
-					this.defs[PBD.OPACITYFRESNEL] = true;
+					this.defs["OPACITYFRESNEL"] = true;
 				}
 				
 				if (this.emissiveFresnelParameters != null && this.emissiveFresnelParameters.isEnabled) {
-					this.defs[PBD.EMISSIVEFRESNEL] = true;
+					this.defs["EMISSIVEFRESNEL"] = true;
 				}
 				
 				needNormals = true;
-				this.defs[PBD.FRESNEL] = true;
+				this.defs["FRESNEL"] = true;
 			}
 		}
 		
-		if (this.defs[PBD.SPECULARTERM] && this.useSpecularOverAlpha) {
-			this.defs[PBD.SPECULAROVERALPHA] = true;
+		if (this.defs["SPECULARTERM"] && this.useSpecularOverAlpha) {
+			this.defs["SPECULAROVERALPHA"] = true;
 		}
 		
 		if (this.usePhysicalLightFalloff) {
-			this.defs[PBD.USEPHYSICALLIGHTFALLOFF] = true;
+			this.defs["USEPHYSICALLIGHTFALLOFF"] = true;
 		}
 		
 		if (this.useRadianceOverAlpha) {
-			this.defs[PBD.RADIANCEOVERALPHA] = true;
+			this.defs["RADIANCEOVERALPHA"] = true;
 		}
 		
 		// Attribs
 		if (mesh != null) {
 			if (needNormals && mesh.isVerticesDataPresent(VertexBuffer.NormalKind)) {
-				this.defs[PBD.NORMAL] = true;
+				this.defs["NORMAL"] = true;
 			}
 			if (needUVs) {
 				if (mesh.isVerticesDataPresent(VertexBuffer.UVKind)) {
-					this.defs[PBD.UV1] = true;
+					this.defs["UV1"] = true;
 				}
 				if (mesh.isVerticesDataPresent(VertexBuffer.UV2Kind)) {
-					this.defs[PBD.UV2] = true;
+					this.defs["UV2"] = true;
 				}
 			}
 			if (mesh.useVertexColors && mesh.isVerticesDataPresent(VertexBuffer.ColorKind)) {
-				this.defs[PBD.VERTEXCOLOR] = true;
+				this.defs["VERTEXCOLOR"] = true;
 				
 				if (mesh.hasVertexAlpha) {
-					this.defs[PBD.VERTEXALPHA] = true;
+					this.defs["VERTEXALPHA"] = true;
 				}
 			}
 			if (mesh.useBones && mesh.computeBonesUsingShaders) {
@@ -903,7 +900,7 @@ class PBRMaterial extends Material {
 			
 			// Instances
 			if (useInstances) {
-				this.defs[PBD.INSTANCES] = true;
+				this.defs["INSTANCES"] = true;
 			}
 		}
 		
@@ -915,61 +912,61 @@ class PBRMaterial extends Material {
 			
 			// Fallbacks
 			var fallbacks = new EffectFallbacks();
-			if (this.defs[PBD.REFLECTION]) {
+			if (this.defs["REFLECTION"]) {
 				fallbacks.addFallback(0, "REFLECTION");
 			}
 			
-			if (this.defs[PBD.REFRACTION]) {
+			if (this.defs["REFRACTION"]) {
 				fallbacks.addFallback(0, "REFRACTION");
 			}
 			
-			if (this.defs[PBD.REFLECTIVITY]) {
+			if (this.defs["REFLECTIVITY"]) {
 				fallbacks.addFallback(0, "REFLECTIVITY");
 			}
 			
-			if (this.defs[PBD.BUMP]) {
+			if (this.defs["BUMP"]) {
 				fallbacks.addFallback(0, "BUMP");
 			}
 			
-			if (this.defs[PBD.PARALLAX]) {
+			if (this.defs["PARALLAX"]) {
 				fallbacks.addFallback(1, "PARALLAX");
 			}
 			
-			if (this.defs[PBD.PARALLAXOCCLUSION]) {
+			if (this.defs["PARALLAXOCCLUSION"]) {
 				fallbacks.addFallback(0, "PARALLAXOCCLUSION");
 			}
 			
-			if (this.defs[PBD.SPECULAROVERALPHA]) {
+			if (this.defs["SPECULAROVERALPHA"]) {
 				fallbacks.addFallback(0, "SPECULAROVERALPHA");
 			}
 			
-			if (this.defs[PBD.FOG]) {
+			if (this.defs["FOG"]) {
 				fallbacks.addFallback(1, "FOG");
 			}
 			
-			if (this.defs[PBD.POINTSIZE]) {
+			if (this.defs["POINTSIZE"]) {
 				fallbacks.addFallback(0, "POINTSIZE");
 			}
 			
-			if (this.defs[PBD.LOGARITHMICDEPTH]) {
+			if (this.defs["LOGARITHMICDEPTH"]) {
 				fallbacks.addFallback(0, "LOGARITHMICDEPTH");
 			}
 			
 			MaterialHelper.HandleFallbacksForShadows(this._defines, fallbacks, this.maxSimultaneousLights);
 			
-			if (this.defs[PBD.SPECULARTERM]) {
+			if (this.defs["SPECULARTERM"]) {
 				fallbacks.addFallback(0, "SPECULARTERM");
 			}
 			
-			if (this.defs[PBD.OPACITYFRESNEL]) {
+			if (this.defs["OPACITYFRESNEL"]) {
 				fallbacks.addFallback(1, "OPACITYFRESNEL");
 			}
 			
-			if (this.defs[PBD.EMISSIVEFRESNEL]) {
+			if (this.defs["EMISSIVEFRESNEL"]) {
 				fallbacks.addFallback(2, "EMISSIVEFRESNEL");
 			}
 			
-			if (this.defs[PBD.FRESNEL]) {
+			if (this.defs["FRESNEL"]) {
 				fallbacks.addFallback(3, "FRESNEL");
 			}
 			
@@ -980,24 +977,24 @@ class PBRMaterial extends Material {
 			//Attributes
 			var attribs:Array<String> = [VertexBuffer.PositionKind];
 			
-			if (this.defs[PBD.NORMAL]) {
+			if (this.defs["NORMAL"]) {
 				attribs.push(VertexBuffer.NormalKind);
 			}
 			
-			if (this.defs[PBD.UV1]) {
+			if (this.defs["UV1"]) {
 				attribs.push(VertexBuffer.UVKind);
 			}
 			
-			if (this.defs[PBD.UV2]) {
+			if (this.defs["UV2"]) {
 				attribs.push(VertexBuffer.UV2Kind);
 			}
 			
-			if (this.defs[PBD.VERTEXCOLOR]) {
+			if (this.defs["VERTEXCOLOR"]) {
 				attribs.push(VertexBuffer.ColorKind);
 			}
 			
-			MaterialHelper.PrepareAttributesForBones(attribs, mesh, this._defines.NUM_BONE_INFLUENCERS, fallbacks);
-			MaterialHelper.PrepareAttributesForInstances(attribs, this.defs, PBD.INSTANCES);
+			MaterialHelper.PrepareAttributesForBones(attribs, mesh, this._defines, fallbacks);
+			MaterialHelper.PrepareAttributesForInstances(attribs, this._defines);
 			
 			// Legacy browser patch
 			var shaderName:String = "pbr";
@@ -1025,7 +1022,7 @@ class PBRMaterial extends Material {
 			var samplers:Array<String> = ["albedoSampler", "ambientSampler", "opacitySampler", "reflectionCubeSampler", "reflection2DSampler", "emissiveSampler", "reflectivitySampler", "bumpSampler", "lightmapSampler", "refractionCubeSampler", "refraction2DSampler", "cameraColorGrading2DSampler"];
 			
 			ColorCurves.PrepareUniforms(uniforms);
-			MaterialHelper.PrepareUniformsAndSamplersList(uniforms, samplers, this._defines.lights, this.maxSimultaneousLights); 
+			MaterialHelper.PrepareUniformsAndSamplersList(uniforms, samplers, this._defines, this.maxSimultaneousLights); 
 			
 			this._effect = scene.getEngine().createEffect(shaderName,
 				attribs, uniforms, samplers,
@@ -1128,7 +1125,7 @@ class PBRMaterial extends Material {
 					this._effect.setMatrix("reflectionMatrix", this.reflectionTexture.getReflectionTextureMatrix());
 					this._effect.setFloat2("vReflectionInfos", this.reflectionTexture.level, 0);
 					
-					if (this.defs[PBD.USESPHERICALFROMREFLECTIONMAP]) {
+					if (this.defs["USESPHERICALFROMREFLECTIONMAP"]) {
 						var sp = cast (this.reflectionTexture, HDRCubeTexture).sphericalPolynomial;
 						this._effect.setFloat3("vSphericalX", sp.x.x, sp.x.y, sp.x.z);
 						this._effect.setFloat3("vSphericalY", sp.y.x, sp.y.y, sp.y.z);
@@ -1255,7 +1252,7 @@ class PBRMaterial extends Material {
 			
 			// Lights
 			if (this._myScene.lightsEnabled && !this.disableLighting) {
-				PBRMaterial.BindLights(this._myScene, mesh, this._effect, this._defines, this.useScalarInLinearSpace, this.maxSimultaneousLights, this.usePhysicalLightFalloff, PBD.SPECULARTERM);
+				PBRMaterial.BindLights(this._myScene, mesh, this._effect, this._defines, this.useScalarInLinearSpace, this.maxSimultaneousLights, this.usePhysicalLightFalloff);
 			}
 			
 			// View
@@ -1308,7 +1305,7 @@ class PBRMaterial extends Material {
 			this._effect.setVector3("vOverloadedMicroSurface", this._overloadedMicroSurface);
 			
 			// Log. depth
-			MaterialHelper.BindLogDepth(this.defs[PBD.LOGARITHMICDEPTH], this._effect, this._myScene);
+			MaterialHelper.BindLogDepth(this._defines, this._effect, this._myScene);
 		}
 		super.bind(world, mesh);
 		

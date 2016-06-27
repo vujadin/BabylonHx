@@ -1460,6 +1460,36 @@ import com.babylonhx.audio.*;
 		return null;
 	}
 	
+	/**
+	 * get a material using its id
+	 * @param {string} the multiMaterials's ID
+	 * @return {BABYLON.MultiMaterial|null} the multiMaterial or null if none found.
+	 */
+	public function getMultiMaterialByID(id:String):MultiMaterial {
+		for (index in 0...this.multiMaterials.length) {
+			if (this.multiMaterials[index].id == id) {
+				return this.multiMaterials[index];
+			}
+		}
+		
+		return null;
+	}
+
+	/**
+	 * get a material using its name
+	 * @param {string} the multiMaterials's name
+	 * @return {BABYLON.MultiMaterial|null} the multiMaterial or null if none found.
+	 */
+	public function getMultiMaterialByName(name:String):MultiMaterial {
+		for (index in 0...this.multiMaterials.length) {
+			if (this.multiMaterials[index].name == name) {
+				return this.multiMaterials[index];
+			}
+		}
+		
+		return null;
+	}
+	
 	public function getLensFlareSystemByName(name:String):LensFlareSystem {
 		for (index in 0...this.lensFlareSystems.length) {
 			if (this.lensFlareSystems[index].name == name) {
@@ -1961,7 +1991,9 @@ import com.babylonhx.audio.*;
 
 	private function _activeMesh(mesh:AbstractMesh) {
 		if (mesh.skeleton != null && this.skeletonsEnabled) {
-			this._activeSkeletons.pushNoDuplicate(mesh.skeleton);
+			if (this._activeSkeletons.pushNoDuplicate(mesh.skeleton)) {
+				mesh.skeleton.prepare();
+			}
 			
 			if (!mesh.computeBonesUsingShaders) {
                 this._softwareSkinnedMeshes.pushNoDuplicate(cast mesh);
@@ -2011,7 +2043,7 @@ import com.babylonhx.audio.*;
 		if (this.activeCamera == null) {
 			throw("Active camera not set");
 		}
-			
+		
 		//Tools.StartPerformanceCounter("Rendering camera " + this.activeCamera.name);
 		
 		// Viewport
@@ -2025,18 +2057,11 @@ import com.babylonhx.audio.*;
 		this.onBeforeCameraRenderObservable.notifyObservers(this.activeCamera);
 		
 		// Meshes
-		var beforeEvaluateActiveMeshesDate = Tools.Now();
+		//var beforeEvaluateActiveMeshesDate = Tools.Now();
 		//Tools.StartPerformanceCounter("Active meshes evaluation");
 		this._evaluateActiveMeshes();
-		this._evaluateActiveMeshesDuration += Tools.Now() - beforeEvaluateActiveMeshesDate;
+		//this._evaluateActiveMeshesDuration += Tools.Now() - beforeEvaluateActiveMeshesDate;
 		//Tools.EndPerformanceCounter("Active meshes evaluation");
-		
-		// Skeletons
-		for (skeletonIndex in 0...this._activeSkeletons.length) {
-			var skeleton:Skeleton = cast this._activeSkeletons.data[skeletonIndex];			
-			
-			skeleton.prepare();			
-		}
 		
 		// Software skinning
         for (softwareSkinnedMeshIndex in 0...this._softwareSkinnedMeshes.length) {
@@ -2140,7 +2165,7 @@ import com.babylonhx.audio.*;
 	}
 
 	private function _processSubCameras(camera:Camera) {
-		if (camera.subCameras.length == 0 && camera._rigCameras.length == 0) {
+		if (camera.cameraRigMode == Camera.RIG_MODE_NONE) {
 			this._renderForCamera(camera);
 			return;
 		}
@@ -2212,7 +2237,7 @@ import com.babylonhx.audio.*;
 		this.getEngine().resetDrawCalls();
 		this._meshesForIntersections.reset();
 		this.resetCachedMaterial();
-			
+		
 		//Tools.StartPerformanceCounter("Scene rendering");
 		
 		// Actions

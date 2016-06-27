@@ -7,17 +7,16 @@ import com.babylonhx.math.Tmp;
 import com.babylonhx.lights.Light;
 import com.babylonhx.lights.IShadowLight;
 
-import haxe.ds.Vector;
-
 /**
  * ...
  * @author Krtolica Vujadin
  */
 class MaterialHelper {	
 
-	public static function PrepareDefinesForLights(scene:Scene, mesh:AbstractMesh, defines:MaterialDefines, maxSimultaneousLights:Int, SPECULARTERM:Int):Bool {
+	public static function PrepareDefinesForLights(scene:Scene, mesh:AbstractMesh, defines:MaterialDefines, maxSimultaneousLights:Int = 4):Bool {		
 		var lightIndex:Int = 0;
 		var needNormals:Bool = false;
+		var needRebuild:Bool = false;
 		
 		for (index in 0...scene.lights.length) {
 			var light = scene.lights[index];
@@ -57,41 +56,48 @@ class MaterialHelper {
 			}
 			needNormals = true;
 			
-			defines.lights[lightIndex] = true;
+			/*if (defines.defines["LIGHT" + lightIndex] == null) {
+				needRebuild = true;
+			}*/
 			
+			defines.defines["LIGHT" + lightIndex] = true;
+			
+			var type:String = "";
 			switch (light.type) {
 				case "SPOTLIGHT":
-					defines.spotlights[lightIndex] = true;
-					
-				case "POINTLIGHT":
-					defines.pointlights[lightIndex] = true;
-					
-				case "DIRLIGHT":
-					defines.dirlights[lightIndex] = true;
+					type = "SPOTLIGHT" + lightIndex;
 					
 				case "HEMILIGHT":
-					defines.hemilights[lightIndex] = true;
+					type = "HEMILIGHT" + lightIndex;
+					
+				case "POINTLIGHT":
+					type = "POINTLIGHT" + lightIndex;
+					
+				case "DIRLIGHT":
+					type = "DIRLIGHT" + lightIndex;
 			}
 			
+			defines.defines[type] = true;
+			
 			// Specular
-			if (!light.specular.equalsFloats(0, 0, 0) && SPECULARTERM > -1) {
-				defines.defines[SPECULARTERM] = true;
+			if (!light.specular.equalsFloats(0, 0, 0) && defines.defines["SPECULARTERM"] != null) {
+				defines.defines["SPECULARTERM"] = true;
 			}
 			
 			// Shadows
 			if (scene.shadowsEnabled) {
 				var shadowGenerator = light.getShadowGenerator();
 				if (mesh != null && mesh.receiveShadows && shadowGenerator != null) {
-					defines.shadows[lightIndex] = true; 
+					defines.defines["SHADOW" + lightIndex] = true;
 					
-					defines.defines[untyped defines.SHADOWS] = true;
+					defines.defines["SHADOWS"] = true;
 					
 					if (shadowGenerator.useVarianceShadowMap || shadowGenerator.useBlurVarianceShadowMap) {
-						defines.shadowvsms[lightIndex] = true;
+						defines.defines["SHADOWVSM" + lightIndex] = true;
 					}
 					
 					if (shadowGenerator.usePoissonSampling) {
-						defines.shadowpcfs[lightIndex] = true;
+						defines.defines["SHADOWPCF" + lightIndex] = true;
 					}
 				}
 			}
@@ -102,12 +108,16 @@ class MaterialHelper {
 			}
 		}
 		
+		/*if (needRebuild) {
+			defines.rebuild();
+		}*/
+		
 		return needNormals;
 	}
 	
-	public static function PrepareUniformsAndSamplersList(uniformsList:Array<String>, samplersList:Array<String>, lights:Array<Bool>, maxSimultaneousLights:Int = 4) {
+	public static function PrepareUniformsAndSamplersList(uniformsList:Array<String>, samplersList:Array<String>, defines:MaterialDefines, maxSimultaneousLights:Int = 4) {
 		for (lightIndex in 0...maxSimultaneousLights) {
-			if (!lights[lightIndex]) {
+			if (!defines.defines["LIGHT" + lightIndex]) {
 				break;
 			}
 			
@@ -125,7 +135,7 @@ class MaterialHelper {
 
 	public static function HandleFallbacksForShadows(defines:MaterialDefines, fallbacks:EffectFallbacks, maxSimultaneousLights:Int = 4) {
 		for (lightIndex in 0...maxSimultaneousLights) {
-			if (!defines.lights[lightIndex]) {
+			if (!defines.defines["LIGHT" + lightIndex]) {
 				continue;
 			}
 			
@@ -133,35 +143,35 @@ class MaterialHelper {
 				fallbacks.addFallback(lightIndex, "LIGHT" + lightIndex);
 			}
 			
-			if (defines.shadows[lightIndex]) {
+			if (defines.defines["SHADOW" + lightIndex]) {
 				fallbacks.addFallback(0, "SHADOW" + lightIndex);
 			}
 			
-			if (defines.shadowpcfs[lightIndex]) {
+			if (defines.defines["SHADOWPCF" + lightIndex]) {
 				fallbacks.addFallback(0, "SHADOWPCF" + lightIndex);
 			}
 			
-			if (defines.shadowvsms[lightIndex]) {
+			if (defines.defines["SHADOWVSM" + lightIndex]) {
 				fallbacks.addFallback(0, "SHADOWVSM" + lightIndex);
 			}
 		}
 	}
 
-	inline public static function PrepareAttributesForBones(attribs:Array<String>, mesh:AbstractMesh, numBoneInfluencers:Int, fallbacks:EffectFallbacks) {
-		if (numBoneInfluencers > 0) {
+	public static function PrepareAttributesForBones(attribs:Array<String>, mesh:AbstractMesh, defines:MaterialDefines, fallbacks:EffectFallbacks) {
+		if (untyped defines.NUM_BONE_INFLUENCERS > 0) {
 			fallbacks.addCPUSkinningFallback(0, mesh);
 			
 			attribs.push(VertexBuffer.MatricesIndicesKind);
 			attribs.push(VertexBuffer.MatricesWeightsKind);
-			if (numBoneInfluencers > 4) {
+			if (untyped defines.NUM_BONE_INFLUENCERS > 4) {
 				attribs.push(VertexBuffer.MatricesIndicesExtraKind);
 				attribs.push(VertexBuffer.MatricesWeightsExtraKind);
 			}
 		}
 	}
 
-	public static function PrepareAttributesForInstances(attribs:Array<String>, defines:Vector<Bool>, INSTANCES:Int) {
-		if (defines[INSTANCES]) {
+	public static function PrepareAttributesForInstances(attribs:Array<String>, defines:MaterialDefines) {
+		if (defines.defines["INSTANCES"]) {
 			attribs.push("world0");
 			attribs.push("world1");
 			attribs.push("world2");
@@ -190,7 +200,7 @@ class MaterialHelper {
 		return depthValuesAlreadySet;
 	}
 	
-	inline public static function BindLightProperties(light:Light, effect:Effect, lightIndex:Int) {
+	public static function BindLightProperties(light:Light, effect:Effect, lightIndex:Int) {
 		switch (light.type) {
 			case "POINTLIGHT":
 				light.transferToEffect(effect, "vLightData" + lightIndex);
@@ -206,7 +216,7 @@ class MaterialHelper {
 		}
 	}
 
-	public static function BindLights(scene:Scene, mesh:AbstractMesh, effect:Effect, specularTerm:Bool, maxSimultaneousLights:Int = 4) {
+	public static function BindLights(scene:Scene, mesh:AbstractMesh, effect:Effect, defines:MaterialDefines, maxSimultaneousLights:Int = 4) {
 		var lightIndex:Int = 0;
 		var depthValuesAlreadySet:Bool = false;
 		for (index in 0...scene.lights.length) {
@@ -224,7 +234,7 @@ class MaterialHelper {
 			
 			light.diffuse.scaleToRef(light.intensity, Tmp.color3[0]);
 			effect.setColor4("vLightDiffuse" + lightIndex, Tmp.color3[0], light.range);
-			if (specularTerm) {
+			if (defines.defines["SPECULARTERM"]) {
 				light.specular.scaleToRef(light.intensity, Tmp.color3[1]);
 				effect.setColor3("vLightSpecular" + lightIndex, Tmp.color3[1]);
 			}
@@ -255,8 +265,8 @@ class MaterialHelper {
 		}
 	}
 	
-	inline public static function BindLogDepth(logarithmicDepth:Bool, effect:Effect, scene:Scene) {
-        if (logarithmicDepth) {
+	inline public static function BindLogDepth(defines:MaterialDefines, effect:Effect, scene:Scene) {
+        if (defines.defines["LOGARITHMICDEPTH"]) {
             effect.setFloat("logarithmicDepthConstant", 2.0 / (Math.log(scene.activeCamera.maxZ + 1.0) / 0.6931471805599453));  // Math.LN2
         }
     }

@@ -90,6 +90,18 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		return this;
 	}
+	
+	public function setTextureArray(name:String, textures:Array<Texture>):ShaderMaterial {
+		if (this._options.samplers.indexOf(name) == -1) {
+			this._options.samplers.push(name);
+		}
+		
+		this._checkUniform(name);
+		
+		this.setTextureArray(name, textures);
+		
+		return this;
+	}
 
 	inline public function setFloat(name:String, value:Float):ShaderMaterial {
 		this._checkUniform(name);
