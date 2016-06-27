@@ -11,7 +11,7 @@ import haxe.ds.Vector;
 * ...
 * @author Krtolica Vujadin
 */
-@:expose('BABYLON.OctreeBlock') class OctreeBlock<T> implements IOctreeContainer<T> {
+@:expose('BABYLON.OctreeBlock') class OctreeBlock<T:ISmartArrayCompatible> implements IOctreeContainer<T> {
 	
 	public var entries:Array<T> = [];
 	public var blocks:Array<OctreeBlock<T>>;

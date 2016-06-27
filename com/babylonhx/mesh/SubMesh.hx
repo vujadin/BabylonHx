@@ -17,7 +17,7 @@ import com.babylonhx.tools.Tools;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.SubMesh') class SubMesh {
+@:expose('BABYLON.SubMesh') class SubMesh implements ISmartArrayCompatible {
 	
 	public var linesIndexCount:Int;
 

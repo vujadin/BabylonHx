@@ -461,7 +461,7 @@ import com.babylonhx.audio.*;
 	private var _executeWhenReadyTimeoutId:Int = -1;
 	private var _intermediateRendering:Bool = false;
 
-	public var _toBeDisposed:SmartArray<IDisposable> = new SmartArray<IDisposable>(256);
+	public var _toBeDisposed:SmartArray<ISmartArrayCompatible> = new SmartArray<ISmartArrayCompatible>(256);
 
 	private var _pendingData:Array<Dynamic> = [];//ANY
 
@@ -2347,7 +2347,9 @@ import com.babylonhx.audio.*;
 		
 		// Cleaning
 		for (index in 0...this._toBeDisposed.length) {
-			this._toBeDisposed.data[index].dispose();			
+            var item:IDisposable = cast this._toBeDisposed.data[index];
+            if(item != null)
+                item.dispose();
 			this._toBeDisposed.data[index] = null;
 			//this._toBeDisposed.data.splice(index, 1);
 		}

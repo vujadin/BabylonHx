@@ -1,8 +1,6 @@
 package com.babylonhx.materials.textures;
 
 import com.babylonhx.Engine;
-import com.babylonhx.ISmartArrayCompatible;
-import com.babylonhx.mesh.Mesh;
 import com.babylonhx.rendering.RenderingManager;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.mesh.AbstractMesh;

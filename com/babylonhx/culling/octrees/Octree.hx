@@ -12,7 +12,7 @@ import com.babylonhx.tools.SmartArray;
 * @author Krtolica Vujadin
 */
 
-@:expose('BABYLON.Octree') class Octree<T> implements IOctreeContainer<T> {
+@:expose('BABYLON.Octree') class Octree<T:ISmartArrayCompatible> implements IOctreeContainer<T> {
 	
 	public var blocks:Array<OctreeBlock<T>>;
 	public var dynamicContent:Array<T> = new Array<T>();
@@ -90,7 +90,7 @@ import com.babylonhx.tools.SmartArray;
 		return this._selectionContent;
 	}
 
-	public static function _CreateBlocks<T>(worldMin:Vector3, worldMax:Vector3, entries:Array<T>, maxBlockCapacity:Int, currentDepth:Int, maxDepth:Int, target:IOctreeContainer<T>, creationFunc:T->OctreeBlock<T>->Void) {
+	public static function _CreateBlocks<T:ISmartArrayCompatible>(worldMin:Vector3, worldMax:Vector3, entries:Array<T>, maxBlockCapacity:Int, currentDepth:Int, maxDepth:Int, target:IOctreeContainer<T>, creationFunc:T->OctreeBlock<T>->Void) {
 		target.blocks = new Array<OctreeBlock<T>>();
 		var blockSize = new Vector3((worldMax.x - worldMin.x) / 2, (worldMax.y - worldMin.y) / 2, (worldMax.z - worldMin.z) / 2);
 		
