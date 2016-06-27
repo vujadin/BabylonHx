@@ -8,6 +8,7 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.animations.Animation;
+import com.babylonhx.tools.serialization.SerializationHelper;
 
 /**
  * ...
@@ -16,16 +17,29 @@ import com.babylonhx.animations.Animation;
 
 @:expose('BABYLON.Light') class Light extends Node {
 	
+	@serializeAsColor3()
 	public var diffuse:Color3 = new Color3(1.0, 1.0, 1.0);
+	
+	@serializeAsColor3()
 	public var specular:Color3 = new Color3(1.0, 1.0, 1.0);
+	
+	@serialize()
 	public var intensity:Float = 1.0;
+	
+	@serialize()
 	public var range:Float = Math.POSITIVE_INFINITY;
+	
+	@serialize()
 	public var includeOnlyWithLayerMask:Int = 0;
+	
 	public var includedOnlyMeshes:Array<AbstractMesh> = [];
 	public var excludedMeshes:Array<AbstractMesh> = [];
+	
+	@serialize()
 	public var excludeWithLayerMask:Int = 0;
 	
 	// PBR Properties.
+	@serialize()
 	public var radius:Float = 0.00001;
 
 	public var _shadowGenerator:ShadowGenerator;
@@ -35,6 +49,8 @@ import com.babylonhx.animations.Animation;
 	
 	private var _type:String;
 	public var type(get, never):String;
+	
+	public var __serializableMembers:Dynamic;
 	
 
 	public function new(name:String, scene:Scene) {
@@ -64,6 +80,10 @@ import com.babylonhx.animations.Animation;
 	public function _getWorldMatrix():Matrix {
 		return Matrix.Identity();
 	}
+	
+	public function getTypeID():Int {
+		return 0;
+	}
 
 	inline public function canAffectMesh(mesh:AbstractMesh):Bool {
 		if (mesh == null) {
@@ -82,7 +102,7 @@ import com.babylonhx.animations.Animation;
             return false;
         }
 		
-		if (this.excludeWithLayerMask != 0 && (this.excludeWithLayerMask & mesh.layerMask != 0)) {
+		if (this.excludeWithLayerMask != 0 && (this.excludeWithLayerMask & mesh.layerMask) != 0) {
             return false;
         }
 		
@@ -109,7 +129,7 @@ import com.babylonhx.animations.Animation;
 		return worldMatrix;
 	}
 
-	public function dispose() {
+	override public function dispose(doNotRecurse:Bool = false) {
 		if (this._shadowGenerator != null) {
 			this._shadowGenerator.dispose();
 			this._shadowGenerator = null;
@@ -120,77 +140,80 @@ import com.babylonhx.animations.Animation;
 		
 		// Remove from scene
 		this.getScene().removeLight(this);
+		
+		super.dispose();
+	}
+	
+	public function clone(name:String):Light {
+		return SerializationHelper.Clone(Light.GetConstructorFromName(this.getTypeID(), name, this.getScene()), this);
 	}
 	
 	public function serialize():Dynamic {
-		var serializationObject:Dynamic = {};
-		serializationObject.name = this.name;
-		serializationObject.id = this.id;
-		serializationObject.tags = Tags.GetTags(this);
+		var serializationObject = SerializationHelper.Serialize(Light, this);
 		
-		if (this.intensity != 0) {
-			serializationObject.intensity = this.intensity;
-		}
+		// Type
+		serializationObject.type = this.getTypeID();
 		
 		// Parent
 		if (this.parent != null) {
 			serializationObject.parentId = this.parent.id;
 		}
 		
-		serializationObject.range = this.range;
+		// Inclusion / exclusions
+		if (this.excludedMeshes.length > 0) {
+			serializationObject.excludedMeshesIds = [];
+			for (mesh in this.excludedMeshes) {
+				serializationObject.excludedMeshesIds.push(mesh.id);
+			}
+		}
+
+		if (this.includedOnlyMeshes.length > 0) {
+			serializationObject.includedOnlyMeshesIds = [];
+			for (mesh in this.includedOnlyMeshes) {
+				serializationObject.includedOnlyMeshesIds.push(mesh.id);
+			}
+		}
 		
-		serializationObject.diffuse = this.diffuse.asArray();
-		serializationObject.specular = this.specular.asArray();
+		// Animations  
+		//Animation.AppendSerializedAnimations(this, serializationObject);
+		//serializationObject.ranges = this.serializeAnimationRanges(); 
 		
 		return serializationObject;
 	}
-
-	public static function Parse(parsedLight:Dynamic, scene:Scene):Light {
-		var light:Light = null;
-
-		switch (parsedLight.type) {
+	
+	static function GetConstructorFromName(type:Int, name:String, scene:Scene):Void->Light {
+		switch (type) {
 			case 0:
-				light = new PointLight(parsedLight.name, Vector3.FromArray(parsedLight.position), scene);
+				return function():PointLight { return new PointLight(name, Vector3.Zero(), scene); }
 				
 			case 1:
-				light = new DirectionalLight(parsedLight.name, Vector3.FromArray(parsedLight.direction), scene);
-				untyped light.position = Vector3.FromArray(parsedLight.position);
+				return function():DirectionalLight { return new DirectionalLight(name, Vector3.Zero(), scene); }
 				
 			case 2:
-				light = new SpotLight(parsedLight.name, Vector3.FromArray(parsedLight.position), Vector3.FromArray(parsedLight.direction), parsedLight.angle, parsedLight.exponent, scene);
+				return function():SpotLight { return new SpotLight(name, Vector3.Zero(), Vector3.Zero(), 0, 0, scene); }
 				
 			case 3:
-				light = new HemisphericLight(parsedLight.name, Vector3.FromArray(parsedLight.direction), scene);
-				untyped light.groundColor = Color3.FromArray(parsedLight.groundColor);
-				
+				return function():HemisphericLight { return new HemisphericLight(name, Vector3.Zero(), scene); }
 		}
 		
-		light.id = parsedLight.id;
+		return null;
+	}
+
+	public static function Parse(parsedLight:Dynamic, scene:Scene):Light {
+		var light = SerializationHelper.Parse(Light.GetConstructorFromName(parsedLight.type, parsedLight.name, scene), parsedLight, scene);
 		
-		Tags.AddTagsTo(light, parsedLight.tags);
-		
-		if (parsedLight.intensity != null) {
-			light.intensity = parsedLight.intensity;
-		}
-		
-		if (parsedLight.range != null) {
-			light.range = parsedLight.range;
-		}
-		
-		light.diffuse = Color3.FromArray(parsedLight.diffuse);
-		light.specular = Color3.FromArray(parsedLight.specular);
-		
+		// Inclusion / exclusions
 		if (parsedLight.excludedMeshesIds != null) {
 			light._excludedMeshesIds = parsedLight.excludedMeshesIds;
+		}
+		
+		if (parsedLight.includedOnlyMeshesIds != null) {
+			light._includedOnlyMeshesIds = parsedLight.includedOnlyMeshesIds;
 		}
 		
 		// Parent
 		if (parsedLight.parentId != null) {
 			light._waitingParentId = parsedLight.parentId;
-		}
-		
-		if (parsedLight.includedOnlyMeshesIds != null) {
-			light._includedOnlyMeshesIds = parsedLight.includedOnlyMeshesIds;
 		}
 		
 		// Animations
@@ -200,14 +223,14 @@ import com.babylonhx.animations.Animation;
 				
 				light.animations.push(Animation.Parse(parsedAnimation));
 			}
-			
 			Node.ParseAnimationRanges(light, parsedLight, scene);
 		}
 		
-		if (parsedLight.autoAnimate == true) {
-			scene.beginAnimation(light, parsedLight.autoAnimateFrom, parsedLight.autoAnimateTo, parsedLight.autoAnimateLoop, 1.0);
+		if (parsedLight.autoAnimate != null && parsedLight.autoAnimate == true) {
+			var aSpeed:Dynamic = parsedLight.autoAnimateSpeed;
+			scene.beginAnimation(light, parsedLight.autoAnimateFrom, parsedLight.autoAnimateTo, parsedLight.autoAnimateLoop, aSpeed != null ? aSpeed : 1.0);
 		}
-		
+
 		return light;
 	}
 	

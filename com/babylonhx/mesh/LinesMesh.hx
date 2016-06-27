@@ -5,7 +5,9 @@ import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.ShaderMaterial;
 import com.babylonhx.materials.Material;
 import com.babylonhx.math.Color3;
-import com.babylonhx.math.Ray;
+import com.babylonhx.math.Vector2;
+import com.babylonhx.culling.Ray;
+
 
 /**
  * ...
@@ -20,12 +22,20 @@ import com.babylonhx.math.Ray;
 	public var dashSize:Float = 0;
 	public var gapSize:Float = 0;
 
+	public var intersectionThreshold(get, set):Float;
+	private var _intersectionThreshold:Float;
 	private var _colorShader:ShaderMaterial;
 	
 
-	public function new(name:String, scene:Scene, parent:Node = null, ?source:Mesh, doNotCloneChildren:Bool = false) {
+	public function new(name:String, scene:Scene, parent:Node = null, ?source:LinesMesh, doNotCloneChildren:Bool = false) {
 		super(name, scene, parent, source, doNotCloneChildren);
 		
+		if (source != null) {
+            this.color = source.color.clone();
+            this.alpha = source.alpha;
+        }
+		
+		this._intersectionThreshold = 0.1;
 		this._colorShader = new ShaderMaterial("colorShader", scene, "color",
 			{
 				attributes: ["position"],
@@ -33,17 +43,47 @@ import com.babylonhx.math.Ray;
 				needAlphaBlending: true
 			});
 	}
+	
+	/**
+	 * The intersection Threshold is the margin applied when intersection a segment of the LinesMesh with a Ray.
+	 * This margin is expressed in world space coordinates, so its value may vary.
+	 * Default value is 0.1
+	 * @returns the intersection Threshold value.
+	 */
+	private function get_intersectionThreshold():Float {
+		return this._intersectionThreshold;
+	}
+
+	/**
+	 * The intersection Threshold is the margin applied when intersection a segment of the LinesMesh with a Ray.
+	 * This margin is expressed in world space coordinates, so its value may vary.
+	 * @param value the new threshold to apply
+	 */
+	public function set_intersectionThreshold(value:Float):Float {
+		if (this._intersectionThreshold == value) {
+			return value;
+		}
+		
+		this._intersectionThreshold = value;
+		if (this.geometry != null) {
+			this.geometry.boundingBias = new Vector2(0, value);
+		}
+		
+		return value;
+	}
 
 	override private function get_material():Material {
 		return this._colorShader;
 	}
 
-	override private function get_isPickable():Bool {
-		return false;
-	}
-
 	override private function get_checkCollisions():Bool {
 		return false;
+	}
+	
+	override public function createInstance(name:String):InstancedMesh {
+		trace("LinesMeshes do not support createInstance.");
+		
+		return null;
 	}
 
 	override public function _bind(subMesh:SubMesh, effect:Effect, fillMode:Int) {
@@ -67,10 +107,6 @@ import com.babylonhx.math.Ray;
 		
 		// Draw order
 		engine.draw(false, subMesh.indexStart, subMesh.indexCount);
-	}
-
-	override public function intersects(ray:Ray, fastCheck:Bool = false):PickingInfo {
-		return null;
 	}
 
 	override public function dispose(doNotRecurse:Bool = false) {

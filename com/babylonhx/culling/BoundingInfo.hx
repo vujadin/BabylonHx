@@ -17,6 +17,9 @@ import com.babylonhx.math.Vector3;
 	
 	public var minimum:Vector3;
 	public var maximum:Vector3;
+	
+	public var isLocked(get, set):Bool;
+	private var _isLocked:Bool = false;
 
 	
 	public function new(minimum:Vector3, maximum:Vector3) {
@@ -25,17 +28,29 @@ import com.babylonhx.math.Vector3;
 		this.boundingBox = new BoundingBox(minimum, maximum);
 		this.boundingSphere = new BoundingSphere(minimum, maximum);
 	}
+	
+	private function get_isLocked():Bool {
+		return this._isLocked;
+	}
+	private function set_isLocked(value:Bool):Bool {
+		return this._isLocked = value;
+	}
 
 	// Methods
 	inline public function _update(world:Matrix) {
+		if (this._isLocked) {
+			return;
+		}
+		
 		this.boundingBox._update(world);
 		this.boundingSphere._update(world);
 	}
 
 	public function isInFrustum(frustumPlanes:Array<Plane>):Bool {
-		if (!this.boundingSphere.isInFrustum(frustumPlanes))
+		if (!this.boundingSphere.isInFrustum(frustumPlanes)) {
 			return false;
-			
+		}
+		
 		return this.boundingBox.isInFrustum(frustumPlanes);
 	}
 
@@ -63,7 +78,7 @@ import com.babylonhx.math.Vector3;
 		return true;
 	}
 
-	public function intersects(boundingInfo:BoundingInfo, precise:Bool = false/*?precise:Bool*/):Bool {
+	public function intersects(boundingInfo:BoundingInfo, precise:Bool = false):Bool {
 		if (this.boundingSphere.centerWorld == null || boundingInfo.boundingSphere.centerWorld == null) {
 			return false;
 		}
@@ -111,6 +126,7 @@ import com.babylonhx.math.Vector3;
         var r2 = Math.abs(Vector3.Dot(box.directions[2], axis)) * box.extendSize.z;
 		
         var r = r0 + r1 + r2;
+		
         return {
             min: p - r,
             max: p + r

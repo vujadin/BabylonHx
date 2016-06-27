@@ -13,24 +13,70 @@ class PBRMaterialDefines extends MaterialDefines {
 	public function new() {
 		super();
 		
-		defines["ALBEDO"] = false;
-		defines["CLIPPLANE"] = false;
-		defines["ALPHATEST"] = false;
-		defines["FOG"] = false;
-		defines["NORMAL"] = false;
-		defines["UV1"] = false;
-		defines["UV2"] = false;
-		defines["VERTEXCOLOR"] = false;
-		defines["VERTEXALPHA"] = false;
-		defines["INSTANCES"] = false;
-		defines["POINTSIZE"] = false;
+		this.defines = [
+			"ALBEDO" => false, 
+			"AMBIENT" => false, 
+			"OPACITY" => false, 
+			"OPACITYRGB" => false, 
+			"REFLECTION" => false, 
+			"EMISSIVE" => false, 
+			"REFLECTIVITY" => false, 
+			"BUMP" => false, 
+			"PARALLAX" => false, 
+			"PARALLAXOCCLUSION" => false, 
+			"SPECULAROVERALPHA" => false, 
+			"CLIPPLANE" => false, 
+			"ALPHATEST" => false, 
+			"ALPHAFROMALBEDO" => false, 
+			"POINTSIZE" => false, 
+			"FOG" => false, 
+			"SPECULARTERM" => false, 
+			"OPACITYFRESNEL" => false, 
+			"EMISSIVEFRESNEL" => false, 
+			"FRESNEL" => false, 
+			"NORMAL" => false, 
+			"UV1" => false, 
+			"UV2" => false, 
+			"VERTEXCOLOR" => false, 
+			"VERTEXALPHA" => false, 
+			"INSTANCES" => false, 
+			"MICROSURFACEFROMREFLECTIVITYMAP" => false, 
+			"MICROSURFACEAUTOMATIC" => false, 
+			"EMISSIVEASILLUMINATION" => false, 
+			"LINKEMISSIVEWITHALBEDO" => false, 
+			"LIGHTMAP" => false, 
+			"USELIGHTMAPASSHADOWMAP" => false, 
+			"REFLECTIONMAP_3D" => false, 
+			"REFLECTIONMAP_SPHERICAL" => false, 
+			"REFLECTIONMAP_PLANAR" => false, 
+			"REFLECTIONMAP_CUBIC" => false, 
+			"REFLECTIONMAP_PROJECTION" => false, 
+			"REFLECTIONMAP_SKYBOX" => false, 
+			"REFLECTIONMAP_EXPLICIT" => false, 
+			"REFLECTIONMAP_EQUIRECTANGULAR" => false, 
+			"INVERTCUBICMAP" => false, 
+			"LOGARITHMICDEPTH" => false, 
+			"CAMERATONEMAP" => false, 
+			"CAMERACONTRAST" => false, 
+			"CAMERACOLORGRADING" => false, 
+			"OVERLOADEDVALUES" => false, 
+			"OVERLOADEDSHADOWVALUES" => false, 
+			"USESPHERICALFROMREFLECTIONMAP" => false, 
+			"REFRACTION" => false, 
+			"REFRACTIONMAP_3D" => false, 
+			"LINKREFRACTIONTOTRANSPARENCY" => false, 
+			"REFRACTIONMAPINLINEARSPACE" => false, 
+			"LODBASEDMICROSFURACE" => false, 
+			"USEPHYSICALLIGHTFALLOFF" => false, 
+			"RADIANCEOVERALPHA" => false, 
+			"USEPMREMREFLECTION" => false, 
+			"USEPMREMREFRACTION" => false,
+			"INVERTNORMALMAPX" => false,
+			"INVERTNORMALMAPY" => false
+		];
 		
 		BonesPerMesh = 0;
 		NUM_BONE_INFLUENCERS = 0;
-		
-		for (key in defines.keys()) {
-			_keys.push(key);
-		}
 	}
 	
 	override public function cloneTo(other:MaterialDefines) {

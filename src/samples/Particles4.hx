@@ -10,6 +10,7 @@ import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.particles.ParticleSystem;
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.materials.textures.Texture;
+import com.babylonhx.tools.EventState;
 import com.babylonhx.tools.Tools;
 
 /**
@@ -21,52 +22,52 @@ class Particles4 {
 	public function new(scene:Scene) {
 		// This creates and positions a free camera (non-mesh)
 		var camera = new ArcRotateCamera("Camera", 0, Math.PI / 2, 10, Vector3.Zero(), scene);
-
+		
 		// This targets the camera to scene origin
 		camera.setTarget(Vector3.Zero());
-
+		
 		// This attaches the camera to the canvas
 		camera.attachControl();
-
+		
 		// This creates a light, aiming 0,1,0 - to the sky (non-mesh)
 		var light = new PointLight("light1", new Vector3(0, 0, 0), scene);
-
+		
 		// Default intensity is 1. Let's dim the light a small amount
 		light.intensity = 0.7;
 		
 		var knot = Mesh.CreateTorusKnot("knot", 2, 0.5, 256, 64, 2, 3, scene);
-		 
+		
 		var knotmat = new StandardMaterial("knot", scene);
 		knotmat.pointsCloud = true;
 		knotmat.pointSize = 2.0;
-
+		
 		knot.material = knotmat;
 		knot.isVisible = true;
-		
+				
 		// Create a particle system
 		var particleSystem = new ParticleSystem("particles", 2000, scene);
-
+		
 		//Texture of each particle
 		particleSystem.particleTexture = new Texture("assets/img/flare.png", scene);
-
+		
 		// Where the particles come from
 		particleSystem.emitter = knot;
 		particleSystem.minEmitBox = new Vector3(-1, 0, 0); // Starting all from
 		particleSystem.maxEmitBox = new Vector3(1, 0, 0); // To...
-
+		
 		// Colors of all particles
 		particleSystem.color1 = new Color4(0.7, 0.8, 1.0, 1.0);
 		particleSystem.color2 = new Color4(0.2, 0.5, 1.0, 1.0);
 		particleSystem.colorDead = new Color4(0, 0, 0, 0.0);
-
+		
 		// Size of each particle (random between...
 		particleSystem.minSize = 0.1;
 		particleSystem.maxSize = 0.5;
-
+		
 		// Life time of each particle (random between...
 		particleSystem.minLifeTime = 0.3;
 		particleSystem.maxLifeTime = 10.0;
-
+		
 		// Emission rate
 		particleSystem.emitRate = 20000;
 
@@ -113,7 +114,7 @@ class Particles4 {
 		var px:Float = 0;
 		var py:Float = 0;
 		var pz:Float = 0;
-		scene.registerBeforeRender(function () {
+		scene.registerBeforeRender(function(scene:Scene, es:Null<EventState>) {
 			time = Date.now().getTime() * 0.005;
 			px = Tools.randomFloat(-0.1, 0.1);
 			py = Tools.randomFloat( -0.1, 0.1);

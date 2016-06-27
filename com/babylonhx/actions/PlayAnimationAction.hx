@@ -15,6 +15,7 @@ package com.babylonhx.actions;
 
 	public function new(triggerOptions:Dynamic, target:Dynamic, from:Int, to:Int, ?loop:Bool, ?condition:Condition) {
 		super(triggerOptions, condition);
+		
 		this._target = target;
 		this.from = from;
 		this.to = to;

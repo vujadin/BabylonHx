@@ -15,7 +15,7 @@ import com.babylonhx.animations.AnimationRange;
 @:expose('BABYLON.Bone') class Bone extends Node implements IAnimatable {
 	
 	public var children:Array<Bone> = [];
-	public var length:Int;
+	public var length:Int = -1;
 
 	private var _skeleton:Skeleton;
 	private var _matrix:Matrix;
@@ -71,38 +71,37 @@ import com.babylonhx.animations.AnimationRange;
 
 	override public function getWorldMatrix():Matrix {
 		return this._worldTransform;
-	}
-
+	}	
+	
 	inline public function getInvertedAbsoluteTransform():Matrix {
 		return this._invertedAbsoluteTransform;
 	}
-
-	inline public function getAbsoluteMatrix():Matrix {
-		var matrix = this._matrix.clone();
-		var parent = this._parent;
-		
-		while(parent != null) {
-			matrix = matrix.multiply(parent.getLocalMatrix());
-			parent = parent.getParent();
-		}
-		
-		return matrix;
+	
+	inline public function getAbsoluteTransform():Matrix {
+		return this._absoluteTransform;
 	}
 
 	// Methods
 	inline public function updateMatrix(matrix:Matrix) {
-		this._matrix = matrix;
+		this._baseMatrix = matrix.clone();
+		this._matrix = matrix.clone();
+		
 		this._skeleton._markAsDirty();
 		
 		this._updateDifferenceMatrix();
 	}
 
-	inline private function _updateDifferenceMatrix() {
+	@:allow(com.babylonhx.bones.Skeleton)
+	inline private function _updateDifferenceMatrix(?rootMatrix:Matrix) {
+		if (rootMatrix == null) {
+			rootMatrix = this._baseMatrix;
+		}
+		
 		if (this._parent != null) {
-			this._matrix.multiplyToRef(this._parent._absoluteTransform, this._absoluteTransform);
+			rootMatrix.multiplyToRef(this._parent._absoluteTransform, this._absoluteTransform);
 		} 
 		else {
-			this._absoluteTransform.copyFrom(this._matrix);
+			this._absoluteTransform.copyFrom(rootMatrix);
 		}
 		
 		this._absoluteTransform.invertToRef(this._invertedAbsoluteTransform);
@@ -121,6 +120,7 @@ import com.babylonhx.animations.AnimationRange;
 		// all animation may be coming from a library skeleton, so may need to create animation
 		if (this.animations.length == 0){
 			this.animations.push(new Animation(this.name, "_matrix", source.animations[0].framePerSecond, Animation.ANIMATIONTYPE_MATRIX, 0)); 
+			this.animations[0].setKeys([{ frame: 0, value: 0 }]);
 		}
 		
 		// get animation info / verify there is such a range from the source bone
@@ -136,7 +136,7 @@ import com.babylonhx.animations.AnimationRange;
 		// rescaling prep
 		var sourceBoneLength:Int = source.length;
 		var scalingReqd:Bool = rescaleAsRequired && sourceBoneLength > 0 && this.length > 0 && sourceBoneLength != this.length;
-		var ratio:Float = scalingReqd ? this.length / sourceBoneLength : 1;
+		var ratio:Float = scalingReqd ? this.length / sourceBoneLength : 0;
 		
 		var destKeys = this.animations[0].getKeys();
 		

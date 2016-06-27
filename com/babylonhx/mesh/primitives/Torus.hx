@@ -33,8 +33,8 @@ import com.babylonhx.tools.Tags;
 		return new Torus(id, this.getScene(), this.diameter, this.thickness, this.tessellation, this.canBeRegenerated(), null, this.side);
 	}
 	
-	public static function ParseTorus(parsedTorus:Dynamic, scene:Scene):Geometry {
-        if (Geometry.ParseGeometry(parsedTorus, scene) == null) {
+	public static function Parse(parsedTorus:Dynamic, scene:Scene):Geometry {
+        if (Geometry.Parse(parsedTorus, scene) == null) {
             return null; // null since geometry could be something else than a torus...
         }
 		

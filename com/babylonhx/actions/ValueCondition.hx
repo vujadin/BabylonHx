@@ -36,17 +36,21 @@ package com.babylonhx.actions;
 	override public function isValid():Bool {
 		switch (this.operator) {
 			case ValueCondition.IsGreater:
-				return Reflect.field(this._target, this._property) > this.value;
+				return Reflect.getProperty(this._target, this._property) > this.value;
+				
 			case ValueCondition.IsLesser:
-				return Reflect.field(this._target, this._property) < this.value;
+				return Reflect.getProperty(this._target, this._property) < this.value;
+				
 			case ValueCondition.IsEqual, ValueCondition.IsDifferent:
 				var check:Bool = false;
 				
 				if (this.value.equals != null) {
-					check = this.value.equals(Reflect.field(this._target, this._property));
-				} else {
-					check = this.value == Reflect.field(this._target, this._property);
+					check = this.value.equals(Reflect.getProperty(this._target, this._property));
+				} 
+				else {
+					check = this.value == Reflect.getProperty(this._target, this._property);
 				}
+				
 				return this.operator == ValueCondition.IsEqual ? check : !check;
 		}
 		

@@ -8,11 +8,13 @@ import js.html.XMLHttpRequestResponseType;
 #end
 
 import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Vector2;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.utils.Image;
 import com.babylonhx.utils.typedarray.UInt8Array;
+import haxe.io.BytesInput;
 
 import haxe.io.Bytes;
 import haxe.crypto.Base64;
@@ -41,52 +43,13 @@ typedef Assets = nme.Assets;
 @:expose('BABYLON.Tools') class Tools {
 	
 	public static var BaseUrl:String = "";
-		
+	
 	@:noCompletion private static var __startTime:Float = Timer.stamp();
 	
 	#if snow
 	@:noCompletion public static var app:snow.Snow;
 	#end
-	
-	
-	public static function ToHex(i:Int):String {
-		var str:String = StringTools.hex(i, 16); 
-		
-		if (i <= 15) {
-			var ret:String = "0" + str;
-			return ret.toUpperCase();
-		}
-		
-		return str.toUpperCase();
-	}
-	
-	inline public static function IsExponentOfTwo(value:Int):Bool {
-		var count = 1;
-		
-		do {
-			count *= 2;
-		} while (count < value);
-		
-		return count == value;
-	}
 
-	inline public static function GetExponentOfTwo(value:Int, max:Int):Int {
-		var count = 1;
-		
-		do {
-			count *= 2;
-		} while (count < value);
-		
-		if (count > max) {
-			count = max;
-		}
-		
-		return count;
-	}
-	
-	inline public static function Lerp(v0:Float, v1:Float, t:Float):Float {
-		return (1 - t) * v0 + t * v1;
-	}
 
 	public static function GetFilename(path:String):String {
 		var index = path.lastIndexOf("/");
@@ -95,14 +58,6 @@ typedef Assets = nme.Assets;
 		}
 		
 		return path.substring(index + 1);
-	}
-
-	inline public static function ToDegrees(angle:Float):Float {
-		return angle * 180 / Math.PI;
-	}
-
-	inline public static function ToRadians(angle:Float):Float {
-		return angle * Math.PI / 180;
 	}
 	
 	// Snow build gives an error that haxe.Timer has no delay method...
@@ -121,7 +76,7 @@ typedef Assets = nme.Assets;
 		return t;
 	}
 
-	inline public static function ExtractMinAndMaxIndexed(positions:Array<Float>, indices:Array<Int>, indexStart:Int, indexCount:Int):BabylonMinMax {
+	inline public static function ExtractMinAndMaxIndexed(positions:Array<Float>, indices:Array<Int>, indexStart:Int, indexCount:Int, bias:Vector2 = null):BabylonMinMax {
 		var minimum = new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY);
 		var maximum = new Vector3(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY);
 		
@@ -131,13 +86,22 @@ typedef Assets = nme.Assets;
 			maximum = Vector3.Maximize(current, maximum);
 		}
 		
+		if (bias != null) {
+			minimum.x -= minimum.x * bias.x + bias.y;
+			minimum.y -= minimum.y * bias.x + bias.y;
+			minimum.z -= minimum.z * bias.x + bias.y;
+			maximum.x += maximum.x * bias.x + bias.y;
+			maximum.y += maximum.y * bias.x + bias.y;
+			maximum.z += maximum.z * bias.x + bias.y;
+		}
+		
 		return {
 			minimum: minimum,
 			maximum: maximum
 		};
 	}
 
-	inline public static function ExtractMinAndMax(positions:Array<Float>, start:Int, count:Int):BabylonMinMax {
+	inline public static function ExtractMinAndMax(positions:Array<Float>, start:Int, count:Int, bias:Vector2 = null):BabylonMinMax {
 		var minimum = new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY);
 		var maximum = new Vector3(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY);
 		
@@ -146,6 +110,15 @@ typedef Assets = nme.Assets;
 			
 			minimum = Vector3.Minimize(current, minimum);
 			maximum = Vector3.Maximize(current, maximum);
+		}
+		
+		if (bias != null) {
+			minimum.x -= minimum.x * bias.x + bias.y;
+			minimum.y -= minimum.y * bias.x + bias.y;
+			minimum.z -= minimum.z * bias.x + bias.y;
+			maximum.x += maximum.x * bias.x + bias.y;
+			maximum.y += maximum.y * bias.x + bias.y;
+			maximum.z += maximum.z * bias.x + bias.y;
 		}
 		
 		return {
@@ -393,7 +366,20 @@ typedef Assets = nme.Assets;
     }
 	#else //snow
 	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {	
-		if (type == "") {
+		if (type == "hdr") {
+			var callBackFunction = callbackFn != null ?
+				function(result:Dynamic) {
+					callbackFn(result);
+				} : function(_) { };
+				
+			app.assets.bytes(path).then(
+				function(result:Dynamic) {
+					trace(result.bytes);
+					callBackFunction(result.bytes);	
+				}
+			);
+		}
+		else if (type == "") {
 			//if (SnowApp._snow.assets.listed(path)) {
 				if (StringTools.endsWith(path, "bbin")) {
 					var callBackFunction = callbackFn != null ?
@@ -458,6 +444,17 @@ typedef Assets = nme.Assets;
 								callBackFunction(asset);
 							}
 						);
+						
+					case "ctm":
+						var callBackFunction = callbackFn != null ?
+							function(result:Dynamic) {
+								callbackFn(result.bytes);
+							} : function(_) { };
+						app.assets.bytes(path).then(
+							function(asset:Dynamic) {
+								callBackFunction(asset);
+							}
+						);
 				}
 			//} 
 			//else {
@@ -513,7 +510,12 @@ typedef Assets = nme.Assets;
 					case "img":
 						#if openfl
 						var img = Assets.getBitmapData(path);
+						#if openfl_legacy
 						var image = new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height);
+						#else
+						var image = new Image(img.image.data, img.width, img.height);
+						#end
+
 						if (callbackFn != null) {
 							callbackFn(image);
 						}
@@ -528,6 +530,14 @@ typedef Assets = nme.Assets;
 						var image = new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height);
 						if (callbackFn != null) {
 							callbackFn(image);
+						}
+						#end
+						
+					case "ctm":
+						#if lime
+						var file = Assets.getBytes(path);
+						if (callbackFn != null) {
+							callbackFn(file);
 						}
 						#end
 				}
@@ -655,7 +665,15 @@ typedef Assets = nme.Assets;
 		#if (openfl && !nme)
 		if (Assets.exists(url)) {
 			var img = Assets.getBitmapData(url); 
-			onload(new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height));			
+			
+			#if openfl_legacy
+			onload(new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height));		
+			#else
+			if (img.image.format != lime.graphics.PixelFormat.RGBA32) {
+				img.image.format = lime.graphics.PixelFormat.RGBA32;
+			}
+			onload(new Image(img.image.data, img.width, img.height));	
+			#end
 		} 
 		else {
 			trace("Image '" + url + "' doesn't exist!");
@@ -686,25 +704,6 @@ typedef Assets = nme.Assets;
 	
 	#end
 
-	// Misc. 
-	inline public static function Clamp(value:Float, min:Float = 0, max:Float = 1):Float {
-		return Math.min(max, Math.max(min, value));
-	}  
-	
-	inline public static function Clamp2(x:Float, a:Float, b:Float):Float {
-		return (x < a) ? a : ((x > b) ? b : x);
-	}
-	
-	// Returns -1 when value is a negative number and
-	// +1 when value is a positive number. 
-	inline public static function Sign(value:Dynamic):Int {
-		if (value == 0) {
-			return 0;
-		}
-			
-		return value > 0 ? 1 : -1;
-	}
-
 	public static function Format(value:Float, decimals:Int = 2):String {
 		value = Math.round(value * Math.pow(10, decimals));
 		var str = '' + value;
@@ -720,28 +719,7 @@ typedef Assets = nme.Assets;
 			return str.substr(0, str.length - decimals) + (decimals == 0 ? '' : '.') + str.substr(str.length - decimals);
 		}
 	}
-
-	inline public static function CheckExtends(v:Vector3, min:Vector3, max:Vector3) {
-		if (v.x < min.x)
-			min.x = v.x;
-		if (v.y < min.y)
-			min.y = v.y;
-		if (v.z < min.z)
-			min.z = v.z;
-			
-		if (v.x > max.x)
-			max.x = v.x;
-		if (v.y > max.y)
-			max.y = v.y;
-		if (v.z > max.z)
-			max.z = v.z;
-	}
-
-	inline public static function WithinEpsilon(a:Float, b:Float, epsilon:Float = 1.401298E-45):Bool {
-		var num = a - b;
-		return -epsilon <= num && num <= epsilon;
-	}
-		
+	
 	public static function cloneValue(source:Dynamic, destinationObject:Dynamic):Dynamic {
         if (source == null)
             return null;
@@ -789,21 +767,58 @@ typedef Assets = nme.Assets;
 			radix                  = (radix > 61) ? 61 : radix;
 			
 			while (length-- > 0) {
-				id.push(characters[randomInt(0, radix)]);
+				id.push(characters[com.babylonhx.math.Tools.randomInt(0, radix)]);
 			}
 			
 			return id.join('');
 		}
 		
-		return createRandomIdentifier(8, 15) + '-' + createRandomIdentifier(4, 15) + '-4' + createRandomIdentifier(3, 15) + '-' + randomInt(0, 3) + createRandomIdentifier(3, 15) + '-' + createRandomIdentifier(12, 15);
-	}
+		return createRandomIdentifier(8, 15) + '-' + createRandomIdentifier(4, 15) + '-4' + createRandomIdentifier(3, 15) + '-' + com.babylonhx.math.Tools.randomInt(0, 3) + createRandomIdentifier(3, 15) + '-' + createRandomIdentifier(12, 15);
+	}	
 	
-	public static inline function randomInt(from:Int, to:Int):Int {
-		return from + Math.floor(((to - from + 1) * Math.random()));
+	/**
+	 * This method can be used with hashCodeFromStream when your input is an array of values that are either: 
+	 * number, string, boolean or custom type implementing the getHashCode():number method.
+	 * @param array
+	 */
+	public static function arrayOrStringFeeder(array:Dynamic):Int->Int {
+		return function(index:Int):Int {
+			if (index >= array.length) {
+				return -9999;
+			}
+			
+			var val:Dynamic = array.charCodeAt != null ? array.charCodeAt(index) : array[index];
+			if (val != null && val.getHashCode != null) {
+				val = val.getHashCode();
+			}
+			if (Std.is(val, String)) {
+				return Tools.hashCodeFromStream(Tools.arrayOrStringFeeder(val));
+			}
+			
+			return val;
+		};
 	}
-	
-	public static inline function randomFloat(from:Float, to:Float):Float {
-		return from + ((to - from + 1) * Math.random());
+
+	/**
+	 * Compute the hashCode of a stream of number
+	 * To compute the HashCode on a string or an Array of data types implementing the getHashCode() method, 
+	 * use the arrayOrStringFeeder method.
+	 * @param feeder a callback that will be called until it returns null, each valid returned values will 
+	 * be used to compute the hash code.
+	 * @return the hash code computed
+	 */
+	public static function hashCodeFromStream(feeder:Int->Int):Int {
+		// Based from here: http://stackoverflow.com/a/7616484/802124
+		var hash = 0;
+		var index = 0;
+		var chr = feeder(index++);
+		while (chr != -9999) {
+			hash = Std.int(((hash << 5) - hash) + chr);
+			//hash |= 0;                          // Convert to 32bit integer
+			chr = feeder(index++);
+		}
+		
+		return hash;
 	}
 	
 }

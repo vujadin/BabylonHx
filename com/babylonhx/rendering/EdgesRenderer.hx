@@ -50,7 +50,7 @@ class EdgesRenderer implements ISmartArrayCompatible {
 	private var _buffers:Map<String, VertexBuffer> = new Map();
 	private var _checkVerticesInsteadOfIndices:Bool = false;
 	
-	public var __smartArrayFlags:Array<Int>;
+	public var __smartArrayFlags:Array<Int> = [];
 	
 
 	// Beware when you use this class with complex objects as the adjacencies computation can be really long

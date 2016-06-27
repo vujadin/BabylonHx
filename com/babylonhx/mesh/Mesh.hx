@@ -43,6 +43,9 @@ import com.babylonhx.cameras.Camera;
 import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.particles.ParticleSystem;
 import com.babylonhx.tools.AsyncLoop;
+import com.babylonhx.tools.Observable;
+import com.babylonhx.tools.Observer;
+import com.babylonhx.tools.EventState;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.loading.SceneLoader;
@@ -77,19 +80,50 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
     public static inline var CAP_END:Int = 2;
     public static inline var CAP_ALL:Int = 3;
 	
+	// Events 
+
+	/**
+	 * An event triggered before rendering the mesh
+	 * @type {BABYLON.Observable}
+	 */
+	public var onBeforeRenderObservable:Observable<Mesh> = new Observable<Mesh>();
+
+	/**
+	* An event triggered after rendering the mesh
+	* @type {BABYLON.Observable}
+	*/
+	public var onAfterRenderObservable:Observable<Mesh> = new Observable<Mesh>();
+
+	/**
+	* An event triggered before drawing the mesh
+	* @type {BABYLON.Observable}
+	*/
+	public var onBeforeDrawObservable:Observable<Mesh> = new Observable<Mesh>();
+
+	public var onBeforeDraw(never, set):Mesh->Null<EventState>->Void;
+	private var _onBeforeDrawObserver:Observer<Mesh>;
+	private function set_onBeforeDraw(callback:Mesh->Null<EventState>->Void):Mesh->Null<EventState>->Void {
+		if (this._onBeforeDrawObserver != null) {
+			this.onBeforeDrawObservable.remove(this._onBeforeDrawObserver);
+		}
+		
+		this._onBeforeDrawObserver = this.onBeforeDrawObservable.add(callback);
+		
+		return callback;
+	}
+	
 	// Members
-	public var delayLoadState = Engine.DELAYLOADSTATE_NONE;
+	public var delayLoadState:Int = Engine.DELAYLOADSTATE_NONE;
 	public var instances:Array<InstancedMesh> = [];
 	public var delayLoadingFile:String;
 	public var _binaryInfo:Dynamic;
 	private var _LODLevels:Array<MeshLODLevel> = [];
 	public var onLODLevelSelection:Float->Mesh->Mesh->Void;
-	public var onBeforeDraw:Void->Void;
 
 	// Private
-	public var _geometry:Geometry;
-	private var _onBeforeRenderCallbacks:Array<AbstractMesh->Void> = [];
-	private var _onAfterRenderCallbacks:Array<AbstractMesh->Void> = [];
+	@:allow(com.babylonhx.mesh.Geometry) 
+	private var _geometry:Geometry;
+	
 	public var _delayInfo:Array<String>; //ANY
 	public var _delayLoadingFunction:Dynamic->Mesh->Void;
 	public var _visibleInstances:_VisibleInstances;
@@ -98,7 +132,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	private var _worldMatricesInstancesBuffer:WebGLBuffer;
 	private var _worldMatricesInstancesArray: #if (js || purejs) Float32Array #else Array<Float> #end;
 	private var _instancesBufferSize:Int = 32 * 16 * 4; // let's start with a maximum of 32 instances
-	public var _shouldGenerateFlatShading:Bool;
+	public var _shouldGenerateFlatShading:Bool = false;
 	private var _preActivateId:Int = -1;
 	private var _sideOrientation:Int = Mesh.DEFAULTSIDE;
 	public var sideOrientation(get, set):Int;
@@ -109,6 +143,15 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
     private var _sourceNormals:Array<Float>; 	// Will be used to save original normals when using software skinning
 	
 	public var cap:Int = Mesh.NO_CAP;
+	
+	@:noCompletion
+	public var _tags:String;
+	@:noCompletion
+	public var hasTags:Void->Bool;
+	@:noCompletion
+	public var addTags:String->Void;
+	@:noCompletion
+	public var removeTags:String->Void;
 	
 	// exposing physics...
 	public var rigidBody:Dynamic;
@@ -184,64 +227,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 	}
 	
-	static private function _deepCopy(source:Mesh, dest:Mesh) {
-		dest.__smartArrayFlags = source.__smartArrayFlags.copy();
-		dest._LODLevels = source._LODLevels.copy();
-		dest._absolutePosition = source._absolutePosition.clone();
-		dest._batchCache = source._batchCache;
-		dest._boundingInfo = source._boundingInfo;
-		dest._cache = source._cache;
-		dest._checkCollisions = source._checkCollisions;
-		dest._childrenFlag = source._childrenFlag;
-		dest._collider = source._collider;
-		dest._collisionsScalingMatrix = source._collisionsScalingMatrix.clone();
-		dest._collisionsTransformMatrix = source._collisionsTransformMatrix.clone();
-		dest._diffPositionForCollisions = source._diffPositionForCollisions.clone();
-		dest._geometry = source._geometry;
-		dest._instancesBufferSize = source._instancesBufferSize;
-		dest._intersectionsInProgress = source._intersectionsInProgress.copy();
-		dest._isBlocked	= source._isBlocked;
-		dest._isDirty = source._isDirty;
-		dest._isDisposed = source._isDisposed;
-		dest._isEnabled = source._isEnabled;
-		dest._isPickable = source._isPickable;
-		dest._isReady = source._isReady;
-		dest._localBillboard = source._localBillboard.clone();
-		dest._localPivotScaling = source._localPivotScaling.clone();
-		dest._localRotation = source._localRotation.clone();
-		dest._localScaling = source._localScaling.clone();
-		dest._localTranslation = source._localTranslation.clone();
-		dest._localWorld = source._localWorld;
-		dest._masterMesh = source._masterMesh;		// ??
-		dest._newPositionForCollisions = source._newPositionForCollisions.clone();
-		dest._oldPositionForCollisions = source._oldPositionForCollisions.clone();
-		dest._onAfterRenderCallbacks = source._onAfterRenderCallbacks;
-		dest._onAfterWorldMatrixUpdate = source._onAfterWorldMatrixUpdate;
-		dest._onBeforeRenderCallbacks = source._onBeforeRenderCallbacks;
-		dest._parentRenderId = source._parentRenderId;
-		dest._physicImpostor = source._physicImpostor;
-		dest._physicRestitution = source._physicRestitution;
-		dest._physicsFriction = source._physicsFriction;
-		dest._physicsMass = source._physicsMass;
-		dest._pivotMatrix = source._pivotMatrix.clone();
-		if (source._positions != null) {
-			dest._positions = source._positions.copy();
-		}
-		dest._preActivateId = source._preActivateId;
-		dest._receiveShadows = source._receiveShadows;
-		dest._renderId = source._renderId;
-		dest._renderIdForInstances = source._renderIdForInstances.copy();
-		dest._rotateYByPI = source._rotateYByPI.clone();
-		dest._scene = source._scene;
-		dest._shouldGenerateFlatShading = source._shouldGenerateFlatShading;
-		dest._submeshesOctree = source._submeshesOctree;
-		dest._visibility = source._visibility;
-		dest._visibleInstances = source._visibleInstances;
-		dest._waitingActions = source._waitingActions;
-		dest._waitingParentId = source._waitingParentId;
-		dest._worldMatricesInstancesBuffer = source._worldMatricesInstancesBuffer;
-		dest._worldMatrix = source._worldMatrix.clone();				
-		dest.definedFacingForward = source.definedFacingForward;
+	static private function _deepCopy(source:Mesh, dest:Mesh) {	
 		dest.position = source.position.clone();
 		dest.rotation = source.rotation.clone();
 		if (source.rotationQuaternion != null) {
@@ -254,7 +240,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		dest.isVisible = source.isVisible;
 		dest.showBoundingBox = source.showBoundingBox;
 		dest.showSubMeshesBoundingBox = source.showSubMeshesBoundingBox;
-		dest.onDispose = source.onDispose;
+		//dest.onDispose = source.onDispose;
 		dest.isBlocker = source.isBlocker;
 		dest.renderingGroupId = source.renderingGroupId;
 		dest.actionManager = source.actionManager;
@@ -272,7 +258,33 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		dest.useOctreeForCollisions = source.useOctreeForCollisions;
 		dest.layerMask = source.layerMask;
 		dest.ellipsoid = source.ellipsoid.clone();
-		dest.ellipsoidOffset = source.ellipsoidOffset.clone();
+		dest.ellipsoidOffset = source.ellipsoidOffset.clone();		
+		dest.state = source.state;
+		dest.definedFacingForward = source.definedFacingForward;
+		dest.animations = source.animations.copy();
+		dest.visibility = source.visibility;
+		dest.isPickable = source.isPickable;
+		dest.receiveShadows = source.receiveShadows;
+		dest.computeBonesUsingShaders = source.computeBonesUsingShaders;
+		dest.scalingDeterminant = source.scalingDeterminant;
+		dest.numBoneInfluencers = source.numBoneInfluencers;		
+		dest.alwaysSelectAsActiveMesh = source.alwaysSelectAsActiveMesh;
+		dest.edgesWidth = source.edgesWidth;
+		dest.edgesColor = source.edgesColor.clone();
+		dest.delayLoadState = source.delayLoadState;
+		dest.sideOrientation = source.sideOrientation;
+		dest.checkCollisions = source.checkCollisions;
+		
+		dest.__smartArrayFlags = source.__smartArrayFlags.copy();
+		
+		/*
+		dest.isBlocked = source.isBlocked;		
+		dest.areNormalsFrozen = source.areNormalsFrozen;
+		dest.useBones = source.useBones;
+		dest.worldMatrixFromCache = source.worldMatrixFromCache.clone();
+		dest.absolutePosition = source.absolutePosition.clone();
+		dest.isWorldMatrixFrozen = source.isWorldMatrixFrozen;		
+		*/	
 	}
 
 	// Methods
@@ -282,7 +294,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	}
 	
 	private function _sortLODLevels() {
-		this._LODLevels.sort(function(a:MeshLODLevel, b:MeshLODLevel) {
+		this._LODLevels.sort(function(a:MeshLODLevel, b:MeshLODLevel):Int {
 			if (a.distance < b.distance) {
 				return 1;
 			}
@@ -347,6 +359,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 		
 		this._sortLODLevels();
+		
 		return this;
 	}
 
@@ -361,6 +374,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			if (this.onLODLevelSelection != null) {
                 this.onLODLevelSelection(distanceToCamera, this, this._LODLevels[this._LODLevels.length - 1].mesh);
             }
+			
 			return this;
 		}
 		
@@ -376,6 +390,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 				if (this.onLODLevelSelection != null) {
                     this.onLODLevelSelection(distanceToCamera, this, level.mesh);
                 }
+				
 				return level.mesh;
 			}
 		}
@@ -383,6 +398,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		if (this.onLODLevelSelection != null) {
             this.onLODLevelSelection(distanceToCamera, this, this);
         }
+		
 		return this;
 	}
 	
@@ -395,33 +411,107 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		if (this._geometry == null) {
 			return 0;
 		}
+		
 		return this._geometry.getTotalVertices();
 	}
 
+	/**
+     * Returns an array of integers or floats, or a Float32Array, depending on the requested `kind` 
+	 * (positions, indices, normals, etc).
+     * If `copywhenShared` is true (default false) and if the mesh geometry is shared among some other meshes, 
+	 * the returned array is a copy of the internal one.
+     * Returns null if the mesh has no geometry or no vertex buffer.
+     * Possible `kind` values :
+     * - VertexBuffer.PositionKind
+     * - VertexBuffer.UVKind
+     * - VertexBuffer.UV2Kind
+     * - VertexBuffer.UV3Kind
+     * - VertexBuffer.UV4Kind
+     * - VertexBuffer.UV5Kind
+     * - VertexBuffer.UV6Kind
+     * - VertexBuffer.ColorKind
+     * - VertexBuffer.MatricesIndicesKind
+     * - VertexBuffer.MatricesIndicesExtraKind
+     * - VertexBuffer.MatricesWeightsKind
+     * - VertexBuffer.MatricesWeightsExtraKind
+     */
 	override public function getVerticesData(kind:String, copyWhenShared:Bool = false):Array<Float> {
 		if (this._geometry == null) {
 			return null;
 		}
+		
 		return this._geometry.getVerticesData(kind, copyWhenShared);
 	}
 
+	/**
+     * Returns the mesh `VertexBuffer` object from the requested `kind` : positions, indices, normals, etc.
+     * Returns `undefined` if the mesh has no geometry.
+     * Possible `kind` values :
+     * - VertexBuffer.PositionKind
+     * - VertexBuffer.UVKind
+     * - VertexBuffer.UV2Kind
+     * - VertexBuffer.UV3Kind
+     * - VertexBuffer.UV4Kind
+     * - VertexBuffer.UV5Kind
+     * - VertexBuffer.UV6Kind
+     * - VertexBuffer.ColorKind
+     * - VertexBuffer.MatricesIndicesKind
+     * - VertexBuffer.MatricesIndicesExtraKind
+     * - VertexBuffer.MatricesWeightsKind
+     * - VertexBuffer.MatricesWeightsExtraKind
+     */
 	public function getVertexBuffer(kind:String):VertexBuffer {
 		if (this._geometry == null) {
 			return null;
 		}
+		
 		return this._geometry.getVertexBuffer(kind);
 	}
 
+	/**
+	  * Returns a boolean depending on the existence of the Vertex Data for the requested `kind`.
+	  * Possible `kind` values :
+	  * - VertexBuffer.PositionKind
+	  * - VertexBuffer.UVKind
+	  * - VertexBuffer.UV2Kind
+	  * - VertexBuffer.UV3Kind
+	  * - VertexBuffer.UV4Kind
+	  * - VertexBuffer.UV5Kind
+	  * - VertexBuffer.UV6Kind
+	  * - VertexBuffer.ColorKind
+	  * - VertexBuffer.MatricesIndicesKind
+	  * - VertexBuffer.MatricesIndicesExtraKind
+	  * - VertexBuffer.MatricesWeightsKind
+	  * - VertexBuffer.MatricesWeightsExtraKind
+	  */
 	override public function isVerticesDataPresent(kind:String):Bool {
 		if (this._geometry == null) {
 			if (this._delayInfo != null) {
 				return this._delayInfo.indexOf(kind) != -1;
 			}
+			
 			return false;
 		}
+		
 		return this._geometry.isVerticesDataPresent(kind);
 	}
 
+	/**
+	  * Returns a string : the list of existing `kinds` of Vertex Data for this mesh.
+	  * Possible `kind` values :
+	  * - VertexBuffer.PositionKind
+	  * - VertexBuffer.UVKind
+	  * - VertexBuffer.UV2Kind
+	  * - VertexBuffer.UV3Kind
+	  * - VertexBuffer.UV4Kind
+	  * - VertexBuffer.UV5Kind
+	  * - VertexBuffer.UV6Kind
+	  * - VertexBuffer.ColorKind
+	  * - VertexBuffer.MatricesIndicesKind
+	  * - VertexBuffer.MatricesIndicesExtraKind
+	  * - VertexBuffer.MatricesWeightsKind
+	  * - VertexBuffer.MatricesWeightsExtraKind
+	  */
 	public function getVerticesDataKinds():Array<String> {
 		if (this._geometry == null) {
 			var result:Array<String> = [];
@@ -430,22 +520,36 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 					result.push(kind);
 				}
 			}
+			
 			return result;
 		}
+		
 		return this._geometry.getVerticesDataKinds();
 	}
 
+	/**
+	  * Returns a positive integer : the total number of indices in this mesh geometry.
+	  * Returns zero if the mesh has no geometry.
+	  */
 	public function getTotalIndices():Int {
 		if (this._geometry == null) {
 			return 0;
 		}
+		
 		return this._geometry.getTotalIndices();
 	}
 
+	/**
+     * Returns an array of integers or a Int32Array populated with the mesh indices.
+     * If the parameter `copyWhenShared` is true (default false) and and if the mesh geometry 
+	 * is shared among some other meshes, the returned array is a copy of the internal one.
+     * Returns an empty array if the mesh has no geometry.
+     */
 	override public function getIndices(copyWhenShared:Bool = false):Array<Int> {
 		if (this._geometry == null) {
 			return [];
 		}
+		
 		return this._geometry.getIndices(copyWhenShared);
 	}
 
@@ -471,6 +575,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	
 	inline private function set_sideOrientation(value:Int):Int {
 		this._sideOrientation = value;
+		
 		return value;
 	}
 	
@@ -504,6 +609,12 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		this._preActivateId = sceneRenderId;
 		this._visibleInstances = null;
 	}
+	
+	override public function _preActivateForIntermediateRendering(renderId:Int) {
+        if (this._visibleInstances != null) {
+            this._visibleInstances.intermediateDefaultRenderId = renderId;
+        }
+    }
 
 	public function _registerInstanceForRenderId(instance:InstancedMesh, renderId:Int) {
 		if (this._visibleInstances == null) {
@@ -517,7 +628,15 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		this._visibleInstances.map[renderId].push(instance);
 	}
 
+	/**
+     * This method recomputes and sets a new `BoundingInfo` to the mesh unless it is locked.
+     * This means the mesh underlying bounding box and sphere are recomputed.
+     */
 	inline public function refreshBoundingInfo() {
+		if (this._boundingInfo.isLocked) {
+			return;
+		}
+		
 		var data = this.getVerticesData(VertexBuffer.PositionKind);
 		
 		if (data != null) {
@@ -541,6 +660,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 		
 		this.releaseSubMeshes();
+		
 		return new SubMesh(0, 0, totalVertices, 0, this.getTotalIndices(), this);
 	}
 
@@ -571,6 +691,29 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		this.synchronizeInstances();
 	}
 
+	/**
+     * Sets the vertex data of the mesh geometry for the requested `kind`.
+     * If the mesh has no geometry, a new `Geometry` object is set to the mesh and then passed this vertex data.
+     * The `data` are either a numeric array either a Float32Array.
+     * The parameter `updatable` is passed as is to the underlying `Geometry` object constructor (if initianilly none) or updater.
+     * The parameter `stride` is an optional positive integer, it is usually automatically deducted from the `kind` (3 for positions or normals, 2 for UV, etc).
+     * Note that a new underlying `VertexBuffer` object is created each call.
+     * If the `kind` is the `PositionKind`, the mesh `BoundingInfo` is renewed, so the bounding box and sphere, and the mesh World Matrix is recomputed.
+     *
+     * Possible `kind` values :
+     * - VertexBuffer.PositionKind
+     * - VertexBuffer.UVKind
+     * - VertexBuffer.UV2Kind
+     * - VertexBuffer.UV3Kind
+     * - VertexBuffer.UV4Kind
+     * - VertexBuffer.UV5Kind
+     * - VertexBuffer.UV6Kind
+     * - VertexBuffer.ColorKind
+     * - VertexBuffer.MatricesIndicesKind
+     * - VertexBuffer.MatricesIndicesExtraKind
+     * - VertexBuffer.MatricesWeightsKind
+     * - VertexBuffer.MatricesWeightsExtraKind
+     */
 	public function setVerticesData(kind:String, data:Array<Float>, updatable:Bool = false, ?stride:Int) {
 		if (this._geometry == null) {
 			var vertexData = new VertexData();
@@ -584,6 +727,27 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 	}
 
+	/**
+     * Updates the existing vertex data of the mesh geometry for the requested `kind`.
+     * If the mesh has no geometry, it is simply returned as it is.
+     * The `data` are either a numeric array either a Float32Array.
+     * No new underlying `VertexBuffer` object is created.
+     * If the `kind` is the `PositionKind` and if `updateExtends` is true, the mesh `BoundingInfo` is renewed, so the bounding box and sphere, and the mesh World Matrix is recomputed.
+     * If the parameter `makeItUnique` is true, a new global geometry is created from this positions and is set to the mesh.
+     * Possible `kind` values :
+     * - VertexBuffer.PositionKind
+     * - VertexBuffer.UVKind
+     * - VertexBuffer.UV2Kind
+     * - VertexBuffer.UV3Kind
+     * - VertexBuffer.UV4Kind
+     * - VertexBuffer.UV5Kind
+     * - VertexBuffer.UV6Kind
+     * - VertexBuffer.ColorKind
+     * - VertexBuffer.MatricesIndicesKind
+     * - VertexBuffer.MatricesIndicesExtraKind
+     * - VertexBuffer.MatricesWeightsKind
+     * - VertexBuffer.MatricesWeightsExtraKind
+     */
 	public function updateVerticesData(kind:String, data:Array<Float>, updateExtends:Bool = false, makeItUnique:Bool = false) {
 		if (this._geometry == null) {
 			return;
@@ -666,9 +830,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 					
 				case Material.TriangleFillMode:
 					indexBufferToBind = this._geometry.getIndexBuffer();
-									
-				default:
-					indexBufferToBind = this._geometry.getIndexBuffer();
+					
+				//default:
+				//	indexBufferToBind = this._geometry.getIndexBuffer();
 			}
 		}
 		
@@ -681,9 +845,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			return;
 		}
 		
-		if (this.onBeforeDraw != null) {
-            this.onBeforeDraw();
-        }
+		this.onBeforeDrawObservable.notifyObservers(this);
 		
 		var engine:Engine = this.getScene().getEngine();
 		
@@ -710,27 +872,20 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 	}
 
-	public function registerBeforeRender(func:AbstractMesh->Void) {
-		this._onBeforeRenderCallbacks.push(func);
+	public function registerBeforeRender(func:AbstractMesh->Null<EventState>->Void) {
+		this.onBeforeRenderObservable.add(func);
 	}
 
-	public function unregisterBeforeRender(func:AbstractMesh->Void) {
-		var index = this._onBeforeRenderCallbacks.indexOf(func);
-		
-		if (index > -1) {
-			this._onBeforeRenderCallbacks.splice(index, 1);
-		}
+	public function unregisterBeforeRender(func:AbstractMesh->Null<EventState>->Void) {
+		this.onBeforeRenderObservable.removeCallback(func);
 	}
 
-	public function registerAfterRender(func:AbstractMesh->Void) {
-		this._onAfterRenderCallbacks.push(func);
+	public function registerAfterRender(func:AbstractMesh->Null<EventState>->Void) {
+		this.onAfterRenderObservable.add(func);
 	}
 
-	public function unregisterAfterRender(func:AbstractMesh->Void) {
-		var index = this._onAfterRenderCallbacks.indexOf(func);
-		if (index > -1) {
-			this._onAfterRenderCallbacks.splice(index, 1);
-		}
+	public function unregisterAfterRender(func:AbstractMesh->Null<EventState>->Void) {
+		this.onAfterRenderObservable.removeCallback(func);
 	}
 
 	public function _getInstancesRenderList(subMeshId:Int):_InstancesBatch {
@@ -741,18 +896,20 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		
 		if (this._visibleInstances != null) {
 			var currentRenderId:Int = scene.getRenderId();
+			var defaultRenderId = (scene._isInIntermediateRendering() ? this._visibleInstances.intermediateDefaultRenderId : this._visibleInstances.defaultRenderId);
 			this._batchCache.visibleInstances[subMeshId] = this._visibleInstances.map[currentRenderId];
 			var selfRenderId:Int = this._renderId;
 			
-			if (this._batchCache.visibleInstances[subMeshId] == null && this._visibleInstances.defaultRenderId > 0) {
-				this._batchCache.visibleInstances[subMeshId] = this._visibleInstances.map[this._visibleInstances.defaultRenderId];
-				currentRenderId = cast Math.max(this._visibleInstances.defaultRenderId, currentRenderId);
+			if (this._batchCache.visibleInstances[subMeshId] == null && defaultRenderId > 0) {
+                this._batchCache.visibleInstances[subMeshId] = this._visibleInstances.map[defaultRenderId];
+                currentRenderId = cast Math.max(defaultRenderId, currentRenderId);
 				selfRenderId = cast Math.max(this._visibleInstances.selfDefaultRenderId, currentRenderId);
 			}
 			
 			if (this._batchCache.visibleInstances[subMeshId] != null && this._batchCache.visibleInstances[subMeshId].length > 0) {
 				if (this._renderIdForInstances[subMeshId] == currentRenderId) {
 					this._batchCache.mustReturn = true;
+					
 					return this._batchCache;
 				}
 				
@@ -852,9 +1009,13 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 	}
 
+	/**
+     * Triggers the draw call for the mesh.
+     * This is handled by the scene rendering manager.
+     */
 	public function render(subMesh:SubMesh, enableAlphaMode:Bool) {
 		var scene = this.getScene();
-				
+		
 		// Managing instances
 		var batch = this._getInstancesRenderList(subMesh._id);
 		
@@ -867,9 +1028,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			return;
 		}
 		
-		for (callbackIndex in 0...this._onBeforeRenderCallbacks.length) {
-			this._onBeforeRenderCallbacks[callbackIndex](this);
-		}
+		this.onBeforeRenderObservable.notifyObservers(this);
 		
 		var engine = scene.getEngine();
 		var hardwareInstancedRendering = (engine.getCaps().instancedArrays != null) && (batch.visibleInstances[subMesh._id] != null) && (batch.visibleInstances.length > subMesh._id && batch.visibleInstances[subMesh._id] != null);
@@ -932,9 +1091,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
             engine.setAlphaMode(currentMode);
         }
 		
-		for (callbackIndex in 0...this._onAfterRenderCallbacks.length) {
-			this._onAfterRenderCallbacks[callbackIndex](this);
-		}
+		this.onAfterRenderObservable.notifyObservers(this);
 	}
 
 	inline public function getEmittedParticleSystems():Array<ParticleSystem> {
@@ -958,18 +1115,6 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			var particleSystem = this.getScene().particleSystems[index];
 			if (descendants.indexOf(particleSystem.emitter) != -1) {
 				results.push(particleSystem);
-			}
-		}
-		
-		return results;
-	}
-
-	inline public function getChildren():Array<Node> {
-		var results:Array<Node> = [];
-		for (index in 0...this.getScene().meshes.length) {
-			var mesh = this.getScene().meshes[index];
-			if (mesh.parent == this) {
-				results.push(mesh);
 			}
 		}
 		
@@ -1019,6 +1164,11 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return true;
 	}
 
+	/**
+     * Sets the mesh material by the material or multiMaterial `id` property.
+     * The material `id` is a string identifying the material or the multiMaterial.
+     * This method returns nothing.
+     */
 	public function setMaterialByID(id:String) {
 		var materials = this.getScene().materials;
 		for (index in 0...materials.length) {
@@ -1038,6 +1188,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 	}
 
+	/**
+     * Returns as a new array populated with the mesh material and/or skeleton, if any.
+     */
 	inline public function getAnimatables():Array<Dynamic> {
 		var results:Array<Dynamic> = [];
 		
@@ -1052,12 +1205,20 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return results;
 	}
 
-	// Geometry
+	/**
+     * Modifies the mesh geometry according to the passed transformation matrix.
+     * This method modifies the mesh even if it's originally not set as updatable.
+     * The mesh normals are modified accordingly the same transformation.
+     * tuto : http://doc.babylonjs.com/tutorials/How_Rotations_and_Translations_Work#baking-transform
+     * Note that, under the hood, this method sets a new VertexBuffer each call.
+     */
 	public function bakeTransformIntoVertices(transform:Matrix) {
 		// Position
 		if (!this.isVerticesDataPresent(VertexBuffer.PositionKind)) {
 			return;
 		}
+		
+		var submeshes = this.subMeshes.splice(0, this.subMeshes.length);
 		
 		this._resetPointsArrayCache();
 		
@@ -1090,9 +1251,19 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
         if (transform.m[0] * transform.m[5] * transform.m[10] < 0) { 
 			this.flipFaces(); 
 		}
+		
+		// Restore submeshes
+        this.releaseSubMeshes();
+        this.subMeshes = submeshes;
 	}
 	
-	// Will apply current transform to mesh and reset world matrix
+	/**
+     * Modifies the mesh geometry according to its own current World Matrix.
+     * The mesh World Matrix is then reset.
+     * This method returns nothing but really modifies the mesh even if it's originally not set as updatable.
+     * tutorial : http://doc.babylonjs.com/tutorials/How_Rotations_and_Translations_Work#baking-transform
+     * Note that, under the hood, this method sets a new VertexBuffer each call.
+     */
     public function bakeCurrentTransformIntoVertices() {
         this.bakeTransformIntoVertices(this.computeWorldMatrix(true));
         this.scaling.copyFromFloats(1, 1, 1);
@@ -1111,9 +1282,10 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	}
 
 	override public function _generatePointsArray():Bool {
-		if (this._positions != null)
+		if (this._positions != null) {
 			return true;
-			
+		}
+		
 		this._positions = [];
 		
 		var data = this.getVerticesData(VertexBuffer.PositionKind);
@@ -1131,12 +1303,24 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return true;
 	}
 
-	// Clone
-	override public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false):Mesh {
+	/**
+     * Returns a new `Mesh` object generated from the current mesh properties.
+     * This method must not get confused with createInstance().
+     * The parameter `name` is a string, the name given to the new mesh.
+     * The optional parameter `newParent` can be any `Node` object (default `null`).
+     * The optional parameter `doNotCloneChildren` (default `false`) allows/denies the recursive cloning 
+	 * of the original mesh children if any.
+     * The parameter `clonePhysicsImpostor` (default `true`)  allows/denies the cloning in the same time 
+	 * of the original mesh `body` used by the physics engine, if any.
+     */
+	override public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false/*, clonePhysicsImpostor:Bool = true*/):Mesh {
 		return new Mesh(name, this.getScene(), newParent, this, doNotCloneChildren);
 	}
 
-	// Dispose
+	/**
+     * Disposes the mesh.
+     * This also frees the memory allocated under the hood to all the buffers used by WebGL.
+     */
 	override public function dispose(doNotRecurse:Bool = false) {
 		if (this._geometry != null) {
 			this._geometry.releaseForMesh(this, true);
@@ -1155,7 +1339,17 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		super.dispose(doNotRecurse);
 	}
 
-	// Geometric tools
+	/**
+     * Modifies the mesh geometry according to a displacement map.
+     * A displacement map is a colored image. Each pixel color value (actually a gradient computed from 
+	 * red, green, blue values) will give the displacement to apply to each mesh vertex.
+     * The mesh must be set as updatable. Its internal geometry is directly modified, no new buffer are allocated.
+     * This method returns nothing.
+     * The parameter `url` is a string, the URL from the image file is to be downloaded.
+     * The parameters `minHeight` and `maxHeight` are the lower and upper limits of the displacement.
+     * The parameter `onSuccess` is an optional Javascript function to be called just after the mesh is modified. 
+	 * It is passed the modified mesh and must return nothing.
+     */
 	public function applyDisplacementMap(url:String, minHeight:Float, maxHeight:Float, ?onSuccess:Mesh->Void, invert:Bool = false) {
 		var scene = this.getScene();
 		
@@ -1170,6 +1364,17 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		Tools.LoadImage(url, onload);
 	}
 
+	/**
+     * Modifies the mesh geometry according to a displacementMap buffer.
+     * A displacement map is a colored image. Each pixel color value (actually a gradient computed from 
+	 * red, green, blue values) will give the displacement to apply to each mesh vertex.
+     * The mesh must be set as updatable. Its internal geometry is directly modified, no new buffer are allocated.
+     * The parameter `buffer` is a `Uint8Array` buffer containing series of `Uint8` lower than 255, the red, 
+	 * green, blue and alpha values of each successive pixel.
+     * The parameters `heightMapWidth` and `heightMapHeight` are positive integers to set the width and height 
+	 * of the buffer image.
+     * The parameters `minHeight` and `maxHeight` are the lower and upper limits of the displacement.
+     */
 	public function applyDisplacementMapFromBuffer(buffer:UInt8Array, heightMapWidth:Float, heightMapHeight:Float, minHeight:Float, maxHeight:Float, invert:Bool = false) {
 		if (!this.isVerticesDataPresent(VertexBuffer.PositionKind)
 			|| !this.isVerticesDataPresent(VertexBuffer.NormalKind)
@@ -1228,6 +1433,13 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		this.updateVerticesData(VertexBuffer.NormalKind, normals);
 	}
 
+	/**
+     * Modify the mesh to get a flat shading rendering.
+     * This means each mesh facet will then have its own normals. 
+	 * Usually new vertices are added in the mesh geometry to get this result.
+     * Warning : the mesh is really modified even if not set originally as updatable and, 
+	 * under the hood, a new VertexBuffer is allocated.
+     */
 	public function convertToFlatShadedMesh() {
 		/// <summary>Update normals and vertices to get a flat shading rendering.</summary>
 		/// <summary>Warning:This may imply adding vertices to the mesh in order to get exactly 3 vertices per face</summary>
@@ -1322,6 +1534,11 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		this.synchronizeInstances();
 	}
 	
+	/**
+     * This method removes all the mesh indices and add new vertices (duplication) in order to unfold facets into buffers.
+     * In other words, more vertices, no more indices and a single bigger VBO.
+     * The mesh is really modified even if not set originally as updatable. Under the hood, a new VertexBuffer is allocated.
+     */
 	public function convertToUnIndexedMesh() {
 		/// <summary>Remove indices by unfolding faces into buffers</summary>
 		/// <summary>Warning: This implies adding vertices to the mesh in order to get exactly 3 vertices per face</summary>
@@ -1390,7 +1607,11 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		this.synchronizeInstances();
 	}
 	
-	// will inverse faces orientations, and invert normals too if specified
+	/**
+     * Inverses facet orientations and inverts also the normals with `flipNormals` (default `false`) if true.
+     * Warning : the mesh is really modified even if not set originally as updatable. 
+	 * A new VertexBuffer is created under the hood each call.
+	 */
 	public function flipFaces(flipNormals:Bool = false) {
 		var vertex_data = VertexData.ExtractFromMesh(this);
 		
@@ -1415,10 +1636,27 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	}
 
 	// Instances
+	
+	/**
+     * Creates a new `InstancedMesh` object from the mesh model.
+     * An instance shares the same properties and the same material than its model.
+     * Only these properties of each instance can then be set individually :
+     * - position
+     * - rotation
+     * - rotationQuaternion
+     * - setPivotMatrix
+     * - scaling
+     * tutorial : http://doc.babylonjs.com/tutorials/How_to_use_Instances
+	 * Warning : this method is not supported for `Line` mesh and `LineSystem`
+     */
 	public function createInstance(name:String):InstancedMesh {
 		return new InstancedMesh(name, this);
 	}
 
+	/**
+     * Synchronises all the mesh instance submeshes to the current mesh submeshes, if any.
+     * After this call, all the mesh instances have the same submeshes than the current mesh.
+     */
 	inline public function synchronizeInstances() {
 		for (instanceIndex in 0...this.instances.length) {
 			var instance = this.instances[instanceIndex];
@@ -1530,6 +1768,54 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return MeshBuilder.CreateSphere(name, options, scene);
 	}
 	
+	public static function CreateCapsule(name:String, diameter:Float, height:Float, segments:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+		if (diameter > height) {
+			height = diameter / 2;
+		}
+		var tess:Int = Std.int(segments * 2) + 4;
+		var subd:Int = Std.int(height / diameter);
+		var box = MeshBuilder.CreateBox("tempbox", { width: diameter, height: height, depth: diameter }, scene);
+		
+		var sphereTop = Mesh.CreateSphere("capsuleSphereTop", segments, diameter, scene);
+		sphereTop.position.y = height / 2;
+		
+		var aCSG = com.babylonhx.mesh.csg.CSG.FromMesh(sphereTop);
+		var bCSG = com.babylonhx.mesh.csg.CSG.FromMesh(box);			
+		aCSG.subtractInPlace(bCSG);		
+		
+		box.dispose();
+		sphereTop.dispose();
+		
+		var sphere1 = aCSG.toMesh("test", scene.defaultMaterial, scene, false);
+		var sphere2 = sphere1.clone("tempsphereclone");
+		sphere2.position.y = -height / 2;
+		sphere2.rotation.x = Math.PI;
+		
+		aCSG = null;
+		bCSG = null;
+		
+		var cyl2 = MeshBuilder.CreateCylinder("capsuleCylinder", { height: height, diameterTop: diameter, diameterBottom: diameter, tessellation: tess, subdivisions: 6, enclose: false }, scene);
+		
+		// rotate uvs 90 degrees
+		/*var uvs = cyl2.getVerticesData(VertexBuffer.UVKind);
+		
+		var i:Int = 0;
+		while (i < uvs.length) {
+			var x = uvs[i];
+			uvs[i] = -uvs[i + 1];
+			uvs[i + 1] = x;
+			
+			i += 2;
+		}
+		
+		cyl2.updateVerticesData(VertexBuffer.UVKind, uvs);*/
+		
+		var finalMesh = Mesh.MergeMeshes([cyl2, sphere1, sphere2], true);
+		finalMesh.material = scene.defaultMaterial;
+		
+		return finalMesh;
+	}
+	
 	// Cylinder and cone
 	public static function CreateCylinder(name:String, height:Float, diameterTop:Float, diameterBottom:Float, tessellation:Int, subdivisions:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
 		var options:CylinderOptions = {
@@ -1539,7 +1825,8 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			tessellation: tessellation,
 			subdivisions: subdivisions,
 			sideOrientation: sideOrientation,
-			updatable: updatable
+			updatable: updatable,
+			enclose: true
 		};
 		
 		return MeshBuilder.CreateCylinder(name, options, scene);
@@ -1879,6 +2166,12 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	}
 
 	// Tools
+	
+	/**
+     * Returns an object `{min: Vector3, max: Vector3}`
+     * This min and max `Vector3` are the minimum and maximum vectors of each mesh bounding 
+	 * box from the passed array, in the World system
+     */
 	public static function MinMax(meshes:Array<AbstractMesh>):BabylonMinMax {
 		var minVector:Vector3 = null;
 		var maxVector:Vector3 = null;
@@ -1897,6 +2190,10 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return { minimum: minVector, maximum: maxVector };
 	}
 
+	/**
+     * Returns a `Vector3`, the center of the `{min: Vector3, max: Vector3}` or the center of 
+	 * MinMax vector3 computed from a mesh array.
+     */
 	public static function Center(meshesOrMinMaxVector:Dynamic):Vector3 {
 		var minMaxVector:BabylonMinMax = meshesOrMinMaxVector.min != null ? meshesOrMinMaxVector : Mesh.MinMax(meshesOrMinMaxVector);
 		return Vector3.Center(minMaxVector.minimum, minMaxVector.maximum);
@@ -1968,7 +2265,12 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return meshSubclass;
 	}
 	
-	public static function ParseMesh(parsedMesh:Dynamic, scene:Scene, rootUrl:String):Mesh {
+	/**
+     * Returns a new `Mesh` object what is a deep copy of the passed mesh.
+     * The parameter `parsedMesh` is the mesh to be copied.
+     * The parameter `rootUrl` is a string, it's the root URL to prefix the `delayLoadingFile` property with
+     */
+	public static function Parse(parsedMesh:Dynamic, scene:Scene, rootUrl:String):Mesh {
         var mesh = new Mesh(parsedMesh.name, scene);
         mesh.id = parsedMesh.id;
 		

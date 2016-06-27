@@ -48,7 +48,7 @@ import com.babylonhx.tools.Tools;
 	}
 
 	public function addEffect(renderEffect:PostProcessRenderEffect) {
-		this._renderEffects.set(renderEffect._name, renderEffect);
+		this._renderEffects[renderEffect._name] = renderEffect;
 	}
 
 	public function _enableEffect(renderEffectName:String, cameras:Dynamic) {
@@ -58,7 +58,7 @@ import com.babylonhx.tools.Tools;
 			return;
 		}
 		
-		renderEffects._enable(cameras != null ? cameras : this._cameras);
+		renderEffects._enable(Tools.MakeArray(cameras != null ? cameras : this._cameras));
 	}
 
 	public function _disableEffect(renderEffectName:String, cameras:Dynamic) {
@@ -81,7 +81,7 @@ import com.babylonhx.tools.Tools;
 			var cameraName:String = camera.name;
 			
 			if (!this._cameras.exists(cameraName)) {
-				this._cameras.set(cameraName, camera);
+				this._cameras[cameraName] = camera;
 			}
 			else if (unique) {
 				indicesToDelete.push(i);

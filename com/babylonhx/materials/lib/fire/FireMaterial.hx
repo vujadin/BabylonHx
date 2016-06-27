@@ -9,6 +9,7 @@ import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.tools.Tags;
+import com.babylonhx.tools.serialization.SerializationHelper;
 
 /**
  * ...
@@ -77,7 +78,7 @@ class FireMaterial extends Material {
 			return true;
 		}
 		
-		if (this._defines.defines[FMD.INSTANCES] != useInstances) {
+		if (this._defines.defines["INSTANCES"] != useInstances) {
 			return false;
 		}
 		
@@ -119,40 +120,40 @@ class FireMaterial extends Material {
 				} 
 				else {
 					needUVs = true;
-					this._defines.defines[FMD.DIFFUSE] = true;
+					this._defines.defines["DIFFUSE"] = true;
 				}
 			}                
 		}
 		
 		// Effect
 		if (scene.clipPlane != null) {
-			this._defines.defines[FMD.CLIPPLANE] = true;
+			this._defines.defines["CLIPPLANE"] = true;
 		}
 		
-		this._defines.defines[FMD.ALPHATEST] = true;
+		this._defines.defines["ALPHATEST"] = true;
 		
 		// Point size
 		if (this.pointsCloud || scene.forcePointsCloud) {
-			this._defines.defines[FMD.POINTSIZE] = true;
+			this._defines.defines["POINTSIZE"] = true;
 		}
 		
 		// Fog
 		if (scene.fogEnabled && mesh != null && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
-			this._defines.defines[FMD.FOG] = true;
+			this._defines.defines["FOG"] = true;
 		}
 		
 		// Attribs
 		if (mesh != null) {
 			if (needUVs) {
 				if (mesh.isVerticesDataPresent(VertexBuffer.UVKind)) {
-					this._defines.defines[FMD.UV1] = true;
+					this._defines.defines["UV1"] = true;
 				}
 			}
 			if (mesh.useVertexColors && mesh.isVerticesDataPresent(VertexBuffer.ColorKind)) {
-				this._defines.defines[FMD.VERTEXCOLOR] = true;
+				this._defines.defines["VERTEXCOLOR"] = true;
 				
 				if (mesh.hasVertexAlpha) {
-					this._defines.defines[FMD.VERTEXALPHA] = true;
+					this._defines.defines["VERTEXALPHA"] = true;
 				}
 			}
 			if (mesh.useBones && mesh.computeBonesUsingShaders) {
@@ -162,7 +163,7 @@ class FireMaterial extends Material {
 			
 			// Instances
 			if (useInstances) {
-				this._defines.defines[FMD.INSTANCES] = true;
+				this._defines.defines["INSTANCES"] = true;
 			}
 		}
 		
@@ -174,7 +175,7 @@ class FireMaterial extends Material {
 			
 			// Fallbacks
 			var fallbacks:EffectFallbacks = new EffectFallbacks();             
-			if (this._defines.defines[FMD.FOG]) {
+			if (this._defines.defines["FOG"]) {
 				fallbacks.addFallback(1, "FOG");
 			}
 		 
@@ -185,16 +186,16 @@ class FireMaterial extends Material {
 			//Attributes
 			var attribs:Array<String> = [VertexBuffer.PositionKind];
 			
-			if (this._defines.defines[FMD.UV1]) {
+			if (this._defines.defines["UV1"]) {
 				attribs.push(VertexBuffer.UVKind);
 			}
 			
-			if (this._defines.defines[FMD.VERTEXCOLOR]) {
+			if (this._defines.defines["VERTEXCOLOR"]) {
 				attribs.push(VertexBuffer.ColorKind);
 			}
 			
 			MaterialHelper.PrepareAttributesForBones(attribs, mesh, this._defines, fallbacks);
-		    MaterialHelper.PrepareAttributesForInstances(attribs, this._defines, FMD.INSTANCES);
+		    MaterialHelper.PrepareAttributesForInstances(attribs, this._defines);
 			
 			// Legacy browser patch
 			var shaderName:String = "firemat";
@@ -313,12 +314,14 @@ class FireMaterial extends Material {
 		return results;
 	}
 
-	override public function dispose(forceDisposeEffect:Bool = false) {
-		if (this.diffuseTexture != null) {
-			this.diffuseTexture.dispose();
-		}
-		if (this.distortionTexture != null) {
-			this.distortionTexture.dispose();
+	override public function dispose(forceDisposeEffect:Bool = false, forceDisposeTextures:Bool = true) {
+		if (forceDisposeTextures) {
+			if (this.diffuseTexture != null) {
+				this.diffuseTexture.dispose();
+			}
+			if (this.distortionTexture != null) {
+				this.distortionTexture.dispose();
+			}
 		}
 		
 		super.dispose(forceDisposeEffect);
@@ -346,25 +349,7 @@ class FireMaterial extends Material {
 	}
 	
 	override public function serialize():Dynamic {		
-		var serializationObject = super.serialize();
-		serializationObject.customType 		= "fire";
-		serializationObject.diffuseColor    = this.diffuseColor.asArray();
-		serializationObject.speed           = this.speed;
-		serializationObject.disableLighting = this.disableLighting;
-		
-		if (this.diffuseTexture != null) {
-			serializationObject.diffuseTexture = this.diffuseTexture.serialize();
-		}
-		
-		if (this.distortionTexture != null) {
-			serializationObject.distortionTexture = this.distortionTexture.serialize();
-		}
-		
-		if (this.opacityTexture != null) {
-			serializationObject.opacityTexture = this.opacityTexture.serialize();
-		}
-		
-		return serializationObject;
+		return SerializationHelper.Serialize(FireMaterial, this, super.serialize());
 	}
 
 	public static function Parse(source:Dynamic, scene:Scene, rootUrl:String):FireMaterial {
@@ -372,7 +357,6 @@ class FireMaterial extends Material {
 		
 		material.diffuseColor   	= Color3.FromArray(source.diffuseColor);
 		material.speed          	= source.speed;
-		material.disableLighting    = source.disableLighting;
 		
 		material.alpha = source.alpha;
 		

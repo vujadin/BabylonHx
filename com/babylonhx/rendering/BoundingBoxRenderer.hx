@@ -19,7 +19,7 @@ import com.babylonhx.culling.BoundingBox;
 	public var frontColor:Color3 = new Color3(1, 1, 1);
 	public var backColor:Color3 = new Color3(0.1, 0.1, 0.1);
 	public var showBackLines:Bool = true;
-	public var renderList:SmartArray<BoundingBox> = new SmartArray<BoundingBox>(32);// SmartArray<BoundingBox> = new SmartArray<BoundingBox>(32);
+	public var renderList:SmartArray<BoundingBox> = new SmartArray<BoundingBox>(32);
 
 	private var _scene:Scene;
 	private var _colorShader:ShaderMaterial;

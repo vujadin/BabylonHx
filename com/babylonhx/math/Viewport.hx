@@ -13,23 +13,15 @@ package com.babylonhx.math;
 	public var height:Float;
 	
 	
-	public function new(x:Float, y:Float, width:Float, height:Float) {
+	inline public function new(x:Float, y:Float, width:Float, height:Float) {
 		this.x = x;
 		this.y = y;
 		this.width = width;
 		this.height = height;
 	}
 
-	inline public function toGlobal(engine:Engine) {
-		var width = engine.getRenderWidth();
-		var height = engine.getRenderHeight();
-		return new Viewport(this.x * width, this.y * height, this.width * width, this.height * height);
+	inline public function toGlobal(renderWidth:Int, renderHeight:Int):Viewport {		
+		return new Viewport(this.x * renderWidth, this.y * renderHeight, this.width * renderWidth, this.height * renderHeight);
 	}
-	
-	public function toScreenGlobal(engine:Engine):Viewport {
-        var width = engine.getRenderWidth(true);
-        var height = engine.getRenderHeight(true);
-        return new Viewport(this.x * width, this.y * height, this.width * width, this.height * height);
-    }
 	
 }

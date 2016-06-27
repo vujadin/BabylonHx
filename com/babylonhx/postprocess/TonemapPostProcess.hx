@@ -23,10 +23,11 @@ class TonemapPostProcess extends PostProcess {
 
 	
 	public function new(name:String, operator:TonemappingOperator, exposureAdjustment:Float, camera:Camera, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, ?engine:Engine, textureFormat:Int = Engine.TEXTURETYPE_UNSIGNED_INT) {
+		super(name, "tonemap", ["_ExposureAdjustment"], null, 1.0, camera, samplingMode, engine, true, defines, textureFormat);
+		
 		this._operator = operator;
 		this.exposureAdjustment = exposureAdjustment;
 		
-		var params:Array<String> = ["_ExposureAdjustment"];
 		var defines:String = "#define ";
 		
 		if (operator == TonemappingOperator.Hable) {
@@ -42,7 +43,8 @@ class TonemapPostProcess extends PostProcess {
 			defines += "PHOTOGRAPHIC_TONEMAPPING";
 		}
 		
-		super(name, "tonemap", params, null, 1.0, camera, samplingMode, engine, true, defines, textureFormat);
+		//sadly a second call to create the effect.
+		this.updateEffect(defines);
 		
 		this.onApply = function(effect:Effect) {
 			effect.setFloat("_ExposureAdjustment", this.exposureAdjustment);

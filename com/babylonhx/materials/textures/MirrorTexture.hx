@@ -3,6 +3,7 @@ package com.babylonhx.materials.textures;
 import com.babylonhx.math.Plane;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -21,7 +22,7 @@ import com.babylonhx.math.Vector3;
 	public function new(name:String, size:Int, scene:Scene, generateMipMaps:Bool = false) {
 		super(name, size, scene, generateMipMaps, true);
 		
-		this.onBeforeRender = function(val:Int = 0) {
+		this.onBeforeRenderObservable.add(function(val:Int = 0, es:EventState = null) {
 			Matrix.ReflectionToRef(this.mirrorPlane, this._mirrorMatrix);
 			this._savedViewMatrix = scene.getViewMatrix();
 			
@@ -34,15 +35,15 @@ import com.babylonhx.math.Vector3;
 			scene.getEngine().cullBackFaces = false;
 			
 			scene._mirroredCameraPosition = Vector3.TransformCoordinates(scene.activeCamera.position, this._mirrorMatrix);
-		}
+		});
 		
-		this.onAfterRender = function(val:Int = 0) {
+		this.onAfterRenderObservable.add(function(val:Int = 0, es:EventState = null) {
 			scene.setTransformMatrix(this._savedViewMatrix, scene.getProjectionMatrix());
 			scene.getEngine().cullBackFaces = true;
 			scene._mirroredCameraPosition = null;
 			
 			scene.clipPlane = null;
-		}
+		});
 	}
 
 	override public function clone():MirrorTexture {

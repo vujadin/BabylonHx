@@ -1,6 +1,8 @@
 package com.babylonhx.postprocess;
 
 import com.babylonhx.cameras.Camera;
+import com.babylonhx.materials.Effect;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -9,8 +11,16 @@ import com.babylonhx.cameras.Camera;
 
 @:expose('BABYLON.AnaglyphPostProcess') class AnaglyphPostProcess extends PostProcess {
 	
-	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
-		super(name, "anaglyph", null, ["leftSampler"], ratio, camera, samplingMode, engine, reusable);
+	private var _passedProcess:PostProcess;
+	
+	public function new(name:String, ratio:Float, rigCameras:Array<Camera>, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
+		super(name, "anaglyph", null, ["leftSampler"], ratio, rigCameras[1], samplingMode, engine, reusable);
+		
+		this._passedProcess = rigCameras[0]._rigPostProcess;
+		
+		this.onApplyObservable.add(function(effect:Effect, eventState:EventState = null) {
+			effect.setTextureFromPostProcess("leftSampler", this._passedProcess);
+		});
 	}
 	
 }

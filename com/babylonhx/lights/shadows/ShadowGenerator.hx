@@ -16,6 +16,7 @@ import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.postprocess.PassPostProcess;
 import com.babylonhx.postprocess.PostProcess;
 import com.babylonhx.tools.SmartArray;
+import com.babylonhx.tools.EventState;
 import com.babylonhx.Scene;
 
 /**
@@ -64,9 +65,9 @@ import com.babylonhx.Scene;
 		}
 		
 		this._boxBlurPostprocess = new PostProcess("DepthBoxBlur", "depthBoxBlur", ["screenSize", "boxOffset"], [], 1.0 / this.blurScale, null, Texture.BILINEAR_SAMPLINGMODE, this._scene.getEngine(), false, "#define OFFSET " + value);
-		this._boxBlurPostprocess.onApply = function(effect:Effect) {
+		this._boxBlurPostprocess.onApplyObservable.add(function(effect:Effect, eventState:EventState = null) {
 			effect.setFloat2("screenSize", this._mapSize / this.blurScale, this._mapSize / this.blurScale);
-		};
+		});
 		
 		return value;
 	}
@@ -163,11 +164,11 @@ import com.babylonhx.Scene;
 		this._shadowMap.updateSamplingMode(Texture.NEAREST_SAMPLINGMODE);
 		this._shadowMap.renderParticles = false;
 		
-		this._shadowMap.onBeforeRender = function(?faceIndex:Int) {
+		this._shadowMap.onBeforeRenderObservable.add(function(faceIndex:Int, eventState:EventState = null) {
 			this._currentFaceIndex = faceIndex;
-		};
+		});
 		
-		this._shadowMap.onAfterUnbind = function() {
+		this._shadowMap.onAfterUnbindObservable.add(function(rtt:RenderTargetTexture, eventState:EventState = null) {
 			if (!this.useBlurVarianceShadowMap) {
 				return;
 			}
@@ -179,15 +180,15 @@ import com.babylonhx.Scene;
 				this._shadowMap2.updateSamplingMode(Texture.TRILINEAR_SAMPLINGMODE);
 				
 				this._downSamplePostprocess = new PassPostProcess("downScale", 1.0 / this.blurScale, null, Texture.BILINEAR_SAMPLINGMODE, this._scene.getEngine());
-				this._downSamplePostprocess.onApply = function(effect:Effect) {
+				this._downSamplePostprocess.onApplyObservable.add(function(effect:Effect, eventState:EventState = null) {
 					effect.setTexture("textureSampler", this._shadowMap);
-				};
+				});
 				
 				this.blurBoxOffset = 1;				
 			}
 			
 			this._scene.postProcessManager.directRender([this._downSamplePostprocess, this._boxBlurPostprocess], this._shadowMap2.getInternalTexture());
-		}
+		});
 		
 		// Custom render function
 		var renderSubMesh = function(subMesh:SubMesh) {
@@ -265,14 +266,14 @@ import com.babylonhx.Scene;
 			}
 		};
 		
-		this._shadowMap.onClear = function(engine:Engine) {
+		this._shadowMap.onClearObservable.add(function(engine:Engine, eventState:EventState = null) {
 			if (this.useBlurVarianceShadowMap || this.useVarianceShadowMap) {
 				engine.clear(new Color4(0, 0, 0, 0), true, true);
 			} 
 			else {
 				engine.clear(new Color4(1.0, 1.0, 1.0, 1.0), true, true);
 			}
-		}
+		});
 	}
 
 	public function isReady(subMesh:SubMesh, useInstances:Bool):Bool {
@@ -365,6 +366,7 @@ import com.babylonhx.Scene;
 		}
 		
 		this._currentRenderID = scene.getRenderId();
+		this._currentFaceIndexCache = this._currentFaceIndex;
 		
 		var lightPosition = this._light.position;
 		Vector3.NormalizeToRef(this._light.getShadowDirection(this._currentFaceIndex), this._lightDirection);
@@ -459,9 +461,10 @@ import com.babylonhx.Scene;
 		var shadowGenerator:ShadowGenerator = new ShadowGenerator(parsedShadowGenerator.mapSize, cast light);
 		
 		for (meshIndex in 0...parsedShadowGenerator.renderList.length) {
-			var mesh = scene.getMeshByID(parsedShadowGenerator.renderList[meshIndex]);
-			
-			shadowGenerator.getShadowMap().renderList.push(mesh);
+			var meshes = scene.getMeshesByID(parsedShadowGenerator.renderList[meshIndex]);
+			for (mesh in meshes) {
+				shadowGenerator.getShadowMap().renderList.push(mesh);
+			}
 		}
 		
 		if (parsedShadowGenerator.usePoissonSampling == true) {

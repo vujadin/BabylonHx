@@ -2,7 +2,7 @@ package com.babylonhx.culling.octrees;
 
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Plane;
-import com.babylonhx.math.Ray;
+import com.babylonhx.culling.Ray;
 import com.babylonhx.tools.SmartArray;
 import haxe.ds.Vector;
 
@@ -79,6 +79,7 @@ import haxe.ds.Vector;
 				var block = this.blocks[index];
 				block.addEntry(entry);
 			}
+			
 			return;
 		}
 		
@@ -103,12 +104,14 @@ import haxe.ds.Vector;
 					var block = this.blocks[index];
 					block.select(frustumPlanes, selection, allowDuplicate);
 				}
+				
 				return;
 			}
 			
 			if (allowDuplicate) {
 				selection.concatArray(this.entries);
-			} else {
+			} 
+			else {
 				selection.concatArrayWithNoDuplicate(this.entries);
 			}
 		}
@@ -121,12 +124,14 @@ import haxe.ds.Vector;
 					var block = this.blocks[index];
 					block.intersects(sphereCenter, sphereRadius, selection, allowDuplicate);
 				}
+				
 				return;
 			}
 			
 			if (allowDuplicate) {
 				selection.concatArray(this.entries);
-			} else {
+			} 
+			else {
 				selection.concatArrayWithNoDuplicate(this.entries);
 			}
 		}
@@ -139,6 +144,7 @@ import haxe.ds.Vector;
 					var block = this.blocks[index];
 					block.intersectsRay(ray, selection);
 				}
+				
 				return;
 			}
 			selection.concatArrayWithNoDuplicate(this.entries);

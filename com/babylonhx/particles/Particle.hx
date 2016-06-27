@@ -21,10 +21,22 @@ import com.babylonhx.math.Color4;
 	public var size:Float = 0;
 	public var angle:Float = 0;
 	public var angularSpeed:Float = 0;
-		
+	
 
 	public function new() {
 		//
+	}
+	
+	inline public function copyTo(other:Particle) {
+		other.position.copyFrom(this.position);
+		other.direction.copyFrom(this.direction);
+		other.color.copyFrom(this.color);
+		other.colorStep.copyFrom(this.colorStep);
+		other.lifeTime = this.lifeTime;
+		other.age = this.age;
+		other.size = this.size;
+		other.angle = this.angle;
+		other.angularSpeed = this.angularSpeed;
 	}
 	
 }

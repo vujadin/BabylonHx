@@ -13,6 +13,7 @@ package com.babylonhx.actions;
 
 	public function new(triggerOptions:Dynamic, target:Dynamic, value:String, ?condition:Condition) {
 		super(triggerOptions, condition);
+		
 		this._target = target;
 	}
 

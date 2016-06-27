@@ -5,6 +5,7 @@ import com.babylonhx.animations.easing.IEasingFunction;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Quaternion;
+import com.babylonhx.math.Size;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
@@ -28,6 +29,7 @@ import com.babylonhx.Node;
 	public static inline var ANIMATIONTYPE_MATRIX:Int = 3;
 	public static inline var ANIMATIONTYPE_COLOR3:Int = 4;
 	public static inline var ANIMATIONTYPE_VECTOR2:Int = 5;
+	public static inline var ANIMATIONTYPE_SIZE:Int = 6;
 
 	public static inline var ANIMATIONLOOPMODE_RELATIVE:Int = 0;
 	public static inline var ANIMATIONLOOPMODE_CYCLE:Int = 1;
@@ -79,6 +81,9 @@ import com.babylonhx.Node;
 		} 
 		else if (Std.is(from, Color3)) {
 			dataType = Animation.ANIMATIONTYPE_COLOR3;
+		}
+		else if (Std.is(from, Size)) {
+			dataType = Animation.ANIMATIONTYPE_SIZE;
 		}
 		
 		if (dataType == -1) {
@@ -229,12 +234,16 @@ import com.babylonhx.Node;
 	inline public function vector2InterpolateFunction(startValue:Vector2, endValue:Vector2, gradient:Float):Vector2 {
 		return Vector2.Lerp(startValue, endValue, gradient);
 	}
+	
+	inline public function sizeInterpolateFunction(startValue:Size, endValue:Size, gradient:Float):Size {
+        return Size.Lerp(startValue, endValue, gradient);
+    }
 
 	inline public function color3InterpolateFunction(startValue:Color3, endValue:Color3, gradient:Float):Color3 {
 		return Color3.Lerp(startValue, endValue, gradient);
 	}
 	
-	public function matrixInterpolateFunction(startValue:Matrix, endValue:Matrix, gradient:Float):Matrix {
+	inline public function matrixInterpolateFunction(startValue:Matrix, endValue:Matrix, gradient:Float):Matrix {
 		return Matrix.Lerp(startValue, endValue, gradient);
 	}
 
@@ -243,6 +252,13 @@ import com.babylonhx.Node;
 		
 		if (this._keys != null) {
 			clone.setKeys(this._keys);
+		}
+		
+		if (this._ranges != null) {
+			clone._ranges = new Map();
+			for (name in this._ranges.keys()) {
+				clone._ranges[name] = this._ranges[name].clone();
+			}
 		}
 		
 		return clone;
@@ -331,6 +347,16 @@ import com.babylonhx.Node;
 							case Animation.ANIMATIONLOOPMODE_RELATIVE:
 								return this.vector2InterpolateFunction(cast startValue, cast endValue, gradient).add(offsetValue.scale(repeatCount));
 						}
+					// Size	
+					case Animation.ANIMATIONTYPE_SIZE:
+                        switch (loopMode) {
+                            case Animation.ANIMATIONLOOPMODE_CYCLE, Animation.ANIMATIONLOOPMODE_CONSTANT:
+                                return this.sizeInterpolateFunction(startValue, endValue, gradient);
+								
+                            case Animation.ANIMATIONLOOPMODE_RELATIVE:
+                                return this.sizeInterpolateFunction(startValue, endValue, gradient).add(offsetValue.scale(repeatCount));
+                        }
+						
 					// Color3
 					case Animation.ANIMATIONTYPE_COLOR3:
 						switch (loopMode) {
@@ -426,17 +452,17 @@ import com.babylonhx.Node;
 		
 		// Blending
 		if (this.enableBlending && this._blendingFactor <= 1.0) {
-			if (this._originalBlendValue == null) {
-				this._originalBlendValue = Reflect.getProperty(destination, path);
+			if (this._originalBlendValue == null) {				
+				if (path == "_matrix") {
+					this._originalBlendValue = destination._matrix.clone();
+				} 
+				else {
+					this._originalBlendValue = Reflect.getProperty(destination, path);
+				}
 			}
 			
-			if (!Std.is(this._originalBlendValue, Float) && !Std.is(this._originalBlendValue, Int)) { // Complex value				
-				if (Reflect.hasField(this._originalBlendValue, "Lerp")) { // Lerp supported
-					Reflect.setField(destination, path, this._originalBlendValue.Lerp(currentValue, this._originalBlendValue, this._blendingFactor));
-				} 
-				else { // Blending not supported
-					Reflect.setField(destination, path, currentValue);
-				}
+			if (path == "_matrix") { 				
+				untyped destination._matrix = Matrix.Lerp(this._originalBlendValue, currentValue, this._blendingFactor);
 			} 
 			else { // Direct value
 				Reflect.setField(destination, path, this._originalBlendValue * (1.0 - this._blendingFactor) + this._blendingFactor * currentValue);
@@ -527,7 +553,9 @@ import com.babylonhx.Node;
 						// Vector2
 						case Animation.ANIMATIONTYPE_VECTOR2:
 							this._offsetsCache[keyOffset] = cast(toValue, Vector2).subtract(cast(fromValue, Vector2));
-							
+						// Size
+                        case Animation.ANIMATIONTYPE_SIZE:
+                            this._offsetsCache[keyOffset] = cast(toValue, Size).subtract(cast(fromValue, Size)); 
 						// Color3
 						case Animation.ANIMATIONTYPE_COLOR3:
 							this._offsetsCache[keyOffset] = cast(toValue, Color3).subtract(cast(fromValue, Color3));
@@ -561,6 +589,10 @@ import com.babylonhx.Node;
 				// Vector2
 				case Animation.ANIMATIONTYPE_VECTOR2:
 					offsetValue = Vector2.Zero();
+					
+				// Size
+                case Animation.ANIMATIONTYPE_SIZE:
+                    offsetValue = Size.Zero();
 					
 				// Color3
 				case Animation.ANIMATIONTYPE_COLOR3:

@@ -25,16 +25,16 @@ package com.babylonhx.tools;
 
 	inline public function push(value:T):Void {
 		this.data[this.length++] = value;
-		//trace(value);
-		if (untyped value.__smartArrayFlags == null) {
+		
+		/*if (untyped value.__smartArrayFlags == null) {
 			untyped value.__smartArrayFlags = [];
-		}
+		}*/
 		
 		untyped value.__smartArrayFlags[this._id] = this._duplicateId;
 	}
 
 	public function pushNoDuplicate(value:T) {
-		if(untyped value.__smartArrayFlags != null && value.__smartArrayFlags[this._id] == this._duplicateId) {
+		if(untyped /*value.__smartArrayFlags != null &&*/ value.__smartArrayFlags[this._id] == this._duplicateId) {
 			return;
 		}
 		
@@ -51,47 +51,43 @@ package com.babylonhx.tools;
 	}
 
 	inline public function concatArray(array:Array<T>) {
-		if (array.length != 0) {		
+		//if (array.length != 0) {		
 			for (index in 0...array.length) {
 				this.data[this.length++] = array[index];
 			}
-		}
+		//}
 	}
 	
 	inline public function concatSmartArray(array:SmartArray<T>) {
-		if (array.length != 0) {
+		//if (array.length != 0) {
 			for (index in 0...array.length) {
 				this.data[this.length++] = array.data[index];
 			}
-		}
+		//}
 	}
 
 	inline public function concatArrayWithNoDuplicate(array:Array<T>) {
-		if (array.length != 0) {			
+		//if (array.length != 0) {			
 			for (index in 0...array.length) {
 				var item = array[index];
 				this.pushNoDuplicate(item);
 			}
-		}
+		//}
 	}
 	
 	inline public function concatSmartArrayWithNoDuplicate(array:SmartArray<T>) {
-		if (array.length != 0) {
+		//if (array.length != 0) {
 			for (index in 0...array.length) {
 				var item = array.data[index];
 				this.pushNoDuplicate(item);
 			}
-		}
+		//}
 	}
 
-	public function indexOf(value:T):Int {
+	inline public function indexOf(value:T):Int {
 		var position = this.data.indexOf(value);
 		
-		if (position >= this.length) {
-			return -1;
-		}
-		
-		return position;
+		return (position >= this.length) ? return -1 : position;
 	}
 
 }

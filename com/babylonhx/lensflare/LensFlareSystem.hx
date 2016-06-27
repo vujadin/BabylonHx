@@ -1,12 +1,14 @@
 package com.babylonhx.lensflare;
 
 import com.babylonhx.materials.Effect;
-import com.babylonhx.math.Ray;
+import com.babylonhx.culling.Ray;
 import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Color3;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Viewport;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.mesh.Mesh;
+import com.babylonhx.tools.Tools;
 
 /**
  * ...
@@ -20,6 +22,7 @@ import com.babylonhx.mesh.Mesh;
 	public var borderLimit:Float = 300;
 	public var meshesSelectionPredicate:Mesh->Bool;
 	public var layerMask:Int = 0x0FFFFFFF;
+	public var id:String;
 
 	private var _scene:Scene;
 	private var _emitter:Dynamic;
@@ -33,9 +36,9 @@ import com.babylonhx.mesh.Mesh;
 	private var _isEnabled:Bool = true;	
 	
 
-	public function new(name:String, emitter:Dynamic, scene:Scene) {
-		
+	public function new(name:String, emitter:Dynamic, scene:Scene) {		
 		this.name = name;
+		this.id = name;
 		this._scene = scene;
 		this._emitter = emitter;
 		scene.lensFlareSystems.push(this);
@@ -99,7 +102,7 @@ import com.babylonhx.mesh.Mesh;
 	}
 
 	public function getEmitterPosition():Vector3 {
-		return this._emitter.getAbsolutePosition != null ? this._emitter.getAbsolutePosition() :this._emitter.position;
+		return this._emitter.getAbsolutePosition != null ? this._emitter.getAbsolutePosition() : this._emitter.position;
 	}
 
 	public function computeEffectivePosition(globalViewport:Viewport):Bool {
@@ -145,7 +148,7 @@ import com.babylonhx.mesh.Mesh;
 		
 		var engine = this._scene.getEngine();
 		var viewport = this._scene.activeCamera.viewport;
-		var globalViewport = viewport.toScreenGlobal(engine);
+		var globalViewport = viewport.toGlobal(engine.getRenderWidth(true), engine.getRenderHeight(true));
 		
 		// Position
 		if (!this.computeEffectivePosition(globalViewport)) {
@@ -262,6 +265,50 @@ import com.babylonhx.mesh.Mesh;
 		
 		// Remove from scene
 		this._scene.lensFlareSystems.remove(this);
+	}
+	
+	public static function Parse(parsedLensFlareSystem:Dynamic, scene:Scene, rootUrl:String):LensFlareSystem {
+		var emitter = scene.getLastEntryByID(parsedLensFlareSystem.emitterId);
+		
+		var _name = parsedLensFlareSystem.name != null ? parsedLensFlareSystem.name : "lensFlareSystem#" + parsedLensFlareSystem.emitterId;
+		
+		var lensFlareSystem = new LensFlareSystem(_name, emitter, scene);
+		if (parsedLensFlareSystem.id != null) {
+            lensFlareSystem.id = parsedLensFlareSystem.id;
+        }
+		lensFlareSystem.borderLimit = parsedLensFlareSystem.borderLimit;
+		
+		var _flares:Array<Dynamic> = cast parsedLensFlareSystem.flares;
+		for (index in 0..._flares.length) {
+			var parsedFlare = _flares[index];
+			var flare = new LensFlare(parsedFlare.size, parsedFlare.position, Color3.FromArray(parsedFlare.color), rootUrl + parsedFlare.textureName, lensFlareSystem);
+		}
+		
+		return lensFlareSystem;
+	}
+
+	public function serialize():Dynamic {
+		var serializationObject:Dynamic = { };
+		
+		serializationObject.id = this.id;
+        serializationObject.name = this.name;
+		
+		serializationObject.emitterId = this.getEmitter().id;
+		serializationObject.borderLimit = this.borderLimit;
+		
+		serializationObject.flares = [];
+		for (index in 0...this.lensFlares.length) {
+			var flare = this.lensFlares[index];
+			
+			serializationObject.flares.push({
+				size: flare.size,
+				position: flare.position,
+				color: flare.color.asArray(),
+				textureName: Tools.GetFilename(flare.texture.name)
+			});
+		}
+		
+		return serializationObject;
 	}
 	
 }

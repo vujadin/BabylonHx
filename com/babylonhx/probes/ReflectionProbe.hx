@@ -4,6 +4,7 @@ import com.babylonhx.Scene;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
+import com.babylonhx.tools.EventState;
 import com.babylonhx.materials.textures.RenderTargetTexture;
 
 
@@ -38,7 +39,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 		
 		this._renderTargetTexture = new RenderTargetTexture(name, size, scene, generateMipMaps, true, Engine.TEXTURETYPE_UNSIGNED_INT, true);
 		
-		this._renderTargetTexture.onBeforeRender = function(faceIndex:Int) {
+		this._renderTargetTexture.onBeforeRenderObservable.add(function(faceIndex:Int, es:EventState = null) {
 			switch (faceIndex) {
 				case 0:
 					this._add.set(1, 0, 0);
@@ -68,11 +69,11 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 			Matrix.LookAtLHToRef(this.position, this._target, Vector3.Up(), this._viewMatrix);
 			
 			scene.setTransformMatrix(this._viewMatrix, this._projectionMatrix);
-		};
+		});
 		
-		this._renderTargetTexture.onAfterUnbind = function() {
+		this._renderTargetTexture.onAfterUnbindObservable.add(function(tex:RenderTargetTexture, es:EventState = null) {
 			scene.updateTransformMatrix(true);
-		};
+		});
 		
 		this._projectionMatrix = Matrix.PerspectiveFovLH(Math.PI / 2, 1, scene.activeCamera.minZ, scene.activeCamera.maxZ);
 	}

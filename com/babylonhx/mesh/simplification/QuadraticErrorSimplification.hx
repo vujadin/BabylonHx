@@ -35,7 +35,7 @@ import haxe.Timer;
 	public function new(mesh:Mesh) {
 		this.aggressiveness = 7;
 		this.decimationIterations = 100;
-		this.boundingBoxEpsilon = Engine.Epsilon;
+		this.boundingBoxEpsilon = com.babylonhx.math.Tools.Epsilon;
 	}
 
 	public function simplify(settings:ISimplificationSettings, successCallback:Mesh->Void, ?errorCallback:Void->Void) {

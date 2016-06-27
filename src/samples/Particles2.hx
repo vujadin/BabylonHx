@@ -9,6 +9,7 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.particles.ParticleSystem;
 import com.babylonhx.Scene;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -23,8 +24,6 @@ class Particles2 {
 		camera.lowerBetaLimit = 0.1;
 		camera.upperBetaLimit = (Math.PI / 2) * 0.95;
 		camera.lowerRadiusLimit = 5;
-		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
 		
 		// Emitters
 		var emitter0 = Mesh.CreateBox("emitter0", 0.1, scene);
@@ -81,7 +80,7 @@ class Particles2 {
 		var time = 0.0;
 		var order = 0.1;
 		
-		scene.registerBeforeRender(function () {
+		scene.registerBeforeRender(function(scene:Scene, es:Null<EventState>) {
 			// Waiting for effect to be compiled
 			if (effect == null) {
 				return;

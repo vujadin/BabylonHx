@@ -4,6 +4,7 @@ import com.babylonhx.cameras.Camera;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.textures.Texture;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -22,11 +23,11 @@ import com.babylonhx.materials.textures.Texture;
 		this.direction = direction;
         this.blurWidth = blurWidth;
 		
-		this.onApply = function(effect:Effect) {
+		this.onApplyObservable.add(function(effect:Effect, es:EventState = null) {
 			effect.setFloat2("screenSize", this.width, this.height);
 			effect.setVector2("direction", this.direction);
 			effect.setFloat("blurWidth", this.blurWidth);
-		};
+		});
 	}
 
 }

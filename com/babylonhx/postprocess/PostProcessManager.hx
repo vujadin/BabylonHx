@@ -38,13 +38,12 @@ import com.babylonhx.materials.textures.WebGLTexture;
 	// Methods
 	public function _prepareFrame(?sourceTexture:WebGLTexture):Bool {
 		var postProcesses = this._scene.activeCamera._postProcesses;
-		var postProcessesTakenIndices = this._scene.activeCamera._postProcessesTakenIndices;
 		
-		if (postProcessesTakenIndices.length == 0 || !this._scene.postProcessesEnabled) {
+		if (postProcesses.length == 0 || !this._scene.postProcessesEnabled) {
 			return false;
 		}
 		
-		postProcesses[this._scene.activeCamera._postProcessesTakenIndices[0]].activate(this._scene.activeCamera, sourceTexture);
+		postProcesses[0].activate(this._scene.activeCamera, sourceTexture);
 		
 		return true;
 	}
@@ -69,9 +68,7 @@ import com.babylonhx.materials.textures.WebGLTexture;
 			var effect = pp.apply();
 			
 			if (effect != null) {
-				if (pp.onBeforeRender != null) {
-					pp.onBeforeRender(effect);
-				}
+				pp.onBeforeRenderObservable.notifyObservers(effect);
 				
 				// VBOs
 				this._prepareBuffers();
@@ -80,9 +77,7 @@ import com.babylonhx.materials.textures.WebGLTexture;
 				// Draw order
 				engine.draw(true, 0, 6);
 				
-				if (pp.onAfterRender != null) {
-                    pp.onAfterRender(effect);
-                }
+				pp.onAfterRenderObservable.notifyObservers(effect);
 			}
 		}
 		
@@ -96,16 +91,15 @@ import com.babylonhx.materials.textures.WebGLTexture;
 			postProcesses = this._scene.activeCamera._postProcesses;
 		}
 		
-		var postProcessesTakenIndices = this._scene.activeCamera._postProcessesTakenIndices;
-		if (postProcessesTakenIndices.length == 0 || !this._scene.postProcessesEnabled) {
+		if (postProcesses.length == 0 || !this._scene.postProcessesEnabled) {
 			return;
 		}
 		
 		var engine = this._scene.getEngine();
 		
-		for (index in 0...postProcessesTakenIndices.length) {
-			if (index < postProcessesTakenIndices.length - 1) {
-				postProcesses[postProcessesTakenIndices[index + 1]].activate(this._scene.activeCamera, targetTexture);
+		for (index in 0...postProcesses.length) {
+			if (index < postProcesses.length - 1) {
+				postProcesses[index + 1].activate(this._scene.activeCamera, targetTexture);
 			} 
 			else {
 				if (targetTexture != null) {
@@ -120,13 +114,11 @@ import com.babylonhx.materials.textures.WebGLTexture;
 				break;
 			}
 			
-			var pp = postProcesses[postProcessesTakenIndices[index]];
+			var pp = postProcesses[index];
 			var effect = pp.apply();
 			
 			if (effect != null) {
-				if (pp.onBeforeRender != null) {
-					pp.onBeforeRender(effect);
-				}
+				pp.onBeforeRenderObservable.notifyObservers(effect);
 				
 				// VBOs
 				this._prepareBuffers();
@@ -135,9 +127,7 @@ import com.babylonhx.materials.textures.WebGLTexture;
 				// Draw order
 				engine.draw(true, 0, 6);
 				
-				if (pp.onAfterRender != null) {
-                    pp.onAfterRender(effect);
-                }
+				pp.onAfterRenderObservable.notifyObservers(effect);
 			}
 		}
 		

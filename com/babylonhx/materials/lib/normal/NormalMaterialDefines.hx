@@ -101,71 +101,8 @@ class NormalMaterialDefines extends MaterialDefines {
 		return result;
 	}
 	
-	public function getLight(lightType:String, lightIndex:Int):Int {
-		switch (lightType) {
-			case "POINTLIGHT":
-				switch (lightIndex) {
-					case 0:
-						return POINTLIGHT0;
-						
-					case 1:
-						return POINTLIGHT1;
-						
-					case 2:
-						return POINTLIGHT2;
-						
-					case 3:
-						return POINTLIGHT3;
-				}
-				
-			case "HEMILIGHT":
-				switch (lightIndex) {
-					case 0:
-						return HEMILIGHT0;
-						
-					case 1:
-						return HEMILIGHT1;
-						
-					case 2:
-						return HEMILIGHT2;
-						
-					case 3:
-						return HEMILIGHT3;
-				}
-				
-			case "DIRLIGHT":
-				switch (lightIndex) {
-					case 0:
-						return DIRLIGHT0;
-						
-					case 1:
-						return DIRLIGHT1;
-						
-					case 2:
-						return DIRLIGHT2;
-						
-					case 3:
-						return DIRLIGHT3;
-				}
-				
-			case "SPOTLIGHT":
-				switch (lightIndex) {
-					case 0:
-						return SPOTLIGHT0;
-						
-					case 1:
-						return SPOTLIGHT1;
-						
-					case 2:
-						return SPOTLIGHT2;
-						
-					case 3:
-						return SPOTLIGHT3;
-				}
-				
-		}
-		
-		return -1;
+	static inline public function getLight(lightType:String, lightIndex:Int):Int {
+		return LIGHTS[lightType][lightIndex];		
 	}
 	
 }

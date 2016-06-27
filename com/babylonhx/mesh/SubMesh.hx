@@ -5,7 +5,7 @@ import com.babylonhx.materials.MultiMaterial;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Plane;
-import com.babylonhx.math.Ray;
+import com.babylonhx.culling.Ray;
 import com.babylonhx.collisions.Collider;
 import com.babylonhx.collisions.IntersectionInfo;
 import com.babylonhx.culling.BoundingInfo;
@@ -29,7 +29,7 @@ import com.babylonhx.tools.Tools;
 	public var _trianglePlanes:Array<Plane>;
 	public var _lastColliderTransformMatrix:Matrix;
 	
-	public var __smartArrayFlags:Array<Int>;
+	public var __smartArrayFlags:Array<Int> = [];
 
 	public var _renderId:Int = 0;
 	public var _alphaIndex:Float;
@@ -181,7 +181,35 @@ import com.babylonhx.tools.Tools;
 
 	inline public function intersects(ray:Ray, positions:Array<Vector3>, indices:Array<Int>, fastCheck:Bool = false):IntersectionInfo {
 		var intersectInfo:IntersectionInfo = null;
-		if (positions != null && indices != null) {		
+		
+		// LineMesh first as it's also a Mesh...
+		if (Std.is(this._mesh, LinesMesh)) {
+			var lineMesh:LinesMesh = cast this._mesh;
+			
+			// Line test
+			var index:Int = this.indexStart;
+			while (index < this.indexStart + this.indexCount) {			
+				var p0 = positions[indices[index]];
+				var p1 = positions[indices[index + 1]];
+				
+				var length = ray.intersectionSegment(p0, p1, lineMesh.intersectionThreshold);
+				if (length < 0) {
+					index += 2;
+					continue;
+				}
+				
+				if (fastCheck || intersectInfo == null || length < intersectInfo.distance) {
+					intersectInfo = new IntersectionInfo(0, 0, length);
+					
+					if (fastCheck) {
+						break;
+					}
+				}
+				
+				index += 2;
+			}
+		}
+		else {
 			// Triangles test
 			var index:Int = this.indexStart;
 			while (index < this.indexStart + this.indexCount) {
@@ -193,6 +221,7 @@ import com.babylonhx.tools.Tools;
 				
 				if (currentIntersectInfo != null) {
                     if (currentIntersectInfo.distance < 0) {
+						index += 3;
                         continue;
                     }
 					

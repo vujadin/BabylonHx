@@ -30,7 +30,7 @@ typedef IAMethods = {
 	public var maxAnisotropy:Int;
 	public var textureLOD:Bool;
 	public var textureLODExt:String = "";
-	public var textureCubeLodFnName:String = "textureCubeLod";
+	public var textureCubeLodFnName:String = "textureCubeLodEXT";
 	
 	#if (!mobile && cpp)
 	public var instancedArrays:IAMethods;

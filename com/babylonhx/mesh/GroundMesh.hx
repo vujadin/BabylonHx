@@ -4,7 +4,7 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector4;
-import com.babylonhx.math.Ray;
+import com.babylonhx.culling.Ray;
 import com.babylonhx.math.Tmp;
 
 /**
@@ -51,8 +51,8 @@ import com.babylonhx.math.Tmp;
 	 */
 	public function getHeightAtCoordinates(x:Float, z:Float):Float {
 		// express x and y in the ground local system
-        x -= this.position.x;
-        z -= this.position.z;
+		x -= this.position.x;
+		z -= this.position.z;
 		x /= this.scaling.x;
 		z /= this.scaling.z;
 		
@@ -78,7 +78,7 @@ import com.babylonhx.math.Tmp;
 	 * Returns Vector3(0, 1, 0) if (x, z) are outside the ground surface.
 	 * Not pertinent if the ground is rotated.
 	 */
-	public function getNormalAtCoordinates(x:Float, z:Float):Vector3 {
+	inline public function getNormalAtCoordinates(x:Float, z:Float):Vector3 {
 		var normal = new Vector3(0, 1, 0);
 		this.getNormalAtCoordinatesToRef(x, z, normal);
 		
@@ -91,7 +91,7 @@ import com.babylonhx.math.Tmp;
 	 * Doesn't uptade the reference Vector3 if (x, z) are outside the ground surface.
 	 * Not pertinent if the ground is rotated.
 	 */
-	public function getNormalAtCoordinatesToRef(x:Float, z:Float, ref:Vector3) {
+	inline public function getNormalAtCoordinatesToRef(x:Float, z:Float, ref:Vector3) {
 		// express x and y in the ground local system
         x -= this.position.x;
         z -= this.position.z;
@@ -117,7 +117,7 @@ import com.babylonhx.math.Tmp;
 	* if the ground has been updated.
 	* This can be used in the render loop
 	*/
-	public function updateCoordinateHeights() {
+	inline public function updateCoordinateHeights() {
 		if (this._heightQuads == null || this._heightQuads.length == 0) {
 			this._initHeightQuads();
 		}
@@ -150,7 +150,7 @@ import com.babylonhx.math.Tmp;
 		this._heightQuads = [];
 		for (row in 0...this._subdivisions) {
 			for (col in 0...this._subdivisions) {
-				var quad = { slope: Vector2.Zero(), facet1: new Vector4(0, 0, 0,0), facet2: new Vector4(0, 0, 0,0) };
+				var quad = { slope: Vector2.Zero(), facet1: new Vector4(0, 0, 0, 0), facet2: new Vector4(0, 0, 0, 0) };
 				this._heightQuads[row * this._subdivisions + col] = quad;
 			}
 		}
@@ -162,7 +162,6 @@ import com.babylonhx.math.Tmp;
 	// facet1 : Vector4(a, b, c, d) = first facet 3D plane equation : ax + by + cz + d = 0
 	// facet2 :  Vector4(a, b, c, d) = second facet 3D plane equation : ax + by + cz + d = 0
 	private function _computeHeightQuads() {
-		this._heightQuads = [];
 		var positions = this.getVerticesData(VertexBuffer.PositionKind);
 		var v1 = Tmp.vector3[0];
 		var v2 = Tmp.vector3[1];
@@ -202,7 +201,6 @@ import com.babylonhx.math.Tmp;
 				// 2D slope V1V4
 				cd = (v4.z - v1.z) / (v4.x - v1.x);
 				h = v1.z - cd * v1.x;             // v1 belongs to the slope
-				var slope = new Vector2(cd, h);
 				
 				// facet equations :
 				// we compute each facet normal vector
@@ -218,6 +216,7 @@ import com.babylonhx.math.Tmp;
 				norm2.normalize();
 				d1 = -(norm1.x * v1.x + norm1.y * v1.y + norm1.z * v1.z);
 				d2 = -(norm2.x * v2.x + norm2.y * v2.y + norm2.z * v2.z);
+				
 				var quad = this._heightQuads[row * this._subdivisions + col];
 				quad.slope.copyFromFloats(cd, h);
 				quad.facet1.copyFromFloats(norm1.x, norm1.y, norm1.z, d1);

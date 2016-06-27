@@ -2,6 +2,8 @@ package com.babylonhx.postprocess;
 
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.materials.Effect;
+import com.babylonhx.tools.EventState;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -25,10 +27,10 @@ import com.babylonhx.materials.Effect;
 		
 		this.kernel = kernel;
 		
-		this.onApply = function(effect:Effect) {
+		this.onApplyObservable.add(function(effect:Effect, es:EventState = null) {
 			effect.setFloat2("screenSize", this.width, this.height);
 			effect.setArray("kernel", this.kernel);
-		};
+		});
 	}
     
 }

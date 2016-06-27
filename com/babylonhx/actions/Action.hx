@@ -30,9 +30,7 @@ package com.babylonhx.actions;
 	}
 
 	// Methods
-	public function _prepare() {
-		
-	}
+	public function _prepare() { }
 
 	public function getTriggerParameter():Dynamic {
 		return this._triggerParameter;
@@ -54,6 +52,7 @@ package com.babylonhx.actions;
 				
 				if (!condition.isValid()) {
 					condition._currentResult = false;
+					
 					return;
 				}
 				
@@ -66,9 +65,7 @@ package com.babylonhx.actions;
 		this.skipToNextActiveAction();
 	}
 
-	public function execute(?evt:ActionEvent) {
-
-	}
+	public function execute(?evt:ActionEvent) { }
 	
 	public function skipToNextActiveAction() {
 		if (this._nextActiveAction._child != null) {

@@ -2,6 +2,7 @@ package com.babylonhx.math;
 
 import com.babylonhx.tools.Tools;
 import com.babylonhx.utils.typedarray.Float32Array;
+import haxe.ds.Vector;
 
 
 /**
@@ -14,7 +15,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public var x:Float;
 	public var y:Float;
 	public var z:Float;
-
+	
 
 	inline public function new(x:Float = 0, y:Float = 0, z:Float = 0) {
 		this.x = x;
@@ -25,6 +26,18 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	inline public function toString():String {
 		return "{X:" + this.x + " Y:" + this.y + " Z:" + this.z + "}";
 	}
+	
+	inline public function getClassName():String {
+        return "Vector3";
+    }
+	
+	public function getHashCode():Int {
+        var hash = Std.int(this.x);
+        hash = Std.int(hash * 397) ^ Std.int(this.y);
+		hash = Std.int(hash * 397) ^ Std.int(this.z);
+		
+        return hash;
+    }
 
 	// Operators
 	inline public function asArray():Array<Float> {
@@ -47,7 +60,13 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		array[index + 2] = this.z;
 	}
 	
-	inline public function toQuaternion():Quaternion {
+	inline public function toFloat32Array(array:Float32Array, index:Int = 0) {
+		array[index] = this.x;
+		array[index + 1] = this.y;
+		array[index + 2] = this.z;
+	}
+	
+	public function toQuaternion():Quaternion {
 		var result = new Quaternion(0, 0, 0, 1);
 		
 		var cosxPlusz = Math.cos((this.x + this.z) * 0.5);
@@ -69,6 +88,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this.x += otherVector.x;
 		this.y += otherVector.y;
 		this.z += otherVector.z;
+		
 		return this;
 	}
 
@@ -76,16 +96,19 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return new Vector3(this.x + otherVector.x, this.y + otherVector.y, this.z + otherVector.z);
 	}
 
-	inline public function addToRef(otherVector:Vector3, result:Vector3) {
+	inline public function addToRef(otherVector:Vector3, result:Vector3):Vector3 {
 		result.x = this.x + otherVector.x;
 		result.y = this.y + otherVector.y;
 		result.z = this.z + otherVector.z;
+		
+		return this;
 	}
 
 	inline public function subtractInPlace(otherVector:Vector3):Vector3 {
 		this.x -= otherVector.x;
 		this.y -= otherVector.y;
 		this.z -= otherVector.z;
+		
 		return this;
 	}
 
@@ -93,20 +116,24 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return new Vector3(this.x - otherVector.x, this.y - otherVector.y, this.z - otherVector.z);
 	}
 
-	inline public function subtractToRef(otherVector:Vector3, result:Vector3) {
+	inline public function subtractToRef(otherVector:Vector3, result:Vector3):Vector3 {
 		result.x = this.x - otherVector.x;
 		result.y = this.y - otherVector.y;
 		result.z = this.z - otherVector.z;
+		
+		return this;
 	}
 
 	inline public function subtractFromFloats(x:Float, y:Float, z:Float):Vector3 {
 		return new Vector3(this.x - x, this.y - y, this.z - z);
 	}
 
-	inline public function subtractFromFloatsToRef(x:Float, y:Float, z:Float, result:Vector3) {
+	inline public function subtractFromFloatsToRef(x:Float, y:Float, z:Float, result:Vector3):Vector3 {
 		result.x = this.x - x;
 		result.y = this.y - y;
 		result.z = this.z - z;
+		
+		return this;
 	}
 
 	inline public function negate():Vector3 {
@@ -117,6 +144,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this.x *= scale;
 		this.y *= scale;
 		this.z *= scale;
+		
 		return this;
 	}
 
@@ -134,7 +162,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return otherVector != null && this.x == otherVector.x && this.y == otherVector.y && this.z == otherVector.z;
 	}
 
-	inline public function equalsWithEpsilon(otherVector:Vector3, epsilon:Float = Engine.Epsilon):Bool {
+	inline public function equalsWithEpsilon(otherVector:Vector3, epsilon:Float = Tools.Epsilon):Bool {
 		return otherVector != null && Tools.WithinEpsilon(this.x, otherVector.x, epsilon) && Tools.WithinEpsilon(this.y, otherVector.y, epsilon) && Tools.WithinEpsilon(this.z, otherVector.z, epsilon);
 	}
 
@@ -142,23 +170,27 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return this.x == x && this.y == y && this.z == z;
 	}
 
-	inline public function multiplyInPlace(otherVector:Vector3) {
+	inline public function multiplyInPlace(otherVector:Vector3):Vector3 {
 		this.x *= otherVector.x;
 		this.y *= otherVector.y;
 		this.z *= otherVector.z;
+		
+		return this;
 	}
 
 	inline public function multiply(otherVector:Vector3):Vector3 {
 		return new Vector3(this.x * otherVector.x, this.y * otherVector.y, this.z * otherVector.z);
 	}
 
-	inline public function multiplyToRef(otherVector:Vector3, result:Vector3) {
+	inline public function multiplyToRef(otherVector:Vector3, result:Vector3):Vector3 {
 		result.x = this.x * otherVector.x;
 		result.y = this.y * otherVector.y;
 		result.z = this.z * otherVector.z;
+		
+		return this;
 	}
 
-	public function multiplyByFloats(x:Float, y:Float, z:Float):Vector3 {
+	inline public function multiplyByFloats(x:Float, y:Float, z:Float):Vector3 {
 		return new Vector3(this.x * x, this.y * y, this.z * z);
 	}
 
@@ -166,22 +198,28 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return new Vector3(this.x / otherVector.x, this.y / otherVector.y, this.z / otherVector.z);
 	}
 
-	inline public function divideToRef(otherVector:Vector3, result:Vector3) {
+	inline public function divideToRef(otherVector:Vector3, result:Vector3):Vector3 {
 		result.x = this.x / otherVector.x;
 		result.y = this.y / otherVector.y;
 		result.z = this.z / otherVector.z;
+		
+		return this;
 	}
 
-	inline public function MinimizeInPlace(other:Vector3) {
+	inline public function MinimizeInPlace(other:Vector3):Vector3 {
 		if (other.x < this.x) this.x = other.x;
 		if (other.y < this.y) this.y = other.y;
 		if (other.z < this.z) this.z = other.z;
+		
+		return this;
 	}
 
-	inline public function MaximizeInPlace(other:Vector3) {
+	inline public function MaximizeInPlace(other:Vector3):Vector3 {
 		if (other.x > this.x) this.x = other.x;
 		if (other.y > this.y) this.y = other.y;
 		if (other.z > this.z) this.z = other.z;
+		
+		return this;
 	}
 
 	// Properties
@@ -197,7 +235,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public function normalize():Vector3 {
 		var len = this.length();
 		
-		if (len == 0) {
+		if (len == 0 || len == 1) {
 			return this;
 		}
 		
@@ -214,10 +252,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return new Vector3(this.x, this.y, this.z);
 	}
 
-	inline public function copyFrom(source:Vector3) {
+	inline public function copyFrom(source:Vector3):Vector3 {
 		this.x = source.x;
 		this.y = source.y;
 		this.z = source.z;
+		
+		return this;
 	}
 
 	inline public function copyFromFloats(x:Float, y:Float, z:Float):Vector3 {
@@ -305,10 +345,14 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	inline public static function TransformCoordinatesToRef(vector:Vector3, transformation:Matrix, result:Vector3) {
-		var x = (vector.x * transformation.m[0]) + (vector.y * transformation.m[4]) + (vector.z * transformation.m[8]) + transformation.m[12];
-		var y = (vector.x * transformation.m[1]) + (vector.y * transformation.m[5]) + (vector.z * transformation.m[9]) + transformation.m[13];
-		var z = (vector.x * transformation.m[2]) + (vector.y * transformation.m[6]) + (vector.z * transformation.m[10]) + transformation.m[14];
-		var w = (vector.x * transformation.m[3]) + (vector.y * transformation.m[7]) + (vector.z * transformation.m[11]) + transformation.m[15];
+		var vx = vector.x;
+		var vy = vector.y;
+		var vz = vector.z;
+		var tm = transformation.m;
+		var x = (vx * tm[0]) + (vy * tm[4]) + (vz * tm[8]) + tm[12];
+		var y = (vx * tm[1]) + (vy * tm[5]) + (vz * tm[9]) + tm[13];
+		var z = (vx * tm[2]) + (vy * tm[6]) + (vz * tm[10]) + tm[14];
+		var w = (vx * tm[3]) + (vy * tm[7]) + (vz * tm[11]) + tm[15];
 		
 		result.x = x / w;
 		result.y = y / w;
@@ -335,9 +379,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	inline public static function TransformNormalToRef(vector:Vector3, transformation:Matrix, result:Vector3) {
-		result.x = (vector.x * transformation.m[0]) + (vector.y * transformation.m[4]) + (vector.z * transformation.m[8]);
-		result.y = (vector.x * transformation.m[1]) + (vector.y * transformation.m[5]) + (vector.z * transformation.m[9]);
-		result.z = (vector.x * transformation.m[2]) + (vector.y * transformation.m[6]) + (vector.z * transformation.m[10]);
+		var vx = vector.x;
+		var vy = vector.y;
+		var vz = vector.z;
+		result.x = (vx * transformation.m[0]) + (vy * transformation.m[4]) + (vz * transformation.m[8]);
+		result.y = (vx * transformation.m[1]) + (vy * transformation.m[5]) + (vz * transformation.m[9]);
+		result.z = (vx * transformation.m[2]) + (vy * transformation.m[6]) + (vz * transformation.m[10]);
 	}
 
 	inline public static function TransformNormalFromFloatsToRef(x:Float, y:Float, z:Float, transformation:Matrix, result:Vector3) {
@@ -350,17 +397,32 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		var squared = amount * amount;
 		var cubed = amount * squared;
 		
-		var x = 0.5 * ((((2.0 * value2.x) + ((-value1.x + value3.x) * amount)) +
-			(((((2.0 * value1.x) - (5.0 * value2.x)) + (4.0 * value3.x)) - value4.x) * squared)) +
-			(((( -value1.x + (3.0 * value2.x)) - (3.0 * value3.x)) + value4.x) * cubed));
+		var v1x = value1.x;
+		var v2x = value2.x;
+		var v3x = value3.x;
+		var v4x = value4.x;
+		
+		var v1y = value1.y;
+		var v2y = value2.y;
+		var v3y = value3.y;
+		var v4y = value4.y;
+		
+		var v1z = value1.z;
+		var v2z = value2.z;
+		var v3z = value3.z;
+		var v4z = value4.z;
+		
+		var x = 0.5 * ((((2.0 * v2x) + ((-v1x + v3x) * amount)) +
+			(((((2.0 * v1x) - (5.0 * v2x)) + (4.0 * v3x)) - v4x) * squared)) +
+			(((( -v1x + (3.0 * v2x)) - (3.0 * v3x)) + v4x) * cubed));
 			
-		var y = 0.5 * ((((2.0 * value2.y) + ((-value1.y + value3.y) * amount)) +
-			(((((2.0 * value1.y) - (5.0 * value2.y)) + (4.0 * value3.y)) - value4.y) * squared)) +
-			(((( -value1.y + (3.0 * value2.y)) - (3.0 * value3.y)) + value4.y) * cubed));
+		var y = 0.5 * ((((2.0 * v2y) + ((-v1y + v3y) * amount)) +
+			(((((2.0 * v1y) - (5.0 * v2y)) + (4.0 * v3y)) - v4y) * squared)) +
+			(((( -v1y + (3.0 * v2y)) - (3.0 * v3y)) + v4y) * cubed));
 			
-		var z = 0.5 * ((((2.0 * value2.z) + ((-value1.z + value3.z) * amount)) +
-			(((((2.0 * value1.z) - (5.0 * value2.z)) + (4.0 * value3.z)) - value4.z) * squared)) +
-			(((( -value1.z + (3.0 * value2.z)) - (3.0 * value3.z)) + value4.z) * cubed));
+		var z = 0.5 * ((((2.0 * v2z) + ((-v1z + v3z) * amount)) +
+			(((((2.0 * v1z) - (5.0 * v2z)) + (4.0 * v3z)) - v4z) * squared)) +
+			(((( -v1z + (3.0 * v2z)) - (3.0 * v3z)) + v4z) * cubed));
 			
 		return new Vector3(x, y, z);
 	}
@@ -410,7 +472,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 
 	inline public static function Cross(left:Vector3, right:Vector3):Vector3 {
 		var result = Vector3.Zero();
+		
 		Vector3.CrossToRef(left, right, result);
+		
 		return result;
 	}
 
@@ -423,6 +487,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	inline public static function Normalize(vector:Vector3):Vector3 {
 		var result = Vector3.Zero();
 		Vector3.NormalizeToRef(vector, result);
+		
 		return result;
 	}
 
@@ -449,12 +514,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 	
 	inline public static function UnprojectFromTransform(source:Vector3, viewportWidth:Float, viewportHeight:Float, world:Matrix, transform:Matrix):Vector3 {
-		var matrix = world.multiply(transform);
-		matrix.invert();
+		Tmp.matrix[0] = world.multiply(transform);
+		Tmp.matrix[0].invert();
 		source.x = source.x / viewportWidth * 2 - 1;
 		source.y = -(source.y / viewportHeight * 2 - 1);
-		var vector = Vector3.TransformCoordinates(source, matrix);
-		var num = source.x * matrix.m[3] + source.y * matrix.m[7] + source.z * matrix.m[11] + matrix.m[15];
+		var vector = Vector3.TransformCoordinates(source, Tmp.matrix[0]);
+		var num = source.x * Tmp.matrix[0].m[3] + source.y * Tmp.matrix[0].m[7] + source.z * Tmp.matrix[0].m[11] + Tmp.matrix[0].m[15];
 		
 		if (Tools.WithinEpsilon(num, 1.0)) {
 			vector = vector.scale(1.0 / num);
@@ -464,11 +529,11 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	inline public static function Unproject(source:Vector3, viewportWidth:Float, viewportHeight:Float, world:Matrix, view:Matrix, projection:Matrix):Vector3 {
-		var matrix = world.multiply(view).multiply(projection);
-		matrix.invert();
+		Tmp.matrix[0] = world.multiply(view).multiply(projection);
+		Tmp.matrix[0].invert();
 		var screenSource = new Vector3(source.x / viewportWidth * 2 - 1, -(source.y / viewportHeight * 2 - 1), source.z);
-        var vector = Vector3.TransformCoordinates(screenSource, matrix);
-        var num = screenSource.x * matrix.m[3] + screenSource.y * matrix.m[7] + screenSource.z * matrix.m[11] + matrix.m[15];
+        var vector = Vector3.TransformCoordinates(screenSource, Tmp.matrix[0]);
+        var num = screenSource.x * Tmp.matrix[0].m[3] + screenSource.y * Tmp.matrix[0].m[7] + screenSource.z * Tmp.matrix[0].m[11] + Tmp.matrix[0].m[15];
 		
 		if (Tools.WithinEpsilon(num, 1.0)) {
 			vector = vector.scale(1.0 / num);
@@ -480,12 +545,14 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	inline public static function Minimize(left:Vector3, right:Vector3):Vector3 {
 		var min = left.clone();
 		min.MinimizeInPlace(right);
+		
 		return min;
 	}
 
 	inline public static function Maximize(left:Vector3, right:Vector3):Vector3 {
 		var max = left.clone();
 		max.MaximizeInPlace(right);
+		
 		return max;
 	}
 
@@ -504,6 +571,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	inline public static function Center(value1:Vector3, value2:Vector3):Vector3 {
 		var center = value1.add(value2);
 		center.scaleInPlace(0.5);
+		
 		return center;
 	}
 	
@@ -515,13 +583,121 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public static function RotationFromAxis(axis1:Vector3, axis2:Vector3, axis3:Vector3):Vector3 {
 		var rotation = Vector3.Zero();
 		Vector3.RotationFromAxisToRef(axis1, axis2, axis3, rotation);
+		
 		return rotation;
 	}
 	
 	/** 
 	 * The same as RotationFromAxis but updates the passed ref Vector3 parameter.
 	 */
+	static var _tF:Vector<Float> = new Vector<Float>(4);
 	public static function RotationFromAxisToRef(axis1:Vector3, axis2:Vector3, axis3:Vector3, ref:Vector3) {
+		var u = Tmp.vector3[0];
+		var w = Tmp.vector3[1];
+		Vector3.NormalizeToRef(axis1, u);
+		Vector3.NormalizeToRef(axis3, w);
+		
+		// equation unknowns and vars
+		_tF[0] = 0.0;
+		_tF[1] = 0.0;
+		_tF[2] = 0.0;
+		var sign = -1;
+		var nbRevert = 0;
+		var cross:Vector3 = Tmp.vector3[2];
+		_tF[3] = 0.0;
+		
+		// step 1  : rotation around w
+		// Rv3(u) = u1, and u1 belongs to plane xOz
+		// Rv3(w) = w1 = w invariant
+		var u1:Vector3 = Tmp.vector3[3];
+		var v1:Vector3 = Tmp.vector3[4];
+		if (Tools.WithinEpsilon(w.z, 0, Tools.Epsilon)) {
+			_tF[1] = 1.0;
+		}
+		else if (Tools.WithinEpsilon(w.x, 0, Tools.Epsilon)) {
+			_tF[0] = 1.0;
+		}
+		else {
+			_tF[2] = w.z / w.x;
+			_tF[0] = - _tF[2] * Math.sqrt(1 / (1 + _tF[2] * _tF[2]));
+			_tF[1] = Math.sqrt(1 / (1 + _tF[2] * _tF[2]));
+		}
+		
+		u1.set(_tF[0], 0, _tF[1]);
+		u1.normalize();
+		v1 = Vector3.Cross(w, u1);     // v1 image of v through rotation around w
+		v1.normalize();
+		cross = Vector3.Cross(u, u1);  // returns same direction as w (=local z) if positive angle : cross(source, image)
+		cross.normalize();
+		if (Vector3.Dot(w, cross) < 0) {
+			sign = 1;
+		}
+		
+		_tF[4] = Vector3.Dot(u, u1);
+		_tF[4] = (Math.min(1.0, Math.max(-1.0, _tF[4]))); // to force dot to be in the range [-1, 1]
+		ref.z = Math.acos(_tF[4]) * sign;
+		
+		if (Vector3.Dot(u1, Axis.X) < 0) { // checks X orientation
+			ref.z = Math.PI + ref.z;
+			u1 = u1.scaleInPlace(-1);
+			v1 = v1.scaleInPlace(-1);
+			nbRevert++;
+		}
+		
+		// step 2 : rotate around u1
+		// Ru1(w1) = Ru1(w) = w2, and w2 belongs to plane xOz
+		// u1 is yet in xOz and invariant by Ru1, so after this step u1 and w2 will be in xOz
+		var w2:Vector3 = Tmp.vector3[5];
+		var v2:Vector3 = Tmp.vector3[6];
+		_tF[0] = 0.0;
+		_tF[1] = 0.0;
+		sign = -1;
+		if (Tools.WithinEpsilon(w.z, 0, Tools.Epsilon)) {
+			_tF[0] = 1.0;
+		}
+		else {
+			_tF[2] = u1.z / u1.x;
+			_tF[0] = - _tF[2] * Math.sqrt(1 / (1 + _tF[2] * _tF[2]));
+			_tF[1] = Math.sqrt(1 / (1 + _tF[2] * _tF[2]));
+		}
+		
+		w2.set(_tF[0], 0, _tF[1]);
+		w2.normalize();
+		v2 = Vector3.Cross(w2, u1);   // v2 image of v1 through rotation around u1
+		v2.normalize();
+		cross = Vector3.Cross(w, w2); // returns same direction as u1 (=local x) if positive angle : cross(source, image)
+		cross.normalize();
+		if (Vector3.Dot(u1, cross) < 0) {
+			sign = 1;
+		}
+		
+		_tF[4] = Vector3.Dot(w, w2);
+		_tF[4] = (Math.min(1.0, Math.max(-1.0, _tF[4]))); // to force dot to be in the range [-1, 1]
+		ref.x = Math.acos(_tF[4]) * sign;
+		if (Vector3.Dot(v2, Axis.Y) < 0) { // checks for Y orientation
+			ref.x = Math.PI + ref.x;
+			v2 = v2.scaleInPlace(-1);
+			w2 = w2.scaleInPlace(-1);
+			nbRevert++;
+		}
+		
+		// step 3 : rotate around v2
+		// Rv2(u1) = X, same as Rv2(w2) = Z, with X=(1,0,0) and Z=(0,0,1)
+		sign = -1;
+		cross = Vector3.Cross(Axis.X, u1); // returns same direction as Y if positive angle : cross(source, image)
+		cross.normalize();
+		if (Vector3.Dot(cross, Axis.Y) < 0) {
+			sign = 1;
+		}
+		_tF[4] = Vector3.Dot(u1, Axis.X);
+		_tF[4] = (Math.min(1.0, Math.max(-1.0, _tF[4]))); 	// to force dot to be in the range [-1, 1]
+		ref.y = - Math.acos(_tF[4]) * sign;         		// negative : plane zOx oriented clockwise
+		if (_tF[4] < 0 && nbRevert < 2) {
+			ref.y = Math.PI + ref.y;
+		}
+	}
+	
+	/*public static function RotationFromAxisToRef(axis1:Vector3, axis2:Vector3, axis3:Vector3, ref:Vector3) {
 		var u = Vector3.Normalize(axis1);
 		var w = Vector3.Normalize(axis3);
 		
@@ -547,10 +723,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		// Rv3(w) = w1 = w invariant
 		var u1:Vector3 = Tmp.vector3[1];
 		var v1:Vector3 = null;
-		if (Tools.WithinEpsilon(w.z, 0, Engine.Epsilon)) {
+		if (Tools.WithinEpsilon(w.z, 0, Tools.Epsilon)) {
 			z = 1.0;
 		}
-		else if (Tools.WithinEpsilon(w.x, 0, Engine.Epsilon)) {
+		else if (Tools.WithinEpsilon(w.x, 0, Tools.Epsilon)) {
 			x = 1.0;
 		}
 		else {
@@ -589,7 +765,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		y = 0.0;
 		z = 0.0;
 		sign = -1;
-		if (Tools.WithinEpsilon(w.z, 0, Engine.Epsilon)) {
+		if (Tools.WithinEpsilon(w.z, 0, Tools.Epsilon)) {
 			x = 1.0;
 		}
 		else {
@@ -636,6 +812,6 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		ref.x = pitch;
 		ref.y = yaw;
 		ref.z = roll;
-	}
+	}*/
 	
 }

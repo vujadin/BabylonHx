@@ -24,14 +24,14 @@ import com.babylonhx.materials.ShadersStore;
 		
 		super(name, "blur2", ["screenSize"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onSizeChanged = function() {
+		this.onSizeChangedObservable.add(function() {
 			this.screenSize.x = camera.getScene().getEngine().getRenderWidth();
 			this.screenSize.y = camera.getScene().getEngine().getRenderHeight();
-		};
+		});
 		
-		this.onApply = function(effect:Effect) {
+		this.onApplyObservable.add(function(effect:Effect) {
 			effect.setVector2("screenSize", this.screenSize);
-		};
+		});
 		
 		this.onSizeChanged();
 	}

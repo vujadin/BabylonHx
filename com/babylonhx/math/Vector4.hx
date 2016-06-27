@@ -1,7 +1,6 @@
 package com.babylonhx.math;
 
 import com.babylonhx.utils.typedarray.Float32Array;
-import com.babylonhx.tools.Tools;
 
 /**
 * ...
@@ -27,6 +26,19 @@ import com.babylonhx.tools.Tools;
 	public function toString():String {
 		return "{X:" + this.x + " Y:" + this.y + " Z:" + this.z + "W:" + this.w + "}";
 	}
+	
+	inline public function getClassName():String {
+        return "Vector4";
+    }
+	
+	public function getHashCode():Int {
+        var hash = Std.int(this.x);
+        hash = Std.int(hash * 397) ^ Std.int(this.y);
+		hash = Std.int(hash * 397) ^ Std.int(this.z);
+		hash = Std.int(hash * 397) ^ Std.int(this.w);
+		
+        return hash;
+    }
 
 	// Operators
 	inline public function asArray():Array<Float> {
@@ -141,7 +153,7 @@ import com.babylonhx.tools.Tools;
 		return (otherVector != null && this.x == otherVector.x && this.y == otherVector.y && this.z == otherVector.z && this.w == otherVector.w);
 	}
 
-	inline public function equalsWithEpsilon(otherVector:Vector4, epsilon:Float = Engine.Epsilon):Bool {
+	inline public function equalsWithEpsilon(otherVector:Vector4, epsilon:Float = Tools.Epsilon):Bool {
 		return otherVector != null  
 		&& Tools.WithinEpsilon(this.x, otherVector.x, epsilon) 
 		&& Tools.WithinEpsilon(this.y, otherVector.y, epsilon) 
@@ -239,6 +251,10 @@ import com.babylonhx.tools.Tools;
 		this.w *= num;
 		
 		return this;
+	}
+	
+	inline public function toVector3():Vector3 {
+		return new Vector3(this.x, this.y, this.z);
 	}
 
 	inline public function clone():Vector4 {

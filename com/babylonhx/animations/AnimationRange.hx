@@ -17,4 +17,8 @@ class AnimationRange {
 		this.to = to;
 	}
 	
+	public function clone():AnimationRange {
+		return new AnimationRange(this.name, this.from, this.to);
+	}
+	
 }

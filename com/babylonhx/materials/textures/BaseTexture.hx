@@ -4,6 +4,9 @@ import com.babylonhx.animations.Animation;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
+import com.babylonhx.tools.Observable;
+import com.babylonhx.tools.Observer;
+import com.babylonhx.tools.EventState;
 
 import com.babylonhx.utils.GL;
 
@@ -22,7 +25,6 @@ import com.babylonhx.utils.GL;
 	public var isCube:Bool = false;
 	public var isRenderTarget:Bool = false;
 	public var animations:Array<Animation> = [];
-	public var onDispose:Void->Void;
 	public var coordinatesIndex:Int = 0;
 	public var coordinatesMode:Int = Texture.EXPLICIT_MODE;
 	public var wrapU:Int = Texture.WRAP_ADDRESSMODE;
@@ -30,7 +32,25 @@ import com.babylonhx.utils.GL;
 	public var anisotropicFilteringLevel:Int = 4;
 	public var _cachedAnisotropicFilteringLevel:Int;
 	
-	public var __smartArrayFlags:Array<Int>;
+	/**
+	* An event triggered when the texture is disposed.
+	* @type {BABYLON.Observable}
+	*/
+	public var onDisposeObservable = new Observable<BaseTexture>();
+	private var _onDisposeObserver:Observer<BaseTexture>;
+	public var onDispose(never, set):BaseTexture->Null<EventState>->Void;
+	private function set_onDispose(callback:BaseTexture->Null<EventState>->Void):BaseTexture->Null<EventState>->Void {
+		if (this._onDisposeObserver != null) {
+			this.onDisposeObservable.remove(this._onDisposeObserver);
+		}
+		this._onDisposeObserver = this.onDisposeObservable.add(callback);
+		
+		return callback;
+	}
+	
+	public var __smartArrayFlags:Array<Int> = [];
+	
+	public var __serializableMembers:Dynamic;
 
 	private var _scene:Scene;
 	public var _texture:WebGLTexture;
@@ -82,9 +102,10 @@ import com.babylonhx.utils.GL;
 	}
 
 	public function getBaseSize():Dynamic {
-		if (!this.isReady())
+		if (!this.isReady() || this._texture == null) {
 			return { width: 0, height: 0 };
-			
+		}
+		
 		if (this._texture._size != null) {
 			return { width: this._texture._size, height: this._texture._size };
 		}
@@ -92,8 +113,7 @@ import com.babylonhx.utils.GL;
 		return { width: this._texture._baseWidth, height: this._texture._baseHeight };
 	}
 
-	public function scale(ratio:Float) {
-	}
+	public function scale(ratio:Float) { }
 
 	/*public var canRescale(get, never):Bool;
 	private function get_canRescale():Bool {
@@ -171,9 +191,8 @@ import com.babylonhx.utils.GL;
 		this.releaseInternalTexture();
 		
 		// Callback
-		if (this.onDispose != null) {
-			this.onDispose();
-		}
+		this.onDisposeObservable.notifyObservers(this);
+        this.onDisposeObservable.clear();
 	}
 	
 	public static function ParseCubeTexture(parsedTexture:Dynamic, scene:Scene, rootUrl:String):CubeTexture {

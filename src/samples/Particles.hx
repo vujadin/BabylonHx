@@ -26,8 +26,6 @@ class Particles {
 		var camera = new ArcRotateCamera("ArcRotateCamera", 1, 0.8, 20, new Vector3(0, 0, 0), scene);
 		camera.attachControl(this, true);
 		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
-		
 		// Fountain object
 		var fountain = Mesh.CreateBox("foutain", 1.0, scene);
 				

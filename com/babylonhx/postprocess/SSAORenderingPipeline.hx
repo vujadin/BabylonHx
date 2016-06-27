@@ -9,6 +9,7 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.postprocess.renderpipeline.PostProcessRenderEffect;
 import com.babylonhx.postprocess.renderpipeline.PostProcessRenderPipeline;
 import com.babylonhx.materials.textures.RenderTargetTexture;
+import com.babylonhx.tools.EventState;
 
 
 /**
@@ -62,7 +63,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 	* Default value is 0.0075
 	* @type {number}
 	*/
-	public var area:Float = 0.975;
+	public var area:Float = 0.0075;
 
 	/**
 	* Related to area, used to interpolate SSAO samples (second interpolate function input) based on the occlusion difference of each pixel
@@ -136,7 +137,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 	 * Returns the horizontal blur PostProcess
 	 * @return {BABYLON.BlurPostProcess} The horizontal blur post-process
 	 */
-	public function getBlurHPostProcess():BlurPostProcess {
+	inline public function getBlurHPostProcess():BlurPostProcess {
 		return this._blurHPostProcess;
 	}
 
@@ -144,7 +145,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 	 * Returns the vertical blur PostProcess
 	 * @return {BABYLON.BlurPostProcess} The vertical blur post-process
 	 */
-	public function getBlurVPostProcess():BlurPostProcess {
+	inline public function getBlurVPostProcess():BlurPostProcess {
 		return this._blurVPostProcess;
 	}
 	
@@ -168,7 +169,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 	}
 
 	// Private Methods
-	private function _createSSAOPostProcess(ratio:Float):PostProcess {
+	private function _createSSAOPostProcess(ratio:Float) {
 		var numSamples:Int = 16;
 		var sampleSphere = [
 			0.5381, 0.1856, -0.4319,
@@ -200,8 +201,8 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 			ratio, null, Texture.BILINEAR_SAMPLINGMODE,
 			this._scene.getEngine(), false,
 			"#define SAMPLES " + numSamples);
-												
-		this._ssaoPostProcess.onApply = function(effect:Effect) {
+			
+		this._ssaoPostProcess.onApply = function(effect:Effect, es:EventState = null) {
 			if (this._firstUpdate) {
 				effect.setArray3("sampleSphere", sampleSphere);
 				effect.setFloat("samplesFactor", samplesFactor);
@@ -218,20 +219,16 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 			effect.setTexture("textureSampler", this._depthTexture);
 			effect.setTexture("randomSampler", this._randomTexture);
 		};
-		
-		return this._ssaoPostProcess;
 	}
 
-	private function _createSSAOCombinePostProcess(ratio:Float):PostProcess {
+	private function _createSSAOCombinePostProcess(ratio:Float) {
 		this._ssaoCombinePostProcess = new PostProcess("ssaoCombine", "ssaoCombine", [], ["originalColor"],
 													   ratio, null, Texture.BILINEAR_SAMPLINGMODE,
 													   this._scene.getEngine(), false);
 													   
-		this._ssaoCombinePostProcess.onApply = function(effect:Effect) {
+		this._ssaoCombinePostProcess.onApply = function(effect:Effect, es:EventState = null) {
 			effect.setTextureFromPostProcess("originalColor", this._originalColorPostProcess);
 		};
-		
-		return this._ssaoCombinePostProcess;
 	}
 
 	private function _createRandomTexture() {

@@ -15,7 +15,7 @@ package com.babylonhx.postprocess.renderpipeline;
 	}
 
 	public function addPipeline(renderPipeline:PostProcessRenderPipeline) {
-		this._renderPipelines.set(renderPipeline._name, renderPipeline);
+		this._renderPipelines[renderPipeline._name] = renderPipeline;
 	}
 
 	public function attachCamerasToRenderPipeline(renderPipelineName:String, cameras:Dynamic, unique:Bool = false) {
@@ -83,6 +83,7 @@ package com.babylonhx.postprocess.renderpipeline;
 			var pipeline = this._renderPipelines[renderPipelineName];
 			if (!pipeline.isSupported) {
 				pipeline.dispose();
+				this._renderPipelines[renderPipelineName] = null;
 				this._renderPipelines.remove(renderPipelineName);
 			} 
 			else {

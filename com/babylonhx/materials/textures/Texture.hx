@@ -244,6 +244,8 @@ import com.babylonhx.animations.Animation;
 		newTexture.uAng = this.uAng;
 		newTexture.vAng = this.vAng;
 		newTexture.wAng = this.wAng;
+		newTexture.anisotropicFilteringLevel = this.anisotropicFilteringLevel;
+		newTexture.getAlphaFromRGB = this.getAlphaFromRGB;
 		
 		return newTexture;
 	}
@@ -262,6 +264,8 @@ import com.babylonhx.animations.Animation;
 		serializationObject.uAng = this.uAng;
 		serializationObject.vAng = this.vAng;
 		serializationObject.wAng = this.wAng;
+		serializationObject.anisotropicFilteringLevel = this.anisotropicFilteringLevel;
+		serializationObject.getAlphaFromRGB = this.getAlphaFromRGB;
 		
 		return serializationObject;
 	}

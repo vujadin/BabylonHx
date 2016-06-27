@@ -1,7 +1,5 @@
 package com.babylonhx.math;
 
-import com.babylonhx.tools.Tools;
-
 /**
  * ...
  * @author Krtolica Vujadin
@@ -25,6 +23,18 @@ import com.babylonhx.tools.Tools;
 	public function toString():String {
 		return "{R:" + this.r + " G:" + this.g + " B:" + this.b + "}";
 	}
+	
+	public function getClassName():String {
+        return "Color3";
+    }
+	
+	public function getHashCode():Int {
+        var hash = Std.int(this.r);
+        hash = Std.int(hash * 397) ^ Std.int(this.g);
+        hash = Std.int(hash * 397) ^ Std.int(this.b);
+		
+        return hash;
+    }
 
 	// Operators
 	inline public function toArray(array:Array<Float>, index:Int = 0):Color3 {
@@ -172,9 +182,9 @@ import com.babylonhx.tools.Tools;
 			return new Color3(0, 0, 0);
 		}
 		
-		var r = Std.parseInt(hex.substring(1, 3));
-		var g = Std.parseInt(hex.substring(3, 5));
-		var b = Std.parseInt(hex.substring(5, 7));
+		var r = Std.parseInt("0x" + hex.substring(1, 3));
+		var g = Std.parseInt("0x" + hex.substring(3, 5));
+		var b = Std.parseInt("0x" + hex.substring(5, 7));
 		
 		return Color3.FromInts(r, g, b);
 	}

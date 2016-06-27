@@ -11,6 +11,9 @@ import com.babylonhx.particles.Particle;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.animations.Animation;
+import com.babylonhx.tools.Observable;
+import com.babylonhx.tools.Observer;
+import com.babylonhx.tools.EventState;
 
 import com.babylonhx.utils.typedarray.Float32Array;
 
@@ -38,7 +41,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public var targetStopDuration:Float = 0;
 	public var disposeOnStop:Bool = false;
 	
-	public var __smartArrayFlags:Array<Int>;
+	public var __smartArrayFlags:Array<Int> = [];
 
 	public var minEmitPower:Float = 1;
 	public var maxEmitPower:Float = 1;
@@ -55,7 +58,22 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	
 	public var layerMask:Int = 0x0FFFFFFF;
 
-	public var onDispose:Void->Void;
+	/**
+	* An event triggered when the system is disposed.
+	* @type {BABYLON.Observable}
+	*/
+	public var onDisposeObservable:Observable<ParticleSystem> = new Observable<ParticleSystem>();
+	private var _onDisposeObserver:Observer<ParticleSystem>;
+	public var onDispose:ParticleSystem->Null<EventState>->Void;
+	private function set_onDispose(callback:ParticleSystem->Null<EventState>->Void):ParticleSystem->Null<EventState>->Void {
+		if (this._onDisposeObserver != null) {
+			this.onDisposeObservable.remove(this._onDisposeObserver);
+		}
+		this._onDisposeObserver = this.onDisposeObservable.add(callback);
+		
+		return callback;
+	}
+		
 	public var updateFunction:Array<Particle>->Void;
 
 	public var blendMode:Int = ParticleSystem.BLENDMODE_ONEONE;
@@ -120,7 +138,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._customEffect = customEffect;
 		
 		scene.particleSystems.push(this);
-				
+		
 		// VBO
 		this._vertexBuffer = this._engine.createDynamicVertexBuffer(capacity * this._vertexStrideSize * 4);
 		
@@ -167,9 +185,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 				var particle = particles[index];
 				particle.age += this._scaledUpdateSpeed;
 				
-				if (particle.age >= particle.lifeTime) { // Recycle
-					particles.splice(index, 1);
-					this._stockParticles.push(particle);
+				if (particle.age >= particle.lifeTime) { // Recycle by swapping with last particle
+					this.recycleParticle(particle);
+					//index--;
+					continue;
 				}
 				else {
 					particle.colorStep.scaleToRef(this._scaledUpdateSpeed, this._scaledColorStep);
@@ -186,12 +205,22 @@ import com.babylonhx.utils.typedarray.Float32Array;
 					
 					this.gravity.scaleToRef(this._scaledUpdateSpeed, this._scaledGravity);
 					particle.direction.addInPlace(this._scaledGravity);
+					
 					index++;
 				}
 			}
 		}
 		
-		this._getEffect();
+		this._effect = this._getEffect();
+	}
+	
+	inline public function recycleParticle(particle:Particle) {
+		var lastParticle = this.particles.pop();
+		
+		if (lastParticle != particle) {
+			lastParticle.copyTo(particle);
+			this._stockParticles.push(lastParticle);
+		}
 	}
 
 	inline public function getCapacity():Int {
@@ -231,15 +260,14 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._vertices[offset + 10] = offsetY;
 	}
 
+	var worldMatrix:Matrix = Matrix.Zero();
 	inline private function _update(newParticles:Int) {
 		// Update current
 		this._alive = this.particles.length > 0;
 		
 		this.updateFunction(this.particles);
 		
-		// Add new ones
-		var worldMatrix:Matrix = Matrix.Zero();
-		
+		// Add new ones		
 		if (this.emitter.position != null) {
 			worldMatrix = this.emitter.getWorldMatrix();
 		} 
@@ -304,10 +332,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	public function animate() {
-		if (!this._started)
+		if (!this._started) {
 			return;
-			
-		//var effect = this._getEffect();
+		}
 		
 		// Check
 		if (this.emitter == null || !this._effect.isReady() || this.particleTexture == null || !this.particleTexture.isReady()) {
@@ -378,13 +405,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._engine.updateDynamicVertexBuffer(this._vertexBuffer, this._vertices);
 	}
 
-	public function render():Int {
-		//var effect = this._getEffect();
-		
+	public function render():Int {		
 		// Check
-		if (this.emitter == null || !this._effect.isReady() || this.particleTexture == null || !this.particleTexture.isReady())
+		if (this.emitter == null || !this._effect.isReady() || this.particleTexture == null || !this.particleTexture.isReady()) {
 			return 0;
-					
+		}
+		
 		// Render
 		this._engine.enableEffect(this._effect);
 		this._engine.setState(false);
@@ -444,9 +470,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._scene.particleSystems.remove(this);
 		
 		// Callback
-		if (this.onDispose != null) {
-			this.onDispose();
-		}
+		this.onDisposeObservable.notifyObservers(this);
+        this.onDisposeObservable.clear();
 	}
 
 	// Clone
@@ -588,7 +613,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		particleSystem.targetStopDuration = parsedParticleSystem.targetStopDuration;
 		particleSystem.textureMask = Color4.FromArray(parsedParticleSystem.textureMask);
 		particleSystem.blendMode = parsedParticleSystem.blendMode;
-		particleSystem.start();
+		
+		if (parsedParticleSystem.preventAutoStart == null || parsedParticleSystem.preventAutoStart == true) {
+            particleSystem.start();
+        }
 		
 		return particleSystem;
 	}

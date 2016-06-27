@@ -8,6 +8,7 @@ import com.babylonhx.cameras.Camera;
 import com.babylonhx.postprocess.renderpipeline.PostProcessRenderEffect;
 import com.babylonhx.postprocess.renderpipeline.PostProcessRenderPipeline;
 import com.babylonhx.tools.Tools;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -226,7 +227,7 @@ import com.babylonhx.tools.Tools;
 			ratio, null, Texture.TRILINEAR_SAMPLINGMODE,
 			this._scene.getEngine(), false);
 			
-		this._chromaticAberrationPostProcess.onApply = function(effect:Effect) {
+		this._chromaticAberrationPostProcess.onApply = function(effect:Effect, es:EventState = null) {
 			effect.setFloat('chromatic_aberration', this._chromaticAberration);
 			effect.setFloat('screen_width', this._scene.getEngine().getRenderWidth());
 			effect.setFloat('screen_height', this._scene.getEngine().getRenderHeight());
@@ -242,7 +243,7 @@ import com.babylonhx.tools.Tools;
 			null, Texture.TRILINEAR_SAMPLINGMODE,
 			this._scene.getEngine(), false, this._dofPentagon ? "#define PENTAGON\n" : "");
 			
-		this._highlightsPostProcess.onApply = function(effect:Effect) {
+		this._highlightsPostProcess.onApply = function(effect:Effect, es:EventState = null) {
 			effect.setFloat('gain', this._highlightsGain);
 			effect.setFloat('threshold', this._highlightsThreshold);
 			effect.setTextureFromPostProcess("textureSampler", this._chromaticAberrationPostProcess);
@@ -262,7 +263,7 @@ import com.babylonhx.tools.Tools;
 			ratio, null, Texture.TRILINEAR_SAMPLINGMODE,
 			this._scene.getEngine(), false);
 			
-		this._depthOfFieldPostProcess.onApply = function(effect:Effect) {
+		this._depthOfFieldPostProcess.onApply = function(effect:Effect, es:EventState = null) {
 			
 			effect.setTexture("depthSampler", this._depthTexture);
 			effect.setTexture("grainSampler", this._grainTexture);
@@ -298,7 +299,7 @@ import com.babylonhx.tools.Tools;
 		this._grainTexture = new DynamicTexture("LensNoiseTexture", { width: size, height: size }, this._scene, false, Texture.BILINEAR_SAMPLINGMODE);
 		this._grainTexture.wrapU = Texture.WRAP_ADDRESSMODE;
 		this._grainTexture.wrapV = Texture.WRAP_ADDRESSMODE;
-				
+		
 		var rand = function(min:Float, max:Float):Float {
 			return Math.random() * (max - min) + min;
 		};
@@ -317,7 +318,7 @@ import com.babylonhx.tools.Tools;
 			
 			i += 4;
 		}
-			
+		
 		this._grainTexture.update(false);
 	}
 

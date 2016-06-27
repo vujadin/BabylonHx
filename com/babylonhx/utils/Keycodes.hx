@@ -12,7 +12,7 @@ package com.babylonhx.utils;
 
 /** The keycode class, with conversion helpers for scancodes. The values below come directly from SDL header include files,
 but they aren't specific to SDL so they are used generically */
-@:noCompletion class Keycodes {
+class Keycodes {
 
 	/** Convert a scancode to a keycode for comparison */
     macro public static function from_scan( scancode : haxe.macro.Expr ) : haxe.macro.Expr {

@@ -57,43 +57,43 @@ class PMREMGenerator {
 	//  _ABSOLUTE VALUE_ of the max coord)
 	// into NVC space
 	//Note this currently assumes the D3D cube face ordering and orientation
-	private static var _sgFace2DMapping:Array<Array<Int>> = [
+	private static var _sgFace2DMapping:Array<Array<Array<Int>>> = [
 		//XPOS face
 		[
 			[0, 0, -1], //u towards negative Z
 			[0, -1, 0], //v towards negative Y
-			[1, 0, 0]
-		], //pos X axis  
+			[1, 0, 0]	//pos X axis
+		],   
 		//XNEG face
 		[
-			[0, 0, 1], //u towards positive Z
+			[0, 0, 1],  //u towards positive Z
 			[0, -1, 0], //v towards negative Y
-			[-1, 0, 0]
-		], //neg X axis       
+			[-1, 0, 0]	//neg X axis
+		],        
 		//YPOS face
 		[
 			[1, 0, 0], //u towards positive X
 			[0, 0, 1], //v towards positive Z
-			[0, 1, 0]
-		], //pos Y axis  
+			[0, 1, 0]  //pos Y axis 
+		],  
 		//YNEG face
 		[
-			[1, 0, 0], //u towards positive X
+			[1, 0, 0],  //u towards positive X
 			[0, 0, -1], //v towards negative Z
-			[0, -1, 0]
-		], //neg Y axis  
+			[0, -1, 0]	//neg Y axis 
+		],  
 		//ZPOS face
 		[
-			[1, 0, 0], //u towards positive X
+			[1, 0, 0],  //u towards positive X
 			[0, -1, 0], //v towards negative Y
-			[0, 0, 1]
-		], //pos Z axis  
+			[0, 0, 1]	//pos Z axis
+		],   
 		//ZNEG face
 		[
 			[-1, 0, 0], //u towards negative X
 			[0, -1, 0], //v towards negative Y
-			[0, 0, -1]
-		], //neg Z axis  
+			[0, 0, -1]	//neg Z axis 
+		],  
 	];
 
 	//------------------------------------------------------------------------------
@@ -122,7 +122,7 @@ class PMREMGenerator {
 	//  in ORDER of left, right, top, bottom (e.g. edges corresponding to u=0, 
 	//  u=1, v=0, v=1 in the 2D coordinate system of the particular face.
 	//Note this currently assumes the D3D cube face ordering and orientation
-	private static var _sgCubeNgh:Array<Array<Int>> = [
+	private static var _sgCubeNgh:Array<Array<Array<Int>>> = [
 		//XPOS face
 		[
 			[PMREMGenerator.CP_FACE_Z_POS, PMREMGenerator.CP_EDGE_RIGHT],
@@ -189,7 +189,7 @@ class PMREMGenerator {
 	//Information about which of the 8 cube corners are correspond to the 
 	//  the 4 corners in each cube face
 	//  the order is upper left, upper right, lower left, lower right
-	private static var _sgCubeCornerList = [
+	private static var _sgCubeCornerList:Array<Array<Int>> = [
 		[PMREMGenerator.CP_CORNER_PPP, PMREMGenerator.CP_CORNER_PPN, PMREMGenerator.CP_CORNER_PNP, PMREMGenerator.CP_CORNER_PNN], // XPOS face
 		[PMREMGenerator.CP_CORNER_NPN, PMREMGenerator.CP_CORNER_NPP, PMREMGenerator.CP_CORNER_NNN, PMREMGenerator.CP_CORNER_NNP], // XNEG face
 		[PMREMGenerator.CP_CORNER_NPN, PMREMGenerator.CP_CORNER_PPN, PMREMGenerator.CP_CORNER_NPP, PMREMGenerator.CP_CORNER_PPP], // YPOS face
@@ -199,7 +199,7 @@ class PMREMGenerator {
 	];
 
 	private var _outputSurface:Array<Array<ArrayBufferView>> = [];
-	private var _normCubeMap:Array<Array<ArrayBufferView>>;
+	private var _normCubeMap:Array<ArrayBufferView>;
 	private var _filterLUT:Array<Array<ArrayBufferView>>;
 	private var _numMipLevels:Int = 0;
 	
@@ -214,8 +214,21 @@ class PMREMGenerator {
 	public var excludeBase:Bool;
 	public var fixup:Bool;
 	
-
-	public function new (input:Array<ArrayBufferView>, inputSize:Int, outputSize:Int, maxNumMipLevels:Int, numChannels:Int, isFloat:Bool, specularPower:Float, cosinePowerDropPerMip:Float, excludeBase:Bool, fixup:Bool) {
+	/**
+	 * Constructor of the generator.
+	 * 
+	 * @param input The different faces data from the original cubemap in the order X+ X- Y+ Y- Z+ Z-
+	 * @param inputSize The size of the cubemap faces
+	 * @param outputSize The size of the output cubemap faces
+	 * @param maxNumMipLevels The max number of mip map to generate (0 means all)
+	 * @param numChannels The number of channels stored in the cubemap (3 for RBGE for instance)
+	 * @param isFloat Specifies if the input texture is in float or int (hdr is usually in float)
+	 * @param specularPower The max specular level of the desired cubemap
+	 * @param cosinePowerDropPerMip The amount of drop the specular power will follow on each mip
+	 * @param excludeBase Specifies wether to process the level 0 (original level) or not
+	 * @param fixup Specifies wether to apply the edge fixup algorythm or not
+	 */
+	public function new(input:Array<ArrayBufferView>, inputSize:Int, outputSize:Int, maxNumMipLevels:Int, numChannels:Int, isFloat:Bool, specularPower:Float, cosinePowerDropPerMip:Float, excludeBase:Bool, fixup:Bool) {
 		this.input = input;
 		this.inputSize = inputSize;
 		this.outputSize = outputSize;
@@ -252,12 +265,12 @@ class PMREMGenerator {
 		
 		//Iterate over mip chain, and init ArrayBufferView for mip-chain
 		for (j in 0...this.maxNumMipLevels) {
-			this._outputSurface.length++;
+			//this._outputSurface.length++;
 			this._outputSurface[j] = [];
 			
 			//Iterate over faces for output images
 			for (i in 0...6) {
-				this._outputSurface[j].length++;
+				//this._outputSurface[j].length++;
 				
 				// Initializes a new array for the output.
 				if (this.isFloat) {
@@ -406,12 +419,12 @@ class PMREMGenerator {
 			for (v in 0...size) {
 				for (u in 0...size) {
 					var vect = this.texelCoordToVect(iCubeFace, u, v, size, this.fixup);
-					this._normCubeMap[iCubeFace][(v * size + u) * 4 + 0] = vect.x;
-					this._normCubeMap[iCubeFace][(v * size + u) * 4 + 1] = vect.y;
-					this._normCubeMap[iCubeFace][(v * size + u) * 4 + 2] = vect.z;
+					cast (this._normCubeMap[iCubeFace], Float32Array)[Std.int((v * size + u) * 4 + 0)] = vect.x;
+					cast (this._normCubeMap[iCubeFace], Float32Array)[Std.int((v * size + u) * 4 + 1)] = vect.y;
+					cast (this._normCubeMap[iCubeFace], Float32Array)[Std.int((v * size + u) * 4 + 2)] = vect.z;
 					
 					var solidAngle = this.texelCoordSolidAngle(iCubeFace, u, v, size);
-					this._normCubeMap[iCubeFace][(v * size + u) * 4 + 4] = solidAngle;
+					cast (this._normCubeMap[iCubeFace], Float32Array)[Std.int((v * size + u) * 4 + 4)] = solidAngle;
 				}
 			}
 		}
@@ -677,9 +690,9 @@ class PMREMGenerator {
 					//perform filtering of src faces using filter extents 
 					var vect = this.processFilterExtents(centerTapDir, dotProdThresh, filterExtents, srcCubeMap, srcSize, specularPower);
 					
-					dstCubeMap[iCubeFace][(v * dstSize + u) * this.numChannels + 0] = vect.x;
-					dstCubeMap[iCubeFace][(v * dstSize + u) * this.numChannels + 1] = vect.y;
-					dstCubeMap[iCubeFace][(v * dstSize + u) * this.numChannels + 2] = vect.z;
+					cast (dstCubeMap[iCubeFace], Float32Array)[(v * dstSize + u) * this.numChannels + 0] = vect.x;
+					cast (dstCubeMap[iCubeFace], Float32Array)[(v * dstSize + u) * this.numChannels + 1] = vect.y;
+					cast (dstCubeMap[iCubeFace], Float32Array)[(v * dstSize + u) * this.numChannels + 2] = vect.z;
 				}
 			}
 		}
@@ -710,9 +723,9 @@ class PMREMGenerator {
 		var bleedOverBBoxMin:Array<Float> = [0, 0, 0, 0];
 		var bleedOverBBoxMax:Array<Float> = [0, 0, 0, 0];
 		
-		var neighborFace:Int;
-		var neighborEdge:Int;
-		var oppositeFaceIdx:Int;
+		var neighborFace:Int = 0;
+		var neighborEdge:Int = 0;
+		var oppositeFaceIdx:Int = 0;
 
 		//get face idx, and u, v info from center tap dir
 		var result = this.vectToTexelCoord(centerTapDir.x, centerTapDir.y, centerTapDir.z, srcSize);
@@ -721,17 +734,17 @@ class PMREMGenerator {
 		var v = result.z;
 		
 		//define bbox size within face
-		filterExtents[faceIdx].augment(u - bboxSize, v - bboxSize, 0);
-		filterExtents[faceIdx].augment(u + bboxSize, v + bboxSize, 0);
+		filterExtents[cast faceIdx].augment(u - bboxSize, v - bboxSize, 0);
+		filterExtents[cast faceIdx].augment(u + bboxSize, v + bboxSize, 0);
 		
-		filterExtents[faceIdx].clampMin(0, 0, 0);
-		filterExtents[faceIdx].clampMax(srcSize - 1, srcSize - 1, 0);
+		filterExtents[cast faceIdx].clampMin(0, 0, 0);
+		filterExtents[cast faceIdx].clampMax(srcSize - 1, srcSize - 1, 0);
 		
 		//u and v extent in face corresponding to center tap
-		var minU = filterExtents[faceIdx].min.x;
-		var minV = filterExtents[faceIdx].min.y;
-		var maxU = filterExtents[faceIdx].max.x;
-		var maxV = filterExtents[faceIdx].max.y;
+		var minU = filterExtents[cast faceIdx].min.x;
+		var minV = filterExtents[cast faceIdx].min.y;
+		var maxU = filterExtents[cast faceIdx].max.x;
+		var maxV = filterExtents[cast faceIdx].max.y;
 		
 		//bleed over amounts for face across u=0 edge (left)    
 		bleedOverAmount[0] = (bboxSize - u);
@@ -756,8 +769,8 @@ class PMREMGenerator {
 		//compute bleed over regions in neighboring faces
 		for (i in 0...4) {
 			if (bleedOverAmount[i] > 0) {
-				neighborFace = PMREMGenerator._sgCubeNgh[faceIdx][i][0];
-				neighborEdge = PMREMGenerator._sgCubeNgh[faceIdx][i][1];
+				neighborFace = PMREMGenerator._sgCubeNgh[cast faceIdx][i][0];
+				neighborEdge = PMREMGenerator._sgCubeNgh[cast faceIdx][i][1];
 				
 				//For certain types of edge abutments, the bleedOverBBoxMin, and bleedOverBBoxMax need to 
 				//  be flipped: the cases are 
@@ -780,7 +793,7 @@ class PMREMGenerator {
 				
 				//The way the bounding box is extended onto the neighboring face
 				// depends on which edge of neighboring face abuts with this one
-				switch (PMREMGenerator._sgCubeNgh[faceIdx][i][1]) {
+				switch (PMREMGenerator._sgCubeNgh[cast faceIdx][i][1]) {
 					case PMREMGenerator.CP_EDGE_LEFT:
 						filterExtents[neighborFace].augment(0, bleedOverBBoxMin[i], 0);
 						filterExtents[neighborFace].augment(bleedOverAmount[i], bleedOverBBoxMax[i], 0);
@@ -868,10 +881,10 @@ class PMREMGenerator {
 		for (iFaceIdx in 0...6) {
 			//if bbox is non empty
 			if (!filterExtents[iFaceIdx].empty()) {
-				var uStart = filterExtents[iFaceIdx].min.x;
-				var vStart = filterExtents[iFaceIdx].min.y;
-				var uEnd = filterExtents[iFaceIdx].max.x;
-				var vEnd = filterExtents[iFaceIdx].max.y;
+				var uStart:Int = cast filterExtents[iFaceIdx].min.x;
+				var vStart:Int = cast filterExtents[iFaceIdx].min.y;
+				var uEnd:Int = cast filterExtents[iFaceIdx].max.x;
+				var vEnd:Int = cast filterExtents[iFaceIdx].max.y;
 				
 				var startIndexNormCubeMap = (4 * ((vStart * faceWidth) + uStart));
 				var startIndexSrcCubeMap = (this.numChannels * ((vStart * faceWidth) + uStart));
@@ -883,9 +896,9 @@ class PMREMGenerator {
 					
 					for (u in uStart...uEnd + 1) {
 						//pointer to direction in cube map associated with texel
-						var texelVectX = this._normCubeMap[iFaceIdx][startIndexNormCubeMap + normCubeRowWalk + 0];
-						var texelVectY = this._normCubeMap[iFaceIdx][startIndexNormCubeMap + normCubeRowWalk + 1];
-						var texelVectZ = this._normCubeMap[iFaceIdx][startIndexNormCubeMap + normCubeRowWalk + 2];
+						var texelVectX = cast (this._normCubeMap[iFaceIdx], Float32Array)[startIndexNormCubeMap + normCubeRowWalk + 0];
+						var texelVectY = cast (this._normCubeMap[iFaceIdx], Float32Array)[startIndexNormCubeMap + normCubeRowWalk + 1];
+						var texelVectZ = cast (this._normCubeMap[iFaceIdx], Float32Array)[startIndexNormCubeMap + normCubeRowWalk + 2];
 						
 						//check dot product to see if texel is within cone
 						var tapDotProd = texelVectX * centerTapDir.x +
@@ -894,7 +907,7 @@ class PMREMGenerator {
 							
 						if (tapDotProd >= dotProdThresh && tapDotProd > 0.0) {
 							//solid angle stored in 4th channel of normalizer/solid angle cube map
-							var weight = this._normCubeMap[iFaceIdx][startIndexNormCubeMap + normCubeRowWalk + 3];
+							var weight = cast (this._normCubeMap[iFaceIdx], Float32Array)[startIndexNormCubeMap + normCubeRowWalk + 3];
 							
 							// Here we decide if we use a Phong/Blinn or a Phong/Blinn BRDF.
 							// Phong/Blinn BRDF is just the Phong/Blinn model multiply by the cosine of the lambert law
@@ -903,7 +916,7 @@ class PMREMGenerator {
 							
 							//iterate over channels
 							for (k in 0...nSrcChannels) { //(aSrcCubeMap[iFaceIdx].m_NumChannels) //up to 4 channels 
-								dstAccum[k] += weight * srcCubeMap[iFaceIdx][startIndexSrcCubeMap + srcCubeRowWalk];
+								dstAccum[k] += weight * cast (srcCubeMap[iFaceIdx], Float32Array)[startIndexSrcCubeMap + srcCubeRowWalk];
 								srcCubeRowWalk++;
 							}
 							
@@ -937,11 +950,11 @@ class PMREMGenerator {
 			// get face idx and u, v texel coordinate in face
 			var coord = this.vectToTexelCoord(centerTapDir.x, centerTapDir.y, centerTapDir.z, srcSize).clone();
 			
-			PMREMGenerator._vectorTemp.x = srcCubeMap[coord.x][this.numChannels * (coord.z * srcSize + coord.y) + 0];
-			PMREMGenerator._vectorTemp.y = srcCubeMap[coord.x][this.numChannels * (coord.z * srcSize + coord.y) + 1];
-			PMREMGenerator._vectorTemp.z = srcCubeMap[coord.x][this.numChannels * (coord.z * srcSize + coord.y) + 2];
+			PMREMGenerator._vectorTemp.x = cast (srcCubeMap[cast coord.x], Float32Array)[Std.int(this.numChannels * (coord.z * srcSize + coord.y) + 0)];
+			PMREMGenerator._vectorTemp.y = cast (srcCubeMap[cast coord.x], Float32Array)[Std.int(this.numChannels * (coord.z * srcSize + coord.y) + 1)];
+			PMREMGenerator._vectorTemp.z = cast (srcCubeMap[cast coord.x], Float32Array)[Std.int(this.numChannels * (coord.z * srcSize + coord.y) + 2)];
 			if (this.numChannels > 3) {
-				PMREMGenerator._vectorTemp.z = srcCubeMap[coord.x][this.numChannels * (coord.z * srcSize + coord.y) + 3];
+				PMREMGenerator._vectorTemp.z = cast (srcCubeMap[cast coord.x], Float32Array)[Std.int(this.numChannels * (coord.z * srcSize + coord.y) + 3)];
 			}
 		}
 		
@@ -955,14 +968,11 @@ class PMREMGenerator {
 	// WARP/BENT Method Only.
 	//--------------------------------------------------------------------------------------
 	private function fixupCubeEdges(cubeMap:Array<ArrayBufferView>, cubeMapSize:Int) {
-		var k: number;
-		var j: number;
-		var i: number;
-		var iFace: number;
-		var iCorner = 0;
+		var iFace:Int = 0;
+		var iCorner:Int = 0;
 
 		var cornerNumPtrs = [0, 0, 0, 0, 0, 0, 0, 0]; //indexed by corner and face idx
-		var faceCornerStartIndicies = [
+		var faceCornerStartIndicies:Array<Array<Int>> = [
 			[],
 			[],
 			[],
@@ -971,7 +981,7 @@ class PMREMGenerator {
 
 		// note that if functionality to filter across the three texels for each corner, then 
 		//indexed by corner and face idx. the array contains the face the start points belongs to.
-		var cornerPtr = [
+		var cornerPtr:Array<Array<Array<Int>>> = [
 			[
 				[],
 				[],
@@ -1027,7 +1037,7 @@ class PMREMGenerator {
 				
 				//iterate over faces to accumulate face colors
 				for (iFace in 0...6) {
-					accum += cubeMap[iFace][k];
+					accum += cast (cubeMap[iFace], Float32Array)[k];
 				}
 				
 				//compute average over 6 face colors
@@ -1035,7 +1045,7 @@ class PMREMGenerator {
 				
 				//iterate over faces to distribute face colors
 				for (iFace in 0...6) {
-					cubeMap[iFace][k] = accum;
+					cast (cubeMap[iFace], Float32Array)[k] = accum;
 				}
 			}
 			
@@ -1065,7 +1075,7 @@ class PMREMGenerator {
 				
 				//iterate over corner texels and average results
 				for (i in 0...3) {
-					cornerTapAccum += cubeMap[cornerPtr[iCorner][i][0]][cornerPtr[iCorner][i][1] + k]; // Get in the cube map face the start point + channel.
+					cornerTapAccum += cast (cubeMap[cornerPtr[iCorner][i][0]], Float32Array)[cornerPtr[iCorner][i][1] + k]; // Get in the cube map face the start point + channel.
 				}
 				
 				//divide by 3 to compute average of corner tap values
@@ -1073,7 +1083,7 @@ class PMREMGenerator {
 				
 				//iterate over corner texels and average results
 				for (i in 0...3) {
-					cubeMap[cornerPtr[iCorner][i][0]][cornerPtr[iCorner][i][1] + k] = cornerTapAccum;
+					cast (cubeMap[cornerPtr[iCorner][i][0]], Float32Array)[cornerPtr[iCorner][i][1] + k] = cornerTapAccum;
 				}
 			}
 		}
@@ -1183,15 +1193,15 @@ class PMREMGenerator {
 				//for each set of taps along edge, average them
 				// and rewrite the results into the edges
 				for (k in 0...this.numChannels) {
-					var edgeTap = cubeMap[face][edgeStartIndex + k];
-					var neighborEdgeTap = cubeMap[neighborFace][neighborEdgeStartIndex + k];
+					var edgeTap = cast (cubeMap[face], Float32Array)[edgeStartIndex + k];
+					var neighborEdgeTap = cast (cubeMap[neighborFace], Float32Array)[neighborEdgeStartIndex + k];
 					
 					//compute average of tap intensity values
 					var avgTap = 0.5 * (edgeTap + neighborEdgeTap);
 					
 					//propagate average of taps to edge taps
-					cubeMap[face][edgeStartIndex + k] = avgTap;
-					cubeMap[neighborFace][neighborEdgeStartIndex + k] = avgTap;
+					cast (cubeMap[face], Float32Array)[edgeStartIndex + k] = avgTap;
+					cast (cubeMap[neighborFace], Float32Array)[neighborEdgeStartIndex + k] = avgTap;
 				}
 				
 				edgeStartIndex += edgeWalk;

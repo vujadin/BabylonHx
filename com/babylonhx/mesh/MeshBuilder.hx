@@ -183,7 +183,7 @@ typedef LatheOptions = {
  
 class MeshBuilder {
 	
-	public static function CreateBox(name:String, options:Dynamic, scene:Scene):Mesh {
+	public static function CreateBox(name:String, options:BoxOptions, scene:Scene):Mesh {
 		var box = new Mesh(name, scene);
 		var vertexData = VertexData.CreateBox(options);
 		
@@ -197,7 +197,7 @@ class MeshBuilder {
 		return box;
 	}
 	
-	public static function CreateSphere(name:String, options:Dynamic, scene:Scene):Mesh {		
+	public static function CreateSphere(name:String, options:SphereOptions, scene:Scene):Mesh {		
 		var sphere = new Mesh(name, scene);
 		var vertexData = VertexData.CreateSphere(options);
 		
@@ -329,7 +329,7 @@ class MeshBuilder {
 	}	
 
 	// Cylinder and cone (Code inspired by SharpDX.org)
-	public static function CreateCylinder(name:String, options:Dynamic, scene:Scene):Mesh {		
+	public static function CreateCylinder(name:String, options:CylinderOptions, scene:Scene):Mesh {		
 		var cylinder = new Mesh(name, scene);
 		var vertexData = VertexData.CreateCylinder(options);
 		
@@ -340,7 +340,7 @@ class MeshBuilder {
 		}
 		
 		vertexData.applyToMesh(cylinder, options.updatable);
-			
+		
 		return cylinder;
 	}
 	
@@ -578,6 +578,13 @@ class MeshBuilder {
 		
 		var ground = new GroundMesh(name, scene);
 		ground._subdivisions = subdivisions;
+		ground._width = width;
+		ground._height = height;
+		ground._maxX = ground._width / 2;
+		ground._maxZ = ground._height / 2;
+		ground._minX = -ground._maxX;
+		ground._minZ = -ground._maxZ;
+		
 		ground._setReady(false);
 		
 		var onload = function(img:Image) {
@@ -585,6 +592,7 @@ class MeshBuilder {
 			options.bufferWidth = img.width;
 			options.bufferHeight = img.height;
 			var vertexData = VertexData.CreateGroundFromHeightMap(options);
+			
 			vertexData.applyToMesh(ground, updatable);
 			
 			ground._setReady(true);
@@ -625,7 +633,7 @@ class MeshBuilder {
 			var normal:Vector3 = Vector3.Zero();
 			var rotated:Vector3 = Vector3.Zero();
 			var rotationMatrix:Matrix = Tmp.matrix[0];
-			var index:Int = (cap == Mesh.NO_CAP || cap == Mesh.CAP_END) ? 0 : 2;
+			var index:Int = (cap == Mesh.NO_CAP || cap == Mesh.CAP_END) ? 2 : 0;
 			for (i in 0...path.length) {
 				rad = radiusFunctionFinal(i, distances[i]); // current radius
 				circlePath = [];              				// current circle array
@@ -662,7 +670,7 @@ class MeshBuilder {
                 case Mesh.CAP_ALL:
                     circlePaths.unshift(capPath(tessellation + 1, 0));
                     circlePaths.push(capPath(tessellation + 1, path.length - 1));
-                     
+                    
                 default:
                     //                   
             }

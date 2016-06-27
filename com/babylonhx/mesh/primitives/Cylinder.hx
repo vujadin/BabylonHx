@@ -37,8 +37,8 @@ import com.babylonhx.tools.Tags;
 		return new Cylinder(id, this.getScene(), this.height, this.diameterTop, this.diameterBottom, this.tessellation, this.subdivisions, this.canBeRegenerated(), null, this.side);
 	}
 	
-	public static function ParseCylinder(parsedCylinder:Dynamic, scene:Scene):Cylinder {
-        if (Geometry.ParseGeometry(parsedCylinder, scene) == null) {
+	public static function Parse(parsedCylinder:Dynamic, scene:Scene):Cylinder {
+        if (Geometry.Parse(parsedCylinder, scene) == null) {
             return null; // null since geometry could be something else than a cylinder...
         }
 		

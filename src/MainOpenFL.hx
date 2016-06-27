@@ -1,11 +1,15 @@
 package;
 
+import openfl.display.Bitmap;
+import openfl.Assets;
 import openfl.display.Stage;
 import openfl.display.Sprite;
 import openfl.events.Event;
 import openfl.events.MouseEvent;
 import openfl.events.KeyboardEvent;
 import openfl.events.TouchEvent;
+import openfl.ui.Multitouch;
+import openfl.ui.MultitouchInputMode;
 import openfl.display.OpenGLView;
 import openfl.Lib;
 import openfl.display.FPS;
@@ -15,13 +19,15 @@ import com.babylonhx.Scene;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.utils.Keycodes;
 
-import flixel.FlxGame;
-import flixel.FlxState;
+import com.babylonhx.cameras.FreeCamera;
+import com.babylonhx.cameras.Camera;
 
 import com.babylonhx.bones.Skeleton;
 import com.babylonhx.materials.StandardMaterial;
+import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.AbstractMesh;
+import com.babylonhx.math.Color3;
 import com.babylonhx.particles.ParticleSystem;
 import com.babylonhx.loading.SceneLoader;
 import com.babylonhx.loading.plugins.BabylonFileLoader;
@@ -36,25 +42,17 @@ class MainOpenFL extends Sprite {
 	var scene:Scene;
 	var engine:Engine;
 	
-	// taken from HaxeFlixel example
-	var gameWidth:Int = 640; // Width of the game in pixels (might be less / more in actual pixels depending on your zoom).
-	var gameHeight:Int = 480; // Height of the game in pixels (might be less / more in actual pixels depending on your zoom).
-	var initialState:Class<FlxState> = PlayState; // The FlxState the game starts with.
-	var zoom:Float = -1; // If -1, zoom is automatically calculated to fit the window dimensions.
-	var framerate:Int = 60; // How many frames per second the game should run at.
-	var skipSplash:Bool = false; // Whether to skip the flixel splash screen that appears in release mode.
-	var startFullscreen:Bool = false; // Whether to start the game in fullscreen on desktop targets
 	
 	public function new() {
 		super();
-				
+		
 		stage.addChild(this);
 		
 		engine = new Engine(stage, false);	
 		scene = new Scene(engine);
 		
-		engine.width = stage.stageWidth;
-		engine.height = stage.stageHeight;
+		Engine.width = stage.stageWidth;
+		Engine.height = stage.stageHeight;
 		
 		stage.addEventListener(Event.RESIZE, resize);
 		stage.addEventListener(Event.ENTER_FRAME, update);
@@ -67,54 +65,43 @@ class MainOpenFL extends Sprite {
 		stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 		stage.addEventListener(KeyboardEvent.KEY_UP, onKeyUp);
 		#elseif mobile
+		Multitouch.inputMode = MultitouchInputMode.TOUCH_POINT;
 		stage.addEventListener(TouchEvent.TOUCH_BEGIN, onTouchStart);
 		stage.addEventListener(TouchEvent.TOUCH_END, onTouchEnd);
 		stage.addEventListener(TouchEvent.TOUCH_MOVE, onTouchMove);
 		#end
-				
-		// hack to show 2D on top of 3D
-		var ground = Mesh.CreateGround("ground1", 0.1, 0.1, 1, scene, false);
-		ground.enableEdgesRendering();
-		
-		// this part is needed for android
-		#if mobile
-		var lines = Mesh.CreateLines("lines", [
-			new Vector3(-0.1, 0, 0),
-			new Vector3(0.1, 0, 0)
-		], scene);
-		lines.alpha = 0.01;
-		#end
-		// end of hack
 		
 		createDemo();
+		
+		enableOpenFL2D();
 	}
-		
-	private function setupGame():Void {
-		var stageWidth:Int = stage.stageWidth;
-		var stageHeight:Int = stage.stageHeight;
-		
-		if (zoom == -1) {
-			var ratioX:Float = stageWidth / gameWidth;
-			var ratioY:Float = stageHeight / gameHeight;
-			zoom = Math.min(ratioX, ratioY);
-			gameWidth = Math.ceil(stageWidth / zoom);
-			gameHeight = Math.ceil(stageHeight / zoom);
+	
+	private function enableOpenFL2D():Void {
+		var openflCameraMask:Int = 0xF0E1D2;
+		var mainCamera = scene.activeCamera;
+		if (scene.activeCameras.indexOf(mainCamera) == -1) {
+			scene.activeCameras.push(mainCamera);
 		}
-		
-		stage.addChild(new FlxGame(gameWidth, gameHeight, initialState, zoom, framerate, framerate, skipSplash, startFullscreen));
+		var openflCamera = new FreeCamera("openfl_nme_dummycamera", new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY), scene);
+		openflCamera.fov = 0;
+        openflCamera.layerMask = openflCameraMask; 
+		var openflDummyMesh = Mesh.CreatePlane("openfl_nme_dummymesh", 0.1, scene);
+		var openflDummyMaterial = new StandardMaterial("openfl_nme_DummyMaterial", scene);
+        openflDummyMaterial.backFaceCulling = false;
+		openflDummyMesh.material = openflDummyMaterial;
+		openflDummyMesh.layerMask = openflCameraMask;
+		scene.activeCameras.push(openflCamera);
 	}
 	
 	function createDemo() {
 		new samples.BasicScene(scene);
 		
-		setupGame();
-				
 		stage.addChild(new openfl.display.FPS(10, 10, 0xffffff));
 	}
 	
-	function resize(e){
-		engine.width = stage.stageWidth;
-		engine.height = stage.stageHeight;
+	function resize(e) {
+		Engine.width = stage.stageWidth;
+		Engine.height = stage.stageHeight;
 	}
 	
 	function onKeyDown(e:KeyboardEvent) {
@@ -155,13 +142,13 @@ class MainOpenFL extends Sprite {
 	
 	function onTouchStart(e:TouchEvent) {
 		for(f in Engine.touchDown) {
-			f(e.localX, e.localY, 0);
+			f(e.localX, e.localY, e.touchPointID);
 		}
 	}
 	
 	function onTouchEnd(e:TouchEvent) {		
 		for(f in Engine.touchUp) {
-			f(e.localX, e.localY, 0);
+			f(e.localX, e.localY, e.touchPointID);
 		}
 	}	
 	

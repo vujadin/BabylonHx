@@ -5,8 +5,12 @@ import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.textures.WebGLTexture;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color4;
+import com.babylonhx.math.Vector2;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.Tools;
+import com.babylonhx.tools.Observable;
+import com.babylonhx.tools.Observer;
+import com.babylonhx.tools.EventState;
 
 import com.babylonhx.utils.GL;
 
@@ -20,15 +24,16 @@ import com.babylonhx.utils.GL;
 	
 	public var name:String;
 	
-	public var onApply:Effect->Void;
-	public var onBeforeRender:Effect->Void;
-	public var onAfterRender:Effect->Void;
-	public var onSizeChanged:Void->Void;
-	public var onActivate:Camera->Void;
 	public var width:Int = -1;
 	public var height:Int = -1;
 	public var renderTargetSamplingMode:Int;
 	public var clearColor:Color4;
+	
+	/*
+        Enable Pixel Perfect mode where texture is not scaled to be power of 2.
+        Can only be used on a single postprocess or on the last one of a chain.
+    */ 
+    public var enablePixelPerfectMode:Bool = false;
 	
 	public var isSupported(get, never):Bool;
 
@@ -40,10 +45,98 @@ import com.babylonhx.utils.GL;
 	private var _textureType:Int;
 	public var _textures:SmartArray<WebGLTexture> = new SmartArray<WebGLTexture>(2);
 	public var _currentRenderTextureInd:Int = 0;
+	
+	@:allow(com.babylonhx.shaderbuilder.ShaderMaterialHelper)
 	private var _effect:Effect;
+	
 	private var _samplers:Array<String>;
     private var _fragmentUrl:String;
     private var _parameters:Array<String>;
+	private var _scaleRatio:Vector2 = new Vector2(1, 1);
+	
+	// Events
+
+	/**
+	* An event triggered when the postprocess is activated.
+	* @type {BABYLON.Observable}
+	*/
+	public var onActivateObservable:Observable<Camera> = new Observable<Camera>();
+
+	private var _onActivateObserver:Observer<Camera>;
+	public var onActivate(never, set):Camera->Null<EventState>->Void;
+	private function set_onActivate(callback:Camera->Null<EventState>->Void):Camera->Null<EventState>->Void {
+		if (this._onActivateObserver != null) {
+			this.onActivateObservable.remove(this._onActivateObserver);
+		}
+		this._onActivateObserver = this.onActivateObservable.add(callback);
+		
+		return callback;
+	}
+
+	/**
+	* An event triggered when the postprocess changes its size.
+	* @type {BABYLON.Observable}
+	*/
+	public var onSizeChangedObservable:Observable<Effect> = new Observable<Effect>();
+	private var _onSizeChangedObserver:Observer<Effect>;
+	public var onSizeChanged:Effect->Null<EventState>->Void;
+	private function set_onSizeChanged(callback:Effect->Null<EventState>->Void):Effect->Null<EventState>->Void {
+		if (this._onSizeChangedObserver != null) {
+			this.onSizeChangedObservable.remove(this._onSizeChangedObserver);
+		}
+		this._onSizeChangedObserver = this.onSizeChangedObservable.add(callback);
+		
+		return callback;
+	}
+
+	/**
+	* An event triggered when the postprocess applies its effect.
+	* @type {BABYLON.Observable}
+	*/
+	public var onApplyObservable:Observable<Effect> = new Observable<Effect>();
+	private var _onApplyObserver:Observer<Effect>;
+	public var onApply(never, set):Effect->Null<EventState>->Void;
+	private function set_onApply(callback:Effect->Null<EventState>->Void):Effect->Null<EventState>->Void {
+		if (this._onApplyObserver != null) {
+			this.onApplyObservable.remove(this._onApplyObserver);
+		}
+		this._onApplyObserver = this.onApplyObservable.add(callback);
+		
+		return callback;
+	}
+
+	/**
+	* An event triggered before rendering the postprocess
+	* @type {BABYLON.Observable}
+	*/
+	public var onBeforeRenderObservable:Observable<Effect> = new Observable<Effect>();
+	private var _onBeforeRenderObserver:Observer<Effect>;
+	public var onBeforeRender:Effect->Null<EventState>->Void;
+	private function set_onBeforeRender(callback:Effect->Null<EventState>->Void):Effect->Null<EventState>->Void {
+		if (this._onBeforeRenderObserver != null) {
+			this.onBeforeRenderObservable.remove(this._onBeforeRenderObserver);
+		}
+		this._onBeforeRenderObserver = this.onBeforeRenderObservable.add(callback);
+		
+		return callback;
+	}
+
+	/**
+	* An event triggered after rendering the postprocess
+	* @type {BABYLON.Observable}
+	*/
+	public var onAfterRenderObservable:Observable<Effect> = new Observable<Effect>();
+
+	private var _onAfterRenderObserver:Observer<Effect>;
+	public var onAfterRender:Effect->Null<EventState>->Void;
+	private function set_onAfterRender(callback:Effect->Null<EventState>->Void):Effect->Null<EventState>->Void {
+		if (this._onAfterRenderObserver != null) {
+			this.onAfterRenderObservable.remove(this._onAfterRenderObserver);
+		}
+		this._onAfterRenderObserver = this.onAfterRenderObservable.add(callback);
+		
+		return callback;
+	}
 	
 
 	public function new(name:String, fragmentUrl:String, parameters:Array<String>, samplers:Array<String>, ratio:Dynamic, camera:Camera, samplingMode:Int = Texture.NEAREST_SAMPLINGMODE, ?engine:Engine, reusable:Bool = false, defines:String = "", textureType:Int = Engine.TEXTURETYPE_UNSIGNED_INT) {
@@ -70,6 +163,8 @@ import com.babylonhx.utils.GL;
 		this._fragmentUrl = fragmentUrl;
 		this._parameters = parameters != null ? parameters : [];
 		
+		this._parameters.push("scale");
+		
 		this.updateEffect(defines);
 	}
 	
@@ -83,6 +178,11 @@ import com.babylonhx.utils.GL;
 	public function isReusable():Bool {
 		return this._reusable;
 	}
+	
+	/** invalidate frameBuffer to hint the postprocess to create a depth buffer */
+    public function markTextureDirty() {
+        this.width = -1;
+    }
 
 	public function activate(camera:Camera, ?sourceTexture:WebGLTexture) {
 		camera = camera != null ? camera : this._camera;
@@ -90,11 +190,21 @@ import com.babylonhx.utils.GL;
 		var scene = camera.getScene();
 		var maxSize = camera.getEngine().getCaps().maxTextureSize;
 		
-		var desiredWidth:Int = Std.int((sourceTexture != null ? sourceTexture._width : this._engine.getRenderWidth()) * this._renderRatio);
-        var desiredHeight:Int = Std.int((sourceTexture != null ? sourceTexture._height : this._engine.getRenderHeight()) * this._renderRatio);
-        
-		desiredWidth = this._renderRatio.width != null ? this._renderRatio.width : Tools.GetExponentOfTwo(Std.int(desiredWidth), maxSize);
-		desiredHeight = this._renderRatio.height != null ? this._renderRatio.height : Tools.GetExponentOfTwo(Std.int(desiredHeight), maxSize);
+		var requiredWidth:Int = cast ((sourceTexture != null ? sourceTexture._width : this._engine.getRenderWidth()) * this._renderRatio);
+        var requiredHeight:Int = cast ((sourceTexture != null ? sourceTexture._height : this._engine.getRenderHeight()) * this._renderRatio);
+
+        var desiredWidth = this._renderRatio.width != null ? this._renderRatio.width : requiredWidth;
+        var desiredHeight = this._renderRatio.height != null ? this._renderRatio.height : requiredHeight;
+		
+		if (this.renderTargetSamplingMode != Texture.NEAREST_SAMPLINGMODE) {
+            if (this._renderRatio.width == null) {
+                desiredWidth = com.babylonhx.math.Tools.GetExponentOfTwo(desiredWidth, maxSize);
+            }
+			
+            if (this._renderRatio.height == null) {
+                desiredHeight = com.babylonhx.math.Tools.GetExponentOfTwo(desiredHeight, maxSize);
+            }
+        }
 		
 		if (this.width != desiredWidth || this.height != desiredHeight) {
 			if (this._textures.length > 0) {
@@ -106,22 +216,25 @@ import com.babylonhx.utils.GL;
 			this.width = desiredWidth;
 			this.height = desiredHeight;
 			
-			this._textures.push(this._engine.createRenderTargetTexture( { width: this.width, height: this.height }, { generateMipMaps: false, generateDepthBuffer: camera._postProcesses.indexOf(this) == camera._postProcessesTakenIndices[0], samplingMode: this.renderTargetSamplingMode, type: this._textureType } ));
+			this._textures.push(this._engine.createRenderTargetTexture( { width: this.width, height: this.height }, { generateMipMaps: false, generateDepthBuffer: camera._postProcesses.indexOf(this) == 0, samplingMode: this.renderTargetSamplingMode, type: this._textureType } ));
 			
 			if (this._reusable) {
-				this._textures.push(this._engine.createRenderTargetTexture({ width: this.width, height: this.height }, { generateMipMaps: false, generateDepthBuffer: camera._postProcesses.indexOf(this) == camera._postProcessesTakenIndices[0], samplingMode: this.renderTargetSamplingMode, type: this._textureType }));
+				this._textures.push(this._engine.createRenderTargetTexture({ width: this.width, height: this.height }, { generateMipMaps: false, generateDepthBuffer: camera._postProcesses.indexOf(this) == 0, samplingMode: this.renderTargetSamplingMode, type: this._textureType }));
 			}
 			
-			if (this.onSizeChanged != null) {
-				this.onSizeChanged();
-			}			
+			this.onSizeChangedObservable.notifyObservers(this._effect);			
 		}
 		
-		this._engine.bindFramebuffer(this._textures.data[this._currentRenderTextureInd]);
+		if (this.enablePixelPerfectMode) {
+            this._scaleRatio.copyFromFloats(requiredWidth / desiredWidth, requiredHeight / desiredHeight);
+            this._engine.bindFramebuffer(this._textures.data[this._currentRenderTextureInd], 0, requiredWidth, requiredHeight);
+        }
+        else {
+            this._scaleRatio.copyFromFloats(1, 1);
+            this._engine.bindFramebuffer(this._textures.data[this._currentRenderTextureInd]);
+        }
 		
-		if (this.onActivate != null) {
-			this.onActivate(camera);
-		}
+		this.onActivateObservable.notifyObservers(camera);
 		
 		// Clear
 		if (this.clearColor != null) {
@@ -159,9 +272,8 @@ import com.babylonhx.utils.GL;
 		}
 		
 		// Parameters
-		if (this.onApply != null) {
-			this.onApply(this._effect);
-		}
+		this._effect.setVector2("scale", this._scaleRatio);
+		this.onApplyObservable.notifyObservers(this._effect);
 		
 		return this._effect;
 	}
@@ -182,10 +294,15 @@ import com.babylonhx.utils.GL;
 		camera.detachPostProcess(this);
 		
 		var index = camera._postProcesses.indexOf(this);
-		if (index == camera._postProcessesTakenIndices[0] && camera._postProcessesTakenIndices.length > 0) {
-			// invalidate frameBuffer to hint the postprocess to create a depth buffer
-			this._camera._postProcesses[camera._postProcessesTakenIndices[0]].width = -1; 
-		}
+		if (index == 0 && camera._postProcesses.length > 0) {
+            this._camera._postProcesses[0].markTextureDirty(); 
+        }
+		
+		this.onActivateObservable.clear();
+        this.onAfterRenderObservable.clear();
+        this.onApplyObservable.clear();
+        this.onBeforeRenderObservable.clear();
+        this.onSizeChangedObservable.clear();
 	}
 	
 }

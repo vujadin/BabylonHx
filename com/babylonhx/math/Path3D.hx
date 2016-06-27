@@ -1,7 +1,5 @@
 package com.babylonhx.math;
 
-import com.babylonhx.tools.Tools;
-
 /**
  * ...
  * @author Krtolica Vujadin
@@ -154,13 +152,13 @@ import com.babylonhx.tools.Tools;
 		var normal0:Vector3 = Vector3.Zero();
 		if (va == null) {
 			var point:Vector3 = Vector3.Zero();
-			if (!Tools.WithinEpsilon(vt.y, 1, Engine.Epsilon)) {     // search for a point in the plane
+			if (!Tools.WithinEpsilon(vt.y, 1, Tools.Epsilon)) {     // search for a point in the plane
 				point = new Vector3(0, -1, 0);
 			}
-			else if (!Tools.WithinEpsilon(vt.x, 1, Engine.Epsilon)) {
+			else if (!Tools.WithinEpsilon(vt.x, 1, Tools.Epsilon)) {
 				point = new Vector3(1, 0, 0);
 			}
-			else if (!Tools.WithinEpsilon(vt.z, 1, Engine.Epsilon)) {
+			else if (!Tools.WithinEpsilon(vt.z, 1, Tools.Epsilon)) {
 				point = new Vector3(0, 0, 1);
 			}
 			normal0 = Vector3.Cross(vt, point);

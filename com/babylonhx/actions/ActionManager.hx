@@ -1,12 +1,17 @@
 package com.babylonhx.actions;
 
 import com.babylonhx.mesh.AbstractMesh;
+import com.babylonhx.utils.Keycodes;
 
 /**
  * ...
  * @author Krtolica Vujadin
  */
 
+/**
+ * Action Manager manages all events to be triggered on a given mesh or the global scene.
+ * A single scene can have many Action Managers to handle predefined actions on specific meshes.
+ */
 @:expose('BABYLON.ActionManager') class ActionManager {
 	
 	// Statics
@@ -19,7 +24,7 @@ import com.babylonhx.mesh.AbstractMesh;
 	public static inline var OnPickUpTrigger:Int = 6;
 	public static inline var OnLongPressTrigger:Int = 7;
 	public static inline var OnPointerOverTrigger:Int = 8;
-	public static inline var OnPointerOutTrigger = 9;
+	public static inline var OnPointerOutTrigger:Int = 9;
 	public static inline var OnEveryFrameTrigger:Int = 10;
 	public static inline var OnIntersectionEnterTrigger:Int = 11;
 	public static inline var OnIntersectionExitTrigger:Int = 12;
@@ -29,10 +34,10 @@ import com.babylonhx.mesh.AbstractMesh;
 	
 	public static inline var DragMovementThreshold:Int = 10; // in pixels
     public static inline var LongPressDelay:Int = 500; 	  // in milliseconds
-
 	
 	// Members
 	public var actions:Array<Action> = [];
+	
 	private var _scene:Scene;
 	
 
@@ -89,7 +94,11 @@ import com.babylonhx.mesh.AbstractMesh;
 		return false;
 	}
 
-	public var hasPointerTriggers(get, null):Bool;
+	/**
+	 * Does this action manager has pointer triggers
+	 * @return {boolean} whether or not it has pointer triggers
+	 */
+	public var hasPointerTriggers(get, never):Bool;
 	private function get_hasPointerTriggers():Bool {
 		for (index in 0...this.actions.length) {
 			var action = this.actions[index];
@@ -102,7 +111,11 @@ import com.babylonhx.mesh.AbstractMesh;
 		return false;
 	}
 
-	public var hasPickTriggers(get, null):Bool;
+	/**
+	 * Does this action manager has pick triggers
+	 * @return {boolean} whether or not it has pick triggers
+	 */
+	public var hasPickTriggers(get, never):Bool;
 	private function get_hasPickTriggers():Bool {
 		for (index in 0...this.actions.length) {
 			var action = this.actions[index];
@@ -124,6 +137,7 @@ import com.babylonhx.mesh.AbstractMesh;
 		if (action.trigger == ActionManager.OnEveryFrameTrigger) {
 			if (this.getScene().actionManager != this) {
 				trace("OnEveryFrameTrigger can only be used with scene.actionManager");
+				
 				return null;
 			}
 		}
@@ -148,9 +162,8 @@ import com.babylonhx.mesh.AbstractMesh;
 			if (action.trigger == trigger) {
 				if (trigger == ActionManager.OnKeyUpTrigger || trigger == ActionManager.OnKeyDownTrigger) {
 					var parameter = action.getTriggerParameter();
-					
 					if (parameter != null) {
-						if (evt.sourceEvent.key != parameter) {
+						if (Keycodes.name(evt.sourceEvent) != parameter) {
 							continue;
 						}
 					}

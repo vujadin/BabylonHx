@@ -31,8 +31,8 @@ import com.babylonhx.tools.Tags;
 		return new Ground(id, this.getScene(), this.width, this.height, this.subdivisions, this.canBeRegenerated(), null);
 	}
 	
-	public static function ParseGround(parsedGround:Dynamic, scene:Scene):Ground {
-        if (Geometry.ParseGeometry(parsedGround, scene) == null) {
+	public static function Parse(parsedGround:Dynamic, scene:Scene):Ground {
+        if (Geometry.Parse(parsedGround, scene) == null) {
             return null; // null since geometry could be something else than a ground...
         }
 		

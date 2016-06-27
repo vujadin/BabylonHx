@@ -17,10 +17,6 @@ typedef HDRInfo = {
 };
  
 class HDRTools {
-
-	public function new() {
-		
-	}
 	
 	private static function Ldexp(mantissa:Float, exponent:Float):Float {
 		if (exponent > 1023) {
@@ -125,25 +121,10 @@ class HDRTools {
 		return hdrinfo;
 	}
 
-	public static function GetCubeMapTextureData(buffer: #if (js || purejs || web || html5) Dynamic #else ArrayBuffer #end , size:Int):CubeMapInfo {
-		#if (js || purejs || web || html5)
-		var str2ab = function(s:String):UInt8Array {
-			var str = s + "";
-			var buf = new Array<UInt>();
-			
-			for (i in 0...str.length * 2) {
-				buf.push(str.charCodeAt(i));
-			}
-			var bufView = new UInt8Array(buf);
-			
-			return bufView;
-		}
-		var uint8array = str2ab(buffer);
-		#else
-		var uint8array = new UInt8Array(buffer);
-		#end
+	public static function GetCubeMapTextureData(buffer:Dynamic, size:Int):CubeMapInfo {
+		var uint8array:UInt8Array = UInt8Array.fromBytes(buffer);
 		var hdrInfo = HDRTools.RGBE_ReadHeader(uint8array);
-		var data = HDRTools.RGBE_ReadPixels_RLE( #if (js || purejs || web || html5) cast buffer #else uint8array #end , hdrInfo);
+		var data = HDRTools.RGBE_ReadPixels_RLE(uint8array, hdrInfo);
 		
 		var cubeMapData = PanoramaToCubeMapTools.ConvertPanoramaToCubemap(data, hdrInfo.width, hdrInfo.height, size);
 		
@@ -156,8 +137,6 @@ class HDRTools {
 	}
 
 	private static function RGBE_ReadPixels_RLE(uint8array: #if (js || purejs || web || html5) Dynamic #else UInt8Array #end , hdrInfo:HDRInfo):Float32Array {
-		trace(uint8array);
-		trace(uint8array.length);
 		var num_scanlines = hdrInfo.height;
 		var scanline_width = hdrInfo.width;
 		

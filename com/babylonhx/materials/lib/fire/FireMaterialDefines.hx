@@ -1,22 +1,10 @@
 package com.babylonhx.materials.lib.fire;
 
-import haxe.ds.Vector;
-
 /**
  * ...
  * @author Krtolica Vujadin
  */
 class FireMaterialDefines extends MaterialDefines {
-		
-	public static inline var DIFFUSE:Int = 0;
-	public static inline var CLIPPLANE:Int = 1;
-	public static inline var ALPHATEST:Int = 2;
-	public static inline var POINTSIZE:Int = 3;
-	public static inline var FOG:Int = 4;
-	public static inline var UV1:Int = 5;
-	public static inline var VERTEXCOLOR:Int = 6;
-	public static inline var VERTEXALPHA:Int = 7;
-	public static inline var INSTANCES:Int = 8;
 	
 	public var BonesPerMesh:Int = 0;
 	public var NUM_BONE_INFLUENCERS:Int = 0;
@@ -25,12 +13,17 @@ class FireMaterialDefines extends MaterialDefines {
 	public function new() {
 		super();
 		
-		this._keys = Vector.fromArrayCopy(["DIFFUSE", "CLIPPLANE", "ALPHATEST", "POINTSIZE", "FOG", "UV1", "VERTEXCOLOR", "VERTEXALPHA", "INSTANCES"]);	
-		
-		defines = new Vector(this._keys.length);
-		for (i in 0...this._keys.length) {
-			defines[i] = false;
-		}
+		this.defines = [
+			"DIFFUSE" => false,
+			"CLIPPLANE" => false,
+			"ALPHATEST" => false,
+			"POINTSIZE" => false,
+			"FOG" => false,
+			"UV1" => false,
+			"VERTEXCOLOR" => false,
+			"VERTEXALPHA" => false,
+			"INSTANCES" => false
+		];
 		
 		BonesPerMesh = 0;
 		NUM_BONE_INFLUENCERS = 0;

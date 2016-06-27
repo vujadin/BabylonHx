@@ -31,8 +31,8 @@ import com.babylonhx.tools.Tags;
 		return new Sphere(id, this.getScene(), this.segments, this.diameter, this.canBeRegenerated(), null, this.side);
 	}
 	
-	public static function ParseSphere(parsedSphere:Dynamic, scene:Scene):Sphere {
-        if (Geometry.ParseGeometry(parsedSphere, scene) == null) {
+	public static function Parse(parsedSphere:Dynamic, scene:Scene):Sphere {
+        if (Geometry.Parse(parsedSphere, scene) == null) {
             return null; // null since geometry could be something else than a sphere...
         }
 		

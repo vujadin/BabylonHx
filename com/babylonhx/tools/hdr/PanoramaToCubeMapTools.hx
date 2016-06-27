@@ -33,25 +33,25 @@ class PanoramaToCubeMapTools {
 		new Vector3(1.0, 1.0, 1.0),
 		new Vector3(-1.0, 1.0, 1.0)
 	];
-	private static var FACE_RIGHT:Array<Vector3> = [
+	private static var FACE_LEFT:Array<Vector3> = [
 		new Vector3(1.0, -1.0, -1.0),
 		new Vector3(1.0, -1.0, 1.0),
 		new Vector3(1.0, 1.0, -1.0),
 		new Vector3(1.0, 1.0, 1.0)
 	];
-	private static var FACE_LEFT:Array<Vector3> = [
+	private static var FACE_RIGHT:Array<Vector3> = [
 		new Vector3(-1.0, -1.0, 1.0),
 		new Vector3(-1.0, -1.0, -1.0),
 		new Vector3(-1.0, 1.0, 1.0),
 		new Vector3(-1.0, 1.0, -1.0)
 	];
-	private static var FACE_DOWN:Array<Vector3> = [
+	private static var FACE_UP:Array<Vector3> = [
 		new Vector3(-1.0, 1.0, -1.0),
 		new Vector3(1.0, 1.0, -1.0),
 		new Vector3(-1.0, 1.0, 1.0),
 		new Vector3(1.0, 1.0, 1.0)
 	];
-	private static var FACE_UP:Array<Vector3> = [
+	private static var FACE_DOWN:Array<Vector3> = [
 		new Vector3(-1.0, -1.0, 1.0),
 		new Vector3(1.0, -1.0, 1.0),
 		new Vector3(-1.0, -1.0, -1.0),

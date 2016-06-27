@@ -20,6 +20,17 @@ import com.babylonhx.tools.Tools;
 	public function toString():String {
 		return "{X:" + this.x + " Y:" + this.y + "}";
 	}
+	
+	inline public function getClassName():String {
+        return "Vector2";
+    }
+	
+	public function getHashCode():Int {
+        var hash = Std.int(this.x);
+        hash = Std.int(hash * 397) ^ Std.int(this.y);
+		
+        return hash;
+    }
 
 	// Operators
 	public function toArray(array:Array<Float>, index:Int = 0):Vector2 {
@@ -122,7 +133,7 @@ import com.babylonhx.tools.Tools;
 		return otherVector != null && this.x == otherVector.x && this.y == otherVector.y;
 	}
 	
-	inline public function equalsWithEpsilon(otherVector:Vector2, epsilon:Float = Engine.Epsilon):Bool {
+	inline public function equalsWithEpsilon(otherVector:Vector2, epsilon:Float = Tools.Epsilon):Bool {
 		return otherVector != null && Tools.WithinEpsilon(this.x, otherVector.x, epsilon) && Tools.WithinEpsilon(this.y, otherVector.y, epsilon);
 	}
 
