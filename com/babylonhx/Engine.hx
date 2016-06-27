@@ -189,8 +189,8 @@ import nme.display.OpenGLView;
 		
 		#if purejs
 		GL.context = cast(canvas, js.html.CanvasElement).getContext("webgl", options);
-        if(GL.context == null)
-            GL.context = cast(canvas, js.html.CanvasElement).getContext("experimental-webgl", options);
+		if(GL.context == null)
+			GL.context = cast(canvas, js.html.CanvasElement).getContext("experimental-webgl", options);
 		#end
 		
 		#if (openfl || nme)
