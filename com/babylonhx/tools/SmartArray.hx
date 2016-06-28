@@ -23,20 +23,17 @@ package com.babylonhx.tools;
 
 	inline public function push(value:T):Void {
 		this.data[this.length++] = value;
-
-		/*if (value.__smartArrayFlags == null) {
-			value.__smartArrayFlags = [];
-		}*/
-
 		value.__smartArrayFlags[this._id] = this._duplicateId;
 	}
 
-	public function pushNoDuplicate(value:T) {
-		if(/*value.__smartArrayFlags != null &&*/ value.__smartArrayFlags[this._id] == this._duplicateId) {
-			return;
+	public function pushNoDuplicate(value:T):Bool {
+		if(value.__smartArrayFlags[this._id] == this._duplicateId) {
+			return false;
 		}
 		
 		this.push(value);
+		
+		return true;
 	}
 
 	inline public function sort(compareFn:T->T->Int) {
@@ -49,37 +46,29 @@ package com.babylonhx.tools;
 	}
 
 	inline public function concatArray(array:Array<T>) {
-		//if (array.length != 0) {		
-			for (index in 0...array.length) {
-				this.data[this.length++] = array[index];
-			}
-		//}
+		for (index in 0...array.length) {
+			this.data[this.length++] = array[index];
+		}
 	}
 	
 	inline public function concatSmartArray(array:SmartArray<T>) {
-		//if (array.length != 0) {
-			for (index in 0...array.length) {
-				this.data[this.length++] = array.data[index];
-			}
-		//}
+		for (index in 0...array.length) {
+			this.data[this.length++] = array.data[index];
+		}
 	}
 
 	inline public function concatArrayWithNoDuplicate(array:Array<T>) {
-		//if (array.length != 0) {			
-			for (index in 0...array.length) {
-				var item = array[index];
-				this.pushNoDuplicate(item);
-			}
-		//}
+		for (index in 0...array.length) {
+			var item = array[index];
+			this.pushNoDuplicate(item);
+		}
 	}
 	
 	inline public function concatSmartArrayWithNoDuplicate(array:SmartArray<T>) {
-		//if (array.length != 0) {
-			for (index in 0...array.length) {
-				var item = array.data[index];
-				this.pushNoDuplicate(item);
-			}
-		//}
+		for (index in 0...array.length) {
+			var item = array.data[index];
+			this.pushNoDuplicate(item);
+		}
 	}
 
 	inline public function indexOf(value:T):Int {
