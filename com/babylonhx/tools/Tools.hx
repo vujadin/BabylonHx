@@ -50,6 +50,13 @@ typedef Assets = nme.Assets;
 	@:noCompletion public static var app:snow.Snow;
 	#end
 
+	public static function __init__(){
+		#if purejs
+		untyped Browser.window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+													   window.webkitRequestAnimationFrame || window.msRequestAnimationFrame ||
+													   window.oRequestAnimationFrame;
+		#end
+	}
 
 	public static function GetFilename(path:String):String {
 		var index = path.lastIndexOf("/");
@@ -153,6 +160,10 @@ typedef Assets = nme.Assets;
 		}
 		
 		return eventPrefix;
+	}
+
+	public inline static function QueueNewFrame(func:Dynamic->Void):Void {
+		Browser.window.requestAnimationFrame(func);
 	}
 	
 	public static function RegisterTopRootEvents(events:Array<Dynamic>) {
