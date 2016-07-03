@@ -52,9 +52,11 @@ typedef Assets = nme.Assets;
 
 	public static function __init__(){
 		#if purejs
-		untyped Browser.window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
-													   window.webkitRequestAnimationFrame || window.msRequestAnimationFrame ||
-													   window.oRequestAnimationFrame;
+		untyped Browser.window.requestAnimationFrame = window.requestAnimationFrame
+													   || window.mozRequestAnimationFrame
+													   || window.webkitRequestAnimationFrame
+													   || window.msRequestAnimationFrame
+													   || window.oRequestAnimationFrame;
 		#end
 	}
 
