@@ -103,9 +103,6 @@ import nme.display.OpenGLView;
 	private var _caps:EngineCapabilities;
 	private var _pointerLockRequested:Bool;
 	private var _alphaTest:Bool;
-
-	private var _runningLoop:Bool = false;
-	private var _renderFunction:Dynamic;// Rectangle-> Void;// Void->Void;
 		
 	private var _drawCalls:Int = 0;
 	public var drawCalls(get, never):Int;
@@ -154,7 +151,7 @@ import nme.display.OpenGLView;
 	#if (openfl || nme)
 	public var _workingContext:OpenGLView; 
 	#end
-	
+
 	// quick and dirty solution to handle mouse/keyboard 
 	public static var mouseDown:Array<Dynamic> = [];
 	public static var mouseUp:Array<Dynamic> = [];
@@ -451,27 +448,48 @@ import nme.display.OpenGLView;
 		}
 	}
 
-	public function _renderLoop(?rect:Dynamic) {		
-        // Start new frame
-        this.beginFrame();
-        if (this._renderFunction != null) {
-            this._renderFunction();
-        }
-		
-        // Present
-        this.endFrame();
-		
-		#if purejs
-		Browser.window.requestAnimationFrame(untyped _renderLoop);
-		#end
-    }
+	public function _renderLoop(?rect:Dynamic) {
+		var shouldRender = true;
+		if (!this.renderEvenInBackground && this._windowIsBackground) {
+			shouldRender = false;
+		}
 
-	inline public function runRenderLoop(renderFunction:Dynamic) {
-		this._runningLoop = true;
-		this._renderFunction = renderFunction;
-		
+		if (shouldRender) {
+			// Start new frame
+			this.beginFrame();
+
+			for (index in 0...this._activeRenderLoops.length) {
+				var renderFunction = this._activeRenderLoops[index];
+
+				renderFunction();
+			}
+
+			// Present
+			this.endFrame();
+		}
+
 		#if purejs
-		this._renderLoop();
+		if (this._activeRenderLoops.length > 0) {
+			// Register new frame
+			Tools.QueueNewFrame(this._renderLoop);
+		} else {
+			this._renderingQueueLaunched = false;
+		}
+		#end
+	}
+
+	inline public function runRenderLoop(renderFunction:Void->Void) {
+		if (this._activeRenderLoops.indexOf(renderFunction) != -1) {
+			return;
+		}
+
+		this._activeRenderLoops.push(renderFunction);
+
+		#if purejs
+		if (!this._renderingQueueLaunched) {
+			this._renderingQueueLaunched = true;
+			Tools.QueueNewFrame(this._renderLoop);
+		}
 		#end
 	}
 
