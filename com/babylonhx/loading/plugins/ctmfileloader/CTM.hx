@@ -81,10 +81,10 @@ class CTM {
 		while (i < len) {
 			x = gridIdx = gridIndices[i++];
 			
-			z = cast ~~(x / zdiv);
-			x -= cast ~~(z * zdiv);
-			y = cast ~~(x / ydiv);
-			x -= cast ~~(y * ydiv);
+			z = Std.int(x / zdiv);
+			x -= Std.int(z * zdiv);
+			y = Std.int(x / ydiv);
+			x -= Std.int(y * ydiv);
 			
 			delta = intVertices[j];
 			if (gridIdx == prevGridIdx){

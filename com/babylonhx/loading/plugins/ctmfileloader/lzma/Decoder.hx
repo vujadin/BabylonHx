@@ -241,9 +241,9 @@ class Decoder {
 		
 		value = properties.readByte();
 		lc = value % 9;
-		value = cast ~~(value / 9);
+		value = Std.int(value / 9);
 		lp = value % 5;
-		pb = cast ~~(value / 5);
+		pb = Std.int(value / 5);
 		
 		if (!this.setLcLpPb(lc, lp, pb)) {
 			return false;
