@@ -291,9 +291,12 @@ package com.babylonhx.math;
 	inline public static function Identity():Quaternion {
 		return new Quaternion(0, 0, 0, 1);
 	}
-
+	
 	inline public static function RotationAxis(axis:Vector3, angle:Float):Quaternion {
-		var result = new Quaternion();
+		return Quaternion.RotationAxisToRef(axis, angle, new Quaternion());
+	}
+
+	inline public static function RotationAxisToRef(axis:Vector3, angle:Float, result:Quaternion):Quaternion {
 		var sin = Math.sin(angle / 2);
 		
 		axis.normalize();
@@ -376,12 +379,10 @@ package com.babylonhx.math;
 	}
 
 	inline public static function RotationYawPitchRoll(yaw:Float, pitch:Float, roll:Float):Quaternion {
-		var result = new Quaternion();
-		Quaternion.RotationYawPitchRollToRef(yaw, pitch, roll, result);
-		return result;
+		return Quaternion.RotationYawPitchRollToRef(yaw, pitch, roll, new Quaternion());
 	}
 
-	inline public static function RotationYawPitchRollToRef(yaw:Float, pitch:Float, roll:Float, result:Quaternion) {
+	inline public static function RotationYawPitchRollToRef(yaw:Float, pitch:Float, roll:Float, result:Quaternion):Quaternion {
 		var halfRoll = roll * 0.5;
 		var halfPitch = pitch * 0.5;
 		var halfYaw = yaw * 0.5;
@@ -397,6 +398,8 @@ package com.babylonhx.math;
 		result.y = (sinYaw * cosPitch * cosRoll) - (cosYaw * sinPitch * sinRoll);
 		result.z = (cosYaw * cosPitch * sinRoll) - (sinYaw * sinPitch * cosRoll);
 		result.w = (cosYaw * cosPitch * cosRoll) + (sinYaw * sinPitch * sinRoll);
+		
+		return result;
 	}
 
 	public static function Slerp(left:Quaternion, right:Quaternion, amount:Float):Quaternion {

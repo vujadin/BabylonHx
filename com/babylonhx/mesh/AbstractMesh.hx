@@ -242,6 +242,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return val;
 	}
 	
+	public function setBoundingInfo(boundingInfo:BoundingInfo) {
+        this._boundingInfo = boundingInfo;
+    }
+	
 	public var useBones(get, never):Bool;
 	private function get_useBones():Bool {
 		return this.skeleton != null && this.getScene().skeletonsEnabled && this.isVerticesDataPresent(VertexBuffer.MatricesIndicesKind) && this.isVerticesDataPresent(VertexBuffer.MatricesWeightsKind);
@@ -460,17 +464,19 @@ import com.babylonhx.utils.typedarray.Float32Array;
         return this._isWorldMatrixFrozen;
     }
 
+	static var _rotationAxisCache:Quaternion = new Quaternion();
 	public function rotate(axis:Vector3, amount:Float, space:Space) {
-		axis.normalize();
+		axis.normalize(); 
 		
 		if (this.rotationQuaternion == null) {
 			this.rotationQuaternion = Quaternion.RotationYawPitchRoll(this.rotation.y, this.rotation.x, this.rotation.z);
 			this.rotation = Vector3.Zero();
 		}
 		
-		var rotationQuaternion = Quaternion.RotationAxis(axis, amount);
+		var rotationQuaternion:Quaternion = null;
 		if (space == null || space == Space.LOCAL) {
-			this.rotationQuaternion = this.rotationQuaternion.multiply(rotationQuaternion);
+			rotationQuaternion = Quaternion.RotationAxisToRef(axis, amount, AbstractMesh._rotationAxisCache);
+			this.rotationQuaternion.multiplyToRef(rotationQuaternion, this.rotationQuaternion);
 		}
 		else {
 			if (this.parent != null) {
@@ -479,8 +485,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 				
 				axis = Vector3.TransformNormal(axis, invertParentWorldMatrix);
 			}
-			rotationQuaternion = Quaternion.RotationAxis(axis, amount);
-			this.rotationQuaternion = rotationQuaternion.multiply(this.rotationQuaternion);
+			rotationQuaternion = Quaternion.RotationAxisToRef(axis, amount, AbstractMesh._rotationAxisCache);
+			rotationQuaternion.multiplyToRef(this.rotationQuaternion, this.rotationQuaternion);
 		}
 	}
 
@@ -863,12 +869,13 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	/// <param name="pitchCor" type="Number">optional pitch (x-axis) correction in radians</param>
 	/// <param name="rollCor" type="Number">optional roll (z-axis) correction in radians</param>
 	/// <returns>Mesh oriented towards targetMesh</returns>
+	static var _lookAtVectorCache:Vector3 = new Vector3(0, 0, 0);
 	inline public function lookAt(targetPoint:Vector3, yawCor:Float = 0, pitchCor:Float = 0, rollCor:Float = 0) {		
-		var dv = targetPoint.subtract(this.position);
+		var dv = AbstractMesh._lookAtVectorCache;
 		var yaw = -Math.atan2(dv.z, dv.x) - Math.PI / 2;
 		var len = Math.sqrt(dv.x * dv.x + dv.z * dv.z);
 		var pitch = Math.atan2(dv.y, len);
-		this.rotationQuaternion = Quaternion.RotationYawPitchRoll(yaw + yawCor, pitch + pitchCor, rollCor);
+		Quaternion.RotationYawPitchRollToRef(yaw + yawCor, pitch + pitchCor, rollCor, this.rotationQuaternion);
 	}
 	
 	public function attachToBone(bone:Bone, affectedMesh:AbstractMesh) {

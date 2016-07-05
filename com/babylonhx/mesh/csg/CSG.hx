@@ -50,7 +50,8 @@ import com.babylonhx.Scene;
 			meshPosition = mesh.position.clone();
 			meshRotation = mesh.rotation.clone();
 			meshScaling = mesh.scaling.clone();
-		} else {
+		} 
+		else {
 			throw 'CSG:Wrong Mesh type, must be Mesh';
 		}
 		

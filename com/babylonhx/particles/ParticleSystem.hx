@@ -7,6 +7,8 @@ import com.babylonhx.math.Color4;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.WebGLBuffer;
+import com.babylonhx.mesh.VertexBuffer;
+import com.babylonhx.mesh.Buffer;
 import com.babylonhx.particles.Particle;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.animations.IAnimatable;
@@ -97,17 +99,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
 
 	private var _capacity:Int;
 	private var _scene:Scene;
-	private var _vertexDeclaration:Array<Int> = [3, 4, 4];
-	private var _vertexStrideSize:Int = 11 * 4; // 11 floats per particle (x, y, z, r, g, b, a, angle, size, offsetX, offsetY)
 	private var _stockParticles:Array<Particle> = [];
 	private var _newPartsExcess:Int = 0;
-	private var _vertexBuffer:WebGLBuffer;
-	private var _indexBuffer:WebGLBuffer;
-	#if html5
-	public var _vertices:Float32Array;
-	#else
-    public var _vertices:Array<Float>;
-    #end
+	private var _vertexData:Array<Float>;
+	private var _vertexBuffer:Buffer<Array<Float>>;
+	private var _vertexBuffers:Map<String, VertexBuffer> = new Map();
+	private var _indexBuffer:WebGLBuffer;	
 	private var _effect:Effect;
 	private var _customEffect:Effect;
 	private var _cachedDefines:String;
@@ -122,7 +119,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _started:Bool = false;
 	private var _stopped:Bool = false;
 	private var _actualFrame:Int = 0;
-	public var _scaledUpdateSpeed:Float;
+	private var _scaledUpdateSpeed:Float;
 	
 	private var _engine:Engine;
 	
@@ -139,9 +136,6 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		scene.particleSystems.push(this);
 		
-		// VBO
-		this._vertexBuffer = this._engine.createDynamicVertexBuffer(capacity * this._vertexStrideSize * 4);
-		
 		var indices:Array<Int> = [];
 		var index:Int = 0;
 		for (count in 0...capacity) {
@@ -156,11 +150,17 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		this._indexBuffer = this._engine.createIndexBuffer(indices);
 		
-		#if html5
-		this._vertices = new Float32Array(capacity * this._vertexStrideSize);
-		#else
-        this._vertices = [];
-        #end
+		// 11 floats per particle (x, y, z, r, g, b, a, angle, size, offsetX, offsetY) + 1 filler
+        this._vertexData = [];	//new Float32Array(capacity * 11 * 4);	
+		this._vertexBuffer = new Buffer(scene.getEngine(), this._vertexData, true, 11);
+		
+		var positions = this._vertexBuffer.createVertexBuffer(VertexBuffer.PositionKind, 0, 3);
+		var colors = this._vertexBuffer.createVertexBuffer(VertexBuffer.ColorKind, 3, 4);
+		var options = this._vertexBuffer.createVertexBuffer("options", 7, 4);
+		
+		this._vertexBuffers[VertexBuffer.PositionKind] = positions;
+		this._vertexBuffers[VertexBuffer.ColorKind] = colors;
+		this._vertexBuffers["options"] = options;
 		
 		// Default behaviors
 		this.startDirectionFunction = function(emitPower:Float, worldMatrix:Matrix, directionToUpdate:Vector3):Void {
@@ -247,17 +247,17 @@ import com.babylonhx.utils.typedarray.Float32Array;
 
 	inline public function _appendParticleVertex(index:Int, particle:Particle, offsetX:Float, offsetY:Float):Void {
 		var offset = index * 11;
-		this._vertices[offset] = particle.position.x;
-		this._vertices[offset + 1] = particle.position.y;
-		this._vertices[offset + 2] = particle.position.z;
-		this._vertices[offset + 3] = particle.color.r;
-		this._vertices[offset + 4] = particle.color.g;
-		this._vertices[offset + 5] = particle.color.b;
-		this._vertices[offset + 6] = particle.color.a;
-		this._vertices[offset + 7] = particle.angle;
-		this._vertices[offset + 8] = particle.size;
-		this._vertices[offset + 9] = offsetX;
-		this._vertices[offset + 10] = offsetY;
+		this._vertexData[offset] = particle.position.x;
+		this._vertexData[offset + 1] = particle.position.y;
+		this._vertexData[offset + 2] = particle.position.z;
+		this._vertexData[offset + 3] = particle.color.r;
+		this._vertexData[offset + 4] = particle.color.g;
+		this._vertexData[offset + 5] = particle.color.b;
+		this._vertexData[offset + 6] = particle.color.a;
+		this._vertexData[offset + 7] = particle.angle;
+		this._vertexData[offset + 8] = particle.size;
+		this._vertexData[offset + 9] = offsetX;
+		this._vertexData[offset + 10] = offsetY;
 	}
 
 	var worldMatrix:Matrix = Matrix.Zero();
@@ -272,7 +272,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			worldMatrix = this.emitter.getWorldMatrix();
 		} 
 		else {
-			worldMatrix = Matrix.Translation(this.emitter.x + randomNumber(-500, 500), this.emitter.y, this.emitter.z + randomNumber(-500, 500));
+			worldMatrix = Matrix.Translation(this.emitter.x, this.emitter.y, this.emitter.z);
 		}
 		
 		for (index in 0...newParticles) {
@@ -321,9 +321,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		if (this._cachedDefines != join) {
 			this._cachedDefines = join;
 			
-			this._effect = this._engine.createEffect(
+			this._effect = this._scene.getEngine().createEffect(
 				"particles",
-				["position", "color", "options"],
+				[VertexBuffer.PositionKind, VertexBuffer.ColorKind, "options"],
 				["invView", "view", "projection", "vClipPlane", "textureMask"],
 				["diffuseSampler"], join);
 		}
@@ -355,6 +355,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		if (this.manualEmitCount > -1) {
 			newParticles = this.manualEmitCount;
 			this._newPartsExcess = 0;
+			this.manualEmitCount = 0;
 		} 
 		else {
 			newParticles = Math.floor(this.emitRate * this._scaledUpdateSpeed);
@@ -402,12 +403,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			this._appendParticleVertex(offset++, particle, 0, 1);
 		}
 		
-		this._engine.updateDynamicVertexBuffer(this._vertexBuffer, this._vertices);
+		this._vertexBuffer.update(this._vertexData);
 	}
 
 	public function render():Int {		
 		// Check
-		if (this.emitter == null || !this._effect.isReady() || this.particleTexture == null || !this.particleTexture.isReady()) {
+		if (this.emitter == null || !this._effect.isReady() || this.particleTexture == null || !this.particleTexture.isReady() || this.particles.length == 0) {
 			return 0;
 		}
 		
@@ -430,7 +431,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 		
 		// VBOs
-		this._engine.bindBuffers(this._vertexBuffer, this._indexBuffer, this._vertexDeclaration, this._vertexStrideSize, this._effect);
+		this._engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._effect);
 		
 		// Draw order
 		if (this.blendMode == ParticleSystem.BLENDMODE_ONEONE) {
@@ -452,7 +453,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 
 	inline public function dispose(doNotRecurse:Bool = false) {
 		if (this._vertexBuffer != null) {
-			this._engine._releaseBuffer(this._vertexBuffer);
+			this._vertexBuffer.dispose();
 			this._vertexBuffer = null;
 		}
 		

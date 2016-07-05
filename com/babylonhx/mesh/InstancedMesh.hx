@@ -9,6 +9,7 @@ import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.culling.BoundingSphere;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.animations.IAnimatable;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 
 /**

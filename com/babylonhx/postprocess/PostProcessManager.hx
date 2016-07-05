@@ -1,5 +1,6 @@
 package com.babylonhx.postprocess;
 
+import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.materials.textures.WebGLTexture;
 
@@ -12,9 +13,7 @@ import com.babylonhx.materials.textures.WebGLTexture;
 	
 	private var _scene:Scene;
 	private var _indexBuffer:WebGLBuffer;
-	private var _vertexDeclaration:Array<Int> = [2];
-	private var _vertexStrideSize:Int = 2 * 4;
-	private var _vertexBuffer:WebGLBuffer;
+	private var _vertexBuffers:Map<String, VertexBuffer> = new Map();
 	
 
 	public function new(scene:Scene) {
@@ -22,13 +21,13 @@ import com.babylonhx.materials.textures.WebGLTexture;
 	}
 	
 	private function _prepareBuffers() {
-		if (this._vertexBuffer != null) {
+		if (this._vertexBuffers[VertexBuffer.PositionKind] != null) {
 			return;
 		}
 		
 		// VBO
 		var vertices:Array<Float> = [1, 1, -1, 1, -1, -1, 1, -1];
-		this._vertexBuffer = this._scene.getEngine().createVertexBuffer(vertices);
+		this._vertexBuffers[VertexBuffer.PositionKind] = new VertexBuffer(this._scene.getEngine(), vertices, VertexBuffer.PositionKind, false, false, 2);
 		
 		// Indices
 		var indices:Array<Int> = [0, 1, 2, 0, 2, 3];		
@@ -72,7 +71,7 @@ import com.babylonhx.materials.textures.WebGLTexture;
 				
 				// VBOs
 				this._prepareBuffers();
-				engine.bindBuffers(this._vertexBuffer, this._indexBuffer, this._vertexDeclaration, this._vertexStrideSize, effect);
+				engine.bindBuffers(this._vertexBuffers, this._indexBuffer, effect);
 				
 				// Draw order
 				engine.draw(true, 0, 6);
@@ -122,7 +121,7 @@ import com.babylonhx.materials.textures.WebGLTexture;
 				
 				// VBOs
 				this._prepareBuffers();
-				engine.bindBuffers(this._vertexBuffer, this._indexBuffer, this._vertexDeclaration, this._vertexStrideSize, effect);
+				engine.bindBuffers(this._vertexBuffers, this._indexBuffer, effect);
 				
 				// Draw order
 				engine.draw(true, 0, 6);
@@ -137,9 +136,10 @@ import com.babylonhx.materials.textures.WebGLTexture;
 	}
 
 	public function dispose() {
-		if (this._vertexBuffer != null) {
-			this._scene.getEngine()._releaseBuffer(this._vertexBuffer);
-			this._vertexBuffer = null;
+		var buffer = this._vertexBuffers[VertexBuffer.PositionKind];
+		if (buffer != null) {
+			buffer.dispose();
+			this._vertexBuffers[VertexBuffer.PositionKind] = null;
 		}
 		
 		if (this._indexBuffer != null) {

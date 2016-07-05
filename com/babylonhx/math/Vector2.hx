@@ -175,9 +175,9 @@ import com.babylonhx.tools.Tools;
 		return new Vector2(array[offset], array[offset + 1]);
 	}
 
-	inline public static function FromArrayToRef(array:Array<Float>, offset:Int, result:Vector2):Vector2 {
-		result.x = array[offset];
-		result.y = array[offset + 1];
+	inline public static function FromArrayToRef<T>(array:T, offset:Int, result:Vector2):Vector2 {
+		result.x = untyped array[offset];
+		result.y = untyped array[offset + 1];
 		
 		return result;
 	}

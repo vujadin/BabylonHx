@@ -16,11 +16,13 @@ import com.babylonhx.culling.Ray;
 
 @:expose('BABYLON.LinesMesh') class LinesMesh extends Mesh {
 	
+	public var dashSize:Float = 0;
+	public var gapSize:Float = 0;
+	
 	public var color:Color3 = new Color3(1, 1, 1);
 	public var alpha:Float = 1;
 	
-	public var dashSize:Float = 0;
-	public var gapSize:Float = 0;
+	private var _positionBuffer:Map<String, VertexBuffer> = new Map();
 
 	public var intersectionThreshold(get, set):Float;
 	private var _intersectionThreshold:Float;
@@ -42,6 +44,8 @@ import com.babylonhx.culling.Ray;
 				uniforms: ["worldViewProjection", "color"],
 				needAlphaBlending: true
 			});
+			
+		this._positionBuffer[VertexBuffer.PositionKind] = null;
 	}
 	
 	/**
@@ -89,10 +93,10 @@ import com.babylonhx.culling.Ray;
 	override public function _bind(subMesh:SubMesh, effect:Effect, fillMode:Int) {
 		var engine = this.getScene().getEngine();
 		
-		var indexToBind = this._geometry.getIndexBuffer();
+		this._positionBuffer[VertexBuffer.PositionKind] = this._geometry.getVertexBuffer(VertexBuffer.PositionKind);
 		
 		// VBOs
-		engine.bindBuffers(this._geometry.getVertexBuffer(VertexBuffer.PositionKind).getBuffer(), indexToBind, [3], 3 * 4, this._colorShader.getEffect());
+		engine.bindBuffers(this._positionBuffer, this._geometry.getIndexBuffer(), this._colorShader.getEffect());
 		
 		// Color
 		this._colorShader.setColor4("color", this.color.toColor4(this.alpha));

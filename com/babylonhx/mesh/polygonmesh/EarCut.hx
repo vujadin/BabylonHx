@@ -10,7 +10,7 @@ class EarCut {
 		// ...
 	}
 
-	public function process(data:Array<Float>, holeIndices:Array<Int>, dim:Float = 2) {
+	public function earcut(data:Array<Float>, ?holeIndices:Array<Int>, dim:Float = 2) {
 		var hasHoles = holeIndices != null && holeIndices.length > 0;
 		var	outerLen = hasHoles ? holeIndices[0] * dim : data.length;
 		var	outerNode = filterPoints(data, linkedList(data, 0, outerLen, dim, true)),

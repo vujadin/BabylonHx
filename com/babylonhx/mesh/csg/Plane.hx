@@ -10,10 +10,10 @@ import com.babylonhx.math.Vector3;
 // Represents a plane in 3D space.
 class Plane {
 	
-	static var COPLANAR:Int = 0;
-	static var FRONT:Int = 1;
-	static var BACK:Int = 2;
-	static var SPANNING:Int = 3;
+	static inline var COPLANAR:Int = 0;
+	static inline var FRONT:Int = 1;
+	static inline var BACK:Int = 2;
+	static inline var SPANNING:Int = 3;
 	
 	// `BABYLON.CSG.Plane.EPSILON` is the tolerance used by `splitPolygon()` to decide if a
 	// point is on the plane.

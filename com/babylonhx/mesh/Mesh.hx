@@ -126,18 +126,22 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	
 	public var _delayInfo:Array<String>; //ANY
 	public var _delayLoadingFunction:Dynamic->Mesh->Void;
+	
 	public var _visibleInstances:_VisibleInstances;
 	private var _renderIdForInstances:Array<Int> = [];
 	private var _batchCache:_InstancesBatch = new _InstancesBatch();
-	private var _worldMatricesInstancesBuffer:WebGLBuffer;
-	private var _worldMatricesInstancesArray: #if (js || purejs) Float32Array #else Array<Float> #end;
-	private var _instancesBufferSize:Int = 32 * 16 * 4; // let's start with a maximum of 32 instances
-	public var _shouldGenerateFlatShading:Bool = false;
-	private var _preActivateId:Int = -1;
+	private var _instancesBufferSize:Int = Std.int(32 * 16 * 4); // let's start with a maximum of 32 instances
+	private var _instancesBuffer:Buffer<Array<Float>>;
+	private var _instancesData:Array<Float>;
+	private var _overridenInstanceCount:Int;
+	
+	public var _shouldGenerateFlatShading:Bool;
+	private var _preActivateId:Int;
 	private var _sideOrientation:Int = Mesh.DEFAULTSIDE;
+	private var _areNormalsFrozen:Bool = false; // Will be used by ribbons mainly
+	
 	public var sideOrientation(get, set):Int;
-	private var _areNormalsFrozen:Bool = false;
-	public var areNormalsFrozen(get, never):Bool; // Will be used by ribbons mainly
+	public var areNormalsFrozen(get, never):Bool;
 	
 	private var _sourcePositions:Array<Float>; 	// Will be used to save original positions when using software skinning
     private var _sourceNormals:Array<Float>; 	// Will be used to save original normals when using software skinning
@@ -192,6 +196,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			
 			// copy
 			_deepCopy(source, this);
+			
+			// Pivot                
+			this.setPivotMatrix(source.getPivotMatrix());
 			
 			this.id = name + "." + source.id;
 			
@@ -726,6 +733,16 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			this._geometry.setVerticesData(kind, data, updatable, stride);
 		}
 	}
+	
+	public function setVerticesBuffer(buffer:VertexBuffer) {
+		if (this._geometry == null) {
+			var scene = this.getScene();
+			
+			new Geometry(Geometry.RandomId(), scene).applyToMesh(this);
+		}
+		
+		this._geometry.setVerticesBuffer(buffer);
+	}
 
 	/**
      * Updates the existing vertex data of the mesh geometry for the requested `kind`.
@@ -762,7 +779,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 	}
 
-	public function updateVerticesDataDirectly(kind:String, data:Float32Array, offset:Int = 0, makeItUnique:Bool = false) {
+	public function updateVerticesDataDirectly(kind:String, data:Array<Float>, offset:Int = 0, makeItUnique:Bool = false) {
 		if (this._geometry == null) {
 			return;
 		}
@@ -837,7 +854,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 		
 		// VBOs
-		engine.bindMultiBuffers(this._geometry.getVertexBuffers(), indexBufferToBind, effect);
+		engine.bindBuffers(this._geometry.getVertexBuffers(), indexBufferToBind, effect);
 	}
 
 	public function _draw(subMesh:SubMesh, fillMode:Int, ?instancesCount:Int) {	
@@ -859,7 +876,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 					engine.drawUnIndexed(false, subMesh.verticesStart, subMesh.verticesCount, instancesCount);
 				}
 				else {
-					engine.draw(false, 0, subMesh.linesIndexCount, instancesCount);	
+					engine.draw(false, 0, instancesCount > 0 ? cast (subMesh.linesIndexCount / 2) : subMesh.linesIndexCount, instancesCount);	
 				}
 				
 			default:
@@ -926,28 +943,26 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 
 	public function _renderWithInstances(subMesh:SubMesh, fillMode:Int, batch:_InstancesBatch, effect:Effect, engine:Engine) {
 		var visibleInstances = batch.visibleInstances[subMesh._id];
-        var matricesCount = visibleInstances.length + 1;
-		var bufferSize = matricesCount * 16 * 4;
+		var matricesCount = visibleInstances.length + 1;
+		var bufferSize = Std.int(matricesCount * 16 * 4);
+		
+		var currentInstancesBufferSize = this._instancesBufferSize;
+		var instancesBuffer = this._instancesBuffer;
 		
 		while (this._instancesBufferSize < bufferSize) {
 			this._instancesBufferSize *= 2;
 		}
 		
-		if (this._worldMatricesInstancesBuffer == null || this._worldMatricesInstancesBuffer.capacity < this._instancesBufferSize) {
-			if (this._worldMatricesInstancesBuffer != null) {
-				engine.deleteInstancesBuffer(this._worldMatricesInstancesBuffer);
-			}
-			
-			this._worldMatricesInstancesBuffer = engine.createInstancesBuffer(this._instancesBufferSize);
-			this._worldMatricesInstancesArray = #if (js || purejs) new Float32Array(Std.int(this._instancesBufferSize / 4)) #else [] #end ;
+		if (this._instancesData == null || currentInstancesBufferSize != this._instancesBufferSize) {
+			this._instancesData = [];
 		}
 		
-		var offset = 0;
-		var instancesCount = 0;
+		var offset:Int = 0;
+		var instancesCount:Int = 0;
 		
 		var world:Matrix = this.getWorldMatrix();
 		if (batch.renderSelf[subMesh._id]) {
-			world.copyToArray(this._worldMatricesInstancesArray, offset);
+			world.copyToArray(this._instancesData, offset);
 			offset += 16;
 			instancesCount++;
 		}
@@ -955,27 +970,36 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		if (visibleInstances != null) {
 			for (instanceIndex in 0...visibleInstances.length) {
 				var instance = visibleInstances[instanceIndex];
-				instance.getWorldMatrix().copyToArray(this._worldMatricesInstancesArray, offset);
+				instance.getWorldMatrix().copyToArray(this._instancesData, offset);
 				offset += 16;
 				instancesCount++;
 			}
 		}
 		
-		var offsetLocation0 = effect.getAttributeLocationByName("world0");
-		var offsetLocation1 = effect.getAttributeLocationByName("world1");
-		var offsetLocation2 = effect.getAttributeLocationByName("world2");
-		var offsetLocation3 = effect.getAttributeLocationByName("world3");
-		
-		var offsetLocations = [offsetLocation0, offsetLocation1, offsetLocation2, offsetLocation3];
-		
-		engine.updateAndBindInstancesBuffer(this._worldMatricesInstancesBuffer, this._worldMatricesInstancesArray, offsetLocations);
+		if (instancesBuffer == null || currentInstancesBufferSize != this._instancesBufferSize) {
+			if (instancesBuffer != null) {
+				instancesBuffer.dispose();
+			}
+			
+			instancesBuffer = new Buffer(engine, this._instancesData, true, 16, false, true);
+			this._instancesBuffer = instancesBuffer;
+			
+			this.setVerticesBuffer(instancesBuffer.createVertexBuffer("world0", 0, 4));
+			this.setVerticesBuffer(instancesBuffer.createVertexBuffer("world1", 4, 4));
+			this.setVerticesBuffer(instancesBuffer.createVertexBuffer("world2", 8, 4));
+			this.setVerticesBuffer(instancesBuffer.createVertexBuffer("world3", 12, 4));
+		} 
+		else {
+			instancesBuffer.updateDirectly(this._instancesData, 0, instancesCount);
+		}
+		engine.bindBuffers(this.geometry.getVertexBuffers(), this.geometry.getIndexBuffer(), effect);
 		
 		this._draw(subMesh, fillMode, instancesCount);
 		
-		engine.unBindInstancesBuffer(this._worldMatricesInstancesBuffer, offsetLocations);
+		engine.unbindInstanceAttributes();
 	}
 	
-	public function _processRendering(subMesh:SubMesh, effect:Effect, fillMode:Int, batch:_InstancesBatch, hardwareInstancedRendering:Bool, onBeforeDraw:Bool->Matrix->Void) {
+	public function _processRendering(subMesh:SubMesh, effect:Effect, fillMode:Int, batch:_InstancesBatch, hardwareInstancedRendering:Bool, onBeforeDraw:Bool->Matrix->Null<Material>->Void, ?effectiveMaterial:Material) {
 		var scene = this.getScene();
 		var engine = scene.getEngine();
 
@@ -986,7 +1010,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			if (batch.renderSelf[subMesh._id]) {
 				// Draw
 				if (onBeforeDraw != null) {
-					onBeforeDraw(false, this.getWorldMatrix());
+					onBeforeDraw(false, this.getWorldMatrix(), effectiveMaterial);
 				}
 				
 				this._draw(subMesh, fillMode);
@@ -999,7 +1023,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 					// World
 					var world = instance.getWorldMatrix();
 					if (onBeforeDraw != null) {
-						onBeforeDraw(true, world);
+						onBeforeDraw(true, world, effectiveMaterial);
 					}
 					
 					// Draw
@@ -1064,13 +1088,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
         }
 		
 		// Draw
-		this._processRendering(subMesh, effect, fillMode, batch, hardwareInstancedRendering,
-			function(isInstance:Bool, world:Matrix) {
-				if (isInstance) {
-					effectiveMaterial.bindOnlyWorldMatrix(world);
-				}
-			}
-		);
+		this._processRendering(subMesh, effect, fillMode, batch, hardwareInstancedRendering, this._onBeforeDraw);
 		
 		// Unbind
 		effectiveMaterial.unbind();
@@ -1093,6 +1111,13 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		
 		this.onAfterRenderObservable.notifyObservers(this);
 	}
+	
+	inline private function _onBeforeDraw(isInstance:Bool, world:Matrix, effectiveMaterial:Material) {
+        if (isInstance) {
+			trace(effectiveMaterial);
+            effectiveMaterial.bindOnlyWorldMatrix(world);
+        }
+    }
 
 	inline public function getEmittedParticleSystems():Array<ParticleSystem> {
 		var results = new Array<ParticleSystem>();
@@ -1327,9 +1352,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 		
 		// Instances
-		if (this._worldMatricesInstancesBuffer != null) {
-			this.getEngine().deleteInstancesBuffer(this._worldMatricesInstancesBuffer);
-			this._worldMatricesInstancesBuffer = null;
+		if (this._instancesBuffer != null) {
+			this._instancesBuffer.dispose();
+			this._instancesBuffer = null;
 		}
 		
 		while (this.instances.length > 0) {

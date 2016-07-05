@@ -214,9 +214,9 @@ import haxe.ds.Vector;
 		return this;
 	}
 
-	inline public function copyToArray(array: #if (js || html5 || purejs) Float32Array #else Array<Float> #end, offset:Int = 0) {
+	inline public function copyToArray<T>(array:T, offset:Int = 0) {
 		for (index in 0...16) {
-			array[offset + index] = this.m[index];
+			untyped array[offset + index] = this.m[index];
 		}
 	}
 

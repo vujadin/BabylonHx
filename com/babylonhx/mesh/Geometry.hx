@@ -69,8 +69,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		if (mesh != null) {
 			if (Std.is(mesh, LinesMesh)) {
 				this.boundingBias = new Vector2(0, cast(mesh, LinesMesh).intersectionThreshold);
-				
-				this.updateBoundingInfo(true, null);
+				this.updateExtend();
 			}
 			
 			this.applyToMesh(mesh);
@@ -118,18 +117,26 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	}
 
 	public function setVerticesData(kind:String, data:Array<Float>, updatable:Bool = false, ?stride:Int) {		
-		if (this._vertexBuffers.exists(kind)) {
+		var buffer = new VertexBuffer(this._engine, data, kind, updatable, this._meshes.length == 0, stride);
+		
+		this.setVerticesBuffer(buffer);
+	}
+	
+	public function setVerticesBuffer(buffer:VertexBuffer) {
+		var kind = buffer.getKind();
+		if (this._vertexBuffers[kind] != null) {
 			this._vertexBuffers[kind].dispose();
 		}
 		
-		this._vertexBuffers.set(kind, new VertexBuffer(this._engine, data, kind, updatable, this._meshes.length == 0, stride));
+		this._vertexBuffers[kind] = buffer;
 		
 		if (kind == VertexBuffer.PositionKind) {
-			stride = this._vertexBuffers[kind].getStrideSize();
+			var data = buffer.getData();
+			var stride = buffer.getStrideSize();
 			
-			this._totalVertices = cast data.length / stride;
+			this._totalVertices = Std.int(data.length / stride);
 			
-			this.updateExtend(data);
+			this.updateExtend(data, stride);
 			
 			var meshes = this._meshes;
 			var numOfMeshes = meshes.length;
@@ -146,7 +153,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		this.notifyUpdate(kind);
 	}
 
-	inline public function updateVerticesDataDirectly(kind:String, data:Float32Array, offset:Int) {
+	inline public function updateVerticesDataDirectly(kind:String, data:Array<Float>, offset:Int) {
 		var vertexBuffer = this.getVertexBuffer(kind);
 		
 		if (vertexBuffer != null) {
@@ -164,8 +171,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		
 		vertexBuffer.update(data);
 		
-		if (kind == VertexBuffer.PositionKind) {
-			
+		if (kind == VertexBuffer.PositionKind) {			
 			var stride = vertexBuffer.getStrideSize();
 			this._totalVertices = cast data.length / stride;
 			
@@ -243,6 +249,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		if (!this.isReady()) {
 			return null;
 		}
+		
 		return this._vertexBuffers;
 	}
 
@@ -251,8 +258,10 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			if (this._delayInfo != null) {
 				return this._delayInfo.indexOf(kind) != -1;
 			}
+			
 			return false;
 		}
+		
 		return this._vertexBuffers[kind] != null;
 	}
 
@@ -300,6 +309,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		if (!this.isReady()) {
 			return 0;
 		}
+		
 		return this._indices.length;
 	}
 
@@ -383,12 +393,12 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		}
 	}
 	
-	private function updateExtend(data:Array<Float> = null) {
+	private function updateExtend(data:Array<Float> = null, ?stride:Int) {
 		if (data == null) {
 			data = this._vertexBuffers[VertexBuffer.PositionKind].getData();
 		}
 		
-		this._extend = Tools.ExtractMinAndMax(data, 0, this._totalVertices, this.boundingBias);
+		this._extend = Tools.ExtractMinAndMax(data, 0, this._totalVertices, this.boundingBias, stride);
 	}
 
 	private function _applyToMesh(mesh:Mesh) {
@@ -399,7 +409,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			if (numOfMeshes == 1) {
 				this._vertexBuffers[kind].create();
 			}
-			this._vertexBuffers[kind]._buffer.references = numOfMeshes;
+			this._vertexBuffers[kind]._buffer._buffer.references = numOfMeshes;
 			
 			if (kind == VertexBuffer.PositionKind) {
 				mesh._resetPointsArrayCache();
@@ -505,11 +515,9 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	}
 
 	public function copy(id:String):Geometry {
-		var vertexData = new VertexData();
+		var vertexData:VertexData = new VertexData();
 		
-		vertexData.indices = [];
-		
-		var indices = this.getIndices();
+		var indices = this.getIndices();		
 		for (index in 0...indices.length) {
 			vertexData.indices.push(indices[index]);
 		}

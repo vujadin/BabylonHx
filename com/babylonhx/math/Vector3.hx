@@ -54,10 +54,10 @@ import haxe.ds.Vector;
 		this.z = z;
 	}
 
-	inline public function toArray(array:Array<Float>, index:Int = 0) {
-		array[index] = this.x;
-		array[index + 1] = this.y;
-		array[index + 2] = this.z;
+	inline public function toArray<T>(array:T, index:Int = 0) {
+		untyped array[index] = this.x;
+		untyped array[index + 1] = this.y;
+		untyped array[index + 2] = this.z;
 	}
 	
 	inline public function toFloat32Array(array:Float32Array, index:Int = 0) {
@@ -278,18 +278,18 @@ import haxe.ds.Vector;
         return s;
     }
 	
-	inline public static function FromArray(array:Array<Float>, offset:Int = 0):Vector3 {
-		return new Vector3(array[offset], array[offset + 1], array[offset + 2]);
+	inline public static function FromArray<T>(array:T, offset:Int = 0):Vector3 {
+		return new Vector3(untyped array[offset], untyped array[offset + 1], untyped array[offset + 2]);
 	}
 	
 	inline public static function FromFloatArray(array:Float32Array, offset:Int = 0):Vector3 {
         return new Vector3(array[offset], array[offset + 1], array[offset + 2]);
     }
 
-	inline public static function FromArrayToRef(array:Array<Float>, offset:Int, result:Vector3) {
-		result.x = array[offset];
-		result.y = array[offset + 1];
-		result.z = array[offset + 2];
+	inline public static function FromArrayToRef<T>(array:T, offset:Int, result:Vector3) {
+		result.x = untyped array[offset];
+		result.y = untyped array[offset + 1];
+		result.z = untyped array[offset + 2];
 	}
 
 	inline public static function FromFloatArrayToRef(array: #if (js || purejs || web || html5) Float32Array #else Array<Float> #end, offset:Int, result:Vector3) {
@@ -496,30 +496,33 @@ import haxe.ds.Vector;
 		result.normalize();
 	}
 
+	static var _viewportMatrixCache:Matrix = new Matrix();
+    static var _matrixCache:Matrix = new Matrix();
 	inline public static function Project(vector:Vector3, world:Matrix, transform:Matrix, viewport:Viewport):Vector3 {
 		var cw = viewport.width;
 		var ch = viewport.height;
 		var cx = viewport.x;
 		var cy = viewport.y;
 		
-		var viewportMatrix = Matrix.FromValues(
+		Matrix.FromValuesToRef(
 			cw / 2.0, 0, 0, 0,
 			0, -ch / 2.0, 0, 0,
 			0, 0, 1, 0,
-			cx + cw / 2.0, ch / 2.0 + cy, 0, 1);
+			cx + cw / 2.0, ch / 2.0 + cy, 0, 1, _viewportMatrixCache);
 			
-		var finalMatrix = world.multiply(transform).multiply(viewportMatrix);
+		world.multiplyToRef(transform, _matrixCache);
+		_matrixCache.multiplyToRef(_viewportMatrixCache, _matrixCache);
 		
-		return Vector3.TransformCoordinates(vector, finalMatrix);
+		return Vector3.TransformCoordinates(vector, _matrixCache);
 	}
 	
 	inline public static function UnprojectFromTransform(source:Vector3, viewportWidth:Float, viewportHeight:Float, world:Matrix, transform:Matrix):Vector3 {
-		Tmp.matrix[0] = world.multiply(transform);
-		Tmp.matrix[0].invert();
+		world.multiplyToRef(transform, _matrixCache);
+		_matrixCache.invert();
 		source.x = source.x / viewportWidth * 2 - 1;
 		source.y = -(source.y / viewportHeight * 2 - 1);
-		var vector = Vector3.TransformCoordinates(source, Tmp.matrix[0]);
-		var num = source.x * Tmp.matrix[0].m[3] + source.y * Tmp.matrix[0].m[7] + source.z * Tmp.matrix[0].m[11] + Tmp.matrix[0].m[15];
+		var vector = Vector3.TransformCoordinates(source, _matrixCache);
+		var num = source.x * _matrixCache.m[3] + source.y * _matrixCache.m[7] + source.z * _matrixCache.m[11] + _matrixCache.m[15];
 		
 		if (Tools.WithinEpsilon(num, 1.0)) {
 			vector = vector.scale(1.0 / num);
@@ -529,8 +532,9 @@ import haxe.ds.Vector;
 	}
 
 	inline public static function Unproject(source:Vector3, viewportWidth:Float, viewportHeight:Float, world:Matrix, view:Matrix, projection:Matrix):Vector3 {
-		Tmp.matrix[0] = world.multiply(view).multiply(projection);
-		Tmp.matrix[0].invert();
+		world.multiplyToRef(view, _matrixCache);
+		_matrixCache.multiplyToRef(projection, _matrixCache);
+		_matrixCache.invert();
 		var screenSource = new Vector3(source.x / viewportWidth * 2 - 1, -(source.y / viewportHeight * 2 - 1), source.z);
         var vector = Vector3.TransformCoordinates(screenSource, Tmp.matrix[0]);
         var num = screenSource.x * Tmp.matrix[0].m[3] + screenSource.y * Tmp.matrix[0].m[7] + screenSource.z * Tmp.matrix[0].m[11] + Tmp.matrix[0].m[15];

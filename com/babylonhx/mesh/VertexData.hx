@@ -40,9 +40,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	public var _idx:Array<Int>;
 	
 	
-	public function new() {
-		// nothing to do here ...
-	}
+	public function new() { }
 
 	//@:generic public function set<T>(data:T, kind:String) {
 	public function set(data:Array<Float>, kind:String) {
@@ -1188,6 +1186,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		vertexData.positions = positions;
 		vertexData.normals = normals;
 		vertexData.uvs = uvs;
+		
 		if (faceColors != null) {
 			vertexData.colors = colors;
 		}
@@ -1619,7 +1618,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		var normals:Array<Float> = [];
 		var uvs:Array<Float> = [];
 		
-		subdivisions.h = (subdivisions.w < 1) ? 1 : subdivisions.h;
+		subdivisions.h = (subdivisions.h < 1) ? 1 : subdivisions.h;
 		subdivisions.w = (subdivisions.w < 1) ? 1 : subdivisions.w;
 		precision.w = (precision.w < 1) ? 1 : precision.w;
 		precision.h = (precision.h < 1) ? 1 : precision.h;
