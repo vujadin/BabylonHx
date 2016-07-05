@@ -231,7 +231,7 @@ class ColorGradingTexture extends BaseTexture {
 		var serializationObject:Dynamic = {};
 		serializationObject.name = this.name;
 		serializationObject.level = this.level;
-
+		
 		return serializationObject;
 	}
 	

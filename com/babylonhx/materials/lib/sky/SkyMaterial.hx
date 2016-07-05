@@ -8,14 +8,13 @@ import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.tools.Tags;
-import com.babylonhx.tools.serialization.SerializationHelper;
 
 /**
  * ...
  * @author Krtolica Vujadin
  */
 
-typedef SMD = SkyMaterialDefines
+typedef SMB = SkyMaterialDefines
  
 class SkyMaterial extends Material {
 	
@@ -25,32 +24,18 @@ class SkyMaterial extends Material {
 	
 	
 	// Public members
-	@serialize()
 	public var luminance:Float = 1.0;
-	@serialize()
 	public var turbidity:Float = 10.0;
-	@serialize()
 	public var rayleigh:Float = 2.0;
-	@serialize()
 	public var mieCoefficient:Float = 0.005;
-	@serialize()
 	public var mieDirectionalG:Float = 0.8;
 	
 	public var distance:Float = 500;
-	
-	@serialize()
 	public var inclination:Float = 0.49;
-	@serialize()
 	public var azimuth:Float = 0.25;
 	
-	@serializeAsVector()
-	public var sunPosition:Vector3 = new Vector3(0, 100, 0);
-	
-	@serialize()
-	public var useSunPosition:Bool = false;
-	
 	// Private members
-	private var _cameraPosition:Vector3 = Vector3.Zero();
+	private var _sunPosition:Vector3 = Vector3.Zero();
 	
 	private var _renderId:Int;
 	
@@ -114,26 +99,26 @@ class SkyMaterial extends Material {
 		
 		// Effect
 		if (scene.clipPlane != null) {
-			this._defines.defines["CLIPPLANE"] = true;
+			this._defines.defines[SMB.CLIPPLANE] = true;
 		}
 		
 		// Point size
 		if (this.pointsCloud || scene.forcePointsCloud) {
-			this._defines.defines["POINTSIZE"] = true;
+			this._defines.defines[SMB.POINTSIZE] = true;
 		}
 		
 		// Fog
 		if (scene.fogEnabled && mesh != null && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
-			this._defines.defines["FOG"] = true;
+			this._defines.defines[SMB.FOG] = true;
 		}
 		
 		// Attribs
 		if (mesh != null) {
 			if (mesh.useVertexColors && mesh.isVerticesDataPresent(VertexBuffer.ColorKind)) {
-				this._defines.defines["VERTEXCOLOR"] = true;
+				this._defines.defines[SMB.VERTEXCOLOR] = true;
 				
 				if (mesh.hasVertexAlpha) {
-					this._defines.defines["VERTEXALPHA"] = true;
+					this._defines.defines[SMB.VERTEXALPHA] = true;
 				}
 			}
 		}
@@ -146,14 +131,14 @@ class SkyMaterial extends Material {
 			
 			// Fallbacks
 			var fallbacks:EffectFallbacks = new EffectFallbacks();             
-			if (this._defines.defines["FOG"]) {
+			if (this._defines.defines[SMB.FOG]) {
 				fallbacks.addFallback(1, "FOG");
 			}
 			
 			//Attributes
 			var attribs:Array<String> = [VertexBuffer.PositionKind];
 			
-			if (this._defines.defines["VERTEXCOLOR"]) {
+			if (this._defines.defines[SMB.VERTEXCOLOR]) {
 				attribs.push(VertexBuffer.ColorKind);
 			}
 			
@@ -163,10 +148,9 @@ class SkyMaterial extends Material {
 			var join:String = this._defines.toString();
 			this._effect = scene.getEngine().createEffect(shaderName,
 				attribs,
-				["world", "viewProjection", "view",
+				["world", "viewProjection",
 					"vFogInfos", "vFogColor", "pointSize", "vClipPlane",
-					"luminance", "turbidity", "rayleigh", "mieCoefficient", "mieDirectionalG", "sunPosition",
-					"cameraPosition"
+					"luminance", "turbidity", "rayleigh", "mieCoefficient", "mieDirectionalG", "sunPosition"
 				],
 				[],
 				join, fallbacks, this.onCompiled, this.onError);
@@ -217,36 +201,26 @@ class SkyMaterial extends Material {
 		// View && Fog
 		if (scene.fogEnabled && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE) {
 			this._effect.setMatrix("view", scene.getViewMatrix());
-		}
-		
-		MaterialHelper.BindFogParameters(scene, mesh, this._effect);
-		
-		// Sky
-		var camera = scene.activeCamera;
-		if (camera != null) {
-			var cameraWorldMatrix = camera.getWorldMatrix();
-			this._cameraPosition.x = cameraWorldMatrix.m[12];
-			this._cameraPosition.y = cameraWorldMatrix.m[13];
-			this._cameraPosition.z = cameraWorldMatrix.m[14];
-			this._effect.setVector3("cameraPosition", this._cameraPosition);
-		}
 			
+			this._effect.setFloat4("vFogInfos", scene.fogMode, scene.fogStart, scene.fogEnd, scene.fogDensity);
+			this._effect.setColor3("vFogColor", scene.fogColor);
+		}
+				
+		// Sky
 		this._effect.setFloat("luminance", this.luminance);
 		this._effect.setFloat("turbidity", this.turbidity);
 		this._effect.setFloat("rayleigh", this.rayleigh);
 		this._effect.setFloat("mieCoefficient", this.mieCoefficient);
 		this._effect.setFloat("mieDirectionalG", this.mieDirectionalG);
 		
-		if (!this.useSunPosition) {
-			var theta = Math.PI * (this.inclination - 0.5);
-			var phi = 2 * Math.PI * (this.azimuth - 0.5);
-			
-			this.sunPosition.x = this.distance * Math.cos(phi);
-			this.sunPosition.y = this.distance * Math.sin(phi) * Math.sin(theta);
-			this.sunPosition.z = this.distance * Math.sin(phi) * Math.cos(theta);
-		}
+		var theta = Math.PI * (this.inclination - 0.5);
+		var phi = 2 * Math.PI * (this.azimuth - 0.5);
 		
-		this._effect.setVector3("sunPosition", this.sunPosition);
+		this._sunPosition.x = this.distance * Math.cos(phi);
+		this._sunPosition.y = this.distance * Math.sin(phi) * Math.sin(theta);
+		this._sunPosition.z = this.distance * Math.sin(phi) * Math.cos(theta);
+		
+		this._effect.setVector3("sunPosition", this._sunPosition);
 		
 		super.bind(world, mesh);
 	}
@@ -256,10 +230,10 @@ class SkyMaterial extends Material {
 	}
 
 	override public function dispose(forceDisposeEffect:Bool = false, forceDisposeTextures:Bool = true) {
-		super.dispose(forceDisposeEffect);
+		super.dispose(forceDisposeEffect, forceDisposeTextures);
 	}
 
-	override public function clone(name:String, cloneChildren:Bool = false):Material {
+	override public function clone(name:String, cloneChildren:Bool = false):SkyMaterial {
 		var newMaterial = new SkyMaterial(name, this.getScene());
 		
 		// Base material
@@ -278,7 +252,19 @@ class SkyMaterial extends Material {
 	}
 	
 	override public function serialize():Dynamic {		
-		return SerializationHelper.Serialize(SkyMaterial, this, super.serialize());
+		var serializationObject = super.serialize();
+		serializationObject.customType = "SkyMaterial";
+		
+		serializationObject.luminance = this.luminance;
+		serializationObject.turbidity = this.turbidity;
+		serializationObject.rayleigh = this.rayleigh;
+		serializationObject.mieCoefficient = this.mieCoefficient;
+		serializationObject.mieDirectionalG = this.mieDirectionalG;
+		serializationObject.distance = this.distance;
+		serializationObject.inclination = this.inclination;
+		serializationObject.azimuth = this.azimuth;
+		
+		return serializationObject;
 	}
 
 	public static function Parse(source:Dynamic, scene:Scene, rootUrl:String):SkyMaterial {

@@ -13,6 +13,7 @@ import com.babylonhx.lights.HemisphericLight;
 import com.babylonhx.lights.SpotLight;
 import com.babylonhx.lights.PointLight;
 import com.babylonhx.animations.IAnimatable;
+import haxe.ds.Vector;
 
 /**
  * ...
@@ -27,21 +28,41 @@ class TerrainMaterial extends Material {
 	
 	public static var vertexShader:String = "precision highp float;\n\nattribute vec3 position;\n#ifdef NORMAL\nattribute vec3 normal;\n#endif\n#ifdef UV1\nattribute vec2 uv;\n#endif\n#ifdef UV2\nattribute vec2 uv2;\n#endif\n#ifdef VERTEXCOLOR\nattribute vec4 color;\n#endif\n#ifdef BONES\nattribute vec4 matricesIndices;\nattribute vec4 matricesWeights;\n#endif\n\n#ifdef INSTANCES\nattribute vec4 world0;\nattribute vec4 world1;\nattribute vec4 world2;\nattribute vec4 world3;\n#else\nuniform mat4 world;\n#endif\nuniform mat4 view;\nuniform mat4 viewProjection;\n#ifdef DIFFUSE\nvarying vec2 vTextureUV;\nuniform mat4 textureMatrix;\nuniform vec2 vTextureInfos;\n#endif\n#ifdef BONES\nuniform mat4 mBones[BonesPerMesh];\n#endif\n#ifdef POINTSIZE\nuniform float pointSize;\n#endif\n\nvarying vec3 vPositionW;\n#ifdef NORMAL\nvarying vec3 vNormalW;\n#endif\n#ifdef VERTEXCOLOR\nvarying vec4 vColor;\n#endif\n#ifdef CLIPPLANE\nuniform vec4 vClipPlane;\nvarying float fClipDistance;\n#endif\n#ifdef FOG\nvarying float fFogDistance;\n#endif\n#ifdef SHADOWS\n#if defined(SPOTLIGHT0) || defined(DIRLIGHT0)\nuniform mat4 lightMatrix0;\nvarying vec4 vPositionFromLight0;\n#endif\n#if defined(SPOTLIGHT1) || defined(DIRLIGHT1)\nuniform mat4 lightMatrix1;\nvarying vec4 vPositionFromLight1;\n#endif\n#if defined(SPOTLIGHT2) || defined(DIRLIGHT2)\nuniform mat4 lightMatrix2;\nvarying vec4 vPositionFromLight2;\n#endif\n#if defined(SPOTLIGHT3) || defined(DIRLIGHT3)\nuniform mat4 lightMatrix3;\nvarying vec4 vPositionFromLight3;\n#endif\n#endif\nvoid main(void) {\nmat4 finalWorld;\n#ifdef INSTANCES\nfinalWorld=mat4(world0,world1,world2,world3);\n#else\nfinalWorld=world;\n#endif\n#ifdef BONES\nmat4 m0=mBones[int(matricesIndices.x)]*matricesWeights.x;\nmat4 m1=mBones[int(matricesIndices.y)]*matricesWeights.y;\nmat4 m2=mBones[int(matricesIndices.z)]*matricesWeights.z;\n#ifdef BONES4\nmat4 m3=mBones[int(matricesIndices.w)]*matricesWeights.w;\nfinalWorld=finalWorld*(m0+m1+m2+m3);\n#else\nfinalWorld=finalWorld*(m0+m1+m2);\n#endif \n#endif\ngl_Position=viewProjection*finalWorld*vec4(position,1.0);\nvec4 worldPos=finalWorld*vec4(position,1.0);\nvPositionW=vec3(worldPos);\n#ifdef NORMAL\nvNormalW=normalize(vec3(finalWorld*vec4(normal,0.0)));\n#endif\n\n#ifndef UV1\nvec2 uv=vec2(0.,0.);\n#endif\n#ifndef UV2\nvec2 uv2=vec2(0.,0.);\n#endif\n#ifdef DIFFUSE\nif (vTextureInfos.x == 0.)\n{\nvTextureUV=vec2(textureMatrix*vec4(uv,1.0,0.0));\n}\nelse\n{\nvTextureUV=vec2(textureMatrix*vec4(uv2,1.0,0.0));\n}\n#endif\n\n#ifdef CLIPPLANE\nfClipDistance=dot(worldPos,vClipPlane);\n#endif\n\n#ifdef FOG\nfFogDistance=(view*worldPos).z;\n#endif\n\n#ifdef SHADOWS\n#if defined(SPOTLIGHT0) || defined(DIRLIGHT0)\nvPositionFromLight0=lightMatrix0*worldPos;\n#endif\n#if defined(SPOTLIGHT1) || defined(DIRLIGHT1)\nvPositionFromLight1=lightMatrix1*worldPos;\n#endif\n#if defined(SPOTLIGHT2) || defined(DIRLIGHT2)\nvPositionFromLight2=lightMatrix2*worldPos;\n#endif\n#if defined(SPOTLIGHT3) || defined(DIRLIGHT3)\nvPositionFromLight3=lightMatrix3*worldPos;\n#endif\n#endif\n\n#ifdef VERTEXCOLOR\nvColor=color;\n#endif\n\n#ifdef POINTSIZE\ngl_PointSize=pointSize;\n#endif\n}\n";
 	
-
+	@serializeAsTexture()
 	public var mixTexture:BaseTexture;
-        
+    
+	@serializeAsTexture()
 	public var diffuseTexture1:Texture;
+	
+	@serializeAsTexture()
 	public var diffuseTexture2:Texture;
+	
+	@serializeAsTexture()
 	public var diffuseTexture3:Texture;
 	
+	@serializeAsTexture()
 	public var bumpTexture1:Texture;
+	
+	@serializeAsTexture()
 	public var bumpTexture2:Texture;
+	
+	@serializeAsTexture()
 	public var bumpTexture3:Texture;
 	
+	@serializeAsColor3()
 	public var diffuseColor:Color3 = new Color3(1, 1, 1);
+	
+	@serializeAsColor3()
 	public var specularColor:Color3 = new Color3(0, 0, 0);
+	
+	@serialize()
 	public var specularPower:Int = 64;
+	
+	@serialize()
 	public var disableLighting:Bool = false;
+	
+	@serialize()
+	public var maxSimultaneousLights:Int = 4;
 
 	private var _worldViewProjectionMatrix:Matrix = Matrix.Zero();
 	private var _scaledDiffuse:Color3 = new Color3();
@@ -50,6 +71,8 @@ class TerrainMaterial extends Material {
 
 	private var _defines:TerrainMaterialDefines = new TerrainMaterialDefines();
 	private var _cachedDefines:TerrainMaterialDefines = new TerrainMaterialDefines();
+	
+	private var defs:Vector<Bool>;
 
 	
 	public function new(name:String, scene:Scene) {
@@ -61,6 +84,8 @@ class TerrainMaterial extends Material {
 		}
 		
 		this._cachedDefines.BonesPerMesh = -1;
+		
+		this.defs = this._defines.defines;
 	}
 
 	override public function needAlphaBlending():Bool {
@@ -81,7 +106,7 @@ class TerrainMaterial extends Material {
 			return true;
 		}
 		
-		if (this._defines.defines[TMD.INSTANCES] != useInstances) {
+		if (this.defs[TMD.INSTANCES] != useInstances) {
 			return false;
 		}
 		
@@ -123,33 +148,33 @@ class TerrainMaterial extends Material {
 				} 
 				else {
 					needUVs = true;
-					this._defines.defines[TMD.DIFFUSE] = true;
+					this.defs[TMD.DIFFUSE] = true;
 				}
 			}
 			if ((this.bumpTexture1 != null || this.bumpTexture2 != null || this.bumpTexture3 != null) && StandardMaterial.BumpTextureEnabled) {
 				needUVs = true;
 				needNormals = true;
-				this._defines.defines[TMD.BUMP] = true;
+				this.defs[TMD.BUMP] = true;
 			}
 		}
 		
 		// Effect
 		if (scene.clipPlane != null) {
-			this._defines.defines[TMD.CLIPPLANE] = true;
+			this.defs[TMD.CLIPPLANE] = true;
 		}
 		
 		if (engine.getAlphaTesting()) {
-			this._defines.defines[TMD.ALPHATEST] = true;
+			this.defs[TMD.ALPHATEST] = true;
 		}
 		
 		// Point size
 		if (this.pointsCloud || scene.forcePointsCloud) {
-			this._defines.defines[TMD.POINTSIZE] = true;
+			this.defs[TMD.POINTSIZE] = true;
 		}
 		
 		// Fog
 		if (scene.fogEnabled && mesh != null && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
-			this._defines.defines[TMD.FOG] = true;
+			this.defs[TMD.FOG] = true;
 		}
 		
 		var lightIndex:Int = 0;
@@ -191,36 +216,36 @@ class TerrainMaterial extends Material {
 					continue;
 				}
 				needNormals = true;
-				this._defines.defines[TMD.LIGHT0 + lightIndex] = true;
+				this.defs[TMD.LIGHT0 + lightIndex] = true;
 				
 				var type:Int = this._defines.getLight(light.type, lightIndex);			
-				this._defines.defines[type] = true;
+				this.defs[type] = true;
 				
 				// Specular
 				if (!light.specular.equalsFloats(0, 0, 0)) {
-					this._defines.defines[TMD.SPECULARTERM] = true;
+					this.defs[TMD.SPECULARTERM] = true;
 				}
 				
 				// Shadows
 				if (scene.shadowsEnabled) {
 					var shadowGenerator = light.getShadowGenerator();
 					if (mesh != null && mesh.receiveShadows && shadowGenerator != null) {
-						this._defines.defines[TMD.SHADOW0 + lightIndex] = true;
+						this.defs[TMD.SHADOW0 + lightIndex] = true;
 						
-						this._defines.defines[TMD.SHADOWS] = true;
+						this.defs[TMD.SHADOWS] = true;
 						
 						if (shadowGenerator.useVarianceShadowMap || shadowGenerator.useBlurVarianceShadowMap) {
-							this._defines.defines[TMD.SHADOWVSM0 + lightIndex] = true;
+							this.defs[TMD.SHADOWVSM0 + lightIndex] = true;
 						}
 						
 						if (shadowGenerator.usePoissonSampling) {
-							this._defines.defines[TMD.SHADOWPCF0 + lightIndex] = true;
+							this.defs[TMD.SHADOWPCF0 + lightIndex] = true;
 						}
 					}
 				}
 				
 				lightIndex++;
-				if (lightIndex == Material.maxSimultaneousLights) {
+				if (lightIndex == this.maxSimultaneousLights) {
 					break;
 				}
 			}
@@ -229,21 +254,21 @@ class TerrainMaterial extends Material {
 		// Attribs
 		if (mesh != null) {
 			if (needNormals && mesh.isVerticesDataPresent(VertexBuffer.NormalKind)) {
-				this._defines.defines[TMD.NORMAL] = true;
+				this.defs[TMD.NORMAL] = true;
 			}
 			if (needUVs) {
 				if (mesh.isVerticesDataPresent(VertexBuffer.UVKind)) {
-					this._defines.defines[TMD.UV1] = true;
+					this.defs[TMD.UV1] = true;
 				}
 				if (mesh.isVerticesDataPresent(VertexBuffer.UV2Kind)) {
-					this._defines.defines[TMD.UV2] = true;
+					this.defs[TMD.UV2] = true;
 				}
 			}
 			if (mesh.useVertexColors && mesh.isVerticesDataPresent(VertexBuffer.ColorKind)) {
-				this._defines.defines[TMD.VERTEXCOLOR] = true;
+				this.defs[TMD.VERTEXCOLOR] = true;
 				
 				if (mesh.hasVertexAlpha) {
-					this._defines.defines[TMD.VERTEXALPHA] = true;
+					this.defs[TMD.VERTEXALPHA] = true;
 				}
 			}
 			if (mesh.useBones && mesh.computeBonesUsingShaders) {
@@ -253,7 +278,7 @@ class TerrainMaterial extends Material {
 			
 			// Instances
 			if (useInstances) {
-				this._defines.defines[TMD.INSTANCES] = true;
+				this.defs[TMD.INSTANCES] = true;
 			}
 		}
 		
@@ -265,31 +290,11 @@ class TerrainMaterial extends Material {
 			
 			// Fallbacks
 			var fallbacks:EffectFallbacks = new EffectFallbacks();             
-			if (this._defines.defines[TMD.FOG]) {
+			if (this.defs[TMD.FOG]) {
 				fallbacks.addFallback(1, "FOG");
 			}
 			
-			for (lightIndex in 0...Material.maxSimultaneousLights) {
-				if (!this._defines.defines[TMD.LIGHT0 + lightIndex]) {
-					continue;
-				}
-				
-				if (lightIndex > 0) {
-					fallbacks.addFallback(lightIndex, "LIGHT" + lightIndex);
-				}
-				
-				if (this._defines.defines[TMD.SHADOW0 + lightIndex]) {
-					fallbacks.addFallback(0, "SHADOW" + lightIndex);
-				}
-				
-				if (this._defines.defines[TMD.SHADOWPCF0 + lightIndex]) {
-					fallbacks.addFallback(0, "SHADOWPCF" + lightIndex);
-				}
-				
-				if (this._defines.defines[TMD.SHADOWVSM0 + lightIndex]) {
-					fallbacks.addFallback(0, "SHADOWVSM" + lightIndex);
-				}
-			}
+			MaterialHelper.HandleFallbacksForShadows(this.defs, fallbacks, TMD.LIGHT0, TMD.SHADOW0, TMD.SHADOWPCF0, TMD.SHADOWVSM0, this.maxSimultaneousLights);
 		 
 			if (this._defines.NUM_BONE_INFLUENCERS > 0){
                 fallbacks.addCPUSkinningFallback(0, mesh);    
@@ -298,19 +303,19 @@ class TerrainMaterial extends Material {
 			//Attributes
 			var attribs:Array<String> = [VertexBuffer.PositionKind];
 			
-			if (this._defines.defines[TMD.NORMAL]) {
+			if (this.defs[TMD.NORMAL]) {
 				attribs.push(VertexBuffer.NormalKind);
 			}
 			
-			if (this._defines.defines[TMD.UV1]) {
+			if (this.defs[TMD.UV1]) {
 				attribs.push(VertexBuffer.UVKind);
 			}
 			
-			if (this._defines.defines[TMD.UV2]) {
+			if (this.defs[TMD.UV2]) {
 				attribs.push(VertexBuffer.UV2Kind);
 			}
 			
-			if (this._defines.defines[TMD.VERTEXCOLOR]) {
+			if (this.defs[TMD.VERTEXCOLOR]) {
 				attribs.push(VertexBuffer.ColorKind);
 			}
 			
@@ -323,7 +328,7 @@ class TerrainMaterial extends Material {
                 }
 			}
 			
-			if (this._defines.defines[TMD.INSTANCES]) {
+			if (this.defs[TMD.INSTANCES]) {
 				attribs.push("world0");
 				attribs.push("world1");
 				attribs.push("world2");
@@ -438,70 +443,21 @@ class TerrainMaterial extends Material {
 		
 		this._effect.setColor4("vDiffuseColor", this._scaledDiffuse, this.alpha * mesh.visibility);
 				
-		if (this._defines.defines[TMD.SPECULARTERM]) {
+		if (this.defs[TMD.SPECULARTERM]) {
 			this._effect.setColor4("vSpecularColor", this.specularColor, this.specularPower);
 		}
 		
 		if (scene.lightsEnabled && !this.disableLighting) {
-			var lightIndex:Int = 0;
-			for (index in 0...scene.lights.length) {
-				var light = scene.lights[index];
-				
-				if (!light.isEnabled()) {
-					continue;
-				}
-				
-				if (!light.canAffectMesh(mesh)) {
-					continue;
-				}
-				
-				switch (light.type) {
-					case "POINTLIGHT":
-						light.transferToEffect(this._effect, "vLightData" + lightIndex);
-						
-					case "DIRLIGHT":
-						light.transferToEffect(this._effect, "vLightData" + lightIndex);
-						
-					case "SPOTLIGHT":
-						light.transferToEffect(this._effect, "vLightData" + lightIndex, "vLightDirection" + lightIndex);
-						
-					case "HEMILIGHT":
-						light.transferToEffect(this._effect, "vLightData" + lightIndex, "vLightGround" + lightIndex);			
-				}
-				
-				light.diffuse.scaleToRef(light.intensity, this._scaledDiffuse);
-				this._effect.setColor4("vLightDiffuse" + lightIndex, this._scaledDiffuse, light.range);
-				
-				if (this._defines.defines[TMD.SPECULARTERM]) {
-					light.specular.scaleToRef(light.intensity, this._scaledSpecular);
-					this._effect.setColor3("vLightSpecular" + lightIndex, this._scaledSpecular);
-				}
-				
-				// Shadows
-				if (scene.shadowsEnabled) {
-					var shadowGenerator = light.getShadowGenerator();
-					if (mesh.receiveShadows && shadowGenerator != null) {
-						this._effect.setMatrix("lightMatrix" + lightIndex, shadowGenerator.getTransformMatrix());
-						this._effect.setTexture("shadowSampler" + lightIndex, shadowGenerator.getShadowMapForRendering());
-						this._effect.setFloat3("shadowsInfo" + lightIndex, shadowGenerator.getDarkness(), shadowGenerator.getShadowMap().getSize().width, shadowGenerator.bias);
-					}
-				}
-				
-				lightIndex++;
-				
-				if (lightIndex == Material.maxSimultaneousLights) {
-					break;
-				}
-			}
+			MaterialHelper.BindLights(scene, mesh, this._effect, this.defs, this.maxSimultaneousLights);
 		}
 		
-		// View && Fog
+		// View
 		if (scene.fogEnabled && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE) {
 			this._effect.setMatrix("view", scene.getViewMatrix());
-			
-			this._effect.setFloat4("vFogInfos", scene.fogMode, scene.fogStart, scene.fogEnd, scene.fogDensity);
-			this._effect.setColor3("vFogColor", scene.fogColor);
 		}
+		
+		// Fog
+		MaterialHelper.BindFogParameters(scene, mesh, this._effect);
 		
 		super.bind(world, mesh);
 	}
@@ -516,9 +472,11 @@ class TerrainMaterial extends Material {
 		return results;
 	}
 
-	override public function dispose(forceDisposeEffect:Bool = false) {
-		if (this.mixTexture != null) {
-			this.mixTexture.dispose();
+	override public function dispose(forceDisposeEffect:Bool = false, forceDisposeTextures:Bool = true) {
+		if (forceDisposeTextures) {
+			if (this.mixTexture != null) {
+				this.mixTexture.dispose();
+			}
 		}
 		
 		super.dispose(forceDisposeEffect);

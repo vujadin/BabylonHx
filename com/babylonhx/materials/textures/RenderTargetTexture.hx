@@ -36,6 +36,7 @@ import com.babylonhx.tools.EventState;
 	public var renderSprites:Bool = false;
 	public var activeCamera:Camera;
 	public var customRenderFunction:Dynamic;//SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void->Void->Void;
+	public var useCameraPostProcesses:Bool;
 	
 	// Events
 
@@ -116,7 +117,7 @@ import com.babylonhx.tools.EventState;
 	private var _textureMatrix:Matrix;
 
 	
-	public function new(name:String, size:Dynamic, scene:Scene, ?generateMipMaps:Bool, doNotChangeAspectRatio:Bool = true, type:Int = Engine.TEXTURETYPE_UNSIGNED_INT, isCube:Bool = false) {
+	public function new(name:String, size:Dynamic, scene:Scene, ?generateMipMaps:Bool, doNotChangeAspectRatio:Bool = true, type:Int = Engine.TEXTURETYPE_UNSIGNED_INT, isCube:Bool = false, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE) {
 		super(null, scene, !generateMipMaps);
 		
 		this.coordinatesMode = Texture.PROJECTION_MODE;
@@ -135,13 +136,18 @@ import com.babylonhx.tools.EventState;
 		this._doNotChangeAspectRatio = doNotChangeAspectRatio;
 		this.isCube = isCube;
 		
+		if (samplingMode == Texture.NEAREST_SAMPLINGMODE) {
+            this.wrapU = Texture.CLAMP_ADDRESSMODE;
+            this.wrapV = Texture.CLAMP_ADDRESSMODE;
+        }
+		
 		if (isCube) {
-			this._texture = scene.getEngine().createRenderTargetCubeTexture(this._size, { generateMipMaps: generateMipMaps } );
+			this._texture = scene.getEngine().createRenderTargetCubeTexture(this._size, { generateMipMaps: generateMipMaps, samplingMode: samplingMode } );
 			this.coordinatesMode = Texture.INVCUBIC_MODE;
             this._textureMatrix = Matrix.Identity();
 		}
 		else {
-			this._texture = scene.getEngine().createRenderTargetTexture(this._size, { generateMipMaps: generateMipMaps, type: type });
+			this._texture = scene.getEngine().createRenderTargetTexture(this._size, { generateMipMaps: generateMipMaps, type: type, samplingMode: samplingMode } );
 		}
 		
 		// Rendering groups
@@ -221,6 +227,10 @@ import com.babylonhx.tools.EventState;
 	public function render(useCameraPostProcess:Bool = false) {
 		var scene = this.getScene();
 		
+		if (this.useCameraPostProcesses == false) {
+            useCameraPostProcess = this.useCameraPostProcesses;
+        }
+		
 		if (this.activeCamera != null && this.activeCamera != scene.activeCamera) {
     		scene.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(true));
     	}
@@ -256,10 +266,13 @@ import com.babylonhx.tools.EventState;
 		// Prepare renderingManager
 		this._renderingManager.reset();
 		
-		var currentRenderList:Array<AbstractMesh> = cast this.renderList != null ? this.renderList : cast scene.getActiveMeshes().data;
+		var currentRenderList = this.renderList != null ? this.renderList : scene.getActiveMeshes().data;
+		var currentRenderListLength = cast this.renderList != null ? this.renderList.length : cast scene.getActiveMeshes().length;
 		
 		var sceneRenderId = scene.getRenderId();
-		for (mesh in currentRenderList) {
+		for (meshIndex in 0...currentRenderListLength) {
+			var mesh = currentRenderList[meshIndex];
+			
 			if (mesh != null) {
 				if (!mesh.isReady()) {
 					// Reset _currentRefreshId
@@ -282,13 +295,13 @@ import com.babylonhx.tools.EventState;
 		
 		if (this.isCube) {
 			for (face in 0...6) {
-				this.renderToTarget(face, currentRenderList, useCameraPostProcess);
+				this.renderToTarget(face, currentRenderList, currentRenderListLength, useCameraPostProcess);
 				scene.incrementRenderId();
 				scene.resetCachedMaterial();
 			}
 		} 
 		else {
-			this.renderToTarget(0, currentRenderList, useCameraPostProcess);
+			this.renderToTarget(0, currentRenderList, currentRenderListLength, useCameraPostProcess);
 		}
 		
 		this.onAfterUnbindObservable.notifyObservers(this);
@@ -300,7 +313,7 @@ import com.babylonhx.tools.EventState;
 		scene.resetCachedMaterial();
 	}
 	
-	public function renderToTarget(faceIndex:Int, currentRenderList:Array<AbstractMesh>, useCameraPostProcess:Bool = false) {
+	public function renderToTarget(faceIndex:Int, currentRenderList:Array<AbstractMesh>, currentRenderListLength:Int, useCameraPostProcess:Bool = false) {
 		var scene = this.getScene();
 		var engine = scene.getEngine();
 		

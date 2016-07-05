@@ -26,6 +26,8 @@ import com.babylonhx.tools.Tags;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.tools.serialization.SerializationHelper;
 
+import haxe.ds.Vector;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -95,6 +97,19 @@ class FurMaterial extends Material {
 	private var _defines:FurMaterialDefines = new FurMaterialDefines();
 	private var _cachedDefines:FurMaterialDefines = new FurMaterialDefines();
 	
+	private var defs:Vector<Bool>;
+	
+	
+	private var shaderName:String = "furmat";
+	private var uniforms:Array<String> = ["world", "view", "viewProjection", "vEyePosition", "vLightsType", "vDiffuseColor",
+		"vFogInfos", "vFogColor", "pointSize",
+		"vDiffuseInfos", 
+		"mBones",
+		"vClipPlane", "diffuseMatrix",
+		"furLength", "furAngle", "furColor", "furOffset", "furGravity", "furTime", "furSpacing", "furDensity"
+	];	
+	private var samplers:Array<String> = ["diffuseSampler", "heightTexture", "furTexture"];
+	
 
 	public function new(name:String, scene:Scene) {
 		super(name, scene);
@@ -105,6 +120,8 @@ class FurMaterial extends Material {
 		}
 		
         this._cachedDefines.BonesPerMesh = -1;
+		
+		this.defs = this._defines.defines;
 	}
 	
 	private function get_furTime():Float {
@@ -150,7 +167,7 @@ class FurMaterial extends Material {
 			return true;
 		}
 		
-		if (this._defines.defines["INSTANCES"] != useInstances) {
+		if (this.defs[FURMD.INSTANCES] != useInstances) {
 			return false;
 		}
 		
@@ -192,7 +209,7 @@ class FurMaterial extends Material {
 				} 
 				else {
 					needUVs = true;
-					this._defines.defines["DIFFUSE"] = true;
+					this.defs[FURMD.DIFFUSE] = true;
 				}
 			} 
 			
@@ -202,58 +219,58 @@ class FurMaterial extends Material {
 				} 
 				else {
 					needUVs = true;
-					this._defines.defines["HEIGHTMAP"] = true;
+					this.defs[FURMD.HEIGHTMAP] = true;
 				}
 			}               
 		}
 		
 		// Effect
 		if (scene.clipPlane != null) {
-			this._defines.defines["CLIPPLANE"] = true;
+			this.defs[FURMD.CLIPPLANE] = true;
 		}
 		
 		if (engine.getAlphaTesting()) {
-			this._defines.defines["ALPHATEST"] = true;
+			this.defs[FURMD.ALPHATEST] = true;
 		}
 		
 		// Point size
 		if (this.pointsCloud || scene.forcePointsCloud) {
-			this._defines.defines["POINTSIZE"] = true;
+			this.defs[FURMD.POINTSIZE] = true;
 		}
 		
 		// Fog
 		if (scene.fogEnabled && mesh != null && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
-			this._defines.defines["FOG"] = true;
+			this.defs[FURMD.FOG] = true;
 		}
 		
 		// High level
         if (this.highLevelFur) {
-            this._defines.defines["HIGHLEVEL"] = true;
+            this.defs[FURMD.HIGHLEVEL] = true;
         }
 		
 		// Lights
 		if (scene.lightsEnabled && !this.disableLighting) {
-			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this._defines, this.maxSimultaneousLights);
+			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this.defs, this.maxSimultaneousLights, FURMD.LIGHT0, -1, FURMD.SHADOW0, FURMD.SHADOWS, FURMD.SHADOWVSM0, FURMD.SHADOWPCF0, FURMD.LIGHTS);
 		}
 		
 		// Attribs
 		if (mesh != null) {
 			if (needNormals && mesh.isVerticesDataPresent(VertexBuffer.NormalKind)) {
-				this._defines.defines["NORMAL"] = true;
+				this.defs[FURMD.NORMAL] = true;
 			}
 			if (needUVs) {
 				if (mesh.isVerticesDataPresent(VertexBuffer.UVKind)) {
-					this._defines.defines["UV1"] = true;
+					this.defs[FURMD.UV1] = true;
 				}
 				if (mesh.isVerticesDataPresent(VertexBuffer.UV2Kind)) {
-					this._defines.defines["UV2"] = true;
+					this.defs[FURMD.UV2] = true;
 				}
 			}
 			if (mesh.useVertexColors && mesh.isVerticesDataPresent(VertexBuffer.ColorKind)) {
-				this._defines.defines["VERTEXCOLOR"] = true;
+				this.defs[FURMD.VERTEXCOLOR] = true;
 				
 				if (mesh.hasVertexAlpha) {
-					this._defines.defines["VERTEXALPHA"] = true;
+					this.defs[FURMD.VERTEXALPHA] = true;
 				}
 			}
 			if (mesh.useBones && mesh.computeBonesUsingShaders) {
@@ -263,7 +280,7 @@ class FurMaterial extends Material {
 			
 			// Instances
 			if (useInstances) {
-				this._defines.defines["INSTANCES"] = true;
+				this.defs[FURMD.INSTANCES] = true;
 			}
 		}
 		
@@ -275,11 +292,11 @@ class FurMaterial extends Material {
 			
 			// Fallbacks
 			var fallbacks = new EffectFallbacks();             
-			if (this._defines.defines["FOG"]) {
+			if (this.defs[FURMD.FOG]) {
 				fallbacks.addFallback(1, "FOG");
 			}
 			
-			MaterialHelper.HandleFallbacksForShadows(this._defines, fallbacks, this.maxSimultaneousLights);
+			MaterialHelper.HandleFallbacksForShadows(this.defs, fallbacks, FURMD.LIGHT0, FURMD.SHADOW0, FURMD.SHADOWPCF0, FURMD.SHADOWVSM0, this.maxSimultaneousLights);
 		 
 			if (this._defines.NUM_BONE_INFLUENCERS > 0) {
 				fallbacks.addCPUSkinningFallback(0, mesh);
@@ -288,39 +305,28 @@ class FurMaterial extends Material {
 			//Attributes
 			var attribs:Array<String> = [VertexBuffer.PositionKind];
 			
-			if (this._defines.defines["NORMAL"]) {
+			if (this.defs[FURMD.NORMAL]) {
 				attribs.push(VertexBuffer.NormalKind);
 			}
 			
-			if (this._defines.defines["UV1"]) {
+			if (this.defs[FURMD.UV1]) {
 				attribs.push(VertexBuffer.UVKind);
 			}
 			
-			if (this._defines.defines["UV2"]) {
+			if (this.defs[FURMD.UV2]) {
 				attribs.push(VertexBuffer.UV2Kind);
 			}
 			
-			if (this._defines.defines["VERTEXCOLOR"]) {
+			if (this.defs[FURMD.VERTEXCOLOR]) {
 				attribs.push(VertexBuffer.ColorKind);
 			}
 			
 			MaterialHelper.PrepareAttributesForBones(attribs, mesh, this._defines, fallbacks);
-            MaterialHelper.PrepareAttributesForInstances(attribs, this._defines);
+            MaterialHelper.PrepareAttributesForInstances(attribs, this.defs, FURMD.INSTANCES);
 			
-			// Legacy browser patch
-			var shaderName:String = "furmat";
 			var join:String = this._defines.toString();
-			var uniforms:Array<String> = ["world", "view", "viewProjection", "vEyePosition", "vLightsType", "vDiffuseColor",
-				"vFogInfos", "vFogColor", "pointSize",
-				"vDiffuseInfos", 
-				"mBones",
-				"vClipPlane", "diffuseMatrix",
-				"furLength", "furAngle", "furColor", "furOffset", "furGravity", "furTime", "furSpacing", "furDensity"
-			];
 			
-			var samplers:Array<String> = ["diffuseSampler", "heightTexture", "furTexture"];
-			
-			MaterialHelper.PrepareUniformsAndSamplersList(uniforms, samplers, this._defines, this.maxSimultaneousLights);
+			MaterialHelper.PrepareUniformsAndSamplersList(uniforms, samplers, this.defs, FURMD.LIGHT0, this.maxSimultaneousLights);
 			
 			this._effect = scene.getEngine().createEffect(shaderName,
 				attribs, uniforms, samplers,
@@ -388,7 +394,7 @@ class FurMaterial extends Material {
 		this._effect.setColor4("vDiffuseColor", this.diffuseColor, this.alpha * mesh.visibility);
 		
 		if (scene.lightsEnabled && !this.disableLighting) {
-			MaterialHelper.BindLights(scene, mesh, this._effect, this._defines, this.maxSimultaneousLights);
+			MaterialHelper.BindLights(scene, mesh, this._effect, this.defs, this.maxSimultaneousLights);
 		}
 		
 		// View

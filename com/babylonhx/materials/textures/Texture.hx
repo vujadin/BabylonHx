@@ -286,7 +286,7 @@ import com.babylonhx.animations.Animation;
 		
 		var texture:Texture = null;
 		
-		if (parsedTexture.mirrorPlane != null) {
+		if (parsedTexture.mirrorPlane) {
 			texture = new MirrorTexture(parsedTexture.name, parsedTexture.renderTargetSize, scene);
 			cast(texture, MirrorTexture)._waitingRenderList = parsedTexture.renderList;
 			cast(texture, MirrorTexture).mirrorPlane = Plane.FromArray(parsedTexture.mirrorPlane);

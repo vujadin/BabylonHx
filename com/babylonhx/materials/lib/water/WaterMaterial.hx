@@ -20,6 +20,9 @@ import com.babylonhx.lights.PointLight;
 import com.babylonhx.lights.SpotLight;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.tools.EventState;
+import com.babylonhx.tools.serialization.SerializationHelper;
+
+import haxe.ds.Vector;
 
 /**
  * ...
@@ -119,6 +122,24 @@ class WaterMaterial extends Material {
 	private var _defines:WaterMaterialDefines = new WaterMaterialDefines();
 	private var _cachedDefines:WaterMaterialDefines = new WaterMaterialDefines();
 	
+	private var defs:Vector<Bool>;
+	
+	
+	private var shaderName:String = "watermat";
+	private var uniforms:Array<String> = ["world", "view", "viewProjection", "vEyePosition", "vLightsType", "vDiffuseColor", "vSpecularColor",
+		"vFogInfos", "vFogColor", "pointSize",
+		"vNormalInfos", 
+		"mBones",
+		"vClipPlane", "normalMatrix",
+		// Water
+		"worldReflectionViewProjection", "windDirection", "waveLength", "time", "windForce",
+		"cameraPosition", "bumpHeight", "waveHeight", "waterColor", "colorBlendFactor", "waveSpeed"
+	];
+	private var samplers:Array<String> = ["normalSampler",
+		// Water
+		"refractionSampler", "reflectionSampler"
+	];
+	
 	
 	/**
 	* Constructor
@@ -139,6 +160,8 @@ class WaterMaterial extends Material {
 		
 		// Create render targets
 		this._createRenderTargets(scene, this.renderTargetSize);
+		
+		this.defs = this._defines.defines;
 	}
 	
 	// Get / Set
@@ -188,7 +211,7 @@ class WaterMaterial extends Material {
 			return true;
 		}
 		
-		if (this._defines.defines["INSTANCES"] != useInstances) {
+		if (this.defs[WMD.INSTANCES] != useInstances) {
 			return false;
 		}
 		
@@ -230,57 +253,57 @@ class WaterMaterial extends Material {
 				} 
 				else {
 					needUVs = true;
-					this._defines.defines["BUMP"] = true;
+					this.defs[WMD.BUMP] = true;
 				}
 			}
 			
 			if (StandardMaterial.ReflectionTextureEnabled) {
-				this._defines.defines["REFLECTION"] = true;
+				this.defs[WMD.REFLECTION] = true;
 			}
 		}
 		
 		// Effect
 		if (scene.clipPlane != null) {
-			this._defines.defines["CLIPPLANE"] = true;
+			this.defs[WMD.CLIPPLANE] = true;
 		}
 		
 		if (engine.getAlphaTesting()) {
-			this._defines.defines["ALPHATEST"] = true;
+			this.defs[WMD.ALPHATEST] = true;
 		}
 		
 		// Point size
 		if (this.pointsCloud || scene.forcePointsCloud) {
-			this._defines.defines["POINTSIZE"] = true;
+			this.defs[WMD.POINTSIZE] = true;
 		}
 		
 		// Fog
 		if (scene.fogEnabled && mesh != null && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
-			this._defines.defines["FOG"] = true;
+			this.defs[WMD.FOG] = true;
 		}
 		
 		// Lights
 		if (scene.lightsEnabled && !this.disableLighting) {
-			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this._defines, this.maxSimultaneousLights);
+			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this.defs, maxSimultaneousLights, WMD.LIGHT0, WMD.SPECULARTERM, WMD.SHADOW0, WMD.SHADOWS, WMD.SHADOWVSM0, WMD.SHADOWPCF0, WMD.LIGHTS);
 		}
 		
 		// Attribs
 		if (mesh != null) {
 			if (needNormals && mesh.isVerticesDataPresent(VertexBuffer.NormalKind)) {
-				this._defines.defines["NORMAL"] = true;
+				this.defs[WMD.NORMAL] = true;
 			}
 			if (needUVs) {
 				if (mesh.isVerticesDataPresent(VertexBuffer.UVKind)) {
-					this._defines.defines["UV1"] = true;
+					this.defs[WMD.UV1] = true;
 				}
 				if (mesh.isVerticesDataPresent(VertexBuffer.UV2Kind)) {
-					this._defines.defines["UV2"] = true;
+					this.defs[WMD.UV2] = true;
 				}
 			}
 			if (mesh.useVertexColors && mesh.isVerticesDataPresent(VertexBuffer.ColorKind)) {
-				this._defines.defines["VERTEXCOLOR"] = true;
+				this.defs[WMD.VERTEXCOLOR] = true;
 				
 				if (mesh.hasVertexAlpha) {
-					this._defines.defines["VERTEXALPHA"] = true;
+					this.defs[WMD.VERTEXALPHA] = true;
 				}
 			}
 			
@@ -291,7 +314,7 @@ class WaterMaterial extends Material {
 			
 			// Instances
 			if (useInstances) {
-				this._defines.defines["INSTANCES"] = true;
+				this.defs[WMD.INSTANCES] = true;
 			}
 		}
 		
@@ -305,11 +328,11 @@ class WaterMaterial extends Material {
 			
 			// Fallbacks
 			var fallbacks = new EffectFallbacks();             
-			if (this._defines.defines["FOG"]) {
+			if (this.defs[WMD.FOG]) {
 				fallbacks.addFallback(1, "FOG");
 			}
 			
-			MaterialHelper.HandleFallbacksForShadows(this._defines, fallbacks, this.maxSimultaneousLights);
+			MaterialHelper.HandleFallbacksForShadows(this.defs, fallbacks, WMD.LIGHT0, WMD.SHADOW0, WMD.SHADOWPCF0, WMD.SHADOWVSM0, this.maxSimultaneousLights);
 		 
 			if (this._defines.NUM_BONE_INFLUENCERS > 0) {
 				fallbacks.addCPUSkinningFallback(0, mesh);
@@ -318,43 +341,28 @@ class WaterMaterial extends Material {
 			//Attributes
 			var attribs:Array<String> = [VertexBuffer.PositionKind];
 			
-			if (this._defines.defines["NORMAL"]) {
+			if (this.defs[WMD.NORMAL]) {
 				attribs.push(VertexBuffer.NormalKind);
 			}
 			
-			if (this._defines.defines["UV1"]) {
+			if (this.defs[WMD.UV1]) {
 				attribs.push(VertexBuffer.UVKind);
 			}
 			
-			if (this._defines.defines["UV2"]) {
+			if (this.defs[WMD.UV2]) {
 				attribs.push(VertexBuffer.UV2Kind);
 			}
 			
-			if (this._defines.defines["VERTEXCOLOR"]) {
+			if (this.defs[WMD.VERTEXCOLOR]) {
 				attribs.push(VertexBuffer.ColorKind);
 			}
 			
 			MaterialHelper.PrepareAttributesForBones(attribs, mesh, this._defines, fallbacks);
-			MaterialHelper.PrepareAttributesForInstances(attribs, this._defines);
+			MaterialHelper.PrepareAttributesForInstances(attribs, this.defs, WMD.INSTANCES);
 			
-			// Legacy browser patch
-			var shaderName:String = "watermat";
 			var join:String = this._defines.toString();
-			var uniforms:Array<String> = ["world", "view", "viewProjection", "vEyePosition", "vLightsType", "vDiffuseColor", "vSpecularColor",
-				"vFogInfos", "vFogColor", "pointSize",
-				"vNormalInfos", 
-				"mBones",
-				"vClipPlane", "normalMatrix",
-				// Water
-				"worldReflectionViewProjection", "windDirection", "waveLength", "time", "windForce",
-				"cameraPosition", "bumpHeight", "waveHeight", "waterColor", "colorBlendFactor", "waveSpeed"
-			];
-			var samplers:Array<String> = ["normalSampler",
-				// Water
-				"refractionSampler", "reflectionSampler"
-			];
 			
-			MaterialHelper.PrepareUniformsAndSamplersList(uniforms, samplers, this._defines, this.maxSimultaneousLights);
+			MaterialHelper.PrepareUniformsAndSamplersList(uniforms, samplers, this.defs, WMD.LIGHT0, this.maxSimultaneousLights);
 			
 			this._effect = scene.getEngine().createEffect(shaderName,
 				attribs, uniforms, samplers,
@@ -413,12 +421,12 @@ class WaterMaterial extends Material {
 		
 		this._effect.setColor4("vDiffuseColor", this.diffuseColor, this.alpha * mesh.visibility);
 		
-		if (this._defines.defines["SPECULARTERM"]) {
+		if (this.defs[WMD.SPECULARTERM]) {
 			this._effect.setColor4("vSpecularColor", this.specularColor, this.specularPower);
 		}
 		
 		if (scene.lightsEnabled && !this.disableLighting) {
-			MaterialHelper.BindLights(scene, mesh, this._effect, this._defines, this.maxSimultaneousLights);
+			MaterialHelper.BindLights(scene, mesh, this._effect, this.defs, this.maxSimultaneousLights);
 		}
 		
 		// View

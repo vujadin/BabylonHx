@@ -11,6 +11,7 @@ import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.tools.serialization.SerializationHelper;
+import haxe.ds.Vector;
 
 
 /**
@@ -72,6 +73,8 @@ class TriPlanarMaterial extends Material {
 	private var _defines:TriPlanarMaterialDefines = new TriPlanarMaterialDefines();
 	private var _cachedDefines:TriPlanarMaterialDefines = new TriPlanarMaterialDefines();
 	
+	private var defs:Vector<Bool>;
+	
 
 	public function new(name:String, scene:Scene) {
 		super(name, scene);
@@ -82,6 +85,8 @@ class TriPlanarMaterial extends Material {
 		}
 		
 		this._cachedDefines.BonesPerMesh = -1;
+		
+		this.defs = this._defines.defines;
 	}
 
 	override public function needAlphaBlending():Bool {
@@ -102,7 +107,7 @@ class TriPlanarMaterial extends Material {
 			return true;
 		}
 		
-		if (this._defines.defines["INSTANCES"] != useInstances) {
+		if (this.defs[TPMD.INSTANCES] != useInstances) {
 			return false;
 		}
 		
@@ -139,7 +144,7 @@ class TriPlanarMaterial extends Material {
 		if (scene.texturesEnabled) {
 			if (StandardMaterial.DiffuseTextureEnabled) {
 				var textures:Array<Texture> = [this.diffuseTextureX, this.diffuseTextureY, this.diffuseTextureZ];
-				var textureDefines:Array<String> = ["DIFFUSEX", "DIFFUSEY", "DIFFUSEZ"];
+				var textureDefines:Array<Int> = [TPMD.DIFFUSEX, TPMD.DIFFUSEY, TPMD.DIFFUSEZ];
 				
 				for (i in 0...textures.length) {
 					if (textures[i] != null) {
@@ -147,7 +152,7 @@ class TriPlanarMaterial extends Material {
 							return false;
 						} 
 						else {
-							this._defines.defines[textureDefines[i]] = true;
+							this.defs[textureDefines[i]] = true;
 						}
 					}
 				}
@@ -155,7 +160,7 @@ class TriPlanarMaterial extends Material {
 			
 			if (StandardMaterial.BumpTextureEnabled) {
 				var textures:Array<Texture> = [this.normalTextureX, this.normalTextureY, this.normalTextureZ];
-				var textureDefines:Array<String> = ["BUMPX", "BUMPY", "BUMPZ"];
+				var textureDefines:Array<Int> = [TPMD.BUMPX, TPMD.BUMPY, TPMD.BUMPZ];
 				
 				for (i in 0...textures.length) {
 					if (textures[i] != null) {
@@ -163,7 +168,7 @@ class TriPlanarMaterial extends Material {
 							return false;
 						} 
 						else {
-							this._defines.defines[textureDefines[i]] = true;
+							this.defs[textureDefines[i]] = true;
 						}
 					}
 				}
@@ -172,38 +177,38 @@ class TriPlanarMaterial extends Material {
 		
 		// Effect
 		if (scene.clipPlane != null) {
-			this._defines.defines["CLIPPLANE"] = true;
+			this.defs[TPMD.CLIPPLANE] = true;
 		}
 		
 		if (engine.getAlphaTesting()) {
-			this._defines.defines["ALPHATEST"] = true;
+			this.defs[TPMD.ALPHATEST] = true;
 		}
 		
 		// Point size
 		if (this.pointsCloud || scene.forcePointsCloud) {
-			this._defines.defines["POINTSIZE"] = true;
+			this.defs[TPMD.POINTSIZE] = true;
 		}
 		
 		// Fog
 		if (scene.fogEnabled && mesh != null && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
-			this._defines.defines["FOG"] = true;
+			this.defs[TPMD.FOG] = true;
 		}
 		
 		// Lights
 		if (scene.lightsEnabled && !this.disableLighting) {
-			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this._defines, this.maxSimultaneousLights);
+			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this.defs, this.maxSimultaneousLights, TPMD.LIGHT0, TPMD.SPECULARTERM, TPMD.SHADOW0, TPMD.SHADOWS, TPMD.SHADOWVSM0, TPMD.SHADOWPCF0, TPMD.LIGHTS);
 		}
 		
 		// Attribs
 		if (mesh != null) {
 			if (needNormals && mesh.isVerticesDataPresent(VertexBuffer.NormalKind)) {
-				this._defines.defines["NORMAL"] = true;
+				this.defs[TPMD.NORMAL] = true;
 			}
 			if (mesh.useVertexColors && mesh.isVerticesDataPresent(VertexBuffer.ColorKind)) {
-				this._defines.defines["VERTEXCOLOR"] = true;
+				this.defs[TPMD.VERTEXCOLOR] = true;
 				
 				if (mesh.hasVertexAlpha) {
-					this._defines.defines["VERTEXALPHA"] = true;
+					this.defs[TPMD.VERTEXALPHA] = true;
 				}
 			}
 			
@@ -214,7 +219,7 @@ class TriPlanarMaterial extends Material {
 			
 			// Instances
 			if (useInstances) {
-				this._defines.defines["INSTANCES"] = true;
+				this.defs[TPMD.INSTANCES] = true;
 			}
 		}
 		
@@ -226,11 +231,11 @@ class TriPlanarMaterial extends Material {
 			
 			// Fallbacks
 			var fallbacks = new EffectFallbacks();             
-			if (this._defines.defines["FOG"]) {
+			if (this.defs[TPMD.FOG]) {
 				fallbacks.addFallback(1, "FOG");
 			}
 			
-			MaterialHelper.HandleFallbacksForShadows(this._defines, fallbacks, this.maxSimultaneousLights);
+			MaterialHelper.HandleFallbacksForShadows(this.defs, fallbacks, TPMD.LIGHT0, TPMD.SHADOW0, TPMD.SHADOWPCF0, TPMD.SHADOWVSM0, this.maxSimultaneousLights);
 		 
 			if (this._defines.NUM_BONE_INFLUENCERS > 0) {
 				fallbacks.addCPUSkinningFallback(0, mesh);
@@ -239,16 +244,16 @@ class TriPlanarMaterial extends Material {
 			//Attributes
 			var attribs:Array<String> = [VertexBuffer.PositionKind];
 			
-			if (this._defines.defines["NORMAL"]) {
+			if (this.defs[TPMD.NORMAL]) {
 				attribs.push(VertexBuffer.NormalKind);
 			}
 			
-			if (this._defines.defines["VERTEXCOLOR"]) {
+			if (this.defs[TPMD.VERTEXCOLOR]) {
 				attribs.push(VertexBuffer.ColorKind);
 			}
 			
 			MaterialHelper.PrepareAttributesForBones(attribs, mesh, this._defines, fallbacks);
-			MaterialHelper.PrepareAttributesForInstances(attribs, this._defines);
+			MaterialHelper.PrepareAttributesForInstances(attribs, this.defs, TPMD.INSTANCES);
 			
 			// Legacy browser patch
 			var shaderName:String = "triplanarmat";
@@ -264,7 +269,7 @@ class TriPlanarMaterial extends Material {
 				"normalSamplerX", "normalSamplerY", "normalSamplerZ"
 			];
 			
-			MaterialHelper.PrepareUniformsAndSamplersList(uniforms, samplers, this._defines, this.maxSimultaneousLights);
+			MaterialHelper.PrepareUniformsAndSamplersList(uniforms, samplers, this.defs, this.maxSimultaneousLights);
 			
 			this._effect = scene.getEngine().createEffect(shaderName,
 				attribs, uniforms, samplers,
@@ -337,12 +342,12 @@ class TriPlanarMaterial extends Material {
 		
 		this._effect.setColor4("vDiffuseColor", this.diffuseColor, this.alpha * mesh.visibility);
 		
-		if (this._defines.defines["SPECULARTERM"]) {
+		if (this.defs[TPMD.SPECULARTERM]) {
 			this._effect.setColor4("vSpecularColor", this.specularColor, this.specularPower);
 		}
 		
 		if (scene.lightsEnabled && !this.disableLighting) {
-			MaterialHelper.BindLights(scene, mesh, this._effect, this._defines, this.maxSimultaneousLights);
+			MaterialHelper.BindLights(scene, mesh, this._effect, this.defs, this.maxSimultaneousLights);
 		}
 		
 		// View

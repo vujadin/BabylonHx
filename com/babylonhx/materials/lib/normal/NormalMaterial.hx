@@ -10,6 +10,7 @@ import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.animations.IAnimatable;
+import haxe.ds.Vector;
 
 /**
  * ...
@@ -24,11 +25,17 @@ class NormalMaterial extends Material {
 
 	static var vertexShader:String = "precision highp float;\n\nattribute vec3 position;\n#ifdef NORMAL\nattribute vec3 normal;\n#endif\n#ifdef UV1\nattribute vec2 uv;\n#endif\n#ifdef UV2\nattribute vec2 uv2;\n#endif\n#ifdef VERTEXCOLOR\nattribute vec4 color;\n#endif\n#include<bonesDeclaration>\n\n#include<instancesDeclaration>\nuniform mat4 view;\nuniform mat4 viewProjection;\n#ifdef DIFFUSE\nvarying vec2 vDiffuseUV;\nuniform mat4 diffuseMatrix;\nuniform vec2 vDiffuseInfos;\n#endif\n#ifdef POINTSIZE\nuniform float pointSize;\n#endif\n\nvarying vec3 vPositionW;\n#ifdef NORMAL\nvarying vec3 vNormalW;\n#endif\n#ifdef VERTEXCOLOR\nvarying vec4 vColor;\n#endif\n#include<clipPlaneVertexDeclaration>\n#include<fogVertexDeclaration>\n#include<shadowsVertexDeclaration>\nvoid main(void) {\n#include<instancesVertex>\n#include<bonesVertex>\ngl_Position=viewProjection*finalWorld*vec4(position,1.0);\nvec4 worldPos=finalWorld*vec4(position,1.0);\nvPositionW=vec3(worldPos);\n#ifdef NORMAL\nvNormalW=normalize(vec3(finalWorld*vec4(normal,0.0)));\n#endif\n\n#ifndef UV1\nvec2 uv=vec2(0.,0.);\n#endif\n#ifndef UV2\nvec2 uv2=vec2(0.,0.);\n#endif\n#ifdef DIFFUSE\nif (vDiffuseInfos.x == 0.)\n{\nvDiffuseUV=vec2(diffuseMatrix*vec4(uv,1.0,0.0));\n}\nelse\n{\nvDiffuseUV=vec2(diffuseMatrix*vec4(uv2,1.0,0.0));\n}\n#endif\n\n#include<clipPlaneVertex>\n\n#include<fogVertex>\n#include<shadowsVertex>\n\n#ifdef VERTEXCOLOR\nvColor=color;\n#endif\n\n#ifdef POINTSIZE\ngl_PointSize=pointSize;\n#endif\n}\n";
 	
-	
+	@serializeAsTexture()
 	public var diffuseTexture:BaseTexture;
 	
+	@serializeAsColor3()
 	public var diffuseColor:Color3 = new Color3(1, 1, 1);
+	
+	@serialize()
 	public var disableLighting:Bool = false;
+	
+	@serialize()
+	public var maxSimultaneousLights:Int = 4;
 
 	private var _worldViewProjectionMatrix:Matrix = Matrix.Zero();
 	private var _scaledDiffuse:Color3 = new Color3();
@@ -36,6 +43,8 @@ class NormalMaterial extends Material {
 
 	private var _defines:NormalMaterialDefines = new NormalMaterialDefines();
 	private var _cachedDefines:NormalMaterialDefines = new NormalMaterialDefines();
+	
+	private var defs:Vector<Bool>;
 	
 
 	public function new(name:String, scene:Scene) {
@@ -47,6 +56,8 @@ class NormalMaterial extends Material {
 		}
 		
 		this._cachedDefines.BonesPerMesh = -1;
+		
+		this.defs = this._defines.defines;
 	}
 
 	override public function needAlphaBlending():Bool {
@@ -67,7 +78,7 @@ class NormalMaterial extends Material {
 			return true;
 		}
 		
-		if (this._defines.defines[NMD.INSTANCES] != useInstances) {
+		if (this.defs[NMD.INSTANCES] != useInstances) {
 			return false;
 		}
 		
@@ -109,52 +120,52 @@ class NormalMaterial extends Material {
 				} 
 				else {
 					needUVs = true;
-					this._defines.defines[NMD.DIFFUSE] = true;
+					this.defs[NMD.DIFFUSE] = true;
 				}
 			}                
 		}
 		
 		// Effect
 		if (scene.clipPlane != null) {
-			this._defines.defines[NMD.CLIPPLANE] = true;
+			this.defs[NMD.CLIPPLANE] = true;
 		}
 		
 		if (engine.getAlphaTesting()) {
-			this._defines.defines[NMD.ALPHATEST] = true;
+			this.defs[NMD.ALPHATEST] = true;
 		}
 		
 		// Point size
 		if (this.pointsCloud || scene.forcePointsCloud) {
-			this._defines.defines[NMD.POINTSIZE] = true;
+			this.defs[NMD.POINTSIZE] = true;
 		}
 		
 		// Fog
 		if (scene.fogEnabled && mesh != null && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
-			this._defines.defines[NMD.FOG] = true;
+			this.defs[NMD.FOG] = true;
 		}
 		
 		if (scene.lightsEnabled && !this.disableLighting) {
-			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this._defines, NMD.LIGHT0, -1, NMD.SHADOW0, NMD.SHADOWS, NMD.SHADOWVSM0, NMD.SHADOWPCF0, NMD.LIGHTS);
+			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this._defines, this.maxSimultaneousLights, -1);
 		}
 		
 		// Attribs
 		if (mesh != null) {
 			if (needNormals && mesh.isVerticesDataPresent(VertexBuffer.NormalKind)) {
-				this._defines.defines[NMD.NORMAL] = true;
+				this.defs[NMD.NORMAL] = true;
 			}
 			if (needUVs) {
 				if (mesh.isVerticesDataPresent(VertexBuffer.UVKind)) {
-					this._defines.defines[NMD.UV1] = true;
+					this.defs[NMD.UV1] = true;
 				}
 				if (mesh.isVerticesDataPresent(VertexBuffer.UV2Kind)) {
-					this._defines.defines[NMD.UV2] = true;
+					this.defs[NMD.UV2] = true;
 				}
 			}
 			if (mesh.useVertexColors && mesh.isVerticesDataPresent(VertexBuffer.ColorKind)) {
-				this._defines.defines[NMD.VERTEXCOLOR] = true;
+				this.defs[NMD.VERTEXCOLOR] = true;
 				
 				if (mesh.hasVertexAlpha) {
-					this._defines.defines[NMD.VERTEXALPHA] = true;
+					this.defs[NMD.VERTEXALPHA] = true;
 				}
 			}
 			if (mesh.useBones && mesh.computeBonesUsingShaders) {
@@ -164,7 +175,7 @@ class NormalMaterial extends Material {
 			
 			// Instances
 			if (useInstances) {
-				this._defines.defines[NMD.INSTANCES] = true;
+				this.defs[NMD.INSTANCES] = true;
 			}
 		}
 		
@@ -176,11 +187,11 @@ class NormalMaterial extends Material {
 			
 			// Fallbacks
 			var fallbacks:EffectFallbacks = new EffectFallbacks();             
-			if (this._defines.defines[NMD.FOG]) {
+			if (this.defs[NMD.FOG]) {
 				fallbacks.addFallback(1, "FOG");
 			}
 			
-			MaterialHelper.HandleFallbacksForShadows(this._defines, fallbacks, NMD.LIGHT0, NMD.SHADOW0, NMD.SHADOWPCF0, NMD.SHADOWVSM0);
+			MaterialHelper.HandleFallbacksForShadows(this._defines, fallbacks);
 		 
 			if (this._defines.NUM_BONE_INFLUENCERS > 0){
                 fallbacks.addCPUSkinningFallback(0, mesh);    
@@ -189,24 +200,24 @@ class NormalMaterial extends Material {
 			//Attributes
 			var attribs:Array<String> = [VertexBuffer.PositionKind];
 			
-			if (this._defines.defines[NMD.NORMAL]) {
+			if (this.defs[NMD.NORMAL]) {
 				attribs.push(VertexBuffer.NormalKind);
 			}
 			
-			if (this._defines.defines[NMD.UV1]) {
+			if (this.defs[NMD.UV1]) {
 				attribs.push(VertexBuffer.UVKind);
 			}
 			
-			if (this._defines.defines[NMD.UV2]) {
+			if (this.defs[NMD.UV2]) {
 				attribs.push(VertexBuffer.UV2Kind);
 			}
 			
-			if (this._defines.defines[NMD.VERTEXCOLOR]) {
+			if (this.defs[NMD.VERTEXCOLOR]) {
 				attribs.push(VertexBuffer.ColorKind);
 			}
 			
-			MaterialHelper.PrepareAttributesForBones(attribs, mesh, this._defines, fallbacks);
-            MaterialHelper.PrepareAttributesForInstances(attribs, this._defines, NMD.INSTANCES);
+			MaterialHelper.PrepareAttributesForBones(attribs, mesh, this._defines.NUM_BONE_INFLUENCERS, fallbacks);
+            MaterialHelper.PrepareAttributesForInstances(attribs, this.defs, NMD.INSTANCES);
 			
 			// Legacy browser patch
 			var shaderName:String = "normalmat";
@@ -283,7 +294,7 @@ class NormalMaterial extends Material {
 		this._effect.setColor4("vDiffuseColor", this.diffuseColor, this.alpha * mesh.visibility);
 		
 		if (scene.lightsEnabled && !this.disableLighting) {
-			MaterialHelper.BindLights(scene, mesh, this._effect, this._defines, -1);
+			MaterialHelper.BindLights(scene, mesh, this._effect, false, maxSimultaneousLights);
 		}
 		
 		// View and Fog
