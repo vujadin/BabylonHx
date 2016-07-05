@@ -843,7 +843,7 @@ class PBRMaterial extends Material {
 		}
 		
 		if (scene.lightsEnabled && !this.disableLighting) {
-			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this._defines, this.maxSimultaneousLights, PBD.SPECULARTERM);
+			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this._defines, this.maxSimultaneousLights, PBD.SPECULARTERM, PBD.SHADOWS, PBD.SHADOWFULLFLOAT);
 		}
 		
 		if (StandardMaterial.FresnelEnabled) {

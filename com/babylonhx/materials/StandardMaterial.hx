@@ -469,7 +469,7 @@ typedef SMD = StandardMaterialDefines
 		}
 		
 		if (scene.lightsEnabled && !this.disableLighting) {
-			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this._defines, maxSimultaneousLights, SMD.SPECULARTERM);
+			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this._defines, maxSimultaneousLights, SMD.SPECULARTERM, SMD.SHADOWS, SMD.SHADOWFULLFLOAT);
 		}
 		
 		if (StandardMaterial.FresnelEnabled) {

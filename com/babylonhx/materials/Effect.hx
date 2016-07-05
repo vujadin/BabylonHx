@@ -15,6 +15,7 @@ import com.babylonhx.utils.GL.GLUniformLocation;
 import com.babylonhx.utils.GL.GLProgram;
 import com.babylonhx.utils.GL.GLTexture;
 import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.Int32Array;
 
 
 /**
@@ -23,7 +24,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
  */
 
 @:expose('BABYLON.Effect') class Effect {
-		
+	
 	public var name:Dynamic;
 	public var defines:String;
 	public var onCompiled:Effect->Void;
@@ -47,7 +48,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _program:GLProgram;
 	
 	private var _valueCache:Map<String, Array<Float>>;	
-	private var _valueCacheMatrix:Map<String, Matrix>;	// VK: special map for matrices
+	private var _valueCacheMatrix:Map<String, Matrix>;	// VK: for matrices only
 	
 
 	public function new(baseName:Dynamic, attributesNames:Array<String>, uniformsNames:Array<String>, samplers:Array<String>, engine:Engine, ?defines:String, ?fallbacks:EffectFallbacks, ?onCompiled:Effect->Void, ?onError:Effect->String->Void, ?indexParameters:Dynamic) {
@@ -370,105 +371,233 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._engine._bindTexture(this._samplers.indexOf(channel), texture);
 	}
 
-	inline public function setTexture(channel:String, texture:BaseTexture) {
-		this._engine.setTexture(this._samplers.indexOf(channel), texture);
+	public function setTexture(channel:String, texture:BaseTexture) {
+		this._engine.setTexture(this._samplers.indexOf(channel), this.getUniform(channel), texture);
+	}
+	
+	public function setTextureArray(channel:String, textures:Array<BaseTexture>) {
+		if (this._samplers.indexOf(channel + "Ex") == -1) {
+			var initialPos = this._samplers.indexOf(channel);
+			for (index in 1...textures.length) {
+				this._samplers.insert(initialPos + index, channel + "Ex");
+			}
+		}
+		
+		this._engine.setTextureArray(this._samplers.indexOf(channel), this.getUniform(channel), textures);
 	}
 
 	inline public function setTextureFromPostProcess(channel:String, postProcess:PostProcess) {
 		this._engine.setTextureFromPostProcess(this._samplers.indexOf(channel), postProcess);
 	}
 
-	inline public function _cacheMatrix(uniformName:String, matrix:Matrix) {
-	    if (this._valueCacheMatrix[uniformName] == null) {
-	        this._valueCacheMatrix[uniformName] = new Matrix();
-	    }
+	public function _cacheMatrix(uniformName:String, matrix:Matrix):Bool {
+		var changed:Bool = false;
+		var cache:Matrix = this._valueCacheMatrix[uniformName];
+		if (cache == null || !Std.is(cache, Matrix)) {
+			changed = true;
+			cache = new Matrix();
+		}
 		
-	    this._valueCacheMatrix[uniformName].copyFrom(matrix);
+		var tm = cache.m;
+		var om = matrix.m;
+		for (index in 0...16) {
+			if (tm[index] != om[index]) { 
+				tm[index] = om[index];
+				changed = true;
+			}
+		}
+		
+		this._valueCacheMatrix[uniformName] = cache;
+		
+		return changed;
 	}
 
-	inline public function _cacheFloat2(uniformName:String, x:Float, y:Float) {
-		if (!this._valueCache.exists(uniformName)) {
-			this._valueCache[uniformName] = [x, y];
-		} 
-		else {		
-			this._valueCache[uniformName][0] = x;
-			this._valueCache[uniformName][1] = y;
+	public function _cacheFloat2(uniformName:String, x:Float, y:Float):Bool {
+		var cache:Array<Float> = this._valueCache[uniformName];
+		if (cache == null) {
+			cache = [x, y];
+			this._valueCache[uniformName] = cache;
+			
+			return true;
 		}
+		
+		var changed = false;
+		if (cache[0] != x) {
+			cache[0] = x;
+			changed = true;
+		}
+		if (cache[1] != y) {
+			cache[1] = y;
+			changed = true;
+		}
+		
+		return changed;
 	}
 
-	inline public function _cacheFloat3(uniformName:String, x:Float, y:Float, z:Float) {
-		if (!this._valueCache.exists(uniformName)) {
-			this._valueCache[uniformName] = [x, y, z];
-		} 
-		else {		
-			this._valueCache[uniformName][0] = x;
-			this._valueCache[uniformName][1] = y;
-			this._valueCache[uniformName][2] = z;
+	public function _cacheFloat3(uniformName:String, x:Float, y:Float, z:Float):Bool {
+		var cache:Array<Float> = this._valueCache[uniformName];
+		if (cache == null) {
+			cache = [x, y, z];
+			this._valueCache[uniformName] = cache;
+			return true;
 		}
+		
+		var changed = false;
+		if (cache[0] != x) {
+			cache[0] = x;
+			changed = true;
+		}
+		if (cache[1] != y) {
+			cache[1] = y;
+			changed = true;
+		}
+		if (cache[2] != z) {
+			cache[2] = z;
+			changed = true;
+		}
+		
+		return changed;
 	}
 
-	inline public function _cacheFloat4(uniformName:String, x:Float, y:Float, z:Float, w:Float) {
-		if (!this._valueCache.exists(uniformName)) {
-			this._valueCache[uniformName] = [x, y, z, w];
-		} 
-		else {		
-			this._valueCache[uniformName][0] = x;
-			this._valueCache[uniformName][1] = y;
-			this._valueCache[uniformName][2] = z;
-			this._valueCache[uniformName][3] = w;
+	public function _cacheFloat4(uniformName:String, x:Float, y:Float, z:Float, w:Float):Bool {
+		var cache:Array<Float> = this._valueCache[uniformName];
+		if (cache == null) {
+			cache = [x, y, z, w];
+			this._valueCache[uniformName] = cache;
+			
+			return true;
 		}
+		
+		var changed = false;
+		if (cache[0] != x) {
+			cache[0] = x;
+			changed = true;
+		}
+		if (cache[1] != y) {
+			cache[1] = y;
+			changed = true;
+		}
+		if (cache[2] != z) {
+			cache[2] = z;
+			changed = true;
+		}
+		if (cache[3] != w) {
+			cache[3] = w;
+			changed = true;
+		}
+		
+		return changed;
 	}
+	
+	/*inline public function setIntArray(uniformName:String, array:Int32Array):Effect {
+		this._valueCache[uniformName] = null;
+		this._engine.setIntArray(this.getUniform(uniformName), array);
+		
+		return this;
+	}
+
+	inline public function setIntArray2(uniformName:String, array:Int32Array):Effect {
+		this._valueCache[uniformName] = null;
+		this._engine.setIntArray2(this.getUniform(uniformName), array);
+		
+		return this;
+	}
+
+	inline public function setIntArray3(uniformName:String, array:Int32Array):Effect {
+		this._valueCache[uniformName] = null;
+		this._engine.setIntArray3(this.getUniform(uniformName), array);
+		
+		return this;
+	}
+
+	inline public function setIntArray4(uniformName:String, array:Int32Array):Effect {
+		this._valueCache[uniformName] = null;
+		this._engine.setIntArray4(this.getUniform(uniformName), array);
+		
+		return this;
+	}
+
+	inline public function setFloatArray(uniformName:String, array:Float32Array):Effect {
+		this._valueCache[uniformName] = null;
+		this._engine.setFloatArray(this.getUniform(uniformName), array);
+		
+		return this;
+	}
+
+	inline public function setFloatArray2(uniformName:String, array:Float32Array):Effect {
+		this._valueCache[uniformName] = null;
+		this._engine.setFloatArray2(this.getUniform(uniformName), array);
+		
+		return this;
+	}
+
+	inline public function setFloatArray3(uniformName:String, array:Float32Array):Effect {
+		this._valueCache[uniformName] = null;
+		this._engine.setFloatArray3(this.getUniform(uniformName), array);
+		
+		return this;
+	}
+
+	inline public function setFloatArray4(uniformName:String, array:Float32Array):Effect {
+		this._valueCache[uniformName] = null;
+		this._engine.setFloatArray4(this.getUniform(uniformName), array);
+		
+		return this;
+	}*/
 
 	inline public function setArray(uniformName:String, array:Array<Float>):Effect {
+		this._valueCache[uniformName] = null;
 		this._engine.setArray(this.getUniform(uniformName), array);
 		
 		return this;
 	}
 	
 	inline public function setArray2(uniformName:String, array:Array<Float>):Effect {
+		this._valueCache[uniformName] = null;
         this._engine.setArray2(this.getUniform(uniformName), array);
 		
         return this;
     }
 
     inline public function setArray3(uniformName:String, array:Array<Float>):Effect {
+		this._valueCache[uniformName] = null;
         this._engine.setArray3(this.getUniform(uniformName), array);
 		
         return this;
     }
 
     inline public function setArray4(uniformName:String, array:Array<Float>):Effect {
+		this._valueCache[uniformName] = null;
         this._engine.setArray4(this.getUniform(uniformName), array);
 		
         return this;
     }
 
 	inline public function setMatrices(uniformName:String, matrices: #if (js || purejs) Float32Array #else Array<Float> #end ):Effect {
+		this._valueCache[uniformName] = null;
 		this._engine.setMatrices(this.getUniform(uniformName), matrices);
 		
 		return this;
 	}
 
 	inline public function setMatrix(uniformName:String, matrix:Matrix):Effect {
-		/*var val = this._valueCacheMatrix[uniformName];
-		if (val != null && val.equals(matrix)) {
-		    return this;
+		if (this._cacheMatrix(uniformName, matrix)) {
+			this._engine.setMatrix(this.getUniform(uniformName), matrix);
 		}
-		
-		this._cacheMatrix(uniformName, matrix);*/
-		this._engine.setMatrix(this.getUniform(uniformName), matrix);
 		
 		return this;
 	}
 	
 	inline public function setMatrix3x3(uniformName:String, matrix:Float32Array):Effect {
+		this._valueCache[uniformName] = null;
         this._engine.setMatrix3x3(this.getUniform(uniformName), matrix);
 		
         return this;
     }
 
-    inline public function setMatrix2x2(uniformname:String, matrix:Float32Array):Effect {
-        this._engine.setMatrix2x2(this.getUniform(uniformname), matrix);
+    inline public function setMatrix2x2(uniformName:String, matrix:Float32Array):Effect {
+		this._valueCache[uniformName] = null;
+        this._engine.setMatrix2x2(this.getUniform(uniformName), matrix);
 		
         return this;
     }
@@ -498,97 +627,65 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	inline public function setVector2(uniformName:String, vector2:Vector2):Effect {
-		var val = this._valueCache[uniformName];
-		if (val != null && val[0] == vector2.x && val[1] == vector2.y) {
-			return this;
+		if (this._cacheFloat2(uniformName, vector2.x, vector2.y)) {
+			this._engine.setFloat2(this.getUniform(uniformName), vector2.x, vector2.y);
 		}
-		
-		this._cacheFloat2(uniformName, vector2.x, vector2.y);
-		this._engine.setFloat2(this.getUniform(uniformName), vector2.x, vector2.y);
 		
 		return this;
 	}
 
 	inline public function setFloat2(uniformName:String, x:Float, y:Float):Effect {
-		var val = this._valueCache[uniformName];
-		if (val != null && val[0] == x && val[1] == y) {
-			return this;
+		if (this._cacheFloat2(uniformName, x, y)) {
+			this._engine.setFloat2(this.getUniform(uniformName), x, y);
 		}
-		
-		this._cacheFloat2(uniformName, x, y);
-		this._engine.setFloat2(this.getUniform(uniformName), x, y);
 		
 		return this;
 	}
 
 	inline public function setVector3(uniformName:String, vector3:Vector3):Effect {
-		var val = this._valueCache[uniformName];
-		if (val != null && val[0] == vector3.x && val[1] == vector3.y && val[2] == vector3.z) {
-			return this;
+		if (this._cacheFloat3(uniformName, vector3.x, vector3.y, vector3.z)) {
+			this._engine.setFloat3(this.getUniform(uniformName), vector3.x, vector3.y, vector3.z);
 		}
-		
-		this._cacheFloat3(uniformName, vector3.x, vector3.y, vector3.z);
-		this._engine.setFloat3(this.getUniform(uniformName), vector3.x, vector3.y, vector3.z);
 		
 		return this;
 	}
 
 	inline public function setFloat3(uniformName:String, x:Float, y:Float, z:Float):Effect {
-		var val = this._valueCache[uniformName];
-		if (val != null && val[0] == x && val[1] == y && val[2] == z) {
-			return this;
-		}		
-		
-		this._cacheFloat3(uniformName, x, y, z);
-		this._engine.setFloat3(this.getUniform(uniformName), x, y, z);
+		if (this._cacheFloat3(uniformName, x, y, z)) {
+			this._engine.setFloat3(this.getUniform(uniformName), x, y, z);
+		}
 		
 		return this;
 	}
 	
 	public function setVector4(uniformName:String, vector4:Vector4):Effect {
-		var val = this._valueCache[uniformName];
-		if (val != null && val[0] == vector4.x && val[1] == vector4.y && val[2] == vector4.z && val[3] == vector4.w) {
-			return this;
+		if (this._cacheFloat4(uniformName, vector4.x, vector4.y, vector4.z, vector4.w)) {
+			this._engine.setFloat4(this.getUniform(uniformName), vector4.x, vector4.y, vector4.z, vector4.w);
 		}
-		
-		this._cacheFloat4(uniformName, vector4.x, vector4.y, vector4.z, vector4.w);
-		this._engine.setFloat4(this.getUniform(uniformName), vector4.x, vector4.y, vector4.z, vector4.w);
 		
 		return this;
 	}
 
 	public function setFloat4(uniformName:String, x:Float, y:Float, z:Float, w:Float):Effect {
-		var val = this._valueCache[uniformName];
-		if (val != null && val[0] == x && val[1] == y && val[2] == z && val[3] == w) {
-			return this;
-		}		
-		
-		this._cacheFloat4(uniformName, x, y, z, w);
-		this._engine.setFloat4(this.getUniform(uniformName), x, y, z, w);
+		if (this._cacheFloat4(uniformName, x, y, z, w)) {
+			this._engine.setFloat4(this.getUniform(uniformName), x, y, z, w);
+		}
 		
 		return this;
 	}
 
 	public function setColor3(uniformName:String, color3:Color3):Effect {
-		var val = this._valueCache[uniformName];
-		if (val != null && val[0] == color3.r && val[1] == color3.g && val[2] == color3.b) {
-			return this;
-		} 
-		
-		this._cacheFloat3(uniformName, color3.r, color3.g, color3.b);
-		this._engine.setColor3(this.getUniform(uniformName), color3);
+		if (this._cacheFloat3(uniformName, color3.r, color3.g, color3.b)) {
+			this._engine.setColor3(this.getUniform(uniformName), color3);
+		}
 		
 		return this;
 	}
 
 	public function setColor4(uniformName:String, color3:Color3, alpha:Float):Effect {
-		var val = this._valueCache[uniformName];
-		if (val != null && val[0] == color3.r && val[1] == color3.g && val[2] == color3.b && val[3] == alpha) {
-			return this;
-		}	
-		
-		this._cacheFloat4(uniformName, color3.r, color3.g, color3.b, alpha);
-		this._engine.setColor4(this.getUniform(uniformName), color3, alpha);
+		if (this._cacheFloat4(uniformName, color3.r, color3.g, color3.b, alpha)) {
+			this._engine.setColor4(this.getUniform(uniformName), color3, alpha);
+		}
 		
 		return this;
 	}

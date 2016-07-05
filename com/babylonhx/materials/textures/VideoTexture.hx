@@ -38,7 +38,7 @@ import com.babylonhx.Scene;
                 generateMipMaps = false;
             }
 			
-            _texture = scene.getEngine().createDynamicTexture(video.videoWidth, video.videoHeight, generateMipMaps, samplingMode, false);
+            _texture = scene.getEngine().createDynamicTexture(video.videoWidth, video.videoHeight, generateMipMaps, samplingMode);
             _texture.isReady = true;
         };
 		

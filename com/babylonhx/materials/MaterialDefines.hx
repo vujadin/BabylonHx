@@ -25,8 +25,11 @@ class MaterialDefines {
 
 	public function new() {	}
 	
-	var ret:Bool = true;
 	public function isEqual(other:MaterialDefines):Bool {
+		if (this._keys.length != other._keys.length) {
+			return false;
+		}
+			
 		for (i in 0...this.defines.length) {
 			if (this.defines[i] != other.defines[i]) {
 				return false;

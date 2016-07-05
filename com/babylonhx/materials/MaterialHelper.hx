@@ -15,9 +15,10 @@ import haxe.ds.Vector;
  */
 class MaterialHelper {	
 
-	public static function PrepareDefinesForLights(scene:Scene, mesh:AbstractMesh, defines:MaterialDefines, maxSimultaneousLights:Int, SPECULARTERM:Int):Bool {
+	public static function PrepareDefinesForLights(scene:Scene, mesh:AbstractMesh, defines:MaterialDefines, maxSimultaneousLights:Int, SPECULARTERM:Int = -1, SHADOWS:Int = -1, SHADOWFULLFLOAT:Int = -1):Bool {
 		var lightIndex:Int = 0;
 		var needNormals:Bool = false;
+		var needShadows:Bool = false;
 		
 		for (index in 0...scene.lights.length) {
 			var light = scene.lights[index];
@@ -84,7 +85,7 @@ class MaterialHelper {
 				if (mesh != null && mesh.receiveShadows && shadowGenerator != null) {
 					defines.shadows[lightIndex] = true; 
 					
-					defines.defines[untyped defines.SHADOWS] = true;
+					defines.defines[SHADOWS] = true;
 					
 					if (shadowGenerator.useVarianceShadowMap || shadowGenerator.useBlurVarianceShadowMap) {
 						defines.shadowvsms[lightIndex] = true;
@@ -93,6 +94,8 @@ class MaterialHelper {
 					if (shadowGenerator.usePoissonSampling) {
 						defines.shadowpcfs[lightIndex] = true;
 					}
+					
+					needShadows = true;
 				}
 			}
 			
@@ -100,6 +103,10 @@ class MaterialHelper {
 			if (lightIndex == maxSimultaneousLights) {
 				break;
 			}
+		}
+		
+		if (needShadows && scene.getEngine().getCaps().textureFloat == true && SHADOWFULLFLOAT != -1) {
+			defines.defines[SHADOWFULLFLOAT] = true;
 		}
 		
 		return needNormals;
