@@ -2,6 +2,7 @@ package com.babylonhx.bones;
 
 import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.math.Matrix;
+import com.babylonhx.math.Vector3;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.animations.IAnimatable;
@@ -23,6 +24,7 @@ import haxe.ds.Vector;
 	public var id:String;
 	public var name:String;
 	public var bones:Array<Bone>;
+	public var dimensionsAtRest:Vector3;
 	
 	public var needInitialSkinMatrix:Bool = false;
 
@@ -144,11 +146,13 @@ import haxe.ds.Vector;
 			ret = false;
 		}
 		
+		var skelDimensionsRatio:Vector3 = (rescaleAsRequired && this.dimensionsAtRest != null && source.dimensionsAtRest != null) ? this.dimensionsAtRest.divide(source.dimensionsAtRest) : null;
+		
 		for (i in 0...this.bones.length) {
 			var boneName = this.bones[i].name;
 			var sourceBone = boneDict[boneName];
 			if (sourceBone != null) {
-				ret = ret && this.bones[i].copyAnimationRange(sourceBone, name, cast frameOffset, rescaleAsRequired);
+				ret = ret && this.bones[i].copyAnimationRange(sourceBone, name, cast frameOffset, rescaleAsRequired, skelDimensionsRatio);
 			}
 			else {
 				trace("copyAnimationRange: not same rig, missing source bone " + boneName);

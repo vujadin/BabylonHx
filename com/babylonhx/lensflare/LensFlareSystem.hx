@@ -6,6 +6,7 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Viewport;
+import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.tools.Tools;
@@ -26,9 +27,7 @@ import com.babylonhx.tools.Tools;
 
 	private var _scene:Scene;
 	private var _emitter:Dynamic;
-	private var _vertexDeclaration:Array<Int>;
-	private var _vertexStrideSize:Int;				// 2 * 4;
-	private var _vertexBuffer:WebGLBuffer;
+	private var _vertexBuffers:Map<String, VertexBuffer> = new Map();
 	private var _indexBuffer:WebGLBuffer;
 	private var _effect:Effect;
 	private var _positionX:Float;
@@ -47,19 +46,19 @@ import com.babylonhx.tools.Tools;
 			return m.material != null && m.isVisible && m.isEnabled() && m.isBlocker && ((m.layerMask & scene.activeCamera.layerMask) != 0);
 		}
 		
+		var engine = scene.getEngine(); 
+		
 		// VBO
-		var vertices:Array<Float> = [];
-        vertices.push(1);
+		var vertices:Array<Float> = []; 
 		vertices.push(1);
-        vertices.push(-1);
 		vertices.push(1);
-        vertices.push(-1);
 		vertices.push(-1);
-        vertices.push(1);
+		vertices.push(1);
 		vertices.push(-1);
-        this._vertexDeclaration = [2];
-        this._vertexStrideSize = 2 * 4;
-        this._vertexBuffer = scene.getEngine().createVertexBuffer(vertices);
+		vertices.push(-1);
+		vertices.push(1);
+		vertices.push(-1);
+		this._vertexBuffers[VertexBuffer.PositionKind] = new VertexBuffer(engine, vertices, VertexBuffer.PositionKind, false, false, 2);
 		
 		// Indices
 		var indices:Array<Int> = [];
@@ -70,11 +69,10 @@ import com.babylonhx.tools.Tools;
 		indices.push(0);
 		indices.push(2);
 		indices.push(3);
-		
-		this._indexBuffer = scene.getEngine().createIndexBuffer(indices);
+		this._indexBuffer = engine.createIndexBuffer(indices);
 		
 		// Effects
-		this._effect = this._scene.getEngine().createEffect("lensFlare",
+		this._effect = engine.createEffect("lensFlare",
 			["position"],
 			["color", "viewportMatrix"],
 			["textureSampler"], "");
@@ -89,11 +87,11 @@ import com.babylonhx.tools.Tools;
 		return value;
 	}
 
-	public function getScene():Scene {
+	inline public function getScene():Scene {
 		return this._scene;
 	}
 
-	public function getEmitter():Dynamic {
+	inline public function getEmitter():Dynamic {
 		return this._emitter;
 	}
 	
@@ -101,7 +99,7 @@ import com.babylonhx.tools.Tools;
 		this._emitter = newEmitter;
 	}
 
-	public function getEmitterPosition():Vector3 {
+	inline public function getEmitterPosition():Vector3 {
 		return this._emitter.getAbsolutePosition != null ? this._emitter.getAbsolutePosition() : this._emitter.position;
 	}
 
@@ -117,8 +115,9 @@ import com.babylonhx.tools.Tools;
 		
 		if (position.z > 0) {
 			if ((this._positionX > globalViewport.x) && (this._positionX < globalViewport.x + globalViewport.width)) {
-				if ((this._positionY > globalViewport.y) && (this._positionY < globalViewport.y + globalViewport.height))
+				if ((this._positionY > globalViewport.y) && (this._positionY < globalViewport.y + globalViewport.height)) {
 					return true;
+				}
 			}
 		}
 		
@@ -211,7 +210,7 @@ import com.babylonhx.tools.Tools;
 		engine.setAlphaMode(Engine.ALPHA_ONEONE);
 		
 		// VBOs
-		engine.bindBuffers(this._vertexBuffer, this._indexBuffer, this._vertexDeclaration, this._vertexStrideSize, this._effect);
+		engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._effect);
 		
 		// Flares
 		for (index in 0...this.lensFlares.length) {
@@ -245,13 +244,15 @@ import com.babylonhx.tools.Tools;
 		
 		engine.setDepthBuffer(true);
 		engine.setAlphaMode(Engine.ALPHA_DISABLE);
+		
 		return true;
 	}
 
 	public function dispose():Void {
-		if (this._vertexBuffer != null) {
-			this._scene.getEngine()._releaseBuffer(this._vertexBuffer);
-			this._vertexBuffer = null;
+		var vertexBuffer = this._vertexBuffers[VertexBuffer.PositionKind];
+		if (vertexBuffer != null) {
+			vertexBuffer.dispose();
+			this._vertexBuffers[VertexBuffer.PositionKind] = null;
 		}
 		
 		if (this._indexBuffer != null) {

@@ -5,6 +5,7 @@ import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.mesh.WebGLBuffer;
+import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
@@ -32,9 +33,7 @@ import com.babylonhx.utils.GL;
 	public var indices:Array<Int> = [];
 	
 	private var _scene:Scene;
-	private var _vertexDeclaration:Array<Int> = [];
-	private var _vertexStrideSize:Int = 2 * 4;
-	private var _vertexBuffer:WebGLBuffer;
+	private var _vertexBuffers:Map<String, VertexBuffer>;
 	private var _indexBuffer:WebGLBuffer;
 	private var _effect:Effect;
 	private var _alphaTestEffect:Effect;
@@ -99,36 +98,41 @@ import com.babylonhx.utils.GL;
 		this._scene = scene;
 		this._scene.layers.push(this);
 		
+		var engine = scene.getEngine();
+		
 		// VBO
-		this.vertices.push(1);
-		this.vertices.push(1);
-		this.vertices.push(-1);
-		this.vertices.push(1);
-		this.vertices.push(-1);
-		this.vertices.push(-1);
-		this.vertices.push(1);
-		this.vertices.push( -1);
-		this._vertexDeclaration = [2];
-        this._vertexBuffer = scene.getEngine().createVertexBuffer(this.vertices);		
+		var vertices:Array<Float> = [];
+		vertices.push(1);
+		vertices.push(1);
+		vertices.push(-1);
+		vertices.push(1);
+		vertices.push(-1);
+		vertices.push(-1);
+		vertices.push(1);
+		vertices.push( -1);
+		
+		var vertexBuffer = new VertexBuffer(engine, vertices, VertexBuffer.PositionKind, false, false, 2);
+		this._vertexBuffers[VertexBuffer.PositionKind] = vertexBuffer;
 		
 		// Indices
-		this.indices.push(0);
-		this.indices.push(1);
-		this.indices.push(2);
+		var indices:Array<Int> = [];
+		indices.push(0);
+		indices.push(1);
+		indices.push(2);
 		
-		this.indices.push(0);
-		this.indices.push(2);
-		this.indices.push(3);
+		indices.push(0);
+		indices.push(2);
+		indices.push(3);
 		
-		this._indexBuffer = scene.getEngine().createIndexBuffer(this.indices);
+		this._indexBuffer = engine.createIndexBuffer(this.indices);
 		
 		// Effects
-		this._effect = this._scene.getEngine().createEffect("layer",
+		this._effect = engine.createEffect("layer",
 			["position"],
 			["textureMatrix", "color", "scale", "offset"],
 			["textureSampler"], "");
 			
-		this._alphaTestEffect = this._scene.getEngine().createEffect("layer",
+		this._alphaTestEffect = engine.createEffect("layer",
 			["position"],
 			["textureMatrix", "color", "scale", "offset"],
 			["textureSampler"], "#define ALPHATEST");
@@ -162,7 +166,7 @@ import com.babylonhx.utils.GL;
         currentEffect.setVector2("scale", this.scale);
 		
 		// VBOs
-		engine.bindBuffers(this._vertexBuffer, this._indexBuffer, this._vertexDeclaration, this._vertexStrideSize, currentEffect);
+		engine.bindBuffers(this._vertexBuffers, this._indexBuffer, currentEffect);
 		
 		// Draw order
 		if (this._alphaTestEffect == null) {
@@ -178,9 +182,10 @@ import com.babylonhx.utils.GL;
 	}
 
 	public function dispose() {
-		if (this._vertexBuffer != null) {
-			this._scene.getEngine()._releaseBuffer(this._vertexBuffer);
-			this._vertexBuffer = null;
+		var vertexBuffer = this._vertexBuffers[VertexBuffer.PositionKind];
+		if (vertexBuffer != null) {
+			vertexBuffer.dispose();
+			this._vertexBuffers[VertexBuffer.PositionKind] = null;
 		}
 		
 		if (this._indexBuffer != null) {

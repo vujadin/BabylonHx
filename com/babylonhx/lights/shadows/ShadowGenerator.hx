@@ -147,6 +147,8 @@ import com.babylonhx.Scene;
 	private var _mapSize:Int;
 	private var _currentFaceIndex:Int = 0;
     private var _currentFaceIndexCache:Int = 0;
+	
+	private var _useFullFloat:Bool = true;
 
 	
 	public function new(mapSize:Int, light:IShadowLight) {
@@ -156,8 +158,18 @@ import com.babylonhx.Scene;
 		
 		light._shadowGenerator = this;
 		
+		// Texture type fallback from float to int if not supported.
+		var textureType:Int = Engine.TEXTURETYPE_UNSIGNED_INT;
+		if (this._scene.getEngine().getCaps().textureFloat == true) {
+			this._useFullFloat = true;
+			textureType = Engine.TEXTURETYPE_FLOAT;
+		}
+		else {
+			this._useFullFloat = false;
+		}
+		
 		// Render target
-		this._shadowMap = new RenderTargetTexture(light.name + "_shadowMap", mapSize, this._scene, false, true, Engine.TEXTURETYPE_UNSIGNED_INT, light.needCube());
+		this._shadowMap = new RenderTargetTexture(light.name + "_shadowMap", mapSize, this._scene, false, true, textureType, light.needCube());
 		this._shadowMap.wrapU = Texture.CLAMP_ADDRESSMODE;
 		this._shadowMap.wrapV = Texture.CLAMP_ADDRESSMODE;
 		this._shadowMap.anisotropicFilteringLevel = 1;
@@ -174,7 +186,7 @@ import com.babylonhx.Scene;
 			}
 			
 			if (this._shadowMap2 == null) {
-				this._shadowMap2 = new RenderTargetTexture(light.name + "_shadowMap", mapSize, this._scene, false);
+				this._shadowMap2 = new RenderTargetTexture(light.name + "_shadowMap", mapSize, this._scene, false, true, textureType);
 				this._shadowMap2.wrapU = Texture.CLAMP_ADDRESSMODE;
 				this._shadowMap2.wrapV = Texture.CLAMP_ADDRESSMODE;
 				this._shadowMap2.updateSamplingMode(Texture.TRILINEAR_SAMPLINGMODE);
@@ -238,7 +250,7 @@ import com.babylonhx.Scene;
 				
 				// Draw
 				mesh._processRendering(subMesh, this._effect, Material.TriangleFillMode, batch, hardwareInstancedRendering,
-					function(isInstance:Bool, world:Matrix) { this._effect.setMatrix("world", world); } );
+					function(isInstance:Bool, world:Matrix, ?mat:Material) { this._effect.setMatrix("world", world); } );
 					
 				if (this.forceBackFacesOnly) {
 					engine.setState(true, 0, false, false);
@@ -278,6 +290,10 @@ import com.babylonhx.Scene;
 
 	public function isReady(subMesh:SubMesh, useInstances:Bool):Bool {
 		var defines:Array<String> = [];
+		
+		if (this._useFullFloat) {
+            defines.push("#define FULLFLOAT");
+        }
 		
 		if (this.useVarianceShadowMap || this.useBlurVarianceShadowMap) {
 			defines.push("#define VSM");

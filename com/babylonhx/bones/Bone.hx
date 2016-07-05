@@ -116,7 +116,7 @@ import com.babylonhx.animations.AnimationRange;
 		this._skeleton._markAsDirty();
 	}
 	
-	public function copyAnimationRange(source:Bone, rangeName:String, frameOffset:Int, rescaleAsRequired:Bool = false):Bool {
+	public function copyAnimationRange(source:Bone, rangeName:String, frameOffset:Int, rescaleAsRequired:Bool = false, skelDimensionsRatio:Vector3 = null):Bool {
 		// all animation may be coming from a library skeleton, so may need to create animation
 		if (this.animations.length == 0){
 			this.animations.push(new Animation(this.name, "_matrix", source.animations[0].framePerSecond, Animation.ANIMATIONTYPE_MATRIX, 0)); 
@@ -134,30 +134,44 @@ import com.babylonhx.animations.AnimationRange;
 		var sourceKeys = source.animations[0].getKeys();
 		
 		// rescaling prep
-		var sourceBoneLength:Int = source.length;
-		var scalingReqd:Bool = rescaleAsRequired && sourceBoneLength > 0 && this.length > 0 && sourceBoneLength != this.length;
-		var ratio:Float = scalingReqd ? this.length / sourceBoneLength : 0;
+		var sourceBoneLength = source.length;
+		var sourceParent = source.getParent();
+		var parent = this.getParent();
+		var parentScalingReqd = rescaleAsRequired && sourceParent != null && sourceBoneLength > 0 && this.length > 0 && sourceBoneLength != this.length;
+		var parentRatio = parentScalingReqd ? parent.length / sourceParent.length : null;
+		
+		var dimensionsScalingReqd = rescaleAsRequired && parent == null && skelDimensionsRatio != null && (skelDimensionsRatio.x != 1 || skelDimensionsRatio.y != 1 || skelDimensionsRatio.z != 1);           
 		
 		var destKeys = this.animations[0].getKeys();
 		
-		// loop vars declaration / initialization
+		// loop vars declaration
 		var orig:BabylonFrame = null;
-		var origScale:Vector3 = scalingReqd ? Vector3.Zero() : null;
-		var origRotation:Quaternion = scalingReqd ? new Quaternion() : null;
-		var origTranslation:Vector3 = scalingReqd ? Vector3.Zero() : null;
+		var origTranslation:Vector3;
 		var mat:Matrix = null;
 		
 		for (key in 0...sourceKeys.length) {
 			orig = sourceKeys[key];
 			if (orig.frame >= from  && orig.frame <= to) {
-				if (scalingReqd) {
-					orig.value.decompose(origScale, origRotation, origTranslation);
-					origTranslation.scaleInPlace(ratio);
-					mat = Matrix.Compose(origScale, origRotation, origTranslation);
+				if (rescaleAsRequired) {
+					mat = orig.value.clone();
+					
+					// scale based on parent ratio, when bone has parent
+					if (parentScalingReqd) {
+						origTranslation = mat.getTranslation();
+						mat.setTranslation(origTranslation.scaleInPlace(parentRatio));					
+					} // scale based on skeleton dimension ratio when root bone, and value is passed
+					else if (dimensionsScalingReqd) {
+						origTranslation = mat.getTranslation();
+						mat.setTranslation(origTranslation.multiplyInPlace(skelDimensionsRatio)); 
+					} // use original when root bone, and no data for skelDimensionsRatio
+					else {
+						mat = orig.value;                            
+					}
 				}
 				else {
 					mat = orig.value;
 				}
+				
 				destKeys.push( { frame: orig.frame + frameOffset, value: mat } );
 			}
 		}

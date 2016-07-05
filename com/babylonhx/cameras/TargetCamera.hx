@@ -113,7 +113,7 @@ import com.babylonhx.math.Quaternion;
 	// Methods
 	inline public function _computeLocalCameraSpeed():Float {
 		var engine = this.getEngine();
-		return this.speed * ((engine.getDeltaTime() / (engine.getFps() * 10.0)));
+		return this.speed * Math.sqrt((engine.getDeltaTime() / (engine.getFps() * 100.0)));
 	}
 
 	// Target
