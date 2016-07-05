@@ -101,7 +101,7 @@ import com.babylonhx.tools.Tools;
 
 	static var _renderingGroup:RenderingGroup;
 	static var _needToStepBack:Bool;
-	public function render(customRenderFunction:SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void, activeMeshes:Array<AbstractMesh>, renderParticles:Bool, renderSprites:Bool) {
+	public function render(customRenderFunction:SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void = null, activeMeshes:Array<AbstractMesh>, renderParticles:Bool, renderSprites:Bool) {
 		this._currentActiveMeshes = activeMeshes;
         this._currentRenderParticles = renderParticles;
         this._currentRenderSprites = renderSprites;
@@ -122,6 +122,7 @@ import com.babylonhx.tools.Tools;
                 }
 				
 				if (!_renderingGroup.render(customRenderFunction)) {
+
 					this._renderingGroups.splice(index, 1);
 					_needToStepBack = true;
 					this._renderSpritesAndParticles();

@@ -320,7 +320,7 @@ import com.babylonhx.tools.EventState;
 				}				
 				
 				// Draw
-				mesh._processRendering(subMesh, this._volumetricLightScatteringPass, Material.TriangleFillMode, batch, hardwareInstancedRendering, function(isInstance:Bool, world:Matrix) effect.setMatrix("world", world));
+				mesh._processRendering(subMesh, this._volumetricLightScatteringPass, Material.TriangleFillMode, batch, hardwareInstancedRendering, function(isInstance:Bool, world:Matrix, ?mat:Material) effect.setMatrix("world", world));
 			}
 		};
 		

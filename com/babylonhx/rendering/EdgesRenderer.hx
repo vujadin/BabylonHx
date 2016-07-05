@@ -9,6 +9,7 @@ import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.cameras.Camera;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 
 /**
@@ -319,7 +320,7 @@ class EdgesRenderer implements ISmartArrayCompatible {
 		this._lineShader._preBind();
 		
 		// VBOs
-		engine.bindMultiBuffers(this._buffers, this._ib, this._lineShader.getEffect());
+		engine.bindBuffers(this._buffers, this._ib, this._lineShader.getEffect());
 		
 		scene.resetCachedMaterial();
 		this._lineShader.setColor4("color", this._source.edgesColor);

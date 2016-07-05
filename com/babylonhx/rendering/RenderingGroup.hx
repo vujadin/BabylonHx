@@ -29,8 +29,7 @@ import com.babylonhx.materials.Material;
 		this.index = index;
 	}
 
-	var submesh:SubMesh = null;
-	public function render(customRenderFunction:SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void):Bool {
+	public function render(?customRenderFunction:SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void):Bool {
 		if (customRenderFunction != null) {
 			customRenderFunction(this._opaqueSubMeshes, this._alphaTestSubMeshes, this._transparentSubMeshes);
 			return true;
@@ -44,17 +43,18 @@ import com.babylonhx.materials.Material;
 		}
 		
 		var engine = this._scene.getEngine();
+		
+		var submesh:SubMesh = null;
+		
 		// Opaque		
 		for (subIndex in 0...this._opaqueSubMeshes.length) {
-			submesh = this._opaqueSubMeshes.data[subIndex];
-			submesh.render(false);
+			this._opaqueSubMeshes.data[subIndex].render(false);
 		}
 		
 		// Alpha test
 		engine.setAlphaTesting(true);
 		for (subIndex in 0...this._alphaTestSubMeshes.length) {
-			submesh = this._alphaTestSubMeshes.data[subIndex];
-			submesh.render(false);
+			this._alphaTestSubMeshes.data[subIndex].render(false);
 		}
 		engine.setAlphaTesting(false);
 		

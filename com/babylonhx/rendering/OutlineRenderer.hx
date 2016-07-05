@@ -56,7 +56,7 @@ import com.babylonhx.math.Matrix;
 		}
 		
 		mesh._processRendering(subMesh, this._effect, Material.TriangleFillMode, batch, hardwareInstancedRendering,
-					function(isInstance:Bool, world:Matrix) { this._effect.setMatrix("world", world); } );
+					function(isInstance:Bool, world:Matrix, ?mat:Material) { this._effect.setMatrix("world", world); } );
 	}
 
 	public function isReady(subMesh:SubMesh, useInstances:Bool):Bool {

@@ -8,6 +8,7 @@ import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.VertexData;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.culling.BoundingBox;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 /**
  * ...
@@ -23,8 +24,8 @@ import com.babylonhx.culling.BoundingBox;
 
 	private var _scene:Scene;
 	private var _colorShader:ShaderMaterial;
-	private var _vb:VertexBuffer;
-	private var _ib:WebGLBuffer;
+	private var _vertexBuffers:Map<String, VertexBuffer> = new Map();
+	private var _indexBuffer:WebGLBuffer;
 	
 
 	public function new(scene:Scene) {
@@ -37,14 +38,14 @@ import com.babylonhx.culling.BoundingBox;
 		}
 		
 		this._colorShader = new ShaderMaterial("colorShader", this._scene, "color", {
-			attributes:["position"],
-			uniforms:["worldViewProjection", "color"]
+			attributes: [VertexBuffer.PositionKind],
+			uniforms: ["worldViewProjection", "color"]
 		});
-			
+		
 		var engine = this._scene.getEngine();
 		var boxdata = VertexData.CreateBox(1.0);
-		this._vb = new VertexBuffer(engine, boxdata.positions, VertexBuffer.PositionKind, false);
-		this._ib = engine.createIndexBuffer([0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 7, 1, 6, 2, 5, 3, 4]);
+		this._vertexBuffers[VertexBuffer.PositionKind] = new VertexBuffer(engine, boxdata.positions, VertexBuffer.PositionKind, false);
+		this._indexBuffer = engine.createIndexBuffer([0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 7, 1, 6, 2, 5, 3, 4]);
 	}
 
 	public function reset() {
@@ -77,7 +78,7 @@ import com.babylonhx.culling.BoundingBox;
 				.multiply(boundingBox.getWorldMatrix());
 				
 			// VBOs
-			engine.bindBuffers(this._vb.getBuffer(), this._ib, [3], 3 * 4, this._colorShader.getEffect());
+			engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._colorShader.getEffect());
 			
 			if (this.showBackLines) {
 				// Back
@@ -111,8 +112,14 @@ import com.babylonhx.culling.BoundingBox;
 		}
 		
 		this._colorShader.dispose();
-		this._vb.dispose();
-		this._scene.getEngine()._releaseBuffer(this._ib);
+		
+		var buffer = this._vertexBuffers[VertexBuffer.PositionKind];
+		if (buffer != null) {
+			buffer.dispose();
+			this._vertexBuffers[VertexBuffer.PositionKind] = null;
+		}
+			
+		this._scene.getEngine()._releaseBuffer(this._indexBuffer);
 	}
 	
 }
