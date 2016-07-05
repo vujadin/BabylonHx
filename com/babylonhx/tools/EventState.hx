@@ -24,8 +24,14 @@ class EventState {
 	 * If the callback of a given Observer set this member to true the following observers will be ignored
 	 */
 	inline public function new(mask:Int, skipNextObservers:Bool = false) {
-		this.skipNextObservers = skipNextObservers;
-		this.mask = mask;
+		this.initalize(mask, skipNextObservers);
 	}
+	
+	inline public function initalize(mask:Int, skipNextObservers:Bool = false):EventState {
+        this.mask = mask;
+        this.skipNextObservers = skipNextObservers;
+		
+		return this;
+    }
 	
 }

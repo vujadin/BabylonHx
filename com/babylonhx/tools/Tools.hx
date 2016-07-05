@@ -12,10 +12,11 @@ import com.babylonhx.math.Vector2;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.AbstractMesh;
+
 import com.babylonhx.utils.Image;
 import com.babylonhx.utils.typedarray.UInt8Array;
-import haxe.io.BytesInput;
 
+import haxe.io.BytesInput;
 import haxe.io.Bytes;
 import haxe.crypto.Base64;
 import haxe.Json;
@@ -110,12 +111,12 @@ typedef Assets = nme.Assets;
 		};
 	}
 
-	inline public static function ExtractMinAndMax(positions:Array<Float>, start:Int, count:Int, bias:Vector2 = null):BabylonMinMax {
+	inline public static function ExtractMinAndMax(positions:Array<Float>, start:Int, count:Int, bias:Vector2 = null, stride:Int = 3):BabylonMinMax {
 		var minimum = new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY);
 		var maximum = new Vector3(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY);
 		
 		for (index in start...start + count) {
-			var current = new Vector3(positions[index * 3], positions[index * 3 + 1], positions[index * 3 + 2]);
+			var current = new Vector3(positions[index * stride], positions[index * stride + 1], positions[index * stride + 2]);
 			
 			minimum = Vector3.Minimize(current, minimum);
 			maximum = Vector3.Maximize(current, maximum);

@@ -1967,7 +1967,7 @@ import com.babylonhx.audio.*;
 				this.activeCamera._activeMeshes.push(mesh);
 				mesh._activate(this._renderId);
 				
-				this._activeMesh(meshLOD);
+				this._activeMesh(mesh, meshLOD);
 			}
 		}
 		
@@ -1989,7 +1989,7 @@ import com.babylonhx.audio.*;
 		}
 	}
 
-	private function _activeMesh(mesh:AbstractMesh) {
+	private function _activeMesh(sourceMesh:AbstractMesh, mesh:AbstractMesh) {
 		if (mesh.skeleton != null && this.skeletonsEnabled) {
 			if (this._activeSkeletons.pushNoDuplicate(mesh.skeleton)) {
 				mesh.skeleton.prepare();
@@ -2000,12 +2000,12 @@ import com.babylonhx.audio.*;
             }
 		}
 		
-		if (mesh.showBoundingBox || this.forceShowBoundingBoxes) {
-			this._boundingBoxRenderer.renderList.push(mesh.getBoundingInfo().boundingBox);
+		if (sourceMesh.showBoundingBox || this.forceShowBoundingBoxes) {
+			this._boundingBoxRenderer.renderList.push(sourceMesh.getBoundingInfo().boundingBox);
 		} 
 		
-		if (mesh._edgesRenderer != null) {
-            this._edgesRenderers.push(mesh._edgesRenderer);
+		if (sourceMesh._edgesRenderer != null) {
+            this._edgesRenderers.push(sourceMesh._edgesRenderer);
         }
         
 		if (mesh != null && mesh.subMeshes != null) {

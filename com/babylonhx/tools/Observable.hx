@@ -17,6 +17,7 @@ package com.babylonhx.tools;
  */
 class Observable<T> {
 	
+	private static var _pooledEventState:EventState = null;
 	private var _observers:Array<Observer<T>>;
 	
 	
@@ -85,7 +86,8 @@ class Observable<T> {
 	 * @param eventData
 	 */
 	public function notifyObservers(eventData:T, mask:Int = -1) {
-		var state:EventState = new EventState(mask);
+		var state = Observable._pooledEventState != null ? Observable._pooledEventState.initalize(mask) : new EventState(mask);
+        Observable._pooledEventState = null;
 		
         for (obs in this._observers) {
             if (obs.mask & mask != 0) {
@@ -95,6 +97,8 @@ class Observable<T> {
 				break;
 			}
         }
+		
+		Observable._pooledEventState = state;
 	}
 	
 	/**

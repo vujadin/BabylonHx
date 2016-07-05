@@ -122,8 +122,8 @@ import com.babylonhx.utils.GL;
 		this._depthMask = true;
 		this._depthTest = true;
 		this._depthFunc = null;
-		this._cull = null;
 		this._cullFace = null;
+		this._cull = null;
 		this._zOffset = 0;
 		
 		this._isDepthTestDirty = true;

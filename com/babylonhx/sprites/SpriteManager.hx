@@ -2,6 +2,8 @@ package com.babylonhx.sprites;
 
 import com.babylonhx.materials.Effect;
 import com.babylonhx.mesh.WebGLBuffer;
+import com.babylonhx.mesh.VertexBuffer;
+import com.babylonhx.mesh.Buffer;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.math.Vector3;
@@ -54,18 +56,17 @@ import com.babylonhx.utils.typedarray.Float32Array;
 
 	private var _scene:Scene;
 
-	private var _vertexDeclaration:Array<Int> = [4, 4, 4, 4];
-	private var _vertexStrideSize:Int = 16 * 4; // 16 floats per sprite (x, y, z, angle, size, offsetX, offsetY, invertU, invertV, cellIndexX, cellIndexY, color)
-	private var _vertexBuffer:WebGLBuffer;
+	private var _vertexData:Array<Float>;
+	private var _buffer:Buffer<Array<Float>>;
+	private var _vertexBuffers:Map<String, VertexBuffer>;
 	private var _indexBuffer:WebGLBuffer;
-	private var _vertices:Float32Array;
 	private var _effectBase:Effect;
 	private var _effectFog:Effect;
 	
 	public var texture(get, set):Texture;
 	
 
-	public function new(name:String, imgUrl:String, capacity:Int, cellSize:Float, scene:Scene, ?epsilon:Float, ?samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE) {
+	public function new(name:String, imgUrl:String, capacity:Int, cellSize:Float, scene:Scene, epsilon:Float = 0.01, ?samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE) {
 		this.name = name;
 		this.cellSize = cellSize;
 		
@@ -73,18 +74,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._spriteTexture = new Texture(imgUrl, scene, true, false, samplingMode);
 		this._spriteTexture.wrapU = Texture.CLAMP_ADDRESSMODE;
 		this._spriteTexture.wrapV = Texture.CLAMP_ADDRESSMODE;
-		this._epsilon = epsilon == null ? 0.01 : epsilon;
-		
-		// temp fix for correct 'pixelated' appearance
-        if(samplingMode == Texture.NEAREST_SAMPLINGMODE) {
-            this._spriteTexture.anisotropicFilteringLevel = 1;
-        }
+		this._epsilon = epsilon;
 		
 		this._scene = scene;
 		this._scene.spriteManagers.push(this);
-		
-		// VBO
-		this._vertexBuffer = scene.getEngine().createDynamicVertexBuffer(capacity * this._vertexStrideSize * 4);
 		
 		var indices:Array<Int> = [];
 		var index:Int = 0;
@@ -99,7 +92,21 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 		
 		this._indexBuffer = scene.getEngine().createIndexBuffer(indices);
-		this._vertices = new Float32Array(capacity * this._vertexStrideSize);
+		
+		// VBO
+            // 16 floats per sprite (x, y, z, angle, sizeX, sizeY, offsetX, offsetY, invertU, invertV, cellIndexX, cellIndexY, color r, color g, color b, color a)
+		this._vertexData = [];
+		this._buffer = new Buffer(scene.getEngine(), this._vertexData, true, 16);
+		
+		var positions = this._buffer.createVertexBuffer(VertexBuffer.PositionKind, 0, 4);
+		var options = this._buffer.createVertexBuffer("options", 4, 4);
+		var cellInfo = this._buffer.createVertexBuffer("cellInfo", 8, 4);
+		var colors = this._buffer.createVertexBuffer(VertexBuffer.ColorKind, 12, 4);
+
+		this._vertexBuffers[VertexBuffer.PositionKind] = positions;
+		this._vertexBuffers["options"] = options;
+		this._vertexBuffers["cellInfo"] = cellInfo;
+		this._vertexBuffers[VertexBuffer.ColorKind] = colors;
 		
 		// Effects
 		this._effectBase = this._scene.getEngine().createEffect("sprites",
@@ -137,24 +144,24 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			offsetY = 1 - this._epsilon;
 		}
 			
-		this._vertices[arrayOffset] = sprite.position.x;
-		this._vertices[arrayOffset + 1] = sprite.position.y;
-		this._vertices[arrayOffset + 2] = sprite.position.z;
-		this._vertices[arrayOffset + 3] = sprite.angle;
-		this._vertices[arrayOffset + 4] = sprite.width;
-		this._vertices[arrayOffset + 5] = sprite.height;
-		this._vertices[arrayOffset + 6] = offsetX;
-		this._vertices[arrayOffset + 7] = offsetY;
-		this._vertices[arrayOffset + 8] = sprite.invertU ? 1 : 0;
-		this._vertices[arrayOffset + 9] = sprite.invertV ? 1 : 0;
+		this._vertexData[arrayOffset] = sprite.position.x;
+		this._vertexData[arrayOffset + 1] = sprite.position.y;
+		this._vertexData[arrayOffset + 2] = sprite.position.z;
+		this._vertexData[arrayOffset + 3] = sprite.angle;
+		this._vertexData[arrayOffset + 4] = sprite.width;
+		this._vertexData[arrayOffset + 5] = sprite.height;
+		this._vertexData[arrayOffset + 6] = offsetX;
+		this._vertexData[arrayOffset + 7] = offsetY;
+		this._vertexData[arrayOffset + 8] = sprite.invertU ? 1 : 0;
+		this._vertexData[arrayOffset + 9] = sprite.invertV ? 1 : 0;
 		var offset = Std.int(sprite.cellIndex / rowSize);
-		this._vertices[arrayOffset + 10] = sprite.cellIndex - offset * rowSize;
-		this._vertices[arrayOffset + 11] = offset;
+		this._vertexData[arrayOffset + 10] = sprite.cellIndex - offset * rowSize;
+		this._vertexData[arrayOffset + 11] = offset;
 		// Color
-		this._vertices[arrayOffset + 12] = sprite.color.r;
-		this._vertices[arrayOffset + 13] = sprite.color.g;
-		this._vertices[arrayOffset + 14] = sprite.color.b;
-		this._vertices[arrayOffset + 15] = sprite.color.a;
+		this._vertexData[arrayOffset + 12] = sprite.color.r;
+		this._vertexData[arrayOffset + 13] = sprite.color.g;
+		this._vertexData[arrayOffset + 14] = sprite.color.b;
+		this._vertexData[arrayOffset + 15] = sprite.color.a;
 	}
 	
 	public function intersects(ray:Ray, camera:Camera, ?predicate:Sprite->Bool, fastCheck:Bool = false):PickingInfo {
@@ -241,7 +248,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			this._appendSpriteVertex(offset++, sprite, 1, 1, rowSize);
 			this._appendSpriteVertex(offset++, sprite, 0, 1, rowSize);
 		}
-		engine.updateDynamicVertexBuffer(this._vertexBuffer, this._vertices);
+		
+		this._buffer.update(this._vertexData);
 		
 		// Render
 		var effect = this._effectBase;
@@ -266,7 +274,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 		
 		// VBOs
-		engine.bindBuffers(this._vertexBuffer, this._indexBuffer, this._vertexDeclaration, this._vertexStrideSize, effect);
+		engine.bindBuffers(this._vertexBuffers, this._indexBuffer, effect);
 		
 		// Draw order
 		engine.setDepthFunctionToLessOrEqual();
@@ -282,9 +290,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	public function dispose() {
-		if (this._vertexBuffer != null) {
-			this._scene.getEngine()._releaseBuffer(this._vertexBuffer);
-			this._vertexBuffer = null;
+		if (this._buffer != null) {
+			this._buffer.dispose();
+			this._buffer = null;
 		}
 		
 		if (this._indexBuffer != null) {

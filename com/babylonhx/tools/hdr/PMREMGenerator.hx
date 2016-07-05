@@ -12,19 +12,19 @@ import com.babylonhx.utils.typedarray.UInt32Array;
  */
 class PMREMGenerator {
 
-	private static var CP_MAX_MIPLEVELS:Int = 16;
+	private static inline var CP_MAX_MIPLEVELS:Int = 16;
 
-	private static var CP_UDIR:Int = 0;
-	private static var CP_VDIR:Int = 1;
-	private static var CP_FACEAXIS:Int = 2;
+	private static inline var CP_UDIR:Int = 0;
+	private static inline var CP_VDIR:Int = 1;
+	private static inline var CP_FACEAXIS:Int = 2;
 
 	//used to index cube faces
-	private static var CP_FACE_X_POS:Int = 0;
-	private static var CP_FACE_X_NEG:Int = 1;
-	private static var CP_FACE_Y_POS:Int = 2;
-	private static var CP_FACE_Y_NEG:Int = 3;
-	private static var CP_FACE_Z_POS:Int = 4;
-	private static var CP_FACE_Z_NEG:Int = 5;
+	private static inline var CP_FACE_X_POS:Int = 0;
+	private static inline var CP_FACE_X_NEG:Int = 1;
+	private static inline var CP_FACE_Y_POS:Int = 2;
+	private static inline var CP_FACE_Y_NEG:Int = 3;
+	private static inline var CP_FACE_Z_POS:Int = 4;
+	private static inline var CP_FACE_Z_NEG:Int = 5;
 
 	//used to index image edges
 	// NOTE.. the actual number corresponding to the edge is important
@@ -34,21 +34,21 @@ class PMREMGenerator {
 	// CP_EDGE_RIGHT  is u = width-1
 	// CP_EDGE_TOP    is v = 0
 	// CP_EDGE_BOTTOM is v = height-1
-	private static var CP_EDGE_LEFT:Int = 0;
-	private static var CP_EDGE_RIGHT:Int = 1;
-	private static var CP_EDGE_TOP:Int = 2;
-	private static var CP_EDGE_BOTTOM:Int = 3;
+	private static inline var CP_EDGE_LEFT:Int = 0;
+	private static inline var CP_EDGE_RIGHT:Int = 1;
+	private static inline var CP_EDGE_TOP:Int = 2;
+	private static inline var CP_EDGE_BOTTOM:Int = 3;
 
 	//corners of CUBE map (P or N specifys if it corresponds to the 
 	//  positive or negative direction each of X, Y, and Z
-	private static var CP_CORNER_NNN:Int = 0;
-	private static var CP_CORNER_NNP:Int = 1;
-	private static var CP_CORNER_NPN:Int = 2;
-	private static var CP_CORNER_NPP:Int = 3;
-	private static var CP_CORNER_PNN:Int = 4;
-	private static var CP_CORNER_PNP:Int = 5;
-	private static var CP_CORNER_PPN:Int = 6;
-	private static var CP_CORNER_PPP:Int = 7;
+	private static inline var CP_CORNER_NNN:Int = 0;
+	private static inline var CP_CORNER_NNP:Int = 1;
+	private static inline var CP_CORNER_NPN:Int = 2;
+	private static inline var CP_CORNER_NPP:Int = 3;
+	private static inline var CP_CORNER_PNN:Int = 4;
+	private static inline var CP_CORNER_PNP:Int = 5;
+	private static inline var CP_CORNER_PPN:Int = 6;
+	private static inline var CP_CORNER_PPP:Int = 7;
 
 	private static var _vectorTemp:Vector4 = new Vector4(0, 0, 0, 0);
 

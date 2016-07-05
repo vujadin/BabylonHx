@@ -131,9 +131,11 @@ class SerializationHelper {
 	}
 	
 	// cpp build adds brackets to property name (when defined in metadata...)
-	static function stripBrackets(str:String):String {
-		str = StringTools.replace(str, "[", "");
-		str = StringTools.replace(str, "]", "");
+	static inline function stripBrackets(str:String):String {
+		if (str.indexOf("[") != -1) {
+			str = StringTools.replace(str, "[", "");
+			str = StringTools.replace(str, "]", "");
+		}
 		
 		return str;
 	}
@@ -171,7 +173,8 @@ class SerializationHelper {
 						Reflect.setProperty(destination, property, Vector3.FromArray(sourceProperty));
 						
 					case 6:     // Mesh reference
-						Reflect.setProperty(destination, property, scene.getLastMeshByID(cast sourceProperty));
+						//var meshID:String = cast sourceProperty;
+						//Reflect.setProperty(destination, property, scene.getLastMeshByID(meshID));
 						
 				}
 			}
