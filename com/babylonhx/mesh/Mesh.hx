@@ -131,7 +131,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	private var _renderIdForInstances:Array<Int> = [];
 	private var _batchCache:_InstancesBatch = new _InstancesBatch();
 	private var _instancesBufferSize:Int = Std.int(32 * 16 * 4); // let's start with a maximum of 32 instances
-	private var _instancesBuffer:Buffer<Array<Float>>;
+	private var _instancesBuffer:Buffer;
 	private var _instancesData:Array<Float>;
 	private var _overridenInstanceCount:Int;
 	

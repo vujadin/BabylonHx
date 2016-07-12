@@ -33,6 +33,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 
 	// Members
 	public var animations:Array<Animation> = [];
+	
 	public var name:String;
 	public var id:String;
 	public var renderingGroupId:Int = 0;
@@ -91,8 +92,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public var color2:Color4 = new Color4(1.0, 1.0, 1.0, 0.4);
 	public var colorDead:Color4 = new Color4(0, 0, 0, 0.0);
 	public var textureMask:Color4 = new Color4(1.0, 1.0, 1.0, 1.0);
-	public var startDirectionFunction:Float->Matrix->Vector3->Void;
-	public var startPositionFunction:Matrix->Vector3->Void;
+	public var startDirectionFunction:Float->Matrix->Vector3->Particle->Void;
+	public var startPositionFunction:Matrix->Vector3->Particle->Void;
 
 	private var particles:Array<Particle> = [];
 	private var particle:Particle;
@@ -102,7 +103,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _stockParticles:Array<Particle> = [];
 	private var _newPartsExcess:Int = 0;
 	private var _vertexData:Array<Float>;
-	private var _vertexBuffer:Buffer<Array<Float>>;
+	private var _vertexBuffer:Buffer;
 	private var _vertexBuffers:Map<String, VertexBuffer> = new Map();
 	private var _indexBuffer:WebGLBuffer;	
 	private var _effect:Effect;
@@ -151,7 +152,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._indexBuffer = this._engine.createIndexBuffer(indices);
 		
 		// 11 floats per particle (x, y, z, r, g, b, a, angle, size, offsetX, offsetY) + 1 filler
-        this._vertexData = [];	//new Float32Array(capacity * 11 * 4);	
+        this._vertexData = [];// new Float32Array(Std.int(capacity * 11 * 4));	
+		for (i in 0...capacity) {
+			this._vertexData.push(0);
+		}
 		this._vertexBuffer = new Buffer(scene.getEngine(), this._vertexData, true, 11);
 		
 		var positions = this._vertexBuffer.createVertexBuffer(VertexBuffer.PositionKind, 0, 3);
@@ -163,7 +167,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._vertexBuffers["options"] = options;
 		
 		// Default behaviors
-		this.startDirectionFunction = function(emitPower:Float, worldMatrix:Matrix, directionToUpdate:Vector3):Void {
+		this.startDirectionFunction = function(emitPower:Float, worldMatrix:Matrix, directionToUpdate:Vector3, particle:Particle):Void {
 			var randX = randomNumber(this.direction1.x, this.direction2.x);
 			var randY = randomNumber(this.direction1.y, this.direction2.y);
 			var randZ = randomNumber(this.direction1.z, this.direction2.z);
@@ -171,7 +175,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			Vector3.TransformNormalFromFloatsToRef(randX * emitPower, randY * emitPower, randZ * emitPower, worldMatrix, directionToUpdate);
 		}
 		
-		this.startPositionFunction = function(worldMatrix:Matrix, positionToUpdate:Vector3):Void {
+		this.startPositionFunction = function(worldMatrix:Matrix, positionToUpdate:Vector3, particle:Particle):Void {
 			var randX = randomNumber(this.minEmitBox.x, this.maxEmitBox.x);
 			var randY = randomNumber(this.minEmitBox.y, this.maxEmitBox.y);
 			var randZ = randomNumber(this.minEmitBox.z, this.maxEmitBox.z);
@@ -260,7 +264,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._vertexData[offset + 10] = offsetY;
 	}
 
-	var worldMatrix:Matrix = Matrix.Zero();
+	static var worldMatrix:Matrix = Matrix.Zero();
 	inline private function _update(newParticles:Int) {
 		// Update current
 		this._alive = this.particles.length > 0;
@@ -290,11 +294,11 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			this.particles.push(particle);
 			
 			var emitPower = randomNumber(this.minEmitPower, this.maxEmitPower);
-			this.startDirectionFunction(emitPower, worldMatrix, particle.direction);
+			this.startDirectionFunction(emitPower, worldMatrix, particle.direction, particle);
 			particle.lifeTime = randomNumber(this.minLifeTime, this.maxLifeTime);
 			particle.size = randomNumber(this.minSize, this.maxSize);
 			particle.angularSpeed = randomNumber(this.minAngularSpeed, this.maxAngularSpeed);
-			this.startPositionFunction(worldMatrix, particle.position);
+			this.startPositionFunction(worldMatrix, particle.position, particle);
 			
 			var step = randomNumber(0, 1.0);
 			
@@ -358,7 +362,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			this.manualEmitCount = 0;
 		} 
 		else {
-			newParticles = Math.floor(this.emitRate * this._scaledUpdateSpeed);
+			newParticles = Std.int(this.emitRate * this._scaledUpdateSpeed);
 			this._newPartsExcess += Std.int(this.emitRate * this._scaledUpdateSpeed) - newParticles;
 		}
 		

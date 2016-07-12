@@ -1388,7 +1388,7 @@ import com.babylonhx.audio.*;
 	 * @param {Camera} newCamera - the new camera
 	 * @param {boolean} control - attachControl for the camera (default true)
 	 */
-	public function swithActiveCamera(newCamera:Camera, control:Bool = true) {				
+	public function switchActiveCamera(newCamera:Camera, control:Bool = true) {				
 		this.activeCamera.detachControl();			
 		this.activeCamera = newCamera;			
 		if (control) {

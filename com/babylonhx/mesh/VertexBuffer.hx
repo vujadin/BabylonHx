@@ -26,7 +26,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
     public static inline var MatricesWeightsExtraKind:String = "matricesWeightsExtra";
 	
 	@:allow(com.babylonhx.mesh.Geometry)
-	private var _buffer:Buffer<Array<Float>>;
+	private var _buffer:Buffer;
 	private var _kind:String;
 	private var _offset:Int;
 	private var _size:Int;

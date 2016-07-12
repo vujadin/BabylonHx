@@ -16,7 +16,8 @@ import com.babylonhx.utils.GL;
 	
 	public var _framebuffer:GLFramebuffer;
 	public var _depthBuffer:GLRenderbuffer;
-	public var generateMipMaps:Bool;	
+	public var generateMipMaps:Bool;
+	public var type:Int;
 	public var isCube:Bool;	
 	
 	public var isReady:Bool;

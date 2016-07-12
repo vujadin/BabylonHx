@@ -115,8 +115,9 @@ typedef Assets = nme.Assets;
 		var minimum = new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY);
 		var maximum = new Vector3(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY);
 		
+		var current:Vector3 = Vector3.Zero();
 		for (index in start...start + count) {
-			var current = new Vector3(positions[index * stride], positions[index * stride + 1], positions[index * stride + 2]);
+			current = new Vector3(positions[index * stride], positions[index * stride + 1], positions[index * stride + 2]);
 			
 			minimum = Vector3.Minimize(current, minimum);
 			maximum = Vector3.Maximize(current, maximum);

@@ -159,7 +159,7 @@ typedef BufferPointer = {
 	private var _cachedEffectForVertexBuffers:Effect;
 	private var _currentRenderTarget:WebGLTexture;
 	private var _uintIndicesCurrentlySet:Bool = false;
-	private var _currentBoundBuffer:Array<WebGLBuffer> = [];
+	private var _currentBoundBuffer:Map<Int, WebGLBuffer> = new Map();
 	private var _currentFramebuffer:GLFramebuffer;
 	private var _currentBufferPointers:Array<BufferPointer> = [];
 	private var _currentInstanceLocations:Array<Int> = [];
@@ -876,42 +876,55 @@ typedef BufferPointer = {
 
 	// VBOs
 	inline private function _resetVertexBufferBinding() {
-		GL.bindBuffer(GL.ARRAY_BUFFER, null);
+		this.bindArrayBuffer(null);
 		this._cachedVertexBuffers = null;
 	}
 
 	inline public function createVertexBuffer(vertices:Array<Float>):WebGLBuffer {
 		var vbo = GL.createBuffer();
 		var ret = new WebGLBuffer(vbo);
-		ret.references = 1;
-		GL.bindBuffer(GL.ARRAY_BUFFER, vbo);
+		this.bindArrayBuffer(ret);
+		
 		GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(vertices), GL.STATIC_DRAW);
 		this._resetVertexBufferBinding();
+		ret.references = 1;
 		
 		return ret;
 	}
 
 	inline public function createDynamicVertexBuffer(vertices:Array<Float>):WebGLBuffer {
 		var vbo = GL.createBuffer();
-		var ret = new WebGLBuffer(vbo);
-		ret.references = 1;
-		GL.bindBuffer(GL.ARRAY_BUFFER, vbo);
+		var ret = new WebGLBuffer(vbo);		
+		this.bindArrayBuffer(ret);		
 		
-		GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(vertices), GL.DYNAMIC_DRAW);		
-		
+		GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(vertices), GL.DYNAMIC_DRAW);
 		this._resetVertexBufferBinding();
+		ret.references = 1;
 		
 		return ret;
 	}
 
-	inline public function updateDynamicVertexBuffer(vertexBuffer:WebGLBuffer, vertices:Array<Float>, offset:Int = 0, count:Int = 0) {
+	/*inline public function updateDynamicVertexBuffer(vertexBuffer:WebGLBuffer, vertices:Array<Float>, offset:Int = 0, count:Int = -1) {
 		this.bindArrayBuffer(vertexBuffer);
 		
-		if (count == 0) {
+		if (count == -1) {
 			GL.bufferSubData(GL.ARRAY_BUFFER, offset, new Float32Array(vertices));
 		}
 		else {
-			GL.bufferSubData(GL.ARRAY_BUFFER, 0, new Float32Array(vertices.slice(offset, offset + count)));
+			GL.bufferSubData(GL.ARRAY_BUFFER, 0, new Float32Array(vertices).subarray(offset, offset + count));
+		}
+		
+		this._resetVertexBufferBinding();
+	}*/
+	
+	inline public function updateDynamicVertexBuffer(vertexBuffer:WebGLBuffer, vertices:Array<Float>, offset:Int = 0, count:Int = -1) {
+		this.bindArrayBuffer(vertexBuffer);
+		
+		if (count == -1) {
+			GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(vertices), GL.DYNAMIC_DRAW);
+		}
+		else {
+			GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(vertices).subarray(offset, offset + count), GL.DYNAMIC_DRAW);
 		}
 		
 		this._resetVertexBufferBinding();
@@ -925,7 +938,6 @@ typedef BufferPointer = {
 	inline public function createIndexBuffer(indices:Array<Int>):WebGLBuffer {
 		var vbo = GL.createBuffer();
 		var ret = new WebGLBuffer(vbo);
-		ret.references = 1;
 		
 		this.bindIndexBuffer(ret);
 		
@@ -949,7 +961,7 @@ typedef BufferPointer = {
 		
 		GL.bufferData(GL.ELEMENT_ARRAY_BUFFER, arrayBuffer, GL.STATIC_DRAW);
 		this._resetIndexBufferBinding();
-		
+		ret.references = 1;
 		ret.is32Bits = need32Bits;
 		
 		return ret;
@@ -963,10 +975,10 @@ typedef BufferPointer = {
 		this.bindBuffer(buffer, GL.ELEMENT_ARRAY_BUFFER);
 	}
 	
-	inline private function bindBuffer(buffer:WebGLBuffer, target:Int) {
+	private function bindBuffer(buffer:WebGLBuffer, target:Int) {
 		if (this._currentBoundBuffer[target] != buffer) {
 			GL.bindBuffer(target, buffer == null ? null : buffer.buffer);
-			this._currentBoundBuffer[target] = buffer;
+			this._currentBoundBuffer[target] = (buffer == null ? null : buffer);
 		}
 	}
 
@@ -2130,6 +2142,7 @@ typedef BufferPointer = {
 		texture.generateMipMaps = generateMipMaps;
 		texture.references = 1;
 		texture.samplingMode = samplingMode;
+		texture.type = type;
 		this.resetTextureCache();
 		
 		this._loadedTexturesCache.push(texture);

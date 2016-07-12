@@ -105,7 +105,7 @@ class MaterialHelper {
 			}
 		}
 		
-		if (needShadows && scene.getEngine().getCaps().textureFloat == true && SHADOWFULLFLOAT != -1) {
+		if (needShadows && scene.getEngine().getCaps().textureFloat == true && scene.getEngine().getCaps().textureFloatLinearFiltering == true && SHADOWFULLFLOAT != -1) {
 			defines.defines[SHADOWFULLFLOAT] = true;
 		}
 		

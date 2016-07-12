@@ -27,14 +27,6 @@ abstract Either<L, R>(haxe.ds.Either<L, R>) {
 		}
 	}
 	
-	@:arrayAccess inline public function get(index:Int) {
-		return untyped this[index];
-	}
-	
-	inline public function push(val:Dynamic) {
-		untyped this[length] = val;
-	}
-	
 	@:from static inline public function fromLeft<L>(left:L) {
         return new Either(Left(left));
     }

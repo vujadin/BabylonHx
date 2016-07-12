@@ -160,7 +160,8 @@ import com.babylonhx.Scene;
 		
 		// Texture type fallback from float to int if not supported.
 		var textureType:Int = Engine.TEXTURETYPE_UNSIGNED_INT;
-		if (this._scene.getEngine().getCaps().textureFloat == true) {
+		var caps = this._scene.getEngine().getCaps();
+		if (caps.textureFloat == true && caps.textureFloatLinearFiltering == true) {
 			this._useFullFloat = true;
 			textureType = Engine.TEXTURETYPE_FLOAT;
 		}
@@ -316,8 +317,12 @@ import com.babylonhx.Scene;
 				defines.push("#define UV1");
 			}
 			if (mesh.isVerticesDataPresent(VertexBuffer.UV2Kind)) {
-				attribs.push(VertexBuffer.UV2Kind);
-				defines.push("#define UV2");
+				var alphaTexture = material.getAlphaTestTexture();
+				
+				if (alphaTexture.coordinatesIndex == 1) {
+					attribs.push(VertexBuffer.UV2Kind);
+					defines.push("#define UV2");
+				}
 			}
 		}
 		
