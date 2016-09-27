@@ -2,6 +2,9 @@ package com.babylonhx.states;
 
 import com.babylonhx.utils.GL;
 
+#if (!js && !purejs)
+import com.babylonhx.utils.GL in Gl;
+#end
 
 /**
  * ...
@@ -67,7 +70,7 @@ import com.babylonhx.utils.GL;
 		this._isBlendFunctionParametersDirty = false;
 	}
 
-	public function apply() {
+	public function apply(#if (js || purejs) Gl:js.html.webgl.RenderingContext #end) {
 		
 		if (!this.isDirty) {
 			return;
@@ -76,10 +79,10 @@ import com.babylonhx.utils.GL;
 		// Alpha blend
 		if (this._isAlphaBlendDirty) {
 			if (this._alphaBlend) {
-				GL.enable(GL.BLEND);
+				Gl.enable(GL.BLEND);
 			} 
 			else {
-				GL.disable(GL.BLEND);
+				Gl.disable(GL.BLEND);
 			}
 			
 			this._isAlphaBlendDirty = false;
@@ -87,7 +90,7 @@ import com.babylonhx.utils.GL;
 		
 		// Alpha function
 		if (this._isBlendFunctionParametersDirty) {
-			GL.blendFuncSeparate(this._blendFunctionParameters[0], this._blendFunctionParameters[1], this._blendFunctionParameters[2], this._blendFunctionParameters[3]);
+			Gl.blendFuncSeparate(this._blendFunctionParameters[0], this._blendFunctionParameters[1], this._blendFunctionParameters[2], this._blendFunctionParameters[3]);
 			this._isBlendFunctionParametersDirty = false;
 		}
 	}
