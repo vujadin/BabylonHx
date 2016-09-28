@@ -2,6 +2,10 @@ package com.babylonhx.states;
 
 import com.babylonhx.utils.GL;
 
+#if (!js && !purejs)
+import com.babylonhx.utils.GL in Gl;
+#end
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -134,15 +138,15 @@ import com.babylonhx.utils.GL;
 		this._isZOffsetDirty = false;
 	}
 
-	public function apply() {
+	public function apply(#if (js || purejs) Gl:js.html.webgl.RenderingContext #end) {
 		if (this.isDirty) {
 			// Cull
 			if (this._isCullDirty) {
 				if (this.cull != null && this.cull) {
-					GL.enable(GL.CULL_FACE);
+					Gl.enable(GL.CULL_FACE);
 				} 
 				else {
-					GL.disable(GL.CULL_FACE);
+					Gl.disable(GL.CULL_FACE);
 				}
 				
 				this._isCullDirty = false;
@@ -150,41 +154,41 @@ import com.babylonhx.utils.GL;
 			
 			// Cull face
 			if (this._isCullFaceDirty) {
-				GL.cullFace(this.cullFace);
+				Gl.cullFace(this.cullFace);
 				this._isCullFaceDirty = false;
 			}
 			
 			// Depth mask
 			if (this._isDepthMaskDirty) {
-				GL.depthMask(this.depthMask);
+				Gl.depthMask(this.depthMask);
 				this._isDepthMaskDirty = false;
 			}
 			
 			// Depth test
 			if (this._isDepthTestDirty) {
 				if (this.depthTest) {
-					GL.enable(GL.DEPTH_TEST);
+					Gl.enable(GL.DEPTH_TEST);
 				} 
 				else {
-					GL.disable(GL.DEPTH_TEST);
+					Gl.disable(GL.DEPTH_TEST);
 				}
 				this._isDepthTestDirty = false;
 			}
 			
 			// Depth func
 			if (this._isDepthFuncDirty) {
-				GL.depthFunc(this.depthFunc);
+				Gl.depthFunc(this.depthFunc);
 				this._isDepthFuncDirty = false;
 			}
 			
 			// zOffset
 			if (this._isZOffsetDirty) {
 				if (this.zOffset != 0) {
-					GL.enable(GL.POLYGON_OFFSET_FILL);
-					GL.polygonOffset(this.zOffset, 0);
+					Gl.enable(GL.POLYGON_OFFSET_FILL);
+					Gl.polygonOffset(this.zOffset, 0);
 				} 
 				else {
-					GL.disable(GL.POLYGON_OFFSET_FILL);
+					Gl.disable(GL.POLYGON_OFFSET_FILL);
 				}
 				
 				this._isZOffsetDirty = false;
