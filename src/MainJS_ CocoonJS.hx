@@ -122,37 +122,37 @@ import com.babylonhx.Scene;
 	}
 	
 	function onKeyDown(e:KeyboardEvent) {
-		for(f in Engine.keyDown) {
+		for(f in engine.keyDown) {
 			f(e.charCode);
 		}		
 	}	
 	
 	function onKeyUp(e:KeyboardEvent) {
-		for(f in Engine.keyUp) {
+		for(f in engine.keyUp) {
 			f(e.charCode);
 		}
 	}	
 	
 	function onMouseDown(e:MouseEvent) {
-		for(f in Engine.mouseDown) {
+		for(f in engine.mouseDown) {
 			f(e.clientX, e.clientY, 0);
 		}
 	}	
 	
 	function onMouseMove(e:MouseEvent) {
-		for(f in Engine.mouseMove) {
+		for(f in engine.mouseMove) {
 			f(e.clientX, e.clientY);
 		}
 	}	
 	
 	function onMouseUp(e:MouseEvent) {
-		for(f in Engine.mouseUp) {
+		for(f in engine.mouseUp) {
 			f(e.clientX, e.clientY, 0);
 		}
 	}
 	
 	function onMouseWheel(e:MouseEvent) {
-		for (f in Engine.mouseWheel) {
+		for (f in engine.mouseWheel) {
 			f(e.detail);
 		}
 	}

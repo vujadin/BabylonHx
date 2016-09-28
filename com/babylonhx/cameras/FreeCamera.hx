@@ -209,12 +209,12 @@ import com.babylonhx.utils.Keycodes;
 		]);
 		
 	#else
-	
-		Engine.keyDown.push(_onKeyDown);
-		Engine.keyUp.push(_onKeyUp);
-		Engine.mouseDown.push(_onMouseDown);
-		Engine.mouseUp.push(_onMouseUp);
-		Engine.mouseMove.push(_onMouseMove);
+
+		this.getScene().getEngine().keyDown.push(_onKeyDown);
+		this.getScene().getEngine().keyUp.push(_onKeyUp);
+		this.getScene().getEngine().mouseDown.push(_onMouseDown);
+		this.getScene().getEngine().mouseUp.push(_onMouseUp);
+		this.getScene().getEngine().mouseMove.push(_onMouseMove);
 		
 	#end
 	}
@@ -237,12 +237,12 @@ import com.babylonhx.utils.Keycodes;
 		]);
 		
 	#else
-	
-		Engine.keyDown.remove(_onKeyDown);
-		Engine.keyUp.remove(_onKeyUp);
-		Engine.mouseDown.remove(_onMouseDown);
-		Engine.mouseUp.remove(_onMouseUp);
-		Engine.mouseMove.remove(_onMouseMove);
+
+		this.getScene().getEngine().keyDown.remove(_onKeyDown);
+		this.getScene().getEngine().keyUp.remove(_onKeyUp);
+		this.getScene().getEngine().mouseDown.remove(_onMouseDown);
+		this.getScene().getEngine().mouseUp.remove(_onMouseUp);
+		this.getScene().getEngine().mouseMove.remove(_onMouseMove);
 		
 	#end
 		

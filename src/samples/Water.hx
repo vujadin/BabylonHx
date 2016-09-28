@@ -138,8 +138,8 @@ class Water {
 			scene.getEngine().runRenderLoop(function () {
 				scene.render();
 			});
-			
-			Engine.mouseUp.push(function() {
+
+			scene.getEngine().mouseUp.push(function() {
 				trace(camera.position, camera.rotation);
 			});
 			

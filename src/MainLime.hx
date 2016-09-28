@@ -150,57 +150,57 @@ class MainLime extends Application {
 	}
 	
 	override function onMouseDown(window:Window, x:Float, y:Float, button:Int) {
-		for(f in Engine.mouseDown) {
+		for(f in engine.mouseDown) {
 			f(x, y, button);
 		}
 	}
 	
 	#if !neko
 	override function onMouseUp(window:Window, x:Float, y:Float, button:Int) {
-		for(f in Engine.mouseUp) {
+		for(f in engine.mouseUp) {
 			f();
 		}
 	}
 	#end
 	
 	override function onMouseMove(window:Window, x:Float, y:Float) {
-		for(f in Engine.mouseMove) {
+		for(f in engine.mouseMove) {
 			f(x, y);
 		}
 	}
 	
 	override function onMouseWheel(window:Window, deltaX:Float, deltaY:Float) {
-		for (f in Engine.mouseWheel) {
+		for (f in engine.mouseWheel) {
 			f(deltaY);
 		}
 	}
 	
 	override function onTouchStart(touch:Touch) {
-		for (f in Engine.touchDown) {
+		for (f in engine.touchDown) {
 			f(touch.x, touch.y, touch.id);
 		}
 	}
 	
 	override function onTouchEnd(touch:Touch) {
-		for (f in Engine.touchUp) {
+		for (f in engine.touchUp) {
 			f(touch.x, touch.y, touch.id);
 		}
 	}
 	
 	override function onTouchMove(touch:Touch) {
-		for (f in Engine.touchMove) {
+		for (f in engine.touchMove) {
 			f(touch.x, touch.y, touch.id);
 		}
 	}
 
 	override function onKeyUp(window:Window, keycode:Int, modifier:KeyModifier) {
-		for(f in Engine.keyUp) {
+		for(f in engine.keyUp) {
 			f(keycode);
 		}
 	}
 	
 	override function onKeyDown(window:Window, keycode:Int, modifier:KeyModifier) {
-		for(f in Engine.keyDown) {
+		for(f in engine.keyDown) {
 			f(keycode);
 		}
 	}

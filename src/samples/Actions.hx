@@ -161,8 +161,8 @@ class Actions {
 		donut.actionManager.registerAction(new SetValueAction(
 			{ trigger: ActionManager.OnIntersectionExitTrigger, parameter: sphere }
 			, donut, "scaling", new Vector3(1, 1, 1)));
-			
-		com.babylonhx.Engine.mouseDown.push(scene._onPointerDown);
+
+		scene.getEngine().mouseDown.push(scene._onPointerDown);
 
 		// Animations
 		var alpha = 0.0;

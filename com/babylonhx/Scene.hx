@@ -1060,33 +1060,32 @@ import com.babylonhx.audio.*;
 				this.actionManager.processTrigger(ActionManager.OnKeyUpTrigger, ActionEvent.CreateNewFromScene(this, keycode));
 			}
 		};
-		
-		
-		Engine.touchDown.push(this._onPointerDown);
-		Engine.touchUp.push(this._onPointerUp);
-		Engine.touchMove.push(this._onPointerMove);
-		
-		Engine.mouseDown.push(this._onPointerDown);
-		Engine.mouseUp.push(this._onPointerUp);
-		Engine.mouseMove.push(this._onPointerMove);
-		
-		Engine.keyDown.push(this._onKeyDown);
-		Engine.keyUp.push(this._onKeyUp);
+
+		this.getEngine().touchDown.push(this._onPointerDown);
+		this.getEngine().touchUp.push(this._onPointerUp);
+		this.getEngine().touchMove.push(this._onPointerMove);
+
+		this.getEngine().mouseDown.push(this._onPointerDown);
+		this.getEngine().mouseUp.push(this._onPointerUp);
+		this.getEngine().mouseMove.push(this._onPointerMove);
+
+		this.getEngine().keyDown.push(this._onKeyDown);
+		this.getEngine().keyUp.push(this._onKeyUp);
 		
 	}
 
 	public function detachControl() {
-		
-		Engine.touchDown.remove(this._onPointerDown);
-		Engine.touchUp.remove(this._onPointerUp);
-		Engine.touchMove.remove(this._onPointerMove);
-		
-		Engine.mouseDown.remove(this._onPointerDown);
-		Engine.mouseUp.remove(this._onPointerUp);
-		Engine.mouseMove.remove(this._onPointerMove);
-		
-		Engine.keyDown.remove(this._onKeyDown);
-		Engine.keyUp.remove(this._onKeyUp);
+
+		this.getEngine().touchDown.remove(this._onPointerDown);
+		this.getEngine().touchUp.remove(this._onPointerUp);
+		this.getEngine().touchMove.remove(this._onPointerMove);
+
+		this.getEngine().mouseDown.remove(this._onPointerDown);
+		this.getEngine().mouseUp.remove(this._onPointerUp);
+		this.getEngine().mouseMove.remove(this._onPointerMove);
+
+		this.getEngine().keyDown.remove(this._onKeyDown);
+		this.getEngine().keyUp.remove(this._onKeyUp);
 		
 	}
 
