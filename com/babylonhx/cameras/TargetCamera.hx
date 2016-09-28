@@ -268,8 +268,8 @@ import com.babylonhx.math.Quaternion;
 		this.position.addToRef(this._transformedReferencePoint, this._currentTarget);
 		
 		Matrix.LookAtLHToRef(this.position, this._currentTarget, this._cameraRigParams.vrActualUp, this._cameraRigParams.vrWorkMatrix);
-		
-		this._cameraRigParams.vrWorkMatrix.multiplyToRef(this._cameraRigParams.vrPreViewMatrix, this._viewMatrix);
+
+		cast(this._cameraRigParams.vrWorkMatrix, Matrix).multiplyToRef(this._cameraRigParams.vrPreViewMatrix, this._viewMatrix);
 		return this._viewMatrix;
 	}
 	
