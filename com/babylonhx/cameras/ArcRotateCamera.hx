@@ -411,16 +411,16 @@ import com.babylonhx.utils.Keycodes;
 		]);
 		#else
 		#if !mobile
-		Engine.keyDown.push(_onKeyDown);
-		Engine.keyUp.push(_onKeyUp);
-		Engine.mouseDown.push(_onPointerDown);
-		Engine.mouseUp.push(_onPointerUp);
-		Engine.mouseMove.push(_onMouseMove);
-		Engine.mouseWheel.push(_wheel);	
+		this.getScene().getEngine().keyDown.push(_onKeyDown);
+		this.getScene().getEngine().keyUp.push(_onKeyUp);
+		this.getScene().getEngine().mouseDown.push(_onPointerDown);
+		this.getScene().getEngine().mouseUp.push(_onPointerUp);
+		this.getScene().getEngine().mouseMove.push(_onMouseMove);
+		this.getScene().getEngine().mouseWheel.push(_wheel);
 		#else
-		Engine.touchDown.push(_onPointerDown);
-		Engine.touchUp.push(_onPointerUp);
-		Engine.touchMove.push(_onPointerMove);
+		this.getScene().getEngine().touchDown.push(_onPointerDown);
+		this.getScene().getEngine().touchUp.push(_onPointerUp);
+		this.getScene().getEngine().touchMove.push(_onPointerMove);
 		#end
 		#end
 	}
@@ -450,16 +450,16 @@ import com.babylonhx.utils.Keycodes;
 		]);
 		#else
 		#if !mobile
-		Engine.keyDown.remove(_onKeyDown);
-		Engine.keyUp.remove(_onKeyUp);
-		Engine.mouseDown.remove(_onPointerDown);
-		Engine.mouseUp.remove(_onPointerUp);
-		Engine.mouseMove.remove(_onMouseMove);
-		Engine.mouseWheel.remove(_wheel);
+		this.getScene().getEngine().keyDown.remove(_onKeyDown);
+		this.getScene().getEngine().keyUp.remove(_onKeyUp);
+		this.getScene().getEngine().mouseDown.remove(_onPointerDown);
+		this.getScene().getEngine().mouseUp.remove(_onPointerUp);
+		this.getScene().getEngine().mouseMove.remove(_onMouseMove);
+		this.getScene().getEngine().mouseWheel.remove(_wheel);
 		#else
-		Engine.touchDown.remove(_onPointerDown);
-		Engine.touchUp.remove(_onPointerUp);
-		Engine.touchMove.remove(_onPointerMove);
+		this.getScene().getEngine().touchDown.remove(_onPointerDown);
+		this.getScene().getEngine().touchUp.remove(_onPointerUp);
+		this.getScene().getEngine().touchMove.remove(_onPointerMove);
 		#end
 		#end
 		

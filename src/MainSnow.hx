@@ -135,43 +135,43 @@ class MainSnow extends snow.App {
 	}
 		
 	override function onmousedown(x:Int, y:Int, button:Int, timestamp:Float, window_id:Int) {
-		for(f in Engine.mouseDown) {
+		for(f in engine.mouseDown) {
 			f(x, y, button);
 		}
 	}
 	
 	override function onmouseup(x:Int, y:Int, button:Int, timestamp:Float, window_id:Int) {
-		for(f in Engine.mouseUp) {
+		for(f in engine.mouseUp) {
 			f(x, y, button);
 		}
 	}
 	
 	override function onmousemove(x:Int, y:Int, xrel:Int, yrel:Int, timestamp:Float, window_id:Int) {
-		for(f in Engine.mouseMove) {
+		for(f in engine.mouseMove) {
 			f(x, y);
 		}
 	}
 	
 	override function onmousewheel(x:Float, y:Float, timestamp:Float, window_id:Int) {
-		for (f in Engine.mouseWheel) {
+		for (f in engine.mouseWheel) {
 			f(y);
 		}
 	}
 	
 	/*override function ontouchdown(x:Float, y:Float, touch_id:Int, timestamp:Float) {
-		for (f in Engine.touchDown) {
+		for (f in engine.touchDown) {
 			f(x, y, touch_id, timestamp);
 		}
 	}
 	
 	override function ontouchup(x:Float, y:Float, touch_id:Int, timestamp:Float) {
-		for (f in Engine.touchUp) {
+		for (f in engine.touchUp) {
 			f(x, y, touch_id, timestamp);
 		}
 	}*/
 	
 	override function ontouchmove(x:Float, y:Float, dx:Float, dy:Float, touch_id:Int, timestamp:Float) {
-		for (f in Engine.touchMove) {
+		for (f in engine.touchMove) {
 			f(x, y, dx, dy, touch_id, timestamp);
 		}
 	}
@@ -181,13 +181,13 @@ class MainSnow extends snow.App {
 			app.shutdown();
 		}
 		
-		for(f in Engine.keyUp) {
+		for(f in engine.keyUp) {
 			f(keycode);
 		}
 	}
 	
 	override function onkeydown(keycode:Int, scancode:Int, repeat:Bool, mod:ModState, timestamp:Float, window_id:Int) {
-		for(f in Engine.keyDown) {
+		for(f in engine.keyDown) {
 			f(keycode);
 		}
 	}

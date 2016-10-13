@@ -105,55 +105,55 @@ class MainOpenFL extends Sprite {
 	}
 	
 	function onKeyDown(e:KeyboardEvent) {
-		for(f in Engine.keyDown) {
+		for(f in engine.keyDown) {
 			f(e.charCode);
 		}		
 	}	
 	
 	function onKeyUp(e:KeyboardEvent) {
-		for(f in Engine.keyUp) {
+		for(f in engine.keyUp) {
 			f(e.charCode);
 		}
 	}	
 	
 	function onMouseDown(e:MouseEvent) {
-		for(f in Engine.mouseDown) {
+		for(f in engine.mouseDown) {
 			f(e.localX, e.localY, 0);
 		}
 	}	
 	
 	function onMouseMove(e:MouseEvent) {
-		for(f in Engine.mouseMove) {
+		for(f in engine.mouseMove) {
 			f(e.localX, e.localY);
 		}
 	}	
 	
 	function onMouseUp(e:MouseEvent) {
-		for(f in Engine.mouseUp) {
+		for(f in engine.mouseUp) {
 			f(e.localX, e.localY, 0);
 		}
 	}
 	
 	function onMouseWheel(e:MouseEvent) {
-		for (f in Engine.mouseWheel) {
+		for (f in engine.mouseWheel) {
 			f(e.delta);
 		}
 	}
 	
 	function onTouchStart(e:TouchEvent) {
-		for(f in Engine.touchDown) {
+		for(f in engine.touchDown) {
 			f(e.localX, e.localY, e.touchPointID);
 		}
 	}
 	
 	function onTouchEnd(e:TouchEvent) {		
-		for(f in Engine.touchUp) {
+		for(f in engine.touchUp) {
 			f(e.localX, e.localY, e.touchPointID);
 		}
 	}	
 	
 	function onTouchMove(e:TouchEvent) {
-		for(f in Engine.touchMove) {
+		for(f in engine.touchMove) {
 			f(e.localX, e.localY);
 		}		
 	}

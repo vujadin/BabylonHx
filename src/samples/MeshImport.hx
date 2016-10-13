@@ -80,7 +80,7 @@ class MeshImport {
 				scene.render();
 			});
 			
-			/*Engine.mouseUp.push(function() {
+			/*scene.getEngine().mouseUp.push(function() {
 				trace(camera.alpha, camera.beta);
 			});*/
 		});

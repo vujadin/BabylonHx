@@ -38,7 +38,7 @@ class SSAO {
 			var ssao = new SSAORenderingPipeline('ssaopipeline', scene, 0.75);
 			scene.postProcessRenderPipelineManager.attachCamerasToRenderPipeline("ssaopipeline", camera);
 
-			Engine.keyDown.push(function (keyCode:Int) {
+			scene.getEngine().keyDown.push(function (keyCode:Int) {
 				// draw SSAO with scene when pressed "1"
 				if (keyCode == 49) {
 					scene.postProcessRenderPipelineManager.attachCamerasToRenderPipeline("ssaopipeline", camera);

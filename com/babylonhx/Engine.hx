@@ -179,20 +179,20 @@ typedef BufferPointer = {
 	#end
 	
 	// quick and dirty solution to handle mouse/keyboard 
-	public static var mouseDown:Array<Dynamic> = [];
-	public static var mouseUp:Array<Dynamic> = [];
-	public static var mouseMove:Array<Dynamic> = [];
-	public static var mouseWheel:Array<Dynamic> = [];
-	public static var touchDown:Array<Dynamic> = [];
-	public static var touchUp:Array<Dynamic> = [];
-	public static var touchMove:Array<Dynamic> = [];
-	public static var keyUp:Array<Dynamic> = [];
-	public static var keyDown:Array<Dynamic> = [];
-	
+	public var mouseDown:Array<Dynamic> = [];
+	public var mouseUp:Array<Dynamic> = [];
+	public var mouseMove:Array<Dynamic> = [];
+	public var mouseWheel:Array<Dynamic> = [];
+	public var touchDown:Array<Dynamic> = [];
+	public var touchUp:Array<Dynamic> = [];
+	public var touchMove:Array<Dynamic> = [];
+	public var keyUp:Array<Dynamic> = [];
+	public var keyDown:Array<Dynamic> = [];
+	public var onResize:Array<Void->Void> = [];
+
 	public static var width:Int;
 	public static var height:Int;
-	public static var onResize:Array<Void->Void> = [];
-	
+
 	#if (js || purejs)
 	public var audioEngine:AudioEngine = new AudioEngine();
 	#end
@@ -221,9 +221,9 @@ typedef BufferPointer = {
 		this._workingContext.render = this._renderLoop;
 		canvas.addChild(this._workingContext);
 		#end
-		
+
 		width = 960;
-		height = 640;		
+		height = 640;
 		
 		this._onBlur = function() {
 			this._windowIsBackground = true;

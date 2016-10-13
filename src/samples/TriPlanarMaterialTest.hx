@@ -54,7 +54,7 @@ class TriPlanarMaterialTest {
 		ground.material = triPlanarMaterial;
 		
 		// Events
-		Engine.keyDown.push(function(evt:Dynamic) {
+		scene.getEngine().keyDown.push(function(evt:Dynamic) {
 			// draw SSAO with scene when pressed "1"
 			if (evt.keyCode == 49) {
 				ground.material = triPlanarMaterial;

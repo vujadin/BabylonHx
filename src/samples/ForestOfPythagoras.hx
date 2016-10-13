@@ -38,8 +38,8 @@ class ForestOfPythagoras {
 		
 		var camera = new ArcRotateCamera("Camera", 4, 1.43, 26, new Vector3(0, 1.5, 0), scene);
 		camera.attachControl();
-		
-		Engine.mouseUp.push(function ()
+
+		scene.getEngine().mouseUp.push(function ()
 		{
 			trace(camera.alpha, camera.beta, camera.radius);
 		});

@@ -79,16 +79,16 @@ import com.babylonhx.math.Vector3;
 				this._offsetY = Math.NEGATIVE_INFINITY;
 			};
 		}
-		
-		Engine.touchDown.push(this._onPointerDown);
-		Engine.touchUp.push(this._onPointerUp);
-		Engine.touchMove.push(this._onPointerMove);
+
+		this.getScene().getEngine().touchDown.push(this._onPointerDown);
+		this.getScene().getEngine().touchUp.push(this._onPointerUp);
+		this.getScene().getEngine().touchMove.push(this._onPointerMove);
 	}
 
 	override public function detachControl(?canvas:Dynamic) {
-		Engine.touchDown.remove(this._onPointerDown);
-		Engine.touchUp.remove(this._onPointerUp);
-		Engine.touchMove.remove(this._onPointerMove);
+		this.getScene().getEngine().touchDown.remove(this._onPointerDown);
+		this.getScene().getEngine().touchUp.remove(this._onPointerUp);
+		this.getScene().getEngine().touchMove.remove(this._onPointerMove);
 	}
 
 	override public function _checkInputs() {

@@ -70,8 +70,8 @@ class SkyMaterialTest {
 			scene.stopAnimation(skybox);
 			scene.beginDirectAnimation(skybox, [animation], 0, 100, false, 1);
 		};
-		
-		Engine.keyDown.push(function (keyCode:Int) {
+
+		scene.getEngine().keyDown.push(function (keyCode:Int) {
 			switch (keyCode) {
 				case 49: setSkyConfig("material.inclination", skyboxMaterial.inclination, 0); // 1
 				case 50: setSkyConfig("material.inclination", skyboxMaterial.inclination, -0.5);  // 2
