@@ -505,7 +505,8 @@ import com.babylonhx.animations.Animation;
 
 	private function _getVRProjectionMatrix(force:Bool = false):Matrix {
 		Matrix.PerspectiveFovLHToRef(this._cameraRigParams.vrMetrics.aspectRatioFov(), this._cameraRigParams.vrMetrics.aspectRatio(), this.minZ, this.maxZ, this._cameraRigParams.vrWorkMatrix);
-		this._cameraRigParams.vrWorkMatrix.multiplyToRef(this._cameraRigParams.vrHMatrix, this._projectionMatrix);
+
+		cast(this._cameraRigParams.vrWorkMatrix, Matrix).multiplyToRef(this._cameraRigParams.vrHMatrix, this._projectionMatrix);
 		return this._projectionMatrix;
 	}
 
