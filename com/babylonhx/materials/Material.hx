@@ -73,7 +73,7 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	}
 
 	/**
-	* An event triggered when the material is compiled.
+	* An event triggered when the material is bound.
 	* @type {BABYLON.Observable}
 	*/
 	public var onBindObservable:Observable<AbstractMesh> = new Observable<AbstractMesh>();
@@ -87,6 +87,12 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		
 		return callback;
 	}
+	
+	/**
+    * An event triggered when the material is unbound.
+    * @type {BABYLON.Observable}
+    */
+    public var onUnBindObservable:Observable<Material> = new Observable<Material>();
 	
 	@serialize()
 	public var alphaMode:Int = Engine.ALPHA_COMBINE;
@@ -225,6 +231,8 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	public function bindOnlyWorldMatrix(world:Matrix) { }
 
 	public function unbind():Void {
+		this.onUnBindObservable.notifyObservers(this);
+		
 		if (this.disableDepthWrite) {
             var engine = this._scene.getEngine();
             engine.setDepthWrite(this._cachedDepthWriteState);
@@ -279,6 +287,7 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		
 		this.onDisposeObservable.clear();
         this.onBindObservable.clear();
+		this.onUnBindObservable.clear();
 	}
 	
 	public function copyTo(other:Material) {

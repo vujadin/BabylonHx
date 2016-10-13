@@ -19,6 +19,7 @@ typedef IAMethods = {
 	public var maxTextureSize:Int;
 	public var maxCubemapTextureSize:Int;
 	public var maxRenderTextureSize:Null<Int>;
+	public var maxVertexAttribs:Int;
 	public var standardDerivatives:Null<Bool>;
 	public var s3tc:Dynamic;
 	public var textureFloat:Null<Bool>;
@@ -26,6 +27,7 @@ typedef IAMethods = {
 	public var highPrecisionShaderSupported:Bool;
 	public var fragmentDepthSupported:Bool;
 	public var textureFloatLinearFiltering:Bool;
+	public var textureFloatRender:Bool;
 	public var drawBufferExtension:Dynamic;
 	public var maxAnisotropy:Int;
 	public var textureLOD:Bool;

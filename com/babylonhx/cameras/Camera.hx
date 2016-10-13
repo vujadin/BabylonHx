@@ -169,6 +169,7 @@ import com.babylonhx.animations.Animation;
 		this._cache.maxZ = null;
 		
 		this._cache.fov = null;
+		this._cache.fovMode = null;
 		this._cache.aspectRatio = null;
 		
 		this._cache.orthoLeft = null;
@@ -194,6 +195,7 @@ import com.babylonhx.animations.Animation;
 		this._cache.maxZ = this.maxZ;
 		
 		this._cache.fov = this.fov;
+		this._cache.fovMode = this.fovMode;
 		this._cache.aspectRatio = engine.getAspectRatio(this);
 		
 		this._cache.orthoLeft = this.orthoLeft;
@@ -237,6 +239,7 @@ import com.babylonhx.animations.Animation;
 		
 		if (this.mode == Camera.PERSPECTIVE_CAMERA) {
 			check = this._cache.fov == this.fov
+			&& this._cache.fovMode == this.fovMode
 			&& this._cache.aspectRatio == engine.getAspectRatio(this);
 		}
 		else {

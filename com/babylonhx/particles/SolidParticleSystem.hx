@@ -49,6 +49,10 @@ class SolidParticleSystem implements IDisposable {
 	*/
 	public var billboard:Bool = false;
 	/**
+	 * Recompute normals when adding a shape
+	 */
+	public var recomputeNormals:Bool = true;
+	/**
 	* This a counter ofr your own usage. It's not set by any SPS functions.
 	*/
 	public var counter:Int = 0;
@@ -110,7 +114,7 @@ class SolidParticleSystem implements IDisposable {
 	private var _axisZ:Vector3 = Axis.Z;
 	private var _camera:Camera;
 	private var _particle:SolidParticle;
-	private var _fakeCamPos:Vector3 = Vector3.Zero();
+	private var _camDir:Vector3 = Vector3.Zero();
 	private var _rotMatrix:Matrix = new Matrix();
 	private var _invertMatrix:Matrix = new Matrix();
 	private var _rotated:Vector3 = Vector3.Zero();
@@ -132,6 +136,8 @@ class SolidParticleSystem implements IDisposable {
 	private var _w:Float = 0.0;
 	private var _minimum:Vector3 = Tmp.vector3[0];
     private var _maximum:Vector3 = Tmp.vector3[1];
+	private var _scale:Vector3 = Tmp.vector3[2];
+	private var _translation:Vector3 = Tmp.vector3[3];
 	
 	public var isAlwaysVisible(get, set):Bool;
 	
@@ -175,7 +181,9 @@ class SolidParticleSystem implements IDisposable {
 		/*this._positions32 = new Float32Array(this._positions);
 		this._uvs32 = new Float32Array(this._uvs);
 		this._colors32 = new Float32Array(this._colors);*/
-		VertexData.ComputeNormals(this._positions, this._indices, this._normals);
+		if (this.recomputeNormals) {
+			VertexData.ComputeNormals(this._positions, this._indices, this._normals);
+		}
 		/*this._normals32 = new Float32Array(this._normals);*/
 		//this._fixedNormal32 = new Float32Array(this._normals);
 		
@@ -230,6 +238,7 @@ class SolidParticleSystem implements IDisposable {
 		var meshInd = mesh.getIndices();
 		var meshUV = mesh.getVerticesData(VertexBuffer.UVKind);
 		var meshCol = mesh.getVerticesData(VertexBuffer.ColorKind);
+		var meshNor = mesh.getVerticesData(VertexBuffer.NormalKind);
 		
 		var f:Int = 0;                              		 // facet counter
 		var totalFacets:Int = Std.int(meshInd.length / 3);   // a facet is a triangle, so 3 indices
@@ -301,7 +310,7 @@ class SolidParticleSystem implements IDisposable {
 			var modelShape = new ModelShape(this._shapeCounter, shape, shapeUV, null, null);
 			
 			// add the particle in the SPS
-			this._meshBuilder(this._index, shape, this._positions, facetInd, this._indices, facetUV, this._uvs, facetCol, this._colors, idx, 0, null);
+			this._meshBuilder(this._index, shape, this._positions, facetInd, this._indices, facetUV, this._uvs, facetCol, this._colors, meshNor, this._normals, idx, 0, null);
 			this._addParticle(idx, this._positions.length, modelShape, this._shapeCounter, 0);
 			// initialize the particle position
 			this.particles[this.nbParticles].position.addInPlace(barycenter);
@@ -334,9 +343,10 @@ class SolidParticleSystem implements IDisposable {
 	}
 
 	// _meshBuilder : inserts the shape model in the global SPS mesh
-	private function _meshBuilder(p:Int, shape:Array<Vector3>, positions:Array<Float>, meshInd:Array<Int>, indices:Array<Int>, meshUV:Array<Float>, uvs:Array<Float>, meshCol:Array<Float>, colors:Array<Float>, idx:Int, idxInShape:Int, ?options:Dynamic) {
+	private function _meshBuilder(p:Int, shape:Array<Vector3>, positions:Array<Float>, meshInd:Array<Int>, indices:Array<Int>, meshUV:Array<Float>, uvs:Array<Float>, meshCol:Array<Float>, colors:Array<Float>, meshNor:Array<Float>, normals:Array<Float>, idx:Int, idxInShape:Int, ?options:Dynamic) {
 		var u:Int = 0;
 		var c:Int = 0;
+		var n:Int = 0;
 		
 		this._resetCopy();
 		if (options != null && options.positionFunction != null) {        // call to custom positionFunction
@@ -402,6 +412,17 @@ class SolidParticleSystem implements IDisposable {
 			colors.push(this._color.b);
 			colors.push(this._color.a);
 			c += 4;
+			
+			if (!this.recomputeNormals && meshNor != null) {
+                this._normal.x = meshNor[n];
+                this._normal.y = meshNor[n + 1];
+                this._normal.z = meshNor[n + 2];
+                Vector3.TransformCoordinatesToRef(this._normal, this._rotMatrix, this._normal);
+                normals.push(this._normal.x);
+				normals.push(this._normal.y);
+				normals.push(this._normal.z);
+                n += 3;
+            }
 		}
 		
 		for (i in 0...meshInd.length) {
@@ -458,6 +479,7 @@ class SolidParticleSystem implements IDisposable {
 		var meshInd:Array<Int> = mesh.getIndices();
 		var meshUV:Array<Float> = mesh.getVerticesData(VertexBuffer.UVKind);
 		var meshCol:Array<Float> = mesh.getVerticesData(VertexBuffer.ColorKind);
+		var meshNor:Array<Float> = mesh.getVerticesData(VertexBuffer.NormalKind);
 		
 		var shape:Array<Vector3> = this._posToShape(meshPos);
 		var shapeUV:Array<Float> = this._uvsToShapeUV(meshUV);
@@ -470,7 +492,7 @@ class SolidParticleSystem implements IDisposable {
 		// particles
 		var idx = this.nbParticles;
 		for (i in 0...nb) {
-		    this._meshBuilder(this._index, shape, this._positions, meshInd, this._indices, meshUV, this._uvs, meshCol, this._colors, idx, i, options);
+		    this._meshBuilder(this._index, shape, this._positions, meshInd, this._indices, meshUV, this._uvs, meshCol, this._colors, meshNor, this._normals, idx, i, options);
 			if (this._updatable) {
 				this._addParticle(idx, this._positions.length, modelShape, this._shapeCounter, i);
 			}
@@ -582,21 +604,18 @@ class SolidParticleSystem implements IDisposable {
 		// if the particles will always face the camera
 		if (this.billboard) {    
 			// compute a fake camera position : un-rotate the camera position by the current mesh rotation
-			this._yaw = this.mesh.rotation.y;
-			this._pitch = this.mesh.rotation.x;
-			this._roll = this.mesh.rotation.z;
-			this._quaternionRotationYPR();
-			this._quaternionToRotationMatrix();
-			this._rotMatrix.invertToRef(this._invertMatrix);
-			Vector3.TransformCoordinatesToRef(this._camera.globalPosition, this._invertMatrix, this._fakeCamPos);
-			
-			// set two orthogonal vectors (_cam_axisX and and _cam_axisY) to the cam-mesh axis (_cam_axisZ)
-			this._fakeCamPos.subtractToRef(this.mesh.position, this._cam_axisZ);
-			Vector3.CrossToRef(this._cam_axisZ, this._axisX, this._cam_axisY);
-			Vector3.CrossToRef(this._cam_axisZ, this._cam_axisY, this._cam_axisX);
-			this._cam_axisY.normalize();
-			this._cam_axisX.normalize();
-			this._cam_axisZ.normalize();
+			if (this.mesh._worldMatrix.decompose(this._scale, this._quaternion, this._translation)) {
+                this._quaternionToRotationMatrix();
+                this._rotMatrix.invertToRef(this._invertMatrix);
+                untyped this._camera._currentTarget.subtractToRef(this._camera.globalPosition, this._camDir);
+                Vector3.TransformCoordinatesToRef(this._camDir, this._invertMatrix, this._cam_axisZ);
+                this._cam_axisZ.normalize();
+                // set two orthogonal vectors (_cam_axisX and and _cam_axisY) to the rotated camDir axis (_cam_axisZ)
+                Vector3.CrossToRef(this._cam_axisZ, this._axisX, this._cam_axisY);
+                Vector3.CrossToRef(this._cam_axisY, this._cam_axisZ, this._cam_axisX);
+                this._cam_axisY.normalize();
+                this._cam_axisX.normalize();
+            }
 		}
 		
 		Matrix.IdentityToRef(this._rotMatrix);
@@ -615,13 +634,16 @@ class SolidParticleSystem implements IDisposable {
 		
 		// particle loop
 		end = (end > this.nbParticles - 1) ? this.nbParticles - 1 : end;
-		for (p in start...end + 1) {
+		
+		for (p in start...end) {
 			this._particle = this.particles[p];
 			this._shape = this._particle._model._shape;
 			this._shapeUV = this._particle._model._shapeUV;
 			
 			// call to custom user function to update the particle properties
-			this.updateParticle(this._particle);
+			if (this.updateParticle != null) {
+				this.updateParticle(this._particle);
+			}
 			
 			if (this._particle.isVisible) {
 				// particle rotation matrix
@@ -956,32 +978,58 @@ class SolidParticleSystem implements IDisposable {
 	// these following methods may be overwritten by the user to fit his needs
 
 
-	// init : sets all particles first values and calls updateParticle to set them in space
-	// can be overwritten by the user
+	/**
+	* This function does nothing. It may be overwritten to set all the particle first values.
+	* The SPS doesn't call this function, you may have to call it by your own.
+	* doc : http://doc.babylonjs.com/overviews/Solid_Particle_System#particle-management
+	*/
 	public var initParticles:Void->Void;
 
-	// recycles a particle : can by overwritten by the user
+	/**
+	* This function does nothing. It may be overwritten to recycle a particle.
+	* The SPS doesn't call this function, you may have to call it by your own.
+	* doc : http://doc.babylonjs.com/overviews/Solid_Particle_System#particle-management
+	*/
 	public var recycleParticle:SolidParticle->SolidParticle;
 
-	// updates a particle : can be overwritten by the user
-	// will be called on each particle by setParticles() :
-	// ex : just set a particle position or velocity and recycle conditions
+	/**
+	* Updates a particle : this function should  be overwritten by the user.
+	* It is called on each particle by `setParticles()`. This is the place to code each particle behavior.
+	* doc : http://doc.babylonjs.com/overviews/Solid_Particle_System#particle-management
+	* ex : just set a particle position or velocity and recycle conditions
+	*/
 	public var updateParticle:SolidParticle->SolidParticle;
 
-	// updates a vertex of a particle : can be overwritten by the user
-	// will be called on each vertex particle by setParticles() :
-	// particle : the current particle
-	// vertex : the current index of the current particle
-	// pt : the index of the current vertex in the particle shape
-	// ex : just set a vertex particle position
+	/**
+	* Updates a vertex of a particle : it can be overwritten by the user.
+	* This will be called on each vertex particle by `setParticles()` if `computeParticleVertex` is set to true only.
+	* @param particle the current particle
+	* @param vertex the current index of the current particle
+	* @param pt the index of the current vertex in the particle shape
+	* doc : http://doc.babylonjs.com/overviews/Solid_Particle_System#update-each-particle-shape
+	* ex : just set a vertex particle position
+	*/
 	public var updateParticleVertex:SolidParticle->Vector3->Int->Vector3;
 
-	// will be called before any other treatment by setParticles()
+	/**
+	* This will be called before any other treatment by `setParticles()` and will be passed three parameters.
+	* This does nothing and may be overwritten by the user.
+	* @param start the particle index in the particle array where to stop to iterate, same than the value passed to setParticle()
+	* @param stop the particle index in the particle array where to stop to iterate, same than the value passed to setParticle()
+	* @param update the boolean update value actually passed to setParticles()
+	*/
 	public function beforeUpdateParticles(?start:Float, ?stop:Float, update:Bool = false) {
 		
 	}
 
-	// will be called after all setParticles() treatments
+	/**
+	* This will be called  by `setParticles()` after all the other treatments and just before the actual mesh update.
+	* This will be passed three parameters.
+	* This does nothing and may be overwritten by the user.
+	* @param start the particle index in the particle array where to stop to iterate, same than the value passed to setParticle()
+	* @param stop the particle index in the particle array where to stop to iterate, same than the value passed to setParticle()
+	* @param update the boolean update value actually passed to setParticles()
+	*/
 	public function afterUpdateParticles(?start:Float, ?stop:Float, ?update:Bool) {
 		
 	}

@@ -169,7 +169,7 @@ import com.babylonhx.utils.GL;
 		engine.bindBuffers(this._vertexBuffers, this._indexBuffer, currentEffect);
 		
 		// Draw order
-		if (this._alphaTestEffect == null) {
+		if (this.alphaTest) {
 			engine.setAlphaMode(this.alphaBlendingMode);
 			engine.draw(true, 0, 6);
 			engine.setAlphaMode(Engine.ALPHA_DISABLE);

@@ -16,6 +16,7 @@ import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.math.Viewport;
 import com.babylonhx.postprocess.PostProcess;
+import com.babylonhx.states._StencilState;
 import com.babylonhx.tools.Tools;
 
 import com.babylonhx.utils.GL;
@@ -81,14 +82,45 @@ typedef BufferPointer = {
 	public static inline var DELAYLOADSTATE_LOADING:Int = 2;
 	public static inline var DELAYLOADSTATE_NOTLOADED:Int = 4;
 	
-	public static inline var TEXTUREFORMAT_ALPHA = 0;
-	public static inline var TEXTUREFORMAT_LUMINANCE = 1;
-	public static inline var TEXTUREFORMAT_LUMINANCE_ALPHA = 2;
-	public static inline var TEXTUREFORMAT_RGB = 4;
-	public static inline var TEXTUREFORMAT_RGBA = 5;
+	public static inline var TEXTUREFORMAT_ALPHA:Int = 0;
+	public static inline var TEXTUREFORMAT_LUMINANCE:Int = 1;
+	public static inline var TEXTUREFORMAT_LUMINANCE_ALPHA:Int = 2;
+	public static inline var TEXTUREFORMAT_RGB:Int = 4;
+	public static inline var TEXTUREFORMAT_RGBA:Int = 5;
 
-	public static inline var TEXTURETYPE_UNSIGNED_INT = 0;
-	public static inline var TEXTURETYPE_FLOAT = 1;
+	public static inline var TEXTURETYPE_UNSIGNED_INT:Int = 0;
+	public static inline var TEXTURETYPE_FLOAT:Int = 1;
+	public static inline var TEXTURETYPE_HALF_FLOAT:Int = 2;
+	
+	// Depht or Stencil test Constants.
+	
+	// Passed to depthFunction or stencilFunction to specify depth or stencil tests will never pass. i.e. Nothing will be drawn.
+	public static inline var NEVER:Int = 0x0200;	
+	// Passed to depthFunction or stencilFunction to specify depth or stencil tests will always pass. i.e. Pixels will be drawn in the order they are drawn.
+	public static inline var ALWAYS:Int = 0x0207; 
+	// Passed to depthFunction or stencilFunction to specify depth or stencil tests will pass if the new depth value is less than the stored value.
+	public static inline var LESS:Int = 0x0201; 
+	// Passed to depthFunction or stencilFunction to specify depth or stencil tests will pass if the new depth value is equals to the stored value.
+	public static inline var EQUAL:Int = 0x0202;
+	// Passed to depthFunction or stencilFunction to specify depth or stencil tests will pass if the new depth value is less than or equal to the stored value.
+	public static inline var LEQUAL:Int = 0x0203;
+	// Passed to depthFunction or stencilFunction to specify depth or stencil tests will pass if the new depth value is greater than the stored value.
+	public static inline var GREATER:Int = 0x0204;
+ 	// Passed to depthFunction or stencilFunction to specify depth or stencil tests will pass if the new depth value is greater than or equal to the stored value.
+	public static inline var GEQUAL:Int = 0x0206; 
+	//  Passed to depthFunction or stencilFunction to specify depth or stencil tests will pass if the new depth value is not equal to the stored value.
+	public static inline var NOTEQUAL:Int = 0x0205; 
+	
+	
+	// Stencil Actions Constants.
+	public static inline var KEEP:Int = 0x1E00;
+	public static inline var REPLACE:Int = 0x1E01;
+	public static inline var INCR:Int = 0x1E02;
+	public static inline var DECR:Int = 0x1E03;
+	public static inline var INVERT:Int = 0x150A;
+	public static inline var INCR_WRAP:Int = 0x8507;
+	public static inline var DECR_WRAP:Int = 0x8508;
+	
 
 	public static var Version:String = "2.0.0";
 
@@ -121,6 +153,7 @@ typedef BufferPointer = {
 	private var _caps:EngineCapabilities;
 	private var _pointerLockRequested:Bool;
 	private var _alphaTest:Bool;
+	private var _isStencilEnable:Bool;
 		
 	private var _drawCalls:Int = 0;
 	public var drawCalls(get, never):Int;
@@ -146,6 +179,7 @@ typedef BufferPointer = {
 
 	// States
 	private var _depthCullingState:_DepthCullingState = new _DepthCullingState();
+	private var _stencilState:_StencilState = new _StencilState();
 	private var _alphaState:_AlphaState = new _AlphaState();
 	private var _alphaMode:Int = Engine.ALPHA_DISABLE;
 
@@ -157,7 +191,7 @@ typedef BufferPointer = {
 	private var _currentEffect:Effect;
 	private var _currentProgram:GLProgram;
 	private var _compiledEffects:Map<String, Effect> = new Map<String, Effect>();
-	private var _vertexAttribArrays:Array<Bool>;
+	private var _vertexAttribArraysEnabled:Array<Bool> = [];
 	private var _cachedViewport:Viewport;
 	private var _cachedVertexBuffers:Dynamic; // WebGLBuffer | Map<String, VertexBuffer>;
 	private var _cachedIndexBuffer:WebGLBuffer;
@@ -190,9 +224,9 @@ typedef BufferPointer = {
 	public var keyDown:Array<Dynamic> = [];
 	public var onResize:Array<Void->Void> = [];
 
-	public static var width:Int;
-	public static var height:Int;
-
+	public var width:Int;
+	public var height:Int;
+	
 	#if (js || purejs)
 	public var audioEngine:AudioEngine = new AudioEngine();
 	#end
@@ -210,6 +244,14 @@ typedef BufferPointer = {
             options.preserveDrawingBuffer = false;
         }
 		
+		// Checks if some of the format renders first to allow the use of webgl inspector.
+		var renderToFullFloat = this._canRenderToFloatTexture();
+		var renderToHalfFloat = this._canRenderToHalfFloatTexture();
+		
+		if (options.stencil == null) {
+			options.stencil = true;
+		}
+		
 		#if purejs
 		Gl = cast(canvas, js.html.CanvasElement).getContext("webgl", options);
 		if(Gl == null)
@@ -221,9 +263,9 @@ typedef BufferPointer = {
 		this._workingContext.render = this._renderLoop;
 		canvas.addChild(this._workingContext);
 		#end
-
+		
 		width = 960;
-		height = 640;
+		height = 640;		
 		
 		this._onBlur = function() {
 			this._windowIsBackground = true;
@@ -241,12 +283,15 @@ typedef BufferPointer = {
 		#end
         this.resize();
 		
+		this._isStencilEnable = options.stencil;
+		
 		// Caps
 		this._caps = new EngineCapabilities();
 		this._caps.maxTexturesImageUnits = Gl.getParameter(GL.MAX_TEXTURE_IMAGE_UNITS);
 		this._caps.maxTextureSize = Gl.getParameter(GL.MAX_TEXTURE_SIZE);
 		this._caps.maxCubemapTextureSize = Gl.getParameter(GL.MAX_CUBE_MAP_TEXTURE_SIZE);
 		this._caps.maxRenderTextureSize = Gl.getParameter(GL.MAX_RENDERBUFFER_SIZE);
+		this._caps.maxVertexAttribs = Gl.getParameter(GL.MAX_VERTEX_ATTRIBS);
 		
 		// Infos
 		this._glVersion = Gl.getParameter(GL.VERSION);
@@ -513,6 +558,14 @@ typedef BufferPointer = {
 		return this._glExtensions;
 	}
 	
+	/**
+     * Returns true if the stencil buffer has been enabled through the creation option of the context.
+     */
+	public var isStencilEnable(get, never):Bool;
+    private function get_isStencilEnable():Bool {
+        return this._isStencilEnable;
+    }
+	
 	public function resetTextureCache() {
 		for (index in 0...this._maxTextureChannels) {
 			this._activeTexturesCache[index] = null;
@@ -590,6 +643,70 @@ typedef BufferPointer = {
 	inline public function setDepthFunctionToLessOrEqual() {
 		this._depthCullingState.depthFunc = GL.LEQUAL;
 	}
+	
+	inline public function getStencilBuffer():Bool {
+		return this._stencilState.stencilTest;
+	}
+
+	inline public function setStencilBuffer(enable:Bool) {
+		this._stencilState.stencilTest = enable;
+	}
+
+	inline public function getStencilMask():Int {
+		return this._stencilState.stencilMask;
+	}
+
+	inline public function setStencilMask(mask:Int) {
+		this._stencilState.stencilMask = mask;
+	}
+
+	inline public function getStencilFunction():Int {
+		return this._stencilState.stencilFunc;
+	}
+
+	inline public function getStencilFunctionReference():Int {
+		return this._stencilState.stencilFuncRef;
+	}
+
+	inline public function getStencilFunctionMask():Int {
+		return this._stencilState.stencilFuncMask;
+	}
+
+	inline public function setStencilFunction(stencilFunc:Int) {
+		this._stencilState.stencilFunc = stencilFunc;
+	}
+	
+	inline public function setStencilFunctionReference(reference:Int) {
+		this._stencilState.stencilFuncRef = reference;
+	}
+	
+	inline public function setStencilFunctionMask(mask:Int) {
+		this._stencilState.stencilFuncMask = mask;
+	}
+
+	inline public function getStencilOperationFail():Int {
+		return this._stencilState.stencilOpStencilFail;
+	}
+
+	inline public function getStencilOperationDepthFail():Int {
+		return this._stencilState.stencilOpDepthFail;
+	}
+
+	inline public function getStencilOperationPass():Int {
+		return this._stencilState.stencilOpStencilDepthPass;
+	}
+
+	inline public function setStencilOperationFail(operation:Int) {
+		this._stencilState.stencilOpStencilFail = operation;
+	}
+
+	inline public function setStencilOperationDepthFail(operation:Int) {
+		this._stencilState.stencilOpDepthFail = operation;
+	}
+
+	inline public function setStencilOperationPass(operation:Int) {
+		this._stencilState.stencilOpStencilDepthPass = operation;
+	}
 
 	/**
 	 * stop executing a render loop function and remove it from the execution array
@@ -663,9 +780,10 @@ typedef BufferPointer = {
 		}*/
 	}
 
-	inline public function clear(color:Dynamic, backBuffer:Bool, depthStencil:Bool) {
+	inline public function clear(color:Dynamic, backBuffer:Bool, depth:Bool, stencil:Bool = false) {
 		this.applyStates();
 		
+		var mode = 0;
 		if (backBuffer) {
 			if(Std.is(color, Color4)) {
 				Gl.clearColor(color.r, color.g, color.b, color.a);
@@ -673,22 +791,20 @@ typedef BufferPointer = {
 			else {
 				Gl.clearColor(color.r, color.g, color.b, 1.0);
 			}
-		}
-		
-		if (depthStencil && this._depthCullingState.depthMask) {
-			Gl.clearDepth(1.0);
-		}
-		var mode = 0;
-		
-		if (backBuffer) {
 			mode |= GL.COLOR_BUFFER_BIT;
 		}
 		
-		if (depthStencil && this._depthCullingState.depthMask) {
+		if (depth) {
+			GL.clearDepth(1.0);
 			mode |= GL.DEPTH_BUFFER_BIT;
 		}
 		
-		Gl.clear(mode);
+		if (stencil) {
+			GL.clearStencil(0);
+			mode |= GL.STENCIL_BUFFER_BIT;
+		}
+		
+		GL.clear(mode);
 	}
 	
 	public function scissorClear(x:Int, y:Int, width:Int, height:Int, clearColor:Color4) {
@@ -701,7 +817,7 @@ typedef BufferPointer = {
 		Gl.scissor(x, y, width, height);
 		
 		// Clear
-		this.clear(clearColor, true, true);
+		this.clear(clearColor, true, true, true);
 		
 		// Restore state
 		Gl.scissor(curScissorBox[0], curScissorBox[1], curScissorBox[2], curScissorBox[3]);
@@ -831,8 +947,7 @@ typedef BufferPointer = {
 	}
 
 	public function bindFramebuffer(texture:WebGLTexture, faceIndex:Int = 0, ?requiredWidth:Int, ?requiredHeight:Int) {
-		this._currentRenderTarget = texture;
-		
+		this._currentRenderTarget = texture;		
 		this.bindUnboundFramebuffer(texture._framebuffer);
 		
 		if (texture.isCube) {
@@ -917,7 +1032,7 @@ typedef BufferPointer = {
 		return ret;
 	}
 
-	/*inline public function updateDynamicVertexBuffer(vertexBuffer:WebGLBuffer, vertices:Array<Float>, offset:Int = 0, count:Int = -1) {
+	inline public function updateDynamicVertexBuffer(vertexBuffer:WebGLBuffer, vertices:Array<Float>, offset:Int = 0, count:Int = -1) {
 		this.bindArrayBuffer(vertexBuffer);
 		
 		if (count == -1) {
@@ -925,19 +1040,6 @@ typedef BufferPointer = {
 		}
 		else {
 			Gl.bufferSubData(GL.ARRAY_BUFFER, 0, new Float32Array(vertices).subarray(offset, offset + count));
-		}
-		
-		this._resetVertexBufferBinding();
-	}*/
-	
-	inline public function updateDynamicVertexBuffer(vertexBuffer:WebGLBuffer, vertices:Array<Float>, offset:Int = 0, count:Int = -1) {
-		this.bindArrayBuffer(vertexBuffer);
-		
-		if (count == -1) {
-			Gl.bufferData(GL.ARRAY_BUFFER, new Float32Array(vertices), GL.DYNAMIC_DRAW);
-		}
-		else {
-			Gl.bufferData(GL.ARRAY_BUFFER, new Float32Array(vertices).subarray(offset, offset + count), GL.DYNAMIC_DRAW);
 		}
 		
 		this._resetVertexBufferBinding();
@@ -988,7 +1090,7 @@ typedef BufferPointer = {
 		this.bindBuffer(buffer, GL.ELEMENT_ARRAY_BUFFER);
 	}
 	
-	private function bindBuffer(buffer:WebGLBuffer, target:Int) {
+	inline private function bindBuffer(buffer:WebGLBuffer, target:Int) {
 		if (this._currentBoundBuffer[target] != buffer) {
 			Gl.bindBuffer(target, buffer == null ? null : buffer.buffer);
 			this._currentBoundBuffer[target] = (buffer == null ? null : buffer);
@@ -1045,14 +1147,32 @@ typedef BufferPointer = {
 			this._cachedVertexBuffers = vertexBuffer;
 			this._cachedEffectForVertexBuffers = effect;
 			
+			var attributesCount = effect.getAttributesCount();
+			
 			var offset:Int = 0;
-			for (index in 0...vertexDeclaration.length) {
-				var order = effect.getAttributeLocation(index);
-				
-				if (order >= 0) {
-					this.vertexAttribPointer(vertexBuffer, order, vertexDeclaration[index], GL.FLOAT, false, vertexStrideSize, offset);
+			for (index in 0...attributesCount) {
+				if (index < vertexDeclaration.length) {
+					var order = effect.getAttributeLocation(index);
+					
+					if (order >= 0) {
+						if (!this._vertexAttribArraysEnabled[order]) {
+							Gl.enableVertexAttribArray(order);
+							this._vertexAttribArraysEnabled[order] = true;
+						}
+						
+						this.vertexAttribPointer(vertexBuffer, order, vertexDeclaration[index], GL.FLOAT, false, vertexStrideSize, offset);
+					}
+					
+					offset += Std.int(vertexDeclaration[index] * 4);
 				}
-				offset += vertexDeclaration[index] * 4;
+				else {
+					//disable effect attributes that have no data
+					var order = effect.getAttributeLocation(index);
+					if (this._vertexAttribArraysEnabled[order]) {
+						Gl.disableVertexAttribArray(order);
+						this._vertexAttribArraysEnabled[order] = false;
+					}
+				}
 			}
 		}
 		
@@ -1063,39 +1183,53 @@ typedef BufferPointer = {
 		}
 	}
 
+	static var _order:Int = 0;
+	static var _vertexBuffer:VertexBuffer = null;
+	static var _attributes:Array<String> = null;
 	inline public function bindBuffers(vertexBuffers:Map<String, VertexBuffer>, indexBuffer:WebGLBuffer, effect:Effect) {
-		if (this._cachedVertexBuffers != vertexBuffers || this._cachedEffectForVertexBuffers != effect) {
+		//if (this._cachedVertexBuffers != vertexBuffers || this._cachedEffectForVertexBuffers != effect) {
 			this._cachedVertexBuffers = vertexBuffers;
 			this._cachedEffectForVertexBuffers = effect;
 			
-			var attributes = effect.getAttributesNames();
+			_attributes = effect.getAttributesNames();
 			
-			for (index in 0...attributes.length) {
-				var order = effect.getAttributeLocation(index);
+			for (index in 0..._attributes.length) {
+				_order = effect.getAttributeLocation(index);
 				
-				if (order >= 0) {
-					var vertexBuffer:VertexBuffer = vertexBuffers[attributes[index]];
-					if (vertexBuffer == null) {
+				if (_order >= 0) {
+					_vertexBuffer = vertexBuffers[_attributes[index]];
+					
+					if (_vertexBuffer == null) {
+						if (this._vertexAttribArraysEnabled[_order]) {
+                            Gl.disableVertexAttribArray(_order);
+                            this._vertexAttribArraysEnabled[_order] = false;
+                        }
+						
 						continue;
 					}
 					
-					var buffer = vertexBuffer.getBuffer();
-					this.vertexAttribPointer(buffer, order, vertexBuffer.getSize(), GL.FLOAT, false, vertexBuffer.getStrideSize() * 4, vertexBuffer.getOffset() * 4);
+					if (!this._vertexAttribArraysEnabled[_order]) {
+                        Gl.enableVertexAttribArray(_order);
+                        this._vertexAttribArraysEnabled[_order] = true;
+                    }
 					
-					if (vertexBuffer.getIsInstanced()) {
-						this._caps.instancedArrays.vertexAttribDivisorANGLE(order, 1);
-						this._currentInstanceLocations.push(order);
+					var buffer = _vertexBuffer.getBuffer();
+					this.vertexAttribPointer(buffer, _order, _vertexBuffer.getSize(), GL.FLOAT, false, _vertexBuffer.getStrideSize() * 4, _vertexBuffer.getOffset() * 4);
+					
+					if (_vertexBuffer.getIsInstanced()) {
+						this._caps.instancedArrays.vertexAttribDivisorANGLE(_order, 1);
+						this._currentInstanceLocations.push(_order);
 						this._currentInstanceBuffers.push(buffer);
 					}
 				}
 			}
-		}
+		//}
 		
-		if (indexBuffer != null && this._cachedIndexBuffer != indexBuffer) {
+		//if (indexBuffer != null && this._cachedIndexBuffer != indexBuffer) {
 			this._cachedIndexBuffer = indexBuffer;
 			this.bindIndexBuffer(indexBuffer);
 			this._uintIndicesCurrentlySet = indexBuffer.is32Bits;
-		}
+		//}
 	}
 	
 	public function unbindInstanceAttributes() {
@@ -1160,7 +1294,12 @@ typedef BufferPointer = {
 			}
 			for (i in 0...offsetLocations.length) {
 				var ai = offsetLocations[i];
-				Gl.enableVertexAttribArray(ai.index);
+				
+				if (!this._vertexAttribArraysEnabled[ai.index]) {
+                    Gl.enableVertexAttribArray(ai.index);
+                    this._vertexAttribArraysEnabled[ai.index] = true;
+                }
+				
 				this.vertexAttribPointer(instancesBuffer, ai.index, ai.attributeSize, ai.attribyteType, ai.normalized, stride, ai.offset);
 				this._caps.instancedArrays.vertexAttribDivisorANGLE(ai.index, 1);
 				this._currentInstanceLocations.push(ai.index);
@@ -1170,7 +1309,12 @@ typedef BufferPointer = {
 		else {
 				for (index in 0...4) {
 					var offsetLocation:Int = offsetLocations[index];
-					Gl.enableVertexAttribArray(offsetLocation);
+					
+					if (!this._vertexAttribArraysEnabled[offsetLocation]) {
+						Gl.enableVertexAttribArray(offsetLocation);
+						this._vertexAttribArraysEnabled[offsetLocation] = true;
+					}
+					
 					this.vertexAttribPointer(instancesBuffer, offsetLocation, 4, GL.FLOAT, false, 64, index * 16);
 					this._caps.instancedArrays.vertexAttribDivisorANGLE(offsetLocation, 1);
 					this._currentInstanceLocations.push(offsetLocation);
@@ -1194,16 +1338,16 @@ typedef BufferPointer = {
 		this._alphaState.apply(#if (js || purejs) Gl #end);
 	}
 
-	public function draw(useTriangles:Bool, indexStart:Int, indexCount:Int, instancesCount:Int = -1) {
+	public function draw(useTriangles:Bool, indexStart:Int, indexCount:Int, instancesCount:Int = 0) {
 		// Apply states
 		this.applyStates();
-		
+		this._stencilState.apply();
 		this._drawCalls++;
 		
 		// Render
 		var indexFormat = this._uintIndicesCurrentlySet ? GL.UNSIGNED_INT : GL.UNSIGNED_SHORT;
 		var mult:Int = this._uintIndicesCurrentlySet ? 4 : 2;
-		if (instancesCount != -1) {
+		if (instancesCount > 0) {
 			this._caps.instancedArrays.drawElementsInstancedANGLE(useTriangles ? GL.TRIANGLES : GL.LINES, indexCount, indexFormat, indexStart * mult, instancesCount);
 			
 			return;
@@ -1349,36 +1493,16 @@ typedef BufferPointer = {
     }
 
 	inline public function enableEffect(effect:Effect) {
-		if (effect == null || effect.getAttributesCount() == 0 || this._currentEffect == effect) {
+		/*if (effect == null || effect.getAttributesCount() == 0 || this._currentEffect == effect) {
 			if (effect != null && effect.onBind != null) {
 				effect.onBind(effect);
 			}
 			
 			return;
-		}
-		
-		this._vertexAttribArrays = this._vertexAttribArrays != null ? this._vertexAttribArrays : [];
+		}*/
 		
 		// Use program
 		this.setProgram(effect.getProgram());
-		
-		for (i in 0...this._vertexAttribArrays.length) {
-			if (i > GL.VERTEX_ATTRIB_ARRAY_ENABLED || !this._vertexAttribArrays[i]) {
-				continue;
-			}
-			this._vertexAttribArrays[i] = false;
-			Gl.disableVertexAttribArray(i);
-		}
-		
-		var attributesCount = effect.getAttributesCount();
-		for (index in 0...attributesCount) {
-			// Attributes
-			var order = effect.getAttributeLocation(index);
-			if (order >= 0) {
-				this._vertexAttribArrays[order] = true;
-				Gl.enableVertexAttribArray(order);
-			}
-		}
 		
 		this._currentEffect = effect;
 		
@@ -1624,6 +1748,7 @@ typedef BufferPointer = {
 		this.resetTextureCache();
 		this._currentEffect = null;
 		
+		this._stencilState.reset();
 		this._depthCullingState.reset();
 		this.setDepthFunctionToLessOrEqual();
 		this._alphaState.reset();
@@ -1995,6 +2120,9 @@ typedef BufferPointer = {
 			Gl.generateMipmap(GL.TEXTURE_2D);
 		}
 		this._bindTextureDirectly(GL.TEXTURE_2D, null);
+		if (premulAlpha) {
+            GL.pixelStorei(GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+        }
 		this.resetTextureCache();
 		texture.isReady = true;
 	}
@@ -2080,11 +2208,13 @@ typedef BufferPointer = {
 		// in the same way, generateDepthBuffer is defaulted to true
 		var generateMipMaps = false;
 		var generateDepthBuffer = true;
+		var generateStencilBuffer = false;
 		var type = Engine.TEXTURETYPE_UNSIGNED_INT;
 		var samplingMode = Texture.TRILINEAR_SAMPLINGMODE;
 		if (options != null) {
             generateMipMaps = options.generateMipMaps != null ? options.generateMipMaps : options;
             generateDepthBuffer = options.generateDepthBuffer != null ? options.generateDepthBuffer : true;
+			generateStencilBuffer = options.generateStencilBuffer != null ? options.generateStencilBuffer : generateDepthBuffer;
 			type = options.type == null ? type : options.type;
             if (options.samplingMode != null) {
                 samplingMode = options.samplingMode;
@@ -2120,19 +2250,31 @@ typedef BufferPointer = {
 		Gl.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, width, height, 0, GL.RGBA, getWebGLTextureType(type), null);
 		#end
 		
-		var depthBuffer:GLRenderbuffer = null;
-		// Create the depth buffer
-		if (generateDepthBuffer) {
-			depthBuffer = Gl.createRenderbuffer();
-			Gl.bindRenderbuffer(GL.RENDERBUFFER, depthBuffer);
+		var depthStencilBuffer:GLRenderbuffer = null;
+		// Create the depth/stencil buffer
+        if (generateStencilBuffer) {
+            depthStencilBuffer = GL.createRenderbuffer();
+            Gl.bindRenderbuffer(GL.RENDERBUFFER, depthStencilBuffer);
+            Gl.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_STENCIL, width, height);
+        }
+        else if (generateDepthBuffer) {
+            depthStencilBuffer = GL.createRenderbuffer();
+            Gl.bindRenderbuffer(GL.RENDERBUFFER, depthStencilBuffer);
 			Gl.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_COMPONENT16, width, height);
 		}
+		
 		// Create the framebuffer
 		var framebuffer = Gl.createFramebuffer();
 		this.bindUnboundFramebuffer(framebuffer);
-		if (generateDepthBuffer) {
-			Gl.framebufferRenderbuffer(GL.FRAMEBUFFER, GL.DEPTH_ATTACHMENT, GL.RENDERBUFFER, depthBuffer);
-		}
+		
+		// Manage attachments
+        if (generateStencilBuffer) {                
+            Gl.framebufferRenderbuffer(GL.FRAMEBUFFER, GL.DEPTH_STENCIL_ATTACHMENT, GL.RENDERBUFFER, depthStencilBuffer);
+        }
+        else if (generateDepthBuffer) {
+            Gl.framebufferRenderbuffer(GL.FRAMEBUFFER, GL.DEPTH_ATTACHMENT, GL.RENDERBUFFER, depthStencilBuffer);
+        }
+        Gl.framebufferTexture2D(GL.FRAMEBUFFER, GL.COLOR_ATTACHMENT0, GL.TEXTURE_2D, texture.data, 0);
 		
 		if (generateMipMaps) {
 			Gl.generateMipmap(GL.TEXTURE_2D);
@@ -2145,7 +2287,7 @@ typedef BufferPointer = {
 		
 		texture._framebuffer = framebuffer;
 		if (generateDepthBuffer) {
-			texture._depthBuffer = depthBuffer;
+			texture._depthBuffer = depthStencilBuffer;
 		}
 		texture._baseWidth = width;
 		texture._baseHeight = height;
@@ -2156,6 +2298,7 @@ typedef BufferPointer = {
 		texture.references = 1;
 		texture.samplingMode = samplingMode;
 		texture.type = type;
+		
 		this.resetTextureCache();
 		
 		this._loadedTexturesCache.push(texture);
@@ -2167,9 +2310,14 @@ typedef BufferPointer = {
 		var texture = new WebGLTexture("", Gl.createTexture());
 		
 		var generateMipMaps:Bool = true;
+		var generateDepthBuffer:Bool = true;
+        var generateStencilBuffer:Bool = false;
+		
 		var samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE;
 		if (options != null) {
 			generateMipMaps = options.generateMipMaps == null ? options : options.generateMipMaps;
+			generateDepthBuffer = options.generateDepthBuffer == null ? true : options.generateDepthBuffer;
+            generateStencilBuffer = options.generateStencilBuffer != null ? options.generateStencilBuffer : generateDepthBuffer;
 			if (options.samplingMode != null) {
 				samplingMode = options.samplingMode;
 			}
@@ -2199,15 +2347,31 @@ typedef BufferPointer = {
 		Gl.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_WRAP_S, GL.CLAMP_TO_EDGE);
 		Gl.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_WRAP_T, GL.CLAMP_TO_EDGE);
 		
-		// Create the depth buffer
-		var depthBuffer = Gl.createRenderbuffer();
-		Gl.bindRenderbuffer(GL.RENDERBUFFER, depthBuffer);
-		Gl.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_COMPONENT16, size.width, size.height);
+		var depthStencilBuffer:GLRenderbuffer = null;
+
+        // Create the depth/stencil buffer
+        if (generateStencilBuffer) {
+            depthStencilBuffer = GL.createRenderbuffer();
+            Gl.bindRenderbuffer(GL.RENDERBUFFER, depthStencilBuffer);
+            Gl.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_STENCIL, size, size);
+        }
+        else if (generateDepthBuffer) {
+            depthStencilBuffer = GL.createRenderbuffer();
+            Gl.bindRenderbuffer(GL.RENDERBUFFER, depthStencilBuffer);
+            Gl.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_COMPONENT16, size, size);
+        }
 		
 		// Create the framebuffer
 		var framebuffer = Gl.createFramebuffer();
 		this.bindUnboundFramebuffer(framebuffer);
-		Gl.framebufferRenderbuffer(GL.FRAMEBUFFER, GL.DEPTH_ATTACHMENT, GL.RENDERBUFFER, depthBuffer);
+		
+		// Manage attachments
+        if (generateStencilBuffer) {                
+            Gl.framebufferRenderbuffer(GL.FRAMEBUFFER, GL.DEPTH_STENCIL_ATTACHMENT, GL.RENDERBUFFER, depthStencilBuffer);
+        }
+        else if (generateDepthBuffer) {
+            Gl.framebufferRenderbuffer(GL.FRAMEBUFFER, GL.DEPTH_ATTACHMENT, GL.RENDERBUFFER, depthStencilBuffer);
+        }
 		
 		// Mipmaps
         if (texture.generateMipMaps) {
@@ -2221,13 +2385,16 @@ typedef BufferPointer = {
 		this.bindUnboundFramebuffer(null);
 		
 		texture._framebuffer = framebuffer;
-		texture._depthBuffer = depthBuffer;
-		
-		this.resetTextureCache();
-		
+		if (generateDepthBuffer) {
+            texture._depthBuffer = depthStencilBuffer;
+        }
 		texture._width = size.width;
 		texture._height = size.height;
 		texture.isReady = true;
+		
+		this.resetTextureCache();
+		
+        this._loadedTexturesCache.push(texture);
 		
 		return texture;
 	}
@@ -2555,6 +2722,45 @@ typedef BufferPointer = {
 		
 		return data;
 	}
+	
+	/**
+	 * Remove an externaly attached data from the Engine instance
+	 * @param key the unique key that identifies the data
+	 * @return true if the data was successfully removed, false if it doesn't exist
+	 */
+	/*public function removeExternalData(key:String):Bool {
+		return this._externalData.remove(key);
+	}*/
+
+	public function releaseInternalTexture(?texture:WebGLTexture) {
+		if (texture == null) {
+			return;
+		}
+		
+		texture.references--;
+		
+		// Final reference ?
+		if (texture.references == 0) {
+			var texturesCache = this.getLoadedTexturesCache();
+			var index = texturesCache.indexOf(texture);
+			
+			if (index > -1) {
+				texturesCache.splice(index, 1);
+			}
+			
+			this._releaseTexture(texture);
+		}
+	}
+	
+	inline public function unbindAllAttributes() {
+		for (i in 0...this._vertexAttribArraysEnabled.length) {
+			if (i >= this._caps.maxVertexAttribs || !this._vertexAttribArraysEnabled[i]) {
+				continue;
+			}
+			Gl.disableVertexAttribArray(i);
+			this._vertexAttribArraysEnabled[i] = false;
+		}
+	}
 
 	// Dispose
 	public function dispose() {
@@ -2574,6 +2780,125 @@ typedef BufferPointer = {
 		for (name in this._compiledEffects.keys()) {
 			Gl.deleteProgram(this._compiledEffects[name]._program);
 		}
+		
+		// Unbind
+		for (i in 0...this._vertexAttribArraysEnabled.length) {
+			if (i >= this._caps.maxVertexAttribs || !this._vertexAttribArraysEnabled[i]) {
+				continue;
+			}
+			
+			Gl.disableVertexAttribArray(i);
+		}
+	}
+	
+	private function _canRenderToFloatTexture():Bool {
+		return this._canRenderToTextureOfType(Engine.TEXTURETYPE_FLOAT, 'OES_texture_float');
+	}
+
+	private function _canRenderToHalfFloatTexture():Bool {
+		return this._canRenderToTextureOfType(Engine.TEXTURETYPE_HALF_FLOAT, 'OES_texture_half_float');
+	}
+
+	// Thank you : http://stackoverflow.com/questions/28827511/webgl-ios-render-to-floating-point-texture
+	private function _canRenderToTextureOfType(format:Int, extension:String):Bool {
+		// extension.
+		var ext = Gl.getExtension(extension);
+		if (ext == null) {
+			return false;
+		}
+		
+		// setup GLSL program
+		var vertexCode = "attribute vec4 a_position;\n" +
+			"void main() {\n" +
+			"	gl_Position = a_position;\n" +
+			"}";
+		var fragmentCode = "precision mediump float;\n" + 
+			"uniform vec4 u_color;\n" +
+			"uniform sampler2D u_texture;\n" +
+			"void main() {\n" +
+			"	gl_FragColor = texture2D(u_texture, vec2(0.5, 0.5)) * u_color;\n" +
+			"}";
+		var program = this.createShaderProgram(vertexCode, fragmentCode, null);
+		Gl.useProgram(program);
+		
+		// look up where the vertex data needs to go.
+		var positionLocation = Gl.getAttribLocation(program, "a_position");
+		var colorLoc = Gl.getUniformLocation(program, "u_color");
+		
+		// provide texture coordinates for the rectangle.
+		var positionBuffer = Gl.createBuffer();
+		Gl.bindBuffer(GL.ARRAY_BUFFER, positionBuffer);
+		Gl.bufferData(GL.ARRAY_BUFFER, new Float32Array([
+			-1.0, -1.0,
+			1.0, -1.0,
+			-1.0, 1.0,
+			-1.0, 1.0,
+			1.0, -1.0,
+			1.0, 1.0]), GL.STATIC_DRAW);
+		Gl.enableVertexAttribArray(positionLocation);
+		Gl.vertexAttribPointer(positionLocation, 2, GL.FLOAT, false, 0, 0);
+		
+		var whiteTex = Gl.createTexture();
+		Gl.bindTexture(GL.TEXTURE_2D, whiteTex);
+		Gl.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, 1, 1, 0, GL.RGBA, GL.UNSIGNED_BYTE, new UInt8Array([255, 255, 255, 255]));
+		
+		var tex = Gl.createTexture();
+		Gl.bindTexture(GL.TEXTURE_2D, tex);
+		Gl.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, 1, 1, 0, GL.RGBA, getWebGLTextureType(format), null);
+		Gl.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.NEAREST);
+		Gl.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.NEAREST);
+		
+		var fb = Gl.createFramebuffer();
+		Gl.bindFramebuffer(GL.FRAMEBUFFER, fb);
+		Gl.framebufferTexture2D(GL.FRAMEBUFFER, GL.COLOR_ATTACHMENT0, GL.TEXTURE_2D, tex, 0);
+		
+		var cleanup = function() {
+			Gl.deleteProgram(program);
+			Gl.disableVertexAttribArray(positionLocation);
+			Gl.deleteBuffer(positionBuffer);
+			Gl.deleteFramebuffer(fb);
+			Gl.deleteTexture(whiteTex);
+			Gl.deleteTexture(tex);
+		};
+		
+		var status = Gl.checkFramebufferStatus(GL.FRAMEBUFFER);
+		if (status != GL.FRAMEBUFFER_COMPLETE) {
+			trace("GL Support: can **NOT** render to " + format + " texture");
+			cleanup();
+			
+			return false;
+		}
+		
+		// Draw the rectangle.
+		Gl.bindTexture(GL.TEXTURE_2D, whiteTex);
+		Gl.uniform4fv(colorLoc, new Float32Array([0, 10, 20, 1]));
+		Gl.drawArrays(GL.TRIANGLES, 0, 6);
+		
+		Gl.bindTexture(GL.TEXTURE_2D, tex);
+		Gl.bindFramebuffer(GL.FRAMEBUFFER, null);
+		
+		Gl.clearColor(1, 0, 0, 1);
+		Gl.clear(GL.COLOR_BUFFER_BIT);
+		
+		Gl.uniform4fv(colorLoc, new Float32Array([0, 1 / 10, 1 / 20, 1]));
+		Gl.drawArrays(GL.TRIANGLES, 0, 6);
+		
+		var pixel = new UInt8Array(4);
+		Gl.readPixels(0, 0, 1, 1, GL.RGBA, GL.UNSIGNED_BYTE, pixel);
+		if (pixel[0] != 0 ||
+			pixel[1] < 248 ||
+			pixel[2] < 248 ||
+			pixel[3] < 254) {
+			trace("GL Support: Was not able to actually render to " + format + " texture");
+			cleanup();
+			
+			return false;
+		}
+		
+		// Succesfully rendered to "format" texture.
+		cleanup();
+		
+		return true;
 	}
 	
 	#if purejs

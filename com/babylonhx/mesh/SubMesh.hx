@@ -91,6 +91,7 @@ import com.babylonhx.tools.Tools;
 		
 		if (rootMaterial != null && Std.is(rootMaterial, MultiMaterial)) {
 			var multiMaterial:MultiMaterial = cast rootMaterial;
+			
 			return multiMaterial.getSubMaterial(this.materialIndex);
 		}
 		
@@ -130,6 +131,7 @@ import com.babylonhx.tools.Tools;
 		else {
 			extend = Tools.ExtractMinAndMaxIndexed(data, indices, this.indexStart, this.indexCount);
 		}
+		
 		this._boundingInfo = new BoundingInfo(extend.minimum, extend.maximum);
 	}
 
@@ -181,6 +183,11 @@ import com.babylonhx.tools.Tools;
 
 	inline public function intersects(ray:Ray, positions:Array<Vector3>, indices:Array<Int>, fastCheck:Bool = false):IntersectionInfo {
 		var intersectInfo:IntersectionInfo = null;
+		
+		// fix for picking instances: https://github.com/vujadin/BabylonHx/issues/122
+		if (positions == null) {
+			positions = this._mesh.positions;
+		}
 		
 		// LineMesh first as it's also a Mesh...
 		if (Std.is(this._mesh, LinesMesh)) {

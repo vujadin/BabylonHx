@@ -17,6 +17,27 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 
 @:expose('BABYLON.Light') class Light extends Node {
 	
+	// lightmapMode Consts
+	/**
+     * If every light affecting the material is in this lightmapMode,
+     * material.lightmapTexture adds or multiplies
+     * (depends on material.useLightmapAsShadowmap)
+     * after every other light calculations.
+     */
+    public static inline var LIGHTMAP_DEFAULT:Int = 0;
+	/**
+     * material.lightmapTexture as only diffuse lighting from this light
+     * adds pnly specular lighting from this light
+     * adds dynamic shadows
+     */
+    public static inline var LIGHTMAP_SPECULAR:Int = 1;
+	/**
+     * material.lightmapTexture as only lighting
+     * no light calculation from this light
+     * only adds dynamic shadows from this light
+     */
+    public static inline var LIGHTMAP_SHADOWSONLY:Int = 2;
+	
 	@serializeAsColor3()
 	public var diffuse:Color3 = new Color3(1.0, 1.0, 1.0);
 	
@@ -37,6 +58,9 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	
 	@serialize()
 	public var excludeWithLayerMask:Int = 0;
+	
+	@serialize()
+	public var lightmapMode:Int = 0;
 	
 	// PBR Properties.
 	@serialize()

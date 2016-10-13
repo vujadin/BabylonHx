@@ -6,6 +6,7 @@ import com.babylonhx.lights.IShadowLight;
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.materials.textures.RefractionTexture;
 import com.babylonhx.materials.textures.RenderTargetTexture;
+import com.babylonhx.materials.textures.ColorGradingTexture;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Matrix;
@@ -44,6 +45,7 @@ typedef SMD = StandardMaterialDefines
 	public static var FresnelEnabled:Bool = true;
 	public static var LightmapTextureEnabled:Bool = true;
 	public static var RefractionTextureEnabled:Bool = true;
+	public static var ColorGradingTextureEnabled:Bool = true;
 	
 	@serializeAsTexture()
 	public var diffuseTexture:BaseTexture = null;
@@ -161,6 +163,24 @@ typedef SMD = StandardMaterialDefines
 	 */
 	@serialize()
 	public var invertNormalMapY:Bool = false;
+	
+	/**
+	 * Color Grading 2D Lookup Texture.
+	 * This allows special effects like sepia, black and white to sixties rendering style. 
+	 */
+	@serializeAsTexture()
+	public var cameraColorGradingTexture:BaseTexture = null;
+	
+	/**
+	 * The color grading curves provide additional color adjustmnent that is applied after any color grading transform (3D LUT). 
+	 * They allow basic adjustment of saturation and small exposure adjustments, along with color filter tinting to provide white 
+	 * balance adjustment or more stylistic effects.
+	 * These are similar to controls found in many professional imaging or colorist software. The global controls are applied to 
+	 * the entire image. For advanced tuning, extra controls are provided to adjust the shadow, midtone and highlight areas of the image; 
+	 * corresponding to low luminance, medium luminance, and high luminance areas respectively.
+	 */
+	@serializeAsColorCurves()
+	public var cameraColorCurves:ColorCurves = null;
 
 	private var _renderTargets:SmartArray<RenderTargetTexture> = new SmartArray<RenderTargetTexture>(16);
 	private var _worldViewProjectionMatrix:Matrix = Matrix.Zero();
@@ -431,6 +451,15 @@ typedef SMD = StandardMaterialDefines
 					this.defs[SMD.REFRACTIONMAP_3D] = this.refractionTexture.isCube;
 				}
 			}
+			
+			if (this.cameraColorGradingTexture != null && StandardMaterial.ColorGradingTextureEnabled) {
+				if (!this.cameraColorGradingTexture.isReady()) {
+					return false;
+				} 
+				else {
+					this.defs[SMD.CAMERACOLORGRADING] = true;
+				}
+			}
 		}		
 		
 		// Effect
@@ -457,6 +486,10 @@ typedef SMD = StandardMaterialDefines
 		if (this.useLogarithmicDepth) {
             this.defs[SMD.LOGARITHMICDEPTH] = true;
         }
+		
+		if (this.cameraColorCurves != null) {
+			this.defs[SMD.CAMERACOLORCURVES] = true;
+		}
 		
 		// Point size
 		if (this.pointsCloud || scene.forcePointsCloud) {
@@ -646,6 +679,13 @@ typedef SMD = StandardMaterialDefines
 			}
 			var join:String = this._defines.toString();
 			
+			if (this.defs[SMD.CAMERACOLORCURVES]) {
+				ColorCurves.PrepareUniforms(uniforms);
+			}
+			if (this.defs[SMD.CAMERACOLORGRADING]) {
+				ColorGradingTexture.PrepareUniformsAndSamplers(uniforms, samplers);
+			}
+			
 			MaterialHelper.PrepareUniformsAndSamplersList(uniforms, samplers, this._defines.lights, this.maxSimultaneousLights);
 			
 			this._effect = scene.getEngine().createEffect(shaderName,
@@ -803,6 +843,10 @@ typedef SMD = StandardMaterialDefines
 					}
 					this._effect.setFloat4("vRefractionInfos", this.refractionTexture.level, this.indexOfRefraction, depth, this.invertRefractionY ? -1 : 1);
 				}
+				
+				if (this.cameraColorGradingTexture != null && StandardMaterial.ColorGradingTextureEnabled) {
+					ColorGradingTexture.Bind(this.cameraColorGradingTexture, this._effect);
+				}
 			}
 			
 			// Clip plane
@@ -844,6 +888,11 @@ typedef SMD = StandardMaterialDefines
 			
 			// Log. depth
 			MaterialHelper.BindLogDepth(this.defs[SMD.LOGARITHMICDEPTH], this._effect, scene);
+			
+			// Color Curves
+			if (this.cameraColorCurves != null) {
+				ColorCurves.Bind(this.cameraColorCurves, this._effect);
+			}
 		}
 		
 		super.bind(world, mesh);
@@ -884,6 +933,10 @@ typedef SMD = StandardMaterialDefines
 			results.push(this.refractionTexture);
 		}
 		
+		if (this.cameraColorGradingTexture != null && this.cameraColorGradingTexture.animations != null && this.cameraColorGradingTexture.animations.length > 0) {
+			results.push(this.cameraColorGradingTexture);
+		}
+		
 		return results;
 	}
 
@@ -919,6 +972,10 @@ typedef SMD = StandardMaterialDefines
 			
 			if (this.refractionTexture != null) {
 				this.refractionTexture.dispose();
+			}
+			
+			if (this.cameraColorGradingTexture != null) {
+				this.cameraColorGradingTexture.dispose();
 			}
 		}
 		

@@ -20,6 +20,11 @@ import com.babylonhx.utils.GL;
  * @author Krtolica Vujadin
  */
 
+typedef PostProcessOption = {
+	var width:Float;
+	var height:Float;
+}
+
 @:expose('BABYLON.PostProcess') class PostProcess {
 	
 	public var name:String;
@@ -216,10 +221,19 @@ import com.babylonhx.utils.GL;
 			this.width = desiredWidth;
 			this.height = desiredHeight;
 			
-			this._textures.push(this._engine.createRenderTargetTexture( { width: this.width, height: this.height }, { generateMipMaps: false, generateDepthBuffer: camera._postProcesses.indexOf(this) == 0, samplingMode: this.renderTargetSamplingMode, type: this._textureType } ));
+			var textureSize = { width: this.width, height: this.height };
+            var textureOptions = { 
+                generateMipMaps: false, 
+                generateDepthBuffer: camera._postProcesses.indexOf(this) == 0, 
+                generateStencilBuffer: camera._postProcesses.indexOf(this) == 0 && this._engine.isStencilEnable,
+                samplingMode: this.renderTargetSamplingMode, 
+                type: this._textureType 
+            };
+			
+            this._textures.push(this._engine.createRenderTargetTexture(textureSize, textureOptions));
 			
 			if (this._reusable) {
-				this._textures.push(this._engine.createRenderTargetTexture({ width: this.width, height: this.height }, { generateMipMaps: false, generateDepthBuffer: camera._postProcesses.indexOf(this) == 0, samplingMode: this.renderTargetSamplingMode, type: this._textureType }));
+				this._textures.push(this._engine.createRenderTargetTexture(textureSize, textureOptions));
 			}
 			
 			this.onSizeChangedObservable.notifyObservers(this._effect);			
@@ -238,10 +252,10 @@ import com.babylonhx.utils.GL;
 		
 		// Clear
 		if (this.clearColor != null) {
-            this._engine.clear(this.clearColor, true, true);
+            this._engine.clear(this.clearColor, true, true, true);
         } 
 		else {
-            this._engine.clear(scene.clearColor, scene.autoClear || scene.forceWireframe, true);
+            this._engine.clear(scene.clearColor, scene.autoClear || scene.forceWireframe, true, true);
         }
 		
 		if (this._reusable) {

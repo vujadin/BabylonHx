@@ -20,6 +20,10 @@ class MaterialDefines {
 	public var shadowvsms:Array<Bool> = [];
 	public var shadowpcfs:Array<Bool> = [];
 	
+	public var LIGHTMAPEXCLUDED:Bool = false;
+	public var lightmapexcluded:Array<Bool> = [];
+	public var lightmapnospecular:Array<Bool> = [];
+	
 	var finalString:String = "";
 	
 

@@ -60,19 +60,27 @@ class BoundingInfo2D {
 		return r;
 	}
 
-	public static function CreateFromSizeToRef(size:Size, b:BoundingInfo2D) {
+	public static function CreateFromSizeToRef(size:Size, b:BoundingInfo2D, ?origin:Vector2) {
 		b.center = new Vector2(size.width / 2, size.height / 2);
 		b.extent = b.center.clone();
+		if (origin != null) {
+			b.center.x -= size.width * origin.x;
+			b.center.y -= size.height * origin.y;
+		}
 		b.radius = b.extent.length();
 	}
 
-	public static function CreateFromRadiusToRef(radius:Float, b:BoundingInfo2D) {
+	public static function CreateFromRadiusToRef(radius:Float, b:BoundingInfo2D, ?origin:Vector2) {
 		b.center = Vector2.Zero();
+		if (origin != null) {
+			b.center.x -= radius * origin.x;
+			b.center.y -= radius * origin.y;
+		}
 		b.extent = new Vector2(radius, radius);
 		b.radius = radius;
 	}
 
-	public static function CreateFromPointsToRef(points:Array<Vector2>, b:BoundingInfo2D) {
+	public static function CreateFromPointsToRef(points:Array<Vector2>, b:BoundingInfo2D, ?origin:Vector2) {
 		var xmin = Math.POSITIVE_INFINITY;
 		var ymin = Math.POSITIVE_INFINITY;
 		var xmax = Math.POSITIVE_INFINITY;
@@ -83,11 +91,17 @@ class BoundingInfo2D {
 			ymin = Math.min(p.y, ymin);
 			ymax = Math.max(p.y, ymax);
 		}
-		BoundingInfo2D.CreateFromMinMaxToRef(xmin, xmax, ymin, ymax, b);
+		BoundingInfo2D.CreateFromMinMaxToRef(xmin, xmax, ymin, ymax, b, origin);
 	}
 
-	public static function CreateFromMinMaxToRef(xmin:Float, xmax:Float, ymin:Float, ymax:Float, b:BoundingInfo2D) {
-		b.center = new Vector2(xmin + (xmax - xmin) / 2, ymin + (ymax - ymin) / 2);
+	public static function CreateFromMinMaxToRef(xmin:Float, xmax:Float, ymin:Float, ymax:Float, b:BoundingInfo2D, ?origin:Vector2) {
+		var w = xmax - xmin;
+		var h = ymax - ymin;
+		b.center = new Vector2(xmin + w / 2, ymin + h / 2);
+		if (origin != null) {
+			b.center.x -= w * origin.x;
+			b.center.y -= h * origin.y;
+		}
 		b.extent = new Vector2(xmax - b.center.x, ymax - b.center.y);
 		b.radius = b.extent.length();
 	}
@@ -122,7 +136,7 @@ class BoundingInfo2D {
 	 * @param matrix the transformation matrix to apply
 	 * @return the new instance containing the result of the transformation applied on this BoundingInfo2D
 	 */
-	public function transform(matrix:Matrix, origin:Vector2 = null):BoundingInfo2D {
+	public function transform(matrix:Matrix):BoundingInfo2D {
 		var r = new BoundingInfo2D();
 		this.transformToRef(matrix, origin, r);
 		
@@ -148,20 +162,13 @@ class BoundingInfo2D {
 	 * @param matrix The matrix to use to compute the transformation
 	 * @param result A VALID (i.e. allocated) BoundingInfo2D object where the result will be stored
 	 */
-	public function transformToRef(matrix:Matrix, origin:Vector2, result:BoundingInfo2D) {
+	public function transformToRef(matrix:Matrix, result:BoundingInfo2D) {
 		// Construct a bounding box based on the extent values
 		var p:Array<Vector2> = [];
 		p[0] = new Vector2(this.center.x + this.extent.x, this.center.y + this.extent.y);
 		p[1] = new Vector2(this.center.x + this.extent.x, this.center.y - this.extent.y);
 		p[2] = new Vector2(this.center.x - this.extent.x, this.center.y - this.extent.y);
 		p[3] = new Vector2(this.center.x - this.extent.x, this.center.y + this.extent.y);
-		
-		//if (origin) {
-		//    let off = new Vector2((p[0].x - p[2].x) * origin.x, (p[0].y - p[2].y) * origin.y);
-		//    for (let j = 0; j < 4; j++) {
-		//        p[j].subtractInPlace(off);
-		//    }
-		//}
 		
 		// Transform the four points of the bounding box with the matrix
 		for (i in 0...4) {
@@ -184,6 +191,17 @@ class BoundingInfo2D {
 		var ymin = Math.min(this.center.y - this.extent.y, other.center.y - other.extent.y);
 		
 		BoundingInfo2D.CreateFromMinMaxToRef(xmin, xmax, ymin, ymax, result);
+	}
+	
+	function doesIntersect(pickPosition:Vector2):Bool {
+		// is it inside the radius?
+		var pickLocal = pickPosition.subtract(this.center);
+		if (pickLocal.lengthSquared() <= (this.radius * this.radius)) {
+			// is it inside the rectangle?
+			return ((Math.abs(pickLocal.x) <= this.extent.x) && (Math.abs(pickLocal.y) <= this.extent.y));
+		}
+		
+		return false;
 	}
 	
 }

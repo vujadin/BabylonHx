@@ -6,6 +6,7 @@ import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Path3D;
 import com.babylonhx.math.Matrix;
+import com.babylonhx.math.Axis;
 import com.babylonhx.math.PositionNormalTextureVertex;
 import com.babylonhx.math.PositionNormalVertex;
 import com.babylonhx.tools.Tools;
@@ -184,6 +185,18 @@ typedef LatheOptions = {
  
 class MeshBuilder {
 	
+	private static function updateSideOrientation(orientation:Null<Int>, scene:Scene):Int {
+		if (orientation == Mesh.DOUBLESIDE) {
+			return Mesh.DOUBLESIDE;
+		}
+		
+		if (orientation == -1) {
+			return Mesh.FRONTSIDE;
+		}
+		
+		return orientation;
+	}
+	
 	/**
 	  * Creates a box mesh.  
 	  * tuto : http://doc.babylonjs.com/tutorials/Mesh_CreateXXX_Methods_With_Options_Parameter#box  
@@ -198,6 +211,8 @@ class MeshBuilder {
 	public static function CreateBox(name:String, options:BoxOptions, scene:Scene):Mesh {
 		var box = new Mesh(name, scene);
 		var vertexData = VertexData.CreateBox(options);
+		
+		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
 		
 		if (scene.isPhysicsEnabled()) {
 			box.physicsDim = { };
@@ -223,6 +238,9 @@ class MeshBuilder {
 	  */
 	public static function CreateSphere(name:String, options:SphereOptions, scene:Scene):Mesh {		
 		var sphere = new Mesh(name, scene);
+		
+		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		
 		var vertexData = VertexData.CreateSphere(options);
 		
 		vertexData.applyToMesh(sphere, options.updatable);
@@ -248,9 +266,7 @@ class MeshBuilder {
 	public static function CreateIcoSphere(name:String, options:IcoSphereOptions, scene:Scene):Mesh {
 		var sphere = new Mesh(name, scene);
 		
-		if (options.sideOrientation == null) {
-			options.sideOrientation = Mesh.DEFAULTSIDE;
-		}
+		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
 		
 		if (options.updatable == null) {
 			options.updatable = false;
@@ -276,6 +292,9 @@ class MeshBuilder {
 	  */
 	public static function CreateDisc(name:String, options:Dynamic, scene:Scene):Mesh {
         var disc = new Mesh(name, scene);
+		
+		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		
         var vertexData = VertexData.CreateDisc(options);
 		
         vertexData.applyToMesh(disc, options.updatable);
@@ -304,7 +323,7 @@ class MeshBuilder {
 		var closePath:Bool = options.closePath;
 		var offset:Int = options.offset;
 		var updatable:Bool = options.updatable;
-		var sideOrientation:Int = options.sideOrientation;
+		var sideOrientation:Int = updateSideOrientation(options.sideOrientation, scene);
 		var ribbonInstance:Mesh = options.instance;			
 		
 		if (ribbonInstance != null) {   // existing ribbon instance update
@@ -413,6 +432,9 @@ class MeshBuilder {
 	  */
 	public static function CreateCylinder(name:String, options:CylinderOptions, scene:Scene):Mesh {		
 		var cylinder = new Mesh(name, scene);
+		
+		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		
 		var vertexData = VertexData.CreateCylinder(options);
 		
 		if (scene.isPhysicsEnabled()) {
@@ -438,6 +460,9 @@ class MeshBuilder {
 	  */
 	public static function CreateTorus(name:String, options:Dynamic, scene:Scene):Mesh {
 		var torus = new Mesh(name, scene);
+		
+		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		
 		var vertexData = VertexData.CreateTorus(options);
 		
 		vertexData.applyToMesh(torus, options.updatable);
@@ -458,6 +483,9 @@ class MeshBuilder {
 	  */
 	public static function CreateTorusKnot(name:String, options:Dynamic, scene:Scene):Mesh {
 		var torusKnot = new Mesh(name, scene);
+		
+		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		
 		var vertexData = VertexData.CreateTorusKnot(options);
 		
 		vertexData.applyToMesh(torusKnot, options.updatable);
@@ -628,7 +656,7 @@ class MeshBuilder {
 		var rotation:Float = options.rotation != null ? options.rotation : 0;
 		var cap:Int = options.cap != null ? options.cap : Mesh.NO_CAP;
 		var updatable:Bool = options.updatable;
-		var sideOrientation:Int = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
+		var sideOrientation:Int = updateSideOrientation(options.sideOrientation, scene);
 		var extrudedInstance:Mesh = options.extrudedInstance;
 		
 		return MeshBuilder._ExtrudeShapeGeneric(name, shape, path, scale, rotation, null, null, false, false, cap, false, scene, updatable, sideOrientation, extrudedInstance);
@@ -677,7 +705,7 @@ class MeshBuilder {
 		var ribbonClosePath:Bool = options.ribbonClosePath != null ? options.ribbonClosePath : false;
 		var cap:Int = options.cap != null ? options.cap : Mesh.NO_CAP;
 		var updatable:Bool = options.updatable;
-		var sideOrientation:Int = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
+		var sideOrientation:Int = updateSideOrientation(options.sideOrientation, scene);
 		var extrudedInstance:Mesh = options.extrudedInstance;
 		
 		return MeshBuilder._ExtrudeShapeGeneric(name, shape, path, null, null, scaleFunction, rotationFunction, ribbonCloseArray, ribbonClosePath, cap, true, scene, updatable, sideOrientation, extrudedInstance);
@@ -709,7 +737,7 @@ class MeshBuilder {
 		var radius:Float = options.radius != null ? options.radius : 1;
 		var tessellation:Int = options.tessellation != null ? options.tessellation : 64;
 		var updatable:Bool = options.updatable;
-		var sideOrientation = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
+		var sideOrientation = updateSideOrientation(options.sideOrientation, scene);
 		var cap:Int = options.cap != null ? options.cap : Mesh.NO_CAP;
 		var pi2:Float = Math.PI * 2;
 		var paths:Array<Array<Vector3>> = [];
@@ -756,9 +784,21 @@ class MeshBuilder {
 	  */
 	public static function CreatePlane(name:String, options:Dynamic, scene:Scene):Mesh {
 		var plane = new Mesh(name, scene);		
+		
+		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		
 		var vertexData = VertexData.CreatePlane(options);
 		
 		vertexData.applyToMesh(plane, options.updatable);
+		
+		if (options.sourcePlane != null) {
+			plane.translate(options.sourcePlane.normal, options.sourcePlane.d);
+			
+			var product = Math.acos(Vector3.Dot(options.sourcePlane.normal, Axis.Z));
+			var vectorProduct = Vector3.Cross(Axis.Z, options.sourcePlane.normal);
+			
+			plane.rotate(vectorProduct, product);
+		}
 		
 		return plane;
 	}
@@ -889,7 +929,7 @@ class MeshBuilder {
 		var radiusFunction:Int->Float->Float = options.radiusFunction;
 		var cap:Int = options.cap != null ? options.cap : Mesh.NO_CAP;
 		var updatable:Bool = options.updatable;
-		var sideOrientation:Int = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
+		var sideOrientation:Int = updateSideOrientation(options.sideOrientation, scene);
 		var tubeInstance:Mesh = options.instance;
 		
 		// tube geometry
@@ -993,7 +1033,11 @@ class MeshBuilder {
 	 */
 	public static function CreatePolyhedron(name:String, options:Dynamic, scene:Scene):Mesh {
 		var polyhedron = new Mesh(name, scene);		
+		
+		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		
 		var vertexData = VertexData.CreatePolyhedron(options);
+		
 		vertexData.applyToMesh(polyhedron, options.updatable);
 		
 		return polyhedron;
@@ -1325,7 +1369,7 @@ class MeshBuilder {
 			var path3D = instance.path3D.update(curve);
 			var pathArray = extrusionPathArray(shape, curve, instance.path3D, instance.pathArray, scale, rotation, scaleFunction, rotateFunction, instance.cap, custom);
 			
-			instance = Mesh.CreateRibbon(null, pathArray, false, false, 0, null, false, Mesh.DEFAULTSIDE, instance);
+			instance = Mesh.CreateRibbon(null, pathArray, false, false, 0, scene, false, Mesh.DEFAULTSIDE, instance);
 			
 			return instance;
 		}

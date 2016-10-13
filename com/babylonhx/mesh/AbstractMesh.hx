@@ -465,7 +465,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
     }
 
 	static var _rotationAxisCache:Quaternion = new Quaternion();
-	public function rotate(axis:Vector3, amount:Float, space:Space) {
+	public function rotate(axis:Vector3, amount:Float, ?space:Space) {
 		axis.normalize(); 
 		
 		if (this.rotationQuaternion == null) {
@@ -631,15 +631,15 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			return false;
 		}
 		
-		if (!this._cache.rotation.equals(this.rotation)) {
-			return false;
-		}
-		
 		if (this.rotationQuaternion != null) {
 			if (!this._cache.rotationQuaternion.equals(this.rotationQuaternion)) {
 				return false;
 			}
 		} 
+		
+		if (!this._cache.rotation.equals(this.rotation)) {
+            return false;
+		}
 		
 		if (!this._cache.scaling.equals(this.scaling)) {
 			return false;
@@ -780,10 +780,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 					zero.x = localPosition.x + Tools.Epsilon;
 				}
 				if (this.billboardMode & AbstractMesh.BILLBOARDMODE_Y != 0) {
-					zero.y = localPosition.y + 0.001;
+					zero.y = localPosition.y + Tools.Epsilon;
 				}
 				if (this.billboardMode & AbstractMesh.BILLBOARDMODE_Z != 0) {
-					zero.z = localPosition.z + 0.001;
+					zero.z = localPosition.z + Tools.Epsilon;
 				}
 			}
 			
@@ -1287,6 +1287,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		// SubMeshes
 		this.releaseSubMeshes();
+		
+		// Engine
+		this.getScene().getEngine().unbindAllAttributes();
 		
 		// Remove from scene
 		this.getScene().removeMesh(this);

@@ -77,7 +77,7 @@ class ColorGradingTexture extends BaseTexture {
 	 * Returns the texture matrix used in most of the material.
 	 * This is not used in color grading but keep for troubleshooting purpose (easily swap diffuse by colorgrading to look in).
 	 */
-	public function getTextureMatrix():Matrix {
+	override public function getTextureMatrix():Matrix {
 		return this._textureMatrix;
 	}
 	
@@ -91,8 +91,8 @@ class ColorGradingTexture extends BaseTexture {
 		this._texture = texture;
 		
 		var callback = function(text:String) {
-			var data:UInt8Array;
-			var tempData:Float32Array;
+			var data:UInt8Array = null;
+			var tempData:Array<Float> = [];
 			
 			var line:String = "";
 			var lines = text.split('\n');
@@ -100,7 +100,7 @@ class ColorGradingTexture extends BaseTexture {
 			var pixelIndexW:Int = 0;
 			var pixelIndexH:Int = 0;
 			var pixelIndexSlice:Int = 0;
-			var maxColor:Int = 0;
+			var maxColor:Float = 0;
 			
 			for (i in 0...lines.length) {
 				line = lines[i];
@@ -118,15 +118,15 @@ class ColorGradingTexture extends BaseTexture {
 					// Number of space + one
 					size = words.length;
 					data = new UInt8Array(size * size * size * 4); // volume texture of side size and rgb 8
-					tempData = new Float32Array(size * size * size * 4);
+					//tempData = new Float32Array(size * size * size * 4);
 					
 					continue;
 				}
 				
 				if (size != 0) {
-					var r = Math.max(parseInt(words[0]), 0);
-					var g = Math.max(parseInt(words[1]), 0);
-					var b = Math.max(parseInt(words[2]), 0);
+					var r = Math.max(Std.parseInt(words[0]), 0);
+					var g = Math.max(Std.parseInt(words[1]), 0);
+					var b = Math.max(Std.parseInt(words[2]), 0);
 					
 					maxColor = Math.max(r, maxColor);
 					maxColor = Math.max(g, maxColor);
@@ -153,7 +153,7 @@ class ColorGradingTexture extends BaseTexture {
 			
 			for (i in 0...tempData.length) {
 				var value = tempData[i];
-				data[i] = (value / maxColor * 255);
+				data[i] = cast (value / maxColor * 255);
 			}
 			
 			this.getScene().getEngine().updateTextureSize(texture, size * size, size);
@@ -189,7 +189,7 @@ class ColorGradingTexture extends BaseTexture {
 	/**
 	 * Called during delayed load for textures.
 	 */
-	public function delayLoad() {
+	override public function delayLoad() {
 		if (this.delayLoadState != Engine.DELAYLOADSTATE_NOTLOADED) {
 			return;
 		}
@@ -201,6 +201,44 @@ class ColorGradingTexture extends BaseTexture {
 			this.loadTexture();
 		}
 	}
+	
+	/**
+	 * Binds the color grading to the shader.
+	 * @param colorGrading The texture to bind
+	 * @param effect The effect to bind to
+	 */
+	public static function Bind(colorGrading:BaseTexture, effect:Effect) {
+		effect.setTexture("cameraColorGrading2DSampler", colorGrading);
+		
+		var x = colorGrading.level;                 // Texture Level
+		var y = colorGrading.getSize().height;      // Texture Size example with 8
+		var z = y - 1.0;                    // SizeMinusOne 8 - 1
+		var w = 1 / y;                      // Space of 1 slice 1 / 8
+		
+		effect.setFloat4("vCameraColorGradingInfos", x, y, z, w);
+		
+		var slicePixelSizeU = w / y;    // Space of 1 pixel in U direction, e.g. 1/64
+		var slicePixelSizeV = w;		// Space of 1 pixel in V direction, e.g. 1/8					    // Space of 1 pixel in V direction, e.g. 1/8
+		
+		var x2 = z * slicePixelSizeU;   // Extent of lookup range in U for a single slice so that range corresponds to (size-1) texels, for example 7/64
+		var y2 = z / y;	                // Extent of lookup range in V for a single slice so that range corresponds to (size-1) texels, for example 7/8
+		var z2 = 0.5 * slicePixelSizeU;	// Offset of lookup range in U to align sample position with texel centre, for example 0.5/64 
+		var w2 = 0.5 * slicePixelSizeV;	// Offset of lookup range in V to align sample position with texel centre, for example 0.5/8
+		
+		effect.setFloat4("vCameraColorGradingScaleOffset", x2, y2, z2, w2);
+	}
+	
+	/**
+	 * Prepare the list of uniforms associated with the ColorGrading effects.
+	 * @param uniformsList The list of uniforms used in the effect
+	 * @param samplersList The list of samplers used in the effect
+	 */
+	public static function PrepareUniformsAndSamplers(uniformsList:Array<String>, samplersList:Array<String>) {
+		uniformsList.push("vCameraColorGradingInfos");
+		uniformsList.push("vCameraColorGradingScaleOffset");
+		
+		samplersList.push("cameraColorGrading2DSampler");
+	}
 
 	/**
 	 * Parses a color grading texture serialized by Babylon.
@@ -209,7 +247,7 @@ class ColorGradingTexture extends BaseTexture {
 	 * @param rootUrl The root url of the data assets to load
 	 * @return A color gradind texture
 	 */
-	override public static function Parse(parsedTexture:Dynamic, scene:Scene, rootUrl:String):ColorGradingTexture {
+	public static function Parse(parsedTexture:Dynamic, scene:Scene, rootUrl:String):ColorGradingTexture {
 		var texture:ColorGradingTexture = null;
 		if (parsedTexture.name != null && (parsedTexture.isRenderTarget == null || parsedTexture.isRenderTarget == false)) {
 			texture = new ColorGradingTexture(parsedTexture.name, scene);
@@ -223,7 +261,7 @@ class ColorGradingTexture extends BaseTexture {
 	/**
 	 * Serializes the LUT texture to json format.
 	 */
-	public function serialize():Dynamic {
+	override public function serialize():Dynamic {
 		if (this.name == null) {
 			return null;
 		}

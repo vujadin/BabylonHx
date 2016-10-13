@@ -37,6 +37,7 @@ class WaterMaterial extends Material {
 	
 	static var vertexShader:String = "precision highp float;\n\nattribute vec3 position;\n#ifdef NORMAL\nattribute vec3 normal;\n#endif\n#ifdef UV1\nattribute vec2 uv;\n#endif\n#ifdef UV2\nattribute vec2 uv2;\n#endif\n#ifdef VERTEXCOLOR\nattribute vec4 color;\n#endif\n#include<bonesDeclaration>\n\n#include<instancesDeclaration>\nuniform mat4 view;\nuniform mat4 viewProjection;\n#ifdef BUMP\nvarying vec2 vNormalUV;\nuniform mat4 normalMatrix;\nuniform vec2 vNormalInfos;\n#endif\n#ifdef POINTSIZE\nuniform float pointSize;\n#endif\n\nvarying vec3 vPositionW;\n#ifdef NORMAL\nvarying vec3 vNormalW;\n#endif\n#ifdef VERTEXCOLOR\nvarying vec4 vColor;\n#endif\n#include<clipPlaneVertexDeclaration>\n#include<fogVertexDeclaration>\n#include<shadowsVertexDeclaration>\n\nuniform mat4 worldReflectionViewProjection;\nuniform vec2 windDirection;\nuniform float waveLength;\nuniform float time;\nuniform float windForce;\nuniform float waveHeight;\nuniform float waveSpeed;\n\nvarying vec3 vPosition;\nvarying vec3 vRefractionMapTexCoord;\nvarying vec3 vReflectionMapTexCoord;\nvoid main(void) {\n#include<instancesVertex>\n#include<bonesVertex>\nvec4 worldPos=finalWorld*vec4(position,1.0);\nvPositionW=vec3(worldPos);\n#ifdef NORMAL\nvNormalW=normalize(vec3(finalWorld*vec4(normal,0.0)));\n#endif\n\n#ifndef UV1\nvec2 uv=vec2(0.,0.);\n#endif\n#ifndef UV2\nvec2 uv2=vec2(0.,0.);\n#endif\n#ifdef BUMP\nif (vNormalInfos.x == 0.)\n{\nvNormalUV=vec2(normalMatrix*vec4((uv*1.0)/waveLength+time*windForce*windDirection,1.0,0.0));\n}\nelse\n{\nvNormalUV=vec2(normalMatrix*vec4((uv2*1.0)/waveLength+time*windForce*windDirection,1.0,0.0));\n}\n#endif\n\n#include<clipPlaneVertex>\n\n#include<fogVertex>\n\n#include<shadowsVertex>\n\n#ifdef VERTEXCOLOR\nvColor=color;\n#endif\n\n#ifdef POINTSIZE\ngl_PointSize=pointSize;\n#endif\nvec3 p=position;\nfloat newY=(sin(((p.x/0.05)+time*waveSpeed))*waveHeight*windDirection.x*5.0)\n+(cos(((p.z/0.05)+time*waveSpeed))*waveHeight*windDirection.y*5.0);\np.y+=abs(newY);\ngl_Position=viewProjection*finalWorld*vec4(p,1.0);\n#ifdef REFLECTION\nworldPos=viewProjection*finalWorld*vec4(p,1.0);\n\nvPosition=position;\nvRefractionMapTexCoord.x=0.5*(worldPos.w+worldPos.x);\nvRefractionMapTexCoord.y=0.5*(worldPos.w+worldPos.y);\nvRefractionMapTexCoord.z=worldPos.w;\nworldPos=worldReflectionViewProjection*vec4(position,1.0);\nvReflectionMapTexCoord.x=0.5*(worldPos.w+worldPos.x);\nvReflectionMapTexCoord.y=0.5*(worldPos.w+worldPos.y);\nvReflectionMapTexCoord.z=worldPos.w;\n#endif\n}\n";
 	
+	
 	/*
 	* Public members
 	*/
@@ -79,6 +80,21 @@ class WaterMaterial extends Material {
 	@serialize()
 	public var bumpHeight:Float = 0.4;
 	/**
+	 * @param {boolean}: Add a smaller moving bump to less steady waves.
+	 */
+	@serialize()
+	public var bumpSuperimpose:Bool = false;
+	/**
+	 * @param {boolean}: Color refraction and reflection differently with .waterColor2 and .colorBlendFactor2. Non-linear (physically correct) fresnel.
+	 */
+	@serialize()
+	public var fresnelSeparate:Bool = false;
+	/**
+	 * @param {boolean}: bump Waves modify the reflection.
+	 */
+	@serialize()
+	public var bumpAffectsReflection:Bool = false;
+	/**
 	* @param {number}: The water color blended with the reflection and refraction samplers
 	*/
 	@serializeAsColor3()
@@ -88,6 +104,16 @@ class WaterMaterial extends Material {
 	*/
 	@serialize()
 	public var colorBlendFactor:Float = 0.2;
+	/**
+	 * @param {number}: The water color blended with the reflection (far)
+	 */
+	@serializeAsColor3()
+	public var waterColor2:Color3 = new Color3(0.1, 0.1, 0.6);
+	/**
+	 * @param {number}: The blend factor related to the water color (reflection, far)
+	 */
+	@serialize()
+	public var colorBlendFactor2:Float = 0.2;
 	/**
 	* @param {number}: Represents the maximum length of a wave
 	*/
@@ -122,6 +148,18 @@ class WaterMaterial extends Material {
 	private var _defines:WaterMaterialDefines = new WaterMaterialDefines();
 	private var _cachedDefines:WaterMaterialDefines = new WaterMaterialDefines();
 	
+	private var _useLogarithmicDepth:Bool;
+	
+	@serialize()
+	public var useLogarithmicDepth(get, set):Bool;
+	private function get_useLogarithmicDepth():Bool {
+		return this._useLogarithmicDepth;
+	}
+	private function set_useLogarithmicDepth(value:Bool):Bool {
+		this._useLogarithmicDepth = value && this.getScene().getEngine().getCaps().fragmentDepthSupported;
+		return value;
+	}
+	
 	private var defs:Vector<Bool>;
 	
 	
@@ -131,9 +169,10 @@ class WaterMaterial extends Material {
 		"vNormalInfos", 
 		"mBones",
 		"vClipPlane", "normalMatrix",
+		"logarithmicDepthConstant",
 		// Water
 		"worldReflectionViewProjection", "windDirection", "waveLength", "time", "windForce",
-		"cameraPosition", "bumpHeight", "waveHeight", "waterColor", "colorBlendFactor", "waveSpeed"
+		"cameraPosition", "bumpHeight", "waveHeight", "waterColor", "waterColor2", "colorBlendFactor", "colorBlendFactor2", "waveSpeed"
 	];
 	private var samplers:Array<String> = ["normalSampler",
 		// Water
@@ -276,6 +315,22 @@ class WaterMaterial extends Material {
 			this.defs[WMD.POINTSIZE] = true;
 		}
 		
+		if (this.useLogarithmicDepth) {
+			this.defs[WMD.LOGARITHMICDEPTH] = true;
+		}
+		
+		if (this.fresnelSeparate) {
+			this.defs[WMD.FRESNELSEPARATE] = true;
+		}
+		
+		if (this.bumpSuperimpose) {
+			this.defs[WMD.BUMPSUPERIMPOSE] = true;
+		}
+		
+		if (this.bumpAffectsReflection) {
+			this.defs[WMD.BUMPAFFECTSREFLECTION] = true;
+		}
+		
 		// Fog
 		if (scene.fogEnabled && mesh != null && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
 			this.defs[WMD.FOG] = true;
@@ -283,7 +338,7 @@ class WaterMaterial extends Material {
 		
 		// Lights
 		if (scene.lightsEnabled && !this.disableLighting) {
-			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this.defs, maxSimultaneousLights, WMD.LIGHT0, WMD.SPECULARTERM, WMD.SHADOW0, WMD.SHADOWS, WMD.SHADOWVSM0, WMD.SHADOWPCF0, WMD.LIGHTS);
+			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this._defines, maxSimultaneousLights, WMD.SPECULARTERM, WMD.SHADOWS);
 		}
 		
 		// Attribs
@@ -332,7 +387,11 @@ class WaterMaterial extends Material {
 				fallbacks.addFallback(1, "FOG");
 			}
 			
-			MaterialHelper.HandleFallbacksForShadows(this.defs, fallbacks, WMD.LIGHT0, WMD.SHADOW0, WMD.SHADOWPCF0, WMD.SHADOWVSM0, this.maxSimultaneousLights);
+			if (this.defs[WMD.LOGARITHMICDEPTH]) {
+                fallbacks.addFallback(0, "LOGARITHMICDEPTH");
+            }
+			
+			MaterialHelper.HandleFallbacksForShadows(this._defines, fallbacks, this.maxSimultaneousLights);
 		 
 			if (this._defines.NUM_BONE_INFLUENCERS > 0) {
 				fallbacks.addCPUSkinningFallback(0, mesh);
@@ -357,12 +416,12 @@ class WaterMaterial extends Material {
 				attribs.push(VertexBuffer.ColorKind);
 			}
 			
-			MaterialHelper.PrepareAttributesForBones(attribs, mesh, this._defines, fallbacks);
+			MaterialHelper.PrepareAttributesForBones(attribs, mesh, this._defines.NUM_BONE_INFLUENCERS, fallbacks);
 			MaterialHelper.PrepareAttributesForInstances(attribs, this.defs, WMD.INSTANCES);
 			
 			var join:String = this._defines.toString();
 			
-			MaterialHelper.PrepareUniformsAndSamplersList(uniforms, samplers, this.defs, WMD.LIGHT0, this.maxSimultaneousLights);
+			MaterialHelper.PrepareUniformsAndSamplersList(uniforms, samplers, this._defines.lights, this.maxSimultaneousLights);
 			
 			this._effect = scene.getEngine().createEffect(shaderName,
 				attribs, uniforms, samplers,
@@ -426,7 +485,7 @@ class WaterMaterial extends Material {
 		}
 		
 		if (scene.lightsEnabled && !this.disableLighting) {
-			MaterialHelper.BindLights(scene, mesh, this._effect, this.defs, this.maxSimultaneousLights);
+			MaterialHelper.BindLights(scene, mesh, this._effect, this.defs[WMD.SPECULARTERM], this.maxSimultaneousLights);
 		}
 		
 		// View
@@ -436,6 +495,9 @@ class WaterMaterial extends Material {
 		
 		// Fog
 		MaterialHelper.BindFogParameters(scene, mesh, this._effect);
+		
+		// Log. depth
+        MaterialHelper.BindLogDepth(this.defs[WMD.LOGARITHMICDEPTH], this._effect, scene);
 		
 		// Water
 		if (StandardMaterial.ReflectionTextureEnabled) {
@@ -455,6 +517,8 @@ class WaterMaterial extends Material {
 		this._effect.setFloat("bumpHeight", this.bumpHeight);
 		this._effect.setColor4("waterColor", this.waterColor, 1.0);
 		this._effect.setFloat("colorBlendFactor", this.colorBlendFactor);
+		this._effect.setColor4("waterColor2", this.waterColor2, 1.0);
+        this._effect.setFloat("colorBlendFactor2", this.colorBlendFactor2);
 		this._effect.setFloat("waveSpeed", this.waveSpeed);
 		
 		super.bind(world, mesh);
@@ -463,7 +527,11 @@ class WaterMaterial extends Material {
 	private function _createRenderTargets(scene:Scene, renderTargetSize:Vector2) {
 		// Render targets
 		this._refractionRTT = new RenderTargetTexture(name + "_refraction", {width: renderTargetSize.x, height: renderTargetSize.y}, scene, false, true);
+		this._refractionRTT.wrapU = Texture.MIRROR_ADDRESSMODE;
+        this._refractionRTT.wrapV = Texture.MIRROR_ADDRESSMODE;
 		this._reflectionRTT = new RenderTargetTexture(name + "_reflection", {width: renderTargetSize.x, height: renderTargetSize.y}, scene, false, true);
+		this._reflectionRTT.wrapU = Texture.MIRROR_ADDRESSMODE;
+        this._reflectionRTT.wrapV = Texture.MIRROR_ADDRESSMODE;
 		
 		scene.customRenderTargets.push(this._refractionRTT);
 		scene.customRenderTargets.push(this._reflectionRTT);

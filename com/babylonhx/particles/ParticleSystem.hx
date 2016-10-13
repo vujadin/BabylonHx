@@ -120,7 +120,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _started:Bool = false;
 	private var _stopped:Bool = false;
 	private var _actualFrame:Int = 0;
-	private var _scaledUpdateSpeed:Float;
+	public var _scaledUpdateSpeed:Float;
 	
 	private var _engine:Engine;
 	

@@ -6,6 +6,7 @@ import com.babylonhx.lights.IShadowLight;
 import com.babylonhx.lights.Light;
 import com.babylonhx.materials.EffectFallbacks;
 import com.babylonhx.materials.textures.BaseTexture;
+import com.babylonhx.materials.textures.ColorGradingTexture;
 import com.babylonhx.materials.textures.HDRCubeTexture;
 import com.babylonhx.materials.textures.RenderTargetTexture;
 import com.babylonhx.materials.textures.RefractionTexture;
@@ -114,14 +115,13 @@ class PBRMaterial extends Material {
 	 */
 	@serializeAsTexture()
 	public var cameraColorGradingTexture:BaseTexture = null;
-
-	private var _cameraColorGradingScaleOffset:Vector4 = new Vector4(1.0, 1.0, 0.0, 0.0);
-	private var _cameraColorGradingInfos:Vector4 = new Vector4(1.0, 1.0, 0.0, 0.0);
 	
 	/**
      * The color grading curves provide additional color adjustmnent that is applied after any color grading transform (3D LUT). 
-     * They allow basic adjustment of saturation and small exposure adjustments, along with color filter tinting to provide white balance adjustment or more stylistic effects.
-     * These are similar to controls found in many professional imaging or colorist software. The global controls are applied to the entire image. For advanced tuning, extra controls are provided to adjust the shadow, midtone and highlight areas of the image; 
+     * They allow basic adjustment of saturation and small exposure adjustments, along with color filter tinting to provide white 
+	 * balance adjustment or more stylistic effects.
+     * These are similar to controls found in many professional imaging or colorist software. The global controls are applied to 
+	 * the entire image. For advanced tuning, extra controls are provided to adjust the shadow, midtone and highlight areas of the image; 
      * corresponding to low luminance, medium luminance, and high luminance areas respectively.
      */
     @serializeAsColorCurves()
@@ -534,10 +534,12 @@ class PBRMaterial extends Material {
 	private static var _scaledReflectivity = new Color3();
 	private static var _scaledEmissive = new Color3();
 	private static var _scaledReflection = new Color3();
+	private static var _lightIndex:Int = 0;
+	private static var _depthValuesAlreadySet:Bool = false;
 
 	public static function BindLights(scene:Scene, mesh:AbstractMesh, effect:Effect, defines:MaterialDefines, useScalarInLinearSpace:Bool, maxSimultaneousLights:Int, usePhysicalLightFalloff:Bool, SPECULARTERM:Int) {
-		var lightIndex:Int = 0;
-		var depthValuesAlreadySet:Bool = false;
+		_lightIndex = 0;
+		_depthValuesAlreadySet = false;
 		for (index in 0...scene.lights.length) {
 			var light = scene.lights[index];
 			
@@ -549,29 +551,29 @@ class PBRMaterial extends Material {
 				continue;
 			}
 			
-			MaterialHelper.BindLightProperties(light, effect, lightIndex);
+			MaterialHelper.BindLightProperties(light, effect, _lightIndex);
 			
 			// GAMMA CORRECTION.
 			_convertColorToLinearSpaceToRef(light.diffuse, PBRMaterial._scaledAlbedo, useScalarInLinearSpace);
 			
 			PBRMaterial._scaledAlbedo.scaleToRef(light.intensity, PBRMaterial._scaledAlbedo);
-			effect.setColor4("vLightDiffuse" + lightIndex, PBRMaterial._scaledAlbedo, usePhysicalLightFalloff ? light.radius : light.range);
+			effect.setColor4("vLightDiffuse" + _lightIndex, PBRMaterial._scaledAlbedo, usePhysicalLightFalloff ? light.radius : light.range);
 			
-			if (SPECULARTERM > -1 && defines.defines[SPECULARTERM]) {
+			if (defines.defines[SPECULARTERM]) {
 				_convertColorToLinearSpaceToRef(light.specular, PBRMaterial._scaledReflectivity, useScalarInLinearSpace);
 				
 				PBRMaterial._scaledReflectivity.scaleToRef(light.intensity, PBRMaterial._scaledReflectivity);
-				effect.setColor3("vLightSpecular" + lightIndex, PBRMaterial._scaledReflectivity);
+				effect.setColor3("vLightSpecular" + _lightIndex, PBRMaterial._scaledReflectivity);
 			}
 			
 			// Shadows
 			if (scene.shadowsEnabled) {
-				depthValuesAlreadySet = MaterialHelper.BindLightShadow(light, scene, mesh, lightIndex, effect, depthValuesAlreadySet);
+				_depthValuesAlreadySet = MaterialHelper.BindLightShadow(light, scene, mesh, _lightIndex, effect, _depthValuesAlreadySet);
 			}
 			
-			lightIndex++;
+			_lightIndex++;
 			
-			if (lightIndex == maxSimultaneousLights) {
+			if (_lightIndex == maxSimultaneousLights) {
 				break;
 			}
 		}
@@ -771,7 +773,7 @@ class PBRMaterial extends Material {
 				}
 			}
 			
-			if (this.cameraColorGradingTexture != null) {
+			if (this.cameraColorGradingTexture != null && StandardMaterial.ColorGradingTextureEnabled) {
 				if (!this.cameraColorGradingTexture.isReady()) {
 					return false;
 				} 
@@ -1019,12 +1021,13 @@ class PBRMaterial extends Material {
 				"vSphericalXX", "vSphericalYY", "vSphericalZZ",
 				"vSphericalXY", "vSphericalYZ", "vSphericalZX",
 				"vMicrosurfaceTextureLods",
-				"vCameraInfos", "vCameraColorGradingInfos", "vCameraColorGradingScaleOffset"
+				"vCameraInfos"
 			];
 			
-			var samplers:Array<String> = ["albedoSampler", "ambientSampler", "opacitySampler", "reflectionCubeSampler", "reflection2DSampler", "emissiveSampler", "reflectivitySampler", "bumpSampler", "lightmapSampler", "refractionCubeSampler", "refraction2DSampler", "cameraColorGrading2DSampler"];
+			var samplers:Array<String> = ["albedoSampler", "ambientSampler", "opacitySampler", "reflectionCubeSampler", "reflection2DSampler", "emissiveSampler", "reflectivitySampler", "bumpSampler", "lightmapSampler", "refractionCubeSampler", "refraction2DSampler"];
 			
 			ColorCurves.PrepareUniforms(uniforms);
+			ColorGradingTexture.PrepareUniformsAndSamplers(uniforms, samplers);
 			MaterialHelper.PrepareUniformsAndSamplersList(uniforms, samplers, this._defines.lights, this.maxSimultaneousLights); 
 			
 			this._effect = scene.getEngine().createEffect(shaderName,
@@ -1192,32 +1195,8 @@ class PBRMaterial extends Material {
 					this._effect.setFloat2("vMicrosurfaceTextureLods", this._microsurfaceTextureLods.x, this._microsurfaceTextureLods.y);
 				}
 				
-				if (this.cameraColorGradingTexture != null) {
-					this._effect.setTexture("cameraColorGrading2DSampler", this.cameraColorGradingTexture);
-					
-					this._cameraColorGradingInfos.x = this.cameraColorGradingTexture.level;                     // Texture Level
-					this._cameraColorGradingInfos.y = this.cameraColorGradingTexture.getSize().height;          // Texture Size example with 8
-					this._cameraColorGradingInfos.z = this._cameraColorGradingInfos.y - 1.0;                    // SizeMinusOne 8 - 1
-					this._cameraColorGradingInfos.w = 1 / this._cameraColorGradingInfos.y;                      // Space of 1 slice 1 / 8
-					
-					this._effect.setFloat4("vCameraColorGradingInfos", 
-						this._cameraColorGradingInfos.x,
-						this._cameraColorGradingInfos.y,
-						this._cameraColorGradingInfos.z,
-						this._cameraColorGradingInfos.w);
-						
-					var slicePixelSizeU = this._cameraColorGradingInfos.w / this._cameraColorGradingInfos.y;    // Space of 1 pixel in U direction, e.g. 1/64
-					var slicePixelSizeV = 1.0 / this._cameraColorGradingInfos.y;							    // Space of 1 pixel in V direction, e.g. 1/8
-					this._cameraColorGradingScaleOffset.x = this._cameraColorGradingInfos.z * slicePixelSizeU;  // Extent of lookup range in U for a single slice so that range corresponds to (size-1) texels, for example 7/64
-					this._cameraColorGradingScaleOffset.y = this._cameraColorGradingInfos.z / this._cameraColorGradingInfos.y; // Extent of lookup range in V for a single slice so that range corresponds to (size-1) texels, for example 7/8
-					this._cameraColorGradingScaleOffset.z = 0.5 * slicePixelSizeU;						        // Offset of lookup range in U to align sample position with texel centre, for example 0.5/64 
-					this._cameraColorGradingScaleOffset.w = 0.5 * slicePixelSizeV;						        // Offset of lookup range in V to align sample position with texel centre, for example 0.5/8
-					
-					this._effect.setFloat4("vCameraColorGradingScaleOffset", 
-						this._cameraColorGradingScaleOffset.x,
-						this._cameraColorGradingScaleOffset.y,
-						this._cameraColorGradingScaleOffset.z,
-						this._cameraColorGradingScaleOffset.w);
+				if (this.cameraColorGradingTexture != null && StandardMaterial.ColorGradingTextureEnabled) {
+                    ColorGradingTexture.Bind(this.cameraColorGradingTexture, this._effect);
 				}
 			}
 			

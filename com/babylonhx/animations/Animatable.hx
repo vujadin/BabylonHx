@@ -108,19 +108,31 @@ package com.babylonhx.animations;
 		this._paused = false;
 	}
 
-	inline public function stop() {
+	public function stop(?animationName:String) {
 		var index = this._scene._activeAnimatables.indexOf(this);
 		
 		if (index > -1) {
-			this._scene._activeAnimatables.splice(index, 1);
-			
 			var animations = this._animations;
-			for (index in 0...animations.length) {
+			var numberOfAnimationsStopped = 0;
+			var index = animations.length - 1;
+			while (index >= 0) {
+				if (animationName != null && animations[index].name != animationName) {
+					continue;
+				}
+				
 				animations[index].reset();
+				animations.splice(index, 1);
+				numberOfAnimationsStopped++;
+				
+				--index;
 			}
 			
-			if (this.onAnimationEnd != null) {
-				this.onAnimationEnd();
+			if (animations.length == numberOfAnimationsStopped) {
+				this._scene._activeAnimatables.splice(index, 1);
+				
+				if (this.onAnimationEnd != null) {
+					this.onAnimationEnd();
+				}
 			}
 		}
 	}

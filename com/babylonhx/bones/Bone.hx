@@ -82,13 +82,15 @@ import com.babylonhx.animations.AnimationRange;
 	}
 
 	// Methods
-	inline public function updateMatrix(matrix:Matrix) {
+	inline public function updateMatrix(matrix:Matrix, updateDifferenceMatrix:Bool = true) {
 		this._baseMatrix = matrix.clone();
 		this._matrix = matrix.clone();
 		
 		this._skeleton._markAsDirty();
 		
-		this._updateDifferenceMatrix();
+		if (updateDifferenceMatrix) {
+			this._updateDifferenceMatrix();
+		}
 	}
 
 	@:allow(com.babylonhx.bones.Skeleton)

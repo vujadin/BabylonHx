@@ -27,7 +27,6 @@ class ShaderMaterialHelper {
 	}
 	
 	static public function MakeShaderMaterialForEngine(name:String, scene:Scene, shader:Dynamic/*ShaderStruct*/, helpers:Dynamic/*ShaderHelper*/):ShaderMat { 
-		trace(name);
 		ShadersStore.Shaders.set(name + ".vertex", shader.Vertex);
 		ShadersStore.Shaders.set(name + ".fragment", shader.Pixel);
 		
@@ -82,7 +81,6 @@ class ShaderMaterialHelper {
 	}
 	
 	static public function PostProcessTextures(pps:PostProcess, name:String, txt:BaseTexture) { 
-		trace(name);
 		pps._effect.setTexture(name, txt);
 	}
 	

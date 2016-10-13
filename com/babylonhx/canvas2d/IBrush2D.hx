@@ -8,7 +8,7 @@ package com.babylonhx.canvas2d;
  * This interface defines the IBrush2D contract.
  * Classes implementing a new type of Brush2D must implement this interface
  */
-interface IBrush2D implements ILockable {
+interface IBrush2D {
 	
 	/**
 	 * Define if the brush will use transparency/alphablending

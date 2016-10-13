@@ -6,7 +6,7 @@ package com.babylonhx.utils.typedarray;
 
 #if purejs
 
-	typedef UInt16Array = js.html.UInt16Array;
+	typedef UInt16Array = js.html.Uint16Array;
 
 #elseif snow
  

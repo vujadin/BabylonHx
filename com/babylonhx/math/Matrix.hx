@@ -287,13 +287,13 @@ import haxe.ds.Vector;
 			return false;
 		}
 		
-		var rotationMatrix = Matrix.FromValues(
+		Matrix.FromValuesToRef(
 			this.m[0] / scale.x, this.m[1] / scale.x, this.m[2] / scale.x, 0,
 			this.m[4] / scale.y, this.m[5] / scale.y, this.m[6] / scale.y, 0,
 			this.m[8] / scale.z, this.m[9] / scale.z, this.m[10] / scale.z, 0,
-			0, 0, 0, 1);
+			0, 0, 0, 1, Tmp.matrix[0]);
 			
-		Quaternion.FromRotationMatrixToRef(rotationMatrix, rotation);
+		Quaternion.FromRotationMatrixToRef(Tmp.matrix[0], rotation);
 		
 		return true;
 	}

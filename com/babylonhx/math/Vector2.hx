@@ -65,6 +65,13 @@ import com.babylonhx.tools.Tools;
 	inline public function add(otherVector:Vector2):Vector2 {
 		return new Vector2(this.x + otherVector.x, this.y + otherVector.y);
 	}
+	
+	inline public function addInPlace(otherVector:Vector2):Vector2 {
+        this.x += otherVector.x;
+        this.y += otherVector.y;
+		
+        return this;
+    }
 
 	inline public function addVector3(otherVector:Vector3):Vector2 {
 		return new Vector2(this.x + otherVector.x, this.y + otherVector.y);
@@ -270,6 +277,26 @@ import com.babylonhx.tools.Tools;
 		var y = value1.y - value2.y;
 		
 		return (x * x) + (y * y);
+	}
+	
+	inline public static function Center(value1:Vector2, value2:Vector2):Vector2 {
+		var center = value1.add(value2);
+		center.scaleInPlace(0.5);
+		
+		return center;
+	}
+
+	public static function DistanceOfPointFromSegment(p:Vector2, segA:Vector2, segB:Vector2):Float {
+		var l2 = Vector2.DistanceSquared(segA, segB);
+		if (l2 == 0.0) {
+			return Vector2.Distance(p, segA);
+		}
+		
+		var v = segB.subtract(segA);
+		var t = Math.max(0, Math.min(1, Vector2.Dot(p.subtract(segA), v) / l2));
+		var proj = segA.add(v.multiplyByFloats(t, t));
+		
+		return Vector2.Distance(p, proj);
 	}
 	
 }

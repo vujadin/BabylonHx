@@ -34,6 +34,7 @@ class NodeCache {
 	public var minZ:Null<Float>;
 	public var maxZ:Null<Float>;
 	public var fov:Null<Float>;
+	public var fovMode:Null<Int>;
 	public var aspectRatio:Null<Float>;
 	public var orthoLeft:Null<Float>;
 	public var orthoRight:Null<Float>;

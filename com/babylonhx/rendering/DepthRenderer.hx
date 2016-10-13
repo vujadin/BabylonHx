@@ -47,7 +47,7 @@ import com.babylonhx.tools.EventState;
 		
 		// set default depth value to 1.0 (far away)
 		this._depthMap.onClearObservable.add(function(engine:Engine, es:EventState = null) {
-			engine.clear(new Color4(1.0, 1.0, 1.0, 1.0), true, true);
+			engine.clear(new Color4(1.0, 1.0, 1.0, 1.0), true, true, true);
 		});
 		
 		// Custom render function

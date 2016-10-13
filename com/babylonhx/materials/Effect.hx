@@ -658,7 +658,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		return this;
 	}
 	
-	public function setVector4(uniformName:String, vector4:Vector4):Effect {
+	inline public function setVector4(uniformName:String, vector4:Vector4):Effect {
 		if (this._cacheFloat4(uniformName, vector4.x, vector4.y, vector4.z, vector4.w)) {
 			this._engine.setFloat4(this.getUniform(uniformName), vector4.x, vector4.y, vector4.z, vector4.w);
 		}
@@ -666,7 +666,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		return this;
 	}
 
-	public function setFloat4(uniformName:String, x:Float, y:Float, z:Float, w:Float):Effect {
+	inline public function setFloat4(uniformName:String, x:Float, y:Float, z:Float, w:Float):Effect {
 		if (this._cacheFloat4(uniformName, x, y, z, w)) {
 			this._engine.setFloat4(this.getUniform(uniformName), x, y, z, w);
 		}
@@ -674,7 +674,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		return this;
 	}
 
-	public function setColor3(uniformName:String, color3:Color3):Effect {
+	inline public function setColor3(uniformName:String, color3:Color3):Effect {
 		if (this._cacheFloat3(uniformName, color3.r, color3.g, color3.b)) {
 			this._engine.setColor3(this.getUniform(uniformName), color3);
 		}
@@ -682,7 +682,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		return this;
 	}
 
-	public function setColor4(uniformName:String, color3:Color3, alpha:Float):Effect {
+	inline public function setColor4(uniformName:String, color3:Color3, alpha:Float):Effect {
 		if (this._cacheFloat4(uniformName, color3.r, color3.g, color3.b, alpha)) {
 			this._engine.setColor4(this.getUniform(uniformName), color3, alpha);
 		}

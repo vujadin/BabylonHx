@@ -122,7 +122,7 @@ class HDRTools {
 	}
 
 	public static function GetCubeMapTextureData(buffer:Dynamic, size:Int):CubeMapInfo {
-		var uint8array:UInt8Array = UInt8Array.fromBytes(buffer);
+		var uint8array:UInt8Array = #if (js || purejs) untyped UInt8Array.from(buffer) #else UInt8Array.fromBytes(buffer) #end ;
 		var hdrInfo = HDRTools.RGBE_ReadHeader(uint8array);
 		var data = HDRTools.RGBE_ReadPixels_RLE(uint8array, hdrInfo);
 		

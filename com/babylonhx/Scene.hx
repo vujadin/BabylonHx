@@ -14,6 +14,7 @@ import com.babylonhx.collisions.Collider;
 import com.babylonhx.collisions.PickingInfo;
 import com.babylonhx.culling.octrees.Octree;
 import com.babylonhx.layer.Layer;
+import com.babylonhx.layer.HighlightLayer;
 import com.babylonhx.lensflare.LensFlareSystem;
 import com.babylonhx.lights.HemisphericLight;
 import com.babylonhx.lights.Light;
@@ -357,6 +358,7 @@ import com.babylonhx.audio.*;
 
 	// Layers
 	public var layers:Array<Layer> = [];
+	public var highlightLayers:Array<HighlightLayer> = [];
 
 	// Skeletons
 	public var skeletonsEnabled:Bool = true;
@@ -1239,11 +1241,11 @@ import com.babylonhx.audio.*;
 	 * @param target - the target 
 	 * @see beginAnimation 
 	 */
-	public function stopAnimation(target:Dynamic) {
+	public function stopAnimation(target:Dynamic, ?animationName:String) {
 		var animatable = this.getAnimatableByTarget(target);
 		
 		if (animatable != null) {
-			animatable.stop();
+			animatable.stop(animationName);
 		}
 	}
 	
@@ -2112,7 +2114,27 @@ import com.babylonhx.audio.*;
 		
 		// Render
 		//Tools.StartPerformanceCounter("Main render");
+		
+		// Activate HighlightLayer stencil
+		var stencilState = this._engine.getStencilBuffer();
+		var renderhighlights:Bool = false;
+		if (this.highlightLayers.length > 0) {
+			for (i in 0...this.highlightLayers.length) {
+				if (this.highlightLayers[i].shouldRender()) {
+					renderhighlights = true;
+					this._engine.setStencilBuffer(true);
+					break;
+				}
+			}
+		}
+		
 		this._renderingManager.render(null, null, true, true);
+		
+		// Restore HighlightLayer stencil
+		if (renderhighlights) {
+			this._engine.setStencilBuffer(stencilState);
+		}
+		
 		//Tools.EndPerformanceCounter("Main render");
 		
 		// Bounding boxes
@@ -2142,6 +2164,17 @@ import com.babylonhx.audio.*;
 				var layer = this.layers[layerIndex];
 				if (!layer.isBackground) {
 					layer.render();
+				}
+			}
+			engine.setDepthBuffer(true);
+		}
+		
+		// Highlight Layer
+		if (renderhighlights) {
+			engine.setDepthBuffer(false);
+			for (i in 0...this.highlightLayers.length) {
+				if (this.highlightLayers[i].shouldRender()) {
+					this.highlightLayers[i].render();
 				}
 			}
 			engine.setDepthBuffer(true);
@@ -2317,7 +2350,7 @@ import com.babylonhx.audio.*;
 		}
 		
 		// Clear
-		this._engine.clear(this.clearColor, this.autoClear || this.forceWireframe || this.forcePointsCloud, true);
+		this._engine.clear(this.clearColor, this.autoClear || this.forceWireframe || this.forcePointsCloud, true, true);
 		
 		// Shadows
 		if (this.shadowsEnabled) {
@@ -2336,6 +2369,15 @@ import com.babylonhx.audio.*;
 			this._renderTargets.push(this._depthRenderer.getDepthMap());
 		}
 		
+		// HighlightLayer
+		if (this.highlightLayers.length > 0) {
+			for (i in 0...this.highlightLayers.length) {
+				if (this.highlightLayers[i].shouldRender()) {
+					this._renderTargets.push(this.highlightLayers[i]._mainTexture);
+				}
+			}
+		}
+		
 		// RenderPipeline
 		this.postProcessRenderPipelineManager.update();
 		
@@ -2345,7 +2387,7 @@ import com.babylonhx.audio.*;
 			for (cameraIndex in 0...this.activeCameras.length) {
 				this._renderId = currentRenderId;
 				if (cameraIndex > 0) {
-                    this._engine.clear(0, false, true);
+                    this._engine.clear(0, false, true, true);
                 }
 				
 				this._processSubCameras(this.activeCameras[cameraIndex]);
@@ -2483,6 +2525,9 @@ import com.babylonhx.audio.*;
 		// Release layers
 		while (this.layers.length > 0) {
 			this.layers[0].dispose();
+		}
+		while (this.highlightLayers.length > 0) {
+			this.highlightLayers[0].dispose();
 		}
 		
 		// Release textures
@@ -2903,5 +2948,35 @@ import com.babylonhx.audio.*;
 	public function getMaterialByTags(tagsQuery:String):Array<Material> {
 		return cast this._getByTags(this.materials, tagsQuery).concat(this._getByTags(this.multiMaterials, tagsQuery));
 	}*/
+	
+	/**
+	 * Overrides the default sort function applied in the renderging group to prepare the meshes.
+	 * This allowed control for front to back rendering or reversly depending of the special needs.
+	 * 
+	 * @param renderingGroupId The rendering group id corresponding to its index
+	 * @param opaqueSortCompareFn The opaque queue comparison function use to sort.
+	 * @param alphaTestSortCompareFn The alpha test queue comparison function use to sort.
+	 * @param transparentSortCompareFn The transparent queue comparison function use to sort.
+	 */
+	public function setRenderingOrder(renderingGroupId:Int,
+		opaqueSortCompareFn:SubMesh->SubMesh->Int = null,
+		alphaTestSortCompareFn:SubMesh->SubMesh->Int = null,
+		transparentSortCompareFn:SubMesh->SubMesh->Int = null) {
+		
+		this._renderingManager.setRenderingOrder(renderingGroupId,
+			opaqueSortCompareFn,
+			alphaTestSortCompareFn,
+			transparentSortCompareFn);
+	}
+
+	/**
+	 * Specifies whether or not the stencil and depth buffer are cleared between two rendering groups.
+	 * 
+	 * @param renderingGroupId The rendering group id corresponding to its index
+	 * @param autoClearDepthStencil Automatically clears depth and stencil between groups if true.
+	 */
+	inline public function setRenderingAutoClearDepthStencil(renderingGroupId:Int, autoClearDepthStencil:Bool) {            
+		this._renderingManager.setRenderingAutoClearDepthStencil(renderingGroupId, autoClearDepthStencil);
+	}
 	
 }

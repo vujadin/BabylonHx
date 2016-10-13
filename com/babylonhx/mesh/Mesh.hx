@@ -814,7 +814,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			return;
 		}
 		
+		var oldGeometry = this._geometry;
 		var geometry = this._geometry.copy(Geometry.RandomId());
+		oldGeometry.releaseForMesh(this, true);
 		geometry.applyToMesh(this);
 	}
 
@@ -857,7 +859,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		engine.bindBuffers(this._geometry.getVertexBuffers(), indexBufferToBind, effect);
 	}
 
-	public function _draw(subMesh:SubMesh, fillMode:Int, ?instancesCount:Int) {	
+	public function _draw(subMesh:SubMesh, fillMode:Int, ?instancesCount:Int = 0) {	
 		if (this._geometry == null || this._geometry.getVertexBuffers() == null || this._geometry.getIndexBuffer() == null) {
 			return;
 		}
@@ -1013,7 +1015,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 					onBeforeDraw(false, this.getWorldMatrix(), effectiveMaterial);
 				}
 				
-				this._draw(subMesh, fillMode);
+				this._draw(subMesh, fillMode, this._overridenInstanceCount);
 			}
 			
 			if (batch.visibleInstances[subMesh._id] != null) {
@@ -1035,7 +1037,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 
 	/**
      * Triggers the draw call for the mesh.
-     * This is handled by the scene rendering manager.
+     * Usually, you don't need to call this method by your own because the mesh rendering is handled by the scene rendering manager. 
      */
 	public function render(subMesh:SubMesh, enableAlphaMode:Bool) {
 		var scene = this.getScene();
@@ -1360,6 +1362,15 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		while (this.instances.length > 0) {
 			this.instances[0].dispose();
 		}
+		
+		// Highlight layers.
+        var highlightLayers = this.getScene().highlightLayers;
+        for (i in 0...highlightLayers.length) {
+            var highlightLayer = highlightLayers[i];
+            if (highlightLayer != null) {
+                highlightLayer.removeMesh(this);
+            }
+        }
 		
 		super.dispose(doNotRecurse);
 	}
@@ -2206,10 +2217,11 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			if (minVector == null) {
 				minVector = boundingBox.minimumWorld;
 				maxVector = boundingBox.maximumWorld;
-				continue;
 			}
-			minVector.MinimizeInPlace(boundingBox.minimumWorld);
-			maxVector.MaximizeInPlace(boundingBox.maximumWorld);
+			else {
+				minVector.MinimizeInPlace(boundingBox.minimumWorld);
+				maxVector.MaximizeInPlace(boundingBox.maximumWorld);
+			}
 		}
 		
 		return { minimum: minVector, maximum: maxVector };
@@ -2220,7 +2232,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	 * MinMax vector3 computed from a mesh array.
      */
 	public static function Center(meshesOrMinMaxVector:Dynamic):Vector3 {
-		var minMaxVector:BabylonMinMax = meshesOrMinMaxVector.min != null ? meshesOrMinMaxVector : Mesh.MinMax(meshesOrMinMaxVector);
+		var minMaxVector:BabylonMinMax = Std.is(meshesOrMinMaxVector, Array) ? Mesh.MinMax(meshesOrMinMaxVector) : meshesOrMinMaxVector;
 		return Vector3.Center(minMaxVector.minimum, minMaxVector.maximum);
 	}
 	

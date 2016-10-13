@@ -117,7 +117,7 @@ import com.babylonhx.tools.EventState;
 	private var _textureMatrix:Matrix;
 
 	
-	public function new(name:String, size:Dynamic, scene:Scene, ?generateMipMaps:Bool, doNotChangeAspectRatio:Bool = true, type:Int = Engine.TEXTURETYPE_UNSIGNED_INT, isCube:Bool = false, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE) {
+	public function new(name:String, size:Dynamic, scene:Scene, ?generateMipMaps:Bool, doNotChangeAspectRatio:Bool = true, type:Int = Engine.TEXTURETYPE_UNSIGNED_INT, isCube:Bool = false, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, generateDepthBuffer:Bool = true, generateStencilBuffer:Bool = false) {
 		super(null, scene, !generateMipMaps);
 		
 		this.coordinatesMode = Texture.PROJECTION_MODE;
@@ -142,12 +142,23 @@ import com.babylonhx.tools.EventState;
         }
 		
 		if (isCube) {
-			this._texture = scene.getEngine().createRenderTargetCubeTexture(this._size, { generateMipMaps: generateMipMaps, samplingMode: samplingMode } );
+			this._texture = scene.getEngine().createRenderTargetCubeTexture(this._size, { 
+				generateMipMaps: generateMipMaps, 
+				samplingMode: samplingMode,
+				generateDepthBuffer: generateDepthBuffer,
+				generateStencilBuffer: generateStencilBuffer
+			});
 			this.coordinatesMode = Texture.INVCUBIC_MODE;
             this._textureMatrix = Matrix.Identity();
 		}
 		else {
-			this._texture = scene.getEngine().createRenderTargetTexture(this._size, { generateMipMaps: generateMipMaps, type: type, samplingMode: samplingMode } );
+			this._texture = scene.getEngine().createRenderTargetTexture(this._size, { 
+				generateMipMaps: generateMipMaps, 
+				type: type, 
+				samplingMode: samplingMode,
+				generateDepthBuffer: generateDepthBuffer,
+				generateStencilBuffer: generateStencilBuffer				
+			});
 		}
 		
 		// Rendering groups
@@ -277,6 +288,7 @@ import com.babylonhx.tools.EventState;
 				if (!mesh.isReady()) {
 					// Reset _currentRefreshId
 					this.resetRefreshCounter();
+					
 					continue;
 				}
 				
@@ -334,7 +346,7 @@ import com.babylonhx.tools.EventState;
 			this.onClearObservable.notifyObservers(engine);
 		} 
 		else {
-			engine.clear(scene.clearColor, true, true);
+			engine.clear(scene.clearColor, true, true, true);
 		}
 		
 		if (!this._doNotChangeAspectRatio) {
@@ -364,6 +376,36 @@ import com.babylonhx.tools.EventState;
 			
 			engine.unBindFramebuffer(this._texture, this.isCube);
 		}
+	}
+	
+	/**
+	 * Overrides the default sort function applied in the renderging group to prepare the meshes.
+	 * This allowed control for front to back rendering or reversly depending of the special needs.
+	 * 
+	 * @param renderingGroupId The rendering group id corresponding to its index
+	 * @param opaqueSortCompareFn The opaque queue comparison function use to sort.
+	 * @param alphaTestSortCompareFn The alpha test queue comparison function use to sort.
+	 * @param transparentSortCompareFn The transparent queue comparison function use to sort.
+	 */
+	public function setRenderingOrder(renderingGroupId:Int,
+		opaqueSortCompareFn:SubMesh->SubMesh->Int = null,
+		alphaTestSortCompareFn:SubMesh->SubMesh->Int = null,
+		transparentSortCompareFn:SubMesh->SubMesh->Int = null) {
+		
+		this._renderingManager.setRenderingOrder(renderingGroupId,
+			opaqueSortCompareFn,
+			alphaTestSortCompareFn,
+			transparentSortCompareFn);
+	}
+
+	/**
+	 * Specifies whether or not the stencil and depth buffer are cleared between two rendering groups.
+	 * 
+	 * @param renderingGroupId The rendering group id corresponding to its index
+	 * @param autoClearDepthStencil Automatically clears depth and stencil between groups if true.
+	 */
+	inline public function setRenderingAutoClearDepthStencil(renderingGroupId:Int, autoClearDepthStencil:Bool) {            
+		this._renderingManager.setRenderingAutoClearDepthStencil(renderingGroupId, autoClearDepthStencil);
 	}
 
 	override public function clone():RenderTargetTexture {
