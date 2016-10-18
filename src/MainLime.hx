@@ -24,7 +24,7 @@ import com.babylonhx.Scene;
  * @author Krtolica Vujadin
  */
 #if cpp
-@:build(haxebullet.MacroUtil.buildAll())
+//@:build(haxebullet.MacroUtil.buildAll())
 #end
 class MainLime extends Application {
 	
