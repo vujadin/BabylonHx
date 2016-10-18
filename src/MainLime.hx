@@ -4,6 +4,7 @@ package;
 //import hxtelemetry.HxTelemetry;
 #end
 
+import haxe.Timer;
 import lime.app.Application;
 import lime.Assets;
 import lime.audio.AudioSource;
@@ -22,7 +23,9 @@ import com.babylonhx.Scene;
  * ...
  * @author Krtolica Vujadin
  */
-
+#if cpp
+@:build(haxebullet.MacroUtil.buildAll())
+#end
 class MainLime extends Application {
 	
 	var scene:Scene;
@@ -41,8 +44,8 @@ class MainLime extends Application {
 		engine = new Engine(window, true);	
 		scene = new Scene(engine);
 		
-		//new samples.BasicScene(scene);
-		new samples.BasicElements(scene);
+		new samples.BasicScene(scene);
+		//new samples.BasicElements(scene);
 		//new samples.DashedLinesMesh(scene);
 		//new samples.RotationAndScaling(scene);
 		//new samples.Materials(scene);
@@ -89,9 +92,12 @@ class MainLime extends Application {
 		//new samples.Particles(scene);
 		//new samples.Particles2(scene);
 		//new samples.Particles3(scene);
+		//new samples.Particles4(scene);
+		//new samples.Particles5(scene);
 		//new samples.Extrusion(scene);
 		//new samples.Sprites(scene);
 		//new samples.PostprocessBloom(scene);
+		//new samples.PostprocessBloom2(scene);
 		//new samples.PostprocessRefraction(scene);
 		//new samples.PostprocessConvolution(scene);
 		//new samples.GodRays(scene);
@@ -100,7 +106,8 @@ class MainLime extends Application {
 		//new samples.Actions(scene);
 		//new samples.Picking(scene);		
 		//new samples.Octree(scene);
-		//new samples.SSAO(scene);						
+		//new samples.SSAO(scene);	
+		//new samples.SSAO2(scene);
 		//new samples.Decals(scene);
 		//new samples.InstancedBones(scene);				
 		//new samples.AdvancedShadows(scene);
@@ -116,12 +123,7 @@ class MainLime extends Application {
 		//new samples.SolidParticles5(scene);
 		//new samples.PointLightShadow(scene);
 		//new samples.Labyrinth(scene);
-		//new samples.FireMat(scene);
-		//new samples.WaterMat(scene);
-		//new samples.LavaMat(scene);
-		//new samples.NormalMat(scene);
-		//new samples.ForestOfPythagoras(scene);
-		//new samples.Particles4(scene);
+		//new samples.ForestOfPythagoras(scene);		
 		//new samples.MaterialsLibTest(scene);	
 		//new samples.ReflectionProbeTest(scene);
 		//new samples.IcoSphereTest(scene);
@@ -140,13 +142,37 @@ class MainLime extends Application {
 		//new samples.SponzaDynamicShadows(scene);
 		//new samples.RefractReflect(scene);
 		//new samples.AnimationBlending(scene);
+		//new samples.AnimationBlending2(scene);
 		//new samples.GridMaterialTest(scene);
 		//new samples.SkeletonViewerTest(scene);
 		//new samples.Mario(scene);
 		//new samples.LogarithmicDepth(scene);
+		//new samples.SkullPBR(scene);
+		//new samples.BulletPhysics(scene);
+		//new samples.Bullet2(scene);
+		//new samples.Waterfall(scene);
+		//new samples.ShaderBuilder1(scene);
+		//new samples.ShaderBuilder2(scene);
+		//new samples.ShaderBuilder3(scene);
+		//new samples.ShaderBuilder4(scene);
+		//new samples.ShaderBuilder5(scene);
+		//new samples.ShaderBuilder6(scene);
+		//new samples.CalikoDemo3D(scene);
+		//new samples.TriPlanarMaterialTest(scene);
+		//new samples.SkyMaterialTest(scene);
+		//new samples.SimpleMaterialTest(scene);
+		//new samples.FireMat(scene);
+		//new samples.WaterMat(scene);
+		//new samples.LavaMat(scene);
+		//new samples.NormalMat(scene);
+		//new samples.ShadowTest(scene);
+		//new samples.MultiLights(scene);
+		//new samples.HighlightLayerTest(scene);
 		
-		Engine.width = this.window.width;
-		Engine.height = this.window.height;
+		//new samples.TestCustomFileStruct(scene);
+		
+		engine.width = this.window.width;
+		engine.height = this.window.height;
 	}
 	
 	override function onMouseDown(window:Window, x:Float, y:Float, button:Int) {
@@ -206,8 +232,8 @@ class MainLime extends Application {
 	}
 	
 	override public function onWindowResize(window:Window, width:Int, height:Int) {
-		Engine.width = this.window.width;
-		Engine.height = this.window.height;
+		engine.width = width;
+		engine.height = height;
 		engine.resize();
 	}
 	
