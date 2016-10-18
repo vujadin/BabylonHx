@@ -51,8 +51,8 @@ class MainOpenFL extends Sprite {
 		engine = new Engine(stage, false);	
 		scene = new Scene(engine);
 		
-		Engine.width = stage.stageWidth;
-		Engine.height = stage.stageHeight;
+		engine.width = stage.stageWidth;
+		engine.height = stage.stageHeight;
 		
 		stage.addEventListener(Event.RESIZE, resize);
 		stage.addEventListener(Event.ENTER_FRAME, update);
@@ -94,14 +94,14 @@ class MainOpenFL extends Sprite {
 	}
 	
 	function createDemo() {
-		new samples.BasicScene(scene);
+		new samples.Particles(scene);
 		
 		stage.addChild(new openfl.display.FPS(10, 10, 0xffffff));
 	}
 	
 	function resize(e) {
-		Engine.width = stage.stageWidth;
-		Engine.height = stage.stageHeight;
+		engine.width = stage.stageWidth;
+		engine.height = stage.stageHeight;
 	}
 	
 	function onKeyDown(e:KeyboardEvent) {
