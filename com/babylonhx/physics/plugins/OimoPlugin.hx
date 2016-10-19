@@ -385,7 +385,8 @@ class OimoPlugin implements IPhysicsEnginePlugin {
 					mesh.rotationQuaternion.fromRotationMatrix(mtx);
 					mesh.computeWorldMatrix();
 					
-				} else {					
+				} 
+				else {					
 					m = #if (js || purejs || html5 || web) cast body.getMatrix() #else body.getMatrix().toArray() #end;
 					mtx = Matrix.FromArray(m);
 					
