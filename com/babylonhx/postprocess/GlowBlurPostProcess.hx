@@ -23,6 +23,9 @@ class GlowBlurPostProcess extends PostProcess {
 	
 	
 	public function new(name:String, direction:Vector2, blurWidth:Float, options:Dynamic, camera:Camera, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, ?engine: Engine, reusable:Bool = false) {
+		this.direction = direction;
+		this.blurWidth = blurWidth;
+		
 		super(name, "glowBlurPostProcess", ["screenSize", "direction", "blurWidth"], null, options, camera, samplingMode, engine, reusable);
 		
 		this.onApplyObservable.add(function(effect:Effect, _) {
