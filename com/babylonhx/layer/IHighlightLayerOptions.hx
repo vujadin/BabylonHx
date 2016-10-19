@@ -1,5 +1,7 @@
 package com.babylonhx.layer;
 
+import com.babylonhx.cameras.Camera;
+
 /**
  * @author Krtolica Vujadin
  */
@@ -36,5 +38,10 @@ typedef IHighlightLayerOptions = {
 	 * Alpha blending mode used to apply the blur. Default is combine.
 	 */
 	var alphaBlendingMode:Null<Int>;
+	
+	/**
+     * The camera attached to the layer.
+     */
+    var camera:Null<Camera>;
   
 }

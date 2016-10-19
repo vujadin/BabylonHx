@@ -16,6 +16,7 @@ import com.babylonhx.materials.Material;
 import com.babylonhx.materials.textures.WebGLTexture;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.materials.textures.RenderTargetTexture;
+import com.babylonhx.cameras.Camera;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.ISize;
@@ -70,6 +71,7 @@ class HighlightLayer {
 	private var _maxSize:Int = 0;
 	private var _shouldRender:Bool = false;
 	private var _instanceGlowingMeshStencilReference:Int = HighlightLayer.glowingMeshStencilReference++;
+	private var _excludedMeshes:Map<String, IHighlightLayerExcludedMesh> = new Map();
 
 	/**
 	 * Specifies whether or not the inner glow is ACTIVE in the layer.
@@ -81,11 +83,11 @@ class HighlightLayer {
 	 */
 	public var outerGlow:Bool = true;
 	
-	/**
-     * Specifies the listof mesh excluded during the generation of the highlight layer.
-     */
-    public var excludedMeshes:Array<Mesh> = [];
-
+	public var camera(get, never):Camera;
+	private function get_camera():Camera {
+		return this._options.camera;
+	}
+	
 	/**
 	 * Specifies the horizontal size of the blur.
 	 */
@@ -170,6 +172,7 @@ class HighlightLayer {
 		
 		// Adapt options
 		this._options = options != null ? options : {
+			camera: null,
 			mainTextureRatio: 0.25,
 			blurTextureSizeRatio: 0.5,
 			blurHorizontalSize: 1,
@@ -219,7 +222,7 @@ class HighlightLayer {
 			[VertexBuffer.PositionKind],
 			["offset"],
 			["textureSampler"], "");
-			
+		
 		// Render target
 		this.setMainTextureSize();
 		
@@ -245,6 +248,7 @@ class HighlightLayer {
 			false, 
 			true,
 			Engine.TEXTURETYPE_UNSIGNED_INT);
+		this._mainTexture.activeCamera = this._options.camera;
 		this._mainTexture.wrapU = Texture.CLAMP_ADDRESSMODE;
 		this._mainTexture.wrapV = Texture.CLAMP_ADDRESSMODE;
 		this._mainTexture.anisotropicFilteringLevel = 1;
@@ -312,7 +316,7 @@ class HighlightLayer {
 			}
 			
 			// Excluded Mesh
-            if (this.excludedMeshes.indexOf(mesh) > -1) {
+            if (this._excludedMeshes[mesh.id] != null) {
                 return;
             }
 			
@@ -560,6 +564,39 @@ class HighlightLayer {
 	}
 	
 	/**
+	 * Add a mesh in the exclusion list to prevent it to impact or being impacted by the highlight layer.
+	 * @param mesh The mesh to exclude from the highlight layer
+	 */
+	public function addExcludedMesh(mesh:Mesh) {
+		var meshExcluded = this._excludedMeshes[mesh.id];
+		if (meshExcluded == null) {
+			this._excludedMeshes[mesh.id] = {
+				mesh: mesh,
+				beforeRender: mesh.onBeforeRenderObservable.add(function(mesh:Mesh, _) {
+					mesh.getEngine().setStencilBuffer(false);
+				}),
+				afterRender: mesh.onAfterRenderObservable.add(function(mesh:Mesh, _) {
+					mesh.getEngine().setStencilBuffer(true);
+				}),
+			}
+		}
+	}
+
+	/**
+	  * Remove a mesh from the exclusion list to let it impact or being impacted by the highlight layer.
+	  * @param mesh The mesh to highlight
+	  */
+	public function removeExcludedMesh(mesh:Mesh) {
+		var meshExcluded = this._excludedMeshes[mesh.id];
+		if (meshExcluded != null) {
+			mesh.onBeforeRenderObservable.remove(meshExcluded.beforeRender);
+			mesh.onAfterRenderObservable.remove(meshExcluded.afterRender);
+		}
+		
+		this._excludedMeshes[mesh.id] = null;
+	}
+	
+	/**
 	 * Add a mesh in the highlight layer in order to make it glow with the chosen color.
 	 * @param mesh The mesh to highlight
 	 * @param color The color of the highlight
@@ -576,7 +613,12 @@ class HighlightLayer {
 				color: color,
 				// Lambda required for capture due to Observable this context
 				observerHighlight: mesh.onBeforeRenderObservable.add(function(mesh:Mesh, _) { 
-					mesh.getScene().getEngine().setStencilFunctionReference(this._instanceGlowingMeshStencilReference);
+					if (this._excludedMeshes[mesh.id] != null) {
+                        this.defaultStencilReference(mesh, null);
+                    }
+                    else {
+                        mesh.getScene().getEngine().setStencilFunctionReference(this._instanceGlowingMeshStencilReference);
+                    }
 				}),
 				observerDefault: mesh.onAfterRenderObservable.add(this.defaultStencilReference),
 				glowEmissiveOnly: glowEmissiveOnly
@@ -620,8 +662,8 @@ class HighlightLayer {
 	 * of the engine canvas size.
 	 */
 	private function setMainTextureSize() {
-		this._mainTextureDesiredSize.width = Std.int(this._engine.getRenderingCanvas().width * this._options.mainTextureRatio);
-		this._mainTextureDesiredSize.height = Std.int(this._engine.getRenderingCanvas().height * this._options.mainTextureRatio);
+		this._mainTextureDesiredSize.width = Std.int(this._engine.width * this._options.mainTextureRatio);
+		this._mainTextureDesiredSize.height = Std.int(this._engine.height * this._options.mainTextureRatio);
 		
 		this._mainTextureDesiredSize.width = Tools.GetExponentOfTwo(this._mainTextureDesiredSize.width, this._maxSize);
 		this._mainTextureDesiredSize.height = Tools.GetExponentOfTwo(this._mainTextureDesiredSize.height, this._maxSize);
@@ -673,6 +715,15 @@ class HighlightLayer {
 			} 
 		}
 		this._meshes = null;
+		
+		for (id in this._excludedMeshes.keys()) {
+			var meshHighlight = this._excludedMeshes[id];
+			if (meshHighlight != null) {
+				meshHighlight.mesh.onBeforeRenderObservable.remove(meshHighlight.beforeRender);
+				meshHighlight.mesh.onAfterRenderObservable.remove(meshHighlight.afterRender);
+			}
+		}
+		this._excludedMeshes = null;
 		
 		// Remove from scene
 		var index = this._scene.highlightLayers.indexOf(this);

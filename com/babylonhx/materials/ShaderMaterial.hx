@@ -43,6 +43,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _matrices:Map<String, Matrix> = new Map<String, Matrix>();
 	private var _matrices3x3:Map<String, Float32Array> = new Map<String, Float32Array>();
 	private var _matrices2x2:Map<String, Float32Array> = new Map<String, Float32Array>();
+	private var _vectors3Arrays:Map<String, Array<Float>> = new Map<String, Array<Float>>();
 	private var _cachedWorldViewMatrix:Matrix = new Matrix();
 	private var _renderId:Int;
 	
@@ -172,6 +173,13 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		return this;
 	}
+	
+	inline public function setArray3(name:String, value:Array<Float>):ShaderMaterial {
+		this._checkUniform(name);
+		this._vectors3Arrays[name] = value;
+		
+		return this;
+	}
 
 	override public function isReady(?mesh:AbstractMesh, useInstances:Bool = false):Bool {
 		var scene:Scene = this.getScene();
@@ -262,9 +270,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			}
 			
 			// Bones
-			if (mesh != null && mesh.useBones && mesh.computeBonesUsingShaders) {
-				this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices(mesh));
-            }
+			MaterialHelper.BindBonesParameters(mesh, this._effect);
 			
 			// Texture
 			for (name in this._textures.keys()) {
@@ -315,6 +321,11 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			// Matrix 2x2
 			for (name in this._matrices2x2.keys()) {
 				this._effect.setMatrix2x2(name, this._matrices2x2[name]);
+			}
+			
+			// Vector3Array   
+			for (name in this._vectors3Arrays.keys()) {
+				this._effect.setArray3(name, this._vectors3Arrays[name]);
 			}
 		}
 		
@@ -411,6 +422,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			serializationObject.matrices2x2.name = this._matrices2x2[name];
 		}
 		
+		// Vector3Array
+		serializationObject.vectors3Arrays = { };
+		for (name in this._vectors3Arrays.keys()) {
+			serializationObject.vectors3Arrays.name = this._vectors3Arrays[name];
+		}
+		
 		return serializationObject;
 	}
 
@@ -471,7 +488,13 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		// Matrix 2x2
 		for (name in source.matrices2x2) {
 			material.setMatrix2x2(name, source.matrices2x2[name]);
-		}*/
+		}
+		
+		// Vector3Array
+		for (name in source.vectors3Arrays) {
+			material.setArray3(name, source.vectors3Arrays[name]);
+		}
+		*/
 
 		return material;
 	}
