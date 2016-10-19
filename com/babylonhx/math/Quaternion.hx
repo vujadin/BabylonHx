@@ -92,11 +92,14 @@ package com.babylonhx.math;
 		return result;
 	}
 
-	inline public function multiplyToRef(q1:Quaternion, result:Quaternion) {
-		result.x = this.x * q1.w + this.y * q1.z - this.z * q1.y + this.w * q1.x;
-		result.y = -this.x * q1.z + this.y * q1.w + this.z * q1.x + this.w * q1.y;
-		result.z = this.x * q1.y - this.y * q1.x + this.z * q1.w + this.w * q1.z;
-		result.w = -this.x * q1.x - this.y * q1.y - this.z * q1.z + this.w * q1.w;
+	inline public function multiplyToRef(q1:Quaternion, result:Quaternion):Quaternion {
+		var x = this.x * q1.w + this.y * q1.z - this.z * q1.y + this.w * q1.x;
+		var y = -this.x * q1.z + this.y * q1.w + this.z * q1.x + this.w * q1.y;
+		var z = this.x * q1.y - this.y * q1.x + this.z * q1.w + this.w * q1.z;
+		var w = -this.x * q1.x - this.y * q1.y - this.z * q1.z + this.w * q1.w;
+		result.copyFromFloats(x, y, z, w);
+		
+		return this;
 	}
 	
 	inline public function multiplyInPlace(q1:Quaternion):Quaternion {
@@ -127,43 +130,24 @@ package com.babylonhx.math;
 	}
 	
 	public function toEulerAnglesToRef(result:Vector3, order:String = "YZX") {
-		var heading:Float = Math.NEGATIVE_INFINITY;
-		var attitude:Float = 0;
-		var bank:Float = 0;
-		var x = this.x;
-		var y = this.y;
-		var z = this.z;
-		var w = this.w;
+		var qx = this.x;
+		var qy = this.y;
+		var qz = this.z;
+		var qw = this.w;
+		var xsqr = qx * qx;
 		
-		switch (order) {
-			case "YZX":
-				var test = x * y + z * w;
-				if (test > 0.499) { // singularity at north pole
-					heading = 2 * Math.atan2(x, w);
-					attitude = Math.PI / 2;
-					bank = 0;
-				}
-				if (test < -0.499) { // singularity at south pole
-					heading = -2 * Math.atan2(x, w);
-					attitude = -Math.PI / 2;
-					bank = 0;
-				}
-				if (heading == Math.NEGATIVE_INFINITY) {
-					var sqx = x * x;
-					var sqy = y * y;
-					var sqz = z * z;
-					heading = Math.atan2(2 * y * w - 2 * x * z, 1 - 2 * sqy - 2 * sqz); // Heading
-					attitude = Math.asin(2 * test); // attitude
-					bank = Math.atan2(2 * x * w - 2 * y * z, 1 - 2 * sqx - 2 * sqz); // bank
-				}
-				
-			default:
-				throw ("Euler order " + order + " not supported yet.");
-		}
+		var t0 = -2.0 * (xsqr + qy * qy) + 1.0;
+		var t1 = 2.0 * (qz * qx + qw * qy);
+		var t2 = -2.0 * (qz * qy - qw * qx);
+		var t3 = 2.0 * (qx * qy + qw * qz);
+		var t4 = -2.0 * (qz * qz + xsqr) + 1.0;
 		
-		result.y = heading;
-		result.z = attitude;
-		result.x = bank;
+		t2 = t2 > 1.0 ? 1.0 : t2;
+		t2 = t2 < -1.0 ? -1.0 : t2;
+		
+		result.x = Math.asin(t2);
+		result.z = Math.atan2(t3, t4);
+		result.y = Math.atan2(t1, t0);
 		
 		return this;
 	}
