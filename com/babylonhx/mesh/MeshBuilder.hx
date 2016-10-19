@@ -112,7 +112,9 @@ typedef PlaneOptions = {
 typedef GroundOptions = {
 	width:Float, 
 	height:Float, 
-	subdivision:Int,
+	?subdivisions:Int,
+	?subdivisionsX:Int,
+	?subdivisionsY:Int,
 	?updatable:Bool
 }
 
@@ -813,7 +815,8 @@ class MeshBuilder {
 	public static function CreateGround(name:String, options:Dynamic, scene:Scene):Mesh {
 		var ground = new GroundMesh(name, scene);
 		ground._setReady(false);
-		ground._subdivisions = options.subdivision != null ? options.subdivision : 1;
+		ground._subdivisionsX = options.subdivisionsX != null ? options.subdivisionsX : (options.subdivisions != null ? options.subdivisions : 1);
+		ground._subdivisionsY = options.subdivisionsY != null ? options.subdivisionsY : (options.subdivisions != null ? options.subdivisions : 1);
 		
 		var vertexData = VertexData.CreateGround(options);
 		vertexData.applyToMesh(ground, options.updatable);
@@ -868,7 +871,8 @@ class MeshBuilder {
 		var onReady:GroundMesh->Void = options.onReady;
 		
 		var ground = new GroundMesh(name, scene);
-		ground._subdivisions = subdivisions;
+		ground._subdivisionsX = subdivisions;
+		ground._subdivisionsY = subdivisions;
 		ground._width = width;
 		ground._height = height;
 		ground._maxX = ground._width / 2;

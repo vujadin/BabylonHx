@@ -157,10 +157,6 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	@:noCompletion
 	public var removeTags:String->Void;
 	
-	// exposing physics...
-	public var rigidBody:Dynamic;
-	public var physicsDim:Dynamic;
-	
 	// for extrusion
 	public var path3D:Path3D;
 	public var pathArray:Array<Array<Vector3>>;
@@ -1369,6 +1365,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
             var highlightLayer = highlightLayers[i];
             if (highlightLayer != null) {
                 highlightLayer.removeMesh(this);
+				highlightLayer.removeExcludedMesh(this);
             }
         }
 		
@@ -1983,7 +1980,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		var options:GroundOptions = {
 			width: width,
 			height: height,
-			subdivision: subdivisions,
+			subdivisions: subdivisions,
 			updatable: updatable
 		}
 		
@@ -2314,6 +2311,10 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
         Tags.AddTagsTo(mesh, parsedMesh.tags);
 		
         mesh.position = Vector3.FromArray(parsedMesh.position);
+		
+		if (parsedMesh.metadata != null) {
+            mesh.metadata = parsedMesh.metadata;
+        }
 		
         if (parsedMesh.rotationQuaternion != null) {
             mesh.rotationQuaternion = Quaternion.FromArray(parsedMesh.rotationQuaternion);

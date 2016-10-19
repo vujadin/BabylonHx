@@ -2,10 +2,22 @@ package com.babylonhx.mesh;
 
 import com.babylonhx.utils.typedarray.Float32Array;
 
+import haxe.ds.Either;
+
 /**
  * ...
  * @author Krtolica Vujadin
  */
+
+/*abstract OneOf<A, B>(Either<A, B>) from Either<A, B> to Either<A, B> {
+  @:from inline static function fromA<A, B>(a:A) : OneOf<A, B> return Left(a);
+  @:from inline static function fromB<A, B>(b:B) : OneOf<A, B> return Right(b);
+    
+  @:to inline function toA():Null<A> return switch(this) {case Left(a): a; default: null;}
+  @:to inline function toB():Null<B> return switch(this) {case Right(b): b; default: null;}
+
+}*/
+ 
 class Buffer {
 	
 	private var _engine:Engine;
@@ -13,7 +25,8 @@ class Buffer {
 	@:allow(com.babylonhx.mesh.Geometry)
 	private var _buffer:WebGLBuffer;	
 	
-	//private var _data:Either<Array<Float>, Float32Array>;
+	//@:allow(com.babylonhx.mesh.VertexBuffer)
+	//private var _data:OneOf<Array<Float>, Float32Array>;
 	private var _data:Array<Float>;
 	private var _updatable:Bool;
 	private var _strideSize:Int;
@@ -43,7 +56,7 @@ class Buffer {
 		return this._updatable;
 	}
 
-	public function getData():Array<Float> {
+	inline public function getData() {
 		return this._data;
 	}
 
@@ -61,9 +74,9 @@ class Buffer {
 
 	// Methods
 	public function create(?data:Array<Float>) {
-		if (data == null && this._buffer != null) {
+		/*if (data == null && this._buffer != null) {
 			return; // nothing to do
-		}
+		}*/
 		
 		if (data == null) {
 			data = this._data;
@@ -74,7 +87,7 @@ class Buffer {
 				this._buffer = this._engine.createDynamicVertexBuffer(data);
 				this._data = data;
 			} 
-			else {
+			else { 
 				this._buffer = this._engine.createVertexBuffer(data);
 			}
 		} 
@@ -84,7 +97,7 @@ class Buffer {
 		}
 	}
 
-	public function update(data:Array<Float>) {
+	inline public function update(data:Array<Float>) {
 		this.create(data);
 	}
 

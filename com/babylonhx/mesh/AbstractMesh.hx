@@ -197,6 +197,10 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public var _physicsFriction:Float = 0;
 	public var _physicRestitution:Float = 0;
 	public var onPhysicsCollide:AbstractMesh->Dynamic->Void; 
+	
+	// exposing physics...
+	public var rigidBody:Dynamic;
+	public var physicsDim:Dynamic;
 
 	// Collisions
 	private var _checkCollisions:Bool = false;
@@ -473,10 +477,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			this.rotation = Vector3.Zero();
 		}
 		
-		var rotationQuaternion:Quaternion = null;
 		if (space == null || space == Space.LOCAL) {
-			rotationQuaternion = Quaternion.RotationAxisToRef(axis, amount, AbstractMesh._rotationAxisCache);
-			this.rotationQuaternion.multiplyToRef(rotationQuaternion, this.rotationQuaternion);
+			Quaternion.RotationAxisToRef(axis, amount, AbstractMesh._rotationAxisCache);
+			this.rotationQuaternion.multiplyToRef(AbstractMesh._rotationAxisCache, this.rotationQuaternion);
 		}
 		else {
 			if (this.parent != null) {
@@ -485,8 +488,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 				
 				axis = Vector3.TransformNormal(axis, invertParentWorldMatrix);
 			}
-			rotationQuaternion = Quaternion.RotationAxisToRef(axis, amount, AbstractMesh._rotationAxisCache);
-			rotationQuaternion.multiplyToRef(this.rotationQuaternion, this.rotationQuaternion);
+			Quaternion.RotationAxisToRef(axis, amount, AbstractMesh._rotationAxisCache);
+			AbstractMesh._rotationAxisCache.multiplyToRef(this.rotationQuaternion, this.rotationQuaternion);
 		}
 	}
 
@@ -958,7 +961,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._physicsMass = options.mass;
 		this._physicsFriction = options.friction;
 		this._physicRestitution = options.restitution;
-				
+		
 		return physicsEngine._registerMesh(this, impostor, options);
 	}
 
