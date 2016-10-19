@@ -12,11 +12,11 @@ package com.babylonhx.utils.typedarray;
  
 	typedef UInt32Array = snow.api.buffers.Uint32Array;
 	
-#elseif openfl
-
-	typedef UInt32Array = openfl.utils.UInt32Array;
+//#elseif openfl
+//
+//	typedef UInt32Array = openfl.utils.UInt32Array;
 	
-#elseif lime
+#elseif (lime || openfl)
 
 	typedef UInt32Array = lime.utils.UInt32Array;	
 	
