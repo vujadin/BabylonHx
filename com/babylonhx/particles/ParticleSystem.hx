@@ -102,7 +102,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _scene:Scene;
 	private var _stockParticles:Array<Particle> = [];
 	private var _newPartsExcess:Int = 0;
-	private var _vertexData:Array<Float>;
+	private var _vertexData:Array<Float>; // Float32Array;
 	private var _vertexBuffer:Buffer;
 	private var _vertexBuffers:Map<String, VertexBuffer> = new Map();
 	private var _indexBuffer:WebGLBuffer;	
@@ -152,9 +152,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._indexBuffer = this._engine.createIndexBuffer(indices);
 		
 		// 11 floats per particle (x, y, z, r, g, b, a, angle, size, offsetX, offsetY) + 1 filler
-        this._vertexData = [];// new Float32Array(Std.int(capacity * 11 * 4));	
-		for (i in 0...capacity) {
-			this._vertexData.push(0);
+        this._vertexData = [];// new Float32Array(Std.int(capacity * 11 * 4));
+		for (i in 0...Std.int(capacity * 11 * 4)) {
+			this._vertexData[i] = 0;
 		}
 		this._vertexBuffer = new Buffer(scene.getEngine(), this._vertexData, true, 11);
 		
@@ -209,9 +209,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 					
 					this.gravity.scaleToRef(this._scaledUpdateSpeed, this._scaledGravity);
 					particle.direction.addInPlace(this._scaledGravity);
-					
-					index++;
 				}
+				
+				index++;
 			}
 		}
 		
