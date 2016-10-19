@@ -496,8 +496,6 @@ import haxe.ds.Vector;
 		result.normalize();
 	}
 
-	static var _viewportMatrixCache:Matrix = new Matrix();
-    static var _matrixCache:Matrix = new Matrix();
 	inline public static function Project(vector:Vector3, world:Matrix, transform:Matrix, viewport:Viewport):Vector3 {
 		var cw = viewport.width;
 		var ch = viewport.height;
@@ -508,21 +506,21 @@ import haxe.ds.Vector;
 			cw / 2.0, 0, 0, 0,
 			0, -ch / 2.0, 0, 0,
 			0, 0, 1, 0,
-			cx + cw / 2.0, ch / 2.0 + cy, 0, 1, _viewportMatrixCache);
+			cx + cw / 2.0, ch / 2.0 + cy, 0, 1, Tmp.matrix[0]);
 			
-		world.multiplyToRef(transform, _matrixCache);
-		_matrixCache.multiplyToRef(_viewportMatrixCache, _matrixCache);
+		world.multiplyToRef(transform, Tmp.matrix[1]);
+		Tmp.matrix[1].multiplyToRef(Tmp.matrix[0], Tmp.matrix[1]);
 		
-		return Vector3.TransformCoordinates(vector, _matrixCache);
+		return Vector3.TransformCoordinates(vector, Tmp.matrix[1]);
 	}
 	
 	inline public static function UnprojectFromTransform(source:Vector3, viewportWidth:Float, viewportHeight:Float, world:Matrix, transform:Matrix):Vector3 {
-		world.multiplyToRef(transform, _matrixCache);
-		_matrixCache.invert();
+		world.multiplyToRef(transform, Tmp.matrix[1]);
+		Tmp.matrix[1].invert();
 		source.x = source.x / viewportWidth * 2 - 1;
 		source.y = -(source.y / viewportHeight * 2 - 1);
-		var vector = Vector3.TransformCoordinates(source, _matrixCache);
-		var num = source.x * _matrixCache.m[3] + source.y * _matrixCache.m[7] + source.z * _matrixCache.m[11] + _matrixCache.m[15];
+		var vector = Vector3.TransformCoordinates(source, Tmp.matrix[1]);
+		var num = source.x * Tmp.matrix[1].m[3] + source.y * Tmp.matrix[1].m[7] + source.z * Tmp.matrix[1].m[11] + Tmp.matrix[1].m[15];
 		
 		if (Tools.WithinEpsilon(num, 1.0)) {
 			vector = vector.scale(1.0 / num);
@@ -532,9 +530,9 @@ import haxe.ds.Vector;
 	}
 
 	inline public static function Unproject(source:Vector3, viewportWidth:Float, viewportHeight:Float, world:Matrix, view:Matrix, projection:Matrix):Vector3 {
-		world.multiplyToRef(view, _matrixCache);
-		_matrixCache.multiplyToRef(projection, _matrixCache);
-		_matrixCache.invert();
+		world.multiplyToRef(view, Tmp.matrix[1]);
+		Tmp.matrix[1].multiplyToRef(projection, Tmp.matrix[1]);
+		Tmp.matrix[1].invert();
 		var screenSource = new Vector3(source.x / viewportWidth * 2 - 1, -(source.y / viewportHeight * 2 - 1), source.z);
         var vector = Vector3.TransformCoordinates(screenSource, Tmp.matrix[0]);
         var num = screenSource.x * Tmp.matrix[0].m[3] + screenSource.y * Tmp.matrix[0].m[7] + screenSource.z * Tmp.matrix[0].m[11] + Tmp.matrix[0].m[15];
@@ -584,7 +582,7 @@ import haxe.ds.Vector;
 	 * RotationFromAxis() returns the rotation Euler angles (ex : rotation.x, rotation.y, rotation.z) to apply
 	 * to something in order to rotate it from its local system to the given target system.
 	 */
-	public static function RotationFromAxis(axis1:Vector3, axis2:Vector3, axis3:Vector3):Vector3 {
+	inline public static function RotationFromAxis(axis1:Vector3, axis2:Vector3, axis3:Vector3):Vector3 {
 		var rotation = Vector3.Zero();
 		Vector3.RotationFromAxisToRef(axis1, axis2, axis3, rotation);
 		
