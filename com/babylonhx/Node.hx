@@ -77,6 +77,9 @@ class NodeCache {
 	
 	@serialize()
 	public var state:String = "";
+	
+	@serialize()
+    public var metadata:Dynamic = null;
 
 	public var animations:Array<Animation> = [];
 	private var _ranges:Map<String, AnimationRange> = new Map();

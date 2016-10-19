@@ -244,18 +244,19 @@ typedef BufferPointer = {
             options.preserveDrawingBuffer = false;
         }
 		
-		// Checks if some of the format renders first to allow the use of webgl inspector.
-		var renderToFullFloat = this._canRenderToFloatTexture();
-		var renderToHalfFloat = this._canRenderToHalfFloatTexture();
-		
-		if (options.stencil == null) {
-			options.stencil = true;
-		}
-		
 		#if purejs
 		Gl = cast(canvas, js.html.CanvasElement).getContext("webgl", options);
-		if(Gl == null)
+		if (Gl == null) {
 			Gl = cast(canvas, js.html.CanvasElement).getContext("experimental-webgl", options);
+		}
+		#end
+		
+		#if (js && lime) 
+		var _c = this._renderingCanvas = Browser.document.getElementsByTagName('canvas')[0];
+		Gl = cast(_c, js.html.CanvasElement).getContext("webgl", options);
+		if (Gl == null) {
+			Gl = cast(_c, js.html.CanvasElement).getContext("experimental-webgl", options);
+		}
 		#end
 		
 		#if (openfl || nme)
@@ -263,6 +264,14 @@ typedef BufferPointer = {
 		this._workingContext.render = this._renderLoop;
 		canvas.addChild(this._workingContext);
 		#end
+		
+		// Checks if some of the format renders first to allow the use of webgl inspector.
+		//var renderToFullFloat = this._canRenderToFloatTexture();
+		//var renderToHalfFloat = this._canRenderToHalfFloatTexture();
+		
+		if (options.stencil == null) {
+			options.stencil = true;
+		}
 		
 		width = 960;
 		height = 640;		
@@ -582,11 +591,11 @@ typedef BufferPointer = {
 		if (!useScreen && this._currentRenderTarget != null) {
 			return this._currentRenderTarget._width;
 		}
-
+		
 		#if (js || purejs)
 		return this._renderingCanvas.width;
 		#else
-		return width;
+		return this.width;
 		#end
 	}
 
@@ -594,11 +603,11 @@ typedef BufferPointer = {
 		if (!useScreen && this._currentRenderTarget != null) {
 			return this._currentRenderTarget._height;
 		}
-
+		
 		#if (js || purejs)
 		return this._renderingCanvas.height;
 		#else
-		return height;
+		return this.height;
 		#end
 	}
 
@@ -730,21 +739,20 @@ typedef BufferPointer = {
 		if (!this.renderEvenInBackground && this._windowIsBackground) {
 			shouldRender = false;
 		}
-
+		
 		if (shouldRender) {
 			// Start new frame
 			this.beginFrame();
-
+			
 			for (index in 0...this._activeRenderLoops.length) {
 				var renderFunction = this._activeRenderLoops[index];
-
 				renderFunction();
 			}
-
+			
 			// Present
 			this.endFrame();
 		}
-
+		
 		#if purejs
 		if (this._activeRenderLoops.length > 0) {
 			// Register new frame
@@ -759,9 +767,9 @@ typedef BufferPointer = {
 		if (this._activeRenderLoops.indexOf(renderFunction) != -1) {
 			return;
 		}
-
+		
 		this._activeRenderLoops.push(renderFunction);
-
+		
 		#if purejs
 		if (!this._renderingQueueLaunched) {
 			this._renderingQueueLaunched = true;
@@ -1019,6 +1027,18 @@ typedef BufferPointer = {
 		
 		return ret;
 	}
+	
+	inline public function createVertexBuffer2(vertices:Float32Array):WebGLBuffer {
+		var vbo = Gl.createBuffer();
+		var ret = new WebGLBuffer(vbo);
+		this.bindArrayBuffer(ret);
+		
+		Gl.bufferData(GL.ARRAY_BUFFER, vertices, GL.STATIC_DRAW);
+		this._resetVertexBufferBinding();
+		ret.references = 1;
+		
+		return ret;
+	}
 
 	inline public function createDynamicVertexBuffer(vertices:Array<Float>):WebGLBuffer {
 		var vbo = Gl.createBuffer();
@@ -1026,6 +1046,18 @@ typedef BufferPointer = {
 		this.bindArrayBuffer(ret);		
 		
 		Gl.bufferData(GL.ARRAY_BUFFER, new Float32Array(vertices), GL.DYNAMIC_DRAW);
+		this._resetVertexBufferBinding();
+		ret.references = 1;
+		
+		return ret;
+	}
+	
+	inline public function createDynamicVertexBuffer2(vertices:Float32Array):WebGLBuffer {
+		var vbo = Gl.createBuffer();
+		var ret = new WebGLBuffer(vbo);		
+		this.bindArrayBuffer(ret);		
+		
+		Gl.bufferData(GL.ARRAY_BUFFER, vertices, GL.DYNAMIC_DRAW);
 		this._resetVertexBufferBinding();
 		ret.references = 1;
 		
@@ -1040,6 +1072,19 @@ typedef BufferPointer = {
 		}
 		else {
 			Gl.bufferSubData(GL.ARRAY_BUFFER, 0, new Float32Array(vertices).subarray(offset, offset + count));
+		}
+		
+		this._resetVertexBufferBinding();
+	}
+	
+	inline public function updateDynamicVertexBuffer2(vertexBuffer:WebGLBuffer, vertices:Float32Array, offset:Int = 0, count:Int = -1) {
+		this.bindArrayBuffer(vertexBuffer);
+		
+		if (count == -1) {
+			Gl.bufferSubData(GL.ARRAY_BUFFER, offset, vertices);
+		}
+		else {
+			Gl.bufferSubData(GL.ARRAY_BUFFER, 0, vertices.subarray(offset, offset + count));
 		}
 		
 		this._resetVertexBufferBinding();
@@ -2567,7 +2612,7 @@ typedef BufferPointer = {
         }
     }
 
-    inline public function _bindTextureDirectly(target:Int, texture:WebGLTexture = null) {
+    inline public function _bindTextureDirectly(target:Int, texture:WebGLTexture) {
         if (this._activeTexturesCache[this._activeTexture] != texture) {
             texture != null ? Gl.bindTexture(target, texture.data) : Gl.bindTexture(target, null);
             this._activeTexturesCache[this._activeTexture] = texture;

@@ -2120,7 +2120,8 @@ import com.babylonhx.audio.*;
 		var renderhighlights:Bool = false;
 		if (this.highlightLayers.length > 0) {
 			for (i in 0...this.highlightLayers.length) {
-				if (this.highlightLayers[i].shouldRender()) {
+				var highlightLayer = this.highlightLayers[i];
+                if ((highlightLayer.camera == null || camera == highlightLayer.camera) && highlightLayer.shouldRender()) {
 					renderhighlights = true;
 					this._engine.setStencilBuffer(true);
 					break;
