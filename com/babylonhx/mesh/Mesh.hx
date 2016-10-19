@@ -1112,8 +1112,10 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 	
 	inline private function _onBeforeDraw(isInstance:Bool, world:Matrix, effectiveMaterial:Material) {
         if (isInstance) {
-			trace(effectiveMaterial);
-            effectiveMaterial.bindOnlyWorldMatrix(world);
+			if (effectiveMaterial != null) {
+			//trace(this.name);
+				effectiveMaterial.bindOnlyWorldMatrix(world);
+			}            
         }
     }
 

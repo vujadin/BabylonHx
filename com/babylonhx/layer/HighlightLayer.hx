@@ -9,6 +9,7 @@ import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.Mesh;
+import com.babylonhx.mesh.InstancedMesh;
 import com.babylonhx.postprocess.PassPostProcess;
 import com.babylonhx.postprocess.GlowBlurPostProcess;
 import com.babylonhx.materials.Effect;
@@ -568,6 +569,7 @@ class HighlightLayer {
 	 * @param mesh The mesh to exclude from the highlight layer
 	 */
 	public function addExcludedMesh(mesh:Mesh) {
+		mesh = Std.is(mesh, InstancedMesh) ? cast(mesh, InstancedMesh).sourceMesh : mesh;
 		var meshExcluded = this._excludedMeshes[mesh.id];
 		if (meshExcluded == null) {
 			this._excludedMeshes[mesh.id] = {
@@ -587,6 +589,7 @@ class HighlightLayer {
 	  * @param mesh The mesh to highlight
 	  */
 	public function removeExcludedMesh(mesh:Mesh) {
+		mesh = Std.is(mesh, InstancedMesh) ? cast(mesh, InstancedMesh).sourceMesh : mesh;
 		var meshExcluded = this._excludedMeshes[mesh.id];
 		if (meshExcluded != null) {
 			mesh.onBeforeRenderObservable.remove(meshExcluded.beforeRender);
@@ -603,6 +606,7 @@ class HighlightLayer {
 	 * @param glowEmissiveOnly Extract the glow from the emissive texture
 	 */
 	public function addMesh(mesh:Mesh, color:Color3, glowEmissiveOnly:Bool = false) {
+		mesh = Std.is(mesh, InstancedMesh) ? cast(mesh, InstancedMesh).sourceMesh : mesh;
 		var meshHighlight = this._meshes[mesh.id];
 		if (meshHighlight != null) {
 			meshHighlight.color = color;
@@ -633,6 +637,7 @@ class HighlightLayer {
 	 * @param mesh The mesh to highlight
 	 */
 	public function removeMesh(mesh:Mesh) {
+		mesh = Std.is(mesh, InstancedMesh) ? cast(mesh, InstancedMesh).sourceMesh : mesh;
 		var meshHighlight = this._meshes[mesh.id];
 		if (meshHighlight != null) {
 			mesh.onBeforeRenderObservable.remove(meshHighlight.observerHighlight);

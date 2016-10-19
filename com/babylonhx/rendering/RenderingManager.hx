@@ -38,6 +38,7 @@ import com.babylonhx.tools.Tools;
 	private var _customOpaqueSortCompareFn:Array<SubMesh->SubMesh->Int> = [];
 	private var _customAlphaTestSortCompareFn:Array<SubMesh->SubMesh->Int> = [];
 	private var _customTransparentSortCompareFn:Array<SubMesh->SubMesh->Int> = [];
+	private var _renderinGroupInfo:RenderingGroupInfo = null;
 	
 	private var _activeCamera:Camera;
 	
@@ -116,42 +117,90 @@ import com.babylonhx.tools.Tools;
 		}
 	}
 
-	static var _renderingGroup:RenderingGroup;
-	static var _needToStepBack:Bool;
 	public function render(customRenderFunction:SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void = null, activeMeshes:Array<AbstractMesh>, renderParticles:Bool, renderSprites:Bool) {
-		this._currentActiveMeshes = activeMeshes;
-        this._currentRenderParticles = renderParticles;
-        this._currentRenderSprites = renderSprites;
+		// Check if there's at least on observer on the onRenderingGroupObservable and initialize things to fire it
+		var observable = this._scene.onRenderingGroupObservable.hasObservers() ? this._scene.onRenderingGroupObservable : null;
+		var info:RenderingGroupInfo = null;
+		if (observable != null) {
+			if (this._renderinGroupInfo == null) {
+				this._renderinGroupInfo = new RenderingGroupInfo();
+			}
+			info = this._renderinGroupInfo;
+			info.scene = this._scene;
+			info.camera = this._scene.activeCamera;
+		}
 		
-		var index:Int = RenderingManager.MIN_RENDERINGGROUPS;
-		while(index < RenderingManager.MAX_RENDERINGGROUPS) {
-			this._depthStencilBufferAlreadyCleaned = (index == RenderingManager.MIN_RENDERINGGROUPS);
-			_renderingGroup = this._renderingGroups[index];
-			_needToStepBack = false;
+		this._currentActiveMeshes = activeMeshes;
+		this._currentRenderParticles = renderParticles;
+		this._currentRenderSprites = renderSprites;
+		
+		var index = RenderingManager.MIN_RENDERINGGROUPS;
+		while (index < RenderingManager.MAX_RENDERINGGROUPS) {
+			this._depthStencilBufferAlreadyCleaned = index == RenderingManager.MIN_RENDERINGGROUPS;
+			var renderingGroup = this._renderingGroups[index];
+			var needToStepBack = false;
 			
 			this._currentIndex = index;
 			
-			if (_renderingGroup != null) {
+			if (renderingGroup != null) {
+				var renderingGroupMask:Int = 0;
+				
+				// Fire PRECLEAR stage
+				if (observable != null) {
+					renderingGroupMask = cast Math.pow(2, index);
+					info.renderStage = RenderingGroupInfo.STAGE_PRECLEAR;
+					info.renderingGroupId = index;
+					observable.notifyObservers(info, renderingGroupMask);
+				}
+				
+				// Clear depth/stencil if needed
 				if (this._autoClearDepthStencil[index]) {
-                    this._clearDepthStencilBuffer();
-                }
+					this._clearDepthStencilBuffer();
+				}
 				
-				if (_renderingGroup.onBeforeTransparentRendering == null) {
-                    _renderingGroup.onBeforeTransparentRendering = this._renderSpritesAndParticles;
-                }
+				// Fire PREOPAQUE stage
+				if (observable != null) {
+					info.renderStage = RenderingGroupInfo.STAGE_PREOPAQUE;
+					observable.notifyObservers(info, renderingGroupMask);
+				}
 				
-				if (!_renderingGroup.render(customRenderFunction)) {
-
+				if (renderingGroup.onBeforeTransparentRendering == null) {
+					renderingGroup.onBeforeTransparentRendering = this._renderSpritesAndParticles;
+				}
+				
+				// Fire PRETRANSPARENT stage
+				if (observable != null) {
+					info.renderStage = RenderingGroupInfo.STAGE_PRETRANSPARENT;
+					observable.notifyObservers(info, renderingGroupMask);
+				}
+				
+				if (!renderingGroup.render(customRenderFunction)) {
 					this._renderingGroups.splice(index, 1);
-					_needToStepBack = true;
+					needToStepBack = true;
 					this._renderSpritesAndParticles();
 				}
-			}
+				
+				// Fire POSTTRANSPARENT stage
+				if (observable != null) {
+					info.renderStage = RenderingGroupInfo.STAGE_POSTTRANSPARENT;
+					observable.notifyObservers(info, renderingGroupMask);
+				}
+			} 
 			else {
 				this._renderSpritesAndParticles();
+				
+				if (observable != null) {
+					var renderingGroupMask:Int = cast Math.pow(2, index);
+					info.renderStage = RenderingGroupInfo.STAGE_PRECLEAR;
+					info.renderingGroupId = index;
+					observable.notifyObservers(info, renderingGroupMask);
+					
+					info.renderStage = RenderingGroupInfo.STAGE_POSTTRANSPARENT;
+					observable.notifyObservers(info, renderingGroupMask);
+				}
 			}
 			
-			if (_needToStepBack) {
+			if (needToStepBack) {
 				index--;
 			}
 			

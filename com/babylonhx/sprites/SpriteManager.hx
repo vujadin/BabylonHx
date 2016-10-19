@@ -58,7 +58,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 
 	private var _vertexData:Array<Float>;
 	private var _buffer:Buffer;
-	private var _vertexBuffers:Map<String, VertexBuffer>;
+	private var _vertexBuffers:Map<String, VertexBuffer> = new Map();
 	private var _indexBuffer:WebGLBuffer;
 	private var _effectBase:Effect;
 	private var _effectFog:Effect;
@@ -96,6 +96,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		// VBO
             // 16 floats per sprite (x, y, z, angle, sizeX, sizeY, offsetX, offsetY, invertU, invertV, cellIndexX, cellIndexY, color r, color g, color b, color a)
 		this._vertexData = [];// new Float32Array(capacity * 16 * 4);
+		for (i in 0...Std.int(capacity * 16 * 4)) {
+			this._vertexData[i] = 0;
+		}
 		this._buffer = new Buffer(scene.getEngine(), this._vertexData, true, 16);
 		
 		var positions = this._buffer.createVertexBuffer(VertexBuffer.PositionKind, 0, 4);
