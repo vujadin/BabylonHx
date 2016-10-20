@@ -1,5 +1,11 @@
 package com.babylonhx.canvas2d.engine;
 
+import com.babylonhx.math.Vector2;
+import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Vector4;
+import com.babylonhx.materials.Effect;
+import com.babylonhx.tools.DynamicFloatArray;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -23,29 +29,31 @@ class ModelRenderCache {
 		this._partData = null;
 	}
 
-	public dispose(): boolean {
-		if (--this._refCounter !== 0) {
+	public function dispose():Bool {
+		if (--this._refCounter != 0) {
 			return false;
 		}
-
+		
 		// Remove the Model Render Cache from the global dictionary
-		let edata = this._engine.getExternalData<Canvas2DEngineBoundData>("__BJSCANVAS2D__");
-		if (edata) {
+		var edata = this._engine.getExternalData<Canvas2DEngineBoundData>("__BJSCANVAS2D__");
+		if (edata != null) {
 			edata.DisposeModelRenderCache(this);
 		}
-
+		
 		return true;
 	}
 
-	public get isDisposed(): boolean {
+	public var isDisposed(get, never):Bool;
+	private function get_isDisposed():Bool {
 		return this._refCounter <= 0;
 	}
 
-	public addRef(): number {
+	public function addRef():Int {
 		return ++this._refCounter;
 	}
 
-	public get modelKey(): string {
+	public var modelKey(get, never):String;
+	private function get_modelKey():String {
 		return this._modelKey;
 	}
 
@@ -55,29 +63,30 @@ class ModelRenderCache {
 	 * @param context
 	 * @return must return true is the rendering succeed, false if the rendering couldn't be done (asset's not yet ready, like Effect)
 	 */
-	render(instanceInfo: GroupInstanceInfo, context: Render2DContext): boolean {
+	public function render(instanceInfo:GroupInstanceInfo, context:Render2DContext):Bool {
 		return true;
 	}
 
-	protected getPartIndexFromId(partId: number) {
-		for (var i = 0; i < this._partData.length; i++) {
-			if (this._partData[i]._partId === partId) {
+	public function getPartIndexFromId(partId:Int):Int {
+		for (i in 0...this._partData.length) {
+			if (this._partData[i]._partId == partId) {
 				return i;
 			}
 		}
-		return null;
+		
+		return -1;
 	}
 
-	protected loadInstancingAttributes(partId: number, effect: Effect): InstancingAttributeInfo[] {
-		let i = this.getPartIndexFromId(partId);
-		if (i === null) {
+	public function loadInstancingAttributes(partId:Int, effect:Effect):Array<InstancingAttributeInfo> {
+		var i = this.getPartIndexFromId(partId);
+		if (i == -1) {
 			return null;
 		}
-
+		
 		var ci = this._partsClassInfo[i];
 		var categories = this._partData[i]._partUsedCategories;
-		let res = ci.classContent.getInstancingAttributeInfos(effect, categories);
-
+		var res = ci.classContent.getInstancingAttributeInfos(effect, categories);
+		
 		return res;
 	}
 
@@ -95,18 +104,18 @@ class ModelRenderCache {
 	//    });
 	//}
 
-	private static v2 = Vector2.Zero();
-	private static v3 = Vector3.Zero();
-	private static v4 = Vector4.Zero();
+	private static var v2:Vector2 = Vector2.Zero();
+	private static var v3:Vector3 = Vector3.Zero();
+	private static var v4:Vector4 = Vector4.Zero();
 
-	protected setupUniforms(effect: Effect, partIndex: number, data: DynamicFloatArray, elementCount: number) {
-		let pd = this._partData[partIndex];
-		let offset = (pd._partDataStride/4) * elementCount;
-		let pci = this._partsClassInfo[partIndex];
-
-		let self = this;
-		pci.fullContent.forEach((k, v) => {
-			if (!v.category || pd._partUsedCategories.indexOf(v.category) !== -1) {
+	public function setupUniforms(effect:Effect, partIndex:Int, data:DynamicFloatArray, elementCount:Int) {
+		var pd = this._partData[partIndex];
+		var offset = (pd._partDataStride / 4) * elementCount;
+		var pci = this._partsClassInfo[partIndex];
+		
+		var self = this;
+		for (v in pci.fullContent) {
+			if (v.category || pd._partUsedCategories.indexOf(v.category) !== -1) {
 				switch (v.dataType) {
 					case ShaderDataType.float:
 					{

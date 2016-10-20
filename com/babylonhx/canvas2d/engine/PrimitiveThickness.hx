@@ -1,4 +1,4 @@
-package com.babylonhx.canvas2d;
+package com.babylonhx.canvas2d.engine;
 
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector4;
