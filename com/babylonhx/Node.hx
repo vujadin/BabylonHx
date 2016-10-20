@@ -426,6 +426,18 @@ class NodeCache {
 		this.parent = null;
 	}
 	
+	public function getDirection(localAxis:Vector3):Vector3 {
+        var result = Vector3.Zero();
+		
+        this.getDirectionToRef(localAxis, result);
+        
+        return result;
+    }
+
+    inline public function getDirectionToRef(localAxis:Vector3, result:Vector3) {
+        Vector3.TransformNormalToRef(localAxis, this.getWorldMatrix(), result);
+    }
+	
 	public static function ParseAnimationRanges(node:Node, parsedNode:Dynamic, scene:Scene) {
 		if (parsedNode.ranges != null){
 		    for (index in 0...parsedNode.ranges.length) {

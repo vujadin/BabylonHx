@@ -15,6 +15,10 @@ class ModelShape {
 	public var _vertexFunction:SolidParticle->Vector3->Int->Void;
 	
 
+	/**
+     * Creates a ModelShape object. This is an internal simplified reference to a mesh used as for a model to replicate particles from by the SPS.
+     * SPS internal tool, don't use it manually.  
+     */
 	public function new(id:Int, shape:Array<Vector3>, shapeUV:Array<Float>, posFunction:SolidParticle->Int->Int->Void, vtxFunction:SolidParticle->Vector3->Int->Void) {
 		this.shapeID = id;
 		this._shape = shape;

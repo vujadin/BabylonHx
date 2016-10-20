@@ -138,6 +138,9 @@ class SolidParticleSystem implements IDisposable {
     private var _maximum:Vector3 = Tmp.vector3[1];
 	private var _scale:Vector3 = Tmp.vector3[2];
 	private var _translation:Vector3 = Tmp.vector3[3];
+	private var _minBbox:Vector3 = Tmp.vector3[4];
+    private var _maxBbox:Vector3 = Tmp.vector3[5];
+	private var _particlesIntersect:Bool = false;
 	
 	public var isAlwaysVisible(get, set):Bool;
 	
@@ -307,11 +310,15 @@ class SolidParticleSystem implements IDisposable {
 			for (v in 0...shape.length) {
 				shape[v].subtractInPlace(barycenter);
 			}
+			var bInfo:BoundingInfo = null;
+            if (this._particlesIntersect) {
+                bInfo = new BoundingInfo(barycenter, barycenter);
+            }
 			var modelShape = new ModelShape(this._shapeCounter, shape, shapeUV, null, null);
 			
 			// add the particle in the SPS
 			this._meshBuilder(this._index, shape, this._positions, facetInd, this._indices, facetUV, this._uvs, facetCol, this._colors, meshNor, this._normals, idx, 0, null);
-			this._addParticle(idx, this._positions.length, modelShape, this._shapeCounter, 0);
+			this._addParticle(idx, this._positions.length, modelShape, this._shapeCounter, 0, bInfo);
 			// initialize the particle position
 			this.particles[this.nbParticles].position.addInPlace(barycenter);
 			
@@ -462,8 +469,8 @@ class SolidParticleSystem implements IDisposable {
 	}
 
 	// adds a new particle object in the particles array
-	private function _addParticle(idx:Int, idxpos:Int, model:ModelShape, shapeId:Int, idxInShape:Int) {
-		this.particles.push(new SolidParticle(idx, idxpos, model, shapeId, idxInShape));
+	private function _addParticle(idx:Int, idxpos:Int, model:ModelShape, shapeId:Int, idxInShape:Int, ?bInfo:BoundingInfo) {
+		this.particles.push(new SolidParticle(idx, idxpos, model, shapeId, idxInShape, bInfo));
 	}
 
 	/**
@@ -603,7 +610,7 @@ class SolidParticleSystem implements IDisposable {
 		
 		// if the particles will always face the camera
 		if (this.billboard) {    
-			// compute a fake camera position : un-rotate the camera position by the current mesh rotation
+			// compute camera position and un-rotate it by the current mesh rotation
 			if (this.mesh._worldMatrix.decompose(this._scale, this._quaternion, this._translation)) {
                 this._quaternionToRotationMatrix();
                 this._rotMatrix.invertToRef(this._invertMatrix);
@@ -635,7 +642,7 @@ class SolidParticleSystem implements IDisposable {
 		// particle loop
 		end = (end > this.nbParticles - 1) ? this.nbParticles - 1 : end;
 		
-		for (p in start...end) {
+		for (p in start...end + 1) {
 			this._particle = this.particles[p];
 			this._shape = this._particle._model._shape;
 			this._shapeUV = this._particle._model._shapeUV;
@@ -651,7 +658,7 @@ class SolidParticleSystem implements IDisposable {
 					this._particle.rotation.x = 0.0;
 					this._particle.rotation.y = 0.0;
 				}
-				if (this._computeParticleRotation) {
+				if (this._computeParticleRotation || this.billboard) {
 					if (this._particle.rotationQuaternion != null) {
 						this._quaternion.copyFrom(this._particle.rotationQuaternion);
 					} 
@@ -765,6 +772,56 @@ class SolidParticleSystem implements IDisposable {
 						this._uvs[uvidx + 1] = this._shapeUV[pt * 2 + 1] * (this._particle.uvs.w - this._particle.uvs.y) + this._particle.uvs.y;
 					}
 				}
+			}
+			
+			// if the particle intersections must be computed : update the bbInfo
+			if (this._particlesIntersect) {
+				var bInfo = this._particle._boundingInfo;
+				var bBox = bInfo.boundingBox;
+				var bSphere = bInfo.boundingSphere;
+				
+				// place, scale and rotate the particle bbox within the SPS local system
+				for (b in 0...bBox.vectors.length) {
+					if (this._particle.isVisible) {
+						this._vertex.x = this._particle._modelBoundingInfo.boundingBox.vectors[b].x * this._particle.scaling.x;
+						this._vertex.y = this._particle._modelBoundingInfo.boundingBox.vectors[b].y * this._particle.scaling.y;
+						this._vertex.z = this._particle._modelBoundingInfo.boundingBox.vectors[b].z * this._particle.scaling.z;
+						this._w = (this._vertex.x * this._rotMatrix.m[3]) + (this._vertex.y * this._rotMatrix.m[7]) + (this._vertex.z * this._rotMatrix.m[11]) + this._rotMatrix.m[15];
+						this._rotated.x = ((this._vertex.x * this._rotMatrix.m[0]) + (this._vertex.y * this._rotMatrix.m[4]) + (this._vertex.z * this._rotMatrix.m[8]) + this._rotMatrix.m[12]) / this._w;
+						this._rotated.y = ((this._vertex.x * this._rotMatrix.m[1]) + (this._vertex.y * this._rotMatrix.m[5]) + (this._vertex.z * this._rotMatrix.m[9]) + this._rotMatrix.m[13]) / this._w;
+						this._rotated.z = ((this._vertex.x * this._rotMatrix.m[2]) + (this._vertex.y * this._rotMatrix.m[6]) + (this._vertex.z * this._rotMatrix.m[10]) + this._rotMatrix.m[14]) / this._w;
+						bBox.vectors[b].x = this._particle.position.x + this._cam_axisX.x * this._rotated.x + this._cam_axisY.x * this._rotated.y + this._cam_axisZ.x * this._rotated.z;
+						bBox.vectors[b].y = this._particle.position.y + this._cam_axisX.y * this._rotated.x + this._cam_axisY.y * this._rotated.y + this._cam_axisZ.y * this._rotated.z;
+						bBox.vectors[b].z = this._particle.position.z + this._cam_axisX.z * this._rotated.x + this._cam_axisY.z * this._rotated.y + this._cam_axisZ.z * this._rotated.z;
+					}
+					else {
+						bBox.vectors[b].x = this._camera.position.x;
+						bBox.vectors[b].y = this._camera.position.y;
+						bBox.vectors[b].z = this._camera.position.z;
+					}
+				}
+				// place and scale the particle bouding sphere in the SPS local system
+				if (this._particle.isVisible) {
+					this._minBbox.x = this._particle._modelBoundingInfo.minimum.x * this._particle.scaling.x;
+                    this._minBbox.y = this._particle._modelBoundingInfo.minimum.y * this._particle.scaling.y;
+                    this._minBbox.z = this._particle._modelBoundingInfo.minimum.z * this._particle.scaling.z;
+                    this._maxBbox.x = this._particle._modelBoundingInfo.maximum.x * this._particle.scaling.x;
+                    this._maxBbox.y = this._particle._modelBoundingInfo.maximum.y * this._particle.scaling.y;
+                    this._maxBbox.z = this._particle._modelBoundingInfo.maximum.z * this._particle.scaling.z;
+                    bSphere.center.x = this._particle.position.x + (this._minBbox.x + this._maxBbox.x) * 0.5;
+                    bSphere.center.y = this._particle.position.y + (this._minBbox.y + this._maxBbox.y) * 0.5;
+                    bSphere.center.z = this._particle.position.z + (this._minBbox.z + this._maxBbox.z) * 0.5;
+				} 
+				else {
+					bSphere.center.x = this._camera.position.x;
+					bSphere.center.y = this._camera.position.x;
+					bSphere.center.z = this._camera.position.x;
+					bSphere.radius = 0.0;                       
+				}
+				
+				// then update the bbox and the bsphere into the world system
+				bBox._update(this.mesh._worldMatrix);
+				bSphere._update(this.mesh._worldMatrix);
 			}
 			
 			// increment indexes for the next particle

@@ -9,6 +9,7 @@ import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.Mesh;
+import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.InstancedMesh;
 import com.babylonhx.postprocess.PassPostProcess;
 import com.babylonhx.postprocess.GlowBlurPostProcess;
@@ -568,16 +569,16 @@ class HighlightLayer {
 	 * Add a mesh in the exclusion list to prevent it to impact or being impacted by the highlight layer.
 	 * @param mesh The mesh to exclude from the highlight layer
 	 */
-	public function addExcludedMesh(mesh:Mesh) {
+	public function addExcludedMesh(mesh:AbstractMesh) {
 		mesh = Std.is(mesh, InstancedMesh) ? cast(mesh, InstancedMesh).sourceMesh : mesh;
 		var meshExcluded = this._excludedMeshes[mesh.id];
 		if (meshExcluded == null) {
 			this._excludedMeshes[mesh.id] = {
-				mesh: mesh,
-				beforeRender: mesh.onBeforeRenderObservable.add(function(mesh:Mesh, _) {
+				mesh: cast mesh,
+				beforeRender: cast(mesh, Mesh).onBeforeRenderObservable.add(function(mesh:Mesh, _) {
 					mesh.getEngine().setStencilBuffer(false);
 				}),
-				afterRender: mesh.onAfterRenderObservable.add(function(mesh:Mesh, _) {
+				afterRender: cast(mesh, Mesh).onAfterRenderObservable.add(function(mesh:Mesh, _) {
 					mesh.getEngine().setStencilBuffer(true);
 				}),
 			}
@@ -588,12 +589,12 @@ class HighlightLayer {
 	  * Remove a mesh from the exclusion list to let it impact or being impacted by the highlight layer.
 	  * @param mesh The mesh to highlight
 	  */
-	public function removeExcludedMesh(mesh:Mesh) {
+	public function removeExcludedMesh(mesh:AbstractMesh) {
 		mesh = Std.is(mesh, InstancedMesh) ? cast(mesh, InstancedMesh).sourceMesh : mesh;
 		var meshExcluded = this._excludedMeshes[mesh.id];
 		if (meshExcluded != null) {
-			mesh.onBeforeRenderObservable.remove(meshExcluded.beforeRender);
-			mesh.onAfterRenderObservable.remove(meshExcluded.afterRender);
+			cast(mesh, Mesh).onBeforeRenderObservable.remove(meshExcluded.beforeRender);
+			cast(mesh, Mesh).onAfterRenderObservable.remove(meshExcluded.afterRender);
 		}
 		
 		this._excludedMeshes[mesh.id] = null;
@@ -605,7 +606,7 @@ class HighlightLayer {
 	 * @param color The color of the highlight
 	 * @param glowEmissiveOnly Extract the glow from the emissive texture
 	 */
-	public function addMesh(mesh:Mesh, color:Color3, glowEmissiveOnly:Bool = false) {
+	public function addMesh(mesh:AbstractMesh, color:Color3, glowEmissiveOnly:Bool = false) {
 		mesh = Std.is(mesh, InstancedMesh) ? cast(mesh, InstancedMesh).sourceMesh : mesh;
 		var meshHighlight = this._meshes[mesh.id];
 		if (meshHighlight != null) {
@@ -613,10 +614,10 @@ class HighlightLayer {
 		}
 		else {
 			this._meshes.set(mesh.id, {
-				mesh: mesh,
+				mesh: cast mesh,
 				color: color,
 				// Lambda required for capture due to Observable this context
-				observerHighlight: mesh.onBeforeRenderObservable.add(function(mesh:Mesh, _) { 
+				observerHighlight: cast(mesh, Mesh).onBeforeRenderObservable.add(function(mesh:Mesh, _) { 
 					if (this._excludedMeshes[mesh.id] != null) {
                         this.defaultStencilReference(mesh, null);
                     }
@@ -624,7 +625,7 @@ class HighlightLayer {
                         mesh.getScene().getEngine().setStencilFunctionReference(this._instanceGlowingMeshStencilReference);
                     }
 				}),
-				observerDefault: mesh.onAfterRenderObservable.add(this.defaultStencilReference),
+				observerDefault: cast(mesh, Mesh).onAfterRenderObservable.add(this.defaultStencilReference),
 				glowEmissiveOnly: glowEmissiveOnly
 			});
 		}
@@ -636,12 +637,12 @@ class HighlightLayer {
 	 * Remove a mesh from the highlight layer in order to make it stop glowing.
 	 * @param mesh The mesh to highlight
 	 */
-	public function removeMesh(mesh:Mesh) {
+	public function removeMesh(mesh:AbstractMesh) {
 		mesh = Std.is(mesh, InstancedMesh) ? cast(mesh, InstancedMesh).sourceMesh : mesh;
 		var meshHighlight = this._meshes[mesh.id];
 		if (meshHighlight != null) {
-			mesh.onBeforeRenderObservable.remove(meshHighlight.observerHighlight);
-			mesh.onAfterRenderObservable.remove(meshHighlight.observerDefault); 
+			cast(mesh, Mesh).onBeforeRenderObservable.remove(meshHighlight.observerHighlight);
+			cast(mesh, Mesh).onAfterRenderObservable.remove(meshHighlight.observerDefault); 
 		}
 		
 		this._meshes[mesh.id] = null;

@@ -25,6 +25,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _sourceMesh:Mesh;
 	private var _currentLOD:Mesh;
 	
+	public var sourceMesh(get, null):Mesh;
+	
 
 	public function new(name:String, source:Mesh) {
 		super(name, source.getScene());
@@ -65,12 +67,15 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	override private function get_skeleton():Skeleton {
 		return this._sourceMesh.skeleton;
 	}
+	
+	/*override private function get_renderingGroupId():Int {
+		return this._sourceMesh.renderingGroupId;
+	}*/
 
 	override public function getTotalVertices():Int {
 		return this._sourceMesh.getTotalVertices();
 	}
 
-	public var sourceMesh(get, null):Mesh;
 	private function get_sourceMesh():Mesh {
 		return this._sourceMesh;
 	}
