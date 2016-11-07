@@ -2,6 +2,10 @@ package com.babylonhx.states;
 
 import com.babylonhx.utils.GL;
 
+#if (!js && !purejs)
+import com.babylonhx.utils.GL in Gl;
+#end
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -172,7 +176,7 @@ class _StencilState {
 		this._isStencilOpDirty = true;
 	}
 
-	public function apply() {
+	public function apply(#if (js || purejs) Gl:js.html.webgl.RenderingContext #end) {
 		if (!this.isDirty) {
 			return;
 		}
@@ -180,29 +184,29 @@ class _StencilState {
 		// Stencil test
 		if (this._isStencilTestDirty) {
 			if (this.stencilTest) {
-				GL.enable(GL.STENCIL_TEST);
+				Gl.enable(GL.STENCIL_TEST);
 			} 
 			else {
-				GL.disable(GL.STENCIL_TEST);
+				Gl.disable(GL.STENCIL_TEST);
 			}
 			this._isStencilTestDirty = false;
 		}
 		
 		// Stencil mask
 		if (this._isStencilMaskDirty) {
-			GL.stencilMask(this.stencilMask);
+			Gl.stencilMask(this.stencilMask);
 			this._isStencilMaskDirty = false;
 		}
 		
 		// Stencil func
 		if (this._isStencilFuncDirty) {
-			GL.stencilFunc(this.stencilFunc, this.stencilFuncRef, this.stencilFuncMask);
+			Gl.stencilFunc(this.stencilFunc, this.stencilFuncRef, this.stencilFuncMask);
 			this._isStencilFuncDirty = false;
 		}
 		
 		// Stencil op
 		if (this._isStencilOpDirty) {
-			GL.stencilOp(this.stencilOpStencilFail, this.stencilOpDepthFail, this.stencilOpStencilDepthPass);
+			Gl.stencilOp(this.stencilOpStencilFail, this.stencilOpDepthFail, this.stencilOpStencilDepthPass);
 			this._isStencilOpDirty = false;
 		}
 	}

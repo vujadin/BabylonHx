@@ -31,7 +31,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public var layerMask:Int = 0x0FFFFFFF;
 	public var fogEnabled:Bool = true;
 	public var isPickable = false;
-	public var cellSize:Float;
+	public var cellWidth:Int;
+	public var cellHeight:Int;
 	
 	/**
 	* An event triggered when the manager is disposed.
@@ -66,15 +67,28 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public var texture(get, set):Texture;
 	
 
-	public function new(name:String, imgUrl:String, capacity:Int, cellSize:Float, scene:Scene, epsilon:Float = 0.01, ?samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE) {
+	public function new(name:String, imgUrl:String, capacity:Int, cellSize:Dynamic, scene:Scene, epsilon:Float = 0.01, ?samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE) {
 		this.name = name;
-		this.cellSize = cellSize;
 		
 		this._capacity = capacity;
 		this._spriteTexture = new Texture(imgUrl, scene, true, false, samplingMode);
 		this._spriteTexture.wrapU = Texture.CLAMP_ADDRESSMODE;
 		this._spriteTexture.wrapV = Texture.CLAMP_ADDRESSMODE;
 		this._epsilon = epsilon;
+		
+		if (cellSize != null) {
+			if (cellSize.width != null && cellSize.height != null) {
+				this.cellWidth = cellSize.width;
+				this.cellHeight = cellSize.height;
+			}
+			else {
+				this.cellWidth = cellSize;
+				this.cellHeight = cellSize;
+			}
+		}
+		else {
+			return;
+		}
 		
 		this._scene = scene;
 		this._scene.spriteManagers.push(this);
@@ -105,7 +119,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		var options = this._buffer.createVertexBuffer("options", 4, 4);
 		var cellInfo = this._buffer.createVertexBuffer("cellInfo", 8, 4);
 		var colors = this._buffer.createVertexBuffer(VertexBuffer.ColorKind, 12, 4);
-
+		
 		this._vertexBuffers[VertexBuffer.PositionKind] = positions;
 		this._vertexBuffers["options"] = options;
 		this._vertexBuffers["cellInfo"] = cellInfo;
@@ -113,12 +127,12 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		// Effects
 		this._effectBase = this._scene.getEngine().createEffect("sprites",
-			["position", "options", "cellInfo", "color"],
+			[VertexBuffer.PositionKind, "options", "cellInfo", VertexBuffer.ColorKind],
 			["view", "projection", "textureInfos", "alphaTest"],
 			["diffuseSampler"], "");
 			
 		this._effectFog = this._scene.getEngine().createEffect("sprites",
-			["position", "options", "cellInfo", "color"],
+			[VertexBuffer.PositionKind, "options", "cellInfo", VertexBuffer.ColorKind],
 			["view", "projection", "textureInfos", "alphaTest", "vFogInfos", "vFogColor"],
 			["diffuseSampler"], "#define FOG");
 	}
@@ -228,14 +242,14 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		if (!this._effectBase.isReady() || !this._effectFog.isReady() || this._spriteTexture == null || !this._spriteTexture.isReady()) {
 			return;
 		}
-			
+		
 		var engine = this._scene.getEngine();
 		var baseSize = this._spriteTexture.getBaseSize();
 		
 		// Sprites
 		var deltaTime = engine.getDeltaTime();
 		var max:Int = cast Math.min(this._capacity, this.sprites.length);
-		var rowSize:Int = cast baseSize.width / this.cellSize;
+		var rowSize:Int = cast baseSize.width / this.cellWidth;
 		
 		var offset:Int = 0;
 		for (index in 0...max) {
@@ -268,7 +282,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		effect.setMatrix("view", viewMatrix);
 		effect.setMatrix("projection", this._scene.getProjectionMatrix());
 		
-		effect.setFloat2("textureInfos", this.cellSize / baseSize.width, this.cellSize / baseSize.height);
+		effect.setFloat2("textureInfos", this.cellWidth / baseSize.width, this.cellHeight / baseSize.height);
 		
 		// Fog
 		if (this._scene.fogEnabled && this._scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {

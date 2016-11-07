@@ -9,7 +9,7 @@ package com.babylonhx.animations;
 	
 	private var _localDelayOffset:Float = -1;
 	private var _pausedDelay:Float = -1;
-	private var _animations = new Array<Animation>();
+	private var _animations:Array<Animation> = [];
 	private var _paused:Bool = false;
 	private var _scene:Scene;
 
@@ -94,6 +94,14 @@ package com.babylonhx.animations;
 	
 	public function goToFrame(frame:Int) {
 		var animations = this._animations;
+		
+		if (animations[0] != null) {
+            var fps = animations[0].framePerSecond;
+            var currentFrame = animations[0].currentFrame;
+            var adjustTime = frame - currentFrame;
+            var delay = adjustTime * 1000 / fps;
+            this._localDelayOffset -= delay;
+        }
 		
 		for (index in 0...animations.length) {
 			animations[index].goToFrame(frame);

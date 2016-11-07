@@ -24,23 +24,25 @@ typedef IAMethods = {
 	public var s3tc:Dynamic;
 	public var textureFloat:Null<Bool>;
 	public var textureAnisotropicFilterExtension:Dynamic;
-	public var highPrecisionShaderSupported:Bool;
-	public var fragmentDepthSupported:Bool;
-	public var textureFloatLinearFiltering:Bool;
-	public var textureFloatRender:Bool;
-	public var drawBufferExtension:Dynamic;
 	public var maxAnisotropy:Int;
-	public var textureLOD:Bool;
-	public var textureLODExt:String = "";
-	public var textureCubeLodFnName:String = "textureCubeLodEXT";
-	
 	#if (!mobile && cpp)
 	public var instancedArrays:IAMethods;
 	#else
 	public var instancedArrays:Dynamic;
 	#end
-	
 	public var uintIndices:Null<Bool>;
+	public var highPrecisionShaderSupported:Bool;
+	public var fragmentDepthSupported:Bool;
+	public var textureFloatLinearFiltering:Bool;
+	public var textureFloatRender:Bool;
+	public var textureHalfFloat:Bool;
+	public var textureHalfFloatLinearFiltering:Bool;
+	public var textureHalfFloatRender:Bool;
+	public var textureLOD:Bool;
+	public var drawBuffersExtension:Dynamic;
+	
+	public var textureLODExt:String = "";
+	public var textureCubeLodFnName:String = "textureCubeLodEXT";
 	
 	
 	public function new() {

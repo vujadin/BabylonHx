@@ -379,12 +379,9 @@ import haxe.ds.Vector;
 	}
 
 	inline public static function TransformNormalToRef(vector:Vector3, transformation:Matrix, result:Vector3) {
-		var vx = vector.x;
-		var vy = vector.y;
-		var vz = vector.z;
-		result.x = (vx * transformation.m[0]) + (vy * transformation.m[4]) + (vz * transformation.m[8]);
-		result.y = (vx * transformation.m[1]) + (vy * transformation.m[5]) + (vz * transformation.m[9]);
-		result.z = (vx * transformation.m[2]) + (vy * transformation.m[6]) + (vz * transformation.m[10]);
+		result.x = (vector.x * transformation.m[0]) + (vector.y * transformation.m[4]) + (vector.z * transformation.m[8]);
+		result.y = (vector.x * transformation.m[1]) + (vector.y * transformation.m[5]) + (vector.z * transformation.m[9]);
+		result.z = (vector.x * transformation.m[2]) + (vector.y * transformation.m[6]) + (vector.z * transformation.m[10]);
 	}
 
 	inline public static function TransformNormalFromFloatsToRef(x:Float, y:Float, z:Float, transformation:Matrix, result:Vector3) {
@@ -397,32 +394,17 @@ import haxe.ds.Vector;
 		var squared = amount * amount;
 		var cubed = amount * squared;
 		
-		var v1x = value1.x;
-		var v2x = value2.x;
-		var v3x = value3.x;
-		var v4x = value4.x;
-		
-		var v1y = value1.y;
-		var v2y = value2.y;
-		var v3y = value3.y;
-		var v4y = value4.y;
-		
-		var v1z = value1.z;
-		var v2z = value2.z;
-		var v3z = value3.z;
-		var v4z = value4.z;
-		
-		var x = 0.5 * ((((2.0 * v2x) + ((-v1x + v3x) * amount)) +
-			(((((2.0 * v1x) - (5.0 * v2x)) + (4.0 * v3x)) - v4x) * squared)) +
-			(((( -v1x + (3.0 * v2x)) - (3.0 * v3x)) + v4x) * cubed));
+		var x = 0.5 * ((((2.0 * value2.x) + ((-value1.x + value3.x) * amount)) +
+			(((((2.0 * value1.x) - (5.0 * value2.x)) + (4.0 * value3.x)) - value4.x) * squared)) +
+			(((( -value1.x + (3.0 * value2.x)) - (3.0 * value3.x)) + value4.x) * cubed));
 			
-		var y = 0.5 * ((((2.0 * v2y) + ((-v1y + v3y) * amount)) +
-			(((((2.0 * v1y) - (5.0 * v2y)) + (4.0 * v3y)) - v4y) * squared)) +
-			(((( -v1y + (3.0 * v2y)) - (3.0 * v3y)) + v4y) * cubed));
+		var y = 0.5 * ((((2.0 * value2.y) + ((-value1.y + value3.y) * amount)) +
+			(((((2.0 * value1.y) - (5.0 * value2.y)) + (4.0 * value3.y)) - value4.y) * squared)) +
+			(((( -value1.y + (3.0 * value2.y)) - (3.0 * value3.y)) + value4.y) * cubed));
 			
-		var z = 0.5 * ((((2.0 * v2z) + ((-v1z + v3z) * amount)) +
-			(((((2.0 * v1z) - (5.0 * v2z)) + (4.0 * v3z)) - v4z) * squared)) +
-			(((( -v1z + (3.0 * v2z)) - (3.0 * v3z)) + v4z) * cubed));
+		var z = 0.5 * ((((2.0 * value2.z) + ((-value1.z + value3.z) * amount)) +
+			(((((2.0 * value1.z) - (5.0 * value2.z)) + (4.0 * value3.z)) - value4.z) * squared)) +
+			(((( -value1.z + (3.0 * value2.z)) - (3.0 * value3.z)) + value4.z) * cubed));
 			
 		return new Vector3(x, y, z);
 	}
@@ -451,19 +433,19 @@ import haxe.ds.Vector;
 		var part3 = (cubed - (2.0 * squared)) + amount;
 		var part4 = cubed - squared;
 		
-		var x = (((value1.x * part1) + (value2.x * part2)) + (tangent1.x * part3)) + (tangent2.x * part4);
-		var y = (((value1.y * part1) + (value2.y * part2)) + (tangent1.y * part3)) + (tangent2.y * part4);
-		var z = (((value1.z * part1) + (value2.z * part2)) + (tangent1.z * part3)) + (tangent2.z * part4);
-		
-		return new Vector3(x, y, z);
+		return new Vector3(
+			(((value1.x * part1) + (value2.x * part2)) + (tangent1.x * part3)) + (tangent2.x * part4), 
+			(((value1.y * part1) + (value2.y * part2)) + (tangent1.y * part3)) + (tangent2.y * part4), 
+			(((value1.z * part1) + (value2.z * part2)) + (tangent1.z * part3)) + (tangent2.z * part4)
+		);
 	}
 
 	inline public static function Lerp(start:Vector3, end:Vector3, amount:Float):Vector3 {
-		var x = start.x + ((end.x - start.x) * amount);
-		var y = start.y + ((end.y - start.y) * amount);
-		var z = start.z + ((end.z - start.z) * amount);
-		
-		return new Vector3(x, y, z);
+		return new Vector3(
+			start.x + ((end.x - start.x) * amount), 
+			start.y + ((end.y - start.y) * amount), 
+			start.z + ((end.z - start.z) * amount)
+		);
 	}
 
 	inline public static function Dot(left:Vector3, right:Vector3):Float {

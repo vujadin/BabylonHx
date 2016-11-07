@@ -274,8 +274,8 @@ import com.babylonhx.materials.Material;
 		this._alphaTestSubMeshes.reset();
 	}
 
-	var material:Material;
-	var mesh:AbstractMesh;
+	static var material:Material;
+	static var mesh:AbstractMesh;
 	/**
 	 * Inserts the submesh in its correct queue depending on its material.
 	 * @param subMesh The submesh to dispatch

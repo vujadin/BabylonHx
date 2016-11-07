@@ -206,8 +206,8 @@ class GridMaterial extends Material {
 		super.bind(world, mesh);
 	}
 	
-	override public function dispose(forceDisposeEffect:Bool = false) {
-		super.dispose(forceDisposeEffect);
+	override public function dispose(forceDisposeEffect:Bool = false, forceDisposeTextures:Bool = true) {
+		super.dispose(forceDisposeEffect, forceDisposeTextures);
 	}
 	
 	override public function clone(name:String, cloneChildren:Bool = false):GridMaterial {

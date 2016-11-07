@@ -176,6 +176,7 @@ class HighlightLayer {
 		this._options = options != null ? options : {
 			camera: null,
 			mainTextureRatio: 0.25,
+			mainTextureFixedSize: 512,
 			blurTextureSizeRatio: 0.5,
 			blurHorizontalSize: 1,
 			blurVerticalSize: 1,
@@ -195,6 +196,9 @@ class HighlightLayer {
 		}
 		if (this._options.alphaBlendingMode == null) {
 			this._options.alphaBlendingMode = Engine.ALPHA_COMBINE;
+		}
+		if (this._options.mainTextureFixedSize == null) {
+			this._options.mainTextureFixedSize = 512;
 		}
 		
 		// VBO
@@ -569,18 +573,17 @@ class HighlightLayer {
 	 * Add a mesh in the exclusion list to prevent it to impact or being impacted by the highlight layer.
 	 * @param mesh The mesh to exclude from the highlight layer
 	 */
-	public function addExcludedMesh(mesh:AbstractMesh) {
-		mesh = Std.is(mesh, InstancedMesh) ? cast(mesh, InstancedMesh).sourceMesh : mesh;
+	public function addExcludedMesh(mesh:Mesh) {
 		var meshExcluded = this._excludedMeshes[mesh.id];
 		if (meshExcluded == null) {
 			this._excludedMeshes[mesh.id] = {
-				mesh: cast mesh,
-				beforeRender: cast(mesh, Mesh).onBeforeRenderObservable.add(function(mesh:Mesh, _) {
+				mesh: mesh,
+				beforeRender: mesh.onBeforeRenderObservable.add(function(mesh:Mesh, _) {
 					mesh.getEngine().setStencilBuffer(false);
 				}),
-				afterRender: cast(mesh, Mesh).onAfterRenderObservable.add(function(mesh:Mesh, _) {
+				afterRender: mesh.onAfterRenderObservable.add(function(mesh:Mesh, _) {
 					mesh.getEngine().setStencilBuffer(true);
-				}),
+				})
 			}
 		}
 	}
@@ -589,47 +592,45 @@ class HighlightLayer {
 	  * Remove a mesh from the exclusion list to let it impact or being impacted by the highlight layer.
 	  * @param mesh The mesh to highlight
 	  */
-	public function removeExcludedMesh(mesh:AbstractMesh) {
-		mesh = Std.is(mesh, InstancedMesh) ? cast(mesh, InstancedMesh).sourceMesh : mesh;
+	public function removeExcludedMesh(mesh:Mesh) {
 		var meshExcluded = this._excludedMeshes[mesh.id];
 		if (meshExcluded != null) {
-			cast(mesh, Mesh).onBeforeRenderObservable.remove(meshExcluded.beforeRender);
-			cast(mesh, Mesh).onAfterRenderObservable.remove(meshExcluded.afterRender);
+			mesh.onBeforeRenderObservable.remove(meshExcluded.beforeRender);
+			mesh.onAfterRenderObservable.remove(meshExcluded.afterRender);
 		}
 		
 		this._excludedMeshes[mesh.id] = null;
 	}
-	
+
 	/**
 	 * Add a mesh in the highlight layer in order to make it glow with the chosen color.
 	 * @param mesh The mesh to highlight
 	 * @param color The color of the highlight
 	 * @param glowEmissiveOnly Extract the glow from the emissive texture
 	 */
-	public function addMesh(mesh:AbstractMesh, color:Color3, glowEmissiveOnly:Bool = false) {
-		mesh = Std.is(mesh, InstancedMesh) ? cast(mesh, InstancedMesh).sourceMesh : mesh;
+	public function addMesh(mesh:Mesh, color:Color3, glowEmissiveOnly:Bool = false) {
 		var meshHighlight = this._meshes[mesh.id];
 		if (meshHighlight != null) {
 			meshHighlight.color = color;
 		}
 		else {
 			this._meshes.set(mesh.id, {
-				mesh: cast mesh,
+				mesh: mesh,
 				color: color,
 				// Lambda required for capture due to Observable this context
-				observerHighlight: cast(mesh, Mesh).onBeforeRenderObservable.add(function(mesh:Mesh, _) { 
+				observerHighlight: mesh.onBeforeRenderObservable.add(function(mesh:Mesh, _) {
 					if (this._excludedMeshes[mesh.id] != null) {
-                        this.defaultStencilReference(mesh, null);
-                    }
-                    else {
-                        mesh.getScene().getEngine().setStencilFunctionReference(this._instanceGlowingMeshStencilReference);
-                    }
+						this.defaultStencilReference(mesh, null);
+					}
+					else {
+						mesh.getScene().getEngine().setStencilFunctionReference(this._instanceGlowingMeshStencilReference);
+					}
 				}),
-				observerDefault: cast(mesh, Mesh).onAfterRenderObservable.add(this.defaultStencilReference),
+				observerDefault: mesh.onAfterRenderObservable.add(this.defaultStencilReference),
 				glowEmissiveOnly: glowEmissiveOnly
 			});
 		}
-		
+
 		this._shouldRender = true;
 	}
 
@@ -637,19 +638,18 @@ class HighlightLayer {
 	 * Remove a mesh from the highlight layer in order to make it stop glowing.
 	 * @param mesh The mesh to highlight
 	 */
-	public function removeMesh(mesh:AbstractMesh) {
-		mesh = Std.is(mesh, InstancedMesh) ? cast(mesh, InstancedMesh).sourceMesh : mesh;
+	public function removeMesh(mesh:Mesh) {
 		var meshHighlight = this._meshes[mesh.id];
 		if (meshHighlight != null) {
-			cast(mesh, Mesh).onBeforeRenderObservable.remove(meshHighlight.observerHighlight);
-			cast(mesh, Mesh).onAfterRenderObservable.remove(meshHighlight.observerDefault); 
+			mesh.onBeforeRenderObservable.remove(meshHighlight.observerHighlight);
+			mesh.onAfterRenderObservable.remove(meshHighlight.observerDefault);
 		}
 		
 		this._meshes[mesh.id] = null;
 		
 		this._shouldRender = false;
-		for (meshHighlightToCheck in this._meshes) {
-			if (meshHighlightToCheck != null) {
+		for (key in this._meshes.keys()) {
+			if (this._meshes[key] != null) {
 				this._shouldRender = true;
 				break;
 			}
@@ -668,11 +668,17 @@ class HighlightLayer {
 	 * of the engine canvas size.
 	 */
 	private function setMainTextureSize() {
-		this._mainTextureDesiredSize.width = Std.int(this._engine.width * this._options.mainTextureRatio);
-		this._mainTextureDesiredSize.height = Std.int(this._engine.height * this._options.mainTextureRatio);
-		
-		this._mainTextureDesiredSize.width = Tools.GetExponentOfTwo(this._mainTextureDesiredSize.width, this._maxSize);
-		this._mainTextureDesiredSize.height = Tools.GetExponentOfTwo(this._mainTextureDesiredSize.height, this._maxSize);
+		if (this._options.mainTextureFixedSize != null) {
+			this._mainTextureDesiredSize.width = this._options.mainTextureFixedSize;
+			this._mainTextureDesiredSize.height = this._options.mainTextureFixedSize;
+		}
+		else {
+			this._mainTextureDesiredSize.width = Std.int(this._engine.getRenderingCanvas().width * this._options.mainTextureRatio);
+			this._mainTextureDesiredSize.height = Std.int(this._engine.getRenderingCanvas().height * this._options.mainTextureRatio);
+			
+			this._mainTextureDesiredSize.width = Tools.GetExponentOfTwo(this._mainTextureDesiredSize.width, this._maxSize);
+			this._mainTextureDesiredSize.height = Tools.GetExponentOfTwo(this._mainTextureDesiredSize.height, this._maxSize);
+		}
 	}
 
 	/**

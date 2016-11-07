@@ -27,6 +27,8 @@ import com.babylonhx.utils.GL;
 	
 	public var samplingMode:Int;
 	
+	public var onLoadedCallbacks:Array<Void->Void>;
+	
 	public var _size:Dynamic;
 	public var _baseHeight:Int;
 	public var _baseWidth:Int;

@@ -22,6 +22,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 	private var _add:Vector3 = Vector3.Zero();
 	private var _attachedMesh:AbstractMesh;
 
+	public var invertYAxis:Bool = false;
 	public var position:Vector3 = Vector3.Zero();
 	
 	public var name:String;
@@ -39,25 +40,25 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 		
 		this._renderTargetTexture = new RenderTargetTexture(name, size, scene, generateMipMaps, true, Engine.TEXTURETYPE_UNSIGNED_INT, true);
 		
-		this._renderTargetTexture.onBeforeRenderObservable.add(function(faceIndex:Int, es:EventState = null) {
+		this._renderTargetTexture.onBeforeRenderObservable.add(function(faceIndex:Int, _) {
 			switch (faceIndex) {
 				case 0:
-					this._add.set(1, 0, 0);
+					this._add.copyFromFloats(1, 0, 0);
 					
 				case 1:
-					this._add.set(-1, 0, 0);
+					this._add.copyFromFloats(-1, 0, 0);
 					
 				case 2:
-					this._add.set(0, -1, 0);
+					this._add.copyFromFloats(0, this.invertYAxis ? 1 : -1, 0);
 					
 				case 3:
-					this._add.set(0, 1, 0);
+					this._add.copyFromFloats(0, this.invertYAxis ? -1 : 1, 0);
 					
 				case 4:
-					this._add.set(0, 0, 1);
+					this._add.copyFromFloats(0, 0, 1);
 					
 				case 5:
-					this._add.set(0, 0, -1);					
+					this._add.copyFromFloats(0, 0, -1);					
 			}
 			
 			if (this._attachedMesh != null) {
@@ -71,7 +72,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 			scene.setTransformMatrix(this._viewMatrix, this._projectionMatrix);
 		});
 		
-		this._renderTargetTexture.onAfterUnbindObservable.add(function(tex:RenderTargetTexture, es:EventState = null) {
+		this._renderTargetTexture.onAfterUnbindObservable.add(function(_, _) {
 			scene.updateTransformMatrix(true);
 		});
 		
@@ -84,6 +85,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 
 	private function set_refreshRate(value:Int):Int {
 		this._renderTargetTexture.refreshRate = value;
+		
 		return value;
 	}
 

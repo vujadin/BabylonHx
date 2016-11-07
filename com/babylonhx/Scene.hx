@@ -2139,6 +2139,8 @@ import com.babylonhx.audio.*;
         }
 		
 		// Render targets
+		//this._renderTargetsDuration.beginMonitoring();
+		var needsRestoreFrameBuffer = false;
 		var beforeRenderTargetDate = Tools.Now();
 		if (this.renderTargetsEnabled && this._renderTargets.length > 0) {
 			this._intermediateRendering = true;
@@ -2157,8 +2159,40 @@ import com.babylonhx.audio.*;
 			this._intermediateRendering = false;
 			this._renderId++;
 			
-            engine.restoreDefaultFramebuffer();  // Restore back buffer
+            needsRestoreFrameBuffer = true;  // Restore back buffer
         }
+		
+		// Render HighlightLayer Texture
+		var stencilState = this._engine.getStencilBuffer();
+		var renderhighlights = false;
+		if (this.renderTargetsEnabled && this.highlightLayers != null && this.highlightLayers.length > 0) {
+			this._intermediateRendering = true;
+			for (i in 0...this.highlightLayers.length) {
+				var highlightLayer:HighlightLayer = this.highlightLayers[i];
+				
+				if (highlightLayer.shouldRender() &&
+					(highlightLayer.camera == null ||
+						(highlightLayer.camera.cameraRigMode == Camera.RIG_MODE_NONE && camera == highlightLayer.camera) ||
+						(highlightLayer.camera.cameraRigMode != Camera.RIG_MODE_NONE && highlightLayer.camera._rigCameras.indexOf(camera) > -1))) {
+					
+					renderhighlights = true;
+					
+					var renderTarget = highlightLayer._mainTexture;
+					if (renderTarget._shouldRender()) {
+						this._renderId++;
+						renderTarget.render(false);
+						needsRestoreFrameBuffer = true;
+					}
+				}
+			}
+			
+			this._intermediateRendering = false;
+			this._renderId++;
+		}
+		
+		if (needsRestoreFrameBuffer) {
+			engine.restoreDefaultFramebuffer();
+		}
 		
 		this._renderTargetsDuration += Tools.Now() - beforeRenderTargetDate;
 		
@@ -2183,17 +2217,8 @@ import com.babylonhx.audio.*;
 		//Tools.StartPerformanceCounter("Main render");
 		
 		// Activate HighlightLayer stencil
-		var stencilState = this._engine.getStencilBuffer();
-		var renderhighlights:Bool = false;
-		if (this.highlightLayers.length > 0) {
-			for (i in 0...this.highlightLayers.length) {
-				var highlightLayer = this.highlightLayers[i];
-                if ((highlightLayer.camera == null || camera == highlightLayer.camera) && highlightLayer.shouldRender()) {
-					renderhighlights = true;
-					this._engine.setStencilBuffer(true);
-					break;
-				}
-			}
+		if (renderhighlights) {
+			this._engine.setStencilBuffer(true);
 		}
 		
 		this._renderingManager.render(null, null, true, true);
@@ -2236,19 +2261,6 @@ import com.babylonhx.audio.*;
 			}
 			engine.setDepthBuffer(true);
 		}
-		
-		// Highlight Layer
-		if (renderhighlights) {
-			engine.setDepthBuffer(false);
-			for (i in 0...this.highlightLayers.length) {
-				if (this.highlightLayers[i].shouldRender()) {
-					this.highlightLayers[i].render();
-				}
-			}
-			engine.setDepthBuffer(true);
-		}
-		
-		this._renderDuration += Tools.Now() - beforeRenderDate;
 		
 		// Finalize frame
 		this.postProcessManager._finalizeFrame(camera.isIntermediate);
@@ -2324,8 +2336,7 @@ import com.babylonhx.audio.*;
 	}
 
 	public function render() {
-		//var startDate = Tools.Now();
-		this._particlesDuration = 0;
+		/*this._particlesDuration = 0;
 		this._spritesDuration = 0;
 		this._activeParticles = 0;
 		this._renderDuration = 0;
@@ -2333,7 +2344,7 @@ import com.babylonhx.audio.*;
 		this._evaluateActiveMeshesDuration = 0;
 		this._totalVertices = 0;
 		this._activeIndices = 0;
-		this._activeBones = 0;
+		this._activeBones = 0;*/
 		this.getEngine().resetDrawCalls();
 		this._meshesForIntersections.reset();
 		this.resetCachedMaterial();
@@ -2437,15 +2448,6 @@ import com.babylonhx.audio.*;
 			this._renderTargets.push(this._depthRenderer.getDepthMap());
 		}
 		
-		// HighlightLayer
-		if (this.highlightLayers.length > 0) {
-			for (i in 0...this.highlightLayers.length) {
-				if (this.highlightLayers[i].shouldRender()) {
-					this._renderTargets.push(this.highlightLayers[i]._mainTexture);
-				}
-			}
-		}
-		
 		// RenderPipeline
 		this.postProcessRenderPipelineManager.update();
 		
@@ -2493,9 +2495,6 @@ import com.babylonhx.audio.*;
 		if (this.dumpNextRenderTargets) {
 			this.dumpNextRenderTargets = false;
 		}
-		
-		//Tools.EndPerformanceCounter("Scene rendering");
-		//this._lastFrameDuration = Tools.Now() - startDate;
 	}
 	
 	public function enableDepthRenderer():DepthRenderer {

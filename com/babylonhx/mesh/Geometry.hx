@@ -161,7 +161,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			this.notifyUpdate();
 		}		
 	}
-
+	
+	// makeItUnique required by IGetSetVerticesData
 	public function updateVerticesData(kind:String, data:Array<Float>, updateExtends:Bool = false, makeItUnique:Bool = false) {
 		var vertexBuffer = this.getVertexBuffer(kind);
 		
@@ -338,6 +339,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		if (!this.isReady()) {
 			return null;
 		}
+		
 		return this._indexBuffer;
 	}
 
@@ -409,7 +411,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			if (numOfMeshes == 1) {
 				this._vertexBuffers[kind].create();
 			}
-			this._vertexBuffers[kind]._buffer._buffer.references = numOfMeshes;
+			this._vertexBuffers[kind].getBuffer().references = numOfMeshes;
 			
 			if (kind == VertexBuffer.PositionKind) {
 				mesh._resetPointsArrayCache();
@@ -427,7 +429,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		}
 		
 		// indexBuffer
-		if (numOfMeshes == 1 && this._indices != null) {
+		if (numOfMeshes == 1 && this._indices != null && this._indices.length > 0) {
 			this._indexBuffer = this._engine.createIndexBuffer(this._indices);
 		}
 		if (this._indexBuffer != null) {
@@ -475,6 +477,46 @@ import com.babylonhx.utils.typedarray.Int32Array;
 				onLoaded();
 			}
 		}, function() { }, scene.database);*/
+	}
+	
+	/**
+         * Invert the geometry to move from a right handed system to a left handed one.
+         */
+	public function toLeftHanded() {
+		// Flip faces
+		var tIndices = this.getIndices(false);
+		if (tIndices != null && tIndices.length > 0) {
+			var i = 0;
+			while (i < tIndices.length) {
+				var tTemp = tIndices[i + 0];
+				tIndices[i + 0] = tIndices[i + 2];
+				tIndices[i + 2] = tTemp;
+				i += 3;
+			}
+			this.setIndices(tIndices);
+		}
+		
+		// Negate position.z
+		var tPositions = this.getVerticesData(VertexBuffer.PositionKind, false);
+		if (tPositions != null && tPositions.length > 0) {
+			var i = 0;
+			while (i < tPositions.length) {
+				tPositions[i + 2] = -tPositions[i + 2];
+				i += 3;
+			}
+			this.setVerticesData(VertexBuffer.PositionKind, tPositions, false);
+		}
+		
+		// Negate normal.z
+		var tNormals = this.getVerticesData(VertexBuffer.NormalKind, false);
+		if (tNormals != null && tNormals.length > 0) {
+			var i = 0;
+			while (i < tNormals.length) {
+				tNormals[i + 2] = -tNormals[i + 2];
+				i += 3;
+			}
+			this.setVerticesData(VertexBuffer.NormalKind, tNormals, false);
+		}
 	}
 	
 	public function isDisposed():Bool {
@@ -561,18 +603,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		
 		return geometry.copy(id);
 	}
-	
-	static var UID_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
-	public static function RandomId(size:Int = 32):String {
-		var nchars = UID_CHARS.length;
-		var uid = new StringBuf();
-		for (i in 0...size){
-			uid.add(UID_CHARS.charAt(Std.int(Math.random() * nchars)));
-		}
-		return uid.toString();
-	}
-	
+		
 	public static function ImportGeometry(parsedGeometry:Dynamic, mesh:Mesh) {
 		var scene = mesh.getScene();
 		

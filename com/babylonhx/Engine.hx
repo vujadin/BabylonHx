@@ -92,6 +92,8 @@ typedef BufferPointer = {
 	public static inline var TEXTURETYPE_FLOAT:Int = 1;
 	public static inline var TEXTURETYPE_HALF_FLOAT:Int = 2;
 	
+	public static var HALF_FLOAT_OES:Int = 0x8D61;
+	
 	// Depht or Stencil test Constants.
 	
 	// Passed to depthFunction or stencilFunction to specify depth or stencil tests will never pass. i.e. Nothing will be drawn.
@@ -266,8 +268,8 @@ typedef BufferPointer = {
 		#end
 		
 		// Checks if some of the format renders first to allow the use of webgl inspector.
-		//var renderToFullFloat = this._canRenderToFloatTexture();
-		//var renderToHalfFloat = this._canRenderToHalfFloatTexture();
+		var renderToFullFloat = this._canRenderToFloatTexture();
+		var renderToHalfFloat = this._canRenderToHalfFloatTexture();
 		
 		if (options.stencil == null) {
 			options.stencil = true;
@@ -292,9 +294,8 @@ typedef BufferPointer = {
 		#end
         this.resize();
 		
-		this._isStencilEnable = options.stencil;
-		
 		// Caps
+		this._isStencilEnable = options.stencil;
 		this._caps = new EngineCapabilities();
 		this._caps.maxTexturesImageUnits = Gl.getParameter(GL.MAX_TEXTURE_IMAGE_UNITS);
 		this._caps.maxTextureSize = Gl.getParameter(GL.MAX_TEXTURE_SIZE);
@@ -339,13 +340,17 @@ typedef BufferPointer = {
 				var highp = Gl.getShaderPrecisionFormat(GL.FRAGMENT_SHADER, GL.HIGH_FLOAT);
 				this._caps.highPrecisionShaderSupported = highp != null && highp.precision != 0;
 			}
-			this._caps.drawBufferExtension = Gl.getExtension("WEBGL_draw_buffers");
+			this._caps.drawBuffersExtension = Gl.getExtension("WEBGL_draw_buffers");
 			this._caps.textureFloatLinearFiltering = Gl.getExtension("OES_texture_float_linear") != null;
 			this._caps.textureLOD = Gl.getExtension('EXT_shader_texture_lod') != null;
 			if (this._caps.textureLOD) {
 				this._caps.textureLODExt = "GL_EXT_shader_texture_lod";
 				this._caps.textureCubeLodFnName = "textureCubeLodEXT";
 			}
+			
+			this._caps.textureHalfFloat = (GL.getExtension('OES_texture_half_float') != null);
+            this._caps.textureHalfFloatLinearFiltering = GL.getExtension('OES_texture_half_float_linear');
+            this._caps.textureHalfFloatRender = renderToHalfFloat;
 		} 
 		catch (err:Dynamic) {
 			trace(err);
@@ -384,8 +389,8 @@ typedef BufferPointer = {
 			if (this._caps.fragmentDepthSupported == false) {
 				this._caps.fragmentDepthSupported = Gl.getExtension("GL_EXT_frag_depth") != null;
 			}
-			if (this._caps.drawBufferExtension == null) {
-				this._caps.drawBufferExtension = Gl.getExtension("GL_ARB_draw_buffers");
+			if (this._caps.drawBuffersExtension == null) {
+				this._caps.drawBuffersExtension = Gl.getExtension("GL_ARB_draw_buffers");
 			}
 			if (this._caps.textureFloatLinearFiltering == false) {
 				this._caps.textureFloatLinearFiltering = true;
@@ -397,6 +402,9 @@ typedef BufferPointer = {
 					this._caps.textureCubeLodFnName = "textureCubeLod";
 				}
 			}
+			this._caps.textureHalfFloat = (GL.getExtension('OES_texture_half_float') != null);
+            this._caps.textureHalfFloatLinearFiltering = GL.getExtension('OES_texture_half_float_linear');
+            this._caps.textureHalfFloatRender = renderToHalfFloat;
 		#end
 		#else
 		this._caps.maxRenderTextureSize = 16384;
@@ -408,7 +416,7 @@ typedef BufferPointer = {
 		this._caps.highPrecisionShaderSupported = true;
 		this._caps.textureFloat = this._glExtensions.indexOf("GL_ARB_texture_float") != -1;
 		this._caps.fragmentDepthSupported = this._glExtensions.indexOf("GL_EXT_frag_depth") != -1;
-		this._caps.drawBufferExtension = null;
+		this._caps.drawBuffersExtension = null;
 		this._caps.textureFloatLinearFiltering = false;
 		this._caps.textureLOD = this._glExtensions.indexOf("GL_ARB_shader_texture_lod") != -1;
 		if (this._caps.textureLOD) {
@@ -450,8 +458,16 @@ typedef BufferPointer = {
         return shader;
     }
 	
-	inline public static function getWebGLTextureType(type:Int):Int {
-		return (type == Engine.TEXTURETYPE_FLOAT ? GL.FLOAT : GL.UNSIGNED_BYTE);
+	public static function getWebGLTextureType(type:Int):Int {
+		if (type == Engine.TEXTURETYPE_FLOAT) {
+            return GL.FLOAT;
+        }
+        else if (type == Engine.TEXTURETYPE_HALF_FLOAT) {
+            // Add Half Float Constant.
+            return HALF_FLOAT_OES;
+        }
+		
+        return GL.UNSIGNED_BYTE;
 	}
 
     public static function getSamplingParameters(samplingMode:Int, generateMipMaps:Bool):Dynamic {
@@ -526,6 +542,14 @@ typedef BufferPointer = {
 		
         resetTextureCache();        		
         scene._removePendingData(texture);
+		
+		if (texture.onLoadedCallbacks != null) {
+			for (cb in texture.onLoadedCallbacks) {
+				if (cb != null) {
+					cb();
+				}
+			}
+		}
 		
 		if (onLoad != null) {
 			onLoad();
@@ -803,16 +827,16 @@ typedef BufferPointer = {
 		}
 		
 		if (depth) {
-			GL.clearDepth(1.0);
+			Gl.clearDepth(1.0);
 			mode |= GL.DEPTH_BUFFER_BIT;
 		}
 		
 		if (stencil) {
-			GL.clearStencil(0);
+			Gl.clearStencil(0);
 			mode |= GL.STENCIL_BUFFER_BIT;
 		}
 		
-		GL.clear(mode);
+		Gl.clear(mode);
 	}
 	
 	public function scissorClear(x:Int, y:Int, width:Int, height:Int, clearColor:Color4) {
@@ -869,15 +893,7 @@ typedef BufferPointer = {
 	}
 
 	inline public function endFrame() {
-		//this.flushFramebuffer();
-		#if openfl
-		// Depth buffer
-		//this.setDepthBuffer(true);
-		//this.setDepthFunctionToLessOrEqual();
-		//this.setDepthWrite(true);		
-		//this._activeTexturesCache = new Vector<BaseTexture>(this._maxTextureChannels);
-		// Release effects
-		#end
+		this.flushFramebuffer();
 	}
 	
 	// FPS
@@ -998,7 +1014,7 @@ typedef BufferPointer = {
     }
 
 	inline public function flushFramebuffer() {
-		Gl.flush();
+		//Gl.flush();
 	}
 
 	inline public function restoreDefaultFramebuffer() {
@@ -1232,7 +1248,7 @@ typedef BufferPointer = {
 	static var _vertexBuffer:VertexBuffer = null;
 	static var _attributes:Array<String> = null;
 	inline public function bindBuffers(vertexBuffers:Map<String, VertexBuffer>, indexBuffer:WebGLBuffer, effect:Effect) {
-		//if (this._cachedVertexBuffers != vertexBuffers || this._cachedEffectForVertexBuffers != effect) {
+		if (this._cachedVertexBuffers != vertexBuffers || this._cachedEffectForVertexBuffers != effect) {
 			this._cachedVertexBuffers = vertexBuffers;
 			this._cachedEffectForVertexBuffers = effect;
 			
@@ -1268,13 +1284,13 @@ typedef BufferPointer = {
 					}
 				}
 			}
-		//}
+		}
 		
-		//if (indexBuffer != null && this._cachedIndexBuffer != indexBuffer) {
+		if (indexBuffer != null && this._cachedIndexBuffer != indexBuffer) {
 			this._cachedIndexBuffer = indexBuffer;
 			this.bindIndexBuffer(indexBuffer);
 			this._uintIndicesCurrentlySet = indexBuffer.is32Bits;
-		//}
+		}
 	}
 	
 	public function unbindInstanceAttributes() {
@@ -1380,13 +1396,14 @@ typedef BufferPointer = {
 
 	inline public function applyStates() {
 		this._depthCullingState.apply(#if (js || purejs) Gl #end);
+		this._stencilState.apply(#if (js || purejs) Gl #end);
 		this._alphaState.apply(#if (js || purejs) Gl #end);
 	}
 
 	public function draw(useTriangles:Bool, indexStart:Int, indexCount:Int, instancesCount:Int = 0) {
 		// Apply states
 		this.applyStates();
-		this._stencilState.apply();
+		
 		this._drawCalls++;
 		
 		// Render
@@ -1398,7 +1415,7 @@ typedef BufferPointer = {
 			return;
 		}
 		
-		Gl.drawElements(useTriangles ? GL.TRIANGLES : GL.LINES, indexCount, indexFormat, indexStart * mult);
+		Gl.drawElements(useTriangles ? GL.TRIANGLES : GL.LINES, indexCount, indexFormat, Std.int(indexStart * mult));
 	}
 
 	public function drawPointClouds(verticesStart:Int, verticesCount:Int, instancesCount:Int = -1) {
@@ -2034,6 +2051,10 @@ typedef BufferPointer = {
 				Gl.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_MAG_FILTER, GL.NEAREST);
 				Gl.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_MIN_FILTER, GL.NEAREST);
 			}
+			else if (textureType == HALF_FLOAT_OES && !this._caps.textureHalfFloatLinearFiltering) {
+				Gl.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_MAG_FILTER, GL.NEAREST);
+				Gl.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_MIN_FILTER, GL.NEAREST);
+			}
 			else {
 				Gl.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
 				Gl.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_MIN_FILTER, noMipmap ? GL.LINEAR : GL.LINEAR_MIPMAP_LINEAR);
@@ -2254,18 +2275,24 @@ typedef BufferPointer = {
 		var generateMipMaps = false;
 		var generateDepthBuffer = true;
 		var generateStencilBuffer = false;
+		
 		var type = Engine.TEXTURETYPE_UNSIGNED_INT;
 		var samplingMode = Texture.TRILINEAR_SAMPLINGMODE;
 		if (options != null) {
             generateMipMaps = options.generateMipMaps != null ? options.generateMipMaps : options;
             generateDepthBuffer = options.generateDepthBuffer != null ? options.generateDepthBuffer : true;
 			generateStencilBuffer = options.generateStencilBuffer != null ? options.generateStencilBuffer : generateDepthBuffer;
+			
 			type = options.type == null ? type : options.type;
             if (options.samplingMode != null) {
                 samplingMode = options.samplingMode;
             }
-			if (type == Engine.TEXTURETYPE_FLOAT) {
+			if (type == Engine.TEXTURETYPE_FLOAT && !this._caps.textureFloatLinearFiltering) {
 				// if floating point (gl.FLOAT) then force to NEAREST_SAMPLINGMODE
+				samplingMode = Texture.NEAREST_SAMPLINGMODE;
+			}
+			else if (type == Engine.TEXTURETYPE_HALF_FLOAT && !this._caps.textureHalfFloatLinearFiltering) {
+				// if floating point linear (HALF_FLOAT) then force to NEAREST_SAMPLINGMODE
 				samplingMode = Texture.NEAREST_SAMPLINGMODE;
 			}
         }
@@ -2363,13 +2390,13 @@ typedef BufferPointer = {
 			generateMipMaps = options.generateMipMaps == null ? options : options.generateMipMaps;
 			generateDepthBuffer = options.generateDepthBuffer == null ? true : options.generateDepthBuffer;
             generateStencilBuffer = options.generateStencilBuffer != null ? options.generateStencilBuffer : generateDepthBuffer;
+			
 			if (options.samplingMode != null) {
 				samplingMode = options.samplingMode;
 			}
 		}
 		
 		texture.isCube = true;
-		texture.references = 1;
 		texture.generateMipMaps = generateMipMaps;
 		texture.references = 1;
 		texture.samplingMode = samplingMode;
@@ -2398,12 +2425,12 @@ typedef BufferPointer = {
         if (generateStencilBuffer) {
             depthStencilBuffer = GL.createRenderbuffer();
             Gl.bindRenderbuffer(GL.RENDERBUFFER, depthStencilBuffer);
-            Gl.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_STENCIL, size, size);
+            Gl.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_STENCIL, size.width, size.height);
         }
         else if (generateDepthBuffer) {
             depthStencilBuffer = GL.createRenderbuffer();
             Gl.bindRenderbuffer(GL.RENDERBUFFER, depthStencilBuffer);
-            Gl.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_COMPONENT16, size, size);
+            Gl.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_COMPONENT16, size.width, size.height);
         }
 		
 		// Create the framebuffer

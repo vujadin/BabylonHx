@@ -17,6 +17,11 @@ typedef IHighlightLayerOptions = {
 	 * used to generated the glowing objects (the smaller the faster).
 	 */
 	var mainTextureRatio:Null<Float>;
+	
+	/**
+     * Enforces a fixed size texture to ensure resize independant blur.
+     */
+	var mainTextureFixedSize:Null<Int>;
 
 	/**
 	 * Multiplication factor apply to the main texture size in the first step of the blur to reduce the size 

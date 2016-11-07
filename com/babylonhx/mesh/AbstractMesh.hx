@@ -469,7 +469,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
     }
 
 	static var _rotationAxisCache:Quaternion = new Quaternion();
-	public function rotate(axis:Vector3, amount:Float, ?space:Space) {
+	public function rotate(axis:Vector3, amount:Float, ?space:Int) {
 		axis.normalize(); 
 		
 		if (this.rotationQuaternion == null) {
@@ -493,7 +493,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		}
 	}
 
-	public function translate(axis:Vector3, distance:Float, ?space:Space) {
+	public function translate(axis:Vector3, distance:Float, ?space:Int) {
 		var displacementVector = axis.scale(distance);
 		
 		if (space == null || space == Space.LOCAL) {

@@ -434,7 +434,7 @@ class NodeCache {
         return result;
     }
 
-    inline public function getDirectionToRef(localAxis:Vector3, result:Vector3) {
+    public function getDirectionToRef(localAxis:Vector3, result:Vector3) {
         Vector3.TransformNormalToRef(localAxis, this.getWorldMatrix(), result);
     }
 	

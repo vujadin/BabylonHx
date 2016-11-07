@@ -276,6 +276,11 @@ import com.babylonhx.animations.Animation;
 	}
 	
 	public static function Parse(parsedTexture:Dynamic, scene:Scene, rootUrl:String):BaseTexture {
+		if (parsedTexture.customType) { 
+			var customTexture = Type.createEmptyInstance(parsedTexture.customType);
+			return customTexture.Parse(parsedTexture, scene, rootUrl);
+		}
+			
 		if (parsedTexture.isCube) {
 			return CubeTexture.Parse(parsedTexture, scene, rootUrl);
 		}

@@ -1,5 +1,7 @@
 package com.babylonhx.mesh;
 
+import com.babylonhx.tools.Tools;
+
 import com.babylonhx.utils.GL;
 import com.babylonhx.utils.GL.GLBuffer;
 
@@ -11,7 +13,7 @@ import com.babylonhx.utils.GL.GLBuffer;
 
 @:expose('BABYLON.WebGLBuffer') class WebGLBuffer {
 	
-	// TODO: this will depend on backend we use (Kha, OpenFL, Snow...)
+	public var id:String;
 	public var buffer:GLBuffer;	
 	public var references:Int;
 	public var capacity:Int = 0;
@@ -19,6 +21,7 @@ import com.babylonhx.utils.GL.GLBuffer;
 	
 	
 	public function new(buffer:GLBuffer) {
+		id = Tools.uuid();
 		this.buffer = buffer;
 		this.references = 1;
 	}

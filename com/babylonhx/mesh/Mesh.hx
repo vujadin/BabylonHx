@@ -723,7 +723,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			vertexData.set(data, kind);
 			
 			var scene = this.getScene();
-			new Geometry(Geometry.RandomId(), scene, vertexData, updatable, this);
+			new Geometry(Tools.uuid(), scene, vertexData, updatable, this);
 		}
 		else {
 			this._geometry.setVerticesData(kind, data, updatable, stride);
@@ -734,7 +734,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		if (this._geometry == null) {
 			var scene = this.getScene();
 			
-			new Geometry(Geometry.RandomId(), scene).applyToMesh(this);
+			new Geometry(Tools.uuid(), scene).applyToMesh(this);
 		}
 		
 		this._geometry.setVerticesBuffer(buffer);
@@ -811,7 +811,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		}
 		
 		var oldGeometry = this._geometry;
-		var geometry = this._geometry.copy(Geometry.RandomId());
+		var geometry = this._geometry.copy(Tools.uuid());
 		oldGeometry.releaseForMesh(this, true);
 		geometry.applyToMesh(this);
 	}
@@ -822,7 +822,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			vertexData.indices = indices;
 			
 			var scene = this.getScene();
-			new Geometry(Geometry.RandomId(), scene, vertexData, false, this);
+			new Geometry(Tools.uuid(), scene, vertexData, false, this);
 		} 
 		else {
 			this._geometry.setIndices(indices, totalVertices);
@@ -1086,7 +1086,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
         }
 		
 		// Draw
-		this._processRendering(subMesh, effect, fillMode, batch, hardwareInstancedRendering, this._onBeforeDraw);
+		this._processRendering(subMesh, effect, fillMode, batch, hardwareInstancedRendering, this._onBeforeDraw, effectiveMaterial);
 		
 		// Unbind
 		effectiveMaterial.unbind();

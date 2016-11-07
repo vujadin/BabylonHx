@@ -37,6 +37,8 @@ import haxe.ds.Vector;
 	
 	private var _ranges:Map<String, AnimationRange> = new Map();
 	
+	private var _lastAbsoluteTransformsUpdateId:Int = -1;
+	
 	public var __smartArrayFlags:Array<Int> = [];
 	
 
@@ -329,6 +331,16 @@ import haxe.ds.Vector;
 				animation.blendingSpeed = blendingSpeed;
 			}
 		}
+	}
+	
+	public function computeAbsoluteTransforms(forceUpdate:Bool = false) {
+		var renderId = this._scene.getRenderId();
+		
+		if (this._lastAbsoluteTransformsUpdateId != renderId || forceUpdate ) {
+			this.bones[0].computeAbsoluteTransforms();
+			this._lastAbsoluteTransformsUpdateId = renderId;
+		}
+		
 	}
 	
 	public function dispose() {

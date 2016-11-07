@@ -58,7 +58,7 @@ import com.babylonhx.tools.Tools;
 		
 		// Particles
 		_activeCamera = this._scene.activeCamera;
-		//var beforeParticlesDate = Tools.Now();
+		//this._scene._particlesDuration.beginMonitoring();
 		for (particleIndex in 0...this._scene._activeParticleSystems.length) {
 			var particleSystem:ParticleSystem = cast this._scene._activeParticleSystems.data[particleIndex];
 			
@@ -76,7 +76,7 @@ import com.babylonhx.tools.Tools;
 				this._scene._activeParticles += particleSystem.render();
 			}
 		}
-		//this._scene._particlesDuration += Tools.Now() - beforeParticlesDate;
+		//this._scene._particlesDuration.endMonitoring(false);
 	}
 
 	private function _renderSprites(index:Int) {
@@ -86,7 +86,7 @@ import com.babylonhx.tools.Tools;
 		
 		// Sprites 
 		_activeCamera = this._scene.activeCamera;
-		//var beforeSpritessDate = Tools.Now();
+		//this._scene._spritesDuration.beginMonitoring();
 		for (id in 0...this._scene.spriteManagers.length) {
 			var spriteManager = this._scene.spriteManagers[id];
 			
@@ -95,7 +95,7 @@ import com.babylonhx.tools.Tools;
 				spriteManager.render();
 			}
 		}
-		//this._scene._spritesDuration += Tools.Now() - beforeSpritessDate;
+		//this._scene._spritesDuration.endMonitoring(false);
 	}
 
 	inline private function _clearDepthStencilBuffer() {
@@ -246,16 +246,16 @@ import com.babylonhx.tools.Tools;
 		alphaTestSortCompareFn:SubMesh->SubMesh->Int = null,
 		transparentSortCompareFn:SubMesh->SubMesh->Int = null) {
 		
+		this._customOpaqueSortCompareFn[renderingGroupId] = opaqueSortCompareFn;
+		this._customAlphaTestSortCompareFn[renderingGroupId] = alphaTestSortCompareFn;
+		this._customTransparentSortCompareFn[renderingGroupId] = transparentSortCompareFn;
+		
 		if (this._renderingGroups[renderingGroupId] != null) {
 			var group = this._renderingGroups[renderingGroupId];
 			group.opaqueSortCompareFn = this._customOpaqueSortCompareFn[renderingGroupId];
 			group.alphaTestSortCompareFn = this._customAlphaTestSortCompareFn[renderingGroupId];
 			group.transparentSortCompareFn = this._customTransparentSortCompareFn[renderingGroupId];
 		}
-		
-		this._customOpaqueSortCompareFn[renderingGroupId] = opaqueSortCompareFn;
-		this._customAlphaTestSortCompareFn[renderingGroupId] = alphaTestSortCompareFn;
-		this._customTransparentSortCompareFn[renderingGroupId] = transparentSortCompareFn;
 	}
 
 	/**

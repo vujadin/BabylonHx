@@ -13,12 +13,12 @@ import com.babylonhx.utils.GL in Gl;
 
 @:expose('BABYLON._DepthCullingState') class _DepthCullingState {
 	
-	private var _isDepthTestDirty = false;
-	private var _isDepthMaskDirty = false;
-	private var _isDepthFuncDirty = false;
-	private var _isCullFaceDirty = false;
-	private var _isCullDirty = false;
-	private var _isZOffsetDirty = false;
+	private var _isDepthTestDirty:Bool = false;
+	private var _isDepthMaskDirty:Bool = false;
+	private var _isDepthFuncDirty:Bool = false;
+	private var _isCullFaceDirty:Bool = false;
+	private var _isCullDirty:Bool = false;
+	private var _isZOffsetDirty:Bool = false;
 
 	private var _depthTest:Bool;
 	private var _depthMask:Bool;
@@ -119,7 +119,7 @@ import com.babylonhx.utils.GL in Gl;
 	}
 	
 	public function new() {
-		//
+		this.reset();
 	}
 
 	public function reset() {

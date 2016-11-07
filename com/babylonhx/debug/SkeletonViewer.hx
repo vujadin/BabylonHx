@@ -28,7 +28,7 @@ class SkeletonViewer {
 	public var _debugLines:Array<Array<Vector3>> = []; 
 	private var _debugMesh:LinesMesh;
 	private var _isEnabled:Bool = false;
-	private var _renderFunction:Void->Void;
+	private var _renderFunction:Dynamic;
 	
 
 	public function new(skeleton:Skeleton, mesh:AbstractMesh, scene:Scene, autoUpdateBonesMatrices:Bool = true, renderingGroupId:Int = 1) {
