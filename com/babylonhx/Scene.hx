@@ -2262,6 +2262,17 @@ import com.babylonhx.audio.*;
 			engine.setDepthBuffer(true);
 		}
 		
+		// Highlight Layer
+		if (renderhighlights) {
+			engine.setDepthBuffer(false);
+			for (i in 0...this.highlightLayers.length) {
+				if (this.highlightLayers[i].shouldRender()) {
+					this.highlightLayers[i].render();
+				}
+			}
+			engine.setDepthBuffer(true);
+		}
+		
 		// Finalize frame
 		this.postProcessManager._finalizeFrame(camera.isIntermediate);
 		
