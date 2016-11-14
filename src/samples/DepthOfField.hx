@@ -33,21 +33,43 @@ class DepthOfField {
 		light.specular = new Color3(0.7, 0.7, 0.4);
 
 		//Adding an Arc Rotate Camera
-		var camera = new ArcRotateCamera("Camera", 0.2, 1.0, 300, new Vector3(0, 10.0, 0), scene);
+		var camera = new ArcRotateCamera("Camera", 0.0, 1.3, 80, new Vector3(0, 10.0, 0), scene);
 		camera.attachControl();
 		camera.lowerRadiusLimit = 1;
 		camera.maxZ = 2000;
+
+		/*
+			This is where we create the rendering pipeline and attach it to the camera.
+			The pipeline accepts many parameters, but all of them are optional.
+			Depending on what you set in your parameters array, some effects will be
+			enabled or disabled. Here is a list of the possible parameters:
+			{
+				   chromatic_aberration: number;       // from 0 to x (1 for realism)
+				   edge_blur: number;                  // from 0 to x (1 for realism)
+				   distortion: number;                 // from 0 to x (1 for realism)
+				   grain_amount: number;               // from 0 to 1
+				   grain_texture: Texture;     // texture to use for grain effect; if unset, use random B&W noise
+				   dof_focus_distance: number;         // depth-of-field: focus distance; unset to disable (disabled by default)
+				   dof_aperture: number;               // depth-of-field: focus blur bias (default: 1)
+				   dof_darken: number;                 // depth-of-field: darken that which is out of focus (from 0 to 1, disabled by default)
+				   dof_pentagon: boolean;              // depth-of-field: makes a pentagon-like "bokeh" effect
+				   dof_gain: number;                   // depth-of-field: highlights gain; unset to disable (disabled by default)
+				   dof_threshold: number;              // depth-of-field: highlights threshold (default: 1)
+				   blur_noise: boolean;                // add a little bit of noise to the blur (default: true)
+			}
+		*/
 
 		var lensEffect = new LensRenderingPipeline('lens', {
 			edge_blur: 1.0,
 			chromatic_aberration: 1.0,
 			distortion: 1.0,
-			dof_focus_depth: 200 / camera.maxZ,	// this sets the focus depth at a distance of 200
-			dof_aperture: 3.0,		// set high to increase effect
+			dof_focus_distance: 50,
+			dof_aperture: 6.0,			// set this very high for tilt-shift effect
 			grain_amount: 1.0,
 			dof_pentagon: true,
 			dof_gain: 1.0,
 			dof_threshold: 1.0,
+			dof_darken: 1.25
 		}, scene, 1.0, [camera]);
 
 		// generate ground
@@ -64,54 +86,55 @@ class DepthOfField {
 		material.specularColor = new Color3(0.07, 0.07, 0.07);
 		material.specularPower = 100;
 
-		SceneLoader.RegisterPlugin(BabylonFileLoader.plugin);
-		SceneLoader.ImportMesh("", "assets/models/", "skull.babylon", scene, function (newMeshes:Array<AbstractMesh>, newParticles:Array<ParticleSystem>, newSkeletons:Array<Skeleton>) {
-			var mesh:Mesh = cast newMeshes[0];
+		// uncomment for debug!
+		//scene.debugLayer.show();
 
-			var inst:InstancedMesh;
+		SceneLoader.ImportMesh("", "assets/models/", "skull.babylon", scene, function (newMeshes:Array<AbstractMesh>, p:Array<ParticleSystem>, sk:Array<Skeleton>) {
+			var mesh:Mesh = cast newMeshes[0];
+			//var mesh = Mesh.CreateTorusKnot("knot", 1, 0.4, 128, 64, 2, 3, scene);
+			
+			var inst:InstancedMesh = null;
 			var size:Float = 0;
 			var angle:Float = 0;
 			var dist:Float = 0;
-			var count = 8;
-
+			var count:Int = 12;
+			
 			// generate skull instances
 			for (i in 0...count) {
 				angle = Math.PI * 2 * i / count;
-
+				
 				inst = mesh.createInstance('skull_inst');
 				size = 0.75 + 0.5 * Math.random();
 				dist = 100.0 + 15 * Math.random();
-
+				
 				inst.scaling.copyFromFloats(size, size, size);
-				inst.rotation.y = -angle + Math.PI / 2;
-
+				inst.rotation.y = -angle - Math.PI / 2;
+				
 				inst.position.y = size * 30.0;
 				inst.position.x = Math.cos(angle) * dist;
 				inst.position.z = Math.sin(angle) * dist;
 			}
-
+			
 			for (i in 0...count) {
 				angle = Math.PI * 2 * i / count;
-
+				
 				inst = mesh.createInstance('skull_inst');
 				size = 0.25 + 0.25 * Math.random();
 				dist = 30.0 + 5 * Math.random();
-
+				
 				inst.scaling.copyFromFloats(size, size, size);
 				inst.rotation.y = -angle - Math.PI / 2;
-
+				
 				inst.position.y = size * 30.0;
 				inst.position.x = Math.cos(angle) * dist;
 				inst.position.z = Math.sin(angle) * dist;
-
 			}
-
+			
 			mesh.setEnabled(false);
 			
 			scene.getEngine().runRenderLoop(function () {
 				scene.render();
 			});
-
 		});
 	}
 	

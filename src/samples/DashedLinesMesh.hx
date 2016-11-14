@@ -51,7 +51,7 @@ class DashedLinesMesh {
 		}
 		
 		var k:Float = 0;
-		scene.registerBeforeRender(function() {
+		scene.registerBeforeRender(function(_, _) {
 			updatePoints(k);
 			dashedLines = Mesh.CreateDashedLines(null, points, 3, 1, 200, scene, true, dashedLines);
 			k += 0.01;

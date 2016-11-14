@@ -151,7 +151,7 @@ class Fresnel {
 		skybox.infiniteDistance = true;
 				
 		// Animations
-		scene.registerBeforeRender(function() {
+		scene.registerBeforeRender(function(_, _) {
 			camera.alpha += 0.01 * scene.getAnimationRatio();
 		});
 		

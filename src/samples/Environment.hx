@@ -9,6 +9,7 @@ import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -49,14 +50,14 @@ class Environment {
 		var skybox = Mesh.CreateBox("skyBox", 100.0, scene);
 		var skyboxMaterial = new StandardMaterial("skyBox", scene);
 		skyboxMaterial.backFaceCulling = false;
-		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/skybox", scene);
+		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/TropicalSunnyDay", scene);
 		skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
 		skyboxMaterial.diffuseColor = new Color3(0, 0, 0);
 		skyboxMaterial.specularColor = new Color3(0, 0, 0);
 		skybox.material = skyboxMaterial;
 		
 		var alpha = 0.0;
-		scene.registerBeforeRender(function () {
+		scene.registerBeforeRender(function(scene:Scene, es:Null<EventState>) {
 			scene.fogDensity = Math.cos(alpha) / 10;
 			alpha += 0.02;
 		});

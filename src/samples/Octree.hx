@@ -1,12 +1,14 @@
 package samples;
 
 import com.babylonhx.cameras.ArcRotateCamera;
+import com.babylonhx.cameras.FreeCamera;
 import com.babylonhx.lights.PointLight;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
+import haxe.Timer;
 
 /**
  * ...
@@ -16,6 +18,7 @@ class Octree {
 
 	public function new(scene:Scene) {
 		var camera = new ArcRotateCamera("Camera", 0, 0, 10, Vector3.Zero(), scene);
+		//var camera = new FreeCamera("camera1", new Vector3(-10, 10, 0), scene);
 		camera.attachControl(this);
 		var light0 = new PointLight("Omni0", new Vector3(0, 10, 0), scene);
 		var material = new StandardMaterial("kosh", scene);
@@ -30,6 +33,8 @@ class Octree {
 		material.checkReadyOnEveryCall = false;
 		sphere.material = material;
 		
+		//material.freeze();
+		
 		// Fog
 		scene.fogMode = Scene.FOGMODE_EXP;
 		scene.fogDensity = 0.05;
@@ -42,6 +47,7 @@ class Octree {
 			clone.scaling = new Vector3(scale, scale, scale);
 			clone.position = new Vector3(Math.random() * 2 * playgroundSize - playgroundSize, Math.random() * 2 * playgroundSize - playgroundSize, Math.random() * 2 * playgroundSize - playgroundSize);
 		}
+		
 		sphere.setEnabled(false);
 		scene.createOrUpdateSelectionOctree();
 		

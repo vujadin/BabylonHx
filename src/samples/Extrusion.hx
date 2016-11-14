@@ -21,10 +21,10 @@ class Extrusion {
 	public function new(scene:Scene) {
 		var camera = new ArcRotateCamera("Camera", 3 * Math.PI / 2, 0.8, 80, Vector3.Zero(), scene);
 		camera.attachControl(this, true);
-								
+		
 		var light = new HemisphericLight("light1", new Vector3(0, 1, 0), scene);
 		light.diffuse = Color3.FromInt(0xf68712);
-					  
+		
 		// 2D shape
 		var poly = Polygon.StartingAt(-10, -10)
 			.addLineTo(10, -10)
@@ -70,12 +70,12 @@ class Extrusion {
 		};
 		
 		var mat = new StandardMaterial("mat", scene);
-				
+		
 		var lathe = createLathe(shape, 1, 40);
 		lathe.translate(new Vector3(0, 1, 0), -4, Space.LOCAL);
 		lathe.material = mat;
 		lathe.material.backFaceCulling = false;
-				
+		
 		scene.getEngine().runRenderLoop(function () {
             scene.render();
         });

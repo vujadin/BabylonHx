@@ -41,7 +41,7 @@ class Particles3 {
 			ps.maxLifeTime = Math.NEGATIVE_INFINITY;
 			ps.minEmitPower = 2;
 			ps.maxEmitPower = 2;
-						
+			
 			ps.minAngularSpeed = 0;
 			ps.maxAngularSpeed = Math.PI;
 			
@@ -50,11 +50,11 @@ class Particles3 {
 			ps.emitRate = 360;
 			ps.updateSpeed = 0.02;
 			ps.blendMode = ParticleSystem.BLENDMODE_ONEONE;
-					
+			
 			ps.color1 = color1;
 			ps.color2 = color2;
 			ps.colorDead = colorDead;
-					
+			
 			ps.direction1 = new Vector3(0, 1, 0);
 			ps.direction2 = new Vector3(0, 1, 0);
 			ps.minEmitBox = new Vector3(0, 0, 0);

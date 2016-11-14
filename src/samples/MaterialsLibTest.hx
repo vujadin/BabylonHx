@@ -194,12 +194,6 @@ class MaterialsLibTest {
 		untyped pbr.diffuseTexture.vScale = 5;
 		pbr.specularColor = Color3.Gray();
 		untyped pbr.specularPower = 0.8;
-		pbr.roughness = 6.0;
-		
-		pbr.reflectionFresnelParameters = new FresnelParameters();
-		pbr.useReflectionFresnelFromSpecular = true;
-		pbr.reflectionFresnelParameters.power = 1.0;
-		pbr.reflectionFresnelParameters.bias = 0.0;
 		
 		pbr.reflectionTexture = new CubeTexture("assets/img/skybox/TropicalSunnyDay", scene);
 			

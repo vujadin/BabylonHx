@@ -20,11 +20,9 @@ import com.babylonhx.Scene;
 class EasingFunctions {
 
 	public function new(scene:Scene) {
-		 var light = new PointLight("Omni", new Vector3(0, 100, 100), scene);
+		var light = new PointLight("Omni", new Vector3(0, 100, 100), scene);
 		var camera = new ArcRotateCamera("Camera", 0, 0.8, 100, Vector3.Zero(), scene);
 		camera.attachControl(this, true);
-		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
 		
 		// Torus
 		var torus = Mesh.CreateTorus("torus", 8, 2, 32, scene, false);

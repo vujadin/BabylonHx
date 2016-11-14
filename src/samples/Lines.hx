@@ -1,6 +1,7 @@
 package samples;
 
 import com.babylonhx.cameras.ArcRotateCamera;
+import com.babylonhx.lights.HemisphericLight;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.materials.textures.CubeTexture;
 import com.babylonhx.materials.textures.Texture;
@@ -10,6 +11,7 @@ import com.babylonhx.mesh.Mesh;
 import com.babylonhx.layer.Layer;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.Scene;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -23,14 +25,16 @@ class Lines {
 		camera.attachControl(this);
 		camera.maxZ = 20000;		
 		camera.lowerRadiusLimit = 150;
-			
-		// Create a whirlpool
+		
+		var light = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);
+		light.diffuse = Color3.FromInt(0xf68712);
+		
 		var points:Array<Vector3> = generateLorenz(20000);
-				
-		var lorenz = Mesh.CreateLines("whirlpool", points, scene, true);
+		
+		var lorenz = Mesh.CreateLines("whirlpool", points, scene, false);
 		lorenz.color = Color3.Red();
 		
-		scene.registerBeforeRender(function() {
+		scene.registerBeforeRender(function(scene:Scene, es:Null<EventState>) {
 			lorenz.rotation.y += 0.01 * scene.getAnimationRatio();
 		});
 		

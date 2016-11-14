@@ -7,6 +7,7 @@ import com.babylonhx.mesh.Mesh;
 import com.babylonhx.lights.HemisphericLight;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.cameras.FreeCamera;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -77,7 +78,7 @@ class LogarithmicDepth {
 		var angle = 0.0;
 		
 		//register a function to be called every frame to accomplish animation
-		scene.registerBeforeRender(function () {
+		scene.registerBeforeRender(function(scene:Scene, es:Null<EventState>) {
 			camera.position.z = addZ + 10 + 5 * Math.sin(angle);
 			camera.setTarget(new Vector3(addX, 0, addX));
 			angle += 0.01;

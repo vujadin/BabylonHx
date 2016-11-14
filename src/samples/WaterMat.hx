@@ -12,6 +12,7 @@ import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.materials.textures.CubeTexture;
 import com.babylonhx.lights.HemisphericLight;
 import com.babylonhx.cameras.ArcRotateCamera;
+import com.babylonhx.cameras.Camera;
 
 /**
  * ...
@@ -22,7 +23,7 @@ class WaterMat {
 	public function new(scene:Scene) {
 		var camera = new ArcRotateCamera("Camera", 3 * Math.PI / 2, Math.PI / 4, 100, Vector3.Zero(), scene);
 		camera.attachControl();
-
+		
 		var light = new HemisphericLight("light1", new Vector3(0, 1, 0), scene);
 		
 		// Skybox

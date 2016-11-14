@@ -13,6 +13,7 @@ import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.materials.textures.CubeTexture;
 import com.babylonhx.lights.DirectionalLight;
 import com.babylonhx.lights.HemisphericLight;
+import com.babylonhx.layer.HighlightLayer;
 import com.babylonhx.cameras.FreeCamera;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.animations.Animation;
@@ -35,15 +36,19 @@ class SkyMaterialTest {
 		var ground = Mesh.CreateGroundFromHeightMap("ground", "assets/img/heightMap.png", 100, 100, 100, 0, 10, scene, false);
 		var groundMaterial = new StandardMaterial("ground", scene);
 		groundMaterial.diffuseTexture = new Texture("assets/img/ground.jpg", scene);
-		untyped groundMaterial.diffuseTexture.uScale = 6;
-		untyped groundMaterial.diffuseTexture.vScale = 6;
+		untyped groundMaterial.diffuseTexture.uScale = 10;
+		untyped groundMaterial.diffuseTexture.vScale = 10;
 		groundMaterial.specularColor = new Color3(0, 0, 0);
 		ground.position.y = -2.05;
 		ground.material = groundMaterial;
 		
+		var hl1 = new HighlightLayer("hl1", scene);
+		hl1.addMesh(ground, Color3.Green());
+		
 		// Sky material
 		var skyboxMaterial = new SkyMaterial("skyMaterial", scene);
 		skyboxMaterial.backFaceCulling = false;
+		skyboxMaterial.freeze();
 
 		// Sky mesh (box)
 		var skybox = Mesh.CreateBox("skyBox", 1000.0, scene);
@@ -70,7 +75,7 @@ class SkyMaterialTest {
 			scene.stopAnimation(skybox);
 			scene.beginDirectAnimation(skybox, [animation], 0, 100, false, 1);
 		};
-
+		
 		scene.getEngine().keyDown.push(function (keyCode:Int) {
 			switch (keyCode) {
 				case 49: setSkyConfig("material.inclination", skyboxMaterial.inclination, 0); // 1

@@ -11,6 +11,7 @@ import com.babylonhx.mesh.Mesh;
 import com.babylonhx.postprocess.RefractionPostProcess;
 import com.babylonhx.Scene;
 import com.babylonhx.tools.Tools;
+import com.babylonhx.tools.EventState;
 import com.babylonhxext.loaders.obj.ObjLoader;
 import haxe.Timer;
 
@@ -38,7 +39,7 @@ class PostprocessRefraction {
 		var skybox = Mesh.CreateBox("skyBox", 1000.0, scene);
 		var skyboxMaterial = new StandardMaterial("skyBox", scene);
 		skyboxMaterial.backFaceCulling = false;
-		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/Sky_FantasySky_Fire_Cam", scene);
+		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/skybox", scene);
 		skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
 		skyboxMaterial.diffuseColor = new Color3(0, 0, 0);
 		skyboxMaterial.specularColor = new Color3(0, 0, 0);
@@ -67,7 +68,7 @@ class PostprocessRefraction {
 			
 			// Animations
 			var alpha = 0.0;
-			scene.registerBeforeRender(function() {
+			scene.registerBeforeRender(function(scene:Scene, es:Null<EventState>) {
 				monkey1.position = new Vector3(20 * Math.sin(alpha), 0, 20 * Math.cos(alpha));
 				monkey2.position = new Vector3(20 * Math.sin(alpha), 0, -20 * Math.cos(alpha));
 				monkey3.position = new Vector3(20 * Math.cos(alpha), 0, 20 * Math.sin(alpha));

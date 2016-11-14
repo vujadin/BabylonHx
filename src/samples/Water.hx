@@ -80,8 +80,8 @@ class Water {
 		
 		var groundMaterial = new StandardMaterial("ground", scene);
 		groundMaterial.diffuseTexture = new Texture("assets/img/ground10.jpg", scene);
-		groundMaterial.diffuseTexture.uScale = 22;
-		groundMaterial.diffuseTexture.vScale = 22;
+		untyped groundMaterial.diffuseTexture.uScale = 22;
+		untyped groundMaterial.diffuseTexture.vScale = 22;
 		groundMaterial.backFaceCulling = false;
 		
 		groundMaterial.specularColor = new Color3(0, 0, 0);
@@ -138,7 +138,7 @@ class Water {
 			scene.getEngine().runRenderLoop(function () {
 				scene.render();
 			});
-
+			
 			scene.getEngine().mouseUp.push(function() {
 				trace(camera.position, camera.rotation);
 			});

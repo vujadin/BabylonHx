@@ -34,7 +34,7 @@ class HeightMap {
 		var skybox = Mesh.CreateBox("skyBox", 1000, scene);
 		var skyboxMaterial = new StandardMaterial("skyBox", scene);
 		skyboxMaterial.backFaceCulling = false;
-		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/Sky_FantasySky_Fire_Cam", scene);
+		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/skybox", scene);
 		skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
 		skyboxMaterial.diffuseColor = new Color3(0, 0, 0);
 		skyboxMaterial.specularColor = new Color3(0, 0, 0);
@@ -49,11 +49,11 @@ class HeightMap {
 		var ground:Mesh = Mesh.CreateGroundFromHeightMap("ground", "assets/img/heightmap.jpg", 400, 400, 100, 0, 50, scene, false);
 		ground.material = groundMaterial;		
 					
-		scene.registerBeforeRender(function () {
+		scene.registerBeforeRender(function(_, _) {
 			camera.alpha += 0.005;
 		});
 		
-		scene.getEngine().runRenderLoop(function () {
+		scene.getEngine().runRenderLoop(function() {
             scene.render();
         });
 	}

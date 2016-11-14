@@ -23,27 +23,17 @@ import com.babylonhx.materials.textures.procedurals.standard.WoodProceduralTextu
  */
 class ForestOfPythagoras {
 	
-	var colorScale:Array<Int> = [
-		0xfff7f3, 0xfde0dd, 0xfcc5c0,
-		0xfa9fb5, 0xf768a1, 0xdd3497
-	];
-	
-	var meshes:Array<Mesh> = [];
-	
+	var meshes:Array<Mesh> = [];	
 	var scene:Scene;
+	
 
 	public function new(scene:Scene) {
 		this.scene = scene;
 		scene.clearColor = Color3.Black();
-		
+				
 		var camera = new ArcRotateCamera("Camera", 4, 1.43, 26, new Vector3(0, 1.5, 0), scene);
 		camera.attachControl();
-
-		scene.getEngine().mouseUp.push(function ()
-		{
-			trace(camera.alpha, camera.beta, camera.radius);
-		});
-						
+			
 		var name = "wood";		
 		
 		var woodMaterial = new StandardMaterial(name, scene);
@@ -57,18 +47,18 @@ class ForestOfPythagoras {
 		var grassMaterial = new StandardMaterial(name, scene);
 		var grassTexture = new GrassProceduralTexture(name + "tex", 1024, scene);
 		grassMaterial.ambientTexture = grassTexture;
-		grassMaterial.specularColor = new Color3(0.2, 0.2, 0.2);
+		grassMaterial.specularColor = Color3.Black();
 		
-		var light = new SpotLight("spotlight", new Vector3(-0.2, 50, -55), new Vector3(0, -1, 1.0), 1.2, 2.8, scene);
-		light.intensity = 0.5;
+		var light:SpotLight = new SpotLight("spotlight", new Vector3(-0.2, 70, -70), new Vector3(0, -1, 1.0), 1.0, 70,  scene);
+		light.intensity = 2.4;
 		light.diffuse = Color3.FromInt(0xffffdd);
 		
-		var ground = Mesh.CreateGround("ground1", 100, 100, 20, scene);
+		var ground = Mesh.CreateGround("ground1", 100, 100, 2, scene);
 		ground.material = grassMaterial;
 		ground.position.y = -0.5;
 		ground.position.z = 15;
 		ground.receiveShadows = true;
-					
+		
 		createTreeGeometry();
 		
 		var m = Mesh.MergeMeshes(meshes, true, true);
@@ -126,29 +116,18 @@ class ForestOfPythagoras {
 		shadowGenerator.getShadowMap().renderList.push(m5);
 		shadowGenerator.getShadowMap().renderList.push(m6);
 		shadowGenerator.getShadowMap().renderList.push(m7);
-		shadowGenerator.usePoissonSampling = true; 
 		shadowGenerator.getShadowMap().refreshRate = 0;
-				
+		shadowGenerator.blurScale = 1;
+		shadowGenerator.setDarkness(0.3);
+		shadowGenerator.useBlurVarianceShadowMap = true;
+		
 		scene.getEngine().runRenderLoop(function () {
 			scene.render();
 		});
 	}
 	
-	function cubeColor(depth:Int, maxDepth:Int):Int {		
-		var a = depth / (maxDepth + 1e-10);
-		return colorScale[Math.floor(a * a * colorScale.length)];
-	}
-
 	function createCube(d:Int, maxDepth:Int):Mesh {
-		var cube = Mesh.CreateBox("box" + d, 1, scene);
-		//var cube = Mesh.CreateSphere("sphere" + depth, { segments: 10, diameterX: 1.8, diameterY: 1.8, diameterZ: 1.8 }, scene);
-		var color = cubeColor(d, maxDepth);
-		cube.material = new StandardMaterial("mat" + d, scene);
-		cast(cube.material, StandardMaterial).diffuseColor = Color3.FromInt(color);		
-		cast(cube.material, StandardMaterial).checkReadyOnlyOnce = true;
-		cast(cube.material, StandardMaterial).checkReadyOnEveryCall = false;
-		
-		return cube;
+		return Mesh.CreateBox("box" + d, 1, scene);
 	}
 
 	function createTreeGeometry() {

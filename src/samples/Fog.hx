@@ -45,7 +45,7 @@ class Fog {
 		
 		// Animations
 		var alpha = 0.0;
-		scene.registerBeforeRender(function () {
+		scene.registerBeforeRender(function(_, _) {
 			sphere0.position.z = 4 * Math.cos(alpha);
 			sphere1.position.z = 4 * Math.sin(alpha);
 			sphere2.position.z = 4 * Math.cos(alpha);

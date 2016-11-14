@@ -165,7 +165,7 @@ class PointLightShadows {
 		}
 
 		//keypress events
-		scene.getEngine().keyDown.push(function(keyCode:Int) {
+		Engine.keyDown.push(function(keyCode:Int) {
 			if (keyCode == Keycodes.left) {
 				keysDown[Keycodes.left] = true;
 			}
@@ -179,7 +179,7 @@ class PointLightShadows {
 				keysDown[Keycodes.down] = true;
 			}
 		});
-		scene.getEngine().keyUp.push(function(keyCode:Int) {
+		Engine.keyUp.push(function(keyCode:Int) {
 			if (keyCode == Keycodes.left) {
 				keysDown[Keycodes.left] = false;
 			}

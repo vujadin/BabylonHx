@@ -15,9 +15,15 @@ import com.babylonhx.materials.textures.procedurals.standard.WoodProceduralTextu
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Space;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
+import com.babylonhx.tools.EventState;
+
+import com.babylonhx.postprocess.BlurPostProcess;
+import com.babylonhx.postprocess.PassPostProcess;
+import com.babylonhx.postprocess.PostProcess;
 
 /**
  * ...
@@ -200,7 +206,26 @@ class ProceduralTextures {
 		cloudMaterial.emissiveTexture.coordinatesMode = Texture.SKYBOX_MODE;
 		boxCloud.material = cloudMaterial;
 		
-		scene.registerBeforeRender(function () {
+		// Post-process
+		/*var blurWidth = 1.0;
+		
+		var postProcess0 = new PassPostProcess("Scene copy", 1.0, camera);
+		var postProcess1 = new PostProcess("Down sample", "downsample", ["screenSize", "highlightThreshold"], null, 0.25, camera, Texture.BILINEAR_SAMPLINGMODE);
+		postProcess1.onApply = function (effect) {
+			effect.setFloat2("screenSize", postProcess1.width, postProcess1.height);
+			effect.setFloat("highlightThreshold", 0.90);
+		};
+		var postProcess2 = new BlurPostProcess("Horizontal blur", new Vector2(1.0, 0), blurWidth, 0.25, camera);
+		var postProcess3 = new BlurPostProcess("Vertical blur", new Vector2(0, 1.0), blurWidth, 0.25, camera);
+		var postProcess4 = new PostProcess("Final compose", "compose", ["sceneIntensity", "glowIntensity", "highlightIntensity"], ["sceneSampler"], 1, camera);
+		postProcess4.onApply = function (effect) {
+			effect.setTextureFromPostProcess("sceneSampler", postProcess0);
+			effect.setFloat("sceneIntensity", 0.5);
+			effect.setFloat("glowIntensity", 0.4);
+			effect.setFloat("highlightIntensity", 1.0);
+		};*/
+		
+		scene.registerBeforeRender(function(scene:Scene, es:Null<EventState>) {
 			camera.alpha += 0.001 * scene.getAnimationRatio();
 		});
 		

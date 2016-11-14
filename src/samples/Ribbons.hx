@@ -12,6 +12,7 @@ import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
 import com.babylonhx.postprocess.VolumetricLightScatteringPostProcess;
 import com.babylonhx.tools.Tools;
+import com.babylonhx.tools.EventState;
 import haxe.Timer;
 
 /**
@@ -30,7 +31,7 @@ class Ribbons {
 		
 		// fire material
 		var fireMaterial = new StandardMaterial("fireMaterial", scene);
-		var fireTexture = new FireProceduralTexture("fire", 256, scene);
+		var fireTexture = new FireProceduralTexture("firetexture", 256, scene);
 		fireTexture.level = 2;
 		fireTexture.vScale = 0.5;
 		fireMaterial.diffuseColor = new Color3(Math.random() / 2, Math.random() / 2, Math.random() / 2);
@@ -179,7 +180,7 @@ class Ribbons {
 		newSH(m, paths, targetPaths, deltas, deltaColors);
 		
 		// then animation
-		scene.registerBeforeRender(function () {
+		scene.registerBeforeRender(function (scene:Scene, es:EventState = null) {
 			if (morph) {
 				mesh = morphing(mesh, m, paths, targetPaths, deltas, deltaColors);
 			}

@@ -17,7 +17,7 @@ class LOD {
 
 	public function new(scene:Scene) {
 		var camera = new FreeCamera("Camera", new Vector3(0, 0, 0), scene);
-		camera.attachControl(this);
+		camera.attachControl();
 		var hemi = new HemisphericLight("hemi", new Vector3(0, 1.0, 0), scene);
 		
 		scene.fogColor = scene.clearColor;
@@ -29,8 +29,8 @@ class LOD {
 		var materialAmiga = new StandardMaterial("amiga", scene);
 		materialAmiga.diffuseTexture = new Texture("assets/img/amiga.jpg", scene);
 		materialAmiga.emissiveColor = new Color3(0.5, 0.5, 0.5);
-		materialAmiga.diffuseTexture.uScale = 5;
-		materialAmiga.diffuseTexture.vScale = 5;
+		untyped materialAmiga.diffuseTexture.uScale = 5;
+		untyped materialAmiga.diffuseTexture.vScale = 5;
 		
 		var materialRed = new StandardMaterial("red", scene);
 		materialRed.emissiveColor = new Color3(0.5, 0, 0);
@@ -58,9 +58,9 @@ class LOD {
 		knot00.addLODLevel(30, knot02);
 		knot00.addLODLevel(45, knot03);
 		knot00.addLODLevel(55, null);
-				
-		for (x in -count...count+1) {
-			for (y in -count...count+1) {
+		
+		for (x in -count...count + 1) {
+			for (y in -count...count + 1) {
 				for (z in 5...10) {
 					var knot = knot00.createInstance("knotI");
 					

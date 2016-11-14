@@ -41,28 +41,24 @@ class VolumetricLights {
 			
 			newMeshes[0].material = new StandardMaterial("skull", scene);
 			cast(newMeshes[0].material, StandardMaterial).emissiveColor = new Color3(0.2, 0.2, 0.2);
+			
+			// Create the "God Rays" effect (volumetric light scattering)
+			var godrays = new VolumetricLightScatteringPostProcess("godrays", 1, camera, null, 100, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false);
+			
+			// By default it uses a billboard to render the sun, just apply the desired texture
+			// position and scale
+			cast(godrays.mesh.material, StandardMaterial).diffuseTexture = new Texture("assets/img/haxe-logo.png", scene, true, false, Texture.BILINEAR_SAMPLINGMODE);
+			cast(godrays.mesh.material, StandardMaterial).diffuseTexture.hasAlpha = true;
+			cast(godrays.mesh.material, StandardMaterial).backFaceCulling = false;
+			godrays.mesh.position = new Vector3(-150, 150, 150);
+			godrays.mesh.scaling = new Vector3(350, 350, 350);
+			
+			light.position = godrays.mesh.position;		
+			
+			scene.getEngine().runRenderLoop(function () {
+				scene.render();
+			});
 		});
-		
-		// Create the "God Rays" effect (volumetric light scattering)
-		var godrays = new VolumetricLightScatteringPostProcess("godrays", 1, camera, null, 100, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false);
-		
-		// By default it uses a billboard to render the sun, just apply the desired texture
-		// position and scale
-		cast(godrays.mesh.material, StandardMaterial).diffuseTexture = new Texture("assets/img/sun.png", scene, true, false, Texture.BILINEAR_SAMPLINGMODE);
-		cast(godrays.mesh.material, StandardMaterial).diffuseTexture.hasAlpha = true;
-		//godrays.mesh.position.z -= 100;
-		godrays.mesh.position = new Vector3(-150, 150, 150);
-		godrays.mesh.scaling = new Vector3(350, 350, 350);
-		
-		skull.position = godrays.mesh.position.clone();
-		skull.position.z += 100;
-		
-		light.position = godrays.mesh.position;
-		
-		
-		scene.getEngine().runRenderLoop(function () {
-            scene.render();
-        });
 	}
 	
 }

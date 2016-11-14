@@ -11,7 +11,7 @@ import com.babylonhx.particles.ParticleSystem;
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.tools.EventState;
-import com.babylonhx.tools.Tools;
+import com.babylonhx.math.Tools;
 
 /**
  * ...
@@ -93,7 +93,7 @@ class Particles4 {
 		// start position
 		var vertices = knot.getVerticesData(VertexBuffer.PositionKind);
 		var vertexIndex = 0;
-		particleSystem.startPositionFunction = function(worldMatrix, positionToUpdate) {
+		particleSystem.startPositionFunction = function(worldMatrix, positionToUpdate, particle) {
 			var posX = vertices[vertexIndex * 3];
 			var posY = vertices[vertexIndex * 3 + 1];
 			var posZ = vertices[vertexIndex * 3 + 2];
@@ -105,7 +105,7 @@ class Particles4 {
 			if (vertexIndex >= knot.getTotalVertices()) {
 				vertexIndex = 0;
 			}
-		}
+		};
 		
 		// Start the particle system
 		particleSystem.start();

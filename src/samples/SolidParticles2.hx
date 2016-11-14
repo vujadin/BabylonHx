@@ -13,6 +13,7 @@ import com.babylonhx.particles.SolidParticleSystem;
 import com.babylonhx.particles.SolidParticle;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.materials.textures.Texture;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -76,9 +77,9 @@ class SolidParticles2 {
 			particle.velocity.y = Math.random() * speed;
 			particle.velocity.z = (Math.random() - 0.5) * speed;
 			var scale = Math.random() + 0.5;
-			particle.scale.x = scale;
-			particle.scale.y = scale;
-			particle.scale.z = scale;
+			particle.scaling.x = scale;
+			particle.scaling.y = scale;
+			particle.scaling.z = scale;
 			particle.rotation.x = Math.random() * 3.5;
 			particle.rotation.y = Math.random() * 3.5;
 			particle.rotation.z = Math.random() * 3.5;
@@ -118,7 +119,7 @@ class SolidParticles2 {
 		
 		//scene.debugLayer.show();
 		// animation
-		scene.registerBeforeRender(function() {
+		scene.registerBeforeRender(function(scene:Scene, es:EventState = null) {
 			SPS.setParticles();
 			pl.position = camera.position;
 			SPS.mesh.rotation.y += 0.01;

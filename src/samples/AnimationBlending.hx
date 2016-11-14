@@ -84,7 +84,7 @@ class AnimationBlending {
 
 		animation2Box.setKeys(keys);
 		
-		scene.getEngine().mouseDown.push(function (btn:Int) {
+		Engine.mouseDown.push(function (btn:Int) {
 			scene.stopAnimation(box1);
 			scene.beginDirectAnimation(box1, [animation2Box], 0, 100, true);
 		});

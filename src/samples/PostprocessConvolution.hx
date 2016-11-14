@@ -10,6 +10,7 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.postprocess.ConvolutionPostProcess;
 import com.babylonhx.Scene;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -67,7 +68,7 @@ class PostprocessConvolution {
 		
 		// Animations
 		var alpha = 0.0;
-		scene.registerBeforeRender(function() {
+		scene.registerBeforeRender(function(scene:Scene, es:Null<EventState>) {
 			sphere0.position = new Vector3(20 * Math.sin(alpha), 0, 20 * Math.cos(alpha));
 			sphere1.position = new Vector3(20 * Math.sin(alpha), -20 * Math.cos(alpha), 0);
 			sphere2.position = new Vector3(0, 20 * Math.cos(alpha), 20 * Math.sin(alpha));

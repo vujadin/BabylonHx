@@ -45,7 +45,7 @@ class FurMat {
 			
 			mesh.material = fur;
 			
-			var quality = 30; // It is enougth
+			var quality = 30; // It is enough
 			var shells = FurMaterial.FurifyMesh(mesh, quality);
 			
 			// Special for bunny (ears)
@@ -54,8 +54,6 @@ class FurMat {
 			}
 		}
 		
-		SceneLoader.RegisterPlugin(BabylonFileLoader.plugin);
-				
 		// Meshes
 		SceneLoader.ImportMesh("Rabbit", "assets/models/Rabbit/", "Rabbit.babylon", scene, function(newMeshes, particleSystems, skeletons) {	
 			var rabbit = newMeshes[1];

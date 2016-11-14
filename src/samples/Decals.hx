@@ -70,8 +70,8 @@ class Decals {
 					newDecal.material = decalMaterial;
 				}
 			}
-
-			scene.getEngine().mouseDown.push(onPointerDown);
+			
+			Engine.mouseDown.push(onPointerDown);
 				
 			scene.getEngine().runRenderLoop(function () {
 				scene.render();

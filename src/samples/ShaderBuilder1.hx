@@ -28,16 +28,15 @@ class ShaderBuilder1 {
 		
 		var light = new HemisphericLight("light1", new Vector3(0, 1, 0), scene);
 		
-		light.intensity = 0.7;
-		
+		light.intensity = 0.7;		
 	  
-		var sp = Mesh.CreateSphere("sphere1", 16,10, scene);
-		 
+		var sp = Mesh.CreateSphere("sphere1", 16, 10, scene);
+		
 		var shb = new ShaderBuilder();
 		var sb = Helper.get();
-		sp.material = shb.Range(sb.Solid({r:1.}).Build(), sb.Solid({r:1.,g:1.}).Build(), { start: -0.5, end: 1.0, direction: 'pos.y+noise(pos-vec3(0.,time*0.01,0.))' }) 
+		sp.material = shb.Range(sb.Solid({r:1.}).Build(), sb.Solid({r:1., g:1.}).Build(), { start: -0.5, end: 1.0, direction: 'pos.y+noise(pos-vec3(0.,time*0.01,0.))' }) 
 				.Reference("1")
-				.Yellow(1, sb.InLine('discard;').Build(), { rangeStep: -0.0 , rangePower: -0.01 } )			   
+				.Yellow(1, sb.InLine('discard;').Build(), { rangeStep: -0.0 , rangePower: -0.01 })
 				.Back().BuildMaterial(scene); 
 				
 		var time = 0;
@@ -50,7 +49,7 @@ class ShaderBuilder1 {
 				camera.target,
 				mouse,
 				screen,
-				time++);
+				time += 2);
 		});
 		
 		scene.getEngine().runRenderLoop(function () {

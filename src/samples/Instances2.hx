@@ -7,8 +7,11 @@ import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.InstancedMesh;
 import com.babylonhx.mesh.Mesh;
+import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.Scene;
-import com.babylonhxext.loaders.obj.ObjLoader;
+import com.babylonhx.tools.EventState;
+import com.babylonhx.loading.plugins.ctmfileloader.CTMFile;
+import com.babylonhx.loading.plugins.ctmfileloader.CTMFileLoader;
 
 /**
  * ...
@@ -20,16 +23,17 @@ class Instances2 {
 		//Adding a light
 		var light = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);
 		light.diffuse = Color3.FromInt(0xf68712);
-				
+		
 		//Adding an Arc Rotate Camera
 		var camera = new ArcRotateCamera("Camera", 4, 1.4, 60, Vector3.Zero(), scene);
 		camera.attachControl(this, false);
 		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
-				
-		var objLoader = new ObjLoader(scene); 
-		objLoader.load("assets/models/", "suzanne.obj", function(meshes:Array<Mesh>) {
+		var mat = new StandardMaterial("mat", scene);
+		mat.freeze();
+		
+		CTMFileLoader.load("assets/models/suzanne.ctm", scene, function(meshes:Array<Mesh>, triangleCount:Int) {
 			var _suzanne = meshes[0];
+			_suzanne.material = mat;
 			var instances:Array<InstancedMesh> = [];
 			_suzanne.scaling = new Vector3(0.4, 0.4, 0.4);
 			for (i in 0...8) {
@@ -46,11 +50,11 @@ class Instances2 {
 			}	
 			
 			camera.target = instances[220].position;
-						
+			
 			scene.removeMesh(_suzanne);
 			_suzanne = null;
 			
-			scene.registerBeforeRender(function() {
+			scene.registerBeforeRender(function(scene:Scene, es:Null<EventState>) {
 				for (mesh in instances) {
 					mesh.rotation.y += 0.05;
 					mesh.rotation.z += 0.05;
@@ -60,8 +64,7 @@ class Instances2 {
 			scene.getEngine().runRenderLoop(function () {
 				scene.render();
 			});
-		});
-			
+		});			
 	}
 	
 }

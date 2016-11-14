@@ -2,6 +2,7 @@ package samples;
 
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.materials.StandardMaterial;
+import com.babylonhx.lights.DirectionalLight;
 import com.babylonhx.layer.Layer;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
@@ -16,9 +17,9 @@ class Intersections {
 
 	public function new(scene:Scene) {
 		var camera = new ArcRotateCamera("Camera", 1, 0.8, 70, new Vector3(5, 0, 0), scene);
-		camera.attachControl(this, true);
+		camera.attachControl();
 		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
+		var light3 = new DirectionalLight("Dir0", new Vector3(1, -1, 0), scene);
 		
 		// Material
 		var matPlan = new StandardMaterial("matPlan1", scene);

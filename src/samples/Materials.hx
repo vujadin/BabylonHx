@@ -1,6 +1,7 @@
 package samples;
 
 import com.babylonhx.cameras.ArcRotateCamera;
+import com.babylonhx.cameras.FreeCamera;
 import com.babylonhx.lights.PointLight;
 import com.babylonhx.lights.DirectionalLight;
 import com.babylonhx.materials.StandardMaterial;
@@ -22,16 +23,22 @@ class Materials {
 		var light = new PointLight("Omni", new Vector3( -60, 60, 80), scene);
 		
 		//Create an Arc Rotate Camera - aimed negative z this time
-		var camera = new ArcRotateCamera("Camera", Math.PI / 2, 1.0, 110, new Vector3(0, 5, 0), scene);
+		//var camera = new ArcRotateCamera("Camera", Math.PI / 2, 1.0, 110, new Vector3(0, 5, 0), scene);
+		
+		var camera = new FreeCamera("camera1", new Vector3(0, 50, -10), scene);
+		
+		// This targets the camera to scene origin
+		camera.setTarget(Vector3.Zero());
+		
 		camera.attachControl();
 				
 		//Creation of 6 spheres
-		var sphere1 = Mesh.CreateSphere("Sphere1", { segments: 10, diameterX: 9, diameterY: 9, diameterZ: 9 }, scene);
-		var sphere2 = Mesh.CreateSphere("Sphere2", { segments: 2, diameterX: 9, diameterY: 9, diameterZ: 9 }, scene);//Only two segments
-		var sphere3 = Mesh.CreateSphere("Sphere3", { segments: 10, diameterX: 9, diameterY: 9, diameterZ: 9 }, scene);
-		var sphere4 = Mesh.CreateSphere("Sphere4", { segments: 10, diameterX: 9, diameterY: 9, diameterZ: 9 }, scene);
-		var sphere5 = Mesh.CreateSphere("Sphere5", { segments: 10, diameterX: 9, diameterY: 9, diameterZ: 9 }, scene);
-		var sphere6 = Mesh.CreateSphere("Sphere6", { segments: 10, diameterX: 9, diameterY: 9, diameterZ: 9 }, scene);
+		var sphere1 = Mesh.CreateSphere("Sphere1", 10, 9, scene);
+		var sphere2 = Mesh.CreateSphere("Sphere2", 2, 9, scene);//Only two segments
+		var sphere3 = Mesh.CreateSphere("Sphere3", 10, 9, scene);
+		var sphere4 = Mesh.CreateSphere("Sphere4", 10, 9, scene);
+		var sphere5 = Mesh.CreateSphere("Sphere5", 10, 9, scene);
+		var sphere6 = Mesh.CreateSphere("Sphere6", 10, 9, scene);
 		
 		//Position the spheres
 		sphere1.position.x = 40;
@@ -42,7 +49,7 @@ class Materials {
 		sphere6.position.x = -35;
 		
 		//Creation of a plane
-		var plane = Mesh.CreatePlane("plane", { width: 120, height: 120 }, scene);
+		var plane = Mesh.CreatePlane("plane", 120, scene);
 		plane.position.y = -5;
 		plane.rotation.x = Math.PI / 2;
 				
@@ -95,7 +102,7 @@ class Materials {
 		sphere6.material = materialSphere6;
 		
 		plane.material = materialPlane;
-				
+		
 		scene.getEngine().runRenderLoop(function () {
             scene.render();
         });

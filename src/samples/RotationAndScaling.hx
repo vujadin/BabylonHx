@@ -18,8 +18,6 @@ class RotationAndScaling {
 		var camera = new ArcRotateCamera("Camera", Math.PI, Math.PI / 8, 150, Vector3.Zero(), scene);		
 		camera.attachControl();
 		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
-		
 		var light = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);
 		light.diffuse = Color3.FromInt(0xf68712);
 		light.specular = Color3.FromInt(0xf1471d);
@@ -59,7 +57,7 @@ class RotationAndScaling {
 		//Moving box7 relatively to box1
 		box7.parent = box1;
 		box7.position.z = -10;
-				
+		
 		scene.getEngine().runRenderLoop(function () {
             scene.render();
         });

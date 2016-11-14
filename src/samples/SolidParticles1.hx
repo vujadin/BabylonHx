@@ -9,6 +9,7 @@ import com.babylonhx.lights.PointLight;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.MeshBuilder;
 import com.babylonhx.particles.SolidParticleSystem;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -75,14 +76,14 @@ class SolidParticles1 {
 			p.color.r = 1;
 			p.color.b = 0;
 			p.color.g = 0;
-			p.scale.x = 5;
-			p.scale.y = 5;
-			p.scale.z = 5;
+			p.scaling.x = 5;
+			p.scaling.y = 5;
+			p.scaling.z = 5;
 			SPS.setParticles();
 		};
 		
 		// SPS mesh animation
-		scene.registerBeforeRender(function() {
+		scene.registerBeforeRender(function(scene:Scene, es:EventState = null) {
 			pl.position = camera.position;
 		});
 		

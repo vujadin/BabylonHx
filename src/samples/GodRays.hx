@@ -12,7 +12,6 @@ import com.babylonhx.lights.PointLight;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhxext.loaders.ply.PlyLoader;
-import com.babylonhx.layer.Layer;
 
 import motion.Actuate;
 import motion.easing.Cubic;
@@ -29,16 +28,14 @@ class GodRays {
 		
 		var light = new PointLight("spot", new Vector3(0, 0, 0), scene);
 		light.diffuse = Color3.Red();
-				
+		
 		var camera = new ArcRotateCamera("Camera", -Math.PI / 2, 0.4, 250, Vector3.Zero(), scene);
 		camera.attachControl();
-		
-		var layer:Layer = new Layer("background", "assets/img/nebula.jpg", scene, true);
 		
 		var objParser = new PlyLoader(scene);
 		objParser.load("assets/models/", "star.ply", function(meshes:Array<Mesh>) {
 			var obj = meshes[0];
-						
+			
 			camera.target = obj.position;
 			
 			// Create the "God Rays" effect (volumetric light scattering)
@@ -58,7 +55,7 @@ class GodRays {
 				obj.rotation.x += 0.01;
 				obj.rotation.z += 0.01;
 			});
-						
+			
 			Actuate.tween(camera, 5, { radius: 15 }, false).ease(Cubic.easeOut);
 			
 			scene.getEngine().runRenderLoop(function () {

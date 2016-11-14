@@ -21,7 +21,7 @@ class Lights {
 		var camera = new ArcRotateCamera("Camera", 0, 0, 10, Vector3.Zero(), scene);
 		camera.setPosition(new Vector3(-10, 10, 0));
 		camera.attachControl(this, true);
-				
+		
 		// Lights
 		var light0 = new PointLight("Omni0", new Vector3(0, 10, 0), scene);
 		var light1 = new PointLight("Omni1", new Vector3(0, -10, 0), scene);
@@ -67,10 +67,10 @@ class Lights {
 		
 		light3.diffuse = new Color3(1, 1, 1);
 		light3.specular = new Color3(1, 1, 1);
-						
+		
 		// Animations
 		var alpha = 0.0;
-		scene.beforeRender = function () {
+		scene.beforeRender = function (scene:Scene, ?ev:Dynamic) {
 			light0.position = new Vector3(10 * Math.sin(alpha), 0, 10 * Math.cos(alpha));
 			light1.position = new Vector3(10 * Math.sin(alpha), 0, -10 * Math.cos(alpha));
 			light2.position = new Vector3(10 * Math.cos(alpha), 0, 10 * Math.sin(alpha));

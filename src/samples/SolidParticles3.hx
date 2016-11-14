@@ -13,6 +13,7 @@ import com.babylonhx.particles.SolidParticleSystem;
 import com.babylonhx.particles.SolidParticle;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.materials.textures.Texture;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -99,8 +100,8 @@ class SolidParticles3 {
 		// then set them all
 		SPS.computeParticleVertex = true; 
 			
-		scene.registerBeforeRender(function () {
-			k = scene.getEngine().getDeltaTime() * 100;
+		scene.registerBeforeRender(function (scene:Scene, es:EventState = null) {
+			//k = scene.getEngine().getDeltaTime() * 1000;
 			pl.position = camera.position;
 			SPS.mesh.rotation.y += 0.01;
 			SPS.setParticles();

@@ -18,6 +18,19 @@ import lime.ui.Window;
 import com.babylonhx.Engine;
 import com.babylonhx.Scene;
 
+import com.babylonhx.d2.display.Stage;
+import com.babylonhx.d2.display.Sprite;
+import com.babylonhx.d2.display.Graphics;
+import com.babylonhx.d2.display.Bitmap;
+import com.babylonhx.d2.display.BitmapData;
+import com.babylonhx.utils.Image;
+import com.babylonhx.tools.Tools;
+import com.babylonhx.cameras.FreeCamera;
+import com.babylonhx.math.Vector3;
+import com.babylonhx.materials.StandardMaterial;
+import com.babylonhx.materials.textures.Texture;
+import com.babylonhx.mesh.Mesh;
+
 
 /**
  * ...
@@ -30,6 +43,7 @@ class MainLime extends Application {
 	
 	var scene:Scene;
 	var engine:Engine;
+	var stage:Stage;
 	
 	#if cpp
 	//var hxt = new HxTelemetry();
@@ -44,7 +58,10 @@ class MainLime extends Application {
 		engine = new Engine(window, true);	
 		scene = new Scene(engine);
 		
-		new samples.BasicScene(scene);
+		engine.width = this.window.width;
+		engine.height = this.window.height;
+		
+		//new samples.BasicScene(scene);
 		//new samples.BasicElements(scene);
 		//new samples.DashedLinesMesh(scene);
 		//new samples.RotationAndScaling(scene);
@@ -168,17 +185,43 @@ class MainLime extends Application {
 		//new samples.ShadowTest(scene);
 		//new samples.MultiLights(scene);
 		//new samples.HighlightLayerTest(scene);
+		//new samples.PBRWithHighlight(scene);
+		new samples.BoneScaling(scene);
+		//new samples.MouseFollow(scene);
+		
+		//new samples.TestRot(scene);
 		
 		//new samples.TestCustomFileStruct(scene);
 		
-		engine.width = this.window.width;
-		engine.height = this.window.height;
+		
+		scene.init2D();
+		//new samples.demos2D.Graphics(scene);
+		//new samples.demos2D.Bitmaps(scene);
+		//new samples.demos2D.Bunnymark(scene);
+		//new samples.demos2D.EnterFrameEvent(scene);
+		//new samples.demos2D.MouseEvents(scene);
+		//new samples.demos2D.ColorTransform(scene);
+		//new samples.demos2D.Bezier(scene);
+		//new samples.demos2D.WaterSurface(scene);
+		//new samples.demos2D.Plasma(scene);
+		//new samples.demos2D.Spritesheet(scene);
+		//new samples.demos2D.Mandelbrot(scene);
+		//new samples.demos2D.Pseudo3D(scene);
+		//new samples.demos2D.Real3D(scene);
+		//new samples.demos2D.KeyboardEvents(scene);
+		//new samples.demos2D.Physics(scene);
+		//new samples.demos2D.box2Dtests.Box2DMain(scene);
+		//new samples.demos2D.Text(scene);
+		//new samples.demos2D.Resizable(scene);
+		
+		scene.stage2D.addChild(new com.babylonhx.d2.text.FPS());
 	}
 	
 	override function onMouseDown(window:Window, x:Float, y:Float, button:Int) {
 		for(f in engine.mouseDown) {
 			f(x, y, button);
 		}
+		scene.stage2D._onMD(cast x, cast y, button);
 	}
 	
 	#if !neko
@@ -186,6 +229,7 @@ class MainLime extends Application {
 		for(f in engine.mouseUp) {
 			f();
 		}
+		scene.stage2D._onMU(button);
 	}
 	#end
 	
@@ -193,6 +237,7 @@ class MainLime extends Application {
 		for(f in engine.mouseMove) {
 			f(x, y);
 		}
+		scene.stage2D._onMM(cast x, cast y);
 	}
 	
 	override function onMouseWheel(window:Window, deltaX:Float, deltaY:Float) {
@@ -223,12 +268,14 @@ class MainLime extends Application {
 		for(f in engine.keyUp) {
 			f(keycode);
 		}
+		scene.stage2D._onKU(modifier.altKey, modifier.ctrlKey, modifier.shiftKey, keycode, 0);
 	}
 	
 	override function onKeyDown(window:Window, keycode:Int, modifier:KeyModifier) {
 		for(f in engine.keyDown) {
 			f(keycode);
 		}
+		scene.stage2D._onKD(modifier.altKey, modifier.ctrlKey, modifier.shiftKey, keycode, 0);
 	}
 	
 	override public function onWindowResize(window:Window, width:Int, height:Int) {
