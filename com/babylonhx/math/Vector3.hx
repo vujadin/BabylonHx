@@ -484,25 +484,29 @@ import haxe.ds.Vector;
 		var cx = viewport.x;
 		var cy = viewport.y;
 		
+		var viewportMatrix = Tmp.matrix[0];
+		
 		Matrix.FromValuesToRef(
 			cw / 2.0, 0, 0, 0,
 			0, -ch / 2.0, 0, 0,
 			0, 0, 1, 0,
-			cx + cw / 2.0, ch / 2.0 + cy, 0, 1, Tmp.matrix[0]);
+			cx + cw / 2.0, ch / 2.0 + cy, 0, 1, viewportMatrix);
 			
-		world.multiplyToRef(transform, Tmp.matrix[1]);
-		Tmp.matrix[1].multiplyToRef(Tmp.matrix[0], Tmp.matrix[1]);
+		var matrix = Tmp.matrix[1];
+		world.multiplyToRef(transform, matrix);
+		matrix.multiplyToRef(viewportMatrix, matrix);
 		
-		return Vector3.TransformCoordinates(vector, Tmp.matrix[1]);
+		return Vector3.TransformCoordinates(vector, matrix);
 	}
 	
-	inline public static function UnprojectFromTransform(source:Vector3, viewportWidth:Float, viewportHeight:Float, world:Matrix, transform:Matrix):Vector3 {
-		world.multiplyToRef(transform, Tmp.matrix[1]);
-		Tmp.matrix[1].invert();
+	public static function UnprojectFromTransform(source:Vector3, viewportWidth:Float, viewportHeight:Float, world:Matrix, transform:Matrix):Vector3 {
+		var matrix = Tmp.matrix[1];
+		world.multiplyToRef(transform, matrix);
+		matrix.invert();
 		source.x = source.x / viewportWidth * 2 - 1;
 		source.y = -(source.y / viewportHeight * 2 - 1);
-		var vector = Vector3.TransformCoordinates(source, Tmp.matrix[1]);
-		var num = source.x * Tmp.matrix[1].m[3] + source.y * Tmp.matrix[1].m[7] + source.z * Tmp.matrix[1].m[11] + Tmp.matrix[1].m[15];
+		var vector = Vector3.TransformCoordinates(source, matrix);
+		var num = source.x * matrix.m[3] + source.y * matrix.m[7] + source.z * matrix.m[11] + matrix.m[15];
 		
 		if (Tools.WithinEpsilon(num, 1.0)) {
 			vector = vector.scale(1.0 / num);
@@ -511,13 +515,14 @@ import haxe.ds.Vector;
 		return vector;
 	}
 
-	inline public static function Unproject(source:Vector3, viewportWidth:Float, viewportHeight:Float, world:Matrix, view:Matrix, projection:Matrix):Vector3 {
-		world.multiplyToRef(view, Tmp.matrix[1]);
-		Tmp.matrix[1].multiplyToRef(projection, Tmp.matrix[1]);
-		Tmp.matrix[1].invert();
+	public static function Unproject(source:Vector3, viewportWidth:Float, viewportHeight:Float, world:Matrix, view:Matrix, projection:Matrix):Vector3 {
+		var matrix = Tmp.matrix[1];
+		world.multiplyToRef(view, matrix);
+		matrix.multiplyToRef(projection, matrix);
+		matrix.invert();
 		var screenSource = new Vector3(source.x / viewportWidth * 2 - 1, -(source.y / viewportHeight * 2 - 1), source.z);
-        var vector = Vector3.TransformCoordinates(screenSource, Tmp.matrix[0]);
-        var num = screenSource.x * Tmp.matrix[0].m[3] + screenSource.y * Tmp.matrix[0].m[7] + screenSource.z * Tmp.matrix[0].m[11] + Tmp.matrix[0].m[15];
+		var vector = Vector3.TransformCoordinates(screenSource, matrix);
+		var num = screenSource.x * matrix.m[3] + screenSource.y * matrix.m[7] + screenSource.z * matrix.m[11] + matrix.m[15];
 		
 		if (Tools.WithinEpsilon(num, 1.0)) {
 			vector = vector.scale(1.0 / num);

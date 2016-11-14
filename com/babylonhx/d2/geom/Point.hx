@@ -82,7 +82,10 @@ class Point {
 
 	static public function _m4_Create(?mat:Float32Array):Float32Array {
 		var d = new Float32Array(16);
-		d[0] = d[5] = d[10] = d[15] = 1.0;
+		d[0] = 1.0;
+		d[5] = 1.0;
+		d[10] = 1.0;
+		d[15] = 1.0;
 		
 		if (mat != null) {
 			Point._m4_Set(mat, d);

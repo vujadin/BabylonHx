@@ -57,7 +57,6 @@ class Graphics {
 		var fill = new Fill(len - 1, this._conf);
 		this._fills.push(fill);
 		this._afills.push(fill);
-		trace("ok");
 		//this._lfill = fill;
 	}
 	
@@ -193,14 +192,14 @@ class Graphics {
 		
 		for (i in 1...parts) {
 			var d = i * step;
-			var px = ax +d * tobx,  py = ay +d * toby;
-			var qx = bx +d * tocx,  qy = by +d * tocy;
-			var rx = cx +d * todx,  ry = cy +d * tody;
+			var px = ax + d * tobx,  py = ay + d * toby;
+			var qx = bx + d * tocx,  qy = by + d * tocy;
+			var rx = cx + d * todx,  ry = cy + d * tody;
 			var toqx = qx - px,   toqy = qy - py;
 			var torx = rx - qx,   tory = ry - qy;
 			
-			var sx = px +d * toqx, sy = py +d * toqy;
-			var tx = qx +d * torx, ty = qy +d * tory;
+			var sx = px + d * toqx, sy = py + d * toqy;
+			var tx = qx + d * torx, ty = qy + d * tory;
 			var totx = tx - sx,  toty = ty - sy;
 			this.lineTo(sx + d * totx, sy + d * toty);
 		}

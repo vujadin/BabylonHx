@@ -14,7 +14,7 @@ import com.babylonhx.math.Tools;
 	private var _eyeSpace:Float;
 	private var _leftCamera:FreeCamera;
 	private var _rightCamera:FreeCamera;
-	private var _transformMatrix:Matrix;
+	//private var _transformMatrix:Matrix;
 
 	
 	public function new(name:String, position:Vector3, eyeSpace:Float, scene:Scene) {

@@ -368,7 +368,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	}
 
 	inline public function _bindTexture(channel:String, texture:WebGLTexture) {
-		this._engine._bindTexture(this._samplers.indexOf(channel), texture);
+		this._engine._bindTexture(this._samplers.indexOf(channel), texture.data);
 	}
 
 	public function setTexture(channel:String, texture:BaseTexture) {

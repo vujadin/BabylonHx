@@ -500,7 +500,7 @@ class DisplayObject extends EventDispatcher {
 		
 		return w;
 	}
-	inline private function get_width():Float {
+	private function get_width():Float {
 		this.transform._checkVals(); 
 		
 		return this._getParR(this, true).width; 
@@ -513,7 +513,7 @@ class DisplayObject extends EventDispatcher {
 		
 		return h;
 	}
-	inline private function get_height():Float {
+	private function get_height():Float {
 		this.transform._checkVals(); 
 		
 		return this._getParR(this, true).height;	

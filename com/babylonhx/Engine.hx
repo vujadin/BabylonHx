@@ -150,6 +150,8 @@ typedef BufferPointer = {
 	private var _onFocus:Void->Void;
 	private var _onFullscreenChange:Void->Void;
 	private var _onPointerLockChange:Void->Void;
+	
+	public var onAfterRender:Array<Void->Void> = [];
 
 	private var _hardwareScalingLevel:Float;	
 	private var _caps:EngineCapabilities;
@@ -189,7 +191,7 @@ typedef BufferPointer = {
 	private var _loadedTexturesCache:Array<WebGLTexture> = [];
 	private var _maxTextureChannels:Int = 16;
 	private var _activeTexture:Int;
-	public var _activeTexturesCache:Vector<WebGLTexture>;
+	public var _activeTexturesCache:Vector<GLTexture>;
 	private var _currentEffect:Effect;
 	private var _currentProgram:GLProgram;
 	private var _compiledEffects:Map<String, Effect> = new Map<String, Effect>();
@@ -236,8 +238,8 @@ typedef BufferPointer = {
 	
 	public function new(canvas:Dynamic, antialias:Bool = false, ?options:Dynamic, adaptToDeviceRatio:Bool = false) {		
 		this._renderingCanvas = canvas;
-		this._canvasClientRect.width = 960;// canvas.width;
-		this._canvasClientRect.height = 640;// canvas.height;
+		this._canvasClientRect.width = Reflect.getProperty(canvas, "width") != null ? Reflect.getProperty(canvas, "width") : 960;// canvas.width;
+		this._canvasClientRect.height = Reflect.getProperty(canvas, "height") != null ? Reflect.getProperty(canvas, "height") : 640;// canvas.height;
 		
 		options = options != null ? options : {};
 		options.antialias = antialias;
@@ -275,8 +277,8 @@ typedef BufferPointer = {
 			options.stencil = true;
 		}
 		
-		width = 960;
-		height = 640;		
+		width = this._canvasClientRect.width;
+		height = this._canvasClientRect.height;		
 		
 		this._onBlur = function() {
 			this._windowIsBackground = true;
@@ -438,7 +440,7 @@ typedef BufferPointer = {
 		// Pointer lock
 		this.isPointerLock = false;	
 		
-		this._activeTexturesCache = new Vector<WebGLTexture>(this._maxTextureChannels);
+		this._activeTexturesCache = new Vector<GLTexture>(this._maxTextureChannels);
 		
 		var msg:String = "BabylonHx - Cross-Platform 3D Engine | " + Date.now().getFullYear() + " | www.babylonhx.com";
 		msg +=  " | GL version: " + this._glVersion + " | GL vendor: " + this._glVendor + " | GL renderer: " + this._glVendor; 
@@ -516,7 +518,7 @@ typedef BufferPointer = {
 			trace("Texture '" + texture.url + "' is not power of two !");
 		}
 		
-        this._bindTextureDirectly(GL.TEXTURE_2D, texture);
+        this._bindTextureDirectly(GL.TEXTURE_2D, texture.data);
 		/*#if js
         Gl.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY == null ? 1 : (invertY ? 1 : 0));
 		#end*/
@@ -775,6 +777,10 @@ typedef BufferPointer = {
 			
 			// Present
 			this.endFrame();
+			
+			for (f in onAfterRender) {
+				f();
+			}
 		}
 		
 		#if purejs
@@ -997,7 +1003,7 @@ typedef BufferPointer = {
 		this._currentRenderTarget = null;
 		
 		if (texture.generateMipMaps && !disableGenerateMipMaps) {
-			this._bindTextureDirectly(GL.TEXTURE_2D, texture);
+			this._bindTextureDirectly(GL.TEXTURE_2D, texture.data);
 			Gl.generateMipmap(GL.TEXTURE_2D);
 			this._bindTextureDirectly(GL.TEXTURE_2D, null);
 		}
@@ -1007,7 +1013,7 @@ typedef BufferPointer = {
 	
 	public function generateMipMapsForCubemap(texture:WebGLTexture) {
         if (texture.generateMipMaps) {
-            this._bindTextureDirectly(GL.TEXTURE_CUBE_MAP, texture);
+            this._bindTextureDirectly(GL.TEXTURE_CUBE_MAP, texture.data);
             Gl.generateMipmap(GL.TEXTURE_CUBE_MAP);
             this._bindTextureDirectly(GL.TEXTURE_CUBE_MAP, null);
         }
@@ -1821,7 +1827,7 @@ typedef BufferPointer = {
 	}
 
 	inline public function setSamplingMode(texture:WebGLTexture, samplingMode:Int) {
-		this._bindTextureDirectly(GL.TEXTURE_2D, texture);
+		this._bindTextureDirectly(GL.TEXTURE_2D, texture.data);
 		
 		var magFilter = GL.NEAREST;
 		var minFilter = GL.NEAREST;
@@ -2005,7 +2011,7 @@ typedef BufferPointer = {
 			height = texture._height;
 			isPot = (com.babylonhx.math.Tools.IsExponentOfTwo(width) && com.babylonhx.math.Tools.IsExponentOfTwo(height));
 			
-			this._bindTextureDirectly(GL.TEXTURE_CUBE_MAP, texture);
+			this._bindTextureDirectly(GL.TEXTURE_CUBE_MAP, texture.data);
 			//Gl.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, 0);
 			
 			if (!noMipmap && isPot) {
@@ -2121,7 +2127,7 @@ typedef BufferPointer = {
 	inline public function updateRawTexture(texture:WebGLTexture, data:ArrayBufferView, format:Int, invertY:Bool = false, compression:String = "") {
 		var internalFormat = this._getInternalFormat(format);
 		
-		this._bindTextureDirectly(GL.TEXTURE_2D, texture);
+		this._bindTextureDirectly(GL.TEXTURE_2D, texture.data);
 		//Gl.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 1 : 0);
 		
 		if (texture._width % 4 != 0) {
@@ -2176,7 +2182,7 @@ typedef BufferPointer = {
 	}
 	
 	inline public function updateDynamicTexture(texture:WebGLTexture, canvas:Image, invertY:Bool, premulAlpha:Bool = false) {
-		this._bindTextureDirectly(GL.TEXTURE_2D, texture);
+		this._bindTextureDirectly(GL.TEXTURE_2D, texture.data);
 		//Gl.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 1 : 0);
 		if (premulAlpha) {
             Gl.pixelStorei(GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 1);
@@ -2197,14 +2203,14 @@ typedef BufferPointer = {
 		var filters = getSamplingParameters(samplingMode, texture.generateMipMaps);
 		
 		if (texture.isCube) {
-			this._bindTextureDirectly(GL.TEXTURE_CUBE_MAP, texture);
+			this._bindTextureDirectly(GL.TEXTURE_CUBE_MAP, texture.data);
 			
 			Gl.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_MAG_FILTER, filters.mag);
             Gl.texParameteri(GL.TEXTURE_CUBE_MAP, GL.TEXTURE_MIN_FILTER, filters.min);
             this._bindTextureDirectly(GL.TEXTURE_CUBE_MAP, null);
 		}
 		else {
-			this._bindTextureDirectly(GL.TEXTURE_2D, texture);
+			this._bindTextureDirectly(GL.TEXTURE_2D, texture.data);
 			
 			Gl.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, filters.mag);
 			Gl.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, filters.min);
@@ -2219,7 +2225,7 @@ typedef BufferPointer = {
             return;
 		}
 		
-        this._bindTextureDirectly(GL.TEXTURE_2D, texture);
+        this._bindTextureDirectly(GL.TEXTURE_2D, texture.data);
         Gl.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, invertY ? 0 : 1); // Video are upside down by default
 		
         try {
@@ -2298,7 +2304,7 @@ typedef BufferPointer = {
         }
 		
 		var texture = new WebGLTexture("", Gl.createTexture());
-		this._bindTextureDirectly(GL.TEXTURE_2D, texture);
+		this._bindTextureDirectly(GL.TEXTURE_2D, texture.data);
 		
 		var width:Int = size.width != null ? size.width : size;
         var height:Int = size.height != null ? size.height : size;
@@ -2403,7 +2409,7 @@ typedef BufferPointer = {
 		
 		var filters = getSamplingParameters(samplingMode, generateMipMaps);
 		
-		this._bindTextureDirectly(GL.TEXTURE_CUBE_MAP, texture);
+		this._bindTextureDirectly(GL.TEXTURE_CUBE_MAP, texture.data);
 		
 		for (face in 0...6) {
 			#if (snow && cpp)
@@ -2447,7 +2453,7 @@ typedef BufferPointer = {
 		
 		// Mipmaps
         if (texture.generateMipMaps) {
-            this._bindTextureDirectly(GL.TEXTURE_CUBE_MAP, texture);
+            this._bindTextureDirectly(GL.TEXTURE_CUBE_MAP, texture.data);
             Gl.generateMipmap(GL.TEXTURE_CUBE_MAP);
         }
 		
@@ -2532,7 +2538,7 @@ typedef BufferPointer = {
 				var width = com.babylonhx.math.Tools.GetExponentOfTwo(imgs[0].width, this._caps.maxCubemapTextureSize);
 				var height = width;
 				
-				this._bindTextureDirectly(GL.TEXTURE_CUBE_MAP, texture);
+				this._bindTextureDirectly(GL.TEXTURE_CUBE_MAP, texture.data);
 				
 				/*#if js
 				Gl.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, 0);
@@ -2639,14 +2645,14 @@ typedef BufferPointer = {
         }
     }
 
-    inline public function _bindTextureDirectly(target:Int, texture:WebGLTexture) {
+    inline public function _bindTextureDirectly(target:Int, texture:GLTexture) {
         if (this._activeTexturesCache[this._activeTexture] != texture) {
-            texture != null ? Gl.bindTexture(target, texture.data) : Gl.bindTexture(target, null);
+            Gl.bindTexture(target, texture);
             this._activeTexturesCache[this._activeTexture] = texture;
         }
     }
 
-	inline public function _bindTexture(channel:Int, texture:WebGLTexture) {
+	inline public function _bindTexture(channel:Int, texture:GLTexture) {
 		if (channel < 0) {
 			return;
 		}
@@ -2657,7 +2663,7 @@ typedef BufferPointer = {
 
 	inline public function setTextureFromPostProcess(channel:Int, postProcess:PostProcess) {
 		if (postProcess._textures.length > 0) {
-			this._bindTexture(channel, postProcess._textures.data[postProcess._currentRenderTextureInd]);
+			this._bindTexture(channel, postProcess._textures.data[postProcess._currentRenderTextureInd].data);
 		}
 	}
 
@@ -2696,7 +2702,7 @@ typedef BufferPointer = {
 		
 		var internalTexture = texture.getInternalTexture();
 		
-		if (this._activeTexturesCache[channel] == internalTexture) {
+		if (this._activeTexturesCache[channel] == internalTexture.data) {
 			return;
 		}
 		
@@ -2705,7 +2711,7 @@ typedef BufferPointer = {
         }
 		
 		if (internalTexture.isCube) {
-			this._bindTextureDirectly(GL.TEXTURE_CUBE_MAP, internalTexture);
+			this._bindTextureDirectly(GL.TEXTURE_CUBE_MAP, internalTexture.data);
 			
 			if (internalTexture._cachedCoordinatesMode != texture.coordinatesMode) {
 				internalTexture._cachedCoordinatesMode = texture.coordinatesMode;
@@ -2718,7 +2724,7 @@ typedef BufferPointer = {
 			this._setAnisotropicLevel(GL.TEXTURE_CUBE_MAP, texture);
 		} 
 		else {
-			this._bindTextureDirectly(GL.TEXTURE_2D, internalTexture);
+			this._bindTextureDirectly(GL.TEXTURE_2D, internalTexture.data);
 			
 			if (internalTexture._cachedWrapU != texture.wrapU) {
 				internalTexture._cachedWrapU = texture.wrapU;

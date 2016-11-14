@@ -718,6 +718,158 @@ typedef Assets = nme.Assets;
 	#elseif kha
 	
 	#end
+	
+	
+	#if (purejs)
+	public static function LoadImages(url:String, ?callbackFn:Dynamic->Void, ?onerror:Dynamic->Void, ?db:Dynamic):Dynamic {
+		url = Tools.CleanUrl(url);
+		
+		var img = new js.html.Image();
+		
+		if (url.substr(0, 5) != "data:") {
+			img.crossOrigin = 'anonymous';
+		}
+		
+		img.onload = function(e) {
+			var canvas:js.html.CanvasElement = Browser.document.createCanvasElement();
+			canvas.width = img.width;
+			canvas.height = img.height;
+			var ctx:js.html.CanvasRenderingContext2D = canvas.getContext2d();
+			ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
+			var imgData = ctx.getImageData(0, 0, img.width, img.height).data;
+			
+			// ugly hack ...
+			var normalArray:Dynamic = null;
+			untyped normalArray = Array.prototype.slice.call(imgData);
+			
+			if (callbackFn != null) {
+				callbackFn(new Image(new UInt8Array(normalArray), img.width, img.height));
+			}			
+		};
+		
+		/*img.onerror = err => {
+			onerror(img, err);
+		};*/
+		
+		/*var noIndexedDB = function() {
+			img.src = url;
+		};
+		
+		var loadFromIndexedDB = function() {
+			database.loadImageFromDB(url, img);
+		};
+		
+		//ANY database to do!
+		if (database && database.enableTexturesOffline && Database.IsUASupportingBlobStorage) {
+			database.openAsync(loadFromIndexedDB, noIndexedDB);
+		}
+		else {
+			if (url.indexOf("file:") === -1) {
+				noIndexedDB();
+			}
+			else {
+				try {
+					var textureName = url.substring(5);
+					var blobURL;
+					try {
+						blobURL = URL.createObjectURL(FilesInput.FilesTextures[textureName], { oneTimeOnly: true });
+					}
+					catch (ex) {
+						// Chrome doesn't support oneTimeOnly parameter
+						blobURL = URL.createObjectURL(FilesInput.FilesTextures[textureName]);
+					}
+					img.src = blobURL;
+				}
+				catch (e) {
+					Tools.Log("Error while trying to load texture: " + textureName);
+					img.src = null;
+				}
+			}
+		}*/
+		
+		img.src = url;
+		
+		return img;
+	}	
+	#elseif snow
+	
+	#if luxe
+	public static function LoadImages(url:String, onload:Image->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
+		//if (Luxe.core.app.assets.listed(url)) {
+			var callBackFunction = function(img:Dynamic) {
+				var i = new Image(img.image.pixels, img.image.width, img.image.height);
+				onload(i);
+			};
+			
+			Luxe.core.app.assets.image(url).then(
+				function(asset:Dynamic) {
+					callBackFunction(asset);
+				}
+			);
+		//} 
+		//else {
+		//	trace("Image '" + url + "' doesn't exist!");
+		//}
+    } 
+	#else
+	public static function LoadImages(url:String, onload:Image->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
+		var callBackFunction = function(img:Dynamic) {
+			var i = new Image(img.image.pixels, img.image.width, img.image.height);
+			onload(i);
+		};
+		
+		app.assets.image(url).then(
+			function(asset:Dynamic) {
+				callBackFunction(asset);
+			}
+		);
+    } 
+	#end
+	
+	#elseif (lime || openfl || nme)
+	public static function LoadImages(root:String, urls:Array<String>, onload:Map<String, Image>->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
+		#if (openfl && !nme)
+		if (Assets.exists(url)) {
+			var img = Assets.getBitmapData(url); 
+			
+			#if openfl_legacy
+			onload(new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height));		
+			#else
+			if (img.image.format != lime.graphics.PixelFormat.RGBA32) {
+				img.image.format = lime.graphics.PixelFormat.RGBA32;
+			}
+			onload(new Image(img.image.data, img.width, img.height));	
+			#end
+		} 
+		else {
+			trace("Image '" + url + "' doesn't exist!");
+		}
+		#elseif lime
+		var imgs:Map<String, Image> = new Map();
+		for (i in 0...urls.length) {
+			var url = root != "" ? root + urls[i] : urls[i];
+			if (Assets.exists(url)) {
+				var img = Assets.getImage(url);
+				var image = new Image(img.data, img.width, img.height);
+				imgs.set(urls[i], image);
+			} 
+			else {
+				trace("Image '" + url + "' doesn't exist!");
+			}
+			
+			if (i == urls.length - 1) {
+				onload(imgs);
+			}
+		}
+		#elseif nme		
+		var img = Assets.getBitmapData(url); 
+		onload(new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height));		
+		#end
+    }
+	#elseif kha
+	
+	#end
+	
 
 	public static function Format(value:Float, decimals:Int = 2):String {
 		value = Math.round(value * Math.pow(10, decimals));

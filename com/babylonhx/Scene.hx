@@ -60,6 +60,8 @@ import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
 import com.babylonhx.tools.StringDictionary;
 
+import com.babylonhx.d2.display.Stage;
+
 #if (purejs || js)
 import com.babylonhx.audio.*;
 #end
@@ -91,6 +93,7 @@ import com.babylonhx.audio.*;
 	public var clipPlane:Plane;
 	public var animationsEnabled:Bool = true;
 	public var constantlyUpdateMeshUnderPointer:Bool = false;
+	public var useRightHandedSystem:Bool = false;
 	
 	// Events
 
@@ -309,6 +312,13 @@ import com.babylonhx.audio.*;
 	public var fogDensity:Float = 0.1;
 	public var fogStart:Float = 0;
 	public var fogEnd:Float = 1000.0;
+	
+	// 2D
+	private var _stage2D:Stage;
+	public var stage2D(get, never):Stage;
+	inline private function get_stage2D():Stage {
+		return _stage2D;
+	}
 
 	// Lights
 	/**
@@ -739,6 +749,15 @@ import com.babylonhx.audio.*;
      	}
     }
     #end
+	
+	public function init2D() {
+		if (this.activeCamera != null) {
+			this._stage2D = new Stage(this);
+		}
+		else {
+			trace("No active camera! You need to initialize your 3D stuff first.");
+		}
+	}
 
 	// Stats
 	inline public function getLastFrameDuration():Float {

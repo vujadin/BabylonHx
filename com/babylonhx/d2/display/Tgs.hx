@@ -124,12 +124,11 @@ class Tgs {
 	public function render(st:Stage) {
 		if (this.useTex) {
 			var bd = this.bdata;
-			if (bd._loaded == false) {
-				return;
-			}
+			
 			if (bd._dirty) {
 				bd._syncWithGPU();
 			}
+			
 			if (this.dirtyUVT) {
 				this.dirtyUVT = false;
 				if (this.emptyUVT) {
@@ -137,13 +136,16 @@ class Tgs {
 					var cw = 1 / bd._rwidth;
 					var ch = 1 / bd._rheight;
 					for (i in 0...this.uvt.length) {
-						this.uvt[2 * i] = cw * this.vrt[3 * i]; 
-						this.uvt[2 * i + 1] = ch * this.vrt[3 * i + 1];
+						if (this.vrt.length > (3 * i + 1)) {
+							this.uvt[2 * i] = cw * this.vrt[3 * i]; 
+							this.uvt[2 * i + 1] = ch * this.vrt[3 * i + 1];
+						}
 					}
 				}
 				else if(bd.width != bd._rwidth || bd.height != bd._rheight) {
 					var cw = bd.width / bd._rwidth;
 					var ch = bd.height / bd._rheight;
+					
 					for (i in 0...this.uvt.length) {
 						this.uvt[2 * i] *= cw; 
 						this.uvt[2 * i + 1] *= ch; 

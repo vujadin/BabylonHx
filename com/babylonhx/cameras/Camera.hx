@@ -1,6 +1,7 @@
 package com.babylonhx.cameras;
 
 import com.babylonhx.math.Matrix;
+import com.babylonhx.math.Plane;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Viewport;
 import com.babylonhx.mesh.Mesh;
@@ -37,6 +38,7 @@ import com.babylonhx.animations.Animation;
 	public static inline var RIG_MODE_STEREOSCOPIC_SIDEBYSIDE_CROSSEYED:Int = 12;
 	public static inline var RIG_MODE_STEREOSCOPIC_OVERUNDER:Int = 13;
 	public static inline var RIG_MODE_VR:Int = 20;
+	public static inline var _RIG_MODE_WEBVR:Int = 21;
 
 	// Members
 	@serializeAsVector3()
@@ -99,15 +101,20 @@ import com.babylonhx.animations.Animation;
 	public var _rigPostProcess:PostProcess;
 
 	// Cache
-	private var _computedViewMatrix = Matrix.Identity();
-	public var _projectionMatrix = new Matrix();
+	private var _computedViewMatrix:Matrix = Matrix.Identity();
+	public var _projectionMatrix:Matrix = new Matrix();
+	private var _doNotComputeProjectionMatrix:Bool = false;
 	private var _worldMatrix:Matrix;
 	public var _postProcesses:Array<PostProcess> = [];
+	private var _transformMatrix:Matrix = Matrix.Zero();
+	private var _webvrViewMatrix:Matrix = Matrix.Identity();
 	
 	public var _activeMeshes:SmartArray<AbstractMesh> = new SmartArray<AbstractMesh>(256);
 	
 	private var _globalPosition:Vector3 = Vector3.Zero();
 	public var globalPosition(get, never):Vector3;
+	private var _frustumPlanes:Array<Plane> = [];
+	private var _refreshFrustumPlanes:Bool = true;
 	
 	// VK: do not delete these !!!
 	public var _getViewMatrix:Void->Matrix;
@@ -124,18 +131,11 @@ import com.babylonhx.animations.Animation;
 	public function new(name:String, position:Vector3, scene:Scene) {
 		super(name, scene);
 		
-		this.position = position;
 		scene.addCamera(this);
 		
-		#if (openfl || nme)
-		if (name != "openfl_nme_dummycamera") {
-		#end
 		if (scene.activeCamera == null) {
 			scene.activeCamera = this;
 		}
-		#if (openfl || nme)
-		}
-		#end
 		
 		this.getProjectionMatrix = getProjectionMatrix_default;
 		this._getViewMatrix = _getViewMatrix_default;
@@ -143,6 +143,8 @@ import com.babylonhx.animations.Animation;
 		#if purejs
 		eventPrefix = com.babylonhx.tools.Tools.GetPointerPrefix();
 		#end
+		
+		this.position = position;
 	}
 	
 	private function get_globalPosition():Vector3 {
@@ -403,23 +405,59 @@ import com.babylonhx.animations.Animation;
 	}
 
 	public function getProjectionMatrix_default(force:Bool = false):Matrix {
-		if (!force && this._isSynchronizedProjectionMatrix()) {
+		if (this._doNotComputeProjectionMatrix || (!force && this._isSynchronizedProjectionMatrix())) {
 			return this._projectionMatrix;
 		}
 		
+		this._refreshFrustumPlanes = true;
+		
 		var engine = this.getEngine();
+		var scene = this.getScene();
 		if (this.mode == Camera.PERSPECTIVE_CAMERA) {
 			if (this.minZ <= 0) {
 				this.minZ = 0.1;
 			}
 			
-			Matrix.PerspectiveFovLHToRef(this.fov, engine.getAspectRatio(this), this.minZ, this.maxZ, this._projectionMatrix, this.fovMode == Camera.FOVMODE_VERTICAL_FIXED);
+			if (scene.useRightHandedSystem) {
+				Matrix.PerspectiveFovRHToRef(this.fov,
+					engine.getAspectRatio(this),
+					this.minZ,
+					this.maxZ,
+					this._projectionMatrix,
+					this.fovMode == Camera.FOVMODE_VERTICAL_FIXED);
+			} 
+			else {
+				Matrix.PerspectiveFovLHToRef(this.fov,
+					engine.getAspectRatio(this),
+					this.minZ,
+					this.maxZ,
+					this._projectionMatrix,
+					this.fovMode == Camera.FOVMODE_VERTICAL_FIXED);
+			}
+			
 			return this._projectionMatrix;
 		}
 		
 		var halfWidth = engine.getRenderWidth() / 2.0;
 		var halfHeight = engine.getRenderHeight() / 2.0;
-		Matrix.OrthoOffCenterLHToRef(this.orthoLeft == null ? -halfWidth : this.orthoLeft, this.orthoRight == null ? halfWidth : this.orthoRight, this.orthoBottom == null ? -halfHeight : this.orthoBottom, this.orthoTop == null ? halfHeight : this.orthoTop, this.minZ, this.maxZ, this._projectionMatrix);
+		if (scene.useRightHandedSystem) {
+			Matrix.OrthoOffCenterRHToRef(this.orthoLeft != null ? this.orthoLeft : -halfWidth,
+				this.orthoRight != null ? this.orthoRight : halfWidth,
+				this.orthoBottom != null ? this.orthoBottom : -halfHeight,
+				this.orthoTop != null ? this.orthoTop : halfHeight,
+				this.minZ,
+				this.maxZ,
+				this._projectionMatrix);
+		} 
+		else {
+			Matrix.OrthoOffCenterLHToRef(this.orthoLeft != null ? this.orthoLeft : -halfWidth,
+				this.orthoRight != null ? this.orthoRight : halfWidth,
+				this.orthoBottom != null ? this.orthoBottom : -halfHeight,
+				this.orthoTop != null ? this.orthoTop : halfHeight,
+				this.minZ,
+				this.maxZ,
+				this._projectionMatrix);
+		}
 		
 		return this._projectionMatrix;
 	}

@@ -109,7 +109,7 @@ import com.babylonhx.utils.GL;
 		vertices.push(-1);
 		vertices.push(-1);
 		vertices.push(1);
-		vertices.push( -1);
+		vertices.push(-1);
 		
 		var vertexBuffer = new VertexBuffer(engine, vertices, VertexBuffer.PositionKind, false, false, 2);
 		this._vertexBuffers[VertexBuffer.PositionKind] = vertexBuffer;

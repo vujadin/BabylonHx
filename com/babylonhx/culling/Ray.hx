@@ -32,23 +32,25 @@ import com.babylonhx.collisions.IntersectionInfo;
 	public function intersectsBoxMinMax(minimum:Vector3, maximum:Vector3):Bool {
 		var d:Float = 0.0;
 		var maxValue:Float = Math.POSITIVE_INFINITY;
-		
+		var inv:Float = 0;
+		var min:Float = 0;
+		var max:Float = 0;
+		var temp:Float = 0;
 		if (Math.abs(this.direction.x) < 0.0000001) {
 			if (this.origin.x < minimum.x || this.origin.x > maximum.x) {
 				return false;
 			}
 		}
 		else {
-			var inv = 1.0 / this.direction.x;
-			var min = (minimum.x - this.origin.x) * inv;
-			var max = (maximum.x - this.origin.x) * inv;
-			
-			if(max == Math.NEGATIVE_INFINITY) {
-				max = Math.POSITIVE_INFINITY; 
+			inv = 1.0 / this.direction.x;
+			min = (minimum.x - this.origin.x) * inv;
+			max = (maximum.x - this.origin.x) * inv;
+			if (max == Math.NEGATIVE_INFINITY) {
+				max = Math.POSITIVE_INFINITY;
 			}
 			
 			if (min > max) {
-				var temp = min;
+				temp = min;
 				min = max;
 				max = temp;
 			}
@@ -67,16 +69,16 @@ import com.babylonhx.collisions.IntersectionInfo;
 			}
 		}
 		else {
-			var inv = 1.0 / this.direction.y;
-			var min = (minimum.y - this.origin.y) * inv;
-			var max = (maximum.y - this.origin.y) * inv;
+			inv = 1.0 / this.direction.y;
+			min = (minimum.y - this.origin.y) * inv;
+			max = (maximum.y - this.origin.y) * inv;
 			
-			if(max == Math.NEGATIVE_INFINITY) {
-				max = Math.POSITIVE_INFINITY; 
+			if (max == Math.NEGATIVE_INFINITY) {
+				max = Math.POSITIVE_INFINITY;
 			}
 			
 			if (min > max) {
-				var temp = min;
+				temp = min;
 				min = max;
 				max = temp;
 			}
@@ -95,16 +97,16 @@ import com.babylonhx.collisions.IntersectionInfo;
 			}
 		}
 		else {
-			var inv = 1.0 / this.direction.z;
-			var min = (minimum.z - this.origin.z) * inv;
-			var max = (maximum.z - this.origin.z) * inv;
+			inv = 1.0 / this.direction.z;
+			min = (minimum.z - this.origin.z) * inv;
+			max = (maximum.z - this.origin.z) * inv;
 			
-			if(max == Math.NEGATIVE_INFINITY) {
-				max = Math.POSITIVE_INFINITY; 
+			if (max == Math.NEGATIVE_INFINITY) {
+				max = Math.POSITIVE_INFINITY;
 			}
 			
 			if (min > max) {
-				var temp = min;
+				temp = min;
 				min = max;
 				max = temp;
 			}
@@ -116,6 +118,7 @@ import com.babylonhx.collisions.IntersectionInfo;
 				return false;
 			}
 		}
+		
 		return true;
 	}
 
@@ -177,6 +180,12 @@ import com.babylonhx.collisions.IntersectionInfo;
 		var bv = Vector3.Dot(this.direction, this._qvec) * invdet;
 		
 		if (bv < 0 || bu + bv > 1.0) {
+			return null;
+		}
+		
+		//check if the distance is longer than the predefined length.
+		var distance = Vector3.Dot(this._edge2, this._qvec) * invdet;
+		if (distance > this.length) {
 			return null;
 		}
 		

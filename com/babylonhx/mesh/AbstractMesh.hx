@@ -1189,6 +1189,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			if (currentIntersectInfo != null) {
 				if (fastCheck || intersectInfo == null || currentIntersectInfo.distance < intersectInfo.distance) {
 					intersectInfo = currentIntersectInfo;
+					intersectInfo.subMeshId = index;
 					
 					if (fastCheck) {
 						break;
@@ -1216,6 +1217,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			pickingInfo.bv = intersectInfo.bv;
 			pickingInfo.faceId = intersectInfo.faceId;
 			pickingInfo.subMeshId = intersectInfo.subMeshId;
+			
 			return pickingInfo;
 		}
 		

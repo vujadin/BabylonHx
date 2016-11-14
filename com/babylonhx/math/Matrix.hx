@@ -93,6 +93,38 @@ import haxe.ds.Vector;
 		
 		return this;
 	}
+	
+	inline public function reset():Matrix {
+		for (index in 0...16) {
+			this.m[index] = 0;
+		}
+		
+		return this;
+	}
+
+	inline public function add(other:Matrix):Matrix {
+		var result = new Matrix();
+		
+		this.addToRef(other, result);
+		
+		return result;
+	}
+
+	inline public function addToRef(other:Matrix, result:Matrix):Matrix {
+		for (index in 0...16) {
+			result.m[index] = this.m[index] + other.m[index];
+		}
+		
+		return this;
+	}
+
+	inline public function addToSelf(other:Matrix):Matrix {
+		for (index in 0...16) {
+			this.m[index] += other.m[index];
+		}
+		
+		return this;
+	}
 
 	inline public function invertToRef(other:Matrix):Matrix {
 		var l1 = this.m[0];
@@ -154,37 +186,6 @@ import haxe.ds.Vector;
 		
 		return this;
 	}
-	
-	inline public function reset():Matrix {
-        for (index in 0...16) {
-            this.m[index] = 0;
-        }
-		
-        return this;
-    }
-	
-    inline public function add(other:Matrix):Matrix {
-        var result = new Matrix();
-        this.addToRef(other, result);
-		
-        return result;
-    }
-
-    inline public function addToRef(other:Matrix, result:Matrix):Matrix {
-        for (index in 0...16) {
-            result.m[index] = this.m[index] + other.m[index];
-        }
-		
-        return this;
-    }
-
-    inline public function addToSelf(other:Matrix):Matrix {
-        for (index in 0...16) {
-            this.m[index] += other.m[index];
-        }
-		
-        return this;
-    }
 
 	inline public function setTranslation(vector3:Vector3):Matrix {
 		this.m[12] = vector3.x;
@@ -226,28 +227,62 @@ import haxe.ds.Vector;
 		return this;
 	}
 
-	inline public function multiplyToArray(other:Matrix, result: #if (js || html5 || purejs) Float32Array #else Array<Float> #end, offset:Int) {	
-		var tm = this.m;
-		var om = other.m;
-		result[offset] = tm[0] * om[0] + tm[1] * om[4] + tm[2] * om[8] + tm[3] * om[12];
-		result[offset + 1] = tm[0] * om[1] + tm[1] * om[5] + tm[2] * om[9] + tm[3] * om[13];
-		result[offset + 2] = tm[0] * om[2] + tm[1] * om[6] + tm[2] * om[10] + tm[3] * om[14];
-		result[offset + 3] = tm[0] * om[3] + tm[1] * om[7] + tm[2] * om[11] + tm[3] * om[15];
+	public function multiplyToArray(other:Matrix, result: #if (js || html5 || purejs) Float32Array #else Array<Float> #end, offset:Int) {	
+		var tm0 = this.m[0];
+		var tm1 = this.m[1];
+		var tm2 = this.m[2];
+		var tm3 = this.m[3];
+		var tm4 = this.m[4];
+		var tm5 = this.m[5];
+		var tm6 = this.m[6];
+		var tm7 = this.m[7];
+		var tm8 = this.m[8];
+		var tm9 = this.m[9];
+		var tm10 = this.m[10];
+		var tm11 = this.m[11];
+		var tm12 = this.m[12];
+		var tm13 = this.m[13];
+		var tm14 = this.m[14];
+		var tm15 = this.m[15];
 		
-		result[offset + 4] = tm[4] * om[0] + tm[5] * om[4] + tm[6] * om[8] + tm[7] * om[12];
-		result[offset + 5] = tm[4] * om[1] + tm[5] * om[5] + tm[6] * om[9] + tm[7] * om[13];
-		result[offset + 6] = tm[4] * om[2] + tm[5] * om[6] + tm[6] * om[10] + tm[7] * om[14];
-		result[offset + 7] = tm[4] * om[3] + tm[5] * om[7] + tm[6] * om[11] + tm[7] * om[15];
+		var om0 = other.m[0];
+		var om1 = other.m[1];
+		var om2 = other.m[2];
+		var om3 = other.m[3];
+		var om4 = other.m[4];
+		var om5 = other.m[5];
+		var om6 = other.m[6];
+		var om7 = other.m[7];
+		var om8 = other.m[8];
+		var om9 = other.m[9];
+		var om10 = other.m[10];
+		var om11 = other.m[11];
+		var om12 = other.m[12];
+		var om13 = other.m[13];
+		var om14 = other.m[14];
+		var om15 = other.m[15];
 		
-		result[offset + 8] = tm[8] * om[0] + tm[9] * om[4] + tm[10] * om[8] + tm[11] * om[12];
-		result[offset + 9] = tm[8] * om[1] + tm[9] * om[5] + tm[10] * om[9] + tm[11] * om[13];
-		result[offset + 10] = tm[8] * om[2] + tm[9] * om[6] + tm[10] * om[10] + tm[11] * om[14];
-		result[offset + 11] = tm[8] * om[3] + tm[9] * om[7] + tm[10] * om[11] + tm[11] * om[15];
+		result[offset] = tm0 * om0 + tm1 * om4 + tm2 * om8 + tm3 * om12;
+		result[offset + 1] = tm0 * om1 + tm1 * om5 + tm2 * om9 + tm3 * om13;
+		result[offset + 2] = tm0 * om2 + tm1 * om6 + tm2 * om10 + tm3 * om14;
+		result[offset + 3] = tm0 * om3 + tm1 * om7 + tm2 * om11 + tm3 * om15;
 		
-		result[offset + 12] = tm[12] * om[0] + tm[13] * om[4] + tm[14] * om[8] + tm[15] * om[12];
-		result[offset + 13] = tm[12] * om[1] + tm[13] * om[5] + tm[14] * om[9] + tm[15] * om[13];
-		result[offset + 14] = tm[12] * om[2] + tm[13] * om[6] + tm[14] * om[10] + tm[15] * om[14];
-		result[offset + 15] = tm[12] * om[3] + tm[13] * om[7] + tm[14] * om[11] + tm[15] * om[15];
+		result[offset + 4] = tm4 * om0 + tm5 * om4 + tm6 * om8 + tm7 * om12;
+		result[offset + 5] = tm4 * om1 + tm5 * om5 + tm6 * om9 + tm7 * om13;
+		result[offset + 6] = tm4 * om2 + tm5 * om6 + tm6 * om10 + tm7 * om14;
+		result[offset + 7] = tm4 * om3 + tm5 * om7 + tm6 * om11 + tm7 * om15;
+		
+		result[offset + 8] = tm8 * om0 + tm9 * om4 + tm10 * om8 + tm11 * om12;
+		result[offset + 9] = tm8 * om1 + tm9 * om5 + tm10 * om9 + tm11 * om13;
+		result[offset + 10] = tm8 * om2 + tm9 * om6 + tm10 * om10 + tm11 * om14;
+		result[offset + 11] = tm8 * om3 + tm9 * om7 + tm10 * om11 + tm11 * om15;
+		
+		result[offset + 12] = tm12 * om0 + tm13 * om4 + tm14 * om8 + tm15 * om12;
+		result[offset + 13] = tm12 * om1 + tm13 * om5 + tm14 * om9 + tm15 * om13;
+		result[offset + 14] = tm12 * om2 + tm13 * om6 + tm14 * om10 + tm15 * om14;
+		result[offset + 15] = tm12 * om3 + tm13 * om7 + tm14 * om11 + tm15 * om15;
+		
+		return this;
 	}
 
 	inline public function equals(value:Matrix):Bool {
@@ -735,6 +770,19 @@ import haxe.ds.Vector;
 		result.m[14] = znear / (znear - zfar);
 		result.m[15] = 1.0;
 	}
+	
+	public static function OrthoOffCenterRH(left:Float, right:Float, bottom:Float, top:Float, znear:Float, zfar:Float):Matrix {
+		var matrix = Matrix.Zero();
+		
+		Matrix.OrthoOffCenterRHToRef(left, right, bottom, top, znear, zfar, matrix);
+		
+		return matrix;
+	}
+
+	public static function OrthoOffCenterRHToRef(left:Float, right:Float, bottom:Float, top:Float, znear:Float, zfar:Float, result:Matrix) {
+		Matrix.OrthoOffCenterLHToRef(left, right, bottom, top, znear, zfar, result);
+		result.m[10] *= -1.0;
+	}
 
 	inline public static function PerspectiveLH(width:Float, height:Float, znear:Float, zfar:Float):Matrix {
 		var matrix = Matrix.Zero();
@@ -798,6 +846,75 @@ import haxe.ds.Vector;
 		result.m[12] = 0.0;
 		result.m[13] = 0.0;
 		result.m[15] = 0.0;
+		result.m[14] = (znear * zfar) / (znear - zfar);
+	}
+	
+	public static function PerspectiveFovRH(fov:Float, aspect:Float, znear:Float, zfar:Float):Matrix {
+		var matrix = Matrix.Zero();
+		
+		Matrix.PerspectiveFovRHToRef(fov, aspect, znear, zfar, matrix);
+		
+		return matrix;
+	}
+
+	public static function PerspectiveFovRHToRef(fov:Float, aspect:Float, znear:Float, zfar:Float, result:Matrix, isVerticalFovFixed:Bool = true) {
+		var tan = 1.0 / (Math.tan(fov * 0.5));
+		
+		if (isVerticalFovFixed) {
+			result.m[0] = tan / aspect;
+		}
+		else {
+			result.m[0] = tan;
+		}
+		
+		result.m[1] = 0;
+		result.m[2] = 0;
+		result.m[3] = 0;
+		
+		if (isVerticalFovFixed) {
+			result.m[5] = tan;
+		}
+		else {
+			result.m[5] = tan * aspect;
+		}
+		
+		result.m[4] = 0;
+		result.m[6] = 0;
+		result.m[7] = 0;
+		result.m[8] = 0;
+		result.m[9] = 0;
+		result.m[10] = zfar / (znear - zfar);
+		result.m[11] = -1.0;
+		result.m[12] = 0;
+		result.m[13] = 0;
+		result.m[15] = 0;
+		result.m[14] = (znear * zfar) / (znear - zfar);
+	}
+
+	public static function PerspectiveFovWebVRToRef(fov:Dynamic, znear:Float, zfar:Float, result:Matrix, isVerticalFovFixed:Bool = true) {
+		var upTan = Math.tan(fov.upDegrees * Math.PI / 180.0);
+		var downTan = Math.tan(fov.downDegrees * Math.PI / 180.0);
+		var leftTan = Math.tan(fov.leftDegrees * Math.PI / 180.0);
+		var rightTan = Math.tan(fov.rightDegrees * Math.PI / 180.0);
+		var xScale = 2.0 / (leftTan + rightTan);
+		var yScale = 2.0 / (upTan + downTan);
+		result.m[0] = xScale;
+		result.m[1] = 0;
+		result.m[2] = 0;
+		result.m[3] = 0;
+		result.m[4] = 0;
+		result.m[5] = yScale;
+		result.m[6] = 0;
+		result.m[7] = 0;
+		result.m[8] = ((leftTan - rightTan) * xScale * 0.5);
+		result.m[9] = -((upTan - downTan) * yScale * 0.5);
+		//result.m[10] = -(znear + zfar) / (zfar - znear);
+		result.m[10] = -zfar / (znear - zfar);
+		result.m[11] = 1.0;
+		result.m[12] = 0;
+		result.m[13] = 0;
+		result.m[15] = 0;
+		//result.m[14] = -(2.0 * zfar * znear) / (zfar - znear);
 		result.m[14] = (znear * zfar) / (znear - zfar);
 	}
 

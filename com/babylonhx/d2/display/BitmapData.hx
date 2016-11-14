@@ -2,6 +2,7 @@ package com.babylonhx.d2.display;
 
 import com.babylonhx.d2.events.EventDispatcher;
 import com.babylonhx.d2.geom.Rectangle;
+import com.babylonhx.d2.geom.Point;
 
 import com.babylonhx.utils.Image;
 import com.babylonhx.utils.GL;
@@ -23,7 +24,6 @@ class BitmapData {
 	public var width:Int;
 	public var height:Int;
 	public var rect:Rectangle;
-	public var loader:EventDispatcher;
 	
 	public var _rwidth:Int;
 	public var _rheight:Int;
@@ -31,11 +31,10 @@ class BitmapData {
 	public var _texture:GLTexture;
 	public var _tcBuffer:GLBuffer;
 	public var _vBuffer:GLBuffer;
-	public var _loaded:Bool;
 	
 	public var _dirty:Bool;
 	private var _gpuAllocated:Bool;
-	private var _buffer:UInt8Array;
+	public var _buffer:UInt8Array;
 	private var _ubuffer:UInt32Array;
 	
 
@@ -44,10 +43,6 @@ class BitmapData {
 		this.width = 0;							// size of texture
 		this.height = 0;
 		this.rect = new Rectangle();						
-		this.loader = new EventDispatcher();
-		//this.loader.bitmapData = this;
-		//this.loader.bytesLoaded = 0;
-		//this.loader.bytesTotal = 0;
 		
 		// private
 		this._rwidth  = 0;						// real size of bitmap in memory (power of two)
@@ -56,7 +51,6 @@ class BitmapData {
 		this._texture = null;
 		this._tcBuffer = null;					//	texture coordinates buffer
 		this._vBuffer  = null;					//	four vertices of bitmap
-		this._loaded = true;
 		this._dirty  = true;					
 		this._gpuAllocated = false;
 		this._buffer  = null;					//  Uint8 container for texture
@@ -65,28 +59,11 @@ class BitmapData {
 		if (img != null) {
 			this._initFromImg(img, img.width, img.height);
 		}
-		
-		/*
-		this._opEv = new Event(Event.OPEN);
-		this._pgEv = new Event(Event.PROGRESS);
-		this._cpEv = new Event(Event.COMPLETE);
-		
-		this._opEv.target = this._pgEv.target = this._cpEv.target = this.loader;
-		*/
-		
-		/*if (imgURL == null) {
-			return;
-		}
-		
-		var img = document.createElement("img");
-		img.crossOrigin = "Anonymous";
-		img.onload		= function(e){ this._initFromImg(img, img.width, img.height); var ev = new Event(Event.COMPLETE); this.loader.dispatchEvent(ev);}.bind(this);
-		img.src 		= imgURL;*/
 	}
 	
 	/* public */
 	
-	static public function empty(w:Int, h:Int, fc:Int = 0xffffffff):BitmapData {
+	static public function empty(w:Int, h:Int, fc:Int = 0x00000000):BitmapData {
 		var bd = new BitmapData(null);
 		bd._initFromImg(null, w, h, fc);
 		
@@ -130,6 +107,34 @@ class BitmapData {
 		this._copyRectBuff(this._buffer, this.rect, buff, r);
 		
 		return buff;
+	}
+	
+	public function cleanPixels(rect:Rectangle) {
+		var _w = Std.int(rect.width);
+		var _h = Std.int(rect.height);
+		var _x = Std.int(rect.x);
+		var _y = Std.int(rect.y);
+		for (i in 0..._h) {
+			for (j in 0..._w) {
+				_ubuffer[Std.int(((i + _y) * this.width) + _x + j)] = 0x00000000;
+			}
+		}			
+	}
+	
+	public function copyPixels(sourceBitmapData:BitmapData, sourceRect:Rectangle, destPoint:Point) {
+		var tr = new Rectangle(destPoint.x, destPoint.y, sourceRect.width, sourceRect.height);
+		var sr = sourceRect;
+		var tcc = this._ubuffer;
+		
+		var scc = sourceBitmapData._ubuffer;
+		var height = Std.int(sr.height);
+		var width = Std.int(sr.width);
+		for (i in 0...height) {
+			for (j in 0...width) {
+				tcc[Std.int(((i + tr.y) * this.width) + tr.x + j)] = scc[Std.int(((i + sr.y) * sourceBitmapData.width) + sr.x + j)];
+			}
+		}
+		this._dirty = true;
 	}
 	
 	public function draw(dobj:DisplayObject) {
@@ -179,9 +184,7 @@ class BitmapData {
 			}
 			
 			Stage._setTEX(this._texture);
-			GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, 
-						this._rwidth, this._rheight, 0, GL.RGBA, 
-						GL.UNSIGNED_BYTE, ebuff);
+			GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, this._rwidth, this._rheight, 0, GL.RGBA, GL.UNSIGNED_BYTE, ebuff);
 			GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
 			GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.LINEAR_MIPMAP_LINEAR);
 			this._gpuAllocated = true;
@@ -207,7 +210,6 @@ class BitmapData {
 	}
 	
 	private function _initFromImg(img:Image, w:Int, h:Int, fc:Int = 0x000000) {
-		this._loaded = true;
 		this.width  = w;		// image width
 		this.height = h;		// image.height
 		this.rect = new Rectangle(0, 0, w, h);
@@ -252,9 +254,6 @@ class BitmapData {
 			}
 		}
 	}
-	
-	/*BitmapData._canv = document.createElement("canvas");
-	BitmapData._ctx = BitmapData._canv.getContext("2d");*/
 
 	inline static private function _ipot(x:Int):Bool {
 		return (x & (x - 1)) == 0;

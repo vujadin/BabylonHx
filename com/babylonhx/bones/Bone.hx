@@ -32,6 +32,7 @@ import com.babylonhx.animations.AnimationRange;
 	private var _scaleMatrix:Matrix = Matrix.Identity();
 	private var _scaleVector:Vector3 = new Vector3(1, 1, 1);
 	private var _negateScaleChildren = new Vector3(1, 1, 1);
+	private var _scalingDeterminant:Float = 1;
 
 	
 	public function new(name:String, skeleton:Skeleton, parentBone:Bone = null, matrix:Matrix, ?restPose:Matrix) {
@@ -53,6 +54,10 @@ import com.babylonhx.animations.AnimationRange;
 		}
 		
 		this._updateDifferenceMatrix();
+		
+		if (this.getAbsoluteTransform().determinant() < 0) {
+            this._scalingDeterminant *= -1;
+        }
 	}
 
 	// Members
@@ -336,6 +341,19 @@ import com.babylonhx.animations.AnimationRange;
 		rotMatInv.multiplyToRef(rotMat, rotMat);
 		this._rotateWithMatrix(rotMat, space, mesh);
 	}
+	
+	public function setRotationMatrix(rotMat:Matrix, space:Int = Space.LOCAL, mesh:AbstractMesh = null) {
+		var rotMatInv = Tmp.matrix[0];
+		
+		this._getNegativeRotationToRef(rotMatInv, space, mesh);
+		
+		var rotMat2 = Tmp.matrix[1];
+		rotMat2.copyFrom(rotMat);
+		
+		rotMatInv.multiplyToRef(rotMat, rotMat2);
+		
+		this._rotateWithMatrix(rotMat2, space, mesh);
+	}
 
 	private function _rotateWithMatrix(rmat:Matrix, space:Int = Space.LOCAL, mesh:AbstractMesh = null) {
 		var lmat = this.getLocalMatrix();
@@ -400,7 +418,7 @@ import com.babylonhx.animations.AnimationRange;
 				scaleMatrix.multiplyToRef(meshScale, scaleMatrix);
 			}
 			rotMatInv.invert();
-			scaleMatrix.m[0] *= -1;
+			scaleMatrix.m[0] *= this._scalingDeterminant;
 			rotMatInv.multiplyToRef(scaleMatrix, rotMatInv);
 		} 
 		else {
@@ -415,7 +433,7 @@ import com.babylonhx.animations.AnimationRange;
 				pscaleMatrix.multiplyToRef(rotMatInv, rotMatInv);
 			} 
 			else {
-				scaleMatrix.m[0] *= -1;
+				scaleMatrix.m[0] *= this._scalingDeterminant;
 			}
 			rotMatInv.multiplyToRef(scaleMatrix, rotMatInv);
 		}
@@ -445,7 +463,7 @@ import com.babylonhx.animations.AnimationRange;
 			tmat.copyFrom(this.getAbsoluteTransform());
 			tmat.multiplyToRef(mesh.getWorldMatrix(), tmat);
 		}
-		else{
+		else {
 			tmat = this.getAbsoluteTransform();
 		}
 		
@@ -460,6 +478,12 @@ import com.babylonhx.animations.AnimationRange;
 		} 
 		else {
 			this._absoluteTransform.copyFrom(this._matrix);
+			
+			var poseMatrix = this._skeleton.getPoseMatrix();
+			
+			if (poseMatrix != null) {
+				this._absoluteTransform.multiplyToRef(poseMatrix, this._absoluteTransform);					
+			}
 		}
 		
 		var children = this.children;
@@ -490,22 +514,57 @@ import com.babylonhx.animations.AnimationRange;
 			this._scaleVector.y /= this._parent._negateScaleChildren.y;
 			this._scaleVector.z /= this._parent._negateScaleChildren.z;
 		}
+		
+		Matrix.FromValuesToRef(this._scaleVector.x, 0, 0, 0, 0,  this._scaleVector.y, 0, 0, 0, 0,  this._scaleVector.z, 0, 0, 0, 0, 1, this._scaleMatrix);
 	}
 	
-	override public function getDirection(localAxis:Vector3):Vector3 {
+	override public function getDirection(localAxis:Vector3, ?mesh:AbstractMesh):Vector3 {
 		var result = Vector3.Zero();
-		this.getDirectionToRef(localAxis, result);
+		this.getDirectionToRef(localAxis, result, mesh);
 		
 		return result;
 	}
 
-	override public function getDirectionToRef(localAxis:Vector3, result:Vector3) {
+	override public function getDirectionToRef(localAxis:Vector3, result:Vector3, ?mesh:AbstractMesh) {
 		this._skeleton.computeAbsoluteTransforms();
-		Vector3.TransformNormalToRef(localAxis, this.getAbsoluteTransform(), result);
+        
+		var mat = Tmp.matrix[0];
 		
-		if (this._scaleVector.x != 1 || this._scaleVector.y != 1 || this._scaleVector.z != 1) {
-			result.normalize();
+		mat.copyFrom(this.getAbsoluteTransform());
+		
+		if (mesh != null) {
+			mat.multiplyToRef(mesh.getWorldMatrix(), mat);
 		}
+		
+		Vector3.TransformNormalToRef(localAxis, mat, result);
+		
+		if (mesh != null) {
+			result.x /= mesh.scaling.x;
+			result.y /= mesh.scaling.y;
+			result.z /= mesh.scaling.z;
+		}
+		
+		result.x /= this._scaleVector.x;
+		result.y /= this._scaleVector.y;
+		result.z /= this._scaleVector.z;
+	}
+	
+	public function getRotation(mesh:AbstractMesh):Quaternion {
+		var result = Quaternion.Identity();
+		
+		this.getRotationToRef(mesh, result);
+		
+		return result;
+	}
+
+	public function getRotationToRef(mesh:AbstractMesh, result:Quaternion) {
+		var mat = Tmp.matrix[0];
+		var amat = this.getAbsoluteTransform();
+		var wmat = mesh.getWorldMatrix();
+		
+		amat.multiplyToRef(wmat, mat);
+		
+		mat.decompose(Tmp.vector3[0], result, Tmp.vector3[1]);
 	}
 	
 }

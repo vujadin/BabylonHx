@@ -17,6 +17,12 @@ import com.babylonhx.utils.GL.GLUniformLocation;
 import com.babylonhx.utils.typedarray.Float32Array;
 import com.babylonhx.utils.typedarray.UInt16Array;
 
+import com.babylonhx.cameras.FreeCamera;
+import com.babylonhx.math.Vector3;
+import com.babylonhx.materials.StandardMaterial;
+import com.babylonhx.materials.textures.Texture;
+import com.babylonhx.mesh.Mesh;
+
 
 /**
  * ...
@@ -24,14 +30,41 @@ import com.babylonhx.utils.typedarray.UInt16Array;
  */
 class Stage extends DisplayObjectContainer {
 	
-	static private var _okKeys:Array<Int> = [	// keyCodes, which are not prevented by IvanK
-		112, 113, 114, 115,   116, 117, 118, 119,   120, 121, 122, 123,	// F1 - F12
-		13,	// Enter
-		16,	// Shift
-		//17,	// Ctrl
-		18,	// Alt
-		27	// Esc
-	];
+	var fs = [
+		"precision highp float;",
+		"varying vec2 d2_texCoord;",
+		
+		"uniform sampler2D uSampler;",
+		"uniform vec4 color;",
+		"uniform bool useTex;",
+		
+		"uniform mat4 cMat;",
+		"uniform vec4 cVec;",
+		
+		"void main(void) {",
+			"vec4 c;",
+			"if (useTex) { c = texture2D(uSampler, d2_texCoord);  c.xyz *= c.w; }",
+			"else c = color;",
+			"c = (cMat * c) + cVec;",
+			"c.xyz *= min(c.w, 1.0);",
+			"gl_FragColor = c;",
+		"}"
+	].join("\n");
+	
+	var vs = [
+		"precision highp float;",
+		"attribute vec3 verPos;",
+		"attribute vec2 texPos;",
+		
+		"uniform mat4 tMat;",
+		
+		"varying vec2 d2_texCoord;",
+		
+		"void main(void) {",
+		"	d2_texCoord = texPos;",
+		"	gl_Position = tMat * vec4(verPos, 1.0);",
+		"}"
+	].join("\n");
 	
 	public var _mouseX:Int = 0;
 	public var _mouseY:Int = 0;
@@ -83,16 +116,30 @@ class Stage extends DisplayObjectContainer {
 	
 	private var _touches:Map<String, Dynamic> = new Map();
 	
+	static private var _engine:Engine;
+	static public var engine(get, never):Engine;
+	static inline private function get_engine():Engine {
+		return _engine;
+	}
 
-	public function new(width:Int, height:Int, dpr:Float = 1) {
+	
+	public function new(scene:Scene, dpr:Float = 1) {
 		super();
+		
+		_engine = scene.getEngine();
+		engine.onResize.push(function() {
+			this.stageWidth = engine.width;
+			this.stageHeight = engine.height;
+			this._resize();
+		});
+		engine.onAfterRender.push(this._drawScene);
 		
 		this._dpr = dpr;
 		
 		this.stage = this;
 		
-		this.stageWidth = width;
-		this.stageHeight = height;
+		this.stageWidth = engine.width;
+		this.stageHeight = engine.height;
 		
 		this.focus				= null;			// keyboard focus, never Stage
 		this._focii 			= [null, null, null];
@@ -150,17 +197,32 @@ class Stage extends DisplayObjectContainer {
         this._initShaders();
         this._initBuffers();
 		
-        //GL.clearColor(0, 0, 0, 0);
-		
-		GL.enable(GL.BLEND);
-		GL.blendEquation(GL.FUNC_ADD);		
-		GL.blendFunc(GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
-		
-		GL.enable(GL.DEPTH_TEST);
-		GL.depthFunc(GL.LEQUAL);
-		
 		this._resize();
 		this._srs = true;
+		
+		// hack...
+		var cameraMask:Int = 0xF0E1D2;
+		var mainCamera = scene.activeCamera;
+		if (mainCamera != null && scene.activeCameras.indexOf(mainCamera) == -1) {
+			scene.activeCameras.push(mainCamera);
+		}
+		var camera = new FreeCamera("dummycamera", new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY), scene);
+		camera.fov = 0;
+        camera.layerMask = cameraMask; 
+		var dummyMesh = Mesh.CreatePlane("dummymesh", 0.1, scene);
+		var dummyMaterial = new StandardMaterial("dummymaterial", scene);
+		dummyMaterial.diffuseTexture = new Texture("assets/img/amiga.jpg", scene);
+        dummyMaterial.backFaceCulling = false;
+		dummyMesh.material = dummyMaterial;
+		dummyMesh.layerMask = cameraMask;
+		scene.activeCameras.push(camera);
+		
+		var s:Sprite = new Sprite();
+		s.graphics.beginFill();
+		s.graphics.drawRect( -100, -100, 1, 1);
+		s.graphics.endFill();
+		s.x = -5000;
+		addChild(s);
 	}
 	
 	inline public function _getOrigin(org:Float32Array) {
@@ -208,10 +270,7 @@ class Stage extends DisplayObjectContainer {
 	}
 	
 	inline public static function _setTEX(tex:GLTexture) {
-		if (Stage._curTEX != tex) {
-			GL.bindTexture(GL.TEXTURE_2D, tex);
-			Stage._curTEX = tex;
-		}
+		engine._bindTexture(0, tex);
 	}
 	
 	public static function _setBMD(bmd:BlendMode) {
@@ -301,22 +360,24 @@ class Stage extends DisplayObjectContainer {
 	
 	// mouse events
 	
-	public function _onMD(button:Int, x:Int, y:Int) { 
+	public function _onMD(x:Int, y:Int, button:Int) { 
 		this._setStageMouse(x, y); 
 		this._smd[button] = true; 
 		this._knM = true;  
 		this._processMouseTouch(); 
 	}
+	
 	public function _onMM(x:Int, y:Int) { 
 		this._setStageMouse(x, y); 
 		this._smm = true; 
 		this._knM = true;  
 		this._processMouseTouch(); 
 	}
+	
 	public function _onMU(button:Int) { 
 		this._smu[button] = true; 
 		this._knM = true;  
-		this._processMouseTouch(); 
+		this._processMouseTouch();
 	}
 	
 	// keyboard events
@@ -332,7 +393,7 @@ class Stage extends DisplayObjectContainer {
 		}
 	}
 	
-	private function _onKU(altKey:Bool, ctrlKey:Bool, shiftKey:Bool, keyCode:Int, charCode:Int) { 
+	public function _onKU(altKey:Bool, ctrlKey:Bool, shiftKey:Bool, keyCode:Int, charCode:Int) { 
 		var ev = new KeyboardEvent(KeyboardEvent.KEY_UP, true);
 		ev._setFromDom(altKey, ctrlKey, shiftKey, keyCode, charCode);
 		if (this.focus != null && this.focus.stage != null) {
@@ -351,8 +412,9 @@ class Stage extends DisplayObjectContainer {
 		return _dpr;
 	}
 	
-	public function _resize() {		
+	inline public function _resize() {		
 		this._setFramebuffer(null, this.stageWidth, this.stageHeight, false);
+		this.dispatchEvent(new Event(Event.RESIZE));
 	}
 
     private function _getShader(gl, str:String, fs:Bool) {	
@@ -375,42 +437,7 @@ class Stage extends DisplayObjectContainer {
         return shader;
     }
 
-    private function _initShaders() {	
-		var fs = [
-			"precision mediump float;",
-			"varying vec2 texCoord;",
-			
-			"uniform sampler2D uSampler;",
-			"uniform vec4 color;",
-			"uniform bool useTex;",
-			
-			"uniform mat4 cMat;",
-			"uniform vec4 cVec;",
-			
-			"void main(void) {",
-				"vec4 c;",
-				"if (useTex) { c = texture2D(uSampler, texCoord);  c.xyz *= (1.0 / c.w); }",
-				"else c = color;",
-				"c = (cMat * c) + cVec;",
-				"c.xyz *= min(c.w, 1.0);",
-				"gl_FragColor = c;",
-			"}"
-		].join("\n");
-		
-		var vs = [
-			"attribute vec3 verPos;",
-			"attribute vec2 texPos;",
-			
-			"uniform mat4 tMat;",
-			
-			"varying vec2 texCoord;",
-			
-			"void main(void) {",
-			"	gl_Position = tMat * vec4(verPos, 1.0);",
-			"	texCoord = texPos;",
-			"}"
-		].join("\n");
-		
+    private function _initShaders() {			
 		var fShader = this._getShader(GL, fs, true );
         var vShader = this._getShader(GL, vs, false);
 		
@@ -468,7 +495,7 @@ class Stage extends DisplayObjectContainer {
 		if (fbo != null) {
 			GL.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_COMPONENT16, w, h);
 		}
-		//GL.viewport(0, 0, w, h);
+		GL.viewport(0, 0, w, h);
 	}
 	
 	private function _setStageMouse(x:Int, y:Int) {	// event, want X
@@ -476,15 +503,66 @@ class Stage extends DisplayObjectContainer {
 		this._mouseX = Std.int(x * dpr);
 		this._mouseY = Std.int(y * dpr);
 	}
-
-    public function _drawScene() {		
-		if (this._srs) {
-			this._resize();
-			this.dispatchEvent(new Event(Event.RESIZE));
-			this._srs = false;
+	
+	var lastProgram:Dynamic;
+	var lastElementArrayBuffer:Dynamic;
+	var lastArrayBuffer:Dynamic;
+	var lastTexture:Dynamic;
+	var lastEnableDepthTest:Bool;
+	var lastEnableBlend:Bool;
+	var lastCullEnabled:Bool;
+	private function _backupGLState() {
+		this.lastProgram = GL.getParameter(GL.CURRENT_PROGRAM);
+		//this.lastElementArrayBuffer = GL.getParameter(GL.ELEMENT_ARRAY_BUFFER_BINDING);
+		//this.lastArrayBuffer = GL.getParameter(GL.ARRAY_BUFFER_BINDING);
+		this.lastTexture = GL.getParameter(GL.TEXTURE_BINDING_2D);
+		this.lastEnableDepthTest = GL.isEnabled(GL.DEPTH_TEST);
+		this.lastEnableBlend = GL.isEnabled(GL.BLEND);
+		this.lastCullEnabled = GL.isEnabled(GL.CULL_FACE);
+	}
+	
+	private function _restoreGLState() {
+		//GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, this.lastElementArrayBuffer);
+		//GL.bindBuffer(GL.ARRAY_BUFFER, this.lastArrayBuffer);
+		GL.useProgram(this.lastProgram);
+		
+		if (this.lastTexture != null) {
+			GL.bindTexture(GL.TEXTURE_2D, this.lastTexture);
 		}
 		
-		GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);	
+		if (this.lastEnableDepthTest) {
+			GL.enable(GL.DEPTH_TEST); 
+		}
+		else {
+			GL.disable(GL.DEPTH_TEST);
+		}
+		if (this.lastEnableBlend) {
+			GL.enable(GL.BLEND); 
+		}
+		else {
+			GL.disable(GL.BLEND);
+		}
+		if (this.lastCullEnabled) {
+			GL.enable(GL.CULL_FACE);
+		}
+		else {
+			GL.disable(GL.CULL_FACE);
+		}
+	}
+
+    private function _drawScene() {	
+		_backupGLState();
+		
+		GL.enable(GL.BLEND);
+		GL.blendEquation(GL.FUNC_ADD);		
+		GL.blendFunc(GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
+		
+		GL.enable(GL.DEPTH_TEST);
+		GL.depthFunc(GL.LEQUAL);
+		GL.disable(GL.STENCIL_TEST);
+		GL.disable(GL.CULL_FACE);
+		
+		GL.useProgram(this._sprg.prog);	
 		
 		//	proceeding EnterFrame
 		var efs = EventDispatcher.efbc;
@@ -495,6 +573,8 @@ class Stage extends DisplayObjectContainer {
 		}
 		
         this._renderAll(this);
+		
+		_restoreGLState();
     }
 	
 	private function _processMouseTouch() {
