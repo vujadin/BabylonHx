@@ -75,6 +75,15 @@ class DisplayObjectContainer extends InteractiveObject {
 		++this.numChildren;
 	}
 	
+	public function addChildAt(o:DisplayObject, index:Int) {
+		if (index > 0 && index < this._children.length - 1) {
+			this._children.insert(index, o);
+			o.parent = this;
+			o._setStage(this.stage);
+			++this.numChildren;
+		}
+	}
+	
 	/**
 	 * Removes a child from the container
 	 * 

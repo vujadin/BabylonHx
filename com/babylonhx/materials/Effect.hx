@@ -167,6 +167,14 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	inline public function getCompilationError():String {
 		return this._compilationError;
 	}
+	
+	public function getVertexShaderSource():String {
+        return this._engine.getVertexShaderSource(this._program);
+    }
+
+    public function getFragmentShaderSource():String {
+        return this._engine.getFragmentShaderSource(this._program);
+    }
 
 	// Methods
 	public function _loadVertexShader(vertex:String, callbackFn:String->Void) {

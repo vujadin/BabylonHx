@@ -4,6 +4,7 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Plane;
 import com.babylonhx.animations.Animation;
+import com.babylonhx.utils.Image;
 
 /**
  * ...
@@ -61,6 +62,9 @@ import com.babylonhx.animations.Animation;
 	public var _samplingMode:Int;
 	private var _buffer:Dynamic;
 	private var _deleteBuffer:Bool;
+	
+	// for creating from Image
+	public static var _tmpImage:Image;
 
 	
 	public function new(url:String, scene:Scene, noMipmap:Bool = false, invertY:Bool = true, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, onLoad:Void->Void = null, onError:Void->Void = null, buffer:Dynamic = null, deleteBuffer:Bool = false) {
@@ -81,7 +85,11 @@ import com.babylonhx.animations.Animation;
 		this._texture = this._getFromCache(url, noMipmap, samplingMode);
 		
 		if (this._texture == null) {
-			if (!scene.useDelayedTextureLoading) {
+			if (StringTools.startsWith(url, "from_image") && _tmpImage != null) {	// VK: DO NOT REMOVE!!
+				this._texture = scene.getEngine().createTextureFromImage(_tmpImage, noMipmap, scene, this._samplingMode);
+				_tmpImage = null;
+			}
+			else if (!scene.useDelayedTextureLoading) {
 				if(url.indexOf(".") != -1) {	// protection for cube texture, url is not full path !
 					this._texture = scene.getEngine().createTexture(url, noMipmap, invertY, scene, this._samplingMode, onLoad, onError, this._buffer);
 					if (deleteBuffer) {
@@ -273,6 +281,12 @@ import com.babylonhx.animations.Animation;
 	// Statics
 	public static function CreateFromBase64String(data:String, name:String, scene:Scene, ?noMipmap:Bool, ?invertY:Bool, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, ?onLoad:Void->Void, ?onError:Void->Void):Texture {
 		return new Texture("data:" + name, scene, noMipmap, invertY, samplingMode, onLoad, onError, data);
+	}
+	
+	public static function CreateFromImage(data:Image, name:String, scene:Scene, ?noMipmap:Bool, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE):Texture {
+		_tmpImage = data;
+		
+		return new Texture("from_image" + name, scene, noMipmap, false, samplingMode);
 	}
 	
 	public static function Parse(parsedTexture:Dynamic, scene:Scene, rootUrl:String):BaseTexture {

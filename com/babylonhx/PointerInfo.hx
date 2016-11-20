@@ -1,7 +1,6 @@
 package com.babylonhx;
 
 import com.babylonhx.collisions.PickingInfo;
-import com.babylonhx.math.Vector2;
 
 /**
  * ...

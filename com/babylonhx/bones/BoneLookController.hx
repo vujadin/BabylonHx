@@ -10,22 +10,22 @@ import com.babylonhx.mesh.AbstractMesh;
  */
 class BoneLookController {
 
-	public var target: Vector3;
-	public var mesh: AbstractMesh;
-	public var bone: Bone;
-	public var upAxis: Vector3 = Vector3.Up();
+	public var target:Vector3;
+	public var mesh:AbstractMesh;
+	public var bone:Bone;
+	public var upAxis:Vector3 = Vector3.Up();
 
-	public var adjustYaw = 0;
-	public var adjustPitch = 0;
-	public var adjustRoll = 0;
+	public var adjustYaw:Float = 0;
+	public var adjustPitch:Float = 0;
+	public var adjustRoll:Float = 0;
 	
-	private var _tmpVec1 = Vector3.Zero();
-	private var _tmpVec2 = Vector3.Zero();
-	private var _tmpVec3 = Vector3.Zero();
-	private var _tmpVec4 = Vector3.Zero();
+	private var _tmpVec1:Vector3 = Vector3.Zero();
+	private var _tmpVec2:Vector3 = Vector3.Zero();
+	private var _tmpVec3:Vector3 = Vector3.Zero();
+	private var _tmpVec4:Vector3 = Vector3.Zero();
 	
-	private var _tmpMat1 = Matrix.Identity();
-	private var _tmpMat2 = Matrix.Identity();
+	private var _tmpMat1:Matrix = Matrix.Identity();
+	private var _tmpMat2:Matrix = Matrix.Identity();
 	
 
 	public function new(mesh:AbstractMesh, bone:Bone, target:Vector3, adjustYaw:Float = 0, adjustPitch:Float = 0, adjustRoll:Float = 0) {
@@ -49,7 +49,7 @@ class BoneLookController {
 		var mat1 = this._tmpMat1;
 		var mat2 = this._tmpMat2;
 		
-		bone.getAbsolutePositionToRef(this.mesh, bonePos);
+		bone.getPositionToRef(bonePos, Space.WORLD, this.mesh);
 		
 		target.subtractToRef(bonePos, zaxis);
 		zaxis.normalize();

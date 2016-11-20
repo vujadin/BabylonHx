@@ -902,6 +902,18 @@ typedef BufferPointer = {
 		this.flushFramebuffer();
 	}
 	
+	public function getVertexShaderSource(program:GLProgram):String {
+		var shaders = Gl.getAttachedShaders(program);
+		
+		return Gl.getShaderSource(shaders[0]);
+	}
+
+	public function getFragmentShaderSource(program:GLProgram):String {
+		var shaders = Gl.getAttachedShaders(program);
+		
+		return Gl.getShaderSource(shaders[1]);
+	}
+	
 	// FPS
     inline public function getFps():Float {
         return this.fps;
@@ -1847,6 +1859,23 @@ typedef BufferPointer = {
 		this._bindTextureDirectly(GL.TEXTURE_2D, null);
 		
 		texture.samplingMode = samplingMode;
+	}
+	
+	public function createTextureFromImage(img:Image, noMipmap:Bool, scene:Scene, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE):WebGLTexture {		
+		var texture = new WebGLTexture("from_image", Gl.createTexture());		
+		
+		scene._addPendingData(texture);
+		texture.url = "from_image";
+		texture.noMipmap = noMipmap;
+		texture.references = 1;
+		texture.samplingMode = samplingMode;
+		this._loadedTexturesCache.push(texture);		
+		
+		prepareTexture(texture, scene, img.width, img.height, false, noMipmap, false, function(potWidth:Int, potHeight:Int) {	
+			Gl.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, potWidth, potHeight, 0, GL.RGBA, GL.UNSIGNED_BYTE, img.data);
+		}, samplingMode);	
+		
+		return texture;
 	}
 	
 	public function createTexture(url:String, noMipmap:Bool, invertY:Bool, scene:Scene, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, onLoad:Void->Void = null, onError:Void->Void = null, buffer:Dynamic = null):WebGLTexture {

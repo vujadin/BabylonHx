@@ -81,6 +81,11 @@ class HighlightLayer {
 	public var innerGlow:Bool = true;
 	
 	/**
+     * Specifies wether the highlight layer is enabled or not.
+     */
+    public var isEnabled:Bool = true;
+	
+	/**
 	 * Specifies whether or not the outer glow is ACTIVE in the layer.
 	 */
 	public var outerGlow:Bool = true;
@@ -412,7 +417,7 @@ class HighlightLayer {
 	 * @return true if ready otherwise, false
 	 */
 	private function isReady(subMesh:SubMesh, useInstances:Bool, emissiveTexture:Texture):Bool {
-		if (!subMesh.getMaterial().isReady()) {
+		if (!subMesh.getMaterial().isReady(subMesh.getMesh(), useInstances)) {
 			return false;
 		}
 		
@@ -660,7 +665,7 @@ class HighlightLayer {
 	 * Returns true if the layer contains information to display, otherwise false.
 	 */
 	public function shouldRender():Bool {
-		return this._shouldRender;
+		return this.isEnabled && this._shouldRender;
 	}
 
 	/**

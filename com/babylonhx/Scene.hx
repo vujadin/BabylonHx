@@ -750,12 +750,16 @@ import com.babylonhx.audio.*;
     }
     #end
 	
-	public function init2D() {
+	public function init2D():Stage {
 		if (this.activeCamera != null) {
 			this._stage2D = new Stage(this);
+			
+			return this._stage2D;
 		}
 		else {
 			trace("No active camera! You need to initialize your 3D stuff first.");
+			
+			return null;
 		}
 	}
 

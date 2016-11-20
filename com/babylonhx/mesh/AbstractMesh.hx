@@ -306,6 +306,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return value;
 	}
 	
+	// VK: TEMP
+	public var extraData:Dynamic;
+	
 
 	public function new(name:String, scene:Scene) {
 		super(name, scene);

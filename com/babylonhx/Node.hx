@@ -429,12 +429,12 @@ class NodeCache {
 	public function getDirection(localAxis:Vector3, ?mesh:AbstractMesh):Vector3 {
         var result = Vector3.Zero();
 		
-        this.getDirectionToRef(localAxis, result);
+        this.getDirectionToRef(result, localAxis);
         
         return result;
     }
 
-    public function getDirectionToRef(localAxis:Vector3, result:Vector3, ?mesh:AbstractMesh) {
+    public function getDirectionToRef(result:Vector3, localAxis:Vector3, ?mesh:AbstractMesh) {
         Vector3.TransformNormalToRef(localAxis, this.getWorldMatrix(), result);
     }
 	

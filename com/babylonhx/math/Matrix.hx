@@ -753,22 +753,23 @@ import haxe.ds.Vector;
 	}
 
 	public static function OrthoOffCenterLHToRef(left:Float, right:Float, bottom:Float, top:Float, znear:Float, zfar:Float, result:Matrix) {
-		result.m[0] = 2.0 / (right - left);
-		result.m[1] = 0;
-		result.m[2] = 0;
-		result.m[3] = 0;
-		result.m[5] = 2.0 / (top - bottom);
-		result.m[4] = 0;
-		result.m[6] = 0;
-		result.m[7] = 0;
-		result.m[10] = -1.0 / (znear - zfar);
-		result.m[8] = 0;
-		result.m[9] = 0;
-		result.m[11] = 0;
-		result.m[12] = (left + right) / (left - right);
-		result.m[13] = (top + bottom) / (bottom - top);
-		result.m[14] = znear / (znear - zfar);
-		result.m[15] = 1.0;
+		var rm = result.m;
+		rm[0] = 2.0 / (right - left);
+		rm[1] = 0;
+		rm[2] = 0;
+		rm[3] = 0;
+		rm[5] = 2.0 / (top - bottom);
+		rm[4] = 0;
+		rm[6] = 0;
+		rm[7] = 0;
+		rm[10] = 1.0 / (zfar - znear);
+		rm[8] = 0;
+		rm[9] = 0;
+		rm[11] = 0;
+		rm[12] = (left + right) / (left - right);
+		rm[13] = (top + bottom) / (bottom - top);
+		rm[14] = -znear / (zfar - znear);
+		rm[15] = 1.0;
 	}
 	
 	public static function OrthoOffCenterRH(left:Float, right:Float, bottom:Float, top:Float, znear:Float, zfar:Float):Matrix {
@@ -1029,6 +1030,37 @@ import haxe.ds.Vector;
 		mat.m[14] = 0;
 		
 		mat.m[15] = 1;
+	}
+	
+	public static function FromQuaternionToRef(quat:Quaternion, result:Matrix) {
+		var xx = quat.x * quat.x;
+		var yy = quat.y * quat.y;
+		var zz = quat.z * quat.z;
+		var xy = quat.x * quat.y;
+		var zw = quat.z * quat.w;
+		var zx = quat.z * quat.x;
+		var yw = quat.y * quat.w;
+		var yz = quat.y * quat.z;
+		var xw = quat.x * quat.w;
+		
+		result.m[0] = 1.0 - (2.0 * (yy + zz));
+		result.m[1] = 2.0 * (xy + zw);
+		result.m[2] = 2.0 * (zx - yw);
+		result.m[3] = 0;
+		result.m[4] = 2.0 * (xy - zw);
+		result.m[5] = 1.0 - (2.0 * (zz + xx));
+		result.m[6] = 2.0 * (yz + xw);
+		result.m[7] = 0;
+		result.m[8] = 2.0 * (zx + yw);
+		result.m[9] = 2.0 * (yz - xw);
+		result.m[10] = 1.0 - (2.0 * (yy + xx));
+		result.m[11] = 0;
+		
+		result.m[12] = 0;
+		result.m[13] = 0;
+		result.m[14] = 0;
+		
+		result.m[15] = 1.0;
 	}
 	
 }

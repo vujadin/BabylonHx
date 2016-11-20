@@ -16,6 +16,7 @@ import com.babylonhx.utils.GL.GLTexture;
 import com.babylonhx.utils.GL.GLUniformLocation;
 import com.babylonhx.utils.typedarray.Float32Array;
 import com.babylonhx.utils.typedarray.UInt16Array;
+import com.babylonhx.utils.Image;
 
 import com.babylonhx.cameras.FreeCamera;
 import com.babylonhx.math.Vector3;
@@ -209,17 +210,22 @@ class Stage extends DisplayObjectContainer {
 		var camera = new FreeCamera("dummycamera", new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY), scene);
 		camera.fov = 0;
         camera.layerMask = cameraMask; 
-		var dummyMesh = Mesh.CreatePlane("dummymesh", 0.1, scene);
+		var dummyMesh = Mesh.CreatePlane("dummymesh", 0.001, scene);
 		var dummyMaterial = new StandardMaterial("dummymaterial", scene);
-		dummyMaterial.diffuseTexture = new Texture("assets/img/amiga.jpg", scene);
+		dummyMaterial.diffuseTexture = Texture.CreateFromImage(Image.createNoise(), "_dummy", scene);
         dummyMaterial.backFaceCulling = false;
 		dummyMesh.material = dummyMaterial;
 		dummyMesh.layerMask = cameraMask;
+		//scene.activeCameras.insert(0, camera);
 		scene.activeCameras.push(camera);
+		
+		if (mainCamera != null) {	// fixes picking in 3D scene
+			scene.cameraToUseForPointers = mainCamera;
+		}
 		
 		var s:Sprite = new Sprite();
 		s.graphics.beginFill();
-		s.graphics.drawRect( -100, -100, 1, 1);
+		s.graphics.drawRect( -0.1, -0.1, 0.1, 0.1);
 		s.graphics.endFill();
 		s.x = -5000;
 		addChild(s);

@@ -41,6 +41,8 @@ class BoneIKController {
 	}
 	private function set_maxAngle(value:Float):Float {		
 		this._setMaxAngle(value);
+		
+		return value;
 	}
 	
 
@@ -56,7 +58,7 @@ class BoneIKController {
 		this.poleAngle = poleAngle;
 		this.mesh = mesh;
 		
-		if (bone.getAbsoluteTransform().determinant() > 0){
+		if (bone.getAbsoluteTransform().determinant() > 0) {
 			this._rightHandedSystem = true;
 		}
 		
@@ -70,9 +72,9 @@ class BoneIKController {
 		else if (this._bone1.children[0] != null) {		
 			mesh.computeWorldMatrix(true);
 			
-			var pos1 = this._bone2.children[0].getAbsolutePosition(mesh);
-			var pos2 = this._bone2.getAbsolutePosition(mesh);
-			var pos3 = this._bone1.getAbsolutePosition(mesh);
+			var pos1 = this._bone2.children[0].getPosition(Space.WORLD, mesh);
+            var pos2 = this._bone2.getPosition(Space.WORLD, mesh);
+            var pos3 = this._bone1.getPosition(Space.WORLD, mesh);
 			
 			this._bone1Length = Vector3.Distance(pos1, pos2);
 			this._bone2Length = Vector3.Distance(pos2, pos3);
@@ -86,7 +88,7 @@ class BoneIKController {
 			ang = 0;
 		}
 		
-		if (ang > Math.PI || ang == null) {
+		if (ang > Math.PI) {
 			ang = Math.PI;
 		}
 		
@@ -111,7 +113,7 @@ class BoneIKController {
 		var mat1 = this._tmpMat1;
 		var mat2 = this._tmpMat2;
 		
-		bone1.getAbsolutePositionToRef(this.mesh, bonePos);
+		bone1.getPositionToRef(bonePos, Space.WORLD, this.mesh);
 		
 		poleTarget.subtractToRef(bonePos, upAxis);
 		
@@ -174,7 +176,7 @@ class BoneIKController {
 		if (this._rightHandedSystem) {
 			bendAxis.z = 1;
 			
-			Matrix.RotationYawPitchRollToRef(0, 0, angB + Math.PI*.5, mat2);
+			Matrix.RotationYawPitchRollToRef(0, 0, angB + Math.PI * .5, mat2);
 			mat2.multiplyToRef(mat1, mat1);
 			
 			Matrix.RotationAxisToRef(yaxis, this.poleAngle + Math.PI, mat2);
@@ -193,7 +195,7 @@ class BoneIKController {
 		}
 		
 		this._bone1.setRotationMatrix(mat1, Space.WORLD, this.mesh);
-		this._bone2.setAxisAngle(bendAxis, angC, Space.LOCAL);
+		this._bone2.setAxisAngle(bendAxis, angC, Space.LOCAL, this.mesh);
 	}
 	
 }

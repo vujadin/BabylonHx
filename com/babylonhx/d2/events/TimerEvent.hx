@@ -11,10 +11,10 @@ class TimerEvent extends Event {
 	
 	
 	public function new (type:String, bubbles:Bool = false) {		
-		super (type, bubbles);		
+		super(type, bubbles);		
 	}	
 	
-	public override function clone():Event {		
+	/*override*/ public function clone():Event {		
 		var event = new TimerEvent(type, bubbles);
 		event.target = target;
 		event.currentTarget = currentTarget;

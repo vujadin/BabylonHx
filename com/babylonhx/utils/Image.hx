@@ -27,7 +27,7 @@ class Image {
 	}
 	
 	// creates a black and white random noise texture
-	public static function createNoise(size:Int = 16):Image {			
+	public static function createNoise(size:Int = 8):Image {			
 		var rand = function(min:Float, max:Float):Float {
 			return Math.random() * (max - min) + min;
 		};
@@ -45,6 +45,34 @@ class Image {
 			img.data[i + 3] = 255;
 			
 			i += 4;
+		}
+		
+		return img;
+	}
+	
+	public static function createPerlinNoise(r:Dynamic, g:Dynamic, b:Dynamic, a:Int, size:Int = 8):Image {
+		var img = new Image(new UInt8Array(size * size * 4), size, size);
+		
+		var perlinNoise = new com.babylonhx.math.Perlin();
+		
+		var t = com.babylonhx.math.Tools.randomInt(0, 100);
+		
+		var count = Std.int(size / 2);
+		for (x in 0...count) {
+			for (y in 0...count) {
+				var _r = perlinNoise.noise3d(x / r.size, y / r.size, t / 16) * 0.5 + 0.5;
+				var _g = perlinNoise.noise3d(x / g.size, y / g.size, t / 16) * 0.5 + 0.5;
+				var _b = perlinNoise.noise3d(x / b.size, y / b.size, t / 16) * 0.5 + 0.5;
+				
+				/*var _r = perlinNoise.noise3d(x / r.size, y / r.size / 5, t / 16) * 0.5 + 0.5;
+				var _g = perlinNoise.noise3d(x / g.size / 6, y / g.size, t / 16) * 0.5 + 0.5;
+				var _b = perlinNoise.noise3d(x / b.size, y / b.size, t / 16) * 0.5 + 0.5;*/
+				
+				img.data[(x + y * count) * 4 + 0] = Std.int(_r * r.strength);        
+				img.data[(x + y * count) * 4 + 1] = Std.int(_g * r.strength);
+				img.data[(x + y * count) * 4 + 2] = Std.int(_b * r.strength);        
+				img.data[(x + y * count) * 4 + 3] = a;
+			}
 		}
 		
 		return img;
