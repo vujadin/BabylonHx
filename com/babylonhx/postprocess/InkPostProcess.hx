@@ -36,17 +36,17 @@ import com.babylonhx.materials.ShadersStore;
 		
 		super(name, "ink", ["screenSize", "strength"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onSizeChanged = function() {
+		this.onSizeChanged = function(_, _) {
 			this.screenSize.x = camera.getScene().getEngine().getRenderWidth();
 			this.screenSize.y = camera.getScene().getEngine().getRenderHeight();
 		};
 		
-		this.onApply = function(effect:Effect) {
+		this.onApply = function(effect:Effect, _) {
 			effect.setVector2("screenSize", this.screenSize);
 			effect.setFloat("strength", this.strength);
 		};
 		
-		this.onSizeChanged();
+		this.onSizeChanged(this._effect, null);
 	}
 	
 }

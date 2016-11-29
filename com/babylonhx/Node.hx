@@ -80,6 +80,8 @@ class NodeCache {
 	
 	@serialize()
     public var metadata:Dynamic = null;
+	
+	public var doNotSerialize:Bool = false;
 
 	public var animations:Array<Animation> = [];
 	private var _ranges:Map<String, AnimationRange> = new Map();
@@ -140,7 +142,7 @@ class NodeCache {
 		return parent;
 	}
 
-	private function get_parent():Node {
+	inline private function get_parent():Node {
 		return this._parentNode;
 	}
 	
@@ -425,18 +427,6 @@ class NodeCache {
 	public function dispose(doNotRecurse:Bool = false) {
 		this.parent = null;
 	}
-	
-	public function getDirection(localAxis:Vector3, ?mesh:AbstractMesh):Vector3 {
-        var result = Vector3.Zero();
-		
-        this.getDirectionToRef(result, localAxis);
-        
-        return result;
-    }
-
-    public function getDirectionToRef(result:Vector3, localAxis:Vector3, ?mesh:AbstractMesh) {
-        Vector3.TransformNormalToRef(localAxis, this.getWorldMatrix(), result);
-    }
 	
 	public static function ParseAnimationRanges(node:Node, parsedNode:Dynamic, scene:Scene) {
 		if (parsedNode.ranges != null){

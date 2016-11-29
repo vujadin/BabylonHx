@@ -733,6 +733,44 @@ import haxe.ds.Vector;
 			Matrix._xAxis.z, Matrix._yAxis.z, Matrix._zAxis.z, 0,
 			ex, ey, ez, 1, result);
 	}
+	
+	public static function LookAtRH(eye:Vector3, target:Vector3, up:Vector3):Matrix {
+		var result = Matrix.Zero();
+		
+		Matrix.LookAtRHToRef(eye, target, up, result);
+		
+		return result;
+	}
+
+	public static function LookAtRHToRef(eye:Vector3, target:Vector3, up:Vector3, result:Matrix) {
+		// Z axis
+		eye.subtractToRef(target, Matrix._zAxis);
+		Matrix._zAxis.normalize();
+		
+		// X axis
+		Vector3.CrossToRef(up, Matrix._zAxis, Matrix._xAxis);
+		
+		if (Matrix._xAxis.lengthSquared() == 0) {
+			Matrix._xAxis.x = 1.0;
+		} 
+		else {
+			Matrix._xAxis.normalize();
+		}
+		
+		// Y axis
+		Vector3.CrossToRef(Matrix._zAxis, Matrix._xAxis, Matrix._yAxis);
+		Matrix._yAxis.normalize();
+		
+		// Eye angles
+		var ex = -Vector3.Dot(Matrix._xAxis, eye);
+		var ey = -Vector3.Dot(Matrix._yAxis, eye);
+		var ez = -Vector3.Dot(Matrix._zAxis, eye);
+		
+		return Matrix.FromValuesToRef(Matrix._xAxis.x, Matrix._yAxis.x, Matrix._zAxis.x, 0,
+			Matrix._xAxis.y, Matrix._yAxis.y, Matrix._zAxis.y, 0,
+			Matrix._xAxis.z, Matrix._yAxis.z, Matrix._zAxis.z, 0,
+			ex, ey, ez, 1, result);
+	}
 
 	inline public static function OrthoLH(width:Float, height:Float, znear:Float, zfar:Float):Matrix {
 		var hw = 2.0 / width;
@@ -748,7 +786,9 @@ import haxe.ds.Vector;
 
 	inline public static function OrthoOffCenterLH(left:Float, right:Float, bottom:Float, top:Float, znear:Float, zfar:Float):Matrix {
 		var matrix = Matrix.Zero();
+		
 		Matrix.OrthoOffCenterLHToRef(left, right, bottom, top, znear, zfar, matrix);
+		
 		return matrix;
 	}
 

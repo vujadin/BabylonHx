@@ -282,16 +282,6 @@ typedef SMD = StandardMaterialDefines
 		}
 		
 		var scene = this.getScene();
-		var engine = scene.getEngine();
-		var needUVs = false;
-		var needNormals = false;
-		
-		this._defines.reset();
-		
-		// Lights
-		if (scene.lightsEnabled && !this.disableLighting) {
-			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this._defines, this.maxSimultaneousLights);
-		}
 		
 		if (!this.checkReadyOnEveryCall) {
 			if (this._renderId == scene.getRenderId()) {
@@ -300,6 +290,12 @@ typedef SMD = StandardMaterialDefines
 				}
 			}
 		}
+		
+		var engine = scene.getEngine();
+		var needNormals = false;
+		var needUVs = false;
+		
+		this._defines.reset();
 		
 		// Textures
 		if (scene.texturesEnabled) {
@@ -505,6 +501,10 @@ typedef SMD = StandardMaterialDefines
 			this.defs[SMD.FOG] = true;
 		}
 		
+		if (scene.lightsEnabled && !this.disableLighting) {
+			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this._defines, maxSimultaneousLights, SMD.SPECULARTERM, SMD.SHADOWS, SMD.SHADOWFULLFLOAT);
+		}
+		
 		if (StandardMaterial.FresnelEnabled) {
 			// Fresnel
 			if (this.diffuseFresnelParameters != null && this.diffuseFresnelParameters.isEnabled) {
@@ -692,7 +692,7 @@ typedef SMD = StandardMaterialDefines
                     attribs, uniforms, samplers,
                     join, fallbacks, this.onCompiled, this.onError, { maxSimultaneousLights: this.maxSimultaneousLights - 1 });
 		}
-		if (!this._effect.isReady()) {
+		if (this._effect == null || !this._effect.isReady()) {
 			return false;
 		}
 		

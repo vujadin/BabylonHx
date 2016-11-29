@@ -370,7 +370,11 @@ import com.babylonhx.animations.AnimationRange;
 		this._rotateWithMatrix(rotMat, space, mesh);
 	}
 	
-	public function setRotation(quat:Quaternion, space:Int = Space.LOCAL, ?mesh:AbstractMesh) {
+	inline public function setRotation(rotation:Vector3, space:Int = Space.LOCAL, ?mesh:AbstractMesh) {
+		this.setYawPitchRoll(rotation.y, rotation.x, rotation.z, space, mesh);
+	}
+	
+	public function setRotationQuaternion(quat:Quaternion, space:Int = Space.LOCAL, ?mesh:AbstractMesh) {
 		var rotMatInv = Tmp.matrix[0];
 		
 		this._getNegativeRotationToRef(rotMatInv, space, mesh);
@@ -532,7 +536,7 @@ import com.babylonhx.animations.AnimationRange;
 		return pos;
 	}
 
-	public function getAbsolutePositionToRef(result:Vector3, ?mesh:AbstractMesh) {
+	inline public function getAbsolutePositionToRef(result:Vector3, ?mesh:AbstractMesh) {
 		this.getPositionToRef(result, Space.WORLD, mesh);
 	}
 
@@ -582,14 +586,14 @@ import com.babylonhx.animations.AnimationRange;
 		Matrix.FromValuesToRef(this._scaleVector.x, 0, 0, 0, 0,  this._scaleVector.y, 0, 0, 0, 0,  this._scaleVector.z, 0, 0, 0, 0, 1, this._scaleMatrix);
 	}
 	
-	override public function getDirection(localAxis:Vector3, ?mesh:AbstractMesh):Vector3 {
+	public function getDirection(localAxis:Vector3, ?mesh:AbstractMesh):Vector3 {
 		var result = Vector3.Zero();
-		this.getDirectionToRef(localAxis, result, mesh);
+		this.getDirectionToRef(localAxis, mesh, result);
 		
 		return result;
 	}
 
-	override public function getDirectionToRef(result:Vector3, localAxis:Vector3, ?mesh:AbstractMesh) {
+	public function getDirectionToRef(localAxis:Vector3, mesh:AbstractMesh, result:Vector3) {
 		this._skeleton.computeAbsoluteTransforms();
         
 		var mat = Tmp.matrix[0];
@@ -602,43 +606,78 @@ import com.babylonhx.animations.AnimationRange;
 		
 		Vector3.TransformNormalToRef(localAxis, mat, result);
 		
-		if (mesh != null) {
-			result.x /= mesh.scaling.x;
-			result.y /= mesh.scaling.y;
-			result.z /= mesh.scaling.z;
-		}
-		
-		result.x /= this._scaleVector.x;
-		result.y /= this._scaleVector.y;
-		result.z /= this._scaleVector.z;
+		result.normalize();
 	}
 	
-	public function getRotation(space:Int = Space.LOCAL, ?mesh:AbstractMesh):Quaternion {
-		var result = Quaternion.Identity();
+	public function getRotation(space:Int = Space.LOCAL, ?mesh:AbstractMesh):Vector3 {
+		var result = Vector3.Zero();
 		
-		this.getRotationToRef(result, space, mesh);
+		this.getRotationToRef(space, mesh, result);
 		
 		return result;
 	}
 
-	public function getRotationToRef(result:Quaternion, space:Int = Space.LOCAL, ?mesh:AbstractMesh) {
+	public function getRotationToRef(space:Int = Space.LOCAL, mesh:AbstractMesh, result:Vector3) {
+		var quat = Tmp.quaternion[0];
+		
+        this.getRotationQuaternionToRef(space, mesh, quat);
+        
+        quat.toEulerAnglesToRef(result);
+	}
+	
+	public function getRotationQuaternion(space:Int = Space.LOCAL, ?mesh:AbstractMesh):Quaternion {
+		var result = Quaternion.Identity();
+		
+		this.getRotationQuaternionToRef(space, mesh, result);
+		
+		return result;
+	}
+
+	public function getRotationQuaternionToRef(space:Int = Space.LOCAL, mesh:AbstractMesh, result:Quaternion) {
 		if (space == Space.LOCAL) {
 			this.getLocalMatrix().decompose(Tmp.vector3[0], result, Tmp.vector3[1]);
-		} 
+		}
 		else {
 			var mat = Tmp.matrix[0];
 			var amat = this.getAbsoluteTransform();
 			
 			if (mesh != null) {
-				var wmat = mesh.getWorldMatrix();
-				amat.multiplyToRef(wmat, mat);
-				
-				mat.decompose(Tmp.vector3[0], result, Tmp.vector3[1]);
-			}
+				amat.multiplyToRef(mesh.getWorldMatrix(), mat);
+			} 
 			else {
-				amat.decompose(Tmp.vector3[0], result, Tmp.vector3[1]);
+				mat.copyFrom(amat);
 			}
+			
+			mat.m[0] *= this._scalingDeterminant;
+			mat.m[1] *= this._scalingDeterminant;
+			mat.m[2] *= this._scalingDeterminant;
+			
+			mat.decompose(Tmp.vector3[0], result, Tmp.vector3[1]);
 		}
+	}
+	
+	public function getAbsolutePositionFromLocal(position:Vector3, ?mesh:AbstractMesh):Vector3 {
+		var result = Vector3.Zero();
+		
+		this.getAbsolutePositionFromLocalToRef(position, mesh, result);
+		
+		return result;
+	}
+
+	public function getAbsolutePositionFromLocalToRef(position:Vector3, mesh:AbstractMesh, result:Vector3) {
+		this._skeleton.computeAbsoluteTransforms();
+		
+		var tmat = Tmp.matrix[0];
+		
+		if (mesh != null) {
+			tmat.copyFrom(this.getAbsoluteTransform());
+			tmat.multiplyToRef(mesh.getWorldMatrix(), tmat);
+		}
+		else {
+			tmat = this.getAbsoluteTransform();
+		}
+		
+		Vector3.TransformCoordinatesToRef(position, tmat, result);
 	}
 	
 }

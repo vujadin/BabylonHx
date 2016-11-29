@@ -12,9 +12,16 @@ import com.babylonhx.mesh.AbstractMesh;
  */
 class BoneIKController {
 
-	public var target:AbstractMesh;
-	public var poleTarget:AbstractMesh;
+	public var targetMesh:AbstractMesh;
+	public var poleTargetMesh:AbstractMesh;
+	public var poleTargetBone:Bone;
+	
+	public var targetPosition:Vector3 = Vector3.Zero();
+    public var poleTargetPosition:Vector3 = Vector3.Zero();
+   
+    public var poleTargetLocalOffset:Vector3 = Vector3.Zero();
 	public var poleAngle:Float = 0;
+	
 	public var mesh:AbstractMesh;
 
 	private var _bone1:Bone;
@@ -34,6 +41,8 @@ class BoneIKController {
 	private var _tmpMat2:Matrix = Matrix.Identity();
 
 	private var _rightHandedSystem:Bool = false;
+	
+	private var _bendAxis:Vector3 = Vector3.Right();
 
 	public var maxAngle(get, set):Float;
 	private function get_maxAngle():Float {
@@ -46,28 +55,26 @@ class BoneIKController {
 	}
 	
 
-	public function new(mesh:AbstractMesh, bone:Bone, target:AbstractMesh, poleTarget:AbstractMesh, poleAngle:Float = 0) {
-		target.computeWorldMatrix(true);
-		poleTarget.computeWorldMatrix(true);
-		
+	// options: { targetMesh?: AbstractMesh, poleTargetMesh?: AbstractMesh, poleTargetBone?: Bone, poleTargetLocalOffset?:Vector3, poleAngle?: number, bendAxis?: Vector3, maxAngle?:number }
+	public function new(mesh:AbstractMesh, bone:Bone, ?options:Dynamic) {		
 		this._bone2 = bone;
 		this._bone1 = bone.getParent();
 		
-		this.target = target;
-		this.poleTarget = poleTarget;
-		this.poleAngle = poleAngle;
 		this.mesh = mesh;
 		
 		if (bone.getAbsoluteTransform().determinant() > 0) {
 			this._rightHandedSystem = true;
+			this._bendAxis.x = 0;
+            this._bendAxis.y = 0;
+            this._bendAxis.z = 1;
 		}
 		
 		if (this._bone1.length != 0) {
 			var boneScale1 = this._bone1.getScale();
 			var boneScale2 = this._bone2.getScale();
 			
-			this._bone1Length = this._bone1.length * boneScale1.y;
-			this._bone2Length = this._bone2.length * boneScale2.y;
+			this._bone1Length = this._bone1.length * boneScale1.y * this.mesh.scaling.y;
+			this._bone2Length = this._bone2.length * boneScale2.y * this.mesh.scaling.y;
 		} 
 		else if (this._bone1.children[0] != null) {		
 			mesh.computeWorldMatrix(true);
@@ -81,6 +88,40 @@ class BoneIKController {
 		}
 		
 		this.maxAngle = Math.PI;
+		
+		if (options != null) {
+			if (options.targetMesh != null) {
+				this.targetMesh = options.targetMesh;
+				this.targetMesh.computeWorldMatrix(true);
+			}
+			
+			if (options.poleTargetMesh != null) {
+				this.poleTargetMesh = options.poleTargetMesh;
+				this.poleTargetMesh.computeWorldMatrix(true);
+			}
+			else if (options.poleTargetBone != null) {
+				this.poleTargetBone = options.poleTargetBone;
+			}
+			else if (this._bone1.getParent() != null) {
+				this.poleTargetBone = this._bone1.getParent();
+			}
+			
+			if (options.poleTargetLocalOffset != null) {
+				this.poleTargetLocalOffset.copyFrom(options.poleTargetLocalOffset);
+			}
+			
+			if (options.poleAngle != null) {
+				this.poleAngle = options.poleAngle;
+			}
+			
+			if (options.bendAxis != null) {
+				this._bendAxis.copyFrom(options.bendAxis);
+			}
+			
+			if (options.maxAngle != null) {
+				this.maxAngle = options.maxAngle;
+			}
+		}
 	}
 
 	private function _setMaxAngle(ang:Float) {
@@ -102,16 +143,28 @@ class BoneIKController {
 
 	public function update() {
 		var bone1 = this._bone1;
-		var target = this.target.getAbsolutePosition();
-		var poleTarget = this.poleTarget.getAbsolutePosition();
+		var target = this.targetPosition;
+		var poleTarget = this.poleTargetPosition;
+		
+		var mat1 = this._tmpMat1;
+        var mat2 = this._tmpMat2;
+		
+        if (this.targetMesh != null) {
+            target.copyFrom(this.targetMesh.getAbsolutePosition());
+        }
+		
+        if (this.poleTargetBone != null) {
+            this.poleTargetBone.getAbsolutePositionFromLocalToRef(this.poleTargetLocalOffset, this.mesh, poleTarget);
+        }
+		else if (this.poleTargetMesh != null) {
+            Vector3.TransformCoordinatesToRef(this.poleTargetLocalOffset, this.poleTargetMesh.getWorldMatrix(), poleTarget);
+        }
 		
 		var bonePos = this._tmpVec1;
 		var zaxis = this._tmpVec2;
 		var xaxis = this._tmpVec3;
 		var yaxis = this._tmpVec4;
 		var upAxis = this._tmpVec5;
-		var mat1 = this._tmpMat1;
-		var mat2 = this._tmpMat2;
 		
 		bone1.getPositionToRef(bonePos, Space.WORLD, this.mesh);
 		
@@ -168,34 +221,28 @@ class BoneIKController {
 		
 		var angC = -angA - angB;
 		
-		var bendAxis = this._tmpVec1;
-		bendAxis.x = 0;
-		bendAxis.y = 0;
-		bendAxis.z = 0;
-		
 		if (this._rightHandedSystem) {
-			bendAxis.z = 1;
+			Matrix.RotationYawPitchRollToRef(0, 0, Math.PI * .5, mat2);
+            mat2.multiplyToRef(mat1, mat1);
 			
-			Matrix.RotationYawPitchRollToRef(0, 0, angB + Math.PI * .5, mat2);
+			Matrix.RotationAxisToRef(this._bendAxis, angB, mat2);
 			mat2.multiplyToRef(mat1, mat1);
-			
-			Matrix.RotationAxisToRef(yaxis, this.poleAngle + Math.PI, mat2);
-			mat1.multiplyToRef(mat2, mat1);
 		} 
 		else {
-			bendAxis.x = 1;
+			this._tmpVec1.copyFrom(this._bendAxis);
+            this._tmpVec1.x *= -1;
 			
-			Matrix.RotationYawPitchRollToRef(0, angB, 0, mat2);
+			Matrix.RotationAxisToRef(this._tmpVec1, -angB, mat2);
 			mat2.multiplyToRef(mat1, mat1);
-			
-			if (this.poleAngle != 0) {
-				Matrix.RotationAxisToRef(yaxis, this.poleAngle, mat2);
-				mat1.multiplyToRef(mat2, mat1);
-			}
+		}
+		
+		if (this.poleAngle != 0) {
+            Matrix.RotationAxisToRef(yaxis, this.poleAngle, mat2);
+            mat1.multiplyToRef(mat2, mat1);
 		}
 		
 		this._bone1.setRotationMatrix(mat1, Space.WORLD, this.mesh);
-		this._bone2.setAxisAngle(bendAxis, angC, Space.LOCAL, this.mesh);
+		this._bone2.setAxisAngle(this._bendAxis, angC, Space.LOCAL);
 	}
 	
 }

@@ -42,7 +42,7 @@ import com.babylonhx.math.Tools;
 		
 		super(name, "hueSaturation", ["hue", "saturation"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onApply = function(effect:Effect) {
+		this.onApply = function(effect:Effect, _) {
 			effect.setFloat("hue", this._hue);
 			effect.setFloat("saturation", this._saturation);
 		};

@@ -31,7 +31,7 @@ import com.babylonhx.materials.ShadersStore;
 		
 		super(name, "vibrance", ["amount"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onApply = function(effect:Effect) {
+		this.onApply = function(effect:Effect, _) {
 			effect.setFloat("amount", this.amount);
 		};
 	}

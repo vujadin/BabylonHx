@@ -28,11 +28,11 @@ import com.babylonhx.math.Color3;
 		
 		super(name, "limbDarkening", ["fAspect", "startColor", "endColor", "radialScale", "brightness"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onSizeChanged = function() {
+		this.onSizeChanged = function(_, _) {
 			this.aspect = camera.getScene().getEngine().getRenderWidth() / camera.getScene().getEngine().getRenderHeight();
 		};
 		
-		this.onApply = function(effect:Effect) {
+		this.onApply = function(effect:Effect, _) {
 			effect.setFloat("fAspect", this.aspect);
 			effect.setFloat("radialScale", this.radialScale);
 			effect.setFloat("brightness", this.brightness);

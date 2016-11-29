@@ -151,7 +151,7 @@ void main(void)
 }
 
 */
-class CombustionProceduralTexture extends ProceduralTexture {
+@:expose("BABYLON.CombustionProceduralTexture") class Combustion extends ProceduralTexture {
 	
 	public static var fragmentShader:String = "precision highp float;\nuniform vec2 texRes;uniform float time; vec3 firePalette(float i){float T=1400.+1300.*i;vec3 L=vec3(7.4,5.6,4.4);L=pow(L,vec3(5.))*(exp(143877./(T*L))-1.);return 1.-exp(-5e+08/L);}vec3 hash33(vec3 p){float n=sin(dot(p,vec3(7,157,113)));return fract(vec3(2097152,262144,32768)*n);}float voronoi(vec3 p){vec3 b,r,g=floor(p);p=fract(p);float d=1.;for(int j=-1;j<=1;j++){for(int i=-1;i<=1;i++)b=vec3(i,j,-1),r=b-p+hash33(g+b),d=min(d,dot(r,r)),b.z=0.,r=b-p+hash33(g+b),d=min(d,dot(r,r)),b.z=1.,r=b-p+hash33(g+b),d=min(d,dot(r,r));}return d;}float noiseLayers(in vec3 p){vec3 t=vec3(0.,0.,p.z+time*1.5);const int iter=5;float tot=0.,sum=0.,amp=1.;for(int i=0;i<iter;i++)tot+=voronoi(p+t)*amp,p*=2.,t*=1.5,sum+=amp,amp*=.5;return tot/sum;}void main(){vec2 uv=(gl_FragCoord.xy-texRes.xy*.5)/texRes.y;uv+=vec2(sin(time*.5)*.25,cos(time*.5)*.125);vec3 rd=normalize(vec3(uv.x,uv.y,.392699));float cs=cos(time*.25),si=sin(time*.25);rd.xy=rd.xy*mat2(cs,-si,si,cs);float c=noiseLayers(rd*2.);c=max(c+dot(hash33(rd)*2.-1.,vec3(.015)),0.);c*=sqrt(c)*1.5;vec3 col=firePalette(c);col=mix(col,col.zyx*.1+c*.9,(1.+rd.x+rd.y)*.45);gl_FragColor=vec4(clamp(col,0.,1.),1.);}";
 

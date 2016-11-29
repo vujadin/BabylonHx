@@ -1101,11 +1101,11 @@ typedef BufferPointer = {
 	inline public function updateDynamicVertexBuffer(vertexBuffer:WebGLBuffer, vertices:Array<Float>, offset:Int = 0, count:Int = -1) {
 		this.bindArrayBuffer(vertexBuffer);
 		
-		if (count == -1) {
+		if (count == -1 || (count == vertices.length && offset == 0)) {
 			Gl.bufferSubData(GL.ARRAY_BUFFER, offset, new Float32Array(vertices));
 		}
 		else {
-			Gl.bufferSubData(GL.ARRAY_BUFFER, 0, new Float32Array(vertices).subarray(offset, offset + count));
+			Gl.bufferSubData(GL.ARRAY_BUFFER, 0, new Float32Array(vertices.splice(offset, offset + count)));// ).subarray(offset, offset + count));
 		}
 		
 		this._resetVertexBufferBinding();

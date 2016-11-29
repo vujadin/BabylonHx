@@ -156,10 +156,10 @@ class Rectangle {
 			this._setP(x0, y0);
 		}
 		else {
-			this._unionWP(x0,y0);
+			this._unionWP(x0, y0);
 		}
 		
-		this._unionWP(x1,y1);
+		this._unionWP(x1, y1);
 	}	
 	
 	inline public function _setP(x:Float, y:Float) {

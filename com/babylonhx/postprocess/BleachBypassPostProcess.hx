@@ -23,7 +23,7 @@ import com.babylonhx.materials.ShadersStore;
 		
 		super(name, "bleachBypass", ["opacity"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onApply = function(effect:Effect) {
+		this.onApply = function(effect:Effect, _) {
 			effect.setFloat("opacity", this.opacity);
 		};
 	}

@@ -36,7 +36,7 @@ import com.babylonhx.materials.ShadersStore;
 		this._maskTex = new Texture(maskTextureUrl, camera.getScene());
 		_createNoiseTexture();
 		
-		this.onApply = function(effect:Effect) {
+		this.onApply = function(effect:Effect, _) {
 			this.elapsedTime += camera.getScene().getAnimationRatio() * 0.03;
 			effect.setFloat("elapsedTime", this.elapsedTime);
 			effect.setFloat("luminanceThreshold", this.luminanceThreshold);

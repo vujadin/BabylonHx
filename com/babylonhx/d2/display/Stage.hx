@@ -201,27 +201,11 @@ class Stage extends DisplayObjectContainer {
 		this._resize();
 		this._srs = true;
 		
-		// hack...
-		var cameraMask:Int = 0xF0E1D2;
-		var mainCamera = scene.activeCamera;
-		if (mainCamera != null && scene.activeCameras.indexOf(mainCamera) == -1) {
-			scene.activeCameras.push(mainCamera);
-		}
-		var camera = new FreeCamera("dummycamera", new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY), scene);
-		camera.fov = 0;
-        camera.layerMask = cameraMask; 
-		var dummyMesh = Mesh.CreatePlane("dummymesh", 0.001, scene);
+		var dummyMesh = Mesh.CreatePlane("dummymesh", 0.000001, scene);
 		var dummyMaterial = new StandardMaterial("dummymaterial", scene);
 		dummyMaterial.diffuseTexture = Texture.CreateFromImage(Image.createNoise(), "_dummy", scene);
         dummyMaterial.backFaceCulling = false;
 		dummyMesh.material = dummyMaterial;
-		dummyMesh.layerMask = cameraMask;
-		//scene.activeCameras.insert(0, camera);
-		scene.activeCameras.push(camera);
-		
-		if (mainCamera != null) {	// fixes picking in 3D scene
-			scene.cameraToUseForPointers = mainCamera;
-		}
 		
 		var s:Sprite = new Sprite();
 		s.graphics.beginFill();
@@ -276,11 +260,14 @@ class Stage extends DisplayObjectContainer {
 	}
 	
 	inline public static function _setTEX(tex:GLTexture) {
-		engine._bindTexture(0, tex);
+		if (Stage._curTEX != tex) {
+			engine._bindTexture(0, tex);
+			Stage._curTEX == tex;
+		}
 	}
 	
 	public static function _setBMD(bmd:BlendMode) {
-		if(Stage._curBMD != bmd) {
+		//if(Stage._curBMD != bmd) {
 			if (bmd == BlendMode.NORMAL) {
 				GL.blendEquation(GL.FUNC_ADD);
 				GL.blendFunc(GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
@@ -311,7 +298,7 @@ class Stage extends DisplayObjectContainer {
 			}
 			
 			Stage._curBMD = bmd;
-		}
+		//}
 	}
 	
 	private function _getMakeTouch(id:Int) {  
@@ -326,43 +313,23 @@ class Stage extends DisplayObjectContainer {
 	
 	// touch events
 	
-	/*Stage._onTD = function(e){ 
-		Stage._setStageMouse(e.touches.item(0)); Stage._main._smd[0] = true; Stage._main._knM = true;
-		
-		var main = Stage._main;
-		for(var i=0; i<e.changedTouches.length; i++)
-		{
-			var tdom = e.changedTouches.item(i);
-			var t = main._getMakeTouch(tdom.identifier);
-			t.touch = tdom;
-			t.act = 1;
-		}
-		main._processMouseTouch();
+	public function _onTD(x:Int, y:Int, pointerID:Int) {
+		this._setStageMouse(x, y); 
+		this._smd[0] = true; 
+		this._knM = true;
+		this._processMouseTouch();
 	}
-	Stage._onTM = function(e){ 
-		Stage._setStageMouse(e.touches.item(0)); Stage._main._smm    = true; Stage._main._knM = true;
-		var main = Stage._main;
-		for(var i=0; i<e.changedTouches.length; i++)
-		{
-			var tdom = e.changedTouches.item(i);
-			var t = main._getMakeTouch(tdom.identifier);
-			t.touch = tdom;
-			t.act = 2;
-		}
-		main._processMouseTouch();
+	public function _onTM(x:Int, y:Int, pointerID:Int) { 
+		this._setStageMouse(x, y); 
+		this._smm = true; 
+		this._knM = true;
+		this._processMouseTouch();
 	}
-	Stage._onTU = function(e){ 
-		Stage._main._smu[0] = true; Stage._main._knM = true;
-		var main = Stage._main;
-		for(var i=0; i<e.changedTouches.length; i++)
-		{
-			var tdom = e.changedTouches.item(i);
-			var t = main._getMakeTouch(tdom.identifier);
-			t.touch = tdom;
-			t.act = 3;
-		}
-		main._processMouseTouch();
-	}*/
+	public function _onTU(x:Int, y:Int, pointerID:Int) { 
+		this._smu[0] = true; 
+		this._knM = true;
+		this._processMouseTouch();
+	}
 	
 	// mouse events
 	
@@ -519,8 +486,8 @@ class Stage extends DisplayObjectContainer {
 	var lastCullEnabled:Bool;
 	private function _backupGLState() {
 		this.lastProgram = GL.getParameter(GL.CURRENT_PROGRAM);
-		//this.lastElementArrayBuffer = GL.getParameter(GL.ELEMENT_ARRAY_BUFFER_BINDING);
-		//this.lastArrayBuffer = GL.getParameter(GL.ARRAY_BUFFER_BINDING);
+		this.lastElementArrayBuffer = GL.getParameter(GL.ELEMENT_ARRAY_BUFFER_BINDING);
+		this.lastArrayBuffer = GL.getParameter(GL.ARRAY_BUFFER_BINDING);
 		this.lastTexture = GL.getParameter(GL.TEXTURE_BINDING_2D);
 		this.lastEnableDepthTest = GL.isEnabled(GL.DEPTH_TEST);
 		this.lastEnableBlend = GL.isEnabled(GL.BLEND);
@@ -528,8 +495,8 @@ class Stage extends DisplayObjectContainer {
 	}
 	
 	private function _restoreGLState() {
-		//GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, this.lastElementArrayBuffer);
-		//GL.bindBuffer(GL.ARRAY_BUFFER, this.lastArrayBuffer);
+		GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, this.lastElementArrayBuffer);
+		GL.bindBuffer(GL.ARRAY_BUFFER, this.lastArrayBuffer);
 		GL.useProgram(this.lastProgram);
 		
 		if (this.lastTexture != null) {
@@ -557,11 +524,11 @@ class Stage extends DisplayObjectContainer {
 	}
 
     private function _drawScene() {	
-		_backupGLState();
+		//_backupGLState();
 		
 		GL.enable(GL.BLEND);
-		GL.blendEquation(GL.FUNC_ADD);		
-		GL.blendFunc(GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
+		/*GL.blendEquation(GL.FUNC_ADD);		
+		GL.blendFunc(GL.ONE, GL.ONE_MINUS_SRC_ALPHA);*/
 		
 		GL.enable(GL.DEPTH_TEST);
 		GL.depthFunc(GL.LEQUAL);
@@ -580,7 +547,7 @@ class Stage extends DisplayObjectContainer {
 		
         this._renderAll(this);
 		
-		_restoreGLState();
+		//_restoreGLState();
     }
 	
 	private function _processMouseTouch() {

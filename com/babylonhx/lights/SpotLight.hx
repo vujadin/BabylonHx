@@ -3,6 +3,7 @@ package com.babylonhx.lights;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Matrix;
+import com.babylonhx.math.Axis;
 import com.babylonhx.mesh.AbstractMesh;
 
 /**
@@ -10,7 +11,7 @@ import com.babylonhx.mesh.AbstractMesh;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.SpotLight') class SpotLight extends Light implements IShadowLight {
+@:expose('SpotLight') class SpotLight extends Light implements IShadowLight {
 
 	@serializeAsVector3()
 	public var position:Vector3;
@@ -98,15 +99,29 @@ import com.babylonhx.mesh.AbstractMesh;
 			
 			Vector3.TransformNormalToRef(this.direction, this.parent.getWorldMatrix(), this._transformedDirection);
 			
-			effect.setFloat4(positionUniformName, this.transformedPosition.x, this.transformedPosition.y, this.transformedPosition.z, this.exponent);
+			effect.setFloat4(positionUniformName, 
+				this.transformedPosition.x, 
+				this.transformedPosition.y, 
+				this.transformedPosition.z, 
+				this.exponent);
+				
 			normalizeDirection = Vector3.Normalize(this._transformedDirection);
 		} 
 		else {
-			effect.setFloat4(positionUniformName, this.position.x, this.position.y, this.position.z, this.exponent);
+			effect.setFloat4(positionUniformName, 
+				this.position.x, 
+				this.position.y, 
+				this.position.z, 
+				this.exponent);
+				
 			normalizeDirection = Vector3.Normalize(this.direction);
 		}
 		
-		effect.setFloat4(directionUniformName, normalizeDirection.x, normalizeDirection.y, normalizeDirection.z, Math.cos(this.angle * 0.5));
+		effect.setFloat4(directionUniformName, 
+			normalizeDirection.x, 
+			normalizeDirection.y, 
+			normalizeDirection.z, 
+			Math.cos(this.angle * 0.5));
 	}
 
 	override public function _getWorldMatrix():Matrix {
@@ -117,6 +132,15 @@ import com.babylonhx.mesh.AbstractMesh;
 		Matrix.TranslationToRef(this.position.x, this.position.y, this.position.z, this._worldMatrix);
 		
 		return this._worldMatrix;
+	}
+	
+	public function getRotation():Vector3 {
+		this.direction.normalize();
+		
+		var xaxis = Vector3.Cross(this.direction, Axis.Y);
+		var yaxis = Vector3.Cross(xaxis, this.direction);
+		
+		return Vector3.RotationFromAxis(xaxis, yaxis, this.direction);
 	}
 	
 }

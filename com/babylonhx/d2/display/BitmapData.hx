@@ -124,11 +124,13 @@ class BitmapData {
 	public function copyPixels(sourceBitmapData:BitmapData, sourceRect:Rectangle, destPoint:Point) {
 		var tr = new Rectangle(destPoint.x, destPoint.y, sourceRect.width, sourceRect.height);
 		var sr = sourceRect;
-		var tcc = this._ubuffer;
 		
+		var tcc = this._ubuffer;		
 		var scc = sourceBitmapData._ubuffer;
+		
 		var height = Std.int(sr.height);
 		var width = Std.int(sr.width);
+		
 		for (i in 0...height) {
 			for (j in 0...width) {
 				tcc[Std.int(((i + tr.y) * this.width) + tr.x + j)] = scc[Std.int(((i + sr.y) * sourceBitmapData.width) + sr.x + j)];

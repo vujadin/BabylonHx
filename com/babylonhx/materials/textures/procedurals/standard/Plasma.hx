@@ -44,7 +44,7 @@ void main(void)
     gl_FragColor = vec4(c, 1.);
 }
 */
-class PlasmaProceduralTexture extends ProceduralTexture {
+@:expose("BABYLON.PlasmaProceduralTexture") class Plasma extends ProceduralTexture {
 	
 	public static var fragmentShader:String = "precision highp float;\nuniform vec2 texRes;uniform float time;float len(vec3 p){return max(abs(p.x)*.5+abs(p.z)*.5,max(abs(p.y)*.5+abs(p.x)*.5,abs(p.z)*.5+abs(p.y)*.5));}void main(){vec2 R=texRes.xy,uv=(gl_FragCoord.xy-.5*R)/texRes.y;vec3 rp=vec3(0.,.4,time+.4),rd=normalize(vec3(uv,1.)),c=vec3(0.);float s=0.,viewVary=cos(time*.05)*.15;for(int i=0;i<50;i++){vec3 hp=rp+rd*s;float d=len(cos(hp*.6+cos(hp*.3+time*.5)))-.75,cc=min(1.,pow(max(0.,1.-abs(d)*10.25),1.))/(float(i)+10.);c+=(cos(vec3(hp.xy,s))*.5+.5+cos(vec3(s+time,hp.yx)*.1)*.5+.5+1.)/2.*cc;s+=max(abs(d),.35+viewVary);rd=normalize(rd+vec3(sin(s*.5),cos(s*.5),0.)*d*.05*clamp(s-1.,0.,1.));} gl_FragColor=vec4(c,1.);}";
 

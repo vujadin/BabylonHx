@@ -27,12 +27,12 @@ import com.babylonhx.materials.ShadersStore;
 		
 		super(name, "screenDistortion", ["screenSize", "elapsedTime", "waveFrequency", "waveAmplitude"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onSizeChanged = function() {
+		this.onSizeChanged = function(_, _) {
 			this.screenSize.x = camera.getScene().getEngine().getRenderWidth() * 1.1;
 			this.screenSize.y = camera.getScene().getEngine().getRenderHeight() * 1.1;
 		};
 		
-		this.onApply = function(effect:Effect) {
+		this.onApply = function(effect:Effect, _) {
 			this.elapsedTime += camera.getScene().getAnimationRatio() * 0.03;
 			effect.setFloat("elapsedTime", this.elapsedTime);
 			effect.setVector2("screenSize", this.screenSize);
@@ -40,7 +40,7 @@ import com.babylonhx.materials.ShadersStore;
 			effect.setFloat("waveAmplitude", this.waveAmplitude);
 		};
 		
-		this.onSizeChanged();
+		this.onSizeChanged(this._effect, null);
 	}
 	
 }

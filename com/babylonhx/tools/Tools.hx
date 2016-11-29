@@ -692,6 +692,7 @@ typedef Assets = nme.Assets;
 		} 
 		else {
 			trace("Image '" + url + "' doesn't exist!");
+			onload(Image.createCheckerboard());
 		}
 		#elseif lime
 		if (Assets.exists(url)) {
@@ -709,6 +710,7 @@ typedef Assets = nme.Assets;
 		} 
 		else {
 			trace("Image '" + url + "' doesn't exist!");
+			onload(Image.createCheckerboard());
 		}		
 		#elseif nme		
 		var img = Assets.getBitmapData(url); 

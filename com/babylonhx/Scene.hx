@@ -752,7 +752,20 @@ import com.babylonhx.audio.*;
 	
 	public function init2D():Stage {
 		if (this.activeCamera != null) {
-			this._stage2D = new Stage(this);
+			if (this._stage2D == null) {
+				this._stage2D = new Stage(this);
+			}
+			
+			#if mobile
+			
+			#else
+			_engine.mouseDown.push(stage2D._onMD);
+			_engine.mouseMove.push(stage2D._onMM);
+			_engine.mouseUp.push(stage2D._onMU);
+			
+			_engine.keyDown.push(stage2D._onKD);
+			_engine.keyUp.push(stage2D._onKU);
+			#end
 			
 			return this._stage2D;
 		}
@@ -856,9 +869,13 @@ import com.babylonhx.audio.*;
 			}
 			
 			// Meshes
-			var pickResult:PickingInfo = this.pick(this._unTranslatedPointerX, this._unTranslatedPointerY, pointerMovePredicate,
-				false,
-				this.cameraToUseForPointers);
+			var pickResult:PickingInfo = this.pick(
+				this._unTranslatedPointerX, 
+				this._unTranslatedPointerY, 
+				this.pointerMovePredicate,
+				false, 
+				this.cameraToUseForPointers
+			);
 				
 			if (pickResult.hit && pickResult.pickedMesh != null) {
 				this.setPointerOverSprite(null);
@@ -923,13 +940,14 @@ import com.babylonhx.audio.*;
 			
 			if (this.pointerDownPredicate == null) {
 				this.pointerDownPredicate = function(mesh:AbstractMesh):Bool {
-					return mesh.isPickable && mesh.isVisible && mesh.isReady() && (mesh.actionManager == null || mesh.actionManager.hasPointerTriggers);
+					return mesh.isPickable && mesh.isVisible && mesh.isReady();
 				};
 			}
 			
 			// Meshes
 			this._pickedDownMesh = null;			
-			var pickResult:PickingInfo = this.pick(this._pointerX, this._pointerY, this.pointerDownPredicate, false, this.cameraToUseForPointers);
+			var pickResult:PickingInfo = this.pick(this._unTranslatedPointerX, this._unTranslatedPointerY, this.pointerDownPredicate, false, this.cameraToUseForPointers);
+			
 			if (pickResult.hit && pickResult.pickedMesh != null) {				
 				if (pickResult.pickedMesh.actionManager != null) {
 					this._pickedDownMesh = pickResult.pickedMesh;
@@ -949,10 +967,12 @@ import com.babylonhx.audio.*;
 								pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnLeftPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));							
 						}
 						
-						pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
+						if (pickResult.pickedMesh.actionManager != null) {
+							pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
+						}
 					}
 					
-					if (pickResult.pickedMesh.actionManager.hasSpecificTrigger(ActionManager.OnLongPressTrigger)) {				
+					if (pickResult.pickedMesh.actionManager != null && pickResult.pickedMesh.actionManager.hasSpecificTrigger(ActionManager.OnLongPressTrigger)) {				
 						Tools.delay(function () {
 							var pickResult = this.pick(this._unTranslatedPointerX, this._unTranslatedPointerY,
 								function(mesh:AbstractMesh):Bool { return mesh.isPickable && mesh.isVisible && mesh.isReady() && mesh.actionManager != null && mesh.actionManager.hasSpecificTrigger(ActionManager.OnLongPressTrigger); },
@@ -1003,7 +1023,10 @@ import com.babylonhx.audio.*;
 								pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnLeftPickTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
 							
 						}
-						pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnPickTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
+						
+						if (pickResult.pickedSprite.actionManager != null) {
+							pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnPickTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
+						}
 					}
 				}
 			}
@@ -1028,7 +1051,7 @@ import com.babylonhx.audio.*;
 			
 			if (this.pointerUpPredicate == null) {
 				this.pointerUpPredicate = function(mesh:AbstractMesh):Bool {
-					return mesh.isPickable && mesh.isVisible && mesh.isReady() && (mesh.actionManager == null || (mesh.actionManager.hasPickTriggers || mesh.actionManager.hasSpecificTrigger(ActionManager.OnLongPressTrigger)));
+					return mesh.isPickable && mesh.isVisible && mesh.isReady();
 				};
 			}
 			
@@ -1048,13 +1071,14 @@ import com.babylonhx.audio.*;
 				}
 				if (pickResult.pickedMesh.actionManager != null) {
 					pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnPickUpTrigger, ActionEvent.CreateNew(pickResult.pickedMesh, button));
-					
-					if (Math.abs(this._startingPointerPosition.x - this._pointerX) < ActionManager.DragMovementThreshold && Math.abs(this._startingPointerPosition.y - this._pointerY) < ActionManager.DragMovementThreshold) {
-						pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh, button));
+					if (pickResult.pickedMesh.actionManager != null) {
+						if (Math.abs(this._startingPointerPosition.x - this._pointerX) < ActionManager.DragMovementThreshold && Math.abs(this._startingPointerPosition.y - this._pointerY) < ActionManager.DragMovementThreshold) {
+							pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh, button));
+						}
 					}
 				}
 			}
-			if (this._pickedDownMesh != null && this._pickedDownMesh != pickResult.pickedMesh) {
+			if (this._pickedDownMesh != null && this._pickedDownMesh.actionManager != null && this._pickedDownMesh != pickResult.pickedMesh) {
 				this._pickedDownMesh.actionManager.processTrigger(ActionManager.OnPickOutTrigger, ActionEvent.CreateNew(this._pickedDownMesh));
 			}
 			
@@ -1078,12 +1102,14 @@ import com.babylonhx.audio.*;
 					if (pickResult.pickedSprite.actionManager != null) {
 						pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnPickUpTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
 						
-						if (Math.abs(this._startingPointerPosition.x - this._pointerX) < ActionManager.DragMovementThreshold && Math.abs(this._startingPointerPosition.y - this._pointerY) < ActionManager.DragMovementThreshold) {
-							pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnPickTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
+						if (pickResult.pickedSprite.actionManager != null) {
+							if (Math.abs(this._startingPointerPosition.x - this._pointerX) < ActionManager.DragMovementThreshold && Math.abs(this._startingPointerPosition.y - this._pointerY) < ActionManager.DragMovementThreshold) {
+								pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnPickTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
+							}
 						}
 					}
 				}
-				if (this._pickedDownSprite != null && this._pickedDownSprite != pickResult.pickedSprite) {
+				if (this._pickedDownSprite != null && this._pickedDownSprite.actionManager != null && this._pickedDownSprite != pickResult.pickedSprite) {
 					this._pickedDownSprite.actionManager.processTrigger(ActionManager.OnPickOutTrigger, ActionEvent.CreateNewFromSprite(this._pickedDownSprite, this));
 				}
 			}
@@ -1100,33 +1126,30 @@ import com.babylonhx.audio.*;
 				this.actionManager.processTrigger(ActionManager.OnKeyUpTrigger, ActionEvent.CreateNewFromScene(this, keycode));
 			}
 		};
-
+		
 		this.getEngine().touchDown.push(this._onPointerDown);
 		this.getEngine().touchUp.push(this._onPointerUp);
 		this.getEngine().touchMove.push(this._onPointerMove);
-
+		
 		this.getEngine().mouseDown.push(this._onPointerDown);
 		this.getEngine().mouseUp.push(this._onPointerUp);
 		this.getEngine().mouseMove.push(this._onPointerMove);
-
-		this.getEngine().keyDown.push(this._onKeyDown);
-		this.getEngine().keyUp.push(this._onKeyUp);
 		
+		this.getEngine().keyDown.push(this._onKeyDown);
+		this.getEngine().keyUp.push(this._onKeyUp);		
 	}
 
 	public function detachControl() {
-
 		this.getEngine().touchDown.remove(this._onPointerDown);
 		this.getEngine().touchUp.remove(this._onPointerUp);
 		this.getEngine().touchMove.remove(this._onPointerMove);
-
+		
 		this.getEngine().mouseDown.remove(this._onPointerDown);
 		this.getEngine().mouseUp.remove(this._onPointerUp);
 		this.getEngine().mouseMove.remove(this._onPointerMove);
-
-		this.getEngine().keyDown.remove(this._onKeyDown);
-		this.getEngine().keyUp.remove(this._onKeyUp);
 		
+		this.getEngine().keyDown.remove(this._onKeyDown);
+		this.getEngine().keyUp.remove(this._onKeyUp);		
 	}
 
 	// Ready
@@ -2487,9 +2510,7 @@ import com.babylonhx.audio.*;
 		
 		// Multi-cameras?
 		if (this.activeCameras.length > 0) {
-			var currentRenderId = this._renderId;
 			for (cameraIndex in 0...this.activeCameras.length) {
-				this._renderId = currentRenderId;
 				if (cameraIndex > 0) {
                     this._engine.clear(0, false, true, true);
                 }
@@ -2814,6 +2835,35 @@ import com.babylonhx.audio.*;
 		return pickingInfo != null ? pickingInfo : new PickingInfo();
 	}
 	
+	private function _internalMultiPick(rayFunction:Matrix->Ray, predicate:AbstractMesh->Bool):Array<PickingInfo> {
+		var pickingInfos:Array<PickingInfo> = [];
+		
+		for (meshIndex in 0...this.meshes.length) {
+			var mesh = this.meshes[meshIndex];
+			
+			if (predicate != null) {
+				if (!predicate(mesh)) {
+					continue;
+				}
+			} 
+			else if (!mesh.isEnabled() || !mesh.isVisible || !mesh.isPickable) {
+				continue;
+			}
+			
+			var world = mesh.getWorldMatrix();
+			var ray = rayFunction(world);
+			
+			var result = mesh.intersects(ray, false);
+			if (result ==null || !result.hit) {
+				continue;
+			}
+			
+			pickingInfos.push(result);
+		}
+		
+		return pickingInfos;
+	}
+	
 	private function _internalPickSprites(ray:Ray, ?predicate:Sprite->Bool, fastCheck:Bool = false, ?camera:Camera):PickingInfo {
 		var pickingInfo:PickingInfo = new PickingInfo();
 		
@@ -2849,23 +2899,23 @@ import com.babylonhx.audio.*;
 		return pickingInfo;
 	}
 
+	/// <summary>Launch a ray to try to pick a mesh in the scene</summary>
+	/// <param name="x">X position on screen</param>
+	/// <param name="y">Y position on screen</param>
+	/// <param name="predicate">Predicate function used to determine eligible meshes. Can be set to null. In this case, a mesh must be enabled, visible and with isPickable set to true</param>
+	/// <param name="fastCheck">Launch a fast check only using the bounding boxes. Can be set to null.</param>
+	/// <param name="camera">camera to use for computing the picking ray. Can be set to null. In this case, the scene.activeCamera will be used</param>
 	inline public function pick(x:Float, y:Float, ?predicate:AbstractMesh->Bool, fastCheck:Bool = false, ?camera:Camera):PickingInfo {
-		/// <summary>Launch a ray to try to pick a mesh in the scene</summary>
-		/// <param name="x">X position on screen</param>
-		/// <param name="y">Y position on screen</param>
-		/// <param name="predicate">Predicate function used to determine eligible meshes. Can be set to null. In this case, a mesh must be enabled, visible and with isPickable set to true</param>
-		/// <param name="fastCheck">Launch a fast check only using the bounding boxes. Can be set to null.</param>
-		/// <param name="camera">camera to use for computing the picking ray. Can be set to null. In this case, the scene.activeCamera will be used</param>
 		return this._internalPick(function(world:Matrix):Ray { return this.createPickingRay(x, y, world, camera); }, predicate, fastCheck);
 	}
 	
+	/// <summary>Launch a ray to try to pick a mesh in the scene</summary>
+	/// <param name="x">X position on screen</param>
+	/// <param name="y">Y position on screen</param>
+	/// <param name="predicate">Predicate function used to determine eligible sprites. Can be set to null. In this case, a sprite must have isPickable set to true</param>
+	/// <param name="fastCheck">Launch a fast check only using the bounding boxes. Can be set to null.</param>
+	/// <param name="camera">camera to use for computing the picking ray. Can be set to null. In this case, the scene.activeCamera will be used</param>
 	inline public function pickSprite(x:Float, y:Float, ?predicate:Sprite->Bool, fastCheck:Bool = false, ?camera:Camera):PickingInfo {
-		/// <summary>Launch a ray to try to pick a mesh in the scene</summary>
-		/// <param name="x">X position on screen</param>
-		/// <param name="y">Y position on screen</param>
-		/// <param name="predicate">Predicate function used to determine eligible sprites. Can be set to null. In this case, a sprite must have isPickable set to true</param>
-		/// <param name="fastCheck">Launch a fast check only using the bounding boxes. Can be set to null.</param>
-		/// <param name="camera">camera to use for computing the picking ray. Can be set to null. In this case, the scene.activeCamera will be used</param>
 		return this._internalPickSprites(this.createPickingRayInCameraSpace(x, y, camera), predicate, fastCheck, camera);
 	}
 
@@ -2878,6 +2928,28 @@ import com.babylonhx.audio.*;
 			
 			return Ray.Transform(ray, this._pickWithRayInverseMatrix);
 		}, cast predicate, fastCheck);
+	}
+	
+	/// <summary>Launch a ray to try to pick a mesh in the scene</summary>
+	/// <param name="x">X position on screen</param>
+	/// <param name="y">Y position on screen</param>
+	/// <param name="predicate">Predicate function used to determine eligible meshes. Can be set to null. In this case, a mesh must be enabled, visible and with isPickable set to true</param>
+	/// <param name="camera">camera to use for computing the picking ray. Can be set to null. In this case, the scene.activeCamera will be used</param>
+	public function multiPick(x:Float, y:Float, ?predicate:AbstractMesh->Bool, ?camera:Camera):Array<PickingInfo> {
+		return this._internalMultiPick(function(world:Matrix):Ray { return this.createPickingRay(x, y, world, camera); }, predicate);
+	}
+
+	/// <summary>Launch a ray to try to pick a mesh in the scene</summary>
+	/// <param name="ray">Ray to use</param>
+	/// <param name="predicate">Predicate function used to determine eligible meshes. Can be set to null. In this case, a mesh must be enabled, visible and with isPickable set to true</param>
+	public function multiPickWithRay(ray:Ray, predicate:AbstractMesh->Bool):Array<PickingInfo> {
+		return this._internalMultiPick(function(world:Matrix):Ray {
+			if (this._pickWithRayInverseMatrix == null) {
+				this._pickWithRayInverseMatrix = Matrix.Identity();
+			}
+			world.invertToRef(this._pickWithRayInverseMatrix);
+			return Ray.Transform(ray, this._pickWithRayInverseMatrix);
+		}, predicate);
 	}
 
 	public function setPointerOverMesh(mesh:AbstractMesh) {

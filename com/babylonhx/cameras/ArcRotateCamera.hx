@@ -622,6 +622,7 @@ import com.babylonhx.utils.Keycodes;
 		var sina = Math.sin(this.alpha);
 		var cosb = Math.cos(this.beta);
 		var sinb = Math.sin(this.beta);
+		
 		if (sinb == 0) {
 			sinb = 0.0001;
 		}
@@ -645,10 +646,17 @@ import com.babylonhx.utils.Keycodes;
 				up = up.negate();
 			}
 			
-			Matrix.LookAtLHToRef(this.position, target, up, this._viewMatrix);
+			if (this.getScene().useRightHandedSystem) {
+				Matrix.LookAtRHToRef(this.position, target, up, this._viewMatrix);
+			}  
+			else {
+				Matrix.LookAtLHToRef(this.position, target, up, this._viewMatrix);
+			}
 			this._viewMatrix.m[12] += this.targetScreenOffset.x;
 			this._viewMatrix.m[13] += this.targetScreenOffset.y;
 		}
+		
+		this._currentTarget = target;
 		
 		return this._viewMatrix;
 	}

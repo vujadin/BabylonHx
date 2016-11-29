@@ -686,7 +686,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		var faceUV:Array<Vector4> = options.faceUV != null ? options.faceUV : new Array<Vector4>();
 		var faceColors:Array<Color4> = options.faceColors;
 		var colors:Array<Float> = [];
-			
+		
 		for (f in 0...6) {
 			if (faceUV[f] == null) {
 				faceUV[f] = new Vector4(0, 0, 1, 1);
@@ -695,7 +695,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 				faceColors[f] = new Color4(1, 1, 1, 1);
 			}
 		}
-			
+		
 		var scaleVector = new Vector3(width / 2, height / 2, depth / 2);
 		
 		// Create each face in turn.
@@ -1562,8 +1562,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		var normals:Array<Float> = [];
 		var uvs:Array<Float> = [];
 		
-		var width:Int = options.width != null ? options.width : 1;
-		var height:Int = options.height != null ? options.height : 1;
+		var width:Float = options.width != null ? options.width : 1;
+		var height:Float = options.height != null ? options.height : 1;
 		var subdivisionsX:Int = options.subdivisionsX != null ? options.subdivisionsX : (options.subdivisions != null ? options.subdivisions : 1);
         var subdivisionsY:Int = options.subdivisionsY != null ? options.subdivisionsY : (options.subdivisions != null ? options.subdivisions : 1);
 		
@@ -1777,8 +1777,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		var normals:Array<Float> = [];
 		var uvs:Array<Float> = [];
 		
-		var	width = options.width != null ? options.width : 1;
-		var	height = options.height != null ? options.height : 1;
+		var	width:Float = options.width != null ? options.width : 1;
+		var	height:Float = options.height != null ? options.height : 1;
 		var sideOrientation = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
 		
 		// Vertices

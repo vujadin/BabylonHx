@@ -26,6 +26,40 @@ class Image {
 		}
 	}
 	
+	public static function createCheckerboard(size:Int = 256):Image {			
+		var img = new Image(new UInt8Array(size * size * 4), size, size);
+		
+		var value:Int = 0;
+		var totalPixelsCount = size * size * 4;
+		
+		var r:Int = 0;
+		var g:Int = 0;
+		var b:Int = 0;
+		
+		for (x in 0...size) {
+			for (y in 0...size) {
+				var position = (x + size * y) * 4;
+				var floorX = Math.floor(x / (size / 8));
+				var floorY = Math.floor(y / (size / 8));
+				
+				if ((floorX + floorY) % 2 == 0) {
+					r = g = b = 255;
+				} 
+				else {
+					r = 255;
+					g = b = 0;
+				}
+				
+				img.data[position + 0] = r;
+				img.data[position + 1] = g;
+				img.data[position + 2] = b;
+				img.data[position + 3] = 255;
+			}
+		}
+		
+		return img;
+	}
+	
 	// creates a black and white random noise texture
 	public static function createNoise(size:Int = 8):Image {			
 		var rand = function(min:Float, max:Float):Float {

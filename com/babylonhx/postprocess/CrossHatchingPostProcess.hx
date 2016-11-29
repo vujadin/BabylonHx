@@ -29,7 +29,7 @@ import com.babylonhx.materials.ShadersStore;
 		
 		super(name, "crossHatching", ["vx_offset", "hatch_y_offset", "lum_threshold_1", "lum_threshold_2", "lum_threshold_3", "lum_threshold_4"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onApply = function(effect:Effect) {
+		this.onApply = function(effect:Effect, _) {
 			effect.setFloat("vx_offset", this.vx_offset);
 			effect.setFloat("hatch_y_offset", this.hatch_y_offset);
 			effect.setFloat("lum_threshold_1", this.lum_threshold_1);

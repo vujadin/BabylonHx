@@ -27,12 +27,12 @@ import com.babylonhx.math.Vector2;
 		
 		super(name, "crossStitching", ["rt_w", "rt_h", "stitching_size", "invert"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onSizeChanged = function() {
+		this.onSizeChanged = function(_, _) {
 			this.resolution.x = camera.getScene().getEngine().getRenderWidth();
 			this.resolution.y = camera.getScene().getEngine().getRenderHeight();
 		};
 		
-		this.onApply = function(effect:Effect) {
+		this.onApply = function(effect:Effect, _) {
 			effect.setFloat("rt_w", this.resolution.x);
 			effect.setFloat("rt_h", this.resolution.y);
 			effect.setFloat("stitching_size", this.stitching_size);

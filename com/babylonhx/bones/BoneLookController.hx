@@ -28,14 +28,25 @@ class BoneLookController {
 	private var _tmpMat2:Matrix = Matrix.Identity();
 	
 
-	public function new(mesh:AbstractMesh, bone:Bone, target:Vector3, adjustYaw:Float = 0, adjustPitch:Float = 0, adjustRoll:Float = 0) {
+	// options:  {adjustYaw?: number, adjustPitch?: number, adjustRoll?: number} 
+	public function new(mesh:AbstractMesh, bone:Bone, target:Vector3, ?options:Dynamic) {
 		this.mesh = mesh;
 		this.bone = bone;
 		this.target = target;
 		
-		this.adjustYaw = adjustYaw;
-		this.adjustPitch = adjustPitch;
-		this.adjustRoll = adjustRoll;
+		if (options != null) {
+			if (options.adjustYaw != null) {
+				this.adjustYaw = options.adjustYaw;
+			}
+			
+			if (options.adjustPitch != null) {
+				this.adjustPitch = options.adjustPitch;
+			}
+			
+			if (options.adjustRoll != null) {
+				this.adjustRoll = options.adjustRoll;
+			}
+		}
 	}
 
 	public function update() {			

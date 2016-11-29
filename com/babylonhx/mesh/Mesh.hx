@@ -193,6 +193,9 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			// copy
 			_deepCopy(source, this);
 			
+			// Parent
+			this.parent = source.parent;
+			
 			// Pivot                
 			this.setPivotMatrix(source.getPivotMatrix());
 			

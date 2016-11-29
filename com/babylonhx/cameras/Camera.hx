@@ -586,6 +586,18 @@ import com.babylonhx.animations.Animation;
 		}
 	}
 	
+	public function getDirection(localAxis:Vector3):Vector3 {
+		var result = Vector3.Zero();
+		
+		this.getDirectionToRef(localAxis, result);
+		
+		return result;
+	}
+	
+	public function getDirectionToRef(localAxis:Vector3, result:Vector3) {
+		Vector3.TransformNormalToRef(localAxis, this.getWorldMatrix(), result);
+	}
+	
 	public function serialize():Dynamic {
 		var serializationObject:Dynamic = { };
 		serializationObject.name = this.name;

@@ -334,17 +334,17 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	 * Getting the rotation object. 
 	 * If rotation quaternion is set, this vector will (almost always) be the Zero vector!
 	 */
-	private function get_rotation():Vector3 {
+	inline private function get_rotation():Vector3 {
 		return this._rotation;
 	}
-	private function set_rotation(newRotation:Vector3):Vector3 {
+	inline private function set_rotation(newRotation:Vector3):Vector3 {
 		return this._rotation = newRotation;
 	}
 
-	private function get_scaling():Vector3 {
+	inline private function get_scaling():Vector3 {
 		return this._scaling;
 	}
-	private function set_scaling(newScaling:Vector3):Vector3 {
+	inline private function set_scaling(newScaling:Vector3):Vector3 {
 		this._scaling = newScaling;
 		/*if (this.physicsImpostor != null) {
 			this.physicsImpostor.forceUpdate();
@@ -353,7 +353,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return newScaling;
 	}
 
-	private function get_rotationQuaternion():Quaternion {
+	inline private function get_rotationQuaternion():Quaternion {
 		return this._rotationQuaternion;
 	} 
 	private function set_rotationQuaternion(?quaternion:Quaternion):Quaternion {
@@ -1338,6 +1338,60 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		// Callback
 		this.onDisposeObservable.notifyObservers(this);
 		this.onDisposeObservable.clear();
+	}
+	
+	public function getDirection(localAxis:Vector3):Vector3 {
+		var result = Vector3.Zero();
+		
+		this.getDirectionToRef(localAxis, result);
+		
+		return result;
+	}
+
+	public function getDirectionToRef(localAxis:Vector3, result:Vector3) {
+		Vector3.TransformNormalToRef(localAxis, this.getWorldMatrix(), result);
+	}
+
+	public function setPivotPoint(point:Vector3) {
+		Vector3.TransformCoordinatesToRef(point, this.getWorldMatrix(), this.position);
+		
+		this._pivotMatrix.m[12] = -point.x;
+		this._pivotMatrix.m[13] = -point.y;
+		this._pivotMatrix.m[14] = -point.z;
+		
+		this._cache.pivotMatrixUpdated = true;
+	}
+
+	public function getPivotPoint():Vector3 {
+		var point = Vector3.Zero();
+		
+		this.getPivotPointToRef(point);
+		
+		return point;
+	}
+
+	public function getPivotPointToRef(result:Vector3) {
+		result.x = -this._pivotMatrix.m[12];
+		result.y = -this._pivotMatrix.m[13];
+		result.z = -this._pivotMatrix.m[14];
+	}
+
+	public function getAbsolutePivotPoint():Vector3 {
+		var point = Vector3.Zero();
+		
+		this.getAbsolutePivotPointToRef(point);
+		
+		return point;
+	}
+
+	public function getAbsolutePivotPointToRef(result:Vector3) {
+		result.x = this._pivotMatrix.m[12];
+		result.y = this._pivotMatrix.m[13];
+		result.z = this._pivotMatrix.m[14];
+		
+		this.getPivotPointToRef(result);
+		
+		Vector3.TransformCoordinatesToRef(result, this.getWorldMatrix(), result);
 	}
 	
 }

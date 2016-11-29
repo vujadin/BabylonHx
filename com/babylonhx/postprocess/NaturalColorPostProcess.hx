@@ -28,12 +28,12 @@ import com.babylonhx.materials.ShadersStore;
 		
 		super(name, "natural", ["u_texelDelta"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onSizeChanged = function() {
+		this.onSizeChanged = function(_, _) {
 			this.texelDelta.x = 1 / camera.getScene().getEngine().getRenderWidth();
 			this.texelDelta.y = 1 / camera.getScene().getEngine().getRenderHeight();
 		};
 		
-		this.onApply = function(effect:Effect) {
+		this.onApply = function(effect:Effect, _) {
 			effect.setVector2("u_texelDelta", this.texelDelta);
 		};
 	}
