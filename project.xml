@@ -11,6 +11,7 @@
 	<haxelib name="lime" />
 	<haxelib name="actuate" />
 	<haxelib name="poly2trihx" />
+	<haxelib name="oimohx" />
 		
 	<assets path="assets" exclude="*.svg" />
 	<icon path="assets/lime.svg" />
