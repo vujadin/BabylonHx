@@ -440,12 +440,18 @@ import haxe.ds.Vector;
 		);
 	}
 
-	inline public static function Lerp(start:Vector3, end:Vector3, amount:Float):Vector3 {
-		return new Vector3(
-			start.x + ((end.x - start.x) * amount), 
-			start.y + ((end.y - start.y) * amount), 
-			start.z + ((end.z - start.z) * amount)
-		);
+	public static function Lerp(start:Vector3, end:Vector3, amount:Float):Vector3 {
+		var result = new Vector3(0, 0, 0);
+		
+		Vector3.LerpToRef(start, end, amount, result);
+		
+		return result;
+	}
+
+	inline public static function LerpToRef(start:Vector3, end:Vector3, amount:Float, result:Vector3) {
+		result.x = start.x + ((end.x - start.x) * amount);
+		result.y = start.y + ((end.y - start.y) * amount);
+		result.z = start.z + ((end.z - start.z) * amount);
 	}
 
 	inline public static function Dot(left:Vector3, right:Vector3):Float {

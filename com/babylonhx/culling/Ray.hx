@@ -1,9 +1,15 @@
 package com.babylonhx.culling;
 
+import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
+import com.babylonhx.math.Tmp;
+import com.babylonhx.mesh.Mesh;
+import com.babylonhx.mesh.LinesMesh;
+import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.collisions.IntersectionInfo;
+import com.babylonhx.collisions.PickingInfo;
 
 /**
 * ...
@@ -20,6 +26,12 @@ import com.babylonhx.collisions.IntersectionInfo;
 	private var _pvec:Vector3;
 	private var _tvec:Vector3;
 	private var _qvec:Vector3;
+	
+	private var _renderPoints:Array<Vector3>;
+    private var _renderLine:LinesMesh;
+	private var _scene:Scene;
+	private var _show:Bool = false;
+	private var _tmpRay:Ray;
 	
 
 	inline public function new(origin:Vector3, direction:Vector3, ?length:Float) {
@@ -214,6 +226,59 @@ import com.babylonhx.collisions.IntersectionInfo;
 		}
 	}
 	
+	public function intersectsMesh(mesh:AbstractMesh, fastCheck:Bool = false):PickingInfo {
+		var tm = Tmp.matrix[0];
+		
+		mesh.getWorldMatrix().invertToRef(tm);
+		
+		if (this._tmpRay != null) {
+            Ray.TransformToRef(this, tm, this._tmpRay);
+        }
+		else {
+            this._tmpRay = Ray.Transform(this, tm);
+        }
+		
+		return mesh.intersects(this._tmpRay, fastCheck);
+	}
+
+	public function show(scene:Scene, ?color:Color3) {
+		if (!this._show) {
+            this._show = true;
+            this._scene = scene;
+            this._renderPoints = [this.origin, this.origin.add(this.direction.scale(this.length))];
+            this._renderLine = Mesh.CreateLines("ray", this._renderPoints, scene, true);
+			
+            this._scene.registerBeforeRender(this._render);
+        }
+		
+		if (color != null) {
+			this._renderLine.color.copyFrom(color);
+		}
+	}
+
+	public function hide() {
+		if (this._show){
+			this._show = false;
+			this._scene.unregisterBeforeRender(this._render);
+		}
+		
+		if (this._renderLine != null) {
+			this._renderLine.dispose();
+			this._renderLine = null;
+			this._renderPoints = null;
+		}
+	}
+
+	private function _render(_, _) {
+		var point = this._renderPoints[1];
+		
+		point.copyFrom(this.direction);
+		point.scaleInPlace(this.length);
+		point.addInPlace(this.origin);
+		
+		Mesh.CreateLines("ray", this._renderPoints, this._scene, true, this._renderLine);
+	}
+	
 	private static var smallnum:Float = 0.00000001;
 	private static var rayl:Float = 10e8;
 
@@ -345,5 +410,12 @@ import com.babylonhx.collisions.IntersectionInfo;
 		
 		return new Ray(newOrigin, newDirection, ray.length);
 	}
+	
+	public static function TransformToRef(ray:Ray, matrix:Matrix, result:Ray) {        
+        Vector3.TransformCoordinatesToRef(ray.origin, matrix, result.origin);
+        Vector3.TransformNormalToRef(ray.direction, matrix, result.direction);
+		 
+        ray.direction.normalize();        
+    }
 	
 }

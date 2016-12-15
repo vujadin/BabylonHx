@@ -237,14 +237,11 @@ import com.babylonhx.tools.EventState;
 
 	public function render(useCameraPostProcess:Bool = false) {
 		var scene = this.getScene();
+		var engine = scene.getEngine();
 		
 		if (this.useCameraPostProcesses == false) {
             useCameraPostProcess = this.useCameraPostProcesses;
         }
-		
-		if (this.activeCamera != null && this.activeCamera != scene.activeCamera) {
-    		scene.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(true));
-    	}
 		
 		if (this._waitingRenderList != null) {
 			this.renderList = [];
@@ -322,6 +319,8 @@ import com.babylonhx.tools.EventState;
     		scene.setTransformMatrix(scene.activeCamera.getViewMatrix(), scene.activeCamera.getProjectionMatrix(true));
     	}
 		
+		engine.setViewport(scene.activeCamera.viewport);
+		
 		scene.resetCachedMaterial();
 	}
 	
@@ -336,6 +335,23 @@ import com.babylonhx.tools.EventState;
 			} 
 			else {
 				engine.bindFramebuffer(this._texture);
+			}
+		}
+		
+		// Set states for projection (this does not change accross faces)
+		if (!this.isCube || faceIndex == 0) {            
+			/*if (this.activeCamera != null && this.activeCamera != scene.activeCamera) {
+				scene.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(true));
+			} 
+			else {
+				scene.setTransformMatrix(scene.activeCamera.getViewMatrix(), scene.activeCamera.getProjectionMatrix(true));               
+			}*/
+			
+			if (this.activeCamera != null) {
+				engine.setViewport(this.activeCamera.viewport);
+			}
+			else {
+				engine.setViewport(scene.activeCamera.viewport);
 			}
 		}
 		

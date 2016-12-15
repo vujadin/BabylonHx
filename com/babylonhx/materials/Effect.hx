@@ -17,6 +17,8 @@ import com.babylonhx.utils.GL.GLTexture;
 import com.babylonhx.utils.typedarray.Float32Array;
 import com.babylonhx.utils.typedarray.Int32Array;
 
+using StringTools;
+
 
 /**
  * ...
@@ -63,8 +65,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		this.onError = onError;
 		this.onCompiled = onCompiled;
 		
-		var vertex:String = Reflect.hasField(baseName, "vertex") ? baseName.vertex : baseName;
-        var fragment:String = Reflect.hasField(baseName, "fragment") ? baseName.fragment : baseName;
+		var vertex:String = baseName.vertex != null ? baseName.vertex : baseName;
+        var fragment:String = baseName.fragment != null ? baseName.fragment : baseName;
 		
         var vertexShaderUrl:String = "";
         if (vertex.charAt(0) == ".") {
@@ -169,11 +171,13 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	}
 	
 	public function getVertexShaderSource():String {
-        return this._engine.getVertexShaderSource(this._program);
+		return this._evaluateDefinesOnString(this._engine.getVertexShaderSource(this._program));
+        //return this._engine.getVertexShaderSource(this._program);
     }
 
     public function getFragmentShaderSource():String {
-        return this._engine.getFragmentShaderSource(this._program);
+		return this._evaluateDefinesOnString(this._engine.getFragmentShaderSource(this._program));
+        //return this._engine.getFragmentShaderSource(this._program);	
     }
 
 	// Methods
@@ -696,6 +700,134 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		}
 		
 		return this;
+	}
+	
+	private function _recombineShader(node:Dynamic):String {
+		if (node.define != null) {
+			if (node.condition != null) {
+				var defineIndex = this.defines.indexOf("#define " + node.define);
+                if (defineIndex == -1) {
+                    return null;
+                }
+				
+                var nextComma = this.defines.indexOf("\n", defineIndex);
+                var defineValue = this.defines.substr(defineIndex + 7, nextComma - defineIndex - 7).replace(node.define, "").trim();
+                var condition = defineValue + node.condition;
+				
+				// VK TODO:
+                //if (!eval(condition)) {
+                    return null;
+				//}
+			}
+			else if (node.ndef != null) {
+				if (this.defines.indexOf("#define " + node.define) != -1) {
+					return null;
+				}
+			}
+			else if (this.defines.indexOf("#define " + node.define) == -1) {
+				return null;
+			}
+		}
+		
+		var result:String = "";
+		for (index in 0...node.children.length) {
+			var line = node.children[index];
+			
+			if (line.children != null) {
+				var combined = this._recombineShader(line);
+				if (combined != null) {
+					result += combined + "\r\n";
+				}
+				
+				continue;
+			}
+			
+			result += line + "\r\n";
+		}
+		
+		return result;
+	}
+
+	private function _evaluateDefinesOnString(shaderString:String):String {
+		var root:Dynamic = {
+			children: []
+		};
+		var currentNode:Dynamic = root;
+		
+		var lines = shaderString.split("\n");
+		
+		var newNode:Dynamic = { };
+		
+		for (index in 0...lines.length) {
+			var line = StringTools.trim(lines[index]);
+			
+			// #ifdef
+			var pos = line.indexOf("#ifdef ");
+			if (pos != -1) {
+				var define = line.substr(pos + 7);
+				
+				var newNode:Dynamic = {
+					condition: null,
+					ndef: false,
+					define: define,
+					children: [],
+					parent: currentNode
+				}
+				
+				currentNode.children.push(newNode);
+				currentNode = newNode;
+				continue;
+			}
+			
+			// #ifndef
+			var pos = line.indexOf("#ifndef ");
+			if (pos != -1) {
+				var define = line.substr(pos + 8);
+				
+				newNode = {
+					condition: null,
+					define: define,
+					ndef: true,
+					children: [],
+					parent: currentNode
+				}
+				
+				currentNode.children.push(newNode);
+				currentNode = newNode;
+				continue;
+			}
+			
+			// #if
+			var pos = line.indexOf("#if ");
+			if (pos != -1) {
+				var define = StringTools.trim(line.substr(pos + 4));
+				var conditionPos = define.indexOf(" ");
+				
+				newNode = {
+					condition: define.substr(conditionPos + 1),
+					define: define.substr(0, conditionPos),
+					ndef: false,
+					children: [],
+					parent: currentNode
+				}
+				
+				currentNode.children.push(newNode);
+				currentNode = newNode;
+				continue;
+			}
+			
+			// #endif
+			pos = line.indexOf("#endif");
+			if (pos != -1) {
+				currentNode = currentNode.parent;
+				continue;
+			}
+			
+			currentNode.children.push(line);
+		}
+		
+		// Recombine
+		return this._recombineShader(root);
 	}
 
 }

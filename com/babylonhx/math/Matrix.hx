@@ -332,6 +332,30 @@ import haxe.ds.Vector;
 		
 		return true;
 	}
+	
+	public function getRotationMatrix():Matrix {
+		var result = Matrix.Identity();
+		
+		this.getRotationMatrixToRef(result);
+		
+		return result;
+	}
+
+	public function getRotationMatrixToRef(result:Matrix) {
+		var xs = m[0] * m[1] * m[2] * m[3] < 0 ? -1 : 1;
+		var ys = m[4] * m[5] * m[6] * m[7] < 0 ? -1 : 1;
+		var zs = m[8] * m[9] * m[10] * m[11] < 0 ? -1 : 1;
+		
+		var sx = xs * Math.sqrt(m[0] * m[0] + m[1] * m[1] + m[2] * m[2]);
+		var sy = ys * Math.sqrt(m[4] * m[4] + m[5] * m[5] + m[6] * m[6]);
+		var sz = zs * Math.sqrt(m[8] * m[8] + m[9] * m[9] + m[10] * m[10]);
+		
+		Matrix.FromValuesToRef(
+			m[0] / sx, m[1] / sx, m[2] / sx, 0,
+			m[4] / sy, m[5] / sy, m[6] / sy, 0,
+			m[8] / sz, m[9] / sz, m[10] / sz, 0,
+			0, 0, 0, 1, result);
+	}
 
 	// Statics
 	inline public static function FromArray(array:Array<Float>, offset:Int = 0):Matrix {
