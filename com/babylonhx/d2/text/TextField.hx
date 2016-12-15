@@ -38,7 +38,7 @@ class TextField extends Sprite {
 		addChild(_bmp);
 		
 		if (!bDataMap.exists(BHxDefaultFont.name)) {
-			var img = new Image(new UInt8Array(BHxDefaultFont.image), 64, 256);
+			var img = new Image(new UInt8Array(BHxDefaultFont.image), 128, 128);
 			var bData = new BitmapData(img);
 			addSheet(BHxDefaultFont.name, bData);
 			
