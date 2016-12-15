@@ -139,8 +139,10 @@ import com.babylonhx.materials.Material;
 		}
 		
 		// Transparent
-		this._renderTransparent(this._transparentSubMeshes);
-		engine.setAlphaMode(Engine.ALPHA_DISABLE);
+		if (this._transparentSubMeshes.length > 0) {
+			this._renderTransparent(this._transparentSubMeshes);
+			engine.setAlphaMode(Engine.ALPHA_DISABLE);
+		}
 		
 		return true;
 	}

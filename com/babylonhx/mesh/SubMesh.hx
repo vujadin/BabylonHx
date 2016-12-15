@@ -77,6 +77,10 @@ import com.babylonhx.tools.Tools;
 		
 		return this._boundingInfo;
 	}
+	
+	inline public function setBoundingInfo(boundingInfo:BoundingInfo) {
+        this._boundingInfo = boundingInfo;
+    }
 
 	inline public function getMesh():AbstractMesh {
 		return this._mesh;

@@ -216,6 +216,8 @@ class MeshBuilder {
 		
 		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
 		
+		box.sideOrientation = options.sideOrientation;
+		
 		if (scene.isPhysicsEnabled()) {
 			box.physicsDim = { };
 			box.physicsDim.size = options;
@@ -242,6 +244,8 @@ class MeshBuilder {
 		var sphere = new Mesh(name, scene);
 		
 		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		
+		sphere.sideOrientation = options.sideOrientation;
 		
 		var vertexData = VertexData.CreateSphere(options);
 		
@@ -270,6 +274,8 @@ class MeshBuilder {
 		
 		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
 		
+		sphere.sideOrientation = options.sideOrientation;
+		
 		if (options.updatable == null) {
 			options.updatable = false;
 		}
@@ -296,6 +302,8 @@ class MeshBuilder {
         var disc = new Mesh(name, scene);
 		
 		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		
+		disc.sideOrientation = options.sideOrientation;
 		
         var vertexData = VertexData.CreateDisc(options);
 		
@@ -437,6 +445,8 @@ class MeshBuilder {
 		
 		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
 		
+		cylinder.sideOrientation = options.sideOrientation;
+		
 		var vertexData = VertexData.CreateCylinder(options);
 		
 		if (scene.isPhysicsEnabled()) {
@@ -465,6 +475,8 @@ class MeshBuilder {
 		
 		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
 		
+		torus.sideOrientation = options.sideOrientation;
+		
 		var vertexData = VertexData.CreateTorus(options);
 		
 		vertexData.applyToMesh(torus, options.updatable);
@@ -487,6 +499,8 @@ class MeshBuilder {
 		var torusKnot = new Mesh(name, scene);
 		
 		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		
+		torusKnot.sideOrientation = options.sideOrientation;
 		
 		var vertexData = VertexData.CreateTorusKnot(options);
 		
@@ -789,6 +803,8 @@ class MeshBuilder {
 		
 		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
 		
+		plane.sideOrientation = options.sideOrientation;
+		
 		var vertexData = VertexData.CreatePlane(options);
 		
 		vertexData.applyToMesh(plane, options.updatable);
@@ -1039,6 +1055,8 @@ class MeshBuilder {
 		var polyhedron = new Mesh(name, scene);		
 		
 		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		
+		polyhedron.sideOrientation = options.sideOrientation;
 		
 		var vertexData = VertexData.CreatePolyhedron(options);
 		

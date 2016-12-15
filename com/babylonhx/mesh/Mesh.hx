@@ -1506,6 +1506,10 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			kindIndex++;
 		}
 		
+		if (this.subMeshes == null) {
+			return;
+		}
+		
 		// Save previous submeshes
 		var previousSubmeshes = this.subMeshes.slice(0);
 		
