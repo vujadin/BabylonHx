@@ -656,6 +656,37 @@ import com.babylonhx.animations.AnimationRange;
 		}
 	}
 	
+	public function getRotationMatrix(space:Int = Space.LOCAL, mesh:AbstractMesh):Matrix {
+		var result = Matrix.Identity();
+		
+		this.getRotationMatrixToRef(space, mesh, result);
+		
+		return result;
+	}
+
+	public function getRotationMatrixToRef(space:Int = Space.LOCAL, mesh:AbstractMesh, result:Matrix) {
+		if (space == Space.LOCAL) {
+			this.getLocalMatrix().getRotationMatrixToRef(result);
+		}
+		else {
+			var mat = Tmp.matrix[0];
+			var amat = this.getAbsoluteTransform();
+			
+			if (mesh != null) {
+				amat.multiplyToRef(mesh.getWorldMatrix(), mat);
+			} 
+			else {
+				mat.copyFrom(amat);
+			}
+			
+			mat.m[0] *= this._scalingDeterminant;
+			mat.m[1] *= this._scalingDeterminant;
+			mat.m[2] *= this._scalingDeterminant;
+			
+			mat.getRotationMatrixToRef(result);
+		}
+	}
+	
 	public function getAbsolutePositionFromLocal(position:Vector3, ?mesh:AbstractMesh):Vector3 {
 		var result = Vector3.Zero();
 		
@@ -676,6 +707,30 @@ import com.babylonhx.animations.AnimationRange;
 		else {
 			tmat = this.getAbsoluteTransform();
 		}
+		
+		Vector3.TransformCoordinatesToRef(position, tmat, result);
+	}
+	
+	public function getLocalPositionFromAbsolute(position:Vector3, ?mesh:AbstractMesh):Vector3 {
+		var result = Vector3.Zero();
+		
+		this.getLocalPositionFromAbsoluteToRef(position, mesh, result);
+		
+		return result;
+	}
+
+	public function getLocalPositionFromAbsoluteToRef(position:Vector3, mesh:AbstractMesh, result:Vector3) {
+		this._skeleton.computeAbsoluteTransforms();
+		
+		var tmat = Tmp.matrix[0];
+		
+		tmat.copyFrom(this.getAbsoluteTransform());
+		
+		if (mesh != null) {
+			tmat.multiplyToRef(mesh.getWorldMatrix(), tmat);
+		}
+		
+		tmat.invert();
 		
 		Vector3.TransformCoordinatesToRef(position, tmat, result);
 	}
