@@ -40,7 +40,7 @@ class Fill {
 		this.tgs = null;
 	}
 	
-	public function Build(ps:Array<Float>, rect:Rectangle) {
+	public function Build(st:Stage, ps:Array<Float>, rect:Rectangle) {
 		var tvrt:Array<Float> = [];
 		var tind:Array<Int> = [];
 		
@@ -100,11 +100,11 @@ class Fill {
 		}
 		
 		for (i in 0...lTGS.length) { 
-			this.lineTGS.push(Tgs._makeTgs(lTGS[i].vrt, lTGS[i].ind, null, lTGS[i].color)); 
+			this.lineTGS.push(Tgs._makeTgs(st, lTGS[i].vrt, lTGS[i].ind, null, lTGS[i].color));
 		}
 		
 		if (tvrt.length > 0) {
-			this.tgs = Tgs._makeTgs(tvrt, tind, null, this.color, this.bdata);
+			this.tgs = Tgs._makeTgs(st, tvrt, tind, null, this.color, this.bdata);
 		}
 	}
 	
@@ -118,7 +118,7 @@ class Fill {
 	
 	public function render(st:Stage, ps:Array<Float>, rect:Rectangle) {
 		if (this.dirty) { 
-			this.Build(ps, rect);  
+			this.Build(st, ps, rect);
 			this.dirty = false; 
 		}
 		if (this.tgs != null) {

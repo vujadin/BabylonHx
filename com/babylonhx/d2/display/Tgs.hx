@@ -1,5 +1,6 @@
 package com.babylonhx.d2.display;
 
+import com.babylonhx.d2.display.Stage;
 import com.babylonhx.utils.GL;
 import com.babylonhx.utils.GL.GLBuffer;
 import com.babylonhx.utils.typedarray.Float32Array;
@@ -31,13 +32,16 @@ class Tgs {
 	public var ibuf:GLBuffer;
 	public var vbuf:GLBuffer;
 	public var tbuf:GLBuffer;
+
+    public var stage:Stage;
 	
 	public static var _delTgs:Map<String, Array<Tgs>> = new Map();
 	public static var _delNum:Int = 0;
 	
 	
-	public function new(vrt:Array<Float>, ind:Array<Int>, ?uvt:Array<Float>, ?color:Float32Array, ?bdata:BitmapData) {
-		this.color = color;
+	public function new(stage:Stage, vrt:Array<Float>, ind:Array<Int>, ?uvt:Array<Float>, ?color:Float32Array, ?bdata:BitmapData) {
+		this.stage = stage;
+        this.color = color;
 		this.bdata = bdata;
 		this.name = "t_" + vrt.length + "_" + ind.length;
 		
@@ -79,7 +83,8 @@ class Tgs {
 		GL.bufferData(GL.ARRAY_BUFFER, this.uvt, GL.STATIC_DRAW);
 	}
 	
-	public function Set(vrt:Array<Float>, ind:Array<Int>, uvt:Array<Float>, color:Float32Array, ?bdata:BitmapData) {
+	public function Set(stage:Stage, vrt:Array<Float>, ind:Array<Int>, uvt:Array<Float>, color:Float32Array, ?bdata:BitmapData) {
+        this.stage = stage;
 		this.color = color;
 		this.bdata = bdata;
 		
@@ -185,16 +190,16 @@ class Tgs {
 		}
 	}
 	
-	static public function _makeTgs(vrt:Array<Float>, ind:Array<Int>, ?uvt:Array<Float>, ?color:Float32Array, ?bdata:BitmapData):Tgs {
+	static public function _makeTgs(stage:Stage, vrt:Array<Float>, ind:Array<Int>, ?uvt:Array<Float>, ?color:Float32Array, ?bdata:BitmapData):Tgs {
 		var name = "t_" + vrt.length + "_" + ind.length;
 		var arr = Tgs._delTgs[name];
 		if (arr == null || arr.length == 0) {
-			return new Tgs(vrt, ind, uvt, color, bdata);
+			return new Tgs(stage, vrt, ind, uvt, color, bdata);
 		}
 		
 		var t = arr.pop();
 		Graphics._delNum--;
-		t.Set(vrt, ind, uvt, color, bdata);
+		t.Set(stage, vrt, ind, uvt, color, bdata);
 		
 		return t;
 	}
