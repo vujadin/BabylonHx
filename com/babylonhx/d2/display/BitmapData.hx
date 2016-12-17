@@ -141,6 +141,7 @@ class BitmapData {
 	
 	public function draw(dobj:DisplayObject) {
 		var stage = dobj.stage;
+        var Gl = stage.Gl;
 		if (this._dirty) {
 			this._syncWithGPU(stage);
 		}
@@ -151,11 +152,11 @@ class BitmapData {
 		
 		var buff = this._buffer;
 		var r = this.rect;
-		stage.Gl.readPixels(cast r.x, cast r.y, cast r.width, cast r.height, GL.RGBA, GL.UNSIGNED_BYTE, buff);
+		Gl.readPixels(cast r.x, cast r.y, cast r.width, cast r.height, GL.RGBA, GL.UNSIGNED_BYTE, buff);
 		stage._setFramebuffer(null, stage.stageWidth, stage.stageHeight, false);
 
 		stage._setTEX(this._texture);
-		stage.Gl.generateMipmap(GL.TEXTURE_2D);
+		Gl.generateMipmap(GL.TEXTURE_2D);
 	}
 	
 	

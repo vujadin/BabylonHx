@@ -63,7 +63,7 @@ class Tgs {
 			
 			this.ibuf = Gl.createBuffer();
 			this.stage._setEBF(this.ibuf);
-			Gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, this.ind, GL.STATIC_DRAW);   //TODO mio
+			Gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, this.ind, GL.STATIC_DRAW);
 		}
 		else {
 			this.vrt = new Float32Array(ind.length * 3);
