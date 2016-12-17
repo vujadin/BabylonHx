@@ -31,11 +31,11 @@ class Sprite extends DisplayObjectContainer {
 		this._graphics = new Graphics();
 	}
 
-    override private function _setStage(st:Stage) {
-        super._setStage(st);
+	override private function _setStage(st:Stage) {
+		super._setStage(st);
 
-        this._graphics._stage = st;
-    }
+		this._graphics._stage = st;
+	}
 	
 	override public function _getRect(tmat:Float32Array, torg:Float32Array, stks:Bool):Rectangle {
 		var r1 = super._getRect(tmat, torg, stks);

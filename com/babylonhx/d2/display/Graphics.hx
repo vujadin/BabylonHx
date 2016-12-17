@@ -30,7 +30,7 @@ class Graphics {
 	//private var _lfill:Tgs;
 	public var _rect:Rectangle;
 	public var _srect:Rectangle;
-    public var _stage:Stage;
+	public var _stage:Stage;
 	
 
 	public function new() {
@@ -92,7 +92,7 @@ class Graphics {
 	public function _render() {
 		this._endLine();
 		this._stage.Gl.uniformMatrix4fv(this._stage._sprg.tMatUniform, false, this._stage._mstack.top());
-        this._stage._updateCMStack();
+		this._stage._updateCMStack();
 		
 		for (i in 0...this._afills.length) {
 			this._afills[i].render(this._stage, this._points, this._rect);

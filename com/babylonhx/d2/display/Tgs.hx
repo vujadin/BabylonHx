@@ -33,7 +33,7 @@ class Tgs {
 	public var vbuf:GLBuffer;
 	public var tbuf:GLBuffer;
 
-    public var stage:Stage;
+	public var stage:Stage;
 	
 	public static var _delTgs:Map<String, Array<Tgs>> = new Map();
 	public static var _delNum:Int = 0;
@@ -41,7 +41,7 @@ class Tgs {
 	
 	public function new(stage:Stage, vrt:Array<Float>, ind:Array<Int>, ?uvt:Array<Float>, ?color:Float32Array, ?bdata:BitmapData) {
 		this.stage = stage;
-        this.color = color;
+		this.color = color;
 		this.bdata = bdata;
 		this.name = "t_" + vrt.length + "_" + ind.length;
 		
@@ -50,7 +50,7 @@ class Tgs {
 		this.emptyUVT = (uvt == null);
 		this.useIndex = vrt.length / 3 <= 65536;	// use index array for drawing triangles
 
-        var Gl = stage.Gl;
+		var Gl = stage.Gl;
 		if(this.useIndex) {
 			this.ind = new UInt16Array (ind);
 			this.vrt = new Float32Array(vrt);
@@ -62,8 +62,8 @@ class Tgs {
 			}
 			
 			this.ibuf = Gl.createBuffer();
-            this.stage._setEBF(this.ibuf);
-            Gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, this.ind, GL.STATIC_DRAW);   //TODO mio
+			this.stage._setEBF(this.ibuf);
+			Gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, this.ind, GL.STATIC_DRAW);   //TODO mio
 		}
 		else {
 			this.vrt = new Float32Array(ind.length * 3);
@@ -76,16 +76,16 @@ class Tgs {
 		}
 		
 		this.vbuf = Gl.createBuffer();
-        this.stage._setBF(this.vbuf);
-        Gl.bufferData(GL.ARRAY_BUFFER, this.vrt, GL.STATIC_DRAW);
+		this.stage._setBF(this.vbuf);
+		Gl.bufferData(GL.ARRAY_BUFFER, this.vrt, GL.STATIC_DRAW);
 		
 		this.tbuf = Gl.createBuffer();
-        this.stage._setBF(this.tbuf);
-        Gl.bufferData(GL.ARRAY_BUFFER, this.uvt, GL.STATIC_DRAW);
+		this.stage._setBF(this.tbuf);
+		Gl.bufferData(GL.ARRAY_BUFFER, this.uvt, GL.STATIC_DRAW);
 	}
 	
 	public function Set(stage:Stage, vrt:Array<Float>, ind:Array<Int>, uvt:Array<Float>, color:Float32Array, ?bdata:BitmapData) {
-        this.stage = stage;
+		this.stage = stage;
 		this.color = color;
 		this.bdata = bdata;
 		
@@ -94,7 +94,7 @@ class Tgs {
 		this.emptyUVT = (uvt == null);
 		//this.useIndex = vrt.length/3 <= 65536;	// use index array for drawing triangles
 
-        var Gl = stage.Gl;
+		var Gl = stage.Gl;
 		if(this.useIndex) {
 			var il = ind.length;
 			var vl = vrt.length;
@@ -110,8 +110,8 @@ class Tgs {
 				}
 			}
 
-            this.stage._setEBF(this.ibuf);
-            Gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, this.ind, GL.STATIC_DRAW);
+			this.stage._setEBF(this.ibuf);
+			Gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, this.ind, GL.STATIC_DRAW);
 			
 		}
 		else {
@@ -121,15 +121,15 @@ class Tgs {
 			}
 		}
 
-        this.stage._setBF(this.vbuf);
-        Gl.bufferData(GL.ARRAY_BUFFER, this.vrt, GL.STATIC_DRAW);
+		this.stage._setBF(this.vbuf);
+		Gl.bufferData(GL.ARRAY_BUFFER, this.vrt, GL.STATIC_DRAW);
 
-        this.stage._setBF(this.tbuf);
-        Gl.bufferData(GL.ARRAY_BUFFER, this.uvt, GL.STATIC_DRAW);
+		this.stage._setBF(this.tbuf);
+		Gl.bufferData(GL.ARRAY_BUFFER, this.uvt, GL.STATIC_DRAW);
 	}
 	
 	public function render() {
-        var Gl = this.stage.Gl;
+		var Gl = this.stage.Gl;
 		if (this.useTex) {
 			var bd = this.bdata;
 			
@@ -160,27 +160,27 @@ class Tgs {
 					}
 				}
 
-                this.stage._setBF(this.tbuf);
+				this.stage._setBF(this.tbuf);
 				Gl.bufferSubData(GL.ARRAY_BUFFER, 0, this.uvt);
 			}
 
-            this.stage._setUT(1);
-            this.stage._setTEX(bd._texture);
+			this.stage._setUT(1);
+			this.stage._setTEX(bd._texture);
 		}
 		else {
-            this.stage._setUT(0);
-            Gl.uniform4fv(this.stage._sprg.color, this.color);
+			this.stage._setUT(0);
+			Gl.uniform4fv(this.stage._sprg.color, this.color);
 		}
 
-        this.stage._setTC(this.tbuf);
-        this.stage._setVC(this.vbuf);
+		this.stage._setTC(this.tbuf);
+		this.stage._setVC(this.vbuf);
 		
 		if (this.useIndex) {
-            this.stage._setEBF(this.ibuf);
-            Gl.drawElements(GL.TRIANGLES, this.ind.length, GL.UNSIGNED_SHORT, 0);	// druhý parametr - počet indexů
+			this.stage._setEBF(this.ibuf);
+			Gl.drawElements(GL.TRIANGLES, this.ind.length, GL.UNSIGNED_SHORT, 0);	// druhý parametr - počet indexů
 		}
 		else {
-            Gl.drawArrays(GL.TRIANGLES, 0, Std.int(this.vrt.length / 3));
+			Gl.drawArrays(GL.TRIANGLES, 0, Std.int(this.vrt.length / 3));
 		}
 	}
 	

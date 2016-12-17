@@ -66,10 +66,11 @@ class CMStack {
 	}
 	
 	public function update(st:Stage) {
+        var Gl = st.Gl;
 		if (this.dirty) {
 			var s = this.size - 1;
-			st.Gl.uniformMatrix4fv(st._sprg.cMatUniform, false, this.mats[s]);
-			st.Gl.uniform4fv      (st._sprg.cVecUniform, this.vecs[s]);
+			Gl.uniformMatrix4fv(st._sprg.cMatUniform, false, this.mats[s]);
+			Gl.uniform4fv      (st._sprg.cVecUniform, this.vecs[s]);
 			this.dirty = false;
 		}
 		
