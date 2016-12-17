@@ -30,7 +30,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 @:allow(com.babylonhx.shaderbuilder.ShaderBuilder)
 @:expose('BABYLON.ShaderMaterial') class ShaderMaterial extends Material {
 	
-	private var _shaderPath:String;
+	private var _shaderPath:Dynamic;
 	private var _options:ShaderMaterialOptions;
 	private var _textures:Map<String, Texture> = new Map<String, Texture>();
 	private var _floats:Map<String, Float> = new Map<String, Float>();
@@ -180,6 +180,18 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		return this;
 	}
+	
+	private function _checkCache(scene:Scene, ?mesh: AbstractMesh, useInstances:Bool = false):Bool {
+        if (mesh == null) {
+            return true;
+        }
+		
+        if (this._effect != null && (this._effect.defines.indexOf("#define INSTANCES") != -1) != useInstances) {
+            return false;
+        }
+		
+		return false;
+    }
 
 	override public function isReady(?mesh:AbstractMesh, useInstances:Bool = false):Bool {
 		var scene:Scene = this.getScene();
@@ -187,7 +199,9 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		if (!this.checkReadyOnEveryCall) {
             if (this._renderId == scene.getRenderId()) {
-                return true;
+				if (this._checkCache(scene, mesh, useInstances)) {
+					return true;
+				}
             }
         }
 		

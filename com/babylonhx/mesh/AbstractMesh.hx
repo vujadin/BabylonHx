@@ -876,11 +876,16 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	/// <param name="rollCor" type="Number">optional roll (z-axis) correction in radians</param>
 	/// <returns>Mesh oriented towards targetMesh</returns>
 	static var _lookAtVectorCache:Vector3 = new Vector3(0, 0, 0);
-	inline public function lookAt(targetPoint:Vector3, yawCor:Float = 0, pitchCor:Float = 0, rollCor:Float = 0) {		
+	inline public function lookAt(targetPoint:Vector3, yawCor:Float = 0, pitchCor:Float = 0, rollCor:Float = 0, space:Int = Space.LOCAL) {		
 		var dv = AbstractMesh._lookAtVectorCache;
+		var pos = space == Space.LOCAL ? this.position : this.getAbsolutePosition();
+		targetPoint.subtractToRef(pos, dv);
 		var yaw = -Math.atan2(dv.z, dv.x) - Math.PI / 2;
 		var len = Math.sqrt(dv.x * dv.x + dv.z * dv.z);
 		var pitch = Math.atan2(dv.y, len);
+		if (this.rotationQuaternion == null) {
+			this.rotationQuaternion = new Quaternion();
+		}
 		Quaternion.RotationYawPitchRollToRef(yaw + yawCor, pitch + pitchCor, rollCor, this.rotationQuaternion);
 	}
 	

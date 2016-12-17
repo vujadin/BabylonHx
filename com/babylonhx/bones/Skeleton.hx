@@ -62,6 +62,10 @@ import haxe.ds.Vector;
 			return mesh._bonesTransformMatrices;
 		}
 		
+		if (this._transformMatrices == null) {
+            this.prepare();
+        }
+		
 		return this._transformMatrices;
 	}
 	

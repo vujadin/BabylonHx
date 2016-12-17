@@ -18,13 +18,13 @@ class FPS extends TextField {
 	
 	
 	public function new (x:Float = 10, y:Float = 10) {	
-		super("FPS: ", "", 58, 16);
+		super("FPS: ", "", 64, 15);
 		
 		this.x = x;
 		this.y = y;
 		
 		this.graphics.beginFill(0x000000, 0.6);
-		this.graphics.drawRect(0, 0, this.width, this.height);
+		this.graphics.drawRect(-1, 0, this.width, this.height);
 		this.graphics.endFill();
 		
 		currentFPS = 0;
@@ -33,12 +33,12 @@ class FPS extends TextField {
 		cacheCount = 0;
 		times = [];
 		
-		addEventListener(Event.ENTER_FRAME, this_onEnterFrame);		
+		addEventListener(Event.ENTER_FRAME, onEnterFrame);		
 	}
 	
-	private function this_onEnterFrame(event:Event) {		
+	private function onEnterFrame(event:Event) {		
 		var currentTime = Timer.stamp();
-		times.push (currentTime);
+		times.push(currentTime);
 		
 		while (times[0] < currentTime - 1) {		
 			times.shift();			

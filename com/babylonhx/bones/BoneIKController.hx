@@ -3,6 +3,7 @@ package com.babylonhx.bones;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Space;
+import com.babylonhx.math.Quaternion;
 import com.babylonhx.mesh.AbstractMesh;
 
 
@@ -23,6 +24,11 @@ class BoneIKController {
 	public var poleAngle:Float = 0;
 	
 	public var mesh:AbstractMesh;
+	public var slerpAmount:Float = 1;
+
+    private var _bone1Quat:Quaternion = Quaternion.Identity();
+    private var _bone1Mat:Matrix = Matrix.Identity();
+    private var _bone2Ang:Float = Math.PI;
 
 	private var _bone1:Bone;
 	private var _bone2:Bone;
@@ -39,10 +45,12 @@ class BoneIKController {
 
 	private var _tmpMat1:Matrix = Matrix.Identity();
 	private var _tmpMat2:Matrix = Matrix.Identity();
+	private var _tmpQuat1:Quaternion = Quaternion.Identity();
 
 	private var _rightHandedSystem:Bool = false;
 	
 	private var _bendAxis:Vector3 = Vector3.Right();
+	private var _slerping:Bool = false;
 
 	public var maxAngle(get, set):Float;
 	private function get_maxAngle():Float {
@@ -55,7 +63,7 @@ class BoneIKController {
 	}
 	
 
-	// options: { targetMesh?: AbstractMesh, poleTargetMesh?: AbstractMesh, poleTargetBone?: Bone, poleTargetLocalOffset?:Vector3, poleAngle?: number, bendAxis?: Vector3, maxAngle?:number }
+	// options: { targetMesh?: AbstractMesh, poleTargetMesh?: AbstractMesh, poleTargetBone?: Bone, poleTargetLocalOffset?:Vector3, poleAngle?: number, bendAxis?: Vector3, maxAngle?:number, slerpAmount?:number }
 	public function new(mesh:AbstractMesh, bone:Bone, ?options:Dynamic) {		
 		this._bone2 = bone;
 		this._bone1 = bone.getParent();
@@ -87,6 +95,7 @@ class BoneIKController {
 			this._bone2Length = Vector3.Distance(pos2, pos3);
 		}
 		
+		this._bone1.getRotationMatrixToRef(Space.WORLD, mesh, this._bone1Mat);
 		this.maxAngle = Math.PI;
 		
 		if (options != null) {
@@ -121,6 +130,10 @@ class BoneIKController {
 			if (options.maxAngle != null) {
 				this.maxAngle = options.maxAngle;
 			}
+			
+			if (options.slerpAmount != null) {
+                this.slerpAmount = options.slerpAmount;
+            }
 		}
 	}
 
@@ -241,8 +254,25 @@ class BoneIKController {
             mat1.multiplyToRef(mat2, mat1);
 		}
 		
-		this._bone1.setRotationMatrix(mat1, Space.WORLD, this.mesh);
+		if (this.slerpAmount < 1) {
+			if (!this._slerping) {
+				Quaternion.FromRotationMatrixToRef(this._bone1Mat, this._bone1Quat);
+			}
+			
+			Quaternion.FromRotationMatrixToRef(mat1, this._tmpQuat1);
+			Quaternion.SlerpToRef(this._bone1Quat, this._tmpQuat1, this.slerpAmount, this._bone1Quat);
+			angC = this._bone2Ang * (1.0 - this.slerpAmount) + angC * this.slerpAmount;
+			this._bone1.setRotationQuaternion(this._bone1Quat, Space.WORLD, this.mesh);
+			this._slerping = true;
+		} 
+		else {
+			this._bone1.setRotationMatrix(mat1, Space.WORLD, this.mesh);
+			this._bone1Mat.copyFrom(mat1);
+			this._slerping = false;
+		}
+		
 		this._bone2.setAxisAngle(this._bendAxis, angC, Space.LOCAL);
+		this._bone2Ang = angC;
 	}
 	
 }

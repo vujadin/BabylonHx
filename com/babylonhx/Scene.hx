@@ -10,6 +10,7 @@ import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.bones.Skeleton;
 import com.babylonhx.bones.Bone;
 import com.babylonhx.cameras.FreeCamera;
+import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.collisions.Collider;
 import com.babylonhx.collisions.PickingInfo;
 import com.babylonhx.culling.octrees.Octree;
@@ -3065,22 +3066,32 @@ import com.babylonhx.audio.*;
 	}
 	
 	// Misc.
-	public function createDefaultCameraOrLight() {
+	public function createDefaultCameraOrLight(createArcRotateCamera:Bool = false) {
 		// Light
 		if (this.lights.length == 0) {
 			new HemisphericLight("default light", Vector3.Up(), this);
 		}
 		
 		// Camera
-		if (this.activeCamera == null) {
-			var camera = new FreeCamera("default camera", Vector3.Zero(), this);
-			
+		if (this.activeCamera == null) {			
 			// Compute position
 			var worldExtends = this.getWorldExtends();
 			var worldCenter:Vector3 = cast worldExtends.min.add(worldExtends.max.subtract(worldExtends.min).scale(0.5));
 			
-			camera.position = new Vector3(worldCenter.x, worldCenter.y, worldExtends.min.z - (worldExtends.max.z - worldExtends.min.z));
-			camera.setTarget(worldCenter);
+			var camera:Camera = null;
+            
+			if (createArcRotateCamera) {
+                camera = new ArcRotateCamera("default camera", 0, 0, 10, Vector3.Zero(), this);
+				
+                untyped camera.setPosition(new Vector3(worldCenter.x, worldCenter.y, worldExtends.min.z - (worldExtends.max.z - worldExtends.min.z)));
+                untyped camera.setTarget(worldCenter);
+            } 
+			else {
+                camera = new FreeCamera("default camera", Vector3.Zero(), this);
+				
+                camera.position = new Vector3(worldCenter.x, worldCenter.y, worldExtends.min.z - (worldExtends.max.z - worldExtends.min.z));
+                untyped camera.setTarget(worldCenter);
+            }
 			
 			this.activeCamera = camera;
 		}
@@ -3145,11 +3156,11 @@ import com.babylonhx.audio.*;
 	/**
 	 * Specifies whether or not the stencil and depth buffer are cleared between two rendering groups.
 	 * 
-	 * @param renderingGroupId The rendering group id corresponding to its index
-	 * @param autoClearDepthStencil Automatically clears depth and stencil between groups if true.
+	 * @param depth Automatically clears depth between groups if true and autoClear is true.
+	 * @param stencil Automatically clears stencil between groups if true and autoClear is true.
 	 */
-	inline public function setRenderingAutoClearDepthStencil(renderingGroupId:Int, autoClearDepthStencil:Bool) {            
-		this._renderingManager.setRenderingAutoClearDepthStencil(renderingGroupId, autoClearDepthStencil);
+	inline public function setRenderingAutoClearDepthStencil(renderingGroupId:Int, autoClearDepthStencil:Bool, depth:Bool, stencil:Bool) {            
+		this._renderingManager.setRenderingAutoClearDepthStencil(renderingGroupId, autoClearDepthStencil, depth, stencil);
 	}
 	
 }

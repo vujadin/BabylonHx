@@ -335,11 +335,19 @@ package com.babylonhx.math;
 	}
 
 	public static function Slerp(left:Quaternion, right:Quaternion, amount:Float):Quaternion {
-		var num2 = 0.0;
-		var num3 = 0.0;
-		var num = amount;
-		var num4 = (((left.x * right.x) + (left.y * right.y)) + (left.z * right.z)) + (left.w * right.w);
-		var flag = false;
+		var result = Quaternion.Identity();
+		
+        Quaternion.SlerpToRef(left, right, amount, result);
+		
+        return result;
+	}
+	
+	public static function SlerpToRef(left:Quaternion, right:Quaternion, amount:Float, result:Quaternion) {
+		var num2:Float = 0.0;
+		var num3:Float = 0.0;
+		var num:Float = amount;
+		var num4:Float = (((left.x * right.x) + (left.y * right.y)) + (left.z * right.z)) + (left.w * right.w);
+		var flag:Bool = false;
 		
 		if (num4 < 0) {
 			flag = true;
@@ -357,7 +365,10 @@ package com.babylonhx.math;
 			num2 = flag ? ((-Math.sin(num * num5)) * num6) : ((Math.sin(num * num5)) * num6);
 		}
 		
-		return new Quaternion((num3 * left.x) + (num2 * right.x), (num3 * left.y) + (num2 * right.y), (num3 * left.z) + (num2 * right.z), (num3 * left.w) + (num2 * right.w));
+		result.x = (num3 * left.x) + (num2 * right.x);
+        result.y = (num3 * left.y) + (num2 * right.y);
+        result.z = (num3 * left.z) + (num2 * right.z);
+        result.w = (num3 * left.w) + (num2 * right.w);
 	}
 	
 }

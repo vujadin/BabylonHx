@@ -64,7 +64,7 @@ import com.babylonhx.math.Quaternion;
 			return null;
 		}
 		
-		return this.lockedTarget.position != null ? this.lockedTarget.position : this.lockedTarget;
+		return this.lockedTarget.absolutePosition != null ? this.lockedTarget.absolutePosition : this.lockedTarget;
 	}
 
 	// Cache
