@@ -98,7 +98,7 @@ class DisplayObject extends EventDispatcher {
 	
 	private function _globalToLocal(sp:Point, tp:Point)	{ 
 		var org = this._torg;
-		Stage._main._getOrigin(org);
+        this.stage._getOrigin(org);
 		Point._m4_MultiplyVec4(this._getAIMat(), org, org);
 		
 		var p1 = this._tvec4_1;
@@ -120,7 +120,7 @@ class DisplayObject extends EventDispatcher {
 	
 	public function localToGlobal(p:Point):Point {	
 		var org = this._torg;
-		Stage._main._getOrigin(org);
+        this.stage._getOrigin(org);
 		
 		var p1 = this._tvec4_1;
 		p1[0] = p.x;  
@@ -228,7 +228,7 @@ class DisplayObject extends EventDispatcher {
 	}
 	
 	private function _getR(tcs:DisplayObject, stks:Bool):Rectangle {
-		Stage._main._getOrigin(this._torg);
+        this.stage._getOrigin(this._torg);
 		Point._m4_MultiplyVec4(tcs._getAIMat(), this._torg, this._torg);
 		
 		return this._getRect(tcs._getAIMat(), this._torg, stks);
@@ -273,7 +273,7 @@ class DisplayObject extends EventDispatcher {
 	
 	public function hitTestPoint(x:Float, y:Float, shapeFlag:Bool = false) {		
 		var org = this._torg;
-		Stage._main._getOrigin(org);
+        this.stage._getOrigin(org);
 		Point._m4_MultiplyVec4(this._getAIMat(), org, org);
 		
 		var p1 = this._tvec4_1;
@@ -290,13 +290,13 @@ class DisplayObject extends EventDispatcher {
 			return this._htpLocal(org, p1);
 		}
 		else {
-            return this._getR(Stage._main, false).contains(x, y);
+            return this._getR(this.stage, false).contains(x, y);
 		}
 	}
 	
 	inline public function hitTestObject(obj:DisplayObject):Bool {
-		var r0 = this._getR(Stage._main, false);
-		var r1 = obj ._getR(Stage._main, false);
+		var r0 = this._getR(this.stage, false);
+		var r1 = obj ._getR(this.stage, false);
 		
 		return r0.intersects(r1);
 	}
@@ -326,31 +326,31 @@ class DisplayObject extends EventDispatcher {
 	/** 
 	 * This method adds a drawing matrix onto the OpenGL stack
 	 */
-	inline private function _preRender(st:Stage) {
+	inline private function _preRender() {
 		var m = this.transform._getTMat();
-		st._mstack.push(m);
-		st._cmstack.push(this.transform._cmat, this.transform._cvec, this.transform._cID, this.blendMode);
+        this.stage._mstack.push(m);
+        this.stage._cmstack.push(this.transform._cmat, this.transform._cvec, this.transform._cID, this.blendMode);
 	}	
 	
 	/** 
 	 * This method renders the current content
 	 */
-	public function _render(st:Stage) {
+	public function _render() {
 		
 	}
 	
 	/** 
 	 * This method renders the whole object
 	 */
-	private function _renderAll(st:Stage) {
+	private function _renderAll() {
 		if (!this.visible) {
 			return;
 		}
 		
-		this._preRender(st);
-		this._render(st);
-		st._mstack.pop();
-		st._cmstack.pop();
+		this._preRender();
+		this._render();
+		this.stage._mstack.pop();
+        this.stage._cmstack.pop();
 	}
 	
 	/*

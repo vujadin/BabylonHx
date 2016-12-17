@@ -24,10 +24,6 @@ import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.mesh.Mesh;
 
-#if (!js && !purejs)
-import com.babylonhx.utils.GL in Gl;
-#end
-
 /**
  * ...
  * @author Krtolica Vujadin
@@ -125,7 +121,9 @@ class Stage extends DisplayObjectContainer {
 	}
 
     #if (js || purejs)
-    private var Gl:js.html.webgl.RenderingContext;
+    public var Gl:js.html.webgl.RenderingContext;
+    #else
+    public var Gl = com.babylonhx.utils.GL;
     #end
 	
 	public function new(scene:Scene, dpr:Float = 1) {
@@ -229,11 +227,7 @@ class Stage extends DisplayObjectContainer {
 	}
 
     inline public function _updateCMStack() {
-        #if (js || html5)
-        _cmstack.update(this, Gl);
-        #else
         _cmstack.update(this);
-        #end
     }
 	
 	inline public function _setBF(bf:GLBuffer) {
@@ -559,7 +553,7 @@ class Stage extends DisplayObjectContainer {
 			efs[i].dispatchEvent(ev);
 		}
 		
-        this._renderAll(this);
+        this._renderAll();
 		
 		//_restoreGLState();
     }

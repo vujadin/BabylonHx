@@ -91,7 +91,7 @@ class Graphics {
 	 */
 	public function _render() {
 		this._endLine();
-		GL.uniformMatrix4fv(this._stage._sprg.tMatUniform, false, this._stage._mstack.top());
+		this._stage.Gl.uniformMatrix4fv(this._stage._sprg.tMatUniform, false, this._stage._mstack.top());
         this._stage._updateCMStack();
 		
 		for (i in 0...this._afills.length) {

@@ -2,12 +2,8 @@ package com.babylonhx.d2.display;
 
 import com.babylonhx.d2.geom.Point;
 
-import com.babylonhx.utils.GL;
 import com.babylonhx.utils.typedarray.Float32Array;
 
-#if (!js && !purejs)
-import com.babylonhx.utils.GL in Gl;
-#end
 
 /**
  * ...
@@ -69,11 +65,11 @@ class CMStack {
 		this.lnnm[s] = (bmd == BlendMode.NORMAL) ? this.lnnm[s - 1] : s;
 	}
 	
-	public function update(st:Stage #if (js || purejs), Gl:js.html.webgl.RenderingContext #end) {
+	public function update(st:Stage) {
 		if (this.dirty) {
 			var s = this.size - 1;
-			Gl.uniformMatrix4fv(st._sprg.cMatUniform, false, this.mats[s]);
-			Gl.uniform4fv      (st._sprg.cVecUniform, this.vecs[s]);
+			st.Gl.uniformMatrix4fv(st._sprg.cMatUniform, false, this.mats[s]);
+			st.Gl.uniform4fv      (st._sprg.cVecUniform, this.vecs[s]);
 			this.dirty = false;
 		}
 		

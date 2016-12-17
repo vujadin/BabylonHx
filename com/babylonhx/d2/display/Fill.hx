@@ -122,10 +122,10 @@ class Fill {
 			this.dirty = false; 
 		}
 		if (this.tgs != null) {
-			this.tgs.render(st);
+			this.tgs.render();
 		}
 		for (i in 0...this.lineTGS.length) {
-			this.lineTGS[i].render(st);
+			this.lineTGS[i].render();
 		}
 	}
 	

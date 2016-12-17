@@ -47,9 +47,9 @@ class Sprite extends DisplayObjectContainer {
 		return r1.union(this._trect2);
 	}	
 	
-	override public function _render(st:Stage) {
-		this.graphics._render(st);
-		super._render(st);
+	override public function _render() {
+		this.graphics._render();
+		super._render();
 	}
 	
 	override private function _getTarget(porg:Float32Array, pp:Float32Array):DisplayObject {

@@ -140,7 +140,9 @@ typedef BufferPointer = {
 
 	// Private Members
 	#if (js || purejs)
-	private var Gl:js.html.webgl.RenderingContext;
+	public var Gl:js.html.webgl.RenderingContext;
+    #else
+    public var Gl = com.babylonhx.utils.GL;
 	#end
     private var _renderingCanvas:Dynamic;
 
@@ -248,18 +250,15 @@ typedef BufferPointer = {
             options.preserveDrawingBuffer = false;
         }
 		
-		#if purejs
-		Gl = cast(canvas, js.html.CanvasElement).getContext("webgl", options);
+		#if (purejs || js)
+            #if lime
+            if(!Std.is(this._renderingCanvas, js.html.CanvasElement))
+                this._renderingCanvas = Browser.document.getElementsByTagName('canvas')[0];
+            #end
+
+		Gl = cast(this._renderingCanvas, js.html.CanvasElement).getContext("webgl", options);
 		if (Gl == null) {
-			Gl = cast(canvas, js.html.CanvasElement).getContext("experimental-webgl", options);
-		}
-		#end
-		
-		#if (js && lime) 
-		var _c = this._renderingCanvas = Browser.document.getElementsByTagName('canvas')[0];
-		Gl = cast(_c, js.html.CanvasElement).getContext("webgl", options);
-		if (Gl == null) {
-			Gl = cast(_c, js.html.CanvasElement).getContext("experimental-webgl", options);
+			Gl = cast(this._renderingCanvas, js.html.CanvasElement).getContext("experimental-webgl", options);
 		}
 		#end
 		

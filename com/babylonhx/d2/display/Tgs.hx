@@ -49,7 +49,8 @@ class Tgs {
 		this.dirtyUVT = true;
 		this.emptyUVT = (uvt == null);
 		this.useIndex = vrt.length / 3 <= 65536;	// use index array for drawing triangles
-		
+
+        var Gl = stage.Gl;
 		if(this.useIndex) {
 			this.ind = new UInt16Array (ind);
 			this.vrt = new Float32Array(vrt);
@@ -60,9 +61,9 @@ class Tgs {
 				this.uvt = new Float32Array(Std.int(vrt.length * 2 / 3));
 			}
 			
-			this.ibuf = GL.createBuffer();
-			Stage._setEBF(this.ibuf);
-			GL.bufferData(GL.ELEMENT_ARRAY_BUFFER, this.ind, GL.STATIC_DRAW);
+			this.ibuf = Gl.createBuffer();
+            this.stage._setEBF(this.ibuf);
+            Gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, this.ind, GL.STATIC_DRAW);   //TODO mio
 		}
 		else {
 			this.vrt = new Float32Array(ind.length * 3);
@@ -74,13 +75,13 @@ class Tgs {
 			}
 		}
 		
-		this.vbuf = GL.createBuffer();
-		Stage._setBF(this.vbuf);
-		GL.bufferData(GL.ARRAY_BUFFER, this.vrt, GL.STATIC_DRAW);
+		this.vbuf = Gl.createBuffer();
+        this.stage._setBF(this.vbuf);
+        Gl.bufferData(GL.ARRAY_BUFFER, this.vrt, GL.STATIC_DRAW);
 		
-		this.tbuf = GL.createBuffer();
-		Stage._setBF(this.tbuf);
-		GL.bufferData(GL.ARRAY_BUFFER, this.uvt, GL.STATIC_DRAW);
+		this.tbuf = Gl.createBuffer();
+        this.stage._setBF(this.tbuf);
+        Gl.bufferData(GL.ARRAY_BUFFER, this.uvt, GL.STATIC_DRAW);
 	}
 	
 	public function Set(stage:Stage, vrt:Array<Float>, ind:Array<Int>, uvt:Array<Float>, color:Float32Array, ?bdata:BitmapData) {
@@ -92,7 +93,8 @@ class Tgs {
 		this.dirtyUVT = true;
 		this.emptyUVT = (uvt == null);
 		//this.useIndex = vrt.length/3 <= 65536;	// use index array for drawing triangles
-		
+
+        var Gl = stage.Gl;
 		if(this.useIndex) {
 			var il = ind.length;
 			var vl = vrt.length;
@@ -107,9 +109,9 @@ class Tgs {
 					this.uvt[i] = uvt[i];
 				}
 			}
-			
-			Stage._setEBF(this.ibuf);
-			GL.bufferData(GL.ELEMENT_ARRAY_BUFFER, this.ind, GL.STATIC_DRAW);
+
+            this.stage._setEBF(this.ibuf);
+            Gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, this.ind, GL.STATIC_DRAW);
 			
 		}
 		else {
@@ -118,20 +120,20 @@ class Tgs {
 				Tgs.unwrapF32(ind, uvt, 2, this.uvt);
 			}
 		}
-		
-		Stage._setBF(this.vbuf);
-		GL.bufferData(GL.ARRAY_BUFFER, this.vrt, GL.STATIC_DRAW);
-		
-		Stage._setBF(this.tbuf);
-		GL.bufferData(GL.ARRAY_BUFFER, this.uvt, GL.STATIC_DRAW);
+
+        this.stage._setBF(this.vbuf);
+        Gl.bufferData(GL.ARRAY_BUFFER, this.vrt, GL.STATIC_DRAW);
+
+        this.stage._setBF(this.tbuf);
+        Gl.bufferData(GL.ARRAY_BUFFER, this.uvt, GL.STATIC_DRAW);
 	}
 	
-	public function render(st:Stage) {
+	public function render() {
 		if (this.useTex) {
 			var bd = this.bdata;
 			
 			if (bd._dirty) {
-				bd._syncWithGPU();
+				bd._syncWithGPU(this.stage);
 			}
 			
 			if (this.dirtyUVT) {
@@ -156,28 +158,28 @@ class Tgs {
 						this.uvt[2 * i + 1] *= ch; 
 					}
 				}
-				
-				Stage._setBF(this.tbuf);
-				GL.bufferSubData(GL.ARRAY_BUFFER, 0, this.uvt);
+
+                this.stage._setBF(this.tbuf);
+				this.stage.Gl.bufferSubData(GL.ARRAY_BUFFER, 0, this.uvt);
 			}
-			
-			Stage._setUT(1);
-			Stage._setTEX(bd._texture);
+
+            this.stage._setUT(1);
+            this.stage._setTEX(bd._texture);
 		}
 		else {
-			Stage._setUT(0);
-			GL.uniform4fv(st._sprg.color, this.color);
+            this.stage._setUT(0);
+            this.stage.Gl.uniform4fv(this.stage._sprg.color, this.color);
 		}
-		
-		Stage._setTC(this.tbuf);
-		Stage._setVC(this.vbuf);
+
+        this.stage._setTC(this.tbuf);
+        this.stage._setVC(this.vbuf);
 		
 		if (this.useIndex) {
-			Stage._setEBF(this.ibuf);
-			GL.drawElements(GL.TRIANGLES, this.ind.length, GL.UNSIGNED_SHORT, 0);	// druhý parametr - počet indexů
+            this.stage._setEBF(this.ibuf);
+            this.stage.Gl.drawElements(GL.TRIANGLES, this.ind.length, GL.UNSIGNED_SHORT, 0);	// druhý parametr - počet indexů
 		}
 		else {
-			GL.drawArrays(GL.TRIANGLES, 0, Std.int(this.vrt.length / 3));
+            this.stage.Gl.drawArrays(GL.TRIANGLES, 0, Std.int(this.vrt.length / 3));
 		}
 	}
 	
