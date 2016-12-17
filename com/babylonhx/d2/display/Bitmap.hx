@@ -36,7 +36,7 @@ class Bitmap extends InteractiveObject {
 		if (tbd._dirty) {
 			tbd._syncWithGPU(this.stage);
 		}
-		GL.uniformMatrix4fv(this.stage._sprg.tMatUniform, false, this.stage._mstack.top()); //TODO mio
+        this.stage.Gl.uniformMatrix4fv(this.stage._sprg.tMatUniform, false, this.stage._mstack.top()); //TODO mio
         this.stage._updateCMStack();
 
         this.stage._setVC(tbd._vBuffer);
@@ -44,8 +44,8 @@ class Bitmap extends InteractiveObject {
         this.stage._setUT(1);
         this.stage._setTEX(tbd._texture);
         this.stage._setEBF(this.stage._unitIBuffer);
-		
-        GL.drawElements(GL.TRIANGLES, 6, GL.UNSIGNED_SHORT, 0);//TODO mio
+
+        this.stage.Gl.drawElements(GL.TRIANGLES, 6, GL.UNSIGNED_SHORT, 0);//TODO mio
 	}
 	
 }

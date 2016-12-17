@@ -129,6 +129,7 @@ class Tgs {
 	}
 	
 	public function render() {
+        var Gl = this.stage.Gl;
 		if (this.useTex) {
 			var bd = this.bdata;
 			
@@ -160,7 +161,7 @@ class Tgs {
 				}
 
                 this.stage._setBF(this.tbuf);
-				this.stage.Gl.bufferSubData(GL.ARRAY_BUFFER, 0, this.uvt);
+				Gl.bufferSubData(GL.ARRAY_BUFFER, 0, this.uvt);
 			}
 
             this.stage._setUT(1);
@@ -168,7 +169,7 @@ class Tgs {
 		}
 		else {
             this.stage._setUT(0);
-            this.stage.Gl.uniform4fv(this.stage._sprg.color, this.color);
+            Gl.uniform4fv(this.stage._sprg.color, this.color);
 		}
 
         this.stage._setTC(this.tbuf);
@@ -176,10 +177,10 @@ class Tgs {
 		
 		if (this.useIndex) {
             this.stage._setEBF(this.ibuf);
-            this.stage.Gl.drawElements(GL.TRIANGLES, this.ind.length, GL.UNSIGNED_SHORT, 0);	// druhý parametr - počet indexů
+            Gl.drawElements(GL.TRIANGLES, this.ind.length, GL.UNSIGNED_SHORT, 0);	// druhý parametr - počet indexů
 		}
 		else {
-            this.stage.Gl.drawArrays(GL.TRIANGLES, 0, Std.int(this.vrt.length / 3));
+            Gl.drawArrays(GL.TRIANGLES, 0, Std.int(this.vrt.length / 3));
 		}
 	}
 	
