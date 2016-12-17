@@ -37,13 +37,13 @@ class Bitmap extends InteractiveObject {
 			tbd._syncWithGPU();
 		}
 		GL.uniformMatrix4fv(st._sprg.tMatUniform, false, st._mstack.top());
-		st._cmstack.update();
-		
-		Stage._setVC(tbd._vBuffer);
-		Stage._setTC(tbd._tcBuffer);
-		Stage._setUT(1);
-		Stage._setTEX(tbd._texture);
-		Stage._setEBF(st._unitIBuffer);
+		st._updateCMStack();
+
+        st._setVC(tbd._vBuffer);
+        st._setTC(tbd._tcBuffer);
+        st._setUT(1);
+        st._setTEX(tbd._texture);
+        st._setEBF(st._unitIBuffer);
 		
         GL.drawElements(GL.TRIANGLES, 6, GL.UNSIGNED_SHORT, 0);
 	}

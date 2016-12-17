@@ -154,7 +154,7 @@ typedef Assets = nme.Assets;
 	}
 	
 	// Misc.
-	#if purejs
+	#if (js || purejs)
 	public static function GetPointerPrefix():String {
 		var eventPrefix = "pointer";
 		
@@ -831,7 +831,7 @@ typedef Assets = nme.Assets;
 	#elseif (lime || openfl || nme)
 	public static function LoadImages(root:String, urls:Array<String>, onload:Map<String, Image>->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
 		#if (openfl && !nme)
-		if (Assets.exists(url)) {
+		if (Assets.exists(url)) { -debug
 			var img = Assets.getBitmapData(url); 
 			
 			#if openfl_legacy

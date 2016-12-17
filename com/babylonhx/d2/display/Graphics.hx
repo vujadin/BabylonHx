@@ -91,7 +91,7 @@ class Graphics {
 	public function _render(st:Stage) {
 		this._endLine();
 		GL.uniformMatrix4fv(st._sprg.tMatUniform, false, st._mstack.top());
-		st._cmstack.update();
+		st._updateCMStack();
 		
 		for (i in 0...this._afills.length) {
 			this._afills[i].render(st, this._points, this._rect);

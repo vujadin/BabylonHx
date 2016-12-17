@@ -350,8 +350,8 @@ typedef BufferPointer = {
 				this._caps.textureCubeLodFnName = "textureCubeLodEXT";
 			}
 			
-			this._caps.textureHalfFloat = (GL.getExtension('OES_texture_half_float') != null);
-            this._caps.textureHalfFloatLinearFiltering = GL.getExtension('OES_texture_half_float_linear');
+			this._caps.textureHalfFloat = (Gl.getExtension('OES_texture_half_float') != null);
+            this._caps.textureHalfFloatLinearFiltering = Gl.getExtension('OES_texture_half_float_linear');
             this._caps.textureHalfFloatRender = renderToHalfFloat;
 		} 
 		catch (err:Dynamic) {
@@ -2222,7 +2222,7 @@ typedef BufferPointer = {
 		}
 		this._bindTextureDirectly(GL.TEXTURE_2D, null);
 		if (premulAlpha) {
-            GL.pixelStorei(GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+            Gl.pixelStorei(GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
         }
 		this.resetTextureCache();
 		texture.isReady = true;
@@ -2360,12 +2360,12 @@ typedef BufferPointer = {
 		var depthStencilBuffer:GLRenderbuffer = null;
 		// Create the depth/stencil buffer
         if (generateStencilBuffer) {
-            depthStencilBuffer = GL.createRenderbuffer();
+            depthStencilBuffer = Gl.createRenderbuffer();
             Gl.bindRenderbuffer(GL.RENDERBUFFER, depthStencilBuffer);
             Gl.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_STENCIL, width, height);
         }
         else if (generateDepthBuffer) {
-            depthStencilBuffer = GL.createRenderbuffer();
+            depthStencilBuffer = Gl.createRenderbuffer();
             Gl.bindRenderbuffer(GL.RENDERBUFFER, depthStencilBuffer);
 			Gl.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_COMPONENT16, width, height);
 		}
@@ -2458,12 +2458,12 @@ typedef BufferPointer = {
 
         // Create the depth/stencil buffer
         if (generateStencilBuffer) {
-            depthStencilBuffer = GL.createRenderbuffer();
+            depthStencilBuffer = Gl.createRenderbuffer();
             Gl.bindRenderbuffer(GL.RENDERBUFFER, depthStencilBuffer);
             Gl.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_STENCIL, size.width, size.height);
         }
         else if (generateDepthBuffer) {
-            depthStencilBuffer = GL.createRenderbuffer();
+            depthStencilBuffer = Gl.createRenderbuffer();
             Gl.bindRenderbuffer(GL.RENDERBUFFER, depthStencilBuffer);
             Gl.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_COMPONENT16, size.width, size.height);
         }

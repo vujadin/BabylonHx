@@ -24,6 +24,9 @@ import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.mesh.Mesh;
 
+#if (!js && !purejs)
+import com.babylonhx.utils.GL in Gl;
+#end
 
 /**
  * ...
@@ -70,18 +73,16 @@ class Stage extends DisplayObjectContainer {
 	public var _mouseX:Int = 0;
 	public var _mouseY:Int = 0;
 	
-	static private var _curBF:GLBuffer = null;
-	static private var _curEBF:GLBuffer = null;
+	private var _curBF:GLBuffer = null;
+	private var _curEBF:GLBuffer = null;
 	
-	static private var _curVC:GLBuffer = null;
-	static private var _curTC:GLBuffer = null;
-	static private var _curUT:Int = 0;
-	static private var _curTEX:GLTexture = null;
+	private var _curVC:GLBuffer = null;
+	private var _curTC:GLBuffer = null;
+	private var _curUT:Int = 0;
+	private var _curTEX:GLTexture = null;
 	
-	static private var _curBMD:BlendMode = BlendMode.NORMAL;
-	
-	static public var _main:Stage;
-	
+	private var _curBMD:BlendMode = BlendMode.NORMAL;
+
 	public var stageWidth:Int;
 	public var stageHeight:Int;
 	
@@ -117,17 +118,24 @@ class Stage extends DisplayObjectContainer {
 	
 	private var _touches:Map<String, Dynamic> = new Map();
 	
-	static private var _engine:Engine;
-	static public var engine(get, never):Engine;
-	static inline private function get_engine():Engine {
+	private var _engine:Engine;
+	public var engine(get, never):Engine;
+	inline private function get_engine():Engine {
 		return _engine;
 	}
 
+    #if (js || purejs)
+    private var Gl:js.html.webgl.RenderingContext;
+    #end
 	
 	public function new(scene:Scene, dpr:Float = 1) {
 		super();
 		
 		_engine = scene.getEngine();
+        #if (js || purejs)
+        Gl = @:privateAccess _engine.Gl;
+        #end
+
 		engine.onResize.push(function() {
 			this.stageWidth = engine.width;
 			this.stageHeight = engine.height;
@@ -192,9 +200,7 @@ class Stage extends DisplayObjectContainer {
 		
 		this._smm  = false;	// stage mouse move
 		this._srs  = false;	// stage resized
-		
-		Stage._main = this;
-		
+
         this._initShaders();
         this._initBuffers();
 		
@@ -221,83 +227,91 @@ class Stage extends DisplayObjectContainer {
 		org[2] = -500;  
 		org[3] = 1;
 	}
+
+    inline public function _updateCMStack() {
+        #if (js || html5)
+        _cmstack.update(this, Gl);
+        #else
+        _cmstack.update(this);
+        #end
+    }
 	
-	inline public static function _setBF(bf:GLBuffer) {
-		if (Stage._curBF != bf) {
-			GL.bindBuffer(GL.ARRAY_BUFFER, bf);
-			Stage._curBF = bf;
+	inline public function _setBF(bf:GLBuffer) {
+		if (_curBF != bf) {
+			Gl.bindBuffer(GL.ARRAY_BUFFER, bf);
+			_curBF = bf;
 		}
 	}
 	
-	inline public static function _setEBF(ebf:GLBuffer) {
-		if(Stage._curEBF != ebf) {
-			GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, ebf);
-			Stage._curEBF = ebf;
+	inline public function _setEBF(ebf:GLBuffer) {
+		if(_curEBF != ebf) {
+			Gl.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, ebf);
+			_curEBF = ebf;
 		}
 	}
 	
-	inline public static function _setVC(vc:GLBuffer) {
-		if (Stage._curVC != vc) {
-			GL.bindBuffer(GL.ARRAY_BUFFER, vc);
-			GL.vertexAttribPointer(Stage._main._sprg.vpa, 3, GL.FLOAT, false, 0, 0);
-			Stage._curVC = Stage._curBF = vc;
+	inline public function _setVC(vc:GLBuffer) {
+		if (_curVC != vc) {
+			Gl.bindBuffer(GL.ARRAY_BUFFER, vc);
+			Gl.vertexAttribPointer(_sprg.vpa, 3, GL.FLOAT, false, 0, 0);
+			_curVC = _curBF = vc;
 		}
 	}
 	
-	inline public static function _setTC(tc:GLBuffer) {
-		if (Stage._curTC != tc) {
-			GL.bindBuffer(GL.ARRAY_BUFFER, tc);
-			GL.vertexAttribPointer(Stage._main._sprg.tca, 2, GL.FLOAT, false, 0, 0);
-			Stage._curTC = Stage._curBF = tc;
+	inline public function _setTC(tc:GLBuffer) {
+		if (_curTC != tc) {
+			Gl.bindBuffer(GL.ARRAY_BUFFER, tc);
+			Gl.vertexAttribPointer(_sprg.tca, 2, GL.FLOAT, false, 0, 0);
+			_curTC = _curBF = tc;
 		}
 	}
 	
-	inline public static function _setUT(ut:Int) {
-		if (Stage._curUT != ut) {
-			GL.uniform1i(Stage._main._sprg.useTex, ut);
-			Stage._curUT = ut;
+	inline public function _setUT(ut:Int) {
+		if (_curUT != ut) {
+			Gl.uniform1i(_sprg.useTex, ut);
+			_curUT = ut;
 		}
 	}
 	
-	inline public static function _setTEX(tex:GLTexture) {
-		if (Stage._curTEX != tex) {
+	inline public function _setTEX(tex:GLTexture) {
+		if (_curTEX != tex) {
 			engine._bindTexture(0, tex);
-			Stage._curTEX == tex;
+			_curTEX == tex;
 		}
 	}
 	
-	public static function _setBMD(bmd:BlendMode) {
-		//if(Stage._curBMD != bmd) {
+	public function _setBMD(bmd:BlendMode) {
+		//if(_curBMD != bmd) {
 			if (bmd == BlendMode.NORMAL) {
-				GL.blendEquation(GL.FUNC_ADD);
-				GL.blendFunc(GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
+				Gl.blendEquation(GL.FUNC_ADD);
+				Gl.blendFunc(GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
 			}
 			else if	(bmd == BlendMode.MULTIPLY) {
-				GL.blendEquation(GL.FUNC_ADD);
-				GL.blendFunc(GL.DST_COLOR, GL.ONE_MINUS_SRC_ALPHA);
+				Gl.blendEquation(GL.FUNC_ADD);
+                Gl.blendFunc(GL.DST_COLOR, GL.ONE_MINUS_SRC_ALPHA);
 			}
 			else if	(bmd == BlendMode.ADD)	  {
-				GL.blendEquation(GL.FUNC_ADD);
-				GL.blendFunc(GL.ONE, GL.ONE);
+                Gl.blendEquation(GL.FUNC_ADD);
+                Gl.blendFunc(GL.ONE, GL.ONE);
 			}
-			else if (bmd == BlendMode.SUBTRACT) { 
-				GL.blendEquationSeparate(GL.FUNC_REVERSE_SUBTRACT, GL.FUNC_ADD);
-				GL.blendFunc(GL.ONE, GL.ONE); 
+			else if (bmd == BlendMode.SUBTRACT) {
+                Gl.blendEquationSeparate(GL.FUNC_REVERSE_SUBTRACT, GL.FUNC_ADD);
+                Gl.blendFunc(GL.ONE, GL.ONE);
 			}
-			else if (bmd == BlendMode.SCREEN) { 
-				GL.blendEquation(GL.FUNC_ADD);
-				GL.blendFunc(GL.ONE, GL.ONE_MINUS_SRC_COLOR);
+			else if (bmd == BlendMode.SCREEN) {
+                Gl.blendEquation(GL.FUNC_ADD);
+                Gl.blendFunc(GL.ONE, GL.ONE_MINUS_SRC_COLOR);
 			}
-			else if (bmd == BlendMode.ERASE) { 
-				GL.blendEquation(GL.FUNC_ADD);
-				GL.blendFunc(GL.ZERO, GL.ONE_MINUS_SRC_ALPHA);
+			else if (bmd == BlendMode.ERASE) {
+                Gl.blendEquation(GL.FUNC_ADD);
+                Gl.blendFunc(GL.ZERO, GL.ONE_MINUS_SRC_ALPHA);
 			}
 			else if (bmd == BlendMode.ALPHA) {
-				GL.blendEquation(GL.FUNC_ADD);
-				GL.blendFunc(GL.ZERO, GL.SRC_ALPHA);
+                Gl.blendEquation(GL.FUNC_ADD);
+                Gl.blendFunc(GL.ZERO, GL.SRC_ALPHA);
 			}
 			
-			Stage._curBMD = bmd;
+			_curBMD = bmd;
 		//}
 	}
 	
@@ -390,20 +404,20 @@ class Stage extends DisplayObjectContainer {
 		this.dispatchEvent(new Event(Event.RESIZE));
 	}
 
-    private function _getShader(gl, str:String, fs:Bool) {	
+    private function _getShader(str:String, fs:Bool) {
         var shader:GLShader = null;
         if (fs)	{
-			shader = GL.createShader(GL.FRAGMENT_SHADER);
+			shader = Gl.createShader(GL.FRAGMENT_SHADER);
 		}
         else {
-			shader = GL.createShader(GL.VERTEX_SHADER);   
+			shader = Gl.createShader(GL.VERTEX_SHADER);
 		}
+
+        Gl.shaderSource(shader, str);
+        Gl.compileShader(shader);
 		
-        GL.shaderSource(shader, str);
-        GL.compileShader(shader);
-		
-        if (GL.getShaderParameter(shader, GL.COMPILE_STATUS) == 0) {
-            trace(GL.getShaderInfoLog(shader));
+        if (Gl.getShaderParameter(shader, GL.COMPILE_STATUS) == 0) {
+            trace(Gl.getShaderInfoLog(shader));
             return null;
         }
 		
@@ -411,39 +425,39 @@ class Stage extends DisplayObjectContainer {
     }
 
     private function _initShaders() {			
-		var fShader = this._getShader(GL, fs, true );
-        var vShader = this._getShader(GL, vs, false);
+		var fShader = this._getShader(fs, true );
+        var vShader = this._getShader(vs, false);
 		
 		this._sprg = new WebGLProgram();
-        this._sprg.prog = GL.createProgram();
-        GL.attachShader(this._sprg.prog, vShader);
-        GL.attachShader(this._sprg.prog, fShader);
-        GL.linkProgram(this._sprg.prog);
+        this._sprg.prog = Gl.createProgram();
+        Gl.attachShader(this._sprg.prog, vShader);
+        Gl.attachShader(this._sprg.prog, fShader);
+        Gl.linkProgram(this._sprg.prog);
 		
-        if (GL.getProgramParameter(this._sprg.prog, GL.LINK_STATUS) == 0) {
+        if (Gl.getProgramParameter(this._sprg.prog, GL.LINK_STATUS) == 0) {
             trace("Could not initialise shaders");
         }
+
+        Gl.useProgram(this._sprg.prog);
 		
-        GL.useProgram(this._sprg.prog);
+        this._sprg.vpa		= Gl.getAttribLocation(this._sprg.prog, "verPos");
+        this._sprg.tca		= Gl.getAttribLocation(this._sprg.prog, "texPos");
+        Gl.enableVertexAttribArray(this._sprg.tca);
+        Gl.enableVertexAttribArray(this._sprg.vpa);
 		
-        this._sprg.vpa		= GL.getAttribLocation(this._sprg.prog, "verPos");
-        this._sprg.tca		= GL.getAttribLocation(this._sprg.prog, "texPos");
-        GL.enableVertexAttribArray(this._sprg.tca);
-		GL.enableVertexAttribArray(this._sprg.vpa);
-		
-		this._sprg.tMatUniform		= GL.getUniformLocation(this._sprg.prog, "tMat");
-		this._sprg.cMatUniform		= GL.getUniformLocation(this._sprg.prog, "cMat");
-		this._sprg.cVecUniform		= GL.getUniformLocation(this._sprg.prog, "cVec");
-        this._sprg.samplerUniform	= GL.getUniformLocation(this._sprg.prog, "uSampler");
-		this._sprg.useTex			= GL.getUniformLocation(this._sprg.prog, "useTex");
-		this._sprg.color			= GL.getUniformLocation(this._sprg.prog, "color");
+		this._sprg.tMatUniform		= Gl.getUniformLocation(this._sprg.prog, "tMat");
+		this._sprg.cMatUniform		= Gl.getUniformLocation(this._sprg.prog, "cMat");
+		this._sprg.cVecUniform		= Gl.getUniformLocation(this._sprg.prog, "cVec");
+        this._sprg.samplerUniform	= Gl.getUniformLocation(this._sprg.prog, "uSampler");
+		this._sprg.useTex			= Gl.getUniformLocation(this._sprg.prog, "useTex");
+		this._sprg.color			= Gl.getUniformLocation(this._sprg.prog, "color");
     }
 	
     private function _initBuffers() {
-        this._unitIBuffer = GL.createBuffer();
+        this._unitIBuffer = Gl.createBuffer();
 		
-		Stage._setEBF(this._unitIBuffer);
-        GL.bufferData(GL.ELEMENT_ARRAY_BUFFER, new UInt16Array([0, 1, 2, 1, 2, 3]), GL.STATIC_DRAW);
+		_setEBF(this._unitIBuffer);
+        Gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, new UInt16Array([0, 1, 2, 1, 2, 3]), GL.STATIC_DRAW);
     }
 	
 	public function _setFramebuffer(fbo:GLFramebuffer, w:Int, h:Int, flip:Bool) {
@@ -463,12 +477,12 @@ class Stage extends DisplayObjectContainer {
 		this._smat[0] = 1 / w;  
 		this._smat[5] = 1 / h;
 		this._mstack.push(this._smat);
-		
-		GL.bindFramebuffer(GL.FRAMEBUFFER, fbo);
+
+        Gl.bindFramebuffer(GL.FRAMEBUFFER, fbo);
 		if (fbo != null) {
-			GL.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_COMPONENT16, w, h);
+            Gl.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_COMPONENT16, w, h);
 		}
-		GL.viewport(0, 0, w, h);
+        Gl.viewport(0, 0, w, h);
 	}
 	
 	private function _setStageMouse(x:Int, y:Int) {	// event, want X
@@ -485,57 +499,57 @@ class Stage extends DisplayObjectContainer {
 	var lastEnableBlend:Bool;
 	var lastCullEnabled:Bool;
 	private function _backupGLState() {
-		this.lastProgram = GL.getParameter(GL.CURRENT_PROGRAM);
-		this.lastElementArrayBuffer = GL.getParameter(GL.ELEMENT_ARRAY_BUFFER_BINDING);
-		this.lastArrayBuffer = GL.getParameter(GL.ARRAY_BUFFER_BINDING);
-		this.lastTexture = GL.getParameter(GL.TEXTURE_BINDING_2D);
-		this.lastEnableDepthTest = GL.isEnabled(GL.DEPTH_TEST);
-		this.lastEnableBlend = GL.isEnabled(GL.BLEND);
-		this.lastCullEnabled = GL.isEnabled(GL.CULL_FACE);
+		this.lastProgram = Gl.getParameter(GL.CURRENT_PROGRAM);
+		this.lastElementArrayBuffer = Gl.getParameter(GL.ELEMENT_ARRAY_BUFFER_BINDING);
+		this.lastArrayBuffer = Gl.getParameter(GL.ARRAY_BUFFER_BINDING);
+		this.lastTexture = Gl.getParameter(GL.TEXTURE_BINDING_2D);
+		this.lastEnableDepthTest = Gl.isEnabled(GL.DEPTH_TEST);
+		this.lastEnableBlend = Gl.isEnabled(GL.BLEND);
+		this.lastCullEnabled = Gl.isEnabled(GL.CULL_FACE);
 	}
 	
 	private function _restoreGLState() {
-		GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, this.lastElementArrayBuffer);
-		GL.bindBuffer(GL.ARRAY_BUFFER, this.lastArrayBuffer);
-		GL.useProgram(this.lastProgram);
+        Gl.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, this.lastElementArrayBuffer);
+        Gl.bindBuffer(GL.ARRAY_BUFFER, this.lastArrayBuffer);
+        Gl.useProgram(this.lastProgram);
 		
 		if (this.lastTexture != null) {
-			GL.bindTexture(GL.TEXTURE_2D, this.lastTexture);
+            Gl.bindTexture(GL.TEXTURE_2D, this.lastTexture);
 		}
 		
 		if (this.lastEnableDepthTest) {
-			GL.enable(GL.DEPTH_TEST); 
+            Gl.enable(GL.DEPTH_TEST);
 		}
 		else {
-			GL.disable(GL.DEPTH_TEST);
+            Gl.disable(GL.DEPTH_TEST);
 		}
 		if (this.lastEnableBlend) {
-			GL.enable(GL.BLEND); 
+            Gl.enable(GL.BLEND);
 		}
 		else {
-			GL.disable(GL.BLEND);
+            Gl.disable(GL.BLEND);
 		}
 		if (this.lastCullEnabled) {
-			GL.enable(GL.CULL_FACE);
+            Gl.enable(GL.CULL_FACE);
 		}
 		else {
-			GL.disable(GL.CULL_FACE);
+            Gl.disable(GL.CULL_FACE);
 		}
 	}
 
     private function _drawScene() {	
 		//_backupGLState();
-		
-		GL.enable(GL.BLEND);
-		/*GL.blendEquation(GL.FUNC_ADD);		
-		GL.blendFunc(GL.ONE, GL.ONE_MINUS_SRC_ALPHA);*/
-		
-		GL.enable(GL.DEPTH_TEST);
-		GL.depthFunc(GL.LEQUAL);
-		GL.disable(GL.STENCIL_TEST);
-		GL.disable(GL.CULL_FACE);
-		
-		GL.useProgram(this._sprg.prog);	
+
+        Gl.enable(GL.BLEND);
+		/*Gl.blendEquation(GL.FUNC_ADD);
+		Gl.blendFunc(GL.ONE, GL.ONE_MINUS_SRC_ALPHA);*/
+
+        Gl.enable(GL.DEPTH_TEST);
+        Gl.depthFunc(GL.LEQUAL);
+        Gl.disable(GL.STENCIL_TEST);
+        Gl.disable(GL.CULL_FACE);
+
+        Gl.useProgram(this._sprg.prog);
 		
 		//	proceeding EnterFrame
 		var efs = EventDispatcher.efbc;
