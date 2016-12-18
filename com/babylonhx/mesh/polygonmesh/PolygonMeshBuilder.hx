@@ -5,9 +5,6 @@ import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.Scene;
-import org.poly2tri.Point;
-import org.poly2tri.Sweep;
-import org.poly2tri.SweepContext;
 
 /**
  * ...
@@ -15,25 +12,20 @@ import org.poly2tri.SweepContext;
  */
 @:expose('BABYLON.PolygonMeshBuilder') class PolygonMeshBuilder {
 
-	private var _swctx:SweepContext;
-	private var _points:PolygonPoints;
-	private var _outlinepoints:PolygonPoints; 
-	private var _holes:Array<PolygonPoints>;
+	private var _points:PolygonPoints = new PolygonPoints();
+	private var _outlinepoints:PolygonPoints = new PolygonPoints();
+	private var _holes:Array<PolygonPoints> = [];
 		
 	private var name:String;
 	private var scene:Scene;
 	
-	// VK: to keep track of holes ...
-	private var currentPointsLength:Int = 0;
+	private var _epoints:Array<Float> = [];
+	private var _eholes:Array<Int> = [];
 
 	
 	public function new(name:String, contours:Dynamic, scene:Scene) {
 		this.name = name;
 		this.scene = scene;
-						
-		this._points = new PolygonPoints();
-		this._outlinepoints = new PolygonPoints();
-		this._holes = [];
 		
 		var points:Array<Vector2> = [];
 		if (Std.is(contours, Path2)) {
@@ -42,32 +34,28 @@ import org.poly2tri.SweepContext;
 		else {
 			points = cast contours;
 		}
-		this._swctx = new SweepContext();
+		
+		this._addToepoint(points);
 		
 		this._points.add(points);
-		var pts:Array<IndexedPoint> = [];
-		for (p in this._points.elements) {
-			pts.push(new IndexedPoint(new Vector2(p.x, p.y), p.index));
-		}
-		this._swctx.addPolyline(cast pts);
 		this._outlinepoints.add(points);
-		
-		this.currentPointsLength = this._points.elements.length;
+	}
+	
+	private function _addToepoint(points:Array<Vector2>) {
+		for (p in points) {
+			this._epoints.push(p.x);
+			this._epoints.push(p.y);
+		}
 	}
 
 	public function addHole(hole:Array<Vector2>):PolygonMeshBuilder {
 		this._points.add(hole);
-		var points_:Array<IndexedPoint> = [];
-		for (p in currentPointsLength...this._points.elements.length) {
-			points_.push(new IndexedPoint(new Vector2(this._points.elements[p].x, this._points.elements[p].y), this._points.elements[p].index));
-		}
 		var holepoints = new PolygonPoints();
 		holepoints.add(hole);
 		this._holes.push(holepoints);
-		this._swctx.addPolyline(cast points_);
 		
-		// update for next hole
-		this.currentPointsLength = this._points.elements.length;
+		this._eholes.push(Std.int(this._epoints.length / 2));
+		this._addToepoint(hole);
 		
 		return this;
 	}
@@ -91,16 +79,8 @@ import org.poly2tri.SweepContext;
 			uvs.push((p.y - bounds.min.y) / bounds.height);
 		}
 		
-		var indices:Array<Int> = [];
+		var indices:Array<Int> = Earcut.earcut(this._epoints, this._eholes, 2);
 		
-		var sweep = new Sweep(this._swctx);
-		sweep.triangulate();
-		for(triangle in this._swctx.triangles) {
-			for(point in triangle.points) {
-				indices.push(cast(point, IndexedPoint).index);
-			}
-		}
-				
 		if (depth > 0) { 
 			var positionscount = Std.int(positions.length / 3); //get the current pointcount
 		   
@@ -115,27 +95,18 @@ import org.poly2tri.SweepContext;
 				uvs.push(1 - (p.y - bounds.min.y) / bounds.height);
 			}
 			
-			var p1:IndexedPoint = null; //we need to change order of point so the triangles are made in the rigth way.
-			var p2:IndexedPoint = null;
-			var poscounter:Int = 0;
-			for(triangle in this._swctx.triangles) {
-				for(point in triangle.points) {
-					switch (poscounter) {
-						case 0:
-							p1 = cast point;
-							
-						case 1:
-							p2 = cast point;
-							
-						case 2:
-							indices.push((cast point).index + positionscount); 
-							indices.push(p2.index + positionscount);
-							indices.push(p1.index + positionscount);
-							poscounter = -1;
-							
-					}
-					poscounter++;
-				}
+			var totalCount:Int = indices.length;
+			var i:Int = 0;
+			while (i < totalCount) {
+				var i0 = indices[i + 0];
+				var i1 = indices[i + 1];
+				var i2 = indices[i + 2];
+				
+				indices.push(i2 + positionscount);
+				indices.push(i1 + positionscount);
+				indices.push(i0 + positionscount);
+				
+				i += 3;
 			}
 			
 			//Add the sides

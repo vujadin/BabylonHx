@@ -2,7 +2,7 @@ package com.babylonhx.mesh.polygonmesh;
 
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Path2;
-import org.poly2tri.Point;
+
 
 /**
  * ...

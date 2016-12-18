@@ -33,10 +33,6 @@ class DisplayObject extends EventDispatcher {
 	
 	public var blendMode:BlendMode;
 	
-	//public var x(get, set):Float;
-	//public var y(get, set):Float;
-	//public var z(get, set):Float;
-	
 	private var _trect:Rectangle;
 	
 	private var _tempP:Point;
@@ -111,7 +107,7 @@ class DisplayObject extends EventDispatcher {
 		this._lineIsc(org, p1, tp);
 	}
 	
-	public function globalToLocal(p:Point):Point {	
+	inline public function globalToLocal(p:Point):Point {	
 		var lp = new Point();
 		this._globalToLocal(p, lp);
 		
@@ -251,12 +247,12 @@ class DisplayObject extends EventDispatcher {
 	}
 	
 	// no strokes
-	private function getRect(tcs:DisplayObject):Rectangle {  
+	inline private function getRect(tcs:DisplayObject):Rectangle {  
 		return this._getR(tcs, false).clone();  
 	}
 	
 	// with strokes
-	public function getBounds(tcs:DisplayObject):Rectangle {  
+	inline public function getBounds(tcs:DisplayObject):Rectangle {  
 		return this._getR(tcs, true ).clone();  
 	}	
 	
