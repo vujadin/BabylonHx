@@ -32,7 +32,6 @@
   
   <haxelib name="nme" />
   <haxelib name="actuate" />
-  <haxelib name="poly2trihx" />
 	
   <assets path="assets" exclude="nme.svg" />
   <!-- <icon name="icon.svg" /> -->
