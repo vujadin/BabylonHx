@@ -831,7 +831,7 @@ typedef Assets = nme.Assets;
 	#elseif (lime || openfl || nme)
 	public static function LoadImages(root:String, urls:Array<String>, onload:Map<String, Image>->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
 		#if (openfl && !nme)
-		if (Assets.exists(url)) { -debug
+		if (Assets.exists(url)) {
 			var img = Assets.getBitmapData(url); 
 			
 			#if openfl_legacy

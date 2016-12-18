@@ -251,6 +251,20 @@ class PBRMaterial extends Material {
      */
     @serializeAsTexture()
     public var metallicTexture:BaseTexture;
+	
+	/**
+     * Specifies the metallic scalar of the metallic/roughness workflow.
+     * Can also be used to scale the metalness values of the metallic texture.
+     */
+    @serialize()
+    public var metallic:Float = Math.NEGATIVE_INFINITY;
+
+    /**
+     * Specifies the roughness scalar of the metallic/roughness workflow.
+     * Can also be used to scale the roughness values of the metallic texture.
+     */
+    @serialize()
+    public var roughness:Float = Math.NEGATIVE_INFINITY;
 
 	@serializeAsTexture()
 	public var bumpTexture:BaseTexture;
@@ -744,6 +758,7 @@ class PBRMaterial extends Material {
 					else {
                         needUVs = true;
                         this.defs[PBD.METALLICWORKFLOW] = true;
+						this.defs[PBD.METALLICROUGHNESSMAP] = true;
                         this.defs[PBD.METALLICROUGHNESSGSTOREINALPHA] = this.useRoughnessFromMetallicTextureAlpha;
                         this.defs[PBD.METALLICROUGHNESSGSTOREINGREEN] = !this.useRoughnessFromMetallicTextureAlpha && this.useRoughnessFromMetallicTextureGreen;
                     }
@@ -912,6 +927,10 @@ class PBRMaterial extends Material {
 		if (this.useRadianceOverAlpha) {
 			this.defs[PBD.RADIANCEOVERALPHA] = true;
 		}
+		
+		if (this.metallic != Math.NEGATIVE_INFINITY || this.roughness != Math.NEGATIVE_INFINITY) {
+            this.defs[PBD.METALLICWORKFLOW] = true;
+        }
 		
 		// Attribs
 		if (mesh != null) {
@@ -1254,12 +1273,19 @@ class PBRMaterial extends Material {
 			// Colors
 			this._myScene.ambientColor.multiplyToRef(this.ambientColor, this._globalAmbientColor);
 			
-			// GAMMA CORRECTION.
-			this.convertColorToLinearSpaceToRef(this.reflectivityColor, PBRMaterial._scaledReflectivity);
+			if (this.defs[PBD.METALLICWORKFLOW]) {
+				PBRMaterial._scaledReflectivity.r = this.metallic == Math.NEGATIVE_INFINITY ? 1 : this.metallic;
+				PBRMaterial._scaledReflectivity.g = this.roughness == Math.NEGATIVE_INFINITY ? 1 : this.roughness;
+				this._effect.setColor4("vReflectivityColor", PBRMaterial._scaledReflectivity, 0);
+			}
+			else {
+				// GAMMA CORRECTION.
+				this.convertColorToLinearSpaceToRef(this.reflectivityColor, PBRMaterial._scaledReflectivity);
+				this._effect.setColor4("vReflectivityColor", PBRMaterial._scaledReflectivity, this.microSurface);
+			}
 			
 			this._effect.setVector3("vEyePosition", this._myScene._mirroredCameraPosition != null ? this._myScene._mirroredCameraPosition : this._myScene.activeCamera.position);
 			this._effect.setColor3("vAmbientColor", this._globalAmbientColor);
-			this._effect.setColor4("vReflectivityColor", PBRMaterial._scaledReflectivity, this.microSurface);
 			
 			// GAMMA CORRECTION.
 			this.convertColorToLinearSpaceToRef(this.emissiveColor, PBRMaterial._scaledEmissive);
@@ -1313,8 +1339,7 @@ class PBRMaterial extends Material {
 			this._overloadedIntensity.w = this.overloadedEmissiveIntensity;
 			this._effect.setVector4("vOverloadedIntensity", this._overloadedIntensity);
 			
-			this.convertColorToLinearSpaceToRef(this.overloadedAmbient, this._tempColor);
-			this._effect.setColor3("vOverloadedAmbient", this._tempColor);
+			this._effect.setColor3("vOverloadedAmbient", this.overloadedAmbient);
 			this.convertColorToLinearSpaceToRef(this.overloadedAlbedo, this._tempColor);
 			this._effect.setColor3("vOverloadedAlbedo", this._tempColor);
 			this.convertColorToLinearSpaceToRef(this.overloadedReflectivity, this._tempColor);

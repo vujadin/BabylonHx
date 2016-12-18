@@ -271,6 +271,19 @@ import com.babylonhx.tools.EventState;
 			return;
 		}
 		
+		// Set custom projection.
+        // Needs to be before binding to prevent changing the aspect ratio.
+        if (this.activeCamera != null) {
+            engine.setViewport(this.activeCamera.viewport);
+			
+            if (this.activeCamera != scene.activeCamera) {
+                scene.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(true));
+            }
+        }
+        else {
+            engine.setViewport(scene.activeCamera.viewport);
+        }
+		
 		// Prepare renderingManager
 		this._renderingManager.reset();
 		
@@ -335,23 +348,6 @@ import com.babylonhx.tools.EventState;
 			} 
 			else {
 				engine.bindFramebuffer(this._texture);
-			}
-		}
-		
-		// Set states for projection (this does not change accross faces)
-		if (!this.isCube || faceIndex == 0) {            
-			/*if (this.activeCamera != null && this.activeCamera != scene.activeCamera) {
-				scene.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(true));
-			} 
-			else {
-				scene.setTransformMatrix(scene.activeCamera.getViewMatrix(), scene.activeCamera.getProjectionMatrix(true));               
-			}*/
-			
-			if (this.activeCamera != null) {
-				engine.setViewport(this.activeCamera.viewport);
-			}
-			else {
-				engine.setViewport(scene.activeCamera.viewport);
 			}
 		}
 		
