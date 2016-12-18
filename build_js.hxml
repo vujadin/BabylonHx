@@ -1,6 +1,5 @@
 -D purejs
 -D shallow-expose
 -cp src
--lib poly2trihx
 -main MainJS
 -js bin_js/BabylonHxJS.js
