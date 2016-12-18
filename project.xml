@@ -10,7 +10,6 @@
 	
 	<haxelib name="lime" />
 	<haxelib name="actuate" />
-	<haxelib name="poly2trihx" />
 		
 	<assets path="assets" exclude="*.svg" />
 	<icon path="assets/lime.svg" />
