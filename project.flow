@@ -13,8 +13,7 @@
 
     build : {
       dependencies : {
-        "snow" : "*",
-		"poly2trihx" : "*"
+        "snow" : "*"
       }
     },
 
