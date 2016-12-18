@@ -473,7 +473,8 @@ import com.babylonhx.animations.Animation;
 		}
 		
 		// Postprocesses
-		for (i in 0...this._postProcesses.length) {
+        var i = this._postProcesses.length;
+		while (--i >= 0) {
 			this._postProcesses[i].dispose(this);
 		}
 		
