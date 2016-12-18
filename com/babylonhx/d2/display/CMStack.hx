@@ -2,8 +2,8 @@ package com.babylonhx.d2.display;
 
 import com.babylonhx.d2.geom.Point;
 
-import com.babylonhx.utils.GL;
 import com.babylonhx.utils.typedarray.Float32Array;
+
 
 /**
  * ...
@@ -65,17 +65,17 @@ class CMStack {
 		this.lnnm[s] = (bmd == BlendMode.NORMAL) ? this.lnnm[s - 1] : s;
 	}
 	
-	public function update() {
+	public function update(st:Stage) {
+        var Gl = st.Gl;
 		if (this.dirty) {
-			var st = Stage._main;
 			var s = this.size - 1;
-			GL.uniformMatrix4fv(st._sprg.cMatUniform, false, this.mats[s]);
-			GL.uniform4fv      (st._sprg.cVecUniform, this.vecs[s]);
+			Gl.uniformMatrix4fv(st._sprg.cMatUniform, false, this.mats[s]);
+			Gl.uniform4fv      (st._sprg.cVecUniform, this.vecs[s]);
 			this.dirty = false;
 		}
 		
 		var n = this.lnnm[this.size - 1];
-		Stage._setBMD(this.bmds[n]);
+		st._setBMD(this.bmds[n]);
 	}
 	
 	public function pop() {

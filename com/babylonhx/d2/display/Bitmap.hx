@@ -30,22 +30,22 @@ class Bitmap extends InteractiveObject {
 		return this.bitmapData.rect;
 	}
 	
-	override public function _render(st:Stage) {
+	override public function _render() {
 		//return;
 		var tbd = this.bitmapData;
 		if (tbd._dirty) {
-			tbd._syncWithGPU();
+			tbd._syncWithGPU(this.stage);
 		}
-		GL.uniformMatrix4fv(st._sprg.tMatUniform, false, st._mstack.top());
-		st._cmstack.update();
-		
-		Stage._setVC(tbd._vBuffer);
-		Stage._setTC(tbd._tcBuffer);
-		Stage._setUT(1);
-		Stage._setTEX(tbd._texture);
-		Stage._setEBF(st._unitIBuffer);
-		
-        GL.drawElements(GL.TRIANGLES, 6, GL.UNSIGNED_SHORT, 0);
+		this.stage.Gl.uniformMatrix4fv(this.stage._sprg.tMatUniform, false, this.stage._mstack.top());
+		this.stage._updateCMStack();
+
+		this.stage._setVC(tbd._vBuffer);
+		this.stage._setTC(tbd._tcBuffer);
+		this.stage._setUT(1);
+		this.stage._setTEX(tbd._texture);
+		this.stage._setEBF(this.stage._unitIBuffer);
+
+		this.stage.Gl.drawElements(GL.TRIANGLES, 6, GL.UNSIGNED_SHORT, 0);
 	}
 	
 }

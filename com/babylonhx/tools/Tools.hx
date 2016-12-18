@@ -154,7 +154,7 @@ typedef Assets = nme.Assets;
 	}
 	
 	// Misc.
-	#if purejs
+	#if (js || purejs)
 	public static function GetPointerPrefix():String {
 		var eventPrefix = "pointer";
 		
@@ -378,7 +378,7 @@ typedef Assets = nme.Assets;
 			//	trace("File '" + path + "' doesn't exist!");
 			//}
 		}
-    }
+	}
 	#else //snow
 	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {	
 		if (type == "hdr") {
@@ -476,7 +476,7 @@ typedef Assets = nme.Assets;
 			//	trace("File '" + path + "' doesn't exist!");
 			//}
 		}
-    }
+	}
 	#end // if luxe
 	
 	#elseif (lime || openfl || nme)
@@ -563,7 +563,7 @@ typedef Assets = nme.Assets;
 			}
 			#end
 		}
-    }
+	}
 	#elseif kha
 	
 	#end
@@ -659,7 +659,7 @@ typedef Assets = nme.Assets;
 		//else {
 		//	trace("Image '" + url + "' doesn't exist!");
 		//}
-    } 
+	}
 	#else
 	public static function LoadImage(url:String, onload:Image->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
 		var callBackFunction = function(img:Dynamic) {
@@ -672,7 +672,7 @@ typedef Assets = nme.Assets;
 				callBackFunction(asset);
 			}
 		);
-    } 
+	}
 	#end
 	
 	#elseif (lime || openfl || nme)
@@ -716,7 +716,7 @@ typedef Assets = nme.Assets;
 		var img = Assets.getBitmapData(url); 
 		onload(new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height));		
 		#end
-    }
+	}
 	#elseif kha
 	
 	#end
@@ -812,7 +812,7 @@ typedef Assets = nme.Assets;
 		//else {
 		//	trace("Image '" + url + "' doesn't exist!");
 		//}
-    } 
+	}
 	#else
 	public static function LoadImages(url:String, onload:Image->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
 		var callBackFunction = function(img:Dynamic) {
@@ -825,13 +825,13 @@ typedef Assets = nme.Assets;
 				callBackFunction(asset);
 			}
 		);
-    } 
+	}
 	#end
 	
 	#elseif (lime || openfl || nme)
 	public static function LoadImages(root:String, urls:Array<String>, onload:Map<String, Image>->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
 		#if (openfl && !nme)
-		if (Assets.exists(url)) {
+		if (Assets.exists(url)) { -debug
 			var img = Assets.getBitmapData(url); 
 			
 			#if openfl_legacy
@@ -867,7 +867,7 @@ typedef Assets = nme.Assets;
 		var img = Assets.getBitmapData(url); 
 		onload(new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height));		
 		#end
-    }
+	}
 	#elseif kha
 	
 	#end
@@ -890,21 +890,21 @@ typedef Assets = nme.Assets;
 	}
 	
 	public static function cloneValue(source:Dynamic, destinationObject:Dynamic):Dynamic {
-        if (source == null)
-            return null;
+		if (source == null)
+			return null;
 			
-        if (Std.is(source, Mesh)) {
-            return null;
-        }
+		if (Std.is(source, Mesh)) {
+			return null;
+		}
 		
-        if (Std.is(source, SubMesh)) {
-            return cast(source, SubMesh).clone(cast(destinationObject, AbstractMesh));
-        } 
+		if (Std.is(source, SubMesh)) {
+			return cast(source, SubMesh).clone(cast(destinationObject, AbstractMesh));
+		}
 		else if (Reflect.hasField(source, "clone")) {
-            return source.clone();// Reflect.callMethod(source, "clone", []);
-        }
-        return null;
-    }
+			return source.clone();// Reflect.callMethod(source, "clone", []);
+		}
+		return null;
+	}
 
 	public static function IsEmpty(obj:Dynamic):Bool {
 		if(Std.is(obj, Array)) {

@@ -36,7 +36,7 @@ class BitmapData {
 	private var _gpuAllocated:Bool;
 	public var _buffer:UInt8Array;
 	private var _ubuffer:UInt32Array;
-	
+
 
 	public function new(img:Image) {
 		// public
@@ -55,7 +55,7 @@ class BitmapData {
 		this._gpuAllocated = false;
 		this._buffer  = null;					//  Uint8 container for texture
 		this._ubuffer = null;					//  Uint32 container for texture
-		
+
 		if (img != null) {
 			this._initFromImg(img, img.width, img.height);
 		}
@@ -140,75 +140,80 @@ class BitmapData {
 	}
 	
 	public function draw(dobj:DisplayObject) {
+		var stage = dobj.stage;
+        var Gl = stage.Gl;
 		if (this._dirty) {
-			this._syncWithGPU();
+			this._syncWithGPU(stage);
 		}
-		this._setTexAsFB();
-		Stage._setTEX(null);
-		dobj._render(Stage._main);
+		this._setTexAsFB(stage);
+
+		stage._setTEX(null);
+		dobj._render();
 		
 		var buff = this._buffer;
 		var r = this.rect;
-		GL.readPixels(cast r.x, cast r.y, cast r.width, cast r.height, GL.RGBA, GL.UNSIGNED_BYTE, buff);
-		Stage._main._setFramebuffer(null, Stage._main.stageWidth, Stage._main.stageHeight, false);
-		
-		Stage._setTEX(this._texture);
-		GL.generateMipmap(GL.TEXTURE_2D);
+		Gl.readPixels(cast r.x, cast r.y, cast r.width, cast r.height, GL.RGBA, GL.UNSIGNED_BYTE, buff);
+		stage._setFramebuffer(null, stage.stageWidth, stage.stageHeight, false);
+
+		stage._setTEX(this._texture);
+		Gl.generateMipmap(GL.TEXTURE_2D);
 	}
 	
 	
 	/* private */
 	
-	public function _syncWithGPU() {
+	public function _syncWithGPU(st:Stage) {
 		var r = this.rect;
 		var buff = this._buffer;
-		
+		var Gl = st.Gl;
+
 		if (!this._gpuAllocated) {
 			var w = r.width;
 			var h = r.height;
 			var xsc = w / this._rwidth;
 			var ysc = h / this._rheight;
 			
-			this._texture = GL.createTexture();
-			this._tcBuffer = GL.createBuffer();		//	texture coordinates buffer
-			this._vBuffer  = GL.createBuffer();		//	four vertices of bitmap
-			
-			Stage._setBF(this._tcBuffer);
-			GL.bufferData(GL.ARRAY_BUFFER, new Float32Array([0, 0, xsc, 0, 0, ysc, xsc, ysc]), GL.STATIC_DRAW);
-			
-			Stage._setBF(this._vBuffer);
-			GL.bufferData(GL.ARRAY_BUFFER, new Float32Array([0, 0, 0, w, 0, 0, 0, h, 0, w, h, 0]), GL.STATIC_DRAW);
+			this._texture = Gl.createTexture();
+			this._tcBuffer = Gl.createBuffer();		//	texture coordinates buffer
+			this._vBuffer  = Gl.createBuffer();		//	four vertices of bitmap
+
+			st._setBF(this._tcBuffer);
+			Gl.bufferData(GL.ARRAY_BUFFER, new Float32Array([0, 0, xsc, 0, 0, ysc, xsc, ysc]), GL.STATIC_DRAW);
+
+			st._setBF(this._vBuffer);
+			Gl.bufferData(GL.ARRAY_BUFFER, new Float32Array([0, 0, 0, w, 0, 0, 0, h, 0, w, h, 0]), GL.STATIC_DRAW);
 			
 			var ebuff = new UInt8Array(this._rwidth * this._rheight * 4);
 			var ebuff32 = new UInt32Array(ebuff.buffer);
 			for (i in 0...ebuff32.length) {
 				ebuff32[i] = 0x00ffffff;
 			}
-			
-			Stage._setTEX(this._texture);
-			GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, this._rwidth, this._rheight, 0, GL.RGBA, GL.UNSIGNED_BYTE, ebuff);
-			GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
-			GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.LINEAR_MIPMAP_LINEAR);
+
+			st._setTEX(this._texture);
+			Gl.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, this._rwidth, this._rheight, 0, GL.RGBA, GL.UNSIGNED_BYTE, ebuff);
+			Gl.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
+			Gl.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.LINEAR_MIPMAP_LINEAR);
 			this._gpuAllocated = true;
 		}
-		
-		Stage._setTEX(this._texture);
-		GL.texSubImage2D(GL.TEXTURE_2D, 0, cast r.x, cast r.y, cast r.width, cast r.height,  GL.RGBA, GL.UNSIGNED_BYTE, buff);
-		GL.generateMipmap(GL.TEXTURE_2D);
+
+		st._setTEX(this._texture);
+		Gl.texSubImage2D(GL.TEXTURE_2D, 0, cast r.x, cast r.y, cast r.width, cast r.height,  GL.RGBA, GL.UNSIGNED_BYTE, buff);
+		Gl.generateMipmap(GL.TEXTURE_2D);
 		this._dirty = false;
 	}
 	
-	private function _setTexAsFB() {
+	private function _setTexAsFB(st:Stage) {
+		var Gl = st.Gl;
 		if(BitmapData._fbo == null) {
-			BitmapData._fbo = GL.createFramebuffer();
-			var rbo = GL.createRenderbuffer();
-			GL.bindRenderbuffer(GL.RENDERBUFFER, rbo);
-			GL.bindFramebuffer(GL.FRAMEBUFFER, BitmapData._fbo);
-			GL.framebufferRenderbuffer(GL.FRAMEBUFFER, GL.DEPTH_ATTACHMENT, GL.RENDERBUFFER, rbo);
+			BitmapData._fbo = Gl.createFramebuffer();
+			var rbo = Gl.createRenderbuffer();
+			Gl.bindRenderbuffer(GL.RENDERBUFFER, rbo);
+			Gl.bindFramebuffer(GL.FRAMEBUFFER, BitmapData._fbo);
+			Gl.framebufferRenderbuffer(GL.FRAMEBUFFER, GL.DEPTH_ATTACHMENT, GL.RENDERBUFFER, rbo);
 		}
-		
-		Stage._main._setFramebuffer(BitmapData._fbo, this._rwidth, this._rheight, true);
-		GL.framebufferTexture2D(GL.FRAMEBUFFER, GL.COLOR_ATTACHMENT0, GL.TEXTURE_2D, this._texture, 0);
+
+		st._setFramebuffer(BitmapData._fbo, this._rwidth, this._rheight, true);
+		Gl.framebufferTexture2D(GL.FRAMEBUFFER, GL.COLOR_ATTACHMENT0, GL.TEXTURE_2D, this._texture, 0);
 	}
 	
 	private function _initFromImg(img:Image, w:Int, h:Int, fc:Int = 0x000000) {

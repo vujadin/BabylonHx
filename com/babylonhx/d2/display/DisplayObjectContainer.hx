@@ -155,9 +155,9 @@ class DisplayObjectContainer extends InteractiveObject {
 		return this._children[i];
 	}	
 	
-	override public function _render(st:Stage) {
+	override public function _render() {
 		for (i in 0...this.numChildren) {
-			this._children[i]._renderAll(st);
+			this._children[i]._renderAll();
 		}
 	}	
 	
