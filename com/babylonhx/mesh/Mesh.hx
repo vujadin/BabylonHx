@@ -16,6 +16,7 @@ import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.mesh.MeshBuilder.BoxOptions;
+import com.babylonhx.mesh.MeshBuilder.CapsuleOptions;
 import com.babylonhx.mesh.MeshBuilder.CylinderOptions;
 import com.babylonhx.mesh.MeshBuilder.DashedLinesOptions;
 import com.babylonhx.mesh.MeshBuilder.DiscOptions;
@@ -1810,54 +1811,6 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		return MeshBuilder.CreateSphere(name, options, scene);
 	}
 	
-	public static function CreateCapsule(name:String, diameter:Float, height:Float, segments:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
-		if (diameter > height) {
-			height = diameter / 2;
-		}
-		var tess:Int = Std.int(segments * 2) + 4;
-		var subd:Int = Std.int(height / diameter);
-		var box = MeshBuilder.CreateBox("tempbox", { width: diameter, height: height, depth: diameter }, scene);
-		
-		var sphereTop = Mesh.CreateSphere("capsuleSphereTop", segments, diameter, scene);
-		sphereTop.position.y = height / 2;
-		
-		var aCSG = com.babylonhx.mesh.csg.CSG.FromMesh(sphereTop);
-		var bCSG = com.babylonhx.mesh.csg.CSG.FromMesh(box);			
-		aCSG.subtractInPlace(bCSG);		
-		
-		box.dispose();
-		sphereTop.dispose();
-		
-		var sphere1 = aCSG.toMesh("test", scene.defaultMaterial, scene, false);
-		var sphere2 = sphere1.clone("tempsphereclone");
-		sphere2.position.y = -height / 2;
-		sphere2.rotation.x = Math.PI;
-		
-		aCSG = null;
-		bCSG = null;
-		
-		var cyl2 = MeshBuilder.CreateCylinder("capsuleCylinder", { height: height, diameterTop: diameter, diameterBottom: diameter, tessellation: tess, subdivisions: 6, enclose: false }, scene);
-		
-		// rotate uvs 90 degrees
-		/*var uvs = cyl2.getVerticesData(VertexBuffer.UVKind);
-		
-		var i:Int = 0;
-		while (i < uvs.length) {
-			var x = uvs[i];
-			uvs[i] = -uvs[i + 1];
-			uvs[i + 1] = x;
-			
-			i += 2;
-		}
-		
-		cyl2.updateVerticesData(VertexBuffer.UVKind, uvs);*/
-		
-		var finalMesh = Mesh.MergeMeshes([cyl2, sphere1, sphere2], true);
-		finalMesh.material = scene.defaultMaterial;
-		
-		return finalMesh;
-	}
-	
 	// Cylinder and cone
 	public static function CreateCylinder(name:String, height:Float, diameterTop:Float, diameterBottom:Float, tessellation:Int, subdivisions:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
 		var options:CylinderOptions = {
@@ -1873,6 +1826,19 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 		
 		return MeshBuilder.CreateCylinder(name, options, scene);
 	}
+	
+	public static function CreateCapsule(name:String, scene:Scene, radius:Float = 1, height:Float = 2, segmentsW:Int = 16, segmentsH:Int = 16, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {
+		var options:CapsuleOptions = {
+			radius: radius,
+			height: height,
+			segmentsW: segmentsW,
+			segmentsH: segmentsH,
+			sideOrientation: sideOrientation,
+			updatable: updatable
+		};
+		
+		return MeshBuilder.CreateCapsule(name, scene, options);
+	}
 
 	// Torus  (Code from SharpDX.org)
 	public static function CreateTorus(name:String, diameter:Float, thickness:Float, tessellation:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {				
@@ -1884,7 +1850,7 @@ import com.babylonhx.utils.typedarray.ArrayBuffer;
 			updatable: updatable
 		};
 		
-		return MeshBuilder.CreateTorus(name, options, scene);
+		return MeshBuilder.CreateTorus(name, scene, options);
 	}
 	
 	public static function CreateTorusKnot(name:String, radius:Float, tube:Float, radialSegments:Int, tubularSegments:Int, p:Int, q:Int, scene:Scene, updatable:Bool = false, sideOrientation:Int = Mesh.DEFAULTSIDE):Mesh {	

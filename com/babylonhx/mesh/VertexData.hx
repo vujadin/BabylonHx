@@ -1384,6 +1384,182 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		return vertexData;
 	}
 
+	public static function CreateCapsule(options:Dynamic):VertexData {
+		var indices:Array<Int> = [];
+		var positions:Array<Float> = [];
+		var normals:Array<Float> = [];
+		var uvs:Array<Float> = [];
+		
+		var radius:Float = options.radius != null ? options.radius : 1;
+		var height:Float = options.height != null ? options.height : 2;
+		var segmentsW:Int = options.segmentsW != null ? options.segmentsW : 16;
+		var segmentsH:Int = options.segmentsH != null ? options.segmentsH : 16;
+		var yUp:Bool = options.yUp != null ? options.yUp : true;
+		
+		var sideOrientation:Int = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
+		
+		var buildPositionsAndNormals = function(radius:Float = 1, height:Float = 1, segmentsW:Int = 1, segmentsH:Int = 1, yUp:Bool = true):Map<String, Array<Float>> {
+			var vertexPositionData = new Float32Array((segmentsH + 1) * (segmentsW + 1) * 3);
+			var vertexNormalData = new Float32Array((segmentsH + 1) * (segmentsW + 1) * 3);
+			var vertexTangentData = new Float32Array((segmentsH + 1) * (segmentsW + 1) * 3);
+			
+			var vertexPositionData:Array<Float> = [];
+			var vertexNormalData:Array<Float> = [];
+			
+			var startIndex:Int;
+			var index:Int = 0;
+			var comp1:Float = 0;
+			var comp2:Float = 0;
+			var t1:Float = 0;
+			var t2:Float = 0;
+			for (yi in 0...segmentsH + 1) {
+				startIndex = index;
+				
+				var horangle:Float = Math.PI * yi / segmentsH;
+				var z:Float = -radius * Math.cos(horangle);
+				var ringradius:Float = radius * Math.sin(horangle);
+				
+				for (xi in 0...segmentsW + 1) {
+					var verangle:Float = 2 * Math.PI * xi / segmentsW;
+					var x:Float = ringradius * Math.cos(verangle);
+					var y:Float = ringradius * Math.sin(verangle);
+					var normLen:Float = 1 / Math.sqrt(x * x + y * y + z * z);
+					var tanLen:Float = Math.sqrt(y * y + x * x);
+					var offset:Float = yi > segmentsH / 2 ? height / 2 : -height / 2;
+					
+					if (yUp) {
+						t1 = 0;
+						t2 = tanLen > .007 ? x / tanLen : 0;
+						comp1 = -z;
+						comp2 = y;
+					}
+					else {
+						t1 = tanLen > .007 ? x / tanLen : 0;
+						t2 = 0;
+						comp1 = y;
+						comp2 = z;
+					}
+					
+					if (xi == segmentsW) {
+						vertexPositionData[index] = vertexPositionData[startIndex];
+						vertexPositionData[index + 1] = vertexPositionData[startIndex + 1];
+						vertexPositionData[index + 2] = vertexPositionData[startIndex + 2];
+						
+						vertexNormalData[index] = (vertexNormalData[startIndex] + x * normLen) * 0.5;
+						vertexNormalData[index + 1] = (vertexNormalData[startIndex + 1] + comp1 * normLen) * 0.5;
+						vertexNormalData[index + 2] = (vertexNormalData[startIndex + 2] + comp2 * normLen) * 0.5;
+					}
+					else {
+						vertexPositionData[index] = x;
+						vertexPositionData[index + 1] = yUp ? comp1 - offset : comp1;
+						vertexPositionData[index + 2] = yUp ? comp2 : comp2 + offset;
+						
+						vertexNormalData[index] = x * normLen;
+						vertexNormalData[index + 1] = comp1 * normLen;
+						vertexNormalData[index + 2] = comp2 * normLen;
+					}
+					
+					if (xi > 0 && yi > 0) {
+						if (yi == segmentsH) {
+							vertexPositionData[index] = vertexPositionData[startIndex];
+							vertexPositionData[index + 1] = vertexPositionData[startIndex + 1];
+							vertexPositionData[index + 2] = vertexPositionData[startIndex + 2];
+						}
+					}
+					
+					index += 3;
+				}
+			}
+			
+			var result:Map<String, Array<Float>> = new Map();
+			result["positions"] = vertexPositionData;
+			result["normals"] = vertexNormalData;
+			
+			return result;
+		}
+		
+		var buildIndices = function(segmentsW:Int = 1, segmentsH:Int = 1, yUp:Bool = true):Array<Int> {
+			var indices:Array<Int> = [];
+			
+			var numIndices:Int = 0;
+			for (yi in 0...segmentsH + 1) {
+				for (xi in 0...segmentsW + 1) {
+					if (xi > 0 && yi > 0) {
+						var a:Int = Std.int((segmentsW + 1) * yi + xi);
+						var b:Int = Std.int((segmentsW + 1) * yi + xi - 1);
+						var c:Int = Std.int((segmentsW + 1) * (yi - 1) + xi - 1);
+						var d:Int = Std.int((segmentsW + 1) * (yi - 1) + xi);
+						
+						if (yi == segmentsH) {
+							indices[numIndices++] = a;
+							indices[numIndices++] = c;
+							indices[numIndices++] = d;
+						}
+						else if (yi == 1) {
+							indices[numIndices++] = a;
+							indices[numIndices++] = b;
+							indices[numIndices++] = c;
+						}
+						else {
+							indices[numIndices++] = a;
+							indices[numIndices++] = b;
+							indices[numIndices++] = c;
+							indices[numIndices++] = a;
+							indices[numIndices++] = c;
+							indices[numIndices++] = d;
+						}
+					}
+				}
+			}
+			
+			indices.reverse();
+			
+			return indices;
+		}
+		
+		/**
+		 * 构建uv
+		 * @param segmentsW 横向分割数
+		 * @param segmentsH 纵向分割数
+		 */
+		var buildUVs = function(segmentsW:Int = 1, segmentsH:Int = 1):Array<Float> {
+			var data:Array<Float> = [];
+			var index:Int = 0;
+			
+			for (yi in 0...segmentsH + 1) {
+				for (xi in 0...segmentsW + 1) {
+					data[index++] = xi / segmentsW;
+					data[index++] = yi / segmentsH;
+				}
+			}
+			
+			return data;
+		};
+		
+        var geometryData:Map<String, Array<Float>> = buildPositionsAndNormals(radius, height, segmentsW, segmentsH, yUp);
+		
+		positions = geometryData["positions"];
+		
+		normals = geometryData["normals"];
+		
+        indices = buildIndices(segmentsW, segmentsH, yUp);
+		
+		uvs = buildUVs(segmentsW, segmentsH);
+		
+        // Sides
+        VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		
+		// Result
+		var vertexData = new VertexData();
+		
+		vertexData.indices = indices;
+		vertexData.positions = positions;
+		vertexData.normals = normals;
+		vertexData.uvs = uvs;
+		
+		return vertexData;
+    }
+	
 	public static function CreateTorus(options:Dynamic):VertexData {
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];

@@ -20,7 +20,7 @@ import com.babylonhx.utils.GL;
 @:expose('BABYLON.Layer') class Layer {
 	
 	public var name:String;
-	public var texture:Dynamic; // Texture;
+	public var texture:Texture;
 	public var isBackground:Bool;
 	public var color:Color4;
 	public var scale:Vector2 = new Vector2(1, 1);
@@ -29,11 +29,8 @@ import com.babylonhx.utils.GL;
 	public var alphaBlendingMode:Int = Engine.ALPHA_COMBINE;
 	public var alphaTest:Bool = false;
 	
-	public var vertices:Array<Float> = [];
-	public var indices:Array<Int> = [];
-	
 	private var _scene:Scene;
-	private var _vertexBuffers:Map<String, VertexBuffer>;
+	private var _vertexBuffers:Map<String, VertexBuffer> = new Map();
 	private var _indexBuffer:WebGLBuffer;
 	private var _effect:Effect;
 	private var _alphaTestEffect:Effect;
@@ -124,7 +121,7 @@ import com.babylonhx.utils.GL;
 		indices.push(2);
 		indices.push(3);
 		
-		this._indexBuffer = engine.createIndexBuffer(this.indices);
+		this._indexBuffer = engine.createIndexBuffer(indices);
 		
 		// Effects
 		this._effect = engine.createEffect("layer",

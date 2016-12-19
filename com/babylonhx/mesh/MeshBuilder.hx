@@ -51,6 +51,15 @@ typedef CylinderOptions = {
 	?updatable:Bool
 }
 
+typedef CapsuleOptions = {
+	?radius:Float,
+	?height:Float,
+	?segmentsW:Int,
+	?segmentsH:Int,
+	?sideOrientation:Int,
+	?updatable:Bool
+}
+
 typedef DiscOptions = {
 	?radius:Float,
 	?tessellation:Float,
@@ -460,6 +469,24 @@ class MeshBuilder {
 		return cylinder;
 	}
 	
+	public static function CreateCapsule(name:String, scene:Scene, ?options:Dynamic):Mesh {
+		var capsule = new Mesh(name, scene);
+		
+		if (options == null) {
+			options = { };
+		}
+		
+		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		
+		capsule.sideOrientation = options.sideOrientation;
+		
+		var vertexData = VertexData.CreateCapsule(options);
+		
+		vertexData.applyToMesh(capsule, options.updatable);
+		
+		return capsule;
+	}
+	
 	/**
 	  * Creates a torus mesh.   
 	  * tuto : http://doc.babylonjs.com/tutorials/Mesh_CreateXXX_Methods_With_Options_Parameter#torus       
@@ -470,8 +497,12 @@ class MeshBuilder {
 	  * Detail here : http://doc.babylonjs.com/tutorials/02._Discover_Basic_Elements#side-orientation    
 	  * The mesh can be set to updatable with the boolean parameter `updatable` (default false) if its internal geometry is supposed to change once created.  
 	  */
-	public static function CreateTorus(name:String, options:Dynamic, scene:Scene):Mesh {
+	public static function CreateTorus(name:String, scene:Scene, ?options:Dynamic):Mesh {
 		var torus = new Mesh(name, scene);
+		
+		if (options == null) {
+			options = { };
+		}
 		
 		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
 		
