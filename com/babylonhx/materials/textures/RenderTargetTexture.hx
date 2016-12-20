@@ -16,6 +16,14 @@ import com.babylonhx.tools.EventState;
  * @author Krtolica Vujadin
  */
 
+typedef RenderTargetOptions = {
+	generateMipMaps:Bool,
+    type:Int,
+    samplingMode:Int,
+    generateDepthBuffer:Bool,
+    generateStencilBuffer:Bool
+}
+
 @:expose('BABYLON.RenderTargetTexture') class RenderTargetTexture extends Texture {
 	
 	public static inline var REFRESHRATE_RENDER_ONCE:Int = 0;
@@ -115,6 +123,7 @@ import com.babylonhx.tools.EventState;
 	private var _currentRefreshId:Int = -1;
 	private var _refreshRate:Int = 1;
 	private var _textureMatrix:Matrix;
+	private var _renderTargetOptions:RenderTargetOptions;
 
 	
 	public function new(name:String, size:Dynamic, scene:Scene, ?generateMipMaps:Bool, doNotChangeAspectRatio:Bool = true, type:Int = Engine.TEXTURETYPE_UNSIGNED_INT, isCube:Bool = false, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, generateDepthBuffer:Bool = true, generateStencilBuffer:Bool = false) {
@@ -136,29 +145,26 @@ import com.babylonhx.tools.EventState;
 		this._doNotChangeAspectRatio = doNotChangeAspectRatio;
 		this.isCube = isCube;
 		
+		this._renderTargetOptions = {
+			generateMipMaps: generateMipMaps,
+			type: type,
+			samplingMode: samplingMode,
+			generateDepthBuffer: generateDepthBuffer,
+			generateStencilBuffer: generateStencilBuffer
+		};
+		
 		if (samplingMode == Texture.NEAREST_SAMPLINGMODE) {
             this.wrapU = Texture.CLAMP_ADDRESSMODE;
             this.wrapV = Texture.CLAMP_ADDRESSMODE;
         }
 		
 		if (isCube) {
-			this._texture = scene.getEngine().createRenderTargetCubeTexture(this._size, { 
-				generateMipMaps: generateMipMaps, 
-				samplingMode: samplingMode,
-				generateDepthBuffer: generateDepthBuffer,
-				generateStencilBuffer: generateStencilBuffer
-			});
+			this._texture = scene.getEngine().createRenderTargetCubeTexture(this._size, this._renderTargetOptions);
 			this.coordinatesMode = Texture.INVCUBIC_MODE;
             this._textureMatrix = Matrix.Identity();
 		}
 		else {
-			this._texture = scene.getEngine().createRenderTargetTexture(this._size, { 
-				generateMipMaps: generateMipMaps, 
-				type: type, 
-				samplingMode: samplingMode,
-				generateDepthBuffer: generateDepthBuffer,
-				generateStencilBuffer: generateStencilBuffer				
-			});
+			this._texture = scene.getEngine().createRenderTargetTexture(this._size, this._renderTargetOptions);
 		}
 		
 		// Rendering groups
@@ -214,7 +220,7 @@ import com.babylonhx.tools.EventState;
 
 	override public function scale(ratio:Float) {
 		var newSize = { width: Std.int(this._size.width * ratio), height: Std.int(this._size.height * ratio) };
-		this.resize(newSize, this._generateMipMaps);
+		this.resize(newSize);
 	}
 	
 	override public function getReflectionTextureMatrix():Matrix {
@@ -225,13 +231,13 @@ import com.babylonhx.tools.EventState;
         return super.getReflectionTextureMatrix();
     }
 
-	public function resize(size:Dynamic, ?generateMipMaps:Bool) {
+	public function resize(size:Dynamic) {
 		this.releaseInternalTexture();
 		if (this.isCube) {
-			this._texture = this.getScene().getEngine().createRenderTargetCubeTexture(size);
+			this._texture = this.getScene().getEngine().createRenderTargetCubeTexture(size, this._renderTargetOptions);
 		} 
 		else {
-			this._texture = this.getScene().getEngine().createRenderTargetTexture(size, generateMipMaps);
+			this._texture = this.getScene().getEngine().createRenderTargetTexture(size, this._renderTargetOptions);
 		}
 	}
 
@@ -422,7 +428,18 @@ import com.babylonhx.tools.EventState;
 
 	override public function clone():RenderTargetTexture {
 		var textureSize = this.getSize();
-		var newTexture = new RenderTargetTexture(this.name, textureSize.width, this.getScene(), this._generateMipMaps);
+		var newTexture = new RenderTargetTexture(
+			this.name,
+			textureSize.width,
+			this.getScene(),
+			this._renderTargetOptions.generateMipMaps,
+			this._doNotChangeAspectRatio,
+			this._renderTargetOptions.type,
+			this.isCube,
+			this._renderTargetOptions.samplingMode,
+			this._renderTargetOptions.generateDepthBuffer,
+			this._renderTargetOptions.generateStencilBuffer
+		);
 		
 		// Base texture
 		newTexture.hasAlpha = this.hasAlpha;

@@ -19,8 +19,8 @@ import com.babylonhx.tools.EventState;
 	private var _savedViewMatrix:Matrix;
 	
 
-	public function new(name:String, size:Int, scene:Scene, generateMipMaps:Bool = false) {
-		super(name, size, scene, generateMipMaps, true);
+	public function new(name:String, size:Int, scene:Scene, generateMipMaps:Bool = false, type:Int = Engine.TEXTURETYPE_UNSIGNED_INT, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, generateDepthBuffer:Bool = true) {
+		super(name, size, scene, generateMipMaps, true, type, false, samplingMode, generateDepthBuffer);
 		
 		this.onBeforeRenderObservable.add(function(val:Int = 0, es:EventState = null) {
 			Matrix.ReflectionToRef(this.mirrorPlane, this._mirrorMatrix);
@@ -48,7 +48,15 @@ import com.babylonhx.tools.EventState;
 
 	override public function clone():MirrorTexture {
 		var textureSize = this.getSize();
-		var newTexture = new MirrorTexture(this.name, textureSize.width, this.getScene(), this._generateMipMaps);
+		var newTexture = new MirrorTexture(
+            this.name,
+            textureSize.width,
+            this.getScene(),
+            this._renderTargetOptions.generateMipMaps,
+            this._renderTargetOptions.type,
+            this._renderTargetOptions.samplingMode,
+            this._renderTargetOptions.generateDepthBuffer
+        );
 		
 		// Base texture
 		newTexture.hasAlpha = this.hasAlpha;

@@ -476,7 +476,9 @@ import com.babylonhx.audio.*;
 	private var _renderDuration:Float = 0;
 	public var _spritesDuration:Float = 0;
 	private var _animationRatio:Float = 0;
-	private var _animationStartDate:Float = -1;
+	private var _animationTimeLast:Float = Math.NEGATIVE_INFINITY;
+    private var _animationTime:Float = 0;
+    public var animationTimeScale:Float = 1;
 	public var _cachedMaterial:Material;
 
 	private var _renderId:Int = 0;
@@ -1316,22 +1318,22 @@ import com.babylonhx.audio.*;
 			return;
 		}
 		
-		if (this._animationStartDate == -1) {
+		// Getting time
+        var now = Tools.Now();
+        if (this._animationTimeLast == Math.NEGATIVE_INFINITY) {
 			if (this._pendingData.length > 0) {
                 return;
             }
-			
-			this._animationStartDate = Tools.Now();
+			this._animationTimeLast = now;
 		}
 		
-		// Getting time
-		var now = Tools.Now();
-		var delay = now - this._animationStartDate;
-		
+		var deltaTime:Float = (now - this._animationTimeLast) * this.animationTimeScale;
+        this._animationTime += deltaTime;
+        this._animationTimeLast = now;
 		for (index in 0...this._activeAnimatables.length) {
 			// VK TODO: inspect this, last item in array is null sometimes
 			if(this._activeAnimatables[index] != null) {
-				this._activeAnimatables[index]._animate(delay);
+				this._activeAnimatables[index]._animate(this._animationTime);
 			}
 		}
 	}
@@ -2099,6 +2101,7 @@ import com.babylonhx.audio.*;
 				if (particleSystem.emitter.position == null || (particleSystem.emitter != null && particleSystem.emitter.isEnabled())) {
 					this._activeParticleSystems.push(particleSystem);
 					particleSystem.animate();
+					this._renderingManager.dispatchParticles(particleSystem);
 				}
 			}
 		}

@@ -23,7 +23,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.SpriteManager') class SpriteManager {
+@:expose('BABYLON.SpriteManager') class SpriteManager implements ISmartArrayCompatible {
 	
 	public var name:String;
 	public var sprites:Array<Sprite> = [];
@@ -33,6 +33,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public var isPickable = false;
 	public var cellWidth:Int;
 	public var cellHeight:Int;
+	
+	public var __smartArrayFlags:Array<Int> = [];
 	
 	/**
 	* An event triggered when the manager is disposed.

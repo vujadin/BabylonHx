@@ -105,6 +105,10 @@ class NodeCache {
 	private var _parentNode:Node;
 	private var _children:Array<Node>;
 	
+	public var __serializableMembers:Dynamic;
+	
+	public var tags:Dynamic = { };
+	
 
 	/**
 	 * @constructor

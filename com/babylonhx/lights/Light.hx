@@ -74,8 +74,6 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	private var _type:String;
 	public var type(get, never):String;
 	
-	public var __serializableMembers:Dynamic;
-	
 
 	public function new(name:String, scene:Scene) {
 		super(name, scene);

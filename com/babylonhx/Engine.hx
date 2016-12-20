@@ -303,6 +303,9 @@ typedef BufferPointer = {
 		this._caps.maxCubemapTextureSize = Gl.getParameter(GL.MAX_CUBE_MAP_TEXTURE_SIZE);
 		this._caps.maxRenderTextureSize = Gl.getParameter(GL.MAX_RENDERBUFFER_SIZE);
 		this._caps.maxVertexAttribs = Gl.getParameter(GL.MAX_VERTEX_ATTRIBS);
+		this._caps.maxVaryingVectors = Gl.getParameter(GL.MAX_VARYING_VECTORS);
+        this._caps.maxFragmentUniformVectors = Gl.getParameter(GL.MAX_FRAGMENT_UNIFORM_VECTORS);
+        this._caps.maxVertexUniformVectors = Gl.getParameter(GL.MAX_VERTEX_UNIFORM_VECTORS);
 		
 		// Infos
 		this._glVersion = Gl.getParameter(GL.VERSION);

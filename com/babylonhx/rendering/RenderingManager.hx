@@ -4,6 +4,7 @@ import com.babylonhx.cameras.Camera;
 import com.babylonhx.math.Color4;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.SubMesh;
+import com.babylonhx.sprites.SpriteManager;
 import com.babylonhx.particles.ParticleSystem;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.Tools;
@@ -30,17 +31,12 @@ import com.babylonhx.tools.Tools;
 	private var _depthStencilBufferAlreadyCleaned:Bool;
 	
 	private var _currentIndex:Int;
-    private var _currentActiveMeshes:Array<AbstractMesh>;
-    private var _currentRenderParticles:Bool;
-    private var _currentRenderSprites:Bool;
 	
 	private var _autoClearDepthStencil:Array<Map<String, Bool>> = [];	// original Array<RenderingManagerAutoClearOptions>
 	private var _customOpaqueSortCompareFn:Array<SubMesh->SubMesh->Int> = [];
 	private var _customAlphaTestSortCompareFn:Array<SubMesh->SubMesh->Int> = [];
 	private var _customTransparentSortCompareFn:Array<SubMesh->SubMesh->Int> = [];
 	private var _renderinGroupInfo:RenderingGroupInfo = null;
-	
-	private var _activeCamera:Camera;
 	
 
 	public function new(scene:Scene) {
@@ -51,53 +47,6 @@ import com.babylonhx.tools.Tools;
 		}
 	}
 
-	private function _renderParticles(index:Int, activeMeshes:Array<AbstractMesh>) {
-		if (this._scene._activeParticleSystems.length == 0) {
-			return;
-		}
-		
-		// Particles
-		_activeCamera = this._scene.activeCamera;
-		//this._scene._particlesDuration.beginMonitoring();
-		for (particleIndex in 0...this._scene._activeParticleSystems.length) {
-			var particleSystem:ParticleSystem = cast this._scene._activeParticleSystems.data[particleIndex];
-			
-			if (particleSystem.renderingGroupId != index) {
-				continue;
-			}
-			
-			if ((_activeCamera.layerMask & particleSystem.layerMask) == 0) {
-                continue;
-            }
-			
-			this._clearDepthStencilBuffer();
-			
-			if (particleSystem.emitter.position == null || activeMeshes == null || activeMeshes.indexOf(particleSystem.emitter) != -1) {
-				this._scene._activeParticles += particleSystem.render();
-			}
-		}
-		//this._scene._particlesDuration.endMonitoring(false);
-	}
-
-	private function _renderSprites(index:Int) {
-		if (!this._scene.spritesEnabled || this._scene.spriteManagers.length == 0) {
-			return;
-		}
-		
-		// Sprites 
-		_activeCamera = this._scene.activeCamera;
-		//this._scene._spritesDuration.beginMonitoring();
-		for (id in 0...this._scene.spriteManagers.length) {
-			var spriteManager = this._scene.spriteManagers[id];
-			
-			if (spriteManager.renderingGroupId == index && ((_activeCamera.layerMask & spriteManager.layerMask) != 0)) {
-				this._clearDepthStencilBuffer();
-				spriteManager.render();
-			}
-		}
-		//this._scene._spritesDuration.endMonitoring(false);
-	}
-
 	inline private function _clearDepthStencilBuffer(depth:Bool = true, stencil:Bool = true) {
 		if (this._depthStencilBufferAlreadyCleaned) {
 			return;
@@ -105,16 +54,6 @@ import com.babylonhx.tools.Tools;
 		
 		this._scene.getEngine().clear(0, false, depth, stencil);
 		this._depthStencilBufferAlreadyCleaned = true;		
-	}
-	
-	private function _renderSpritesAndParticles() {
-		if (this._currentRenderSprites) {
-			this._renderSprites(this._currentIndex);
-		}
-		
-		if (this._currentRenderParticles) {
-			this._renderParticles(this._currentIndex, this._currentActiveMeshes);
-		}
 	}
 
 	public function render(customRenderFunction:SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void = null, activeMeshes:Array<AbstractMesh>, renderParticles:Bool, renderSprites:Bool) {
@@ -130,12 +69,16 @@ import com.babylonhx.tools.Tools;
 			info.camera = this._scene.activeCamera;
 		}
 		
-		this._currentActiveMeshes = activeMeshes;
-		this._currentRenderParticles = renderParticles;
-		this._currentRenderSprites = renderSprites;
+		// Dispatch sprites
+        if (renderSprites) {
+            for (index in 0...this._scene.spriteManagers.length) {
+                var manager = this._scene.spriteManagers[index];
+                this.dispatchSprites(manager);
+            }
+        }
 		
-		var index = RenderingManager.MIN_RENDERINGGROUPS;
-		while (index < RenderingManager.MAX_RENDERINGGROUPS) {
+		// Render
+		for (index in RenderingManager.MIN_RENDERINGGROUPS...RenderingManager.MAX_RENDERINGGROUPS) {
 			this._depthStencilBufferAlreadyCleaned = index == RenderingManager.MIN_RENDERINGGROUPS;
 			var renderingGroup = this._renderingGroups[index];
 			
@@ -164,17 +107,13 @@ import com.babylonhx.tools.Tools;
 					observable.notifyObservers(info, renderingGroupMask);
 				}
 				
-				if (renderingGroup.onBeforeTransparentRendering == null) {
-					renderingGroup.onBeforeTransparentRendering = this._renderSpritesAndParticles;
-				}
-				
 				// Fire PRETRANSPARENT stage
 				if (observable != null) {
 					info.renderStage = RenderingGroupInfo.STAGE_PRETRANSPARENT;
 					observable.notifyObservers(info, renderingGroupMask);
 				}
 				
-				renderingGroup.render(customRenderFunction);
+				renderingGroup.render(customRenderFunction, renderSprites, renderParticles, activeMeshes);
 				
 				// Fire POSTTRANSPARENT stage
 				if (observable != null) {
@@ -182,21 +121,6 @@ import com.babylonhx.tools.Tools;
 					observable.notifyObservers(info, renderingGroupMask);
 				}
 			} 
-			else {
-				this._renderSpritesAndParticles();
-				
-				if (observable != null) {
-					var renderingGroupMask:Int = cast Math.pow(2, index);
-					info.renderStage = RenderingGroupInfo.STAGE_PRECLEAR;
-					info.renderingGroupId = index;
-					observable.notifyObservers(info, renderingGroupMask);
-					
-					info.renderStage = RenderingGroupInfo.STAGE_POSTTRANSPARENT;
-					observable.notifyObservers(info, renderingGroupMask);
-				}
-			}
-			
-			++index;
 		}
 	}
 
@@ -209,10 +133,7 @@ import com.babylonhx.tools.Tools;
 		}
 	}
 
-	public function dispatch(subMesh:SubMesh) {
-		var mesh = subMesh.getMesh();
-		var renderingGroupId = mesh.renderingGroupId;
-		
+	private function _prepareRenderingGroup(renderingGroupId:Int) {
 		if (this._renderingGroups[renderingGroupId] == null) {
 			this._renderingGroups[renderingGroupId] = new RenderingGroup(renderingGroupId, this._scene,
 				this._customOpaqueSortCompareFn[renderingGroupId],
@@ -220,9 +141,32 @@ import com.babylonhx.tools.Tools;
                 this._customTransparentSortCompareFn[renderingGroupId]
 			);
 		}
+	}
+	
+	public function dispatchSprites(spriteManager:SpriteManager) {
+        var renderingGroupId = spriteManager.renderingGroupId;
+		
+        this._prepareRenderingGroup(renderingGroupId);
+		
+        this._renderingGroups[renderingGroupId].dispatchSprites(spriteManager);
+    }
+
+    public function dispatchParticles(particleSystem:ParticleSystem) {
+        var renderingGroupId = particleSystem.renderingGroupId;
+		
+        this._prepareRenderingGroup(renderingGroupId);
+		
+        this._renderingGroups[renderingGroupId].dispatchParticles(particleSystem);
+    }
+
+    public function dispatch(subMesh:SubMesh) {
+        var mesh = subMesh.getMesh();
+        var renderingGroupId = mesh.renderingGroupId;
+		
+        this._prepareRenderingGroup(renderingGroupId);
 		
 		this._renderingGroups[renderingGroupId].dispatch(subMesh);
-	}
+    }
 	
 	/**
 	 * Overrides the default sort function applied in the renderging group to prepare the meshes.

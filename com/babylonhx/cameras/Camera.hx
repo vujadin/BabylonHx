@@ -120,8 +120,6 @@ import com.babylonhx.animations.Animation;
 	public var _getViewMatrix:Void->Matrix;
 	public var getProjectionMatrix:Null<Bool>->Matrix;
 	
-	public var __serializableMembers:Dynamic;
-	
 	
 	#if purejs
 	private var eventPrefix:String = "mouse";

@@ -5,6 +5,8 @@ import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.materials.Material;
+import com.babylonhx.sprites.SpriteManager;
+import com.babylonhx.particles.ParticleSystem;
 
 
 /**
@@ -17,9 +19,11 @@ import com.babylonhx.materials.Material;
 	public var index:Int;
 	
 	private var _scene:Scene;
-	private var _opaqueSubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>();
-	private var _transparentSubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>();
-	private var _alphaTestSubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>();
+	private var _opaqueSubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>(256);
+	private var _transparentSubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>(256);
+	private var _alphaTestSubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>(256);
+	private var _particleSystems:SmartArray<ParticleSystem> = new SmartArray<ParticleSystem>(256);
+	private var _spriteManagers:SmartArray<SpriteManager> = new SmartArray<SpriteManager>(256);
 	private var _activeVertices:Int = 0;
 	
 	private var _opaqueSortCompareFn:SubMesh->SubMesh->Int;
@@ -107,32 +111,37 @@ import com.babylonhx.materials.Material;
 	/**
      * Render all the sub meshes contained in the group.
      * @param customRenderFunction Used to override the default render behaviour of the group.
-     * @returns true if rendered some submeshes.
      */
-	public function render(?customRenderFunction:SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void):Bool {
+	public function render(?customRenderFunction:SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void, renderSprites:Bool, renderParticles:Bool, activeMeshes:Array<AbstractMesh>) {
 		if (customRenderFunction != null) {
 			customRenderFunction(this._opaqueSubMeshes, this._alphaTestSubMeshes, this._transparentSubMeshes);
 			
-			return true;
-		}
-		
-		if (this._opaqueSubMeshes.length == 0 && this._alphaTestSubMeshes.length == 0 && this._transparentSubMeshes.length == 0) {
-			if (this.onBeforeTransparentRendering != null) {
-                this.onBeforeTransparentRendering();
-            }
-			
-			return false;
+			return;
 		}
 		
 		var engine = this._scene.getEngine();
 		
 		// Opaque
-		this._renderOpaque(this._opaqueSubMeshes);
+		if (this._opaqueSubMeshes.length != 0) {
+			this._renderOpaque(this._opaqueSubMeshes);
+		}
 		
 		// Alpha test
-		engine.setAlphaTesting(true);
-		this._renderAlphaTest(this._alphaTestSubMeshes);
-		engine.setAlphaTesting(false);
+		if (this._alphaTestSubMeshes.length != 0) {
+			engine.setAlphaTesting(true);
+			this._renderAlphaTest(this._alphaTestSubMeshes);
+			engine.setAlphaTesting(false);
+		}
+		
+		// Sprites
+		if (renderSprites) {
+			this._renderSprites();
+		}
+		
+		// Particles
+		if (renderParticles) {
+			this._renderParticles(activeMeshes);
+		}
 		
 		if (this.onBeforeTransparentRendering != null) {
 			this.onBeforeTransparentRendering();
@@ -143,8 +152,6 @@ import com.babylonhx.materials.Material;
 			this._renderTransparent(this._transparentSubMeshes);
 			engine.setAlphaMode(Engine.ALPHA_DISABLE);
 		}
-		
-		return true;
 	}
 	
 	/**
@@ -274,6 +281,8 @@ import com.babylonhx.materials.Material;
 		this._opaqueSubMeshes.reset();
 		this._transparentSubMeshes.reset();
 		this._alphaTestSubMeshes.reset();
+		this._particleSystems.reset();
+        this._spriteManagers.reset();
 	}
 
 	static var material:Material;
@@ -295,6 +304,56 @@ import com.babylonhx.materials.Material;
 		else {
 			this._opaqueSubMeshes.push(subMesh); // Opaque
 		}
+	}
+	
+	inline public function dispatchSprites(spriteManager:SpriteManager) {
+		this._spriteManagers.push(spriteManager);
+	}
+
+	inline public function dispatchParticles(particleSystem:ParticleSystem) {
+		this._particleSystems.push(particleSystem);
+	}
+
+	private function _renderParticles(activeMeshes:Array<AbstractMesh>) {
+		if (this._particleSystems.length == 0) {
+			return;
+		}
+		
+		// Particles
+		var activeCamera = this._scene.activeCamera;
+		//this._scene._particlesDuration.beginMonitoring();
+		for (particleIndex in 0...this._scene._activeParticleSystems.length) {
+			var particleSystem = this._scene._activeParticleSystems.data[particleIndex];
+			
+			if ((activeCamera.layerMask & particleSystem.layerMask) == 0) {
+				continue;
+			}
+			if (particleSystem.emitter.position == null || activeMeshes == null || activeMeshes.indexOf(particleSystem.emitter) != -1) {
+				//this._scene._activeParticles.addCount(particleSystem.render(), false);
+				particleSystem.render();
+			}
+		}
+		
+		//this._scene._particlesDuration.endMonitoring(false);
+	}
+
+	private function _renderSprites() {
+		if (!this._scene.spritesEnabled || this._spriteManagers.length == 0) {
+			return;
+		}
+		
+		// Sprites       
+		var activeCamera = this._scene.activeCamera;
+		//this._scene._spritesDuration.beginMonitoring();
+		for (id in 0...this._spriteManagers.length) {
+			var spriteManager = this._scene.spriteManagers[id];
+			
+			if (((activeCamera.layerMask & spriteManager.layerMask) != 0)) {
+				spriteManager.render();
+			}
+		}
+		
+		//this._scene._spritesDuration.endMonitoring(false);
 	}
 	
 }

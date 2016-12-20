@@ -20,6 +20,9 @@ typedef IAMethods = {
 	public var maxCubemapTextureSize:Int;
 	public var maxRenderTextureSize:Null<Int>;
 	public var maxVertexAttribs:Int;
+	public var maxVaryingVectors:Int;
+    public var maxVertexUniformVectors:Int;
+    public var maxFragmentUniformVectors:Int;
 	public var standardDerivatives:Null<Bool>;
 	public var s3tc:Dynamic;
 	public var textureFloat:Null<Bool>;
