@@ -202,7 +202,7 @@ import com.babylonhx.tools.EventState;
 			this._scene.getEngine(), false,
 			"#define SAMPLES " + numSamples);
 			
-		this._ssaoPostProcess.onApply = function(effect:Effect, es:EventState = null) {
+		this._ssaoPostProcess.onApply = function(effect:Effect, _) {
 			if (this._firstUpdate) {
 				effect.setArray3("sampleSphere", sampleSphere);
 				effect.setFloat("samplesFactor", samplesFactor);
@@ -226,7 +226,7 @@ import com.babylonhx.tools.EventState;
 													   ratio, null, Texture.BILINEAR_SAMPLINGMODE,
 													   this._scene.getEngine(), false);
 													   
-		this._ssaoCombinePostProcess.onApply = function(effect:Effect, es:EventState = null) {
+		this._ssaoCombinePostProcess.onApply = function(effect:Effect, _) {
 			effect.setTextureFromPostProcess("originalColor", this._originalColorPostProcess);
 		};
 	}

@@ -248,4 +248,8 @@ class SerializationHelper {
         return generateSerializableMember(6, sourceName); // mesh reference member
     }
 	
+	static public function serializeAsColorCurves(?sourceName:String) {
+        return generateSerializableMember(7, sourceName); // color curves
+    }
+	
 }

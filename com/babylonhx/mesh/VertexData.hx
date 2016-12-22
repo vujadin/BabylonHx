@@ -1398,11 +1398,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		
 		var sideOrientation:Int = options.sideOrientation != null ? options.sideOrientation : Mesh.DEFAULTSIDE;
 		
-		var buildPositionsAndNormals = function(radius:Float = 1, height:Float = 1, segmentsW:Int = 1, segmentsH:Int = 1, yUp:Bool = true):Map<String, Array<Float>> {
-			var vertexPositionData = new Float32Array((segmentsH + 1) * (segmentsW + 1) * 3);
-			var vertexNormalData = new Float32Array((segmentsH + 1) * (segmentsW + 1) * 3);
-			var vertexTangentData = new Float32Array((segmentsH + 1) * (segmentsW + 1) * 3);
-			
+		var buildPositionsAndNormals = function(radius:Float = 1, height:Float = 1, segmentsW:Int = 1, segmentsH:Int = 1, yUp:Bool = true):Map<String, Array<Float>> {			
 			var vertexPositionData:Array<Float> = [];
 			var vertexNormalData:Array<Float> = [];
 			
@@ -1517,11 +1513,6 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			return indices;
 		}
 		
-		/**
-		 * 构建uv
-		 * @param segmentsW 横向分割数
-		 * @param segmentsH 纵向分割数
-		 */
 		var buildUVs = function(segmentsW:Int = 1, segmentsH:Int = 1):Array<Float> {
 			var data:Array<Float> = [];
 			var index:Int = 0;
