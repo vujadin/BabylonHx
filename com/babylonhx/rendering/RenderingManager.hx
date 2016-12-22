@@ -82,45 +82,46 @@ import com.babylonhx.tools.Tools;
 			this._depthStencilBufferAlreadyCleaned = index == RenderingManager.MIN_RENDERINGGROUPS;
 			var renderingGroup = this._renderingGroups[index];
 			
+			if (renderingGroup == null && observable == null) {
+                continue;
+			}
+			
 			this._currentIndex = index;
 			
-			if (renderingGroup != null) {
-				var renderingGroupMask:Int = 0;
-				
-				// Fire PRECLEAR stage
-				if (observable != null) {
-					renderingGroupMask = cast Math.pow(2, index);
-					info.renderStage = RenderingGroupInfo.STAGE_PRECLEAR;
-					info.renderingGroupId = index;
-					observable.notifyObservers(info, renderingGroupMask);
-				}
-				
-				// Clear depth/stencil if needed
-				var autoClear = this._autoClearDepthStencil[index];
-                if (autoClear != null && autoClear["autoClear"]) {
-                    this._clearDepthStencilBuffer(autoClear["depth"], autoClear["stencil"]);
-				}
-				
+			var renderingGroupMask:Int = 0;
+			
+			// Fire PRECLEAR stage
+			if (observable != null) {
+				renderingGroupMask = Std.int(Math.pow(2, index));
+				info.renderStage = RenderingGroupInfo.STAGE_PRECLEAR;
+				info.renderingGroupId = index;
+				observable.notifyObservers(info, renderingGroupMask);
+			}
+			
+			// Clear depth/stencil if needed
+			var autoClear = this._autoClearDepthStencil[index];
+			if (autoClear != null && autoClear["autoClear"]) {
+				this._clearDepthStencilBuffer(autoClear["depth"], autoClear["stencil"]);
+			}
+			
+			if (observable != null) {
 				// Fire PREOPAQUE stage
-				if (observable != null) {
-					info.renderStage = RenderingGroupInfo.STAGE_PREOPAQUE;
-					observable.notifyObservers(info, renderingGroupMask);
-				}
-				
+				info.renderStage = RenderingGroupInfo.STAGE_PREOPAQUE;
+				observable.notifyObservers(info, renderingGroupMask);
 				// Fire PRETRANSPARENT stage
-				if (observable != null) {
-					info.renderStage = RenderingGroupInfo.STAGE_PRETRANSPARENT;
-					observable.notifyObservers(info, renderingGroupMask);
-				}
-				
+				info.renderStage = RenderingGroupInfo.STAGE_PRETRANSPARENT;
+				observable.notifyObservers(info, renderingGroupMask);
+			}
+			
+			if (renderingGroup != null) {
 				renderingGroup.render(customRenderFunction, renderSprites, renderParticles, activeMeshes);
-				
-				// Fire POSTTRANSPARENT stage
-				if (observable != null) {
-					info.renderStage = RenderingGroupInfo.STAGE_POSTTRANSPARENT;
-					observable.notifyObservers(info, renderingGroupMask);
-				}
-			} 
+			}
+			
+			// Fire POSTTRANSPARENT stage
+			if (observable != null) {
+				info.renderStage = RenderingGroupInfo.STAGE_POSTTRANSPARENT;
+				observable.notifyObservers(info, renderingGroupMask);
+			}
 		}
 	}
 

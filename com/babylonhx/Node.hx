@@ -8,7 +8,6 @@ import com.babylonhx.math.Quaternion;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
-import com.babylonhx.Node.NodeCache;
 
 /**
  * ...
@@ -109,7 +108,7 @@ class NodeCache {
 	
 	public var tags:Dynamic = { };
 	
-
+	
 	/**
 	 * @constructor
 	 * @param {string} name - the name and id to be given to this node

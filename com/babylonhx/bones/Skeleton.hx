@@ -159,6 +159,7 @@ import haxe.ds.Vector;
 		if (this._ranges[name] != null || source.getAnimationRange(name) == null){
 		   return false; 
 		}
+		
 		var ret:Bool = true;
 		var frameOffset:Float = this._getHighestAnimationFrame() + 1;
 		
@@ -170,7 +171,7 @@ import haxe.ds.Vector;
 		}
 		
 		if (this.bones.length != sourceBones.length){
-			trace("copyAnimationRange: this rig has $this.bones.length bones, while source as $sourceBones.length");
+			trace('copyAnimationRange: this rig has ${this.bones.length} bones, while source as ${sourceBones.length}');
 			ret = false;
 		}
 		
@@ -183,10 +184,11 @@ import haxe.ds.Vector;
 				ret = ret && this.bones[i].copyAnimationRange(sourceBone, name, cast frameOffset, rescaleAsRequired, skelDimensionsRatio);
 			}
 			else {
-				trace("copyAnimationRange: not same rig, missing source bone " + boneName);
+				trace('copyAnimationRange: not same rig, missing source bone ${boneName}');
 				ret = false;
 			}
 		}
+		
 		// do not call createAnimationRange(), since it also is done to bones, which was already done
 		var range = source.getAnimationRange(name);
 		this._ranges[name] = new AnimationRange(name, range.from + frameOffset, range.to + frameOffset);
@@ -362,7 +364,7 @@ import haxe.ds.Vector;
 	public function computeAbsoluteTransforms(forceUpdate:Bool = false) {
 		var renderId = this._scene.getRenderId();
 		
-		if (this._lastAbsoluteTransformsUpdateId != renderId || forceUpdate ) {
+		if (this._lastAbsoluteTransformsUpdateId != renderId || forceUpdate) {
 			this.bones[0].computeAbsoluteTransforms();
 			this._lastAbsoluteTransformsUpdateId = renderId;
 		}
@@ -372,7 +374,7 @@ import haxe.ds.Vector;
 	public function getPoseMatrix():Matrix {            
 		var poseMatrix:Matrix = null;
 		
-		if (this._meshesWithPoseMatrix.length > 0){
+		if (this._meshesWithPoseMatrix.length > 0) {
 			poseMatrix = this._meshesWithPoseMatrix[0].getPoseMatrix();
 		}
 		

@@ -76,6 +76,7 @@ typedef BufferPointer = {
 	public static inline var ALPHA_MULTIPLY:Int = 4;
 	public static inline var ALPHA_MAXIMIZED:Int = 5;
 	public static inline var ALPHA_ONEONE:Int = 6;
+	public static inline var ALPHA_PREMULTIPLIED:Int = 7;
 
 	public static inline var DELAYLOADSTATE_NONE:Int = 0;
 	public static inline var DELAYLOADSTATE_LOADED:Int = 1;
@@ -1267,8 +1268,8 @@ typedef BufferPointer = {
 	static var _order:Int = 0;
 	static var _vertexBuffer:VertexBuffer = null;
 	static var _attributes:Array<String> = null;
-	inline public function bindBuffers(vertexBuffers:Map<String, VertexBuffer>, indexBuffer:WebGLBuffer, effect:Effect) {
-		if (this._cachedVertexBuffers != vertexBuffers || this._cachedEffectForVertexBuffers != effect) {
+	public function bindBuffers(vertexBuffers:Map<String, VertexBuffer>, indexBuffer:WebGLBuffer, effect:Effect) {
+		//if (this._cachedVertexBuffers != vertexBuffers || this._cachedEffectForVertexBuffers != effect) {
 			this._cachedVertexBuffers = vertexBuffers;
 			this._cachedEffectForVertexBuffers = effect;
 			
@@ -1304,13 +1305,13 @@ typedef BufferPointer = {
 					}
 				}
 			}
-		}
+		//}
 		
-		if (indexBuffer != null && this._cachedIndexBuffer != indexBuffer) {
+		//if (indexBuffer != null && this._cachedIndexBuffer != indexBuffer) {
 			this._cachedIndexBuffer = indexBuffer;
 			this.bindIndexBuffer(indexBuffer);
 			this._uintIndicesCurrentlySet = indexBuffer.is32Bits;
-		}
+		//}
 	}
 	
 	public function unbindInstanceAttributes() {
@@ -1779,6 +1780,10 @@ typedef BufferPointer = {
 		switch (mode) {
 			case Engine.ALPHA_DISABLE:
 				this._alphaState.alphaBlend = false;
+				
+			case Engine.ALPHA_PREMULTIPLIED:
+                this._alphaState.setAlphaBlendFunctionParameters(GL.ONE, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE_MINUS_SRC_ALPHA);
+                this._alphaState.alphaBlend = true;
 				
 			case Engine.ALPHA_COMBINE:
 				this._alphaState.setAlphaBlendFunctionParameters(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA, GL.ONE, GL.ONE);
@@ -2872,10 +2877,7 @@ typedef BufferPointer = {
 	}
 
 	// Dispose
-	public function dispose() {
-		// TODO
-		//this.hideLoadingUI();
-		
+	public function dispose() {		
 		this.stopRenderLoop();
 		
 		// Release scenes
@@ -2891,21 +2893,25 @@ typedef BufferPointer = {
 		}
 		
 		// Unbind
-		for (i in 0...this._vertexAttribArraysEnabled.length) {
-			if (i >= this._caps.maxVertexAttribs || !this._vertexAttribArraysEnabled[i]) {
-				continue;
-			}
-			
-			Gl.disableVertexAttribArray(i);
-		}
+		this.unbindAllAttributes();
 	}
 	
 	private function _canRenderToFloatTexture():Bool {
-		return this._canRenderToTextureOfType(Engine.TEXTURETYPE_FLOAT, 'OES_texture_float');
+		try {
+			return this._canRenderToTextureOfType(Engine.TEXTURETYPE_FLOAT, 'OES_texture_float');
+		}
+		catch (e:Dynamic) {
+			return false;
+		}
 	}
 
 	private function _canRenderToHalfFloatTexture():Bool {
-		return this._canRenderToTextureOfType(Engine.TEXTURETYPE_HALF_FLOAT, 'OES_texture_half_float');
+		try {
+			return this._canRenderToTextureOfType(Engine.TEXTURETYPE_HALF_FLOAT, 'OES_texture_half_float');
+		}
+		catch (e:Dynamic) {
+			return false;
+		}
 	}
 
 	// Thank you : http://stackoverflow.com/questions/28827511/webgl-ios-render-to-floating-point-texture

@@ -699,6 +699,46 @@ import haxe.ds.Vector;
 		
 		return result;
 	}
+	
+	public static function LerpToRef(startValue:Matrix, endValue:Matrix, gradient:Float, result:Matrix) {            
+		var startm = startValue.m;
+		var endm = endValue.m;
+		var resultm = result.m;
+		
+		var m0 = startm[0] * (1.0 - gradient) + endm[0] * gradient;
+		var m1 = startm[1] * (1.0 - gradient) + endm[1] * gradient;
+		var m2 = startm[2] * (1.0 - gradient) + endm[2] * gradient;
+		var m3 = startm[3] * (1.0 - gradient) + endm[3] * gradient;
+		var m4 = startm[4] * (1.0 - gradient) + endm[4] * gradient;
+		var m5 = startm[5] * (1.0 - gradient) + endm[5] * gradient;
+		var m6 = startm[6] * (1.0 - gradient) + endm[6] * gradient;
+		var m7 = startm[7] * (1.0 - gradient) + endm[7] * gradient;
+		var m8 = startm[8] * (1.0 - gradient) + endm[8] * gradient;
+		var m9 = startm[9] * (1.0 - gradient) + endm[9] * gradient;
+		var m10 = startm[10] * (1.0 - gradient) + endm[10] * gradient;
+		var m11 = startm[11] * (1.0 - gradient) + endm[11] * gradient;
+		var m12 = startm[12] * (1.0 - gradient) + endm[12] * gradient;
+		var m13 = startm[13] * (1.0 - gradient) + endm[13] * gradient;
+		var m14 = startm[14] * (1.0 - gradient) + endm[14] * gradient;
+		var m15 = startm[15] * (1.0 - gradient) + endm[15] * gradient;
+		
+		resultm[0] = m0;
+		resultm[1] = m1;
+		resultm[2] = m2;
+		resultm[3] = m3;
+		resultm[4] = m4;
+		resultm[5] = m5;
+		resultm[6] = m6;
+		resultm[7] = m7;
+		resultm[8] = m8;
+		resultm[9] = m9;
+		resultm[10] = m10;
+		resultm[11] = m11;
+		resultm[12] = m12;
+		resultm[13] = m13;
+		resultm[14] = m14;
+		resultm[15] = m15;		
+	}
 
 	public static function DecomposeLerp(startValue:Matrix, endValue:Matrix, gradient:Float):Matrix {
 		var startScale = new Vector3(0, 0, 0);
@@ -797,15 +837,29 @@ import haxe.ds.Vector;
 	}
 
 	inline public static function OrthoLH(width:Float, height:Float, znear:Float, zfar:Float):Matrix {
-		var hw = 2.0 / width;
-		var hh = 2.0 / height;
-		var id = 1.0 / (zfar - znear);
-		var nid = znear / (znear - zfar);
+		var matrix = Matrix.Zero();
 		
-		return Matrix.FromValues(hw, 0, 0, 0,
-			0, hh, 0, 0,
-			0, 0, id, 0,
-			0, 0, nid, 1);
+		Matrix.OrthoLHToRef(width, height, znear, zfar, matrix);
+		
+		return matrix;
+	}
+	
+	public static function OrthoLHToRef(width:Float, height:Float, znear:Float, zfar:Float, result:Matrix) {
+		var n = znear;
+		var f = zfar;
+		
+		var a = 2.0 / width;
+		var b = 2.0 / height;
+		var c = 2.0 / (f - n);
+		var d = -(f + n) / (f - n);
+		
+		Matrix.FromValuesToRef(
+			a, 0, 0, 0,
+			0, b, 0, 0,
+			0, 0, c, 0,
+			0, 0, d, 1,
+			result
+		);
 	}
 
 	inline public static function OrthoOffCenterLH(left:Float, right:Float, bottom:Float, top:Float, znear:Float, zfar:Float):Matrix {
@@ -817,23 +871,23 @@ import haxe.ds.Vector;
 	}
 
 	public static function OrthoOffCenterLHToRef(left:Float, right:Float, bottom:Float, top:Float, znear:Float, zfar:Float, result:Matrix) {
-		var rm = result.m;
-		rm[0] = 2.0 / (right - left);
-		rm[1] = 0;
-		rm[2] = 0;
-		rm[3] = 0;
-		rm[5] = 2.0 / (top - bottom);
-		rm[4] = 0;
-		rm[6] = 0;
-		rm[7] = 0;
-		rm[10] = 1.0 / (zfar - znear);
-		rm[8] = 0;
-		rm[9] = 0;
-		rm[11] = 0;
-		rm[12] = (left + right) / (left - right);
-		rm[13] = (top + bottom) / (bottom - top);
-		rm[14] = -znear / (zfar - znear);
-		rm[15] = 1.0;
+		var n = znear;
+		var f = zfar;
+		
+		var a = 2.0 / (right - left);
+		var b = 2.0 / (top - bottom);
+		var c = 2.0 / (f - n);
+		var d = -(f + n) / (f - n);
+		var i0 = (left + right) / (left - right);
+        var i1 = (top + bottom) / (bottom - top);
+		
+		Matrix.FromValuesToRef(
+			a, 0, 0, 0,
+			0, b, 0, 0,
+			0, 0, c, 0,
+			i0, i1, d, 1,
+			result
+		);
 	}
 	
 	public static function OrthoOffCenterRH(left:Float, right:Float, bottom:Float, top:Float, znear:Float, zfar:Float):Matrix {
@@ -852,22 +906,21 @@ import haxe.ds.Vector;
 	inline public static function PerspectiveLH(width:Float, height:Float, znear:Float, zfar:Float):Matrix {
 		var matrix = Matrix.Zero();
 		
-		matrix.m[0] = (2.0 * znear) / width;
-		matrix.m[1] = 0.0;
-		matrix.m[2] = 0.0;
-		matrix.m[3] = 0.0;
-		matrix.m[5] = (2.0 * znear) / height;
-		matrix.m[4] = 0.0;
-		matrix.m[6] = 0.0;
-		matrix.m[7] = 0.0;
-		matrix.m[10] = -zfar / (znear - zfar);
-		matrix.m[8] = 0.0;
-		matrix.m[9] = 0.0;
-		matrix.m[11] = 1.0;
-		matrix.m[12] = 0.0;
-		matrix.m[13] = 0.0;
-		matrix.m[15] = 0.0;
-		matrix.m[14] = (znear * zfar) / (znear - zfar);
+		var n = znear;
+		var f = zfar;
+		
+		var a = 2.0 * n / width;
+		var b = 2.0 * n / height;
+		var c = (f + n)/(f - n);
+		var d = -2.0 * f * n / (f - n);
+		
+		Matrix.FromValuesToRef(
+			a, 0, 0, 0,
+			0, b, 0, 0,
+			0, 0, c, 1,
+			0, 0, d, 0,
+			matrix
+		);
 		
 		return matrix;
 	}
@@ -881,37 +934,22 @@ import haxe.ds.Vector;
 	}
 
 	public static function PerspectiveFovLHToRef(fov:Float, aspect:Float, znear:Float, zfar:Float, result:Matrix, isVerticalFovFixed:Bool = true) {
-		var tan = 1.0 / (Math.tan(fov * 0.5));
+		var n = znear;
+		var f = zfar;
 		
-		if (isVerticalFovFixed) {
-			result.m[0] = tan / aspect;
-		} 
-		else {
-			result.m[0] = tan;
-		}
+		var t = 1.0 / (Math.tan(fov * 0.5));
+		var a = isVerticalFovFixed ? (t / aspect) : t;
+		var b = isVerticalFovFixed ? t : (t * aspect);
+		var c = (f + n) / (f - n);
+		var d = -2.0 * f * n / (f - n);
 		
-		result.m[1] = 0.0;
-		result.m[2] = 0.0;
-		result.m[3] = 0.0;
-		
-		if (isVerticalFovFixed) { 
-			result.m[5] = tan; 
-		} 
-		else { 
-			result.m[5] = tan * aspect; 
-		}
-			
-		result.m[4] = 0.0;
-		result.m[6] = 0.0;
-		result.m[7] = 0.0;
-		result.m[8] = 0.0;
-		result.m[9] = 0.0;
-		result.m[10] = -zfar / (znear - zfar);
-		result.m[11] = 1.0;
-		result.m[12] = 0.0;
-		result.m[13] = 0.0;
-		result.m[15] = 0.0;
-		result.m[14] = (znear * zfar) / (znear - zfar);
+		Matrix.FromValuesToRef(
+			a, 0, 0, 0,
+			0, b, 0, 0,
+			0, 0, c, 1,
+			0, 0, d, 0,
+			result
+		);
 	}
 	
 	public static function PerspectiveFovRH(fov:Float, aspect:Float, znear:Float, zfar:Float):Matrix {
@@ -923,40 +961,31 @@ import haxe.ds.Vector;
 	}
 
 	public static function PerspectiveFovRHToRef(fov:Float, aspect:Float, znear:Float, zfar:Float, result:Matrix, isVerticalFovFixed:Bool = true) {
-		var tan = 1.0 / (Math.tan(fov * 0.5));
+		//alternatively this could be expressed as:
+		//    m = PerspectiveFovLHToRef
+		//    m[10] *= -1.0;
+		//    m[11] *= -1.0;
 		
-		if (isVerticalFovFixed) {
-			result.m[0] = tan / aspect;
-		}
-		else {
-			result.m[0] = tan;
-		}
+		var n = znear;
+		var f = zfar;
 		
-		result.m[1] = 0;
-		result.m[2] = 0;
-		result.m[3] = 0;
+		var t = 1.0 / (Math.tan(fov * 0.5));
+		var a = isVerticalFovFixed ? (t / aspect) : t;
+		var b = isVerticalFovFixed ? t : (t * aspect);
+		var c = -(f + n) / (f - n);
+		var d = -2 * f * n / (f - n);
 		
-		if (isVerticalFovFixed) {
-			result.m[5] = tan;
-		}
-		else {
-			result.m[5] = tan * aspect;
-		}
-		
-		result.m[4] = 0;
-		result.m[6] = 0;
-		result.m[7] = 0;
-		result.m[8] = 0;
-		result.m[9] = 0;
-		result.m[10] = zfar / (znear - zfar);
-		result.m[11] = -1.0;
-		result.m[12] = 0;
-		result.m[13] = 0;
-		result.m[15] = 0;
-		result.m[14] = (znear * zfar) / (znear - zfar);
+		Matrix.FromValuesToRef(
+			a, 0, 0, 0,
+			0, b, 0, 0,
+			0, 0, c,-1,
+			0, 0, d, 0,
+			result
+		);
 	}
 
 	public static function PerspectiveFovWebVRToRef(fov:Dynamic, znear:Float, zfar:Float, result:Matrix, isVerticalFovFixed:Bool = true) {
+		// left handed
 		var upTan = Math.tan(fov.upDegrees * Math.PI / 180.0);
 		var downTan = Math.tan(fov.downDegrees * Math.PI / 180.0);
 		var leftTan = Math.tan(fov.leftDegrees * Math.PI / 180.0);
@@ -973,14 +1002,14 @@ import haxe.ds.Vector;
 		result.m[7] = 0;
 		result.m[8] = ((leftTan - rightTan) * xScale * 0.5);
 		result.m[9] = -((upTan - downTan) * yScale * 0.5);
-		//result.m[10] = -(znear + zfar) / (zfar - znear);
-		result.m[10] = -zfar / (znear - zfar);
+		result.m[10] = -(znear + zfar) / (zfar - znear);
+		//result.m[10] = -zfar / (znear - zfar);
 		result.m[11] = 1.0;
 		result.m[12] = 0;
 		result.m[13] = 0;
 		result.m[15] = 0;
-		//result.m[14] = -(2.0 * zfar * znear) / (zfar - znear);
-		result.m[14] = (znear * zfar) / (znear - zfar);
+		result.m[14] = -(2.0 * zfar * znear) / (zfar - znear);
+		//result.m[14] = (znear * zfar) / (znear - zfar);
 	}
 
 	inline public static function GetFinalMatrix(viewport:Viewport, world:Matrix, view:Matrix, projection:Matrix, zmin:Float, zmax:Float):Matrix {
@@ -1040,7 +1069,9 @@ import haxe.ds.Vector;
 
 	inline public static function Reflection(plane:Plane):Matrix {
 		var matrix = new Matrix();
+		
 		Matrix.ReflectionToRef(plane, matrix);
+		
 		return matrix;
 	}
 

@@ -345,15 +345,11 @@ import haxe.ds.Vector;
 	}
 
 	inline public static function TransformCoordinatesToRef(vector:Vector3, transformation:Matrix, result:Vector3) {
-		var vx = vector.x;
-		var vy = vector.y;
-		var vz = vector.z;
-		var tm = transformation.m;
-		var x = (vx * tm[0]) + (vy * tm[4]) + (vz * tm[8]) + tm[12];
-		var y = (vx * tm[1]) + (vy * tm[5]) + (vz * tm[9]) + tm[13];
-		var z = (vx * tm[2]) + (vy * tm[6]) + (vz * tm[10]) + tm[14];
-		var w = (vx * tm[3]) + (vy * tm[7]) + (vz * tm[11]) + tm[15];
-		
+		var x = (vector.x * transformation.m[0]) + (vector.y * transformation.m[4]) + (vector.z * transformation.m[8]) + transformation.m[12];
+		var y = (vector.x * transformation.m[1]) + (vector.y * transformation.m[5]) + (vector.z * transformation.m[9]) + transformation.m[13];
+		var z = (vector.x * transformation.m[2]) + (vector.y * transformation.m[6]) + (vector.z * transformation.m[10]) + transformation.m[14];
+		var w = (vector.x * transformation.m[3]) + (vector.y * transformation.m[7]) + (vector.z * transformation.m[11]) + transformation.m[15];
+
 		result.x = x / w;
 		result.y = y / w;
 		result.z = z / w;
@@ -425,7 +421,7 @@ import haxe.ds.Vector;
 		return new Vector3(x, y, z);
 	}
 
-	inline public static function Hermite(value1:Vector3, tangent1:Vector3, value2:Vector3, tangent2:Vector3, amount:Float):Vector3 {
+	public static function Hermite(value1:Vector3, tangent1:Vector3, value2:Vector3, tangent2:Vector3, amount:Float):Vector3 {
 		var squared = amount * amount;
 		var cubed = amount * squared;
 		var part1 = ((2.0 * cubed) - (3.0 * squared)) + 1.0;
@@ -440,7 +436,7 @@ import haxe.ds.Vector;
 		);
 	}
 
-	public static function Lerp(start:Vector3, end:Vector3, amount:Float):Vector3 {
+	inline public static function Lerp(start:Vector3, end:Vector3, amount:Float):Vector3 {
 		var result = new Vector3(0, 0, 0);
 		
 		Vector3.LerpToRef(start, end, amount, result);

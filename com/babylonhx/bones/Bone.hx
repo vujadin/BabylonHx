@@ -497,12 +497,12 @@ import com.babylonhx.animations.AnimationRange;
 	public function getPosition(space:Int = Space.LOCAL, ?mesh:AbstractMesh):Vector3 {
 		var pos = Vector3.Zero();
 		
-		this.getPositionToRef(pos, space, mesh);
+		this.getPositionToRef(space, mesh, pos);
 		
 		return pos;
 	}
 
-	public function getPositionToRef(result:Vector3, space:Int = Space.LOCAL, ?mesh:AbstractMesh) {
+	public function getPositionToRef(space:Int = Space.LOCAL, mesh:AbstractMesh, result:Vector3) {
 		if (space == Space.LOCAL) {
 			var lm = this.getLocalMatrix();
 			
@@ -531,13 +531,14 @@ import com.babylonhx.animations.AnimationRange;
 
 	public function getAbsolutePosition(?mesh:AbstractMesh):Vector3 {
 		var pos = Vector3.Zero();
-		this.getPositionToRef(pos, Space.WORLD, mesh);
+		
+		this.getPositionToRef(Space.WORLD, mesh, pos);
 		
 		return pos;
 	}
 
-	inline public function getAbsolutePositionToRef(result:Vector3, ?mesh:AbstractMesh) {
-		this.getPositionToRef(result, Space.WORLD, mesh);
+	inline public function getAbsolutePositionToRef(mesh:AbstractMesh, result:Vector3) {
+		this.getPositionToRef(Space.WORLD, mesh, result);
 	}
 
 	public function computeAbsoluteTransforms() {
@@ -588,6 +589,7 @@ import com.babylonhx.animations.AnimationRange;
 	
 	public function getDirection(localAxis:Vector3, ?mesh:AbstractMesh):Vector3 {
 		var result = Vector3.Zero();
+		
 		this.getDirectionToRef(localAxis, mesh, result);
 		
 		return result;

@@ -15,14 +15,11 @@ class BoneIKController {
 
 	public var targetMesh:AbstractMesh;
 	public var poleTargetMesh:AbstractMesh;
-	public var poleTargetBone:Bone;
-	
+	public var poleTargetBone:Bone;	
 	public var targetPosition:Vector3 = Vector3.Zero();
-    public var poleTargetPosition:Vector3 = Vector3.Zero();
-   
+    public var poleTargetPosition:Vector3 = Vector3.Zero();   
     public var poleTargetLocalOffset:Vector3 = Vector3.Zero();
-	public var poleAngle:Float = 0;
-	
+	public var poleAngle:Float = 0;	
 	public var mesh:AbstractMesh;
 	public var slerpAmount:Float = 1;
 
@@ -179,7 +176,7 @@ class BoneIKController {
 		var yaxis = this._tmpVec4;
 		var upAxis = this._tmpVec5;
 		
-		bone1.getPositionToRef(bonePos, Space.WORLD, this.mesh);
+		bone1.getAbsolutePositionToRef(this.mesh, bonePos);
 		
 		poleTarget.subtractToRef(bonePos, upAxis);
 		

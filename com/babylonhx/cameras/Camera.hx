@@ -63,7 +63,7 @@ import com.babylonhx.animations.Animation;
 	public var fov:Float = 0.8;
 	
 	@serialize()
-	public var minZ:Float = 1.0;
+	public var minZ:Float = 0.0;
 	
 	@serialize()
 	public var maxZ:Float = 10000.0;

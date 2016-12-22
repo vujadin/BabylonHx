@@ -515,7 +515,12 @@ import com.babylonhx.audio.*;
 
 	private var _viewMatrix:Matrix;
 	private var _projectionMatrix:Matrix;
+	
 	private var _frustumPlanes:Array<Plane>;
+	public var frustumPlanes(get, never):Array<Plane>;
+	public function get_frustumPlanes():Array<Plane> {
+		return _frustumPlanes;
+	}
 
 	public var _selectionOctree:Octree<AbstractMesh>;
 
