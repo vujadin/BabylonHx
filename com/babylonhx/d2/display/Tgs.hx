@@ -49,7 +49,7 @@ class Tgs {
 		this.dirtyUVT = true;
 		this.emptyUVT = (uvt == null);
 		this.useIndex = vrt.length / 3 <= 65536;	// use index array for drawing triangles
-
+		
 		var Gl = stage.Gl;
 		if(this.useIndex) {
 			this.ind = new UInt16Array (ind);
@@ -109,7 +109,7 @@ class Tgs {
 					this.uvt[i] = uvt[i];
 				}
 			}
-
+			
 			this.stage._setEBF(this.ibuf);
 			Gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, this.ind, GL.STATIC_DRAW);
 			
@@ -120,10 +120,10 @@ class Tgs {
 				Tgs.unwrapF32(ind, uvt, 2, this.uvt);
 			}
 		}
-
+		
 		this.stage._setBF(this.vbuf);
 		Gl.bufferData(GL.ARRAY_BUFFER, this.vrt, GL.STATIC_DRAW);
-
+		
 		this.stage._setBF(this.tbuf);
 		Gl.bufferData(GL.ARRAY_BUFFER, this.uvt, GL.STATIC_DRAW);
 	}
@@ -159,11 +159,11 @@ class Tgs {
 						this.uvt[2 * i + 1] *= ch; 
 					}
 				}
-
+				
 				this.stage._setBF(this.tbuf);
 				Gl.bufferSubData(GL.ARRAY_BUFFER, 0, this.uvt);
 			}
-
+			
 			this.stage._setUT(1);
 			this.stage._setTEX(bd._texture);
 		}
@@ -171,7 +171,7 @@ class Tgs {
 			this.stage._setUT(0);
 			Gl.uniform4fv(this.stage._sprg.color, this.color);
 		}
-
+		
 		this.stage._setTC(this.tbuf);
 		this.stage._setVC(this.vbuf);
 		

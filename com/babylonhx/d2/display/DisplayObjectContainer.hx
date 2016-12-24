@@ -76,7 +76,7 @@ class DisplayObjectContainer extends InteractiveObject {
 	}
 	
 	public function addChildAt(o:DisplayObject, index:Int) {
-		if (index > 0 && index < this._children.length - 1) {
+		if (index >= 0 && index <= this._children.length - 1) {
 			this._children.insert(index, o);
 			o.parent = this;
 			o._setStage(this.stage);

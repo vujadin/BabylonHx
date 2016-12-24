@@ -213,7 +213,7 @@ class Stage extends DisplayObjectContainer {
 		
 		var s:Sprite = new Sprite();
 		s.graphics.beginFill();
-		s.graphics.drawRect( -0.1, -0.1, 0.1, 0.1);
+		s.graphics.drawRect(-0.1, -0.1, 0.1, 0.1);
 		s.graphics.endFill();
 		s.x = -5000;
 		addChild(s);
@@ -355,7 +355,7 @@ class Stage extends DisplayObjectContainer {
 		this._processMouseTouch(); 
 	}
 	
-	public function _onMU(button:Int) { 
+	public function _onMU(x:Int, y:Int, button:Int) { 
 		this._smu[button] = true; 
 		this._knM = true;  
 		this._processMouseTouch();
@@ -533,16 +533,16 @@ class Stage extends DisplayObjectContainer {
 
     private function _drawScene() {	
 		//_backupGLState();
-
+		
         Gl.enable(GL.BLEND);
 		/*Gl.blendEquation(GL.FUNC_ADD);
 		Gl.blendFunc(GL.ONE, GL.ONE_MINUS_SRC_ALPHA);*/
-
+		
         Gl.enable(GL.DEPTH_TEST);
         Gl.depthFunc(GL.LEQUAL);
         Gl.disable(GL.STENCIL_TEST);
         Gl.disable(GL.CULL_FACE);
-
+		
         Gl.useProgram(this._sprg.prog);
 		
 		//	proceeding EnterFrame
