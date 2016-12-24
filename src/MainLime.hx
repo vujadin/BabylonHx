@@ -213,6 +213,8 @@ class MainLime extends Application {
 		//new samples.demos2D.box2Dtests.Box2DMain(scene);
 		//new samples.demos2D.Text(scene);
 		//new samples.demos2D.Resizable(scene);
+		//new samples.demos2D.TestEarcut(scene);
+		new samples.demos2D.JellyPhysics(scene);
 		
 		scene.stage2D.addChild(new com.babylonhx.d2.text.FPS());
 	}
