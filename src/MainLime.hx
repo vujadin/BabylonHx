@@ -18,19 +18,6 @@ import lime.ui.Window;
 import com.babylonhx.Engine;
 import com.babylonhx.Scene;
 
-import com.babylonhx.d2.display.Stage;
-import com.babylonhx.d2.display.Sprite;
-import com.babylonhx.d2.display.Graphics;
-import com.babylonhx.d2.display.Bitmap;
-import com.babylonhx.d2.display.BitmapData;
-import com.babylonhx.utils.Image;
-import com.babylonhx.tools.Tools;
-import com.babylonhx.cameras.FreeCamera;
-import com.babylonhx.math.Vector3;
-import com.babylonhx.materials.StandardMaterial;
-import com.babylonhx.materials.textures.Texture;
-import com.babylonhx.mesh.Mesh;
-
 
 /**
  * ...
@@ -54,13 +41,15 @@ class MainLime extends Application {
 		super();
 	}
 	
-	override public function onPreloadComplete():Void {
+	override public function onWindowCreate(window:Window):Void {
 		engine = new Engine(window, true);	
 		scene = new Scene(engine);
 		
 		engine.width = this.window.width;
 		engine.height = this.window.height;
-		
+	}
+	
+	override public function onPreloadComplete():Void {
 		//new samples.BasicScene(scene);
 		//new samples.BasicElements(scene);
 		//new samples.DashedLinesMesh(scene);
@@ -223,15 +212,14 @@ class MainLime extends Application {
 		for(f in engine.mouseDown) {
 			f(x, y, button);
 		}
-		scene.stage2D._onMD(cast x, cast y, button);
+		
 	}
 	
 	#if !neko
 	override function onMouseUp(window:Window, x:Float, y:Float, button:Int) {
 		for(f in engine.mouseUp) {
-			f();
+			f(x, y, button);
 		}
-		scene.stage2D._onMU(button);
 	}
 	#end
 	
@@ -239,7 +227,6 @@ class MainLime extends Application {
 		for(f in engine.mouseMove) {
 			f(x, y);
 		}
-		scene.stage2D._onMM(cast x, cast y);
 	}
 	
 	override function onMouseWheel(window:Window, deltaX:Float, deltaY:Float) {
@@ -290,9 +277,6 @@ class MainLime extends Application {
 		#if cpp
 		//hxt.advance_frame();
 		#end
-	}
-	
-	override public function render(renderer:Renderer) {
 		engine._renderLoop();
 	}
 	
