@@ -50,7 +50,7 @@ class MainLime extends Application {
 	}
 	
 	override public function onPreloadComplete():Void {
-		//new samples.BasicScene(scene);
+		new samples.BasicScene(scene);
 		//new samples.BasicElements(scene);
 		//new samples.DashedLinesMesh(scene);
 		//new samples.RotationAndScaling(scene);
@@ -175,7 +175,7 @@ class MainLime extends Application {
 		//new samples.MultiLights(scene);
 		//new samples.HighlightLayerTest(scene);
 		//new samples.PBRWithHighlight(scene);
-		new samples.BoneScaling(scene);
+		//new samples.BoneScaling(scene);
 		//new samples.MouseFollow(scene);
 		
 		//new samples.TestRot(scene);
@@ -203,7 +203,7 @@ class MainLime extends Application {
 		//new samples.demos2D.Text(scene);
 		//new samples.demos2D.Resizable(scene);
 		//new samples.demos2D.TestEarcut(scene);
-		new samples.demos2D.JellyPhysics(scene);
+		//new samples.demos2D.JellyPhysics(scene);
 		
 		scene.stage2D.addChild(new com.babylonhx.d2.text.FPS());
 	}
