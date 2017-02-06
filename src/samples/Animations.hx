@@ -80,7 +80,7 @@ class Animations {
 		
 		// Creation of a manual animation with box 2
 		//------------------------------------------
-		scene.registerBeforeRender(function () {			
+		scene.registerBeforeRender(function (_, _) {			
 			//The color is defined at run time with random()
 			untyped box2.material.diffuseColor.r = Math.random();
 			untyped box2.material.diffuseColor.g = Math.random();	
