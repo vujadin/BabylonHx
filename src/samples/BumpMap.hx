@@ -34,7 +34,7 @@ class BumpMap {
 		camera.setPosition(new Vector3(0, 10, 5));
 		
 		// Animations
-		scene.registerBeforeRender(function() {
+		scene.registerBeforeRender(function(_, _) {
 			light.position = camera.position;
 		});
 		
