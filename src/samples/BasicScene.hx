@@ -14,14 +14,6 @@ import com.babylonhx.math.Space;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
 import com.babylonhx.Engine;
-import com.babylonhx.mesh.VertexBuffer;
-
-import com.babylonhx.animations.Animation;
-import com.babylonhx.actions.ActionEvent;
-import com.babylonhx.collisions.PickingInfo;
-
-import com.babylonhx.tools.EventState;
-import com.babylonhx.utils.Image;
 
 /**
  * ...
