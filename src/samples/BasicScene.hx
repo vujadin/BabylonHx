@@ -42,10 +42,6 @@ class BasicScene {
 		
 		var ground = Mesh.CreateGround("ground1", 26, 26, 2, scene);
 				
-		var rotationAxis = new Vector3(1, 0, 0);
-		var rotationAngle = 0.0;
-		var rotationSpeed = 0.003;
-		
 		scene.getEngine().runRenderLoop(function () {
             scene.render();
         });
