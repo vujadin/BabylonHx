@@ -62,7 +62,6 @@ BabylonHx Demos
 	<a href="http://babylonhx.github.io/physics2/" target="_blank" />
 		<img src="http://babylonhx.github.io/physics2/physics2-sm.jpg" alt="physics2"   />
 	</a>
-
 	<a href="http://babylonhx.github.io/ssao/" target="_blank" />
 		<img src="http://babylonhx.github.io/ssao/ssao-sm.jpg" alt="ssao"   />
 	</a>
