@@ -1,7 +1,8 @@
 package com.babylonhx.mesh;
 
 import com.babylonhx.tools.Tools;
-import com.babylonhx.utils.GL.GLBuffer;
+
+import lime.graphics.opengl.GLBuffer;
 
 
 /**

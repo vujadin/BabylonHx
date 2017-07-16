@@ -75,8 +75,8 @@ void main(void)
 	
 
 	public function new(name:String, size:Float, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
-		if (!ShadersStore.Shaders.exists("spiraltexture.fragment")) {
-			ShadersStore.Shaders.set("spiraltexture.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("spiraltextureFragmentShader")) {
+			ShadersStore.Shaders.set("spiraltextureFragmentShader", fragmentShader);
 		}
 		
 		super(name, size, "spiraltexture", scene, fallbackTexture, generateMipMaps);

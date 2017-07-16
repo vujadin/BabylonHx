@@ -5,13 +5,14 @@ import com.babylonhx.d2.geom.Rectangle;
 import com.babylonhx.d2.geom.Point;
 
 import com.babylonhx.utils.Image;
-import com.babylonhx.utils.GL;
-import com.babylonhx.utils.GL.GLBuffer;
-import com.babylonhx.utils.GL.GLTexture;
-import com.babylonhx.utils.GL.GLFramebuffer;
-import com.babylonhx.utils.typedarray.Float32Array;
-import com.babylonhx.utils.typedarray.UInt32Array;
-import com.babylonhx.utils.typedarray.UInt8Array;
+
+import lime.graphics.opengl.GL;
+import lime.graphics.opengl.GLBuffer;
+import lime.graphics.opengl.GLTexture;
+import lime.graphics.opengl.GLFramebuffer;
+import lime.utils.Float32Array;
+import lime.utils.UInt32Array;
+import lime.utils.UInt8Array;
 
 /**
  * ...
@@ -146,7 +147,7 @@ class BitmapData {
 			this._syncWithGPU(stage);
 		}
 		this._setTexAsFB(stage);
-
+		
 		stage._setTEX(null);
 		dobj._render();
 		
@@ -154,7 +155,7 @@ class BitmapData {
 		var r = this.rect;
 		Gl.readPixels(cast r.x, cast r.y, cast r.width, cast r.height, GL.RGBA, GL.UNSIGNED_BYTE, buff);
 		stage._setFramebuffer(null, stage.stageWidth, stage.stageHeight, false);
-
+		
 		stage._setTEX(this._texture);
 		Gl.generateMipmap(GL.TEXTURE_2D);
 	}
@@ -166,7 +167,7 @@ class BitmapData {
 		var r = this.rect;
 		var buff = this._buffer;
 		var Gl = st.Gl;
-
+		
 		if (!this._gpuAllocated) {
 			var w = r.width;
 			var h = r.height;
@@ -176,26 +177,26 @@ class BitmapData {
 			this._texture = Gl.createTexture();
 			this._tcBuffer = Gl.createBuffer();		//	texture coordinates buffer
 			this._vBuffer  = Gl.createBuffer();		//	four vertices of bitmap
-
+			
 			st._setBF(this._tcBuffer);
-			Gl.bufferData(GL.ARRAY_BUFFER, new Float32Array([0, 0, xsc, 0, 0, ysc, xsc, ysc]), GL.STATIC_DRAW);
-
+			Gl.bufferData(GL.ARRAY_BUFFER, #if cpp 8, #end new Float32Array([0, 0, xsc, 0, 0, ysc, xsc, ysc]), GL.STATIC_DRAW);
+			
 			st._setBF(this._vBuffer);
-			Gl.bufferData(GL.ARRAY_BUFFER, new Float32Array([0, 0, 0, w, 0, 0, 0, h, 0, w, h, 0]), GL.STATIC_DRAW);
+			Gl.bufferData(GL.ARRAY_BUFFER, #if cpp 12, #end new Float32Array([0, 0, 0, w, 0, 0, 0, h, 0, w, h, 0]), GL.STATIC_DRAW);
 			
 			var ebuff = new UInt8Array(this._rwidth * this._rheight * 4);
 			var ebuff32 = new UInt32Array(ebuff.buffer);
 			for (i in 0...ebuff32.length) {
 				ebuff32[i] = 0x00ffffff;
 			}
-
+			
 			st._setTEX(this._texture);
 			Gl.texImage2D(GL.TEXTURE_2D, 0, GL.RGBA, this._rwidth, this._rheight, 0, GL.RGBA, GL.UNSIGNED_BYTE, ebuff);
 			Gl.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.LINEAR);
 			Gl.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.LINEAR_MIPMAP_LINEAR);
 			this._gpuAllocated = true;
 		}
-
+		
 		st._setTEX(this._texture);
 		Gl.texSubImage2D(GL.TEXTURE_2D, 0, cast r.x, cast r.y, cast r.width, cast r.height,  GL.RGBA, GL.UNSIGNED_BYTE, buff);
 		Gl.generateMipmap(GL.TEXTURE_2D);
@@ -211,7 +212,7 @@ class BitmapData {
 			Gl.bindFramebuffer(GL.FRAMEBUFFER, BitmapData._fbo);
 			Gl.framebufferRenderbuffer(GL.FRAMEBUFFER, GL.DEPTH_ATTACHMENT, GL.RENDERBUFFER, rbo);
 		}
-
+		
 		st._setFramebuffer(BitmapData._fbo, this._rwidth, this._rheight, true);
 		Gl.framebufferTexture2D(GL.FRAMEBUFFER, GL.COLOR_ATTACHMENT0, GL.TEXTURE_2D, this._texture, 0);
 	}

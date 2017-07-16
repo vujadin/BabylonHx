@@ -15,14 +15,16 @@ package com.babylonhx.tools;
  * A given observer can register itself with only Move and Stop (mask = 0x03), then it will only be notified when 
  * one of these two occurs and will never be for Turn Left/Right.
  */
-class Observable<T> {
+class Observable<T> {	
 	
-	private static var _pooledEventState:EventState = null;
 	private var _observers:Array<Observer<T>>;
+	
+	private var _eventState:EventState;
 	
 	
 	public function new() {
 		_observers = [];
+		this._eventState = new EventState(0);
 	}
 
 	/**
@@ -72,8 +74,7 @@ class Observable<T> {
 	public function removeCallback(callback:T->Null<EventState>->Void):Bool {
 		for (index in 0...this._observers.length) {
 			if (this._observers[index].callback == callback) {
-				this._observers.splice(index, 1);
-				
+				this._observers.splice(index, 1);				
 				return true;
 			}
 		}
@@ -86,19 +87,19 @@ class Observable<T> {
 	 * @param eventData
 	 */
 	public function notifyObservers(eventData:T, mask:Int = -1) {
-		var state = Observable._pooledEventState != null ? Observable._pooledEventState.initalize(mask) : new EventState(mask);
-        Observable._pooledEventState = null;
+		var state:EventState = this._eventState;
+		state.mask = mask;
+		state.skipNextObservers = false;
 		
         for (obs in this._observers) {
             if (obs.mask & mask != 0) {
 				obs.callback(eventData, state);
 			}
 			if (state.skipNextObservers) {
-				break;
+				return false;
 			}
         }
-		
-		Observable._pooledEventState = state;
+		return true;
 	}
 	
 	/**
@@ -124,6 +125,20 @@ class Observable<T> {
 		result._observers = this._observers.slice(0);
 		
 		return result;
+	}
+	
+	/**
+	 * Does this observable handles observer registered with a given mask
+	 * @param {number} trigger - the mask to be tested
+	 * @return {boolean} whether or not one observer registered with the given mask is handeled 
+	**/
+	public function hasSpecificMask(mask:Int = -1):Bool {
+		for (obs in this._observers) {
+			if ((obs.mask & mask != 0) && obs.mask == mask) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 }

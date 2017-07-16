@@ -54,8 +54,8 @@ void main(void)
 	
 
 	public function new(name:String, size:Float, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
-		if (!ShadersStore.Shaders.exists("combustiontexture.fragment")) {
-			ShadersStore.Shaders.set("combustiontexture.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("combustiontextureFragmentShader")) {
+			ShadersStore.Shaders.set("combustiontextureFragmentShader", fragmentShader);
 		}
 		
 		super(name, size, "combustiontexture", scene, fallbackTexture, generateMipMaps);

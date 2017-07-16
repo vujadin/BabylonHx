@@ -9,7 +9,8 @@ import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.culling.BoundingSphere;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.animations.IAnimatable;
-import com.babylonhx.utils.typedarray.Float32Array;
+
+import lime.utils.Float32Array;
 
 
 /**
@@ -60,7 +61,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return this._sourceMesh.material;
 	}
 
-	override private function get_visibility():Float {
+	private function get_visibility():Float {
 		return this._sourceMesh.visibility;
 	}
 
@@ -80,7 +81,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return this._sourceMesh;
 	}
 
-	override public function getVerticesData(kind:String, copyWhenShared:Bool = false):Array<Float> {
+	override public function getVerticesData(kind:String, copyWhenShared:Bool = false, forceCopy:Bool = false):Array<Float> {
 		return this._sourceMesh.getVerticesData(kind, copyWhenShared);
 	}
 
@@ -92,7 +93,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return this._sourceMesh.getIndices(copyWhenShared);
 	}
 
-	override private function get_positions():Array<Vector3> {
+	private function get_positions():Array<Vector3> {
 		return this._sourceMesh._positions;
 	}
 
@@ -140,7 +141,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	}
 
 	// Clone
-	override public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false):InstancedMesh {
+	override public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false, clonePhysicsImpostor:Bool = true):Mesh {
 		var result = this._sourceMesh.createInstance(name);
 		
 		// TODO: Deep copy
@@ -167,7 +168,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		result.computeWorldMatrix(true);
 		
-		return result;
+		return cast result;
 	}
 
 	// Dispose

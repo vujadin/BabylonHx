@@ -11,7 +11,7 @@ import com.babylonhx.mesh.SubMesh;
 */
 @:expose('BABYLON.Collider') class Collider {
 	
-	public var radius:Vector3 = new Vector3(1, 1, 1);
+	public var radius:Vector3 = Vector3.One();
 	public var retry:Int = 0;
 	public var velocity:Vector3;
 	public var basePoint:Vector3;
@@ -38,6 +38,16 @@ import com.babylonhx.mesh.SubMesh;
 	private var _destinationPoint = Vector3.Zero();
 	private var _slidePlaneNormal = Vector3.Zero();
 	private var _displacementVector = Vector3.Zero();
+	
+	private var _collisionMask:Int = -1;
+    public var collisionMask(get, set):Int;
+	private function get_collisionMask():Int {
+		return this._collisionMask;
+	}	
+	private function set_collisionMask(mask:Int):Int {
+		this._collisionMask = !Math.isNaN(mask) ? mask : -1;
+		return mask;
+	}
 	
 	
 	public function new() {
@@ -98,22 +108,22 @@ import com.babylonhx.mesh.SubMesh;
 		return true;
 	}
 
-	public function _testTriangle(faceIndex:Int, subMesh:SubMesh, p1:Vector3, p2:Vector3, p3:Vector3) {
+	public function _testTriangle(faceIndex:Int, trianglePlanes:Array<Plane>, p1:Vector3, p2:Vector3, p3:Vector3, hasMaterial:Bool) {
 		var t0:Float = 0;
 		var embeddedInPlane = false;
 		
-		if (subMesh._trianglePlanes == null) {
-			subMesh._trianglePlanes = [];
+		if (trianglePlanes == null) {
+			trianglePlanes = [];
 		}
 		
-		if (subMesh._trianglePlanes[faceIndex] == null) {
-			subMesh._trianglePlanes[faceIndex] = new Plane(0, 0, 0, 0);
-			subMesh._trianglePlanes[faceIndex].copyFromPoints(p1, p2, p3);
+		if (trianglePlanes[faceIndex] == null) {
+			trianglePlanes[faceIndex] = new Plane(0, 0, 0, 0);
+			trianglePlanes[faceIndex].copyFromPoints(p1, p2, p3);
 		}
 		
-		var trianglePlane = subMesh._trianglePlanes[faceIndex];
+		var trianglePlane = trianglePlanes[faceIndex];
 		
-		if (subMesh.getMaterial() == null && !trianglePlane.isFrontFacingTo(this.normalizedVelocity, 0)) {
+		if ((!hasMaterial) && !trianglePlane.isFrontFacingTo(this.normalizedVelocity, 0)) {
 			return;
 		}
 		
@@ -283,19 +293,18 @@ import com.babylonhx.mesh.SubMesh;
 				
 				this.nearestDistance = distToCollision;
 				this.collisionFound = true;
-				this.collidedMesh = subMesh.getMesh();
 			}
 		}
 	}
 
-	inline public function _collide(subMesh, pts:Array<Vector3>, indices:Array<Int>, indexStart:Int, indexEnd:Int, decal:Int) {
+	inline public function _collide(trianglePlaneArray:Array<Plane>, pts:Array<Vector3>, indices:Array<Int>, indexStart:Int, indexEnd:Int, decal:Int, hasMaterial:Bool) {
 		var i:Int = indexStart;
 		while(i < indexEnd) {
 			var p1 = pts[indices[i] - decal];
 			var p2 = pts[indices[i + 1] - decal];
 			var p3 = pts[indices[i + 2] - decal];
 			
-			this._testTriangle(i, subMesh, p3, p2, p1);
+			this._testTriangle(i, trianglePlaneArray, p3, p2, p1, hasMaterial);
 			i += 3;
 		}
 	}

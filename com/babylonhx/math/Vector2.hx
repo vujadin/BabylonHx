@@ -177,6 +177,13 @@ import com.babylonhx.tools.Tools;
 	inline public static function Zero():Vector2 {
 		return new Vector2(0, 0);
 	}
+	
+	/**
+     * Returns a new Vector2(1, 1)
+     */
+    inline public static function One():Vector2 {
+        return new Vector2(1, 1);
+    }
 
 	inline public static function FromArray(array:Array<Float>, offset:Int = 0):Vector2 {
 		return new Vector2(array[offset], array[offset + 1]);

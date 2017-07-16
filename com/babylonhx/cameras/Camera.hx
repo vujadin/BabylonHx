@@ -1,5 +1,6 @@
 package com.babylonhx.cameras;
 
+import com.babylonhx.materials.textures.RenderTargetTexture;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
 import com.babylonhx.math.Vector3;
@@ -99,6 +100,8 @@ import com.babylonhx.animations.Animation;
 	public var _cameraRigParams:Dynamic;
 	public var _rigCameras:Array<Camera> = [];
 	public var _rigPostProcess:PostProcess;
+	
+	public var customRenderTargets:Array<RenderTargetTexture> = [];
 
 	// Cache
 	private var _computedViewMatrix:Matrix = Matrix.Identity();

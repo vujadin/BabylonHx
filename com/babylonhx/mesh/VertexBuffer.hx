@@ -1,6 +1,6 @@
 package com.babylonhx.mesh;
 
-import com.babylonhx.utils.typedarray.Float32Array;
+import lime.utils.Float32Array;
 
 
 /**
@@ -13,6 +13,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	// Enums
 	public static inline var PositionKind:String = "position";
 	public static inline var NormalKind:String = "normal";
+	public static inline var TangentKind:String = "tangent";
 	public static inline var UVKind:String = "uv";
 	public static inline var UV2Kind:String = "uv2";
 	public static inline var UV3Kind:String = "uv3";
@@ -48,7 +49,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 					 VertexBuffer.UV4Kind, VertexBuffer.UV5Kind, VertexBuffer.UV6Kind:
 					stride = 2;
 					
-				case VertexBuffer.ColorKind:
+				case VertexBuffer.TangentKind, VertexBuffer.ColorKind:
 					stride = 4;
 					
 				case VertexBuffer.MatricesIndicesKind, VertexBuffer.MatricesIndicesExtraKind:
@@ -113,6 +114,13 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	inline public function getIsInstanced():Bool {
 		return this._buffer.getIsInstanced();
 	}
+	
+	/**
+     * Returns the instancing divisor, zero for non-instanced (integer).  
+     */
+    public function getInstanceDivisor():Int {
+        return this._buffer.instanceDivisor;
+    }
 
 	// Methods
 	public function create(?data:Array<Float>) {		

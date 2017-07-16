@@ -17,8 +17,8 @@ import com.babylonhx.math.Color3;
 	
 
 	public function new(name:String, size:Float, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
-		if (!ShadersStore.Shaders.exists("woodtexture.fragment")) {
-			ShadersStore.Shaders.set("woodtexture.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("woodtextureFragmentShader")) {
+			ShadersStore.Shaders.set("woodtextureFragmentShader", fragmentShader);
 		}
 		
 		super(name, size, "woodtexture", scene, fallbackTexture, generateMipMaps);

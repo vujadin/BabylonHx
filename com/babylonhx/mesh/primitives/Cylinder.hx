@@ -26,7 +26,7 @@ import com.babylonhx.tools.Tags;
 		this.subdivisions = subdivisions;
 		this.side = side;
 		
-		super(id, scene, this._regenerateVertexData(), canBeRegenerated, mesh);
+		super(id, scene, canBeRegenerated, mesh);
 	}
 
 	override public function _regenerateVertexData():VertexData {
@@ -35,6 +35,17 @@ import com.babylonhx.tools.Tags;
 
 	override public function copy(id:String):Geometry {
 		return new Cylinder(id, this.getScene(), this.height, this.diameterTop, this.diameterBottom, this.tessellation, this.subdivisions, this.canBeRegenerated(), null, this.side);
+	}
+	
+	override public function serialize():Dynamic {
+		var serializationObject = super.serialize();
+		
+		serializationObject.height = this.height;
+		serializationObject.diameterTop = this.diameterTop;
+		serializationObject.diameterBottom = this.diameterBottom;
+		serializationObject.tessellation = this.tessellation;
+		
+		return serializationObject;
 	}
 	
 	public static function Parse(parsedCylinder:Dynamic, scene:Scene):Cylinder {

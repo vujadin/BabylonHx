@@ -15,7 +15,7 @@ import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
 
-import com.babylonhx.utils.typedarray.Float32Array;
+import lime.utils.Float32Array;
 
 
 /**
@@ -308,7 +308,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		engine.setAlphaMode(Engine.ALPHA_DISABLE);
 	}
 
-	public function dispose() {
+	public function dispose(_:Bool = false) {
 		if (this._buffer != null) {
 			this._buffer.dispose();
 			this._buffer = null;

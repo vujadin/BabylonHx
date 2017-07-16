@@ -37,6 +37,10 @@ import com.babylonhx.math.Tmp;
 		super(name, scene);
 	}
 	
+	override public function getClassName():String {
+		return "GroundMesh";
+	}  
+	
 	private function get_subdivisions():Int {
 		return Std.int(Math.min(this._subdivisionsX, this._subdivisionsY));
 	}
@@ -60,29 +64,27 @@ import com.babylonhx.math.Tmp;
 	 * Returns a height (y) value in the Worl system :
 	 * the ground altitude at the coordinates (x, z) expressed in the World system.
 	 * Returns the ground y position if (x, z) are outside the ground surface.
-	 * Not pertinent if the ground is rotated.
 	 */
 	public function getHeightAtCoordinates(x:Float, z:Float):Float {
-		// express x and y in the ground local system
-		x -= this.position.x;
-		z -= this.position.z;
-		x /= this.scaling.x;
-		z /= this.scaling.z;
-		
+		var world = this.getWorldMatrix();
+		var invMat = Tmp.matrix[5];
+		world.invertToRef(invMat);
+		var tmpVect = Tmp.vector3[8];
+		Vector3.TransformCoordinatesFromFloatsToRef(x, 0.0, z, invMat, tmpVect); // transform x,z in the mesh local space
+		x = tmpVect.x;
+		z = tmpVect.z;
 		if (x < this._minX || x > this._maxX || z < this._minZ || z > this._maxZ) {
 			return this.position.y;
 		}
-		
 		if (this._heightQuads == null || this._heightQuads.length == 0) {
 			this._initHeightQuads();
 			this._computeHeightQuads();
 		}
-		
 		var facet = this._getFacetAt(x, z);
 		var y = -(facet.x * x + facet.z * z + facet.w) / facet.y;
-		
 		// return y in the World system
-		return y * this.scaling.y + this.position.y;
+		Vector3.TransformCoordinatesFromFloatsToRef(0.0, y, 0.0, world, tmpVect);
+		return tmpVect.y;
 	}
 	
 	/**
@@ -93,8 +95,7 @@ import com.babylonhx.math.Tmp;
 	 */
 	inline public function getNormalAtCoordinates(x:Float, z:Float):Vector3 {
 		var normal = new Vector3(0, 1, 0);
-		this.getNormalAtCoordinatesToRef(x, z, normal);
-		
+		this.getNormalAtCoordinatesToRef(x, z, normal);		
 		return normal;
 	}
 	
@@ -102,27 +103,25 @@ import com.babylonhx.math.Tmp;
 	 * Updates the Vector3 passed a reference with a normalized vector orthogonal to the ground
 	 * at the ground coordinates (x, z) expressed in the World system.
 	 * Doesn't uptade the reference Vector3 if (x, z) are outside the ground surface.
-	 * Not pertinent if the ground is rotated.
 	 */
-	inline public function getNormalAtCoordinatesToRef(x:Float, z:Float, ref:Vector3) {
-		// express x and y in the ground local system
-        x -= this.position.x;
-        z -= this.position.z;
-        x /= this.scaling.x;
-        z /= this.scaling.z;
+	inline public function getNormalAtCoordinatesToRef(x:Float, z:Float, ref:Vector3):GroundMesh {
+		var world = this.getWorldMatrix();
+		var tmpMat = Tmp.matrix[5];
+		world.invertToRef(tmpMat);
+		var tmpVect = Tmp.vector3[8];
+		Vector3.TransformCoordinatesFromFloatsToRef(x, 0.0, z, tmpMat, tmpVect); // transform x,z in the mesh local space
+		x = tmpVect.x;
+		z = tmpVect.z;
 		if (x < this._minX || x > this._maxX || z < this._minZ || z > this._maxZ) {
-			return;
+			return this;
 		}
-		
 		if (this._heightQuads == null || this._heightQuads.length == 0) {
 			this._initHeightQuads();
 			this._computeHeightQuads();
 		}
-		
 		var facet = this._getFacetAt(x, z);
-		ref.x = facet.x;
-		ref.y = facet.y;
-		ref.z = facet.z;
+		Vector3.TransformNormalFromFloatsToRef(facet.x, facet.y, facet.z, world, ref);
+		return this;
 	}
 	
 	/**
@@ -130,11 +129,12 @@ import com.babylonhx.math.Tmp;
 	* if the ground has been updated.
 	* This can be used in the render loop
 	*/
-	inline public function updateCoordinateHeights() {
+	inline public function updateCoordinateHeights():GroundMesh {
 		if (this._heightQuads == null || this._heightQuads.length == 0) {
 			this._initHeightQuads();
 		}
 		this._computeHeightQuads();
+		return this;
 	}
 	
 	// Returns the element "facet" from the heightQuads array relative to (x, z) local coordinates
@@ -159,7 +159,7 @@ import com.babylonhx.math.Tmp;
 	// slope : Vector2(c, h) = 2D diagonal line equation setting appart two triangular facets in a quad : z = cx + h
 	// facet1 : Vector4(a, b, c, d) = first facet 3D plane equation : ax + by + cz + d = 0
 	// facet2 :  Vector4(a, b, c, d) = second facet 3D plane equation : ax + by + cz + d = 0
-	private function _initHeightQuads() {
+	private function _initHeightQuads():GroundMesh {
 		this._heightQuads = [];
 		for (row in 0...this._subdivisionsY) {
 			for (col in 0...this._subdivisionsX) {
@@ -167,6 +167,7 @@ import com.babylonhx.math.Tmp;
 				this._heightQuads[row * this._subdivisionsX + col] = quad;
 			}
 		}
+		return this;
 	}
 
 	// Populates the heightMap array with "facet" elements :
@@ -174,7 +175,7 @@ import com.babylonhx.math.Tmp;
 	// slope : Vector2(c, h) = 2D diagonal line equation setting appart two triangular facets in a quad : z = cx + h
 	// facet1 : Vector4(a, b, c, d) = first facet 3D plane equation : ax + by + cz + d = 0
 	// facet2 :  Vector4(a, b, c, d) = second facet 3D plane equation : ax + by + cz + d = 0
-	private function _computeHeightQuads() {
+	private function _computeHeightQuads():GroundMesh {
 		var positions = this.getVerticesData(VertexBuffer.PositionKind);
 		var v1 = Tmp.vector3[0];
 		var v2 = Tmp.vector3[1];
@@ -236,6 +237,41 @@ import com.babylonhx.math.Tmp;
 				quad.facet2.copyFromFloats(norm2.x, norm2.y, norm2.z, d2);
 			}
 		}
+		
+		return this;
+	}
+	
+	override public function serialize(serializationObject:Dynamic) {
+		super.serialize(serializationObject);
+		serializationObject.subdivisionsX = this._subdivisionsX;
+		serializationObject.subdivisionsY = this._subdivisionsY;
+		
+		serializationObject.minX = this._minX;
+		serializationObject.maxX = this._maxX;
+		
+		serializationObject.minZ = this._minZ;
+		serializationObject.maxZ = this._maxZ;
+		
+		serializationObject.width = this._width;
+		serializationObject.height = this._height;
+	}
+
+	public static function Parse(parsedMesh:Dynamic, scene:Scene):GroundMesh {
+		var result = new GroundMesh(parsedMesh.name, scene);
+		
+		result._subdivisionsX = parsedMesh.subdivisionsX != null ? parsedMesh.subdivisionsX : 1;
+		result._subdivisionsY = parsedMesh.subdivisionsY != null ? parsedMesh.subdivisionsY : 1;
+		
+		result._minX = parsedMesh.minX;
+		result._maxX = parsedMesh.maxX;
+		
+		result._minZ = parsedMesh.minZ;
+		result._maxZ = parsedMesh.maxZ;
+		
+		result._width = parsedMesh.width;
+		result._height = parsedMesh.height;
+		
+		return result;
 	}
 	
 }

@@ -2,6 +2,8 @@ package com.babylonhx.mesh;
 
 import com.babylonhx.materials.Material;
 import com.babylonhx.materials.MultiMaterial;
+import com.babylonhx.materials.MaterialDefines;
+import com.babylonhx.materials.Effect;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Plane;
@@ -9,6 +11,7 @@ import com.babylonhx.culling.Ray;
 import com.babylonhx.collisions.Collider;
 import com.babylonhx.collisions.IntersectionInfo;
 import com.babylonhx.culling.BoundingInfo;
+import com.babylonhx.culling.ICullable;
 import com.babylonhx.tools.Tools;
 
 
@@ -17,24 +20,24 @@ import com.babylonhx.tools.Tools;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.SubMesh') class SubMesh implements ISmartArrayCompatible {
+@:expose('BABYLON.SubMesh') class SubMesh extends BaseSubMesh implements ICullable implements ISmartArrayCompatible implements IHasBoundingInfo {
 	
 	public var linesIndexCount:Int;
 
 	private var _mesh:AbstractMesh;
 	private var _renderingMesh:Mesh;
-	private var _boundingInfo:BoundingInfo;
+	public var _boundingInfo:BoundingInfo;
 	private var _linesIndexBuffer:WebGLBuffer;
 	public var _lastColliderWorldVertices:Array<Vector3>;
 	public var _trianglePlanes:Array<Plane>;
 	public var _lastColliderTransformMatrix:Matrix;
-	
-	public var __smartArrayFlags:Array<Int> = [];
 
 	public var _renderId:Int = 0;
 	public var _alphaIndex:Float;
 	public var _distanceToCamera:Float;
 	public var _id:Int;
+	
+	private var _currentMaterial:Material;
 	
 	public var materialIndex:Int;
 	public var verticesStart:Int;
@@ -42,10 +45,11 @@ import com.babylonhx.tools.Tools;
 	public var indexStart:Int;
 	public var indexCount:Int;
 	
-	public var IsGlobal(get, never):Bool;
+	public var __smartArrayFlags:Array<Int> = [];	// BHX
 	
 
 	public function new(materialIndex:Int, verticesStart:Int, verticesCount:Int, indexStart:Int, indexCount:Int, mesh:AbstractMesh, ?renderingMesh:Mesh, createBoundingBox:Bool = true) {
+		super();
 		this.materialIndex = materialIndex;
 		this.verticesStart = verticesStart;
 		this.verticesCount = verticesCount;
@@ -66,10 +70,14 @@ import com.babylonhx.tools.Tools;
 		}
 	}
 	
+	public var IsGlobal(get, never):Bool;
 	private function get_IsGlobal():Bool {
 		return (this.verticesStart == 0 && this.verticesCount == this._mesh.getTotalVertices());
 	}
 
+	/**
+	 * Returns the submesh BoudingInfo object.  
+	 */
 	inline public function getBoundingInfo():BoundingInfo {
 		if (this.IsGlobal) {
 			return this._mesh.getBoundingInfo();
@@ -78,8 +86,9 @@ import com.babylonhx.tools.Tools;
 		return this._boundingInfo;
 	}
 	
-	inline public function setBoundingInfo(boundingInfo:BoundingInfo) {
+	inline public function setBoundingInfo(boundingInfo:BoundingInfo):SubMesh {
         this._boundingInfo = boundingInfo;
+		return this;
     }
 
 	inline public function getMesh():AbstractMesh {
@@ -95,8 +104,16 @@ import com.babylonhx.tools.Tools;
 		
 		if (rootMaterial != null && Std.is(rootMaterial, MultiMaterial)) {
 			var multiMaterial:MultiMaterial = cast rootMaterial;
+			var effectiveMaterial = multiMaterial.getSubMaterial(this.materialIndex);
 			
-			return multiMaterial.getSubMaterial(this.materialIndex);
+			if (this._currentMaterial != effectiveMaterial) {
+				this._currentMaterial = effectiveMaterial;
+				if (this._materialDefines != null) {
+					this._materialDefines.markAllAsDirty();
+				}
+			}
+			
+			return effectiveMaterial;
 		}
 		
 		if (rootMaterial == null) {
@@ -107,6 +124,11 @@ import com.babylonhx.tools.Tools;
 	}
 
 	// Methods
+	
+	/**
+	 * Sets a new updated BoundingInfo object to the submesh.  
+	 * Returns the SubMesh.  
+	 */
 	public function refreshBoundingInfo() {
 		this._lastColliderWorldVertices = null;
 		
@@ -143,22 +165,43 @@ import com.babylonhx.tools.Tools;
 		return this.getBoundingInfo()._checkCollision(collider);
 	}
 
-	inline public function updateBoundingInfo(world:Matrix) {
+	/**
+	 * Updates the submesh BoundingInfo.  
+	 * Returns the Submesh.  
+	 */
+	inline public function updateBoundingInfo(world:Matrix):SubMesh {
 		if (this.getBoundingInfo() == null) {
 			this.refreshBoundingInfo();
-		}
-		
-		this.getBoundingInfo()._update(world);
+		}		
+		this.getBoundingInfo().update(world);
+		return this;
 	}
 
+	/**
+	 * True is the submesh bounding box intersects the frustum defined by the passed array of planes.  
+	 * Boolean returned.  
+	 */
 	inline public function isInFrustum(frustumPlanes:Array<Plane>):Bool {
 		return this.getBoundingInfo().isInFrustum(frustumPlanes);
 	}
-
-	inline public function render(enableAlphaMode:Bool) {
-		this._renderingMesh.render(this, enableAlphaMode);
+	
+	/**
+	 * True is the submesh bounding box is completely inside the frustum defined by the passed array of planes.  
+	 * Boolean returned.  
+	 */        
+	inline public function isCompletelyInFrustum(frustumPlanes:Array<Plane>):Bool {
+		return this.getBoundingInfo().isCompletelyInFrustum(frustumPlanes);
 	}
 
+	inline public function render(enableAlphaMode:Bool):SubMesh {
+		this._renderingMesh.render(this, enableAlphaMode);
+		return this;
+	}
+
+	/**
+	 * Returns a new Index Buffer.  
+	 * Type returned : WebGLBuffer.  
+	 */
 	inline public function getLinesIndexBuffer(indices:Array<Int>, engine:Engine):WebGLBuffer {
 		if (this._linesIndexBuffer == null) {
 			var linesIndices:Array<Int> = [];
@@ -181,16 +224,23 @@ import com.babylonhx.tools.Tools;
 		return this._linesIndexBuffer;
 	}
 
+	/**
+	 * True is the passed Ray intersects the submesh bounding box.  
+	 * Boolean returned.  
+	 */
 	inline public function canIntersects(ray:Ray):Bool {
 		return ray.intersectsBox(this.getBoundingInfo().boundingBox);
 	}
 
-	inline public function intersects(ray:Ray, positions:Array<Vector3>, indices:Array<Int>, fastCheck:Bool = false):IntersectionInfo {
+	/**
+	 * Returns an object IntersectionInfo.  
+	 */
+	public function intersects(ray:Ray, positions:Array<Vector3>, indices:Array<Int>, fastCheck:Bool = false):IntersectionInfo {
 		var intersectInfo:IntersectionInfo = null;
 		
 		// fix for picking instances: https://github.com/vujadin/BabylonHx/issues/122
 		if (positions == null) {
-			positions = this._mesh.positions;
+			positions = this._mesh._positions;
 		}
 		
 		// LineMesh first as it's also a Mesh...
@@ -276,6 +326,14 @@ import com.babylonhx.tools.Tools;
 	}
 
 	// Statics
+	/**
+	 * Creates a new Submesh from the passed parameters : 
+	 * - materialIndex (integer) : the index of the main mesh material.  
+	 * - startIndex (integer) : the index where to start the copy in the mesh indices array.  
+	 * - indexCount (integer) : the number of indices to copy then from the startIndex.  
+	 * - mesh (Mesh) : the main mesh to create the submesh from.  
+	 * - renderingMesh (optional Mesh) : rendering mesh.  
+	 */
 	public static function CreateFromIndices(materialIndex:Int, startIndex:Int, indexCount:Int, mesh:AbstractMesh, ?renderingMesh:Mesh):SubMesh {
 		var minVertexIndex = Math.POSITIVE_INFINITY;
 		var maxVertexIndex = Math.NEGATIVE_INFINITY;

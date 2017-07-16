@@ -11,7 +11,7 @@ package com.babylonhx.postprocess.renderpipeline;
 	
 
 	public function new() {
-		this._renderPipelines = new Map<String, PostProcessRenderPipeline>();
+		this._renderPipelines = new Map();
 	}
 
 	public function addPipeline(renderPipeline:PostProcessRenderPipeline) {

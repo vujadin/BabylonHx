@@ -1,22 +1,81 @@
 package com.babylonhx.tools.hdr;
 
 import com.babylonhx.math.Vector3;
-import com.babylonhx.utils.typedarray.Float32Array;
-import com.babylonhx.utils.typedarray.ArrayBuffer;
+
+import lime.utils.Float32Array;
+import lime.utils.ArrayBuffer;
+import lime.utils.ArrayBufferView;
 
 /**
  * ...
  * @author Krtolica Vujadin
  */
 
+/**
+ * CubeMap information grouping all the data for each faces as well as the cubemap size.
+ */
 typedef CubeMapInfo = {	
-	var front:Float32Array;
-	var back:Float32Array;
-	var left:Float32Array;
-	var right:Float32Array;
-	var up:Float32Array;
-	var down:Float32Array;
-	var size:Int;  
+	/**
+	 * The pixel array for the front face.
+	 * This is stored in format, left to right, up to down format.
+	 */
+	var front:ArrayBufferView;
+	
+	/**
+	 * The pixel array for the back face.
+	 * This is stored in format, left to right, up to down format.
+	 */
+	var back:ArrayBufferView;
+	
+	/**
+	 * The pixel array for the left face.
+	 * This is stored in format, left to right, up to down format.
+	 */
+	var left:ArrayBufferView;
+	
+	/**
+	 * The pixel array for the right face.
+	 * This is stored in format, left to right, up to down format.
+	 */
+	var right:ArrayBufferView;
+	
+	/**
+	 * The pixel array for the up face.
+	 * This is stored in format, left to right, up to down format.
+	 */
+	var up:ArrayBufferView;
+	
+	/**
+	 * The pixel array for the down face.
+	 * This is stored in format, left to right, up to down format.
+	 */
+	var down:ArrayBufferView;
+	
+	/**
+	 * The size of the cubemap stored.
+	 * 
+	 * Each faces will be size * size pixels.
+	 */
+	var size:Int;
+	
+	/**
+	 * The format of the texture.
+	 * 
+	 * RGBA, RGB.
+	 */
+	var format:Int;
+	
+	/**
+	 * The type of the texture data.
+	 * 
+	 * UNSIGNED_INT, FLOAT.
+	 */
+	var type:Int;
+	
+	/**
+	 * Specifies whether the texture is in gamma space.
+	 */
+	var gammaSpace:Bool;
 } 
  
 class PanoramaToCubeMapTools {
@@ -63,6 +122,15 @@ class PanoramaToCubeMapTools {
 		
 	}
 	
+	/**
+	 * Converts a panorma stored in RGB right to left up to down format into a cubemap (6 faces).
+	 * 
+	 * @param float32Array The source data.
+	 * @param inputWidth The width of the input panorama.
+	 * @param inputhHeight The height of the input panorama.
+	 * @param size The willing size of the generated cubemap (each faces will be size * size pixels)
+	 * @return The cubemap data 
+	 */
 	public static function ConvertPanoramaToCubemap(float32Array:Float32Array, inputWidth:Int, inputHeight:Int, size:Int):CubeMapInfo {
 		if (float32Array == null) {
 			throw "ConvertPanoramaToCubemap: input cannot be null";
@@ -86,7 +154,10 @@ class PanoramaToCubeMapTools {
 			right: textureRight,
 			up: textureUp,
 			down: textureDown,
-			size: size
+			size: size,
+			type: Engine.TEXTURETYPE_FLOAT,
+            format: Engine.TEXTUREFORMAT_RGB,
+            gammaSpace: false
 		};
 	}
 

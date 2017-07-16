@@ -14,7 +14,7 @@ import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.AbstractMesh;
 
 import com.babylonhx.utils.Image;
-import com.babylonhx.utils.typedarray.UInt8Array;
+import lime.utils.UInt8Array;
 
 import haxe.io.BytesInput;
 import haxe.io.Bytes;
@@ -26,8 +26,6 @@ import haxe.Timer;
 typedef Assets = openfl.Assets;
 #elseif lime
 typedef Assets = lime.Assets;
-#elseif nme
-typedef Assets = nme.Assets;
 #end
 
 
@@ -60,7 +58,39 @@ typedef Assets = nme.Assets;
 													   || window.oRequestAnimationFrame;
 		#end
 	}
+	
+	public static function Log(msg:String) {
+		trace(msg);
+	}
 
+	public static function Warn(msg:String) {
+		trace('Warning! ' + msg);
+	}
+	
+	public static function Error(msg:String) {
+		trace('!!! ERROR !!! ' + msg);
+	}
+	
+	public static function SetImmediate(action:Void->Void) {
+		delay(action, 1);
+	}
+	
+	#if (js || purejs)
+	public static function GetDOMTextContent(element:js.html.Element):String {
+		var result = "";
+		var child = element.firstChild;
+		
+		while (child != null) {
+			if (child.nodeType == 3) {
+				result += child.textContent;
+			}
+			child = child.nextSibling;
+		}
+		
+		return result;
+	}
+	#end
+	
 	public static function GetFilename(path:String):String {
 		var index = path.lastIndexOf("/");
 		if (index < 0) {
@@ -72,13 +102,7 @@ typedef Assets = nme.Assets;
 	
 	// Snow build gives an error that haxe.Timer has no delay method...
 	public static function delay(f:Void->Void, time_ms:Int) {
-		#if snow
-		var t = new snow.api.Timer(time_ms);
-		#elseif (lime || openfl || nme || purejs)
 		var t = new haxe.Timer(time_ms);
-		#elseif kha
-		
-		#end
 		t.run = function() {
 			t.stop();
 			f();
@@ -139,13 +163,15 @@ typedef Assets = nme.Assets;
 	}
 
 	public static function MakeArray(obj:Dynamic, allowsNullUndefined:Bool = false):Array<Dynamic> {
-		if (allowsNullUndefined != true && obj == null)
+		if (allowsNullUndefined != true && obj == null) {
 			return null;
-			
-		if(Reflect.hasField(obj, "get")) {
+		}
+		
+		if(!Std.is(obj, Array) && Reflect.getProperty(obj, "keys") != null) {
 			var ret:Array<Dynamic> = [];
-			for (key in cast(obj, Map<Dynamic, Dynamic>).keys()) {
-				ret.push(obj.get(key));
+			var map:Map<Dynamic, Dynamic> = cast obj;
+			for (key in map.keys()) {
+				ret.push(map[key]);
 			}
 			return ret;
 		}
@@ -831,20 +857,21 @@ typedef Assets = nme.Assets;
 	#elseif (lime || openfl || nme)
 	public static function LoadImages(root:String, urls:Array<String>, onload:Map<String, Image>->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
 		#if (openfl && !nme)
-		if (Assets.exists(url)) {
-			var img = Assets.getBitmapData(url); 
-			
-			#if openfl_legacy
-			onload(new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height));		
-			#else
-			if (img.image.format != lime.graphics.PixelFormat.RGBA32) {
-				img.image.format = lime.graphics.PixelFormat.RGBA32;
+		var imgs:Map<String, Image> = new Map();
+		for (i in 0...urls.length) {
+			var url = root != "" ? root + urls[i] : urls[i];
+			if (Assets.exists(url)) {
+				var img = Assets.getBitmapData(url); 
+				var image = new Image(img.image.data, img.width, img.height);
+				imgs.set(urls[i], image);
+			} 
+			else {
+				trace("Image '" + url + "' doesn't exist!");
 			}
-			onload(new Image(img.image.data, img.width, img.height));	
-			#end
-		} 
-		else {
-			trace("Image '" + url + "' doesn't exist!");
+			
+			if (i == urls.length - 1) {
+				onload(imgs);
+			}
 		}
 		#elseif lime
 		var imgs:Map<String, Image> = new Map();
@@ -863,13 +890,8 @@ typedef Assets = nme.Assets;
 				onload(imgs);
 			}
 		}
-		#elseif nme		
-		var img = Assets.getBitmapData(url); 
-		onload(new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height));		
 		#end
-	}
-	#elseif kha
-	
+	}	
 	#end
 	
 

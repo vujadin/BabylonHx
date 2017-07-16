@@ -2,9 +2,11 @@ package com.babylonhx.tools.serialization;
 
 import com.babylonhx.materials.FresnelParameters;
 import com.babylonhx.materials.textures.Texture;
+import com.babylonhx.materials.ColorCurves;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
+import haxe.macro.Type;
 
 import haxe.rtti.Meta;
 
@@ -142,17 +144,19 @@ class SerializationHelper {
 	
 	public static function Parse<T>(creationFunction:Void->T, source:Dynamic, scene:Scene, ?rootUrl:String):T {
 		var destination:T = creationFunction();
-		
+		trace(Reflect.fields(untyped destination.__serializableMembers));
 		// Tags
 		Tags.AddTagsTo(destination, untyped source.tags);
 		
 		// Properties
 		for (property in Reflect.fields(untyped destination.__serializableMembers)) {
-			var propertyDescriptor = Reflect.getProperty(untyped destination.__serializableMembers, "property");
+			trace(property);
+			var propertyDescriptor = Reflect.getProperty(untyped destination.__serializableMembers, property);
 			var sourceProperty = Reflect.getProperty(source, propertyDescriptor.sourceName != null ? propertyDescriptor.sourceName : property);
 			var propertyType = propertyDescriptor.type;
 			
 			if (sourceProperty != null) {
+				trace(sourceProperty);
 				switch (propertyType) {
 					case 0:     // Value
 						Reflect.setProperty(destination, property, sourceProperty);
@@ -175,6 +179,9 @@ class SerializationHelper {
 					case 6:     // Mesh reference
 						//var meshID:String = cast sourceProperty;
 						//Reflect.setProperty(destination, property, scene.getLastMeshByID(meshID));
+						
+					case 7:     // Color Curves
+						Reflect.setProperty(destination, property, ColorCurves.Parse(sourceProperty));
 						
 				}
 			}
@@ -200,7 +207,7 @@ class SerializationHelper {
 					case 0, 6:     // Value, Mesh reference
 						Reflect.setProperty(destination, property, sourceProperty);
 						
-					case 1, 2, 3, 4, 5:     // Texture, Color3, FresnelParameters, Vector2, Vector3
+					case 1, 2, 3, 4, 5, 7:     // Texture, Color3, FresnelParameters, Vector2, Vector3, Color Curves
 						Reflect.setProperty(destination, property, sourceProperty.clone());
 						
 				}
@@ -216,7 +223,9 @@ class SerializationHelper {
                 target.__serializableMembers = {};
             }
 			
-            Reflect.setProperty(target.__serializableMembers, propertyKey, { type: type, sourceName: sourceName });
+			if (Reflect.getProperty(target.__serializableMembers, propertyKey) == null) {
+				Reflect.setProperty(target.__serializableMembers, propertyKey, { type: type, sourceName: sourceName });
+			}
         };
     }
 

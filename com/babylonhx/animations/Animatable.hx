@@ -12,6 +12,8 @@ package com.babylonhx.animations;
 	private var _animations:Array<Animation> = [];
 	private var _paused:Bool = false;
 	private var _scene:Scene;
+	
+	public var animationStarted:Bool = false;
 
 	public var target:Dynamic;
 	public var fromFrame:Int;
@@ -19,7 +21,7 @@ package com.babylonhx.animations;
 	public var loopAnimation:Bool;
 	public var speedRatio:Float;
 	public var onAnimationEnd:Void->Void;
-	public var animationStarted:Bool = false;
+	
 	
 
 	public function new(scene:Scene, target:Dynamic, fromFrame:Int = 0, toFrame:Int = 100, loopAnimation:Bool = false, speedRatio:Float = 1.0, onAnimationEnd:Void->Void = null, animations:Array<Animation> = null) {
@@ -38,11 +40,11 @@ package com.babylonhx.animations;
 		scene._activeAnimatables.push(this);
 	}
 	
-	public function getAnimations():Array<Animation> {
+	// Methods
+	inline public function getAnimations():Array<Animation> {
 		return this._animations;
 	}
 
-	// Methods
 	public function appendAnimations(target:Dynamic, animations:Array<Animation>) {
 		for (index in 0...animations.length) {
 			var animation = animations[index];
@@ -117,26 +119,43 @@ package com.babylonhx.animations;
 	}
 
 	public function stop(?animationName:String) {
-		var index = this._scene._activeAnimatables.indexOf(this);
-		
-		if (index > -1) {
-			var animations = this._animations;
-			var numberOfAnimationsStopped = 0;
-			var index = animations.length - 1;
-			while (index >= 0) {
-				if (animationName != null && animations[index].name != animationName) {
-					continue;
+		if (animationName != null) {
+			var idx = this._scene._activeAnimatables.indexOf(this);
+			
+			if (idx > -1) {
+				var animations = this._animations;
+				
+				var index = animations.length - 1;
+				while (index >= 0) {
+					if (Std.is(animationName, String) && animations[index].name != animationName) {
+						continue;
+					}
+					
+					animations[index].reset();
+					animations.splice(index, 1);
+					
+					index--;
 				}
 				
-				animations[index].reset();
-				animations.splice(index, 1);
-				numberOfAnimationsStopped++;
-				
-				--index;
+				if (animations.length == 0) {
+					this._scene._activeAnimatables.splice(idx, 1);
+					
+					if (this.onAnimationEnd != null) {
+						this.onAnimationEnd();
+					}
+				}
 			}
+		} 
+		else {
+			var index = this._scene._activeAnimatables.indexOf(this);
 			
-			if (animations.length == numberOfAnimationsStopped) {
+			if (index > -1) {
 				this._scene._activeAnimatables.splice(index, 1);
+				var animations = this._animations;
+				
+				for (index in 0...animations.length) {
+					animations[index].reset();
+				}
 				
 				if (this.onAnimationEnd != null) {
 					this.onAnimationEnd();

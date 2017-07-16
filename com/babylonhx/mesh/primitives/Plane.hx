@@ -18,7 +18,7 @@ import com.babylonhx.tools.Tags;
 		this.size = size;
 		this.side = side;
 		
-		super(id, scene, this._regenerateVertexData(), canBeRegenerated, mesh);
+		super(id, scene, canBeRegenerated, mesh);
 	}
 
 	override public function _regenerateVertexData():VertexData {
@@ -27,6 +27,14 @@ import com.babylonhx.tools.Tags;
 
 	override public function copy(id:String):Geometry {
 		return new Plane(id, this.getScene(), this.size, this.canBeRegenerated(), null, this.side);
+	}
+	
+	override public function serialize():Dynamic {
+		var serializationObject = super.serialize();
+		
+		serializationObject.size = this.size;
+		
+		return serializationObject;
 	}
 	
 	public static function Parse(parsedPlane:Dynamic, scene:Scene):Geometry {

@@ -20,8 +20,8 @@ import com.babylonhx.math.Color3;
 	
 
 	public function new(name:String, size:Float, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
-		if (!ShadersStore.Shaders.exists("grasstexture.fragment")) {
-			ShadersStore.Shaders.set("grasstexture.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("grasstextureFragmentShader")) {
+			ShadersStore.Shaders.set("grasstextureFragmentShader", fragmentShader);
 		}
 		
 		super(name, size, "grasstexture", scene, fallbackTexture, generateMipMaps);

@@ -2,7 +2,7 @@ package com.babylonhx.d2.geom;
 
 import com.babylonhx.d2.display.DisplayObject;
 
-import com.babylonhx.utils.typedarray.Float32Array;
+import lime.utils.Float32Array;
 
 /**
  * ...

@@ -9,8 +9,8 @@ import com.babylonhx.cameras.Camera;
 
 @:expose('BABYLON.DisplayPassPostProcess') class DisplayPassPostProcess extends PostProcess {
 	
-	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
-		super(name, "displayPass", ["passSampler"], ["passSampler"], ratio, camera, samplingMode, engine, reusable);
+	public function new(name:String, options:Dynamic, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
+		super(name, "displayPass", ["passSampler"], ["passSampler"], options, camera, samplingMode, engine, reusable);
 	}
 	
 }

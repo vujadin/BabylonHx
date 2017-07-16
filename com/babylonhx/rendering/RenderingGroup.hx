@@ -38,6 +38,8 @@ import com.babylonhx.particles.ParticleSystem;
     private var _renderAlphaTest:SmartArray<SubMesh>->Void;
     private var _renderTransparent:SmartArray<SubMesh>->Void;
 	
+	private var _edgesRenderers:SmartArray<EdgesRenderer> = new SmartArray<EdgesRenderer>(16);
+	
 	public var onBeforeTransparentRendering:Void->Void;
 	
 
@@ -133,6 +135,8 @@ import com.babylonhx.particles.ParticleSystem;
 			engine.setAlphaTesting(false);
 		}
 		
+		var stencilState = engine.getStencilBuffer();
+		engine.setStencilBuffer(false);
 		// Sprites
 		if (renderSprites) {
 			this._renderSprites();
@@ -151,6 +155,12 @@ import com.babylonhx.particles.ParticleSystem;
 		if (this._transparentSubMeshes.length > 0) {
 			this._renderTransparent(this._transparentSubMeshes);
 			engine.setAlphaMode(Engine.ALPHA_DISABLE);
+		}
+		engine.setStencilBuffer(stencilState);
+		
+		// Edges
+		for (edgesRendererIndex in 0...this._edgesRenderers.length) {
+			this._edgesRenderers.data[edgesRendererIndex].render();
 		}
 	}
 	
@@ -283,6 +293,16 @@ import com.babylonhx.particles.ParticleSystem;
 		this._alphaTestSubMeshes.reset();
 		this._particleSystems.reset();
         this._spriteManagers.reset();
+		this._edgesRenderers.reset();
+	}
+	
+	public function dispose() {
+		this._opaqueSubMeshes.dispose();
+		this._transparentSubMeshes.dispose();
+		this._alphaTestSubMeshes.dispose();
+		this._particleSystems.dispose();
+		this._spriteManagers.dispose();                      
+		this._edgesRenderers.dispose();
 	}
 
 	static var material:Material;

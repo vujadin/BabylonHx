@@ -19,19 +19,19 @@ import com.babylonhx.materials.textures.Texture;
 class GlowBlurPostProcess extends PostProcess {
 
 	public var direction:Vector2;
-	public var blurWidth:Float;
+	public var kernel:Float;
 	
 	
-	public function new(name:String, direction:Vector2, blurWidth:Float, options:Dynamic, camera:Camera, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, ?engine: Engine, reusable:Bool = false) {
+	public function new(name:String, direction:Vector2, kernel:Float, options:Dynamic, camera:Camera, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, ?engine: Engine, reusable:Bool = false) {
 		this.direction = direction;
-		this.blurWidth = blurWidth;
+		this.kernel = kernel;
 		
 		super(name, "glowBlurPostProcess", ["screenSize", "direction", "blurWidth"], null, options, camera, samplingMode, engine, reusable);
 		
 		this.onApplyObservable.add(function(effect:Effect, _) {
 			effect.setFloat2("screenSize", this.width, this.height);
 			effect.setVector2("direction", this.direction);
-			effect.setFloat("blurWidth", this.blurWidth);
+			effect.setFloat("blurWidth", this.kernel);
 		});
 	}
 	

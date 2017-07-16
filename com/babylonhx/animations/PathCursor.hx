@@ -20,8 +20,7 @@ class PathCursor {
 	}
 
 	public function getPoint():Vector3 {
-		var point = this.path.getPointAtLengthPosition(this.value);
-		
+		var point = this.path.getPointAtLengthPosition(this.value);		
 		return new Vector3(point.x, 0, point.y);
 	}
 

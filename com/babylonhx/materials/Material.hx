@@ -4,6 +4,8 @@ import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.materials.textures.RenderTargetTexture;
 import com.babylonhx.mesh.AbstractMesh;
+import com.babylonhx.mesh.BaseSubMesh;
+import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.math.Matrix;
@@ -28,6 +30,12 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	public static inline var ClockWiseSideOrientation:Int = 0;
 	public static inline var CounterClockWiseSideOrientation:Int = 1;
 	
+	public static inline var TextureDirtyFlag:Int = 1;
+	public static inline var LightDirtyFlag:Int = 2;
+	public static inline var FresnelDirtyFlag:Int = 4;
+	public static inline var AttributesDirtyFlag:Int = 8;
+	public static inline var MiscDirtyFlag:Int = 16;
+	
 	@serialize()
 	public var id:String;
 	
@@ -46,8 +54,21 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	@serialize()
 	public var alpha:Float = 1.0;
 	
-	@serialize()
-	public var backFaceCulling:Bool = true;
+	@serialize("backFaceCulling")
+	private var _backFaceCulling:Bool = true;
+	public var backFaceCulling(get, set):Bool;
+	private function set_backFaceCulling(value:Bool):Bool {
+		if (this._backFaceCulling == value) {
+			return value;
+		}
+		this._backFaceCulling = value;
+		this.markAsDirty(Material.TextureDirtyFlag);
+		
+		return value;
+	}
+	private function get_backFaceCulling():Bool {
+		return this._backFaceCulling;
+	}
 	
 	@serialize()
 	public var sideOrientation:Int = Material.CounterClockWiseSideOrientation;
@@ -55,6 +76,10 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	public var onCompiled:Effect->Void;
 	public var onError:Effect->String->Void;
 	public var getRenderTargetTextures:Void->SmartArray<RenderTargetTexture>;
+	
+	public var doNotSerialize:Bool = false;
+
+	public var storeEffectOnSubMeshes:Bool = false;
 	
 	/**
 	* An event triggered when the material is disposed.
@@ -100,8 +125,21 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	@serialize()
 	public var disableDepthWrite:Bool = false;
 	
-	@serialize()
-	public var fogEnabled:Bool = true;
+	@serialize("fogEnabled")
+	private var _fogEnabled:Bool = true;
+	public var fogEnabled(get, set):Bool;
+	private function set_fogEnabled(value:Bool):Bool {
+		if (this._fogEnabled == value) {
+			return value;
+		}
+		this._fogEnabled = value;
+		this.markAsDirty(Material.MiscDirtyFlag);
+		
+		return value;
+	}
+	private function get_fogEnabled():Bool {
+		return this._fogEnabled;
+	}
 
 	@serialize()
 	public var pointSize:Float = 1.0;
@@ -143,23 +181,36 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 
 	public var _effect:Effect;
 	public var _wasPreviouslyReady:Bool = false;
+	private var _useUBO:Bool;
 	private var _scene:Scene;
 	private var _fillMode:Int = Material.TriangleFillMode;
 	private var _cachedDepthWriteState:Bool;
 	
-	public var __smartArrayFlags:Array<Int> = [];
+	private var _uniformBuffer:UniformBuffer;
 	
-	public var __serializableMembers:Dynamic;
+	
+	public var __smartArrayFlags:Array<Int> = [];	// BHX
+	public var __serializableMembers:Dynamic;		// BHX
 	
 
-	public function new(name:String, scene:Scene, doNotAdd:Bool = false) {
+	public function new(name:String, scene:Scene = null, doNotAdd:Bool = false) {
 		this.id = name;
 		this.name = name;
 		
-		this._scene = scene;
+		this._scene = scene != null ? scene : Engine.LastCreatedScene;
+		
+		if (this._scene.useRightHandedSystem) {
+			this.sideOrientation = Material.ClockWiseSideOrientation;
+		} 
+		else {
+			this.sideOrientation = Material.CounterClockWiseSideOrientation;
+		}
+		
+		this._uniformBuffer = new UniformBuffer(this._scene.getEngine());
+		this._useUBO = this.getScene().getEngine().webGLVersion > 1;
 		
 		if (!doNotAdd) {
-			scene.materials.push(this);
+			this._scene.materials.push(this);
 		}
 		
 		// TODO: macro ...
@@ -168,6 +219,25 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		untyped __js__("Object.defineProperty(this, 'fillMode', { get: this.get_fillMode, set: this.set_fillMode })");
 		untyped __js__("Object.defineProperty(this, 'pointsCloud', { get: this.get_pointsCloud, set: this.set_pointsCloud })");
 		#end
+	}
+	
+	/**
+	 * @param {boolean} fullDetails - support for multiple levels of logging within scene loading
+	 * subclasses should override adding information pertainent to themselves
+	 */
+	public function toString(fullDetails:Bool = false):String {
+		var ret = "Name: " + this.name;
+		if (fullDetails) {
+		}
+		return ret;
+	}
+	
+	/**
+	 * Child classes can use it to update shaders         
+	 */
+	
+	public function getClassName():String {
+		return "Material";
 	}
 	
 	private function get_isFrozen():Bool {
@@ -184,6 +254,10 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 
 	public function isReady(?mesh:AbstractMesh, useInstances:Bool = false):Bool {
 		return true;
+	}
+	
+	public function isReadyForSubMesh(mesh:AbstractMesh, subMesh:BaseSubMesh, useInstances:Bool = false):Bool {
+		return false;            
 	}
 
 	public function getEffect():Effect {
@@ -210,33 +284,70 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		this._wasPreviouslyReady = false;
 	}
 
-	public function _preBind():Void {
+	public function _preBind(?effect:Effect):Void {
 		var engine = this._scene.getEngine();
 		
-		engine.enableEffect(this._effect);
-		engine.setState(this.backFaceCulling, this.zOffset, false, this.sideOrientation == Material.ClockWiseSideOrientation);
+		var reverse = this.sideOrientation == Material.ClockWiseSideOrientation;
+		
+		engine.enableEffect(effect != null ? effect : this._effect);
+		engine.setState(this.backFaceCulling, this.zOffset, false, reverse);
 	}
 
-	public function bind(world:Matrix, ?mesh:Mesh) {		
-		this._scene._cachedMaterial = this;		
-        this.onBindObservable.notifyObservers(mesh);
-		
-		if (this.disableDepthWrite) {
-            var engine = this._scene.getEngine();
-            this._cachedDepthWriteState = engine.getDepthWrite();
-            engine.setDepthWrite(false);
-        }
-	}
+	public function bind(world:Matrix, ?mesh:Mesh) { }
+	
+	public function bindForSubMesh(world:Matrix, mesh:Mesh, subMesh:SubMesh) { }
 
 	public function bindOnlyWorldMatrix(world:Matrix) { }
+	
+	public function bindSceneUniformBuffer(effect:Effect, sceneUbo:UniformBuffer) {
+		sceneUbo.bindToEffect(effect, "Scene");
+	}
 
-	public function unbind():Void {
+	public function bindView(effect:Effect) {
+		if (!this._useUBO) {
+			effect.setMatrix("view", this.getScene().getViewMatrix());
+		} 
+		else {
+			this.bindSceneUniformBuffer(effect, this.getScene().getSceneUniformBuffer());
+		}
+	}
+
+	public function bindViewProjection(effect:Effect) {
+		if (!this._useUBO) {
+			effect.setMatrix("viewProjection", this.getScene().getTransformMatrix());
+		} 
+		else {
+			this.bindSceneUniformBuffer(effect, this.getScene().getSceneUniformBuffer());
+		}
+	}
+
+	public function _afterBind(mesh:Mesh, ?effect:Effect) {
+		this._scene._cachedMaterial = this;
+		
+		this.onBindObservable.notifyObservers(mesh);
+		
+		if (this.disableDepthWrite) {
+			var engine = this._scene.getEngine();
+			this._cachedDepthWriteState = engine.getDepthWrite();
+			engine.setDepthWrite(false);
+		}
+	}
+
+	public function unbind() {
 		this.onUnBindObservable.notifyObservers(this);
 		
 		if (this.disableDepthWrite) {
             var engine = this._scene.getEngine();
             engine.setDepthWrite(this._cachedDepthWriteState);
         }
+	}
+	
+	public function getActiveTextures():Array<BaseTexture> {
+		return new Array<BaseTexture>();
+	}
+	
+	public function hasTexture(texture:BaseTexture):Bool {
+		return false;
 	}
 	
 	public function clone(name:String, cloneChildren:Bool = false):Material {
@@ -256,8 +367,104 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		
 		return result;
 	}
+	
+	// Force shader compilation including textures ready check
+	var beforeRenderCallback:Scene->Null<EventState>->Void;
+	public function forceCompilation(mesh:AbstractMesh, onCompiled:Material->Void, ?options:Dynamic) {
+		var subMesh = new BaseSubMesh();
+		var scene = this.getScene();
+		var engine = scene.getEngine();
+		
+		beforeRenderCallback = function(_, _) {
+			if (subMesh._materialDefines != null) {
+				subMesh._materialDefines._renderId = -1;
+			}
+			
+			var alphaTestState = engine.getAlphaTesting();
+			engine.setAlphaTesting(options != null ? options.alphaTest : this.needAlphaTesting());
+			
+			if (this.isReadyForSubMesh(mesh, subMesh)) {
+				scene.unregisterBeforeRender(this.beforeRenderCallback);
+				
+				if (onCompiled != null) {
+					onCompiled(this);
+				}
+			}
+			
+			engine.setAlphaTesting(alphaTestState);
+		};
+		
+		scene.registerBeforeRender(this.beforeRenderCallback);
+	}
+   
+	public function markAsDirty(flag:Int) {
+		if (flag & Material.TextureDirtyFlag != 0) {
+			this._markAllSubMeshesAsTexturesDirty();
+		}
+		
+		if (flag & Material.LightDirtyFlag != 0) {
+			this._markAllSubMeshesAsLightsDirty();
+		}
+		
+		if (flag & Material.FresnelDirtyFlag != 0) {
+			this._markAllSubMeshesAsFresnelDirty();
+		}
+		
+		if (flag & Material.AttributesDirtyFlag != 0) {
+			this._markAllSubMeshesAsAttributesDirty();
+		}
+		
+		if (flag & Material.MiscDirtyFlag != 0) {
+			this._markAllSubMeshesAsMiscDirty();
+		}
+		
+		this.getScene().resetCachedMaterial();
+	}
 
-	public function dispose(forceDisposeEffect:Bool = false, forceDisposeTextures:Bool = true) {	
+	public function _markAllSubMeshesAsDirty(func:MaterialDefines->Void) {
+		for (mesh in this.getScene().meshes) {
+			if (mesh.subMeshes == null) {
+				continue;
+			}
+			for (subMesh in mesh.subMeshes) {
+				if (subMesh.getMaterial() != this) {
+					continue;
+				}
+				
+				if (subMesh._materialDefines == null) {
+					return;
+				}
+				
+				func(subMesh._materialDefines);
+			}
+		}
+	}
+	
+	public function _markAllSubMeshesAsImageProcessingDirty() {
+		this._markAllSubMeshesAsDirty(function(defines:MaterialDefines) { defines.markAsImageProcessingDirty(); } );
+	} 
+
+	public function _markAllSubMeshesAsTexturesDirty() {
+		this._markAllSubMeshesAsDirty(function(defines:MaterialDefines) { defines.markAsTexturesDirty(); } );
+	}
+
+	public function _markAllSubMeshesAsFresnelDirty() {
+		this._markAllSubMeshesAsDirty(function(defines:MaterialDefines) { defines.markAsFresnelDirty(); } );
+	}
+
+	public function _markAllSubMeshesAsLightsDirty() {
+		this._markAllSubMeshesAsDirty(function(defines:MaterialDefines) { defines.markAsLightDirty(); } );
+	}
+
+	public function _markAllSubMeshesAsAttributesDirty() {
+		this._markAllSubMeshesAsDirty(function(defines:MaterialDefines) { defines.markAsAttributesDirty(); } );
+	}
+
+	public function _markAllSubMeshesAsMiscDirty() {
+		this._markAllSubMeshesAsDirty(function(defines:MaterialDefines) { defines.markAsMiscDirty(); } );
+	}
+
+	public function dispose(forceDisposeEffect:Bool = false, forceDisposeTextures:Bool = false) {	
 		// Animations
         this.getScene().stopAnimation(this);
 		
@@ -267,19 +474,42 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 			this._scene.materials.splice(index, 1);
 		}
 		
-		// Shader are kept in cache for further use but we can get rid of this by using forceDisposeEffect
-		if (forceDisposeEffect && this._effect != null) {
-			this._scene.getEngine()._releaseEffect(this._effect);
-			this._effect = null;
-		}
-		
 		// Remove from meshes
+		var mesh:AbstractMesh = null;
 		for (index in 0...this._scene.meshes.length) {
-			var mesh = this._scene.meshes[index];
+			mesh = this._scene.meshes[index];
 			
 			if (mesh.material == this) {
 				mesh.material = null;
+				
+				if (mesh.getClassName() == "Mesh" && untyped mesh.geometry != null) {
+					var geometry = untyped mesh.geometry;
+					
+					if (this.storeEffectOnSubMeshes) {
+						for (subMesh in mesh.subMeshes) {
+							geometry._releaseVertexArrayObject(subMesh._materialEffect);
+						}
+					} 
+					else {
+						geometry._releaseVertexArrayObject(this._effect);
+					}
+				}
 			}
+		}
+		
+		this._uniformBuffer.dispose();
+		
+		// Shader are kept in cache for further use but we can get rid of this by using forceDisposeEffect
+		if (forceDisposeEffect && this._effect != null) {
+			if (this.storeEffectOnSubMeshes) {
+				for (subMesh in mesh.subMeshes) {
+					this._scene.getEngine()._releaseEffect(subMesh._materialEffect); 
+				}
+			} 
+			else {
+				this._scene.getEngine()._releaseEffect(this._effect);                    
+			}
+			this._effect = null;
 		}
 		
 		// Callback

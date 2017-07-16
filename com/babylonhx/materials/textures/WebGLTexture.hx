@@ -1,8 +1,12 @@
 package com.babylonhx.materials.textures;
 
 import com.babylonhx.ISmartArrayCompatible;
+import com.babylonhx.math.SphericalPolynomial;
 
-import com.babylonhx.utils.GL;
+import lime.graphics.opengl.GL;
+import lime.graphics.opengl.GLTexture;
+import lime.graphics.opengl.GLFramebuffer;
+import lime.graphics.opengl.GLRenderbuffer;
 
 
 /**
@@ -14,17 +18,16 @@ import com.babylonhx.utils.GL;
 	
 	public var data:GLTexture;
 	
-	public var _framebuffer:GLFramebuffer;
-	public var _depthBuffer:GLRenderbuffer;
+	
 	public var generateMipMaps:Bool;
 	public var type:Int;
-	public var isCube:Bool;	
-	
+	public var format:Int;
+	public var isCube:Bool;		
 	public var isReady:Bool;
 	public var noMipmap:Bool = true;
 	public var references:Int;
 	public var url:String;
-	
+	public var samples:Int;	
 	public var samplingMode:Int;
 	
 	public var onLoadedCallbacks:Array<Void->Void>;
@@ -32,13 +35,26 @@ import com.babylonhx.utils.GL;
 	public var _size:Dynamic;
 	public var _baseHeight:Int;
 	public var _baseWidth:Int;
-	public var _cachedWrapU:Int;
-	public var _cachedWrapV:Int;	
 	public var _width:Int;	
 	public var _height:Int;
+	public var _framebuffer:GLFramebuffer;
+	public var _depthStencilBuffer:GLRenderbuffer;
+	public var _MSAAFramebuffer:GLFramebuffer;
+    public var _MSAARenderBuffer:GLRenderbuffer;	
 	public var _cachedCoordinatesMode:Int;
+	public var _cachedWrapU:Int;
+	public var _cachedWrapV:Int;	
 	public var _isDisabled:Bool;
-	public var _cubeFaces:Array<WebGLTexture>;
+	public var _generateStencilBuffer:Bool;
+	public var _generateDepthBuffer:Bool;
+	
+	public var _sphericalPolynomial:SphericalPolynomial;
+	// The following three fields helps sharing generated fixed LODs for texture filtering
+    // In environment not supporting the textureLOD extension like EDGE. They are for internal use only.
+    // They are at the level of the gl texture to benefit from the cache.
+    public var _lodTextureHigh:BaseTexture;
+	public var _lodTextureMid:BaseTexture;
+    public var _lodTextureLow:BaseTexture;
 
     #if (js || purejs)
     public var _workingCanvas:js.html.CanvasElement;
@@ -65,13 +81,30 @@ import com.babylonhx.utils.GL;
 		this._cachedWrapU = -1;
 		this._cachedWrapV = -1;
 		this._framebuffer = null;
-		this._depthBuffer = null;
+		this._depthStencilBuffer = null;
 		this._cachedCoordinatesMode = -1;
 		this._isDisabled = false;
 		
 		this.isReady = false;
 		this.noMipmap = false;
 		this.references = 0;
+	}
+	
+	public function dispose(_:Bool = false) {
+		GL.deleteFramebuffer(_framebuffer);
+		_framebuffer = null;
+		
+		GL.deleteRenderbuffer(_depthStencilBuffer);
+		_depthStencilBuffer = null;
+		
+		GL.deleteFramebuffer(_MSAAFramebuffer);
+		_MSAAFramebuffer = null;
+		
+		GL.deleteRenderbuffer(_MSAARenderBuffer);
+		_MSAARenderBuffer = null;
+		
+		GL.deleteTexture(this.data);
+		this.data = null;
 	}
 	
 }

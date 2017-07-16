@@ -8,7 +8,8 @@ import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.VertexData;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.culling.BoundingBox;
-import com.babylonhx.utils.typedarray.Float32Array;
+
+import lime.utils.Float32Array;
 
 /**
  * ...

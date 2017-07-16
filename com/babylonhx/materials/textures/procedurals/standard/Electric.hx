@@ -92,8 +92,8 @@ void main(void)
 	
 
 	public function new(name:String, size:Float, scene:Scene, ?noiseTexture:Texture, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
-		if (!ShadersStore.Shaders.exists("electrictexture.fragment")) {
-			ShadersStore.Shaders.set("electrictexture.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("electrictextureFragmentShader")) {
+			ShadersStore.Shaders.set("electrictextureFragmentShader", fragmentShader);
 		}
 		
 		super(name, size, "electrictexture", scene, fallbackTexture, generateMipMaps);

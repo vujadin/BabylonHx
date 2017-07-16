@@ -2,8 +2,8 @@ package com.babylonhx.d2.display;
 
 import com.babylonhx.d2.geom.Rectangle;
 
-import com.babylonhx.utils.GL;
-import com.babylonhx.utils.typedarray.Float32Array;
+import lime.graphics.opengl.GL;
+import lime.utils.Float32Array;
 
 /**
  * ...
@@ -91,7 +91,8 @@ class Graphics {
 	 */
 	public function _render() {
 		this._endLine();
-		this._stage.Gl.uniformMatrix4fv(this._stage._sprg.tMatUniform, false, this._stage._mstack.top());
+		var _top = this._stage._mstack.top();
+		this._stage.Gl.uniformMatrix4fv(this._stage._sprg.tMatUniform, #if cpp _top.length, #end false, _top);
 		this._stage._updateCMStack();
 		
 		for (i in 0...this._afills.length) {

@@ -8,6 +8,9 @@ import com.babylonhx.math.Quaternion;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
+import com.babylonhx.tools.Observable;
+import com.babylonhx.tools.Observer;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -144,6 +147,26 @@ class NodeCache {
 		
 		return parent;
 	}
+	
+	public function getClassName():String {
+		return "Node";
+	}
+	
+	/**
+	* An event triggered when the node is disposed.
+	* @type {BABYLON.Observable}
+	*/
+	public var onDisposeObservable:Observable<Node> = new Observable<Node>();
+	private var _onDisposeObserver:Observer<Node>;
+	public var onDispose(never, set):Node->Null<EventState>->Void;
+	private function set_onDispose(callback:Node->Null<EventState>->Void):Node->Null<EventState>->Void {
+		if (this._onDisposeObserver != null) {
+			this.onDisposeObservable.remove(this._onDisposeObserver);
+		}
+		this._onDisposeObserver = this.onDisposeObservable.add(callback);
+		
+		return callback;
+	}
 
 	inline private function get_parent():Node {
 		return this._parentNode;
@@ -260,7 +283,7 @@ class NodeCache {
 	 * @param {boolean} value - the new enabled state
 	 * @see isEnabled
 	 */
-	inline public function setEnabled(value:Bool) {
+	public function setEnabled(value:Bool) {
 		this._isEnabled = value;
 	}
 
@@ -328,11 +351,8 @@ class NodeCache {
 	}
 	
 	/**
-	 * @param predicate: an optional predicate that will be called on every evaluated children, 
-	 * the predicate must return true for a given child to be part of the result, otherwise it will be ignored.
-	 * @Deprecated, legacy support.
-	 * use getDecendants instead.
-	 */
+	 * Get all direct children of this node.
+	*/
 	public function getChildren(?predicate:Node->Bool):Array<Node> {
 		return this.getDescendants(true, predicate);
 	}
@@ -429,6 +449,10 @@ class NodeCache {
 	
 	public function dispose(doNotRecurse:Bool = false) {
 		this.parent = null;
+		
+		// Callback
+		this.onDisposeObservable.notifyObservers(this);
+		this.onDisposeObservable.clear();
 	}
 	
 	public static function ParseAnimationRanges(node:Node, parsedNode:Dynamic, scene:Scene) {

@@ -24,8 +24,8 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 	}
 	
 
-	public function new(name:String, options:Dynamic, scene:Scene, generateMipMaps:Bool, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE) {
-		super(null, scene, !generateMipMaps);
+	public function new(name:String, options:Dynamic, scene:Scene, generateMipMaps:Bool, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, format:Int = Engine.TEXTUREFORMAT_RGBA) {
+		super(null, scene, !generateMipMaps, null, samplingMode, null, null, null, null, format);
 		
 		this.name = name;
 		
@@ -53,6 +53,15 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 	private function get_canRescale():Bool {
 		return true;
 	}
+	
+	private function _recreate(textureSize:Dynamic) {
+		this._canvas.width = textureSize.width;
+		this._canvas.height = textureSize.height;
+		
+		this.releaseInternalTexture();
+		
+		this._texture = this.getScene().getEngine().createDynamicTexture(textureSize.width, textureSize.height, this._generateMipMaps, this._samplingMode);
+	}
 
 	override public function scale(ratio:Float) {
 		var textureSize = this.getSize();
@@ -63,9 +72,16 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 		//this._canvas.width = textureSize.width;
 		//this._canvas.height = textureSize.height;
 		
-		this.releaseInternalTexture();
+		this._recreate(textureSize);
+	}
+	
+	public function scaleTo(width:Int, height:Int) {
+		var textureSize = this.getSize();
 		
-		this._texture = this.getScene().getEngine().createDynamicTexture(textureSize.width, textureSize.height, this._generateMipMaps, this._samplingMode);
+		textureSize.width  = width;
+		textureSize.height = height;
+		
+		this._recreate(textureSize);
 	}
 
 	public function clear() {
@@ -80,7 +96,7 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 	}
 
 	public function update(invertY:Bool = false) {
-		this.getScene().getEngine().updateDynamicTexture(this._texture, this._canvas, invertY);
+		this.getScene().getEngine().updateDynamicTexture(this._texture, this._canvas, invertY, null, this._format);
 	}
 
 	/*public drawText(text: string, x: number, y: number, font: string, color: string, clearColor: string, invertY?: boolean, update = true) {

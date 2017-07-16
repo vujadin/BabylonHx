@@ -7,11 +7,9 @@ import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Color4;
 import com.babylonhx.mesh.MeshBuilder;
 
-import com.babylonhx.utils.typedarray.UInt8Array;
-import com.babylonhx.utils.typedarray.Float32Array;
-import com.babylonhx.utils.typedarray.Int32Array;
-
-//import haxe.ds.Either;
+import lime.utils.UInt8Array;
+import lime.utils.Float32Array;
+import lime.utils.Int32Array;
 
 /**
  * ...
@@ -20,15 +18,15 @@ import com.babylonhx.utils.typedarray.Int32Array;
 
 @:expose('BABYLON.VertexData') class VertexData {
 	
-	//public var positions:Either<Array<Float>, Float32Array>;
 	public var positions:Array<Float>;
 	public var normals:Array<Float>;
+	public var tangents:Array<Float>;
 	public var uvs:Array<Float>;
-	public var uv2s:Array<Float>;
-	public var uv3s:Array<Float>;
-	public var uv4s:Array<Float>;
-	public var uv5s:Array<Float>;
-	public var uv6s:Array<Float>;
+	public var uvs2:Array<Float>;
+	public var uvs3:Array<Float>;
+	public var uvs4:Array<Float>;
+	public var uvs5:Array<Float>;
+	public var uvs6:Array<Float>;
 	public var colors:Array<Float>;
 	public var matricesIndices:Array<Float>;
 	public var matricesWeights:Array<Float>;
@@ -42,7 +40,6 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	
 	public function new() { }
 
-	//@:generic public function set<T>(data:T, kind:String) {
 	public function set(data:Array<Float>, kind:String) {
 		switch (kind) {
 			case VertexBuffer.PositionKind:
@@ -51,23 +48,26 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			case VertexBuffer.NormalKind:
 				this.normals = data;
 				
+			case VertexBuffer.TangentKind:
+				this.tangents = data;
+				
 			case VertexBuffer.UVKind:
 				this.uvs = data;
 				
 			case VertexBuffer.UV2Kind:
-				this.uv2s = data;
+				this.uvs2 = data;
 				
 			case VertexBuffer.UV3Kind:
-				this.uv3s = data;
+				this.uvs3 = data;
 				
 			case VertexBuffer.UV4Kind:
-				this.uv4s = data;
+				this.uvs4 = data;
 				
 			case VertexBuffer.UV5Kind:
-				this.uv5s = data;
+				this.uvs5 = data;
 				
 			case VertexBuffer.UV6Kind:
-				this.uv6s = data;				
+				this.uvs6 = data;				
 				
 			case VertexBuffer.ColorKind:
 				this.colors = data;
@@ -90,20 +90,42 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		}
 	}
 
-	public function applyToMesh(mesh:Mesh, updatable:Bool = false) {
+	/**
+	 * Associates the vertexData to the passed Mesh.  
+	 * Sets it as updatable or not (default `false`).  
+	 * Returns the VertexData.  
+	 */
+	public function applyToMesh(mesh:Mesh, updatable:Bool = false):VertexData {
 		this._applyTo(mesh, updatable);
+		return this;
 	}
 
-	public function applyToGeometry(geometry:Geometry, updatable:Bool = false) {
+	/**
+	 * Associates the vertexData to the passed Geometry.  
+	 * Sets it as updatable or not (default `false`).  
+	 * Returns the VertexData.  
+	 */
+	public function applyToGeometry(geometry:Geometry, updatable:Bool = false):VertexData {
 		this._applyTo(geometry, updatable);
+		return this;
 	}
 
-	public function updateMesh(mesh:Mesh, ?updateExtends:Bool, makeItUnique:Bool = false) {
+	/**
+	 * Updates the associated mesh.  
+	 * Returns the VertexData.  
+	 */
+	public function updateMesh(mesh:Mesh, ?updateExtends:Bool, makeItUnique:Bool = false):VertexData {
 		this._update(mesh);
+		return this;
 	}
 
-	public function updateGeometry(geometry:Geometry, ?updateExtends:Bool, makeItUnique:Bool = false) {
+	/**
+	 * Updates the associated geometry.  
+	 * Returns the VertexData.  
+	 */
+	public function updateGeometry(geometry:Geometry, ?updateExtends:Bool, makeItUnique:Bool = false):VertexData {
 		this._update(geometry);
+		return this;
 	}
 
 	private function _applyTo(meshOrGeometry:IGetSetVerticesData, updatable:Bool = false) {
@@ -115,28 +137,32 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			meshOrGeometry.setVerticesData(VertexBuffer.NormalKind, this.normals, updatable);
 		}
 		
+		if (this.tangents != null) {
+			meshOrGeometry.setVerticesData(VertexBuffer.TangentKind, this.tangents, updatable);
+		}
+		
 		if (this.uvs != null) {
 			meshOrGeometry.setVerticesData(VertexBuffer.UVKind, this.uvs, updatable);
 		}
 		
-		if (this.uv2s != null) {
-			meshOrGeometry.setVerticesData(VertexBuffer.UV2Kind, this.uv2s, updatable);
+		if (this.uvs2 != null) {
+			meshOrGeometry.setVerticesData(VertexBuffer.UV2Kind, this.uvs2, updatable);
 		}
 		
-		if (this.uv3s != null) {
-			meshOrGeometry.setVerticesData(VertexBuffer.UV3Kind, this.uv3s, updatable);
+		if (this.uvs3 != null) {
+			meshOrGeometry.setVerticesData(VertexBuffer.UV3Kind, this.uvs3, updatable);
 		}
 		
-		if (this.uv4s != null) {
-			meshOrGeometry.setVerticesData(VertexBuffer.UV4Kind, this.uv4s, updatable);
+		if (this.uvs4 != null) {
+			meshOrGeometry.setVerticesData(VertexBuffer.UV4Kind, this.uvs4, updatable);
 		}
 		
-		if (this.uv5s != null) {
-			meshOrGeometry.setVerticesData(VertexBuffer.UV5Kind, this.uv5s, updatable);
+		if (this.uvs5 != null) {
+			meshOrGeometry.setVerticesData(VertexBuffer.UV5Kind, this.uvs5, updatable);
 		}
 		
-		if (this.uv6s != null) {
-			meshOrGeometry.setVerticesData(VertexBuffer.UV6Kind, this.uv6s, updatable);
+		if (this.uvs6 != null) {
+			meshOrGeometry.setVerticesData(VertexBuffer.UV6Kind, this.uvs6, updatable);
 		}
 		
 		if (this.colors != null) {
@@ -173,28 +199,32 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			meshOrGeometry.updateVerticesData(VertexBuffer.NormalKind, this.normals, updateExtends, makeItUnique);
 		}
 		
+		if (this.tangents != null) {
+			meshOrGeometry.updateVerticesData(VertexBuffer.TangentKind, this.tangents, updateExtends, makeItUnique);
+		}
+		
 		if (this.uvs != null) {
 			meshOrGeometry.updateVerticesData(VertexBuffer.UVKind, this.uvs, updateExtends, makeItUnique);
 		}
 		
-		if (this.uv2s != null) {
-			meshOrGeometry.updateVerticesData(VertexBuffer.UV2Kind, this.uv2s, updateExtends, makeItUnique);
+		if (this.uvs2 != null) {
+			meshOrGeometry.updateVerticesData(VertexBuffer.UV2Kind, this.uvs2, updateExtends, makeItUnique);
 		}
 		
-		if (this.uv3s != null) {
-			meshOrGeometry.updateVerticesData(VertexBuffer.UV3Kind, this.uv3s, updateExtends, makeItUnique);
+		if (this.uvs3 != null) {
+			meshOrGeometry.updateVerticesData(VertexBuffer.UV3Kind, this.uvs3, updateExtends, makeItUnique);
 		}
 		
-		if (this.uv4s != null) {
-			meshOrGeometry.updateVerticesData(VertexBuffer.UV4Kind, this.uv4s, updateExtends, makeItUnique);
+		if (this.uvs4 != null) {
+			meshOrGeometry.updateVerticesData(VertexBuffer.UV4Kind, this.uvs4, updateExtends, makeItUnique);
 		}
 		
-		if (this.uv5s != null) {
-			meshOrGeometry.updateVerticesData(VertexBuffer.UV5Kind, this.uv5s, updateExtends, makeItUnique);
+		if (this.uvs5 != null) {
+			meshOrGeometry.updateVerticesData(VertexBuffer.UV5Kind, this.uvs5, updateExtends, makeItUnique);
 		}
 		
-		if (this.uv6s != null) {
-			meshOrGeometry.updateVerticesData(VertexBuffer.UV6Kind, this.uv6s, updateExtends, makeItUnique);
+		if (this.uvs6 != null) {
+			meshOrGeometry.updateVerticesData(VertexBuffer.UV6Kind, this.uvs6, updateExtends, makeItUnique);
 		}
 		
 		if (this.colors != null) {
@@ -223,7 +253,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	}
 
 	static var transformed:Vector3 = Vector3.Zero();
-	inline public function transform(matrix:Matrix) {		
+	inline public function transform(matrix:Matrix):VertexData {		
 		if (this.positions != null) {
 			var position = Vector3.Zero();
 			
@@ -255,6 +285,26 @@ import com.babylonhx.utils.typedarray.Int32Array;
 				index += 3;
 			}
 		}
+		
+		if (this.tangents != null) {
+			var tangent = Vector4.Zero();
+			var tangentTransformed = Vector4.Zero();
+			
+			var index:Int = 0;
+			while (index < this.tangents.length) {
+				Vector4.FromArrayToRef(this.tangents, index, tangent);
+				
+				Vector4.TransformNormalToRef(tangent, matrix, tangentTransformed);
+				this.tangents[index] = tangentTransformed.x;
+				this.tangents[index + 1] = tangentTransformed.y;
+				this.tangents[index + 2] = tangentTransformed.z;
+				this.tangents[index + 3] = tangentTransformed.w;
+				
+				index += 4;
+			}
+		}
+		
+		return this;
 	}
 
 	public function merge(other:VertexData) {
@@ -288,6 +338,15 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			}
 		}
 		
+		if (other.tangents != null) {
+			if (this.tangents == null) {
+				this.tangents = [];
+			}
+			for (index in 0...other.normals.length) {
+				this.tangents.push(other.tangents[index]);
+			}
+		}
+		
 		if (other.uvs != null) {
 			if (this.uvs == null) {
 				this.uvs = [];
@@ -297,48 +356,48 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			}
 		}
 		
-		if (other.uv2s != null) {
-			if (this.uv2s == null) {
-				this.uv2s = [];
+		if (other.uvs2 != null) {
+			if (this.uvs2 == null) {
+				this.uvs2 = [];
 			}
-			for (index in 0...other.uv2s.length) {
-				this.uv2s.push(other.uv2s[index]);
-			}
-		}
-		
-		if (other.uv3s != null) {
-			if (this.uv3s == null) {
-				this.uv3s = [];
-			}
-			for (index in 0...other.uv3s.length) {
-				this.uv3s.push(other.uv3s[index]);
+			for (index in 0...other.uvs2.length) {
+				this.uvs2.push(other.uvs2[index]);
 			}
 		}
 		
-		if (other.uv4s != null) {
-			if (this.uv4s == null) {
-				this.uv4s = [];
+		if (other.uvs3 != null) {
+			if (this.uvs3 == null) {
+				this.uvs3 = [];
 			}
-			for (index in 0...other.uv4s.length) {
-				this.uv4s.push(other.uv4s[index]);
-			}
-		}
-		
-		if (other.uv5s != null) {
-			if (this.uv5s == null) {
-				this.uv5s = [];
-			}
-			for (index in 0...other.uv5s.length) {
-				this.uv5s.push(other.uv5s[index]);
+			for (index in 0...other.uvs3.length) {
+				this.uvs3.push(other.uvs3[index]);
 			}
 		}
 		
-		if (other.uv6s != null) {
-			if (this.uv6s == null) {
-				this.uv6s = [];
+		if (other.uvs4 != null) {
+			if (this.uvs4 == null) {
+				this.uvs4 = [];
 			}
-			for (index in 0...other.uv6s.length) {
-				this.uv6s.push(other.uv6s[index]);
+			for (index in 0...other.uvs4.length) {
+				this.uvs4.push(other.uvs4[index]);
+			}
+		}
+		
+		if (other.uvs5 != null) {
+			if (this.uvs5 == null) {
+				this.uvs5 = [];
+			}
+			for (index in 0...other.uvs5.length) {
+				this.uvs5.push(other.uvs5[index]);
+			}
+		}
+		
+		if (other.uvs6 != null) {
+			if (this.uvs6 == null) {
+				this.uvs6 = [];
+			}
+			for (index in 0...other.uvs6.length) {
+				this.uvs6.push(other.uvs6[index]);
 			}
 		}
 		
@@ -387,69 +446,139 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			}
 		}
 	}
+	
+	public function serialize():Dynamic {
+		var serializationObject = this.serialize();
+		
+		if (this.positions != null) {
+			serializationObject.positions = this.positions;
+		}
+		
+		if (this.normals != null) {
+			serializationObject.normals = this.normals;
+		}
+		
+		if (this.tangents != null) {
+			serializationObject.tangents = this.tangents;
+		}
+		
+		if (this.uvs != null) {
+			serializationObject.uvs = this.uvs;
+		}
+		
+		if (this.uvs2 != null) {
+			serializationObject.uvs2 = this.uvs2;
+		}
+		
+		if (this.uvs3 != null) {
+			serializationObject.uvs3 = this.uvs3;
+		}
+		
+		if (this.uvs4 != null) {
+			serializationObject.uvs4 = this.uvs4;
+		}
+		
+		if (this.uvs5 != null) {
+			serializationObject.uvs5 = this.uvs5;
+		}
+		
+		if (this.uvs6 != null) {
+			serializationObject.uvs6 = this.uvs6;
+		}
+		
+		if (this.colors != null) {
+			serializationObject.colors = this.colors;
+		}
+		
+		if (this.matricesIndices != null) {
+			serializationObject.matricesIndices = this.matricesIndices;
+			//serializationObject.matricesIndices._isExpanded = true;
+		}
+		
+		if (this.matricesWeights != null) {
+			serializationObject.matricesWeights = this.matricesWeights;
+		}
+		
+		if (this.matricesIndicesExtra != null) {
+			serializationObject.matricesIndicesExtra = this.matricesIndicesExtra;
+			//serializationObject.matricesIndicesExtra._isExpanded = true;
+		}
+		
+		if (this.matricesWeightsExtra != null) {
+			serializationObject.matricesWeightsExtra = this.matricesWeightsExtra;
+		}
+		
+		serializationObject.indices = this.indices;
+		
+		return serializationObject;
+	}
 
 	// Statics
-	public static function ExtractFromMesh(mesh:Mesh, copyWhenShared:Bool = false):VertexData {
-		return VertexData._ExtractFrom(mesh, copyWhenShared);
+	public static function ExtractFromMesh(mesh:Mesh, copyWhenShared:Bool = false, forceCopy:Bool = false):VertexData {
+		return VertexData._ExtractFrom(mesh, copyWhenShared, forceCopy);
 	}
 
-	public static function ExtractFromGeometry(geometry:Geometry, copyWhenShared:Bool = false):VertexData {
-		return VertexData._ExtractFrom(geometry, copyWhenShared);
+	public static function ExtractFromGeometry(geometry:Geometry, copyWhenShared:Bool = false, forceCopy:Bool = false):VertexData {
+		return VertexData._ExtractFrom(geometry, copyWhenShared, forceCopy);
 	}
 
-	private static function _ExtractFrom(meshOrGeometry:IGetSetVerticesData, copyWhenShared:Bool = false):VertexData {
+	private static function _ExtractFrom(meshOrGeometry:IGetSetVerticesData, copyWhenShared:Bool = false, forceCopy:Bool = false):VertexData {
 		var result = new VertexData();
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.PositionKind)) {
-			result.positions = meshOrGeometry.getVerticesData(VertexBuffer.PositionKind, copyWhenShared);
+			result.positions = meshOrGeometry.getVerticesData(VertexBuffer.PositionKind, copyWhenShared, forceCopy);
 		}
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.NormalKind)) {
-			result.normals = meshOrGeometry.getVerticesData(VertexBuffer.NormalKind, copyWhenShared);
+			result.normals = meshOrGeometry.getVerticesData(VertexBuffer.NormalKind, copyWhenShared, forceCopy);
+		}
+		
+		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.TangentKind)) {
+			result.tangents = meshOrGeometry.getVerticesData(VertexBuffer.TangentKind, copyWhenShared, forceCopy);
 		}
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.UVKind)) {
-			result.uvs = meshOrGeometry.getVerticesData(VertexBuffer.UVKind, copyWhenShared);
+			result.uvs = meshOrGeometry.getVerticesData(VertexBuffer.UVKind, copyWhenShared, forceCopy);
 		}
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.UV2Kind)) {
-			result.uv2s = meshOrGeometry.getVerticesData(VertexBuffer.UV2Kind, copyWhenShared);
+			result.uvs2 = meshOrGeometry.getVerticesData(VertexBuffer.UV2Kind, copyWhenShared, forceCopy);
 		}
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.UV3Kind)) {
-			result.uv3s = meshOrGeometry.getVerticesData(VertexBuffer.UV3Kind, copyWhenShared);
+			result.uvs3 = meshOrGeometry.getVerticesData(VertexBuffer.UV3Kind, copyWhenShared, forceCopy);
 		}
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.UV4Kind)) {
-			result.uv4s = meshOrGeometry.getVerticesData(VertexBuffer.UV4Kind, copyWhenShared);
+			result.uvs4 = meshOrGeometry.getVerticesData(VertexBuffer.UV4Kind, copyWhenShared, forceCopy);
 		}
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.UV5Kind)) {
-			result.uv5s = meshOrGeometry.getVerticesData(VertexBuffer.UV5Kind, copyWhenShared);
+			result.uvs5 = meshOrGeometry.getVerticesData(VertexBuffer.UV5Kind, copyWhenShared, forceCopy);
 		}
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.UV6Kind)) {
-			result.uv6s = meshOrGeometry.getVerticesData(VertexBuffer.UV6Kind, copyWhenShared);
+			result.uvs6 = meshOrGeometry.getVerticesData(VertexBuffer.UV6Kind, copyWhenShared, forceCopy);
 		}
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.ColorKind)) {
-			result.colors = meshOrGeometry.getVerticesData(VertexBuffer.ColorKind, copyWhenShared);
+			result.colors = meshOrGeometry.getVerticesData(VertexBuffer.ColorKind, copyWhenShared, forceCopy);
 		}
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.MatricesIndicesKind)) {
-			result.matricesIndices = meshOrGeometry.getVerticesData(VertexBuffer.MatricesIndicesKind, copyWhenShared);
+			result.matricesIndices = meshOrGeometry.getVerticesData(VertexBuffer.MatricesIndicesKind, copyWhenShared, forceCopy);
 		}
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.MatricesWeightsKind)) {
-			result.matricesWeights = meshOrGeometry.getVerticesData(VertexBuffer.MatricesWeightsKind, copyWhenShared);
+			result.matricesWeights = meshOrGeometry.getVerticesData(VertexBuffer.MatricesWeightsKind, copyWhenShared, forceCopy);
 		}
 		
 		if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.MatricesIndicesExtraKind)) {
-            result.matricesIndicesExtra = meshOrGeometry.getVerticesData(VertexBuffer.MatricesIndicesExtraKind, copyWhenShared);
+            result.matricesIndicesExtra = meshOrGeometry.getVerticesData(VertexBuffer.MatricesIndicesExtraKind, copyWhenShared, forceCopy);
         }
 		
         if (meshOrGeometry.isVerticesDataPresent(VertexBuffer.MatricesWeightsExtraKind)) {
-            result.matricesWeightsExtra = meshOrGeometry.getVerticesData(VertexBuffer.MatricesWeightsExtraKind, copyWhenShared);
+            result.matricesWeightsExtra = meshOrGeometry.getVerticesData(VertexBuffer.MatricesWeightsExtraKind, copyWhenShared, forceCopy);
         }
 		
 		result.indices = meshOrGeometry.getIndices(copyWhenShared);
@@ -1383,7 +1512,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		
 		return vertexData;
 	}
-
+	
 	public static function CreateCapsule(options:Dynamic):VertexData {
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
@@ -2518,75 +2647,183 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	 * @param {any} - indices   (number[] or Uint16Array)
 	 * @param {any} - normals   (number[] or Float32Array)
 	 */
-	public static function ComputeNormals(positions:Array<Float>, indices:Array<Int>, normals:Array<Float>) {
-		var index:Int = 0;
-            
-		var p1p2x:Float = 0.0;
-		var p1p2y:Float = 0.0;
-		var p1p2z:Float = 0.0;
-		var p3p2x:Float = 0.0;
-		var p3p2y:Float = 0.0;
-		var p3p2z:Float = 0.0;
-		var faceNormalx:Float = 0.0;
-		var faceNormaly:Float = 0.0;
-		var faceNormalz:Float = 0.0;
+	public static function ComputeNormals(positions:Array<Float>, indices:Array<Int>, normals:Array<Float>, ?options:Dynamic) {
+		// temporary scalar variables
+		var index = 0;                      // facet index     
+		var p1p2x = 0.0;                    // p1p2 vector x coordinate
+		var p1p2y = 0.0;                    // p1p2 vector y coordinate
+		var p1p2z = 0.0;                    // p1p2 vector z coordinate
+		var p3p2x = 0.0;                    // p3p2 vector x coordinate
+		var p3p2y = 0.0;                    // p3p2 vector y coordinate
+		var p3p2z = 0.0;                    // p3p2 vector z coordinate
+		var faceNormalx = 0.0;              // facet normal x coordinate
+		var faceNormaly = 0.0;              // facet normal y coordinate
+		var faceNormalz = 0.0;              // facet normal z coordinate
+		var length = 0.0;                   // facet normal length before normalization
+		var v1x = 0;                        // vector1 x index in the positions array
+		var v1y = 0;                        // vector1 y index in the positions array
+		var v1z = 0;                        // vector1 z index in the positions array
+		var v2x = 0;                        // vector2 x index in the positions array
+		var v2y = 0;                        // vector2 y index in the positions array
+		var v2z = 0;                        // vector2 z index in the positions array
+		var v3x = 0;                        // vector3 x index in the positions array
+		var v3y = 0;                        // vector3 y index in the positions array
+		var v3z = 0;                        // vector3 z index in the positions array
+		var computeFacetNormals = false;
+		var computeFacetPositions = false;
+		var computeFacetPartitioning = false;
+		var faceNormalSign = 1;
+		if (options != null) {
+			computeFacetNormals = (options.facetNormals == true) ? true : false;
+			computeFacetPositions = (options.facetPositions == true) ? true : false;
+			computeFacetPartitioning = (options.facetPartitioning == true) ? true : false;
+			faceNormalSign = (options.useRightHandedSystem == true) ? -1 : 1;
+		}
 		
-		var length:Float = 0.0;
+		var ox = 0;                 // X partitioning index for facet position
+		var oy = 0;                 // Y partinioning index for facet position
+		var oz = 0;                 // Z partinioning index for facet position
+		var b1x = 0;                // X partitioning index for facet v1 vertex
+		var b1y = 0;                // Y partitioning index for facet v1 vertex
+		var b1z = 0;                // z partitioning index for facet v1 vertex
+		var b2x = 0;                // X partitioning index for facet v2 vertex
+		var b2y = 0;                // Y partitioning index for facet v2 vertex
+		var b2z = 0;                // Z partitioning index for facet v2 vertex
+		var b3x = 0;                // X partitioning index for facet v3 vertex
+		var b3y = 0;                // Y partitioning index for facet v3 vertex
+		var b3z = 0;                // Z partitioning index for facet v3 vertex
+		var block_idx_o = 0;        // facet barycenter block index
+		var block_idx_v1 = 0;       // v1 vertex block index
+		var block_idx_v2 = 0;       // v2 vertex block index
+		var block_idx_v3 = 0;       // v3 vertex block index
 		
-		var i1:Int = 0;
-		var i2:Int = 0;
-		var i3:Int = 0;
+		var bbSizeMax:Float = 0;
+		var xSubRatio:Float = 0;
+		var ySubRatio:Float = 0;
+		var zSubRatio:Float = 0;
+		var subSq:Float = 0;
 		
+		// facetPartitioning reinit if needed
+		if (computeFacetPartitioning) {			
+			bbSizeMax = (options.bbSize.x > options.bbSize.y) ? options.bbSize.x : options.bbSize.y;
+			bbSizeMax = (bbSizeMax > options.bbSize.z) ? bbSizeMax : options.bbSize.z;
+			xSubRatio = options.subDiv.X * options.ratio / options.bbSize.x;
+			ySubRatio = options.subDiv.Y * options.ratio / options.bbSize.y;
+			zSubRatio = options.subDiv.Z * options.ratio / options.bbSize.z;
+			subSq = options.subDiv.max * options.subDiv.max;
+			options.facetPartitioning.length = 0;
+		}
+		
+		// reset the normals
 		for (index in 0...positions.length) {
 			normals[index] = 0.0;
 		}
 		
-		// indice triplet = 1 face
-		var nbFaces:Int = Std.int(indices.length / 3);
+		// Loop : 1 indice triplet = 1 facet
+		var nbFaces = Std.int(indices.length / 3);
 		for (index in 0...nbFaces) {
-			i1 = indices[index * 3];            // get the indexes of each vertex of the face
-			i2 = indices[index * 3 + 1];
-			i3 = indices[index * 3 + 2];
+			// get the indexes of the coordinates of each vertex of the facet
+			v1x = indices[index * 3] * 3;
+			v1y = v1x + 1;
+			v1z = v1x + 2;
+			v2x = indices[index * 3 + 1] * 3;
+			v2y = v2x + 1;
+			v2z = v2x + 2;
+			v3x = indices[index * 3 + 2] * 3;
+			v3y = v3x + 1;
+			v3z = v3x + 2;
 			
-			p1p2x = positions[i1 * 3] - positions[i2 * 3];          // compute two vectors per face
-			p1p2y = positions[i1 * 3 + 1] - positions[i2 * 3 + 1];
-			p1p2z = positions[i1 * 3 + 2] - positions[i2 * 3 + 2];
+			p1p2x = positions[v1x] - positions[v2x];          // compute two vectors per facet : p1p2 and p3p2
+			p1p2y = positions[v1y] - positions[v2y];
+			p1p2z = positions[v1z] - positions[v2z];
 			
-			p3p2x = positions[i3 * 3] - positions[i2 * 3];
-			p3p2y = positions[i3 * 3 + 1] - positions[i2 * 3 + 1];
-			p3p2z = positions[i3 * 3 + 2] - positions[i2 * 3 + 2];
+			p3p2x = positions[v3x] - positions[v2x];
+			p3p2y = positions[v3y] - positions[v2y];
+			p3p2z = positions[v3z] - positions[v2z];
 			
-			faceNormalx = p1p2y * p3p2z - p1p2z * p3p2y;            // compute the face normal with cross product
-			faceNormaly = p1p2z * p3p2x - p1p2x * p3p2z;
-			faceNormalz = p1p2x * p3p2y - p1p2y * p3p2x;
-			
+			// compute the face normal with the cross product
+			faceNormalx = faceNormalSign * (p1p2y * p3p2z - p1p2z * p3p2y);
+			faceNormaly = faceNormalSign * (p1p2z * p3p2x - p1p2x * p3p2z);
+			faceNormalz = faceNormalSign * (p1p2x * p3p2y - p1p2y * p3p2x);
+			// normalize this normal and store it in the array facetData
 			length = Math.sqrt(faceNormalx * faceNormalx + faceNormaly * faceNormaly + faceNormalz * faceNormalz);
 			length = (length == 0) ? 1.0 : length;
-			faceNormalx /= length;                                  // normalize this normal
+			faceNormalx /= length;
 			faceNormaly /= length;
 			faceNormalz /= length;
 			
-			normals[i1 * 3] += faceNormalx;                         // accumulate all the normals per face
-			normals[i1 * 3 + 1] += faceNormaly;
-			normals[i1 * 3 + 2] += faceNormalz;
-			normals[i2 * 3] += faceNormalx;
-			normals[i2 * 3 + 1] += faceNormaly;
-			normals[i2 * 3 + 2] += faceNormalz;
-			normals[i3 * 3] += faceNormalx;
-			normals[i3 * 3 + 1] += faceNormaly;
-			normals[i3 * 3 + 2] += faceNormalz;
+			if (computeFacetNormals) {
+				options.facetNormals[index].x = faceNormalx;
+				options.facetNormals[index].y = faceNormaly;
+				options.facetNormals[index].z = faceNormalz;
+			}
+			
+			if (computeFacetPositions) {
+				// compute and the facet barycenter coordinates in the array facetPositions 
+				options.facetPositions[index].x = (positions[v1x] + positions[v2x] + positions[v3x]) / 3.0;
+				options.facetPositions[index].y = (positions[v1y] + positions[v2y] + positions[v3y]) / 3.0;
+				options.facetPositions[index].z = (positions[v1z] + positions[v2z] + positions[v3z]) / 3.0;
+			}
+			
+			if (computeFacetPartitioning) {
+				// store the facet indexes in arrays in the main facetPartitioning array :
+				// compute each facet vertex (+ facet barycenter) index in the partiniong array
+				ox = Math.floor((options.facetPositions[index].x - options.bInfo.minimum.x * options.ratio) * xSubRatio);
+				oy = Math.floor((options.facetPositions[index].y - options.bInfo.minimum.y * options.ratio) * ySubRatio);
+				oz = Math.floor((options.facetPositions[index].z - options.bInfo.minimum.z * options.ratio) * zSubRatio);
+				b1x = Math.floor((positions[v1x] - options.bInfo.minimum.x * options.ratio) * xSubRatio);
+				b1y = Math.floor((positions[v1y] - options.bInfo.minimum.y * options.ratio) * ySubRatio);
+				b1z = Math.floor((positions[v1z] - options.bInfo.minimum.z * options.ratio) * zSubRatio);
+				b2x = Math.floor((positions[v2x] - options.bInfo.minimum.x * options.ratio) * xSubRatio);
+				b2y = Math.floor((positions[v2y] - options.bInfo.minimum.y * options.ratio) * ySubRatio);
+				b2z = Math.floor((positions[v2z] - options.bInfo.minimum.z * options.ratio) * zSubRatio);
+				b3x = Math.floor((positions[v3x] - options.bInfo.minimum.x * options.ratio) * xSubRatio);
+				b3y = Math.floor((positions[v3y] - options.bInfo.minimum.y * options.ratio) * ySubRatio);
+				b3z = Math.floor((positions[v3z] - options.bInfo.minimum.z * options.ratio) * zSubRatio);
+				
+				block_idx_v1 = Std.int(b1x + options.subDiv.max * b1y + subSq * b1z);
+				block_idx_v2 = Std.int(b2x + options.subDiv.max * b2y + subSq * b2z);
+				block_idx_v3 = Std.int(b3x + options.subDiv.max * b3y + subSq * b3z);
+				block_idx_o = Std.int(ox + options.subDiv.max * oy + subSq * oz);
+				
+				options.facetPartitioning[block_idx_o] = options.facetPartitioning[block_idx_o] ? options.facetPartitioning[block_idx_o] : [];
+				options.facetPartitioning[block_idx_v1] = options.facetPartitioning[block_idx_v1] ? options.facetPartitioning[block_idx_v1] : [];
+				options.facetPartitioning[block_idx_v2] = options.facetPartitioning[block_idx_v2] ? options.facetPartitioning[block_idx_v2] : [];
+				options.facetPartitioning[block_idx_v3] = options.facetPartitioning[block_idx_v3] ? options.facetPartitioning[block_idx_v3] : [];
+				
+				// push each facet index in each block containing the vertex
+				options.facetPartitioning[block_idx_v1].push(index);
+				if (block_idx_v2 != block_idx_v1) {
+					options.facetPartitioning[block_idx_v2].push(index);
+				}
+				if (!(block_idx_v3 == block_idx_v2 || block_idx_v3 == block_idx_v1)) {
+					options.facetPartitioning[block_idx_v3].push(index);
+				}
+				if (!(block_idx_o == block_idx_v1 || block_idx_o == block_idx_v2 || block_idx_o == block_idx_v3)) {
+					options.facetPartitioning[block_idx_o].push(index);
+				}
+			}
+			
+			// compute the normals anyway
+			normals[v1x] += faceNormalx;                         // accumulate all the normals per face
+			normals[v1y] += faceNormaly;
+			normals[v1z] += faceNormalz;
+			normals[v2x] += faceNormalx;
+			normals[v2y] += faceNormaly;
+			normals[v2z] += faceNormalz;
+			normals[v3x] += faceNormalx;
+			normals[v3y] += faceNormaly;
+			normals[v3z] += faceNormalz;
 		}
-		
 		// last normalization of each normal
-		var nl:Int = Std.int(normals.length / 3);
-		for (index in 0...nl) {
+		for (index in 0...Std.int(normals.length / 3)) {
 			faceNormalx = normals[index * 3];
 			faceNormaly = normals[index * 3 + 1];
 			faceNormalz = normals[index * 3 + 2];
 			
 			length = Math.sqrt(faceNormalx * faceNormalx + faceNormaly * faceNormaly + faceNormalz * faceNormalz);
 			length = (length == 0) ? 1.0 : length;
-			faceNormalx /= length;                                 
+			faceNormalx /= length;
 			faceNormaly /= length;
 			faceNormalz /= length;
 			
@@ -2660,6 +2897,12 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		var normals = parsedVertexData.normals;
 		if (normals != null) {
 			vertexData.set(normals, VertexBuffer.NormalKind);
+		}
+		
+		// tangents
+		var tangents = parsedVertexData.tangents;
+		if (tangents != null) {
+			vertexData.set(tangents, VertexBuffer.TangentKind);
 		}
 		
 		// uvs

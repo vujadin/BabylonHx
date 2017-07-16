@@ -28,13 +28,13 @@ import com.babylonhx.math.Vector2;
 	
 
 	public function new(name:String, size:Float, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
-		if (!ShadersStore.Shaders.exists("firetexture.fragment")) {
-			ShadersStore.Shaders.set("firetexture.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("firetextureFragmentShader")) {
+			ShadersStore.Shaders.set("firetextureFragmentShader", fragmentShader);
 		}
 		
 		super(name, size, "firetexture", scene, fallbackTexture, generateMipMaps);
 		
-		this._fireColors = FireProceduralTexture.RedFireColors;
+		this._fireColors = Fire.RedFireColors;
 		this.updateShaderUniforms();
 		this.refreshRate = 1;
 	}

@@ -371,4 +371,22 @@ package com.babylonhx.math;
         result.w = (num3 * left.w) + (num2 * right.w);
 	}
 	
+	/**
+	 * Returns a new Quaternion located for "amount" (float) on the Hermite interpolation spline defined by the vectors "value1", "tangent1", "value2", "tangent2".
+	 */
+	public static function Hermite(value1:Quaternion, tangent1:Quaternion, value2:Quaternion, tangent2:Quaternion, amount:Float):Quaternion {
+		var squared = amount * amount;
+		var cubed = amount * squared;
+		var part1 = ((2.0 * cubed) - (3.0 * squared)) + 1.0;
+		var part2 = (-2.0 * cubed) + (3.0 * squared);
+		var part3 = (cubed - (2.0 * squared)) + amount;
+		var part4 = cubed - squared;
+		
+		var x = (((value1.x * part1) + (value2.x * part2)) + (tangent1.x * part3)) + (tangent2.x * part4);
+		var y = (((value1.y * part1) + (value2.y * part2)) + (tangent1.y * part3)) + (tangent2.y * part4);
+		var z = (((value1.z * part1) + (value2.z * part2)) + (tangent1.z * part3)) + (tangent2.z * part4);
+		var w = (((value1.w * part1) + (value2.w * part2)) + (tangent1.w * part3)) + (tangent2.w * part4);
+		return new Quaternion(x, y, z, w);
+	}
+	
 }

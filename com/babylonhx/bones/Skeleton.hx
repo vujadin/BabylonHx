@@ -9,7 +9,8 @@ import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.animations.Animatable;
 import com.babylonhx.animations.AnimationRange;
-import com.babylonhx.utils.typedarray.Float32Array;
+
+import lime.utils.Float32Array;
 
 import haxe.ds.Vector;
 
@@ -305,7 +306,7 @@ import haxe.ds.Vector;
 		
 		this._isDirty = false;
 		
-		this._scene._activeBones += this.bones.length;
+		this._scene._activeBones.addCount(this.bones.length, false);
 	}
 
 	public function getAnimatables():Array<IAnimatable> {
@@ -381,7 +382,7 @@ import haxe.ds.Vector;
 		return poseMatrix;
 	}
 	
-	public function dispose() {
+	public function dispose(_:Bool = false) {
 		this._meshesWithPoseMatrix = [];
 		
         // Animations

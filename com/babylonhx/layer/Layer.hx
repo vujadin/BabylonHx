@@ -10,7 +10,7 @@ import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
 
-import com.babylonhx.utils.GL;
+import lime.graphics.opengl.GL;
 
 /**
  * ...
@@ -24,10 +24,10 @@ import com.babylonhx.utils.GL;
 	public var isBackground:Bool;
 	public var color:Color4;
 	public var scale:Vector2 = new Vector2(1, 1);
-    public var offset:Vector2 = new Vector2(0, 0);
-	
+    public var offset:Vector2 = new Vector2(0, 0);	
 	public var alphaBlendingMode:Int = Engine.ALPHA_COMBINE;
 	public var alphaTest:Bool = false;
+	public var layerMask:Int = 0x0FFFFFFF;
 	
 	private var _scene:Scene;
 	private var _vertexBuffers:Map<String, VertexBuffer> = new Map();

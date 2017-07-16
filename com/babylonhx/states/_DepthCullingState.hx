@@ -1,9 +1,9 @@
 package com.babylonhx.states;
 
-import com.babylonhx.utils.GL;
+import lime.graphics.opengl.GL;
 
 #if (!js && !purejs)
-import com.babylonhx.utils.GL in Gl;
+import lime.graphics.opengl.GL in Gl;
 #end
 
 /**

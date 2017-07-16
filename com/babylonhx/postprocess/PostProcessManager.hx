@@ -35,15 +35,14 @@ import com.babylonhx.materials.textures.WebGLTexture;
 	}
 
 	// Methods
-	public function _prepareFrame(?sourceTexture:WebGLTexture):Bool {
-		var postProcesses = this._scene.activeCamera._postProcesses;
+	public function _prepareFrame(?sourceTexture:WebGLTexture, ?postProcesses:Array<PostProcess>):Bool {
+		var postProcesses = postProcesses != null ? postProcesses : this._scene.activeCamera._postProcesses;
 		
 		if (postProcesses.length == 0 || !this._scene.postProcessesEnabled) {
 			return false;
 		}
 		
-		postProcesses[0].activate(this._scene.activeCamera, sourceTexture);
-		
+		postProcesses[0].activate(this._scene.activeCamera, sourceTexture, postProcesses != null);		
 		return true;
 	}
 	
@@ -133,6 +132,7 @@ import com.babylonhx.materials.textures.WebGLTexture;
 		// Restore depth buffer
 		engine.setDepthBuffer(true);
 		engine.setDepthWrite(true);
+		engine.setAlphaMode(Engine.ALPHA_DISABLE);
 	}
 
 	public function dispose() {

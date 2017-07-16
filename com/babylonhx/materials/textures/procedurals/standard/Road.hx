@@ -16,8 +16,8 @@ import com.babylonhx.math.Color3;
 	
 
 	public function new(name:String, size:Float, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
-		if (!ShadersStore.Shaders.exists("roadtexture.fragment")) {
-			ShadersStore.Shaders.set("roadtexture.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("roadtextureFragmentShader")) {
+			ShadersStore.Shaders.set("roadtextureFragmentShader", fragmentShader);
 		}
 		
 		super(name, size, "roadtexture", scene, fallbackTexture, generateMipMaps);

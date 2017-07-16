@@ -62,9 +62,9 @@ import haxe.io.Bytes;
 import haxe.Json;
 import haxe.Timer;
 
-import com.babylonhx.utils.typedarray.ArrayBuffer;
-import com.babylonhx.utils.typedarray.Float32Array;
-import com.babylonhx.utils.typedarray.Int32Array;
+import lime.utils.ArrayBuffer;
+import lime.utils.Float32Array;
+import lime.utils.Int32Array;
 
 
 /**

@@ -1,8 +1,8 @@
 package com.babylonhx.d2.display;
 
-import com.babylonhx.utils.GL;
-import com.babylonhx.utils.GL.GLProgram;
-import com.babylonhx.utils.GL.GLUniformLocation;
+import lime.graphics.opengl.GL;
+import lime.graphics.opengl.GLProgram;
+import lime.graphics.opengl.GLUniformLocation;
 
 
 /**

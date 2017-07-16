@@ -161,8 +161,8 @@ void main(void)
 	
 
 	public function new(name:String, size:Float, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
-		if (!ShadersStore.Shaders.exists("plasmatexture.fragment")) {
-			ShadersStore.Shaders.set("plasmatexture.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("plasmatextureFragmentShader")) {
+			ShadersStore.Shaders.set("plasmatextureFragmentShader", fragmentShader);
 		}
 		
 		super(name, size, "plasmatexture", scene, fallbackTexture, generateMipMaps);

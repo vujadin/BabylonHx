@@ -21,7 +21,7 @@ class StereoscopicInterlacePostProcess extends PostProcess {
 		this._passedProcess = rigCameras[0]._rigPostProcess;
 		this._stepSize = new Vector2(1 / this.width, 1 / this.height);
 		
-		this.onSizeChangedObservable.add(function(effect:Effect, eventState:EventState = null) {
+		this.onSizeChangedObservable.add(function(_, _) {
 			this._stepSize = new Vector2(1 / this.width, 1 / this.height);
 		});
 		

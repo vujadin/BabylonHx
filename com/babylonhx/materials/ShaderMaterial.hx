@@ -11,7 +11,10 @@ import com.babylonhx.shaderbuilder.ShaderSetting;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.AbstractMesh;
-import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.mesh.VertexBuffer;
+
+import lime.utils.Float32Array;
+
 
 /**
  * ...
@@ -23,6 +26,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	?needAlphaTesting:Bool,
 	?attributes:Array<String>,
 	?uniforms:Array<String>,
+	?uniformBuffers:Array<String>,
 	?samplers:Array<String>,
 	?defines:Array<String>
 }
@@ -32,18 +36,19 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	
 	private var _shaderPath:Dynamic;
 	private var _options:ShaderMaterialOptions;
-	private var _textures:Map<String, Texture> = new Map<String, Texture>();
-	private var _floats:Map<String, Float> = new Map<String, Float>();
-	private var _floatsArrays:Map<String, Array<Float>> = new Map<String, Array<Float>>();
-	private var _colors3:Map<String, Color3> = new Map<String, Color3>();
-	private var _colors4:Map<String, Color4> = new Map<String, Color4>();
-	private var _vectors2:Map<String, Vector2> = new Map<String, Vector2>();
-	private var _vectors3:Map<String, Vector3> = new Map<String, Vector3>();
-	private var _vectors4:Map<String, Vector4> = new Map<String, Vector4>();
-	private var _matrices:Map<String, Matrix> = new Map<String, Matrix>();
-	private var _matrices3x3:Map<String, Float32Array> = new Map<String, Float32Array>();
-	private var _matrices2x2:Map<String, Float32Array> = new Map<String, Float32Array>();
-	private var _vectors3Arrays:Map<String, Array<Float>> = new Map<String, Array<Float>>();
+	private var _textures:Map<String, Texture> = new Map();
+	private var _textureArrays:Map<String, Array<Texture>> = new Map();
+	private var _floats:Map<String, Float> = new Map();
+	private var _floatsArrays:Map<String, Array<Float>> = new Map();
+	private var _colors3:Map<String, Color3> = new Map();
+	private var _colors4:Map<String, Color4> = new Map();
+	private var _vectors2:Map<String, Vector2> = new Map();
+	private var _vectors3:Map<String, Vector3> = new Map();
+	private var _vectors4:Map<String, Vector4> = new Map();
+	private var _matrices:Map<String, Matrix> = new Map();
+	private var _matrices3x3:Map<String, Float32Array> = new Map();
+	private var _matrices2x2:Map<String, Float32Array> = new Map();
+	private var _vectors3Arrays:Map<String, Array<Float>> = new Map();
 	private var _cachedWorldViewMatrix:Matrix = new Matrix();
 	private var _renderId:Int;
 	
@@ -63,6 +68,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		options.needAlphaTesting = options.needAlphaTesting != null ? options.needAlphaTesting : false;
 		options.attributes = options.attributes != null ? options.attributes : ["position", "normal", "uv"];
 		options.uniforms = options.uniforms != null ? options.uniforms : ["worldViewProjection"];
+		options.uniformBuffers = options.uniformBuffers != null ? options.uniformBuffers : [];
 		options.samplers = options.samplers != null ? options.samplers : [];
 		options.defines = options.defines != null ? options.defines : [];
 		
@@ -207,6 +213,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		// Instances
 		var defines:Array<String> = [];
+		var attribs:Array<String> = [];
 		var fallbacks = new EffectFallbacks();
 		if (useInstances) {
 			defines.push("#define INSTANCES");
@@ -216,12 +223,33 @@ import com.babylonhx.utils.typedarray.Float32Array;
             defines.push(this._options.defines[index]);
         }
 		
+		for (index in 0...this._options.attributes.length) {
+			attribs.push(this._options.attributes[index]);
+		}
+		
 		// Bones
 		if (mesh != null && mesh.useBones && mesh.computeBonesUsingShaders) {
+			attribs.push(VertexBuffer.MatricesIndicesKind);
+			attribs.push(VertexBuffer.MatricesWeightsKind);
+			if (mesh.numBoneInfluencers > 4) {
+				attribs.push(VertexBuffer.MatricesIndicesExtraKind);
+				attribs.push(VertexBuffer.MatricesWeightsExtraKind);
+			}
 			defines.push("#define NUM_BONE_INFLUENCERS " + mesh.numBoneInfluencers);
 			defines.push("#define BonesPerMesh " + (mesh.skeleton.bones.length + 1));
 			fallbacks.addCPUSkinningFallback(0, mesh);
 		}
+		else {
+			defines.push("#define NUM_BONE_INFLUENCERS 0");
+		}
+		
+		// Textures
+		for (name in this._textures.keys()) {
+			if (!this._textures[name].isReady()) {
+				return false;
+			}
+		}
+		
 		// Alpha test
 		if (engine.getAlphaTesting()) {
 			defines.push("#define ALPHATEST");
@@ -230,12 +258,17 @@ import com.babylonhx.utils.typedarray.Float32Array;
         var previousEffect = this._effect;
 		var join = defines.join("\n");
 		
-		this._effect = engine.createEffect(this._shaderPath,
-			this._options.attributes,
-			this._options.uniforms,
-			this._options.samplers,
-			join, fallbacks, this.onCompiled, this.onError);
-			
+		this._effect = engine.createEffect(this._shaderPath, {
+			attributes: attribs,
+			uniformsNames: this._options.uniforms,
+			uniformBuffersNames: this._options.uniformBuffers,
+			samplers: this._options.samplers,
+			defines: join,
+			fallbacks: fallbacks,
+			onCompiled: this.onCompiled,
+			onError: this.onError
+		}, engine);
+		
 		if (!this._effect.isReady()) {
 			return false;
 		}
@@ -291,6 +324,11 @@ import com.babylonhx.utils.typedarray.Float32Array;
 				this._effect.setTexture(name, this._textures[name]);
 			}
 			
+			// Texture arrays
+			for (name in this._textureArrays.keys()) {
+				this._effect.setTextureArray(name, cast this._textureArrays[name]);
+			}
+			
 			// Float    
 			for (name in this._floats.keys()) {
 				this._effect.setFloat(name, this._floats[name]);
@@ -322,6 +360,11 @@ import com.babylonhx.utils.typedarray.Float32Array;
 				this._effect.setVector3(name, this._vectors3[name]);
 			}
 			
+			// Vector4        
+			for (name in this._vectors4.keys()) {
+				this._effect.setVector4(name, this._vectors4[name]);
+			}
+			
 			// Matrix      
 			for (name in this._matrices.keys()) {
 				this._effect.setMatrix(name, this._matrices[name]);
@@ -343,7 +386,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 			}
 		}
 		
-		super.bind(world, null);
+		this._afterBind(mesh);
 	}
 	
 	override public function clone(name:String, cloneChildren:Bool = false):ShaderMaterial {
@@ -356,6 +399,13 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		if (forceDisposeTextures) {
 			for (name in this._textures.keys()) {
 				this._textures[name].dispose();
+			}
+			
+			for (name in this._textureArrays.keys()) {
+				var array = this._textureArrays[name];
+				for (index in 0...array.length) {
+					array[index].dispose();
+				}
 			}
 		}
 		
@@ -374,6 +424,16 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		serializationObject.textures = { };
 		for (name in this._textures.keys()) {
 			serializationObject.textures.name = this._textures[name].serialize();
+		}
+		
+		// Texture arrays
+		serializationObject.textureArrays = { };
+		for (name in this._textureArrays.keys()) {
+			serializationObject.textureArrays.name = [];
+			var array = this._textureArrays[name];
+			for (index in 0...array.length) {
+				serializationObject.textureArrays.name.push(array[index].serialize());
+			}
 		}
 		
 		// Float    

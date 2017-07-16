@@ -196,7 +196,7 @@ import com.babylonhx.tools.EventState;
 		if (this._cachedDefines != join) {
 			this._cachedDefines = join;
 			this._volumetricLightScatteringPass = mesh.getScene().getEngine().createEffect(
-				{ vertex: "depth", fragment: "volumetricLightScatteringPass" },
+				{ vertexElement: "depth", fragmentElement: "volumetricLightScatteringPass" },
 				attribs,
 				["world", "mBones", "viewProjection", "diffuseMatrix"],
 				["diffuseSampler"], join);
@@ -209,7 +209,7 @@ import com.babylonhx.tools.EventState;
 	 * Sets the new light position for light scattering effect
 	 * @param {BABYLON.Vector3} The new custom light position
 	 */
-	public function setCustomMeshPosition(position:Vector3) {
+	inline public function setCustomMeshPosition(position:Vector3) {
 		this.customMeshPosition = position;
 	}
 
@@ -217,7 +217,7 @@ import com.babylonhx.tools.EventState;
 	 * Returns the light position for light scattering effect
 	 * @return {BABYLON.Vector3} The custom light position
 	 */
-	public function getCustomMeshPosition():Vector3 {
+	inline public function getCustomMeshPosition():Vector3 {
 		return this.customMeshPosition;
 	}
 
@@ -238,7 +238,7 @@ import com.babylonhx.tools.EventState;
 	 * Returns the render target texture used by the post-process
 	 * @return {BABYLON.RenderTargetTexture} The render target texture used by the post-process
 	 */
-	public function getPass():RenderTargetTexture {
+	inline public function getPass():RenderTargetTexture {
 		return this._volumetricLightScatteringRTT;
 	}
 	
@@ -282,12 +282,17 @@ import com.babylonhx.tools.EventState;
 				return;
 			}
 			
-			var hardwareInstancedRendering:Bool = (engine.getCaps().instancedArrays != null) && (batch.visibleInstances[subMesh._id] != null);
+			var hardwareInstancedRendering:Bool = (engine.getCaps().instancedArrays) && (batch.visibleInstances[subMesh._id] != null);
 			
 			if (this.isReady(subMesh, hardwareInstancedRendering)) {
 				var effect:Effect = this._volumetricLightScatteringPass;
                 if (mesh == this.mesh) {
-                    effect = subMesh.getMaterial().getEffect();
+                    if (subMesh.effect != null) {
+						effect = subMesh.effect;
+					} 
+					else {
+						effect = subMesh.getMaterial().getEffect();
+					}
                 }
 				
 				engine.enableEffect(effect);
@@ -328,12 +333,12 @@ import com.babylonhx.tools.EventState;
 		var savedSceneClearColor:Color3 = new Color3(0.0, 0.0, 0.0);
 		var sceneClearColor:Color3 = new Color3(0.0, 0.0, 0.0);
 		
-		this._volumetricLightScatteringRTT.onBeforeRenderObservable.add(function(i:Int, es:EventState = null) {
+		this._volumetricLightScatteringRTT.onBeforeRenderObservable.add(function(_, _) {
 			savedSceneClearColor = scene.clearColor;
 			scene.clearColor = sceneClearColor;
 		});
 		
-		this._volumetricLightScatteringRTT.onAfterRenderObservable.add(function(i:Int, es:EventState = null) {
+		this._volumetricLightScatteringRTT.onAfterRenderObservable.add(function(_, _) {
 			scene.clearColor = savedSceneClearColor;
 		});
 		
@@ -347,8 +352,7 @@ import com.babylonhx.tools.EventState;
 			engine.setAlphaTesting(true);
 			for (index in 0...alphaTestSubMeshes.length) {
 				renderSubMesh(alphaTestSubMeshes.data[index]);
-			}
-			
+			}			
 			engine.setAlphaTesting(false);
 			
 			if (transparentSubMeshes != null && transparentSubMeshes.length > 0) {

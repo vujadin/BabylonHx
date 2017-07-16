@@ -20,11 +20,11 @@ import haxe.Json;
 	private var _texturePath:String;
 	
 
-	public function new(name:String, texturePath:String, size:Int, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
+	public function new(name:String, texturePath:String, size:Int, scene:Scene, ?fallbackTexture:Texture, generateMipMaps:Bool = false) {
 		super(name, size, null, scene, fallbackTexture, generateMipMaps);
 		this._texturePath = texturePath;
 		
-		//Try to load json
+		// Try to load json
 		this.loadJson(texturePath);
 		this.refreshRate = 1;
 	}
@@ -120,10 +120,10 @@ import haxe.Json;
 	}
 
 	public var animate(get, set):Bool;
-	private function get_animate():Bool {
+	inline private function get_animate():Bool {
 		return this._animate;
 	}
-	private function set_animate(value:Bool):Bool {
+	inline private function set_animate(value:Bool):Bool {
 		this._animate = value;
 		return value;
 	}

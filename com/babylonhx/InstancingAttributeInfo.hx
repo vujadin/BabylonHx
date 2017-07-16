@@ -1,6 +1,6 @@
 package com.babylonhx;
 
-import com.babylonhx.utils.GL;
+import lime.graphics.opengl.GL;
 
 /**
  * ...
@@ -40,6 +40,6 @@ class InstancingAttributeInfo {
 	public var attributeName:String;
 	
 	
-	public function new() { }
+	inline public function new() { }
 	
 }

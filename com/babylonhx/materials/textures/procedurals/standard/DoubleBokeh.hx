@@ -73,8 +73,8 @@ void main(void) {
 	
 
 	public function new(name:String, size:Float, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
-		if (!ShadersStore.Shaders.exists("doublebokehtexture.fragment")) {
-			ShadersStore.Shaders.set("doublebokehtexture.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("doublebokehtextureFragmentShader")) {
+			ShadersStore.Shaders.set("doublebokehtextureFragmentShader", fragmentShader);
 		}
 		
 		super(name, size, "doublebokehtexture", scene, fallbackTexture, generateMipMaps);

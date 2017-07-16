@@ -22,7 +22,7 @@ import com.babylonhx.tools.Tags;
 		this.tessellation = tessellation;
 		this.side = side;
 		
-		super(id, scene, this._regenerateVertexData(), canBeRegenerated, mesh);
+		super(id, scene, canBeRegenerated, mesh);
 	}
 
 	override public function _regenerateVertexData():VertexData {
@@ -31,6 +31,16 @@ import com.babylonhx.tools.Tags;
 
 	override public function copy(id:String):Geometry {
 		return new Torus(id, this.getScene(), this.diameter, this.thickness, this.tessellation, this.canBeRegenerated(), null, this.side);
+	}
+	
+	override public function serialize():Dynamic {
+		var serializationObject = super.serialize();
+		
+		serializationObject.diameter = this.diameter;
+		serializationObject.thickness = this.thickness;
+		serializationObject.tessellation = this.tessellation;
+		
+		return serializationObject;
 	}
 	
 	public static function Parse(parsedTorus:Dynamic, scene:Scene):Geometry {

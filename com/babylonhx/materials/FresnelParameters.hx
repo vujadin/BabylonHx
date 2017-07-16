@@ -9,7 +9,22 @@ import com.babylonhx.math.Color3;
 
 @:expose('BABYLON.FresnelParameters') class FresnelParameters {
 	
-	public var isEnabled:Bool = true;
+	var _isEnabled:Bool = true;
+	public var isEnabled(get, set):Bool;
+	private function get_isEnabled():Bool {
+		return this._isEnabled;
+	}
+	private function set_isEnabled(value:Bool):Bool {
+		if (this._isEnabled == value) {
+			return value;
+		}
+		
+		this._isEnabled = value;
+		Engine.MarkAllMaterialsAsDirty(Material.FresnelDirtyFlag);
+		
+		return value;
+	}
+	
 	public var leftColor:Color3 = Color3.White();
 	public var rightColor:Color3 = Color3.Black();
 	public var bias:Float = 0;

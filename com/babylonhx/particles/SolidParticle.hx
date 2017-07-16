@@ -6,13 +6,14 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Quaternion;
 import com.babylonhx.culling.BoundingInfo;
+import com.babylonhx.mesh.IHasBoundingInfo;
 
 
 /**
  * ...
  * @author Krtolica Vujadin
  */
-class SolidParticle {
+class SolidParticle implements IHasBoundingInfo {
 	
 	public var idx:Int;                     				// particle global index
 	public var color:Color4 = new Color4(1, 1, 1, 1);  		// color

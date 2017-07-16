@@ -24,7 +24,7 @@ package com.babylonhx.mesh.primitives;
 		this.subdivisions = subdivisions;
 		this.precision = precision;
 		
-		super(id, scene, this._regenerateVertexData(), canBeRegenerated, mesh);
+		super(id, scene, canBeRegenerated, mesh);
 	}
 
 	override public function _regenerateVertexData():VertexData {

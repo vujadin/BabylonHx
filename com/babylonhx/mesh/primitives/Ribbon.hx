@@ -25,7 +25,7 @@ class Ribbon extends _Primitive {
 		this.offset = offset;
 		this.side = side;
 		
-		super(id, scene, this._regenerateVertexData(), canBeRegenerated, mesh);
+		super(id, scene, canBeRegenerated, mesh);
 	}
 
 	override public function _regenerateVertexData():VertexData {

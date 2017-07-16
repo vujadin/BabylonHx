@@ -83,14 +83,14 @@ class HighlightLayer {
 	public var innerGlow:Bool = true;
 	
 	/**
-     * Specifies wether the highlight layer is enabled or not.
-     */
-    public var isEnabled:Bool = true;
-	
-	/**
 	 * Specifies whether or not the outer glow is ACTIVE in the layer.
 	 */
 	public var outerGlow:Bool = true;
+	
+	/**
+     * Specifies wether the highlight layer is enabled or not.
+     */
+    public var isEnabled:Bool = true;
 	
 	public var camera(get, never):Camera;
 	private function get_camera():Camera {
@@ -102,10 +102,10 @@ class HighlightLayer {
 	 */
 	public var blurHorizontalSize(get, set):Float;
 	private function set_blurHorizontalSize(value:Float):Float {
-		untyped return this._horizontalBlurPostprocess.blurWidth = value;
+		untyped return this._horizontalBlurPostprocess.kernel = value;
 	}
 	private function get_blurHorizontalSize():Float {
-		untyped return this._horizontalBlurPostprocess.blurWidth;
+		untyped return this._horizontalBlurPostprocess.kernel;
 	}
 
 	/**
@@ -113,10 +113,10 @@ class HighlightLayer {
 	 */
 	public var blurVerticalSize(get, set):Float;
 	private function set_blurVerticalSize(value:Float):Float {
-		untyped return this._verticalBlurPostprocess.blurWidth = value;
+		untyped return this._verticalBlurPostprocess.kernel = value;
 	}
 	private function get_blurVerticalSize():Float {
-		untyped return this._verticalBlurPostprocess.blurWidth;
+		untyped return this._verticalBlurPostprocess.kernel;
 	}
 
 	/**
@@ -167,7 +167,7 @@ class HighlightLayer {
 	 * @param scene The scene to use the layer in
 	 * @param options Sets of none mandatory options to use with the layer (see IHighlightLayerOptions for more information)
 	 */
-	public function new(name:String, scene:Scene, ?options:IHighlightLayerOptions) {
+	public function new(name:String, scene:Scene, ?options:Dynamic/*IHighlightLayerOptions*/) {
 		this._scene = scene;
 		var engine = scene.getEngine();
 		this._engine = engine;
@@ -249,8 +249,8 @@ class HighlightLayer {
 	private function createTextureAndPostProcesses() {
 		var blurTextureWidth:Int = Std.int(this._mainTextureDesiredSize.width * this._options.blurTextureSizeRatio);
 		var blurTextureHeight:Int = Std.int(this._mainTextureDesiredSize.height * this._options.blurTextureSizeRatio);
-		blurTextureWidth = Tools.GetExponentOfTwo(blurTextureWidth, this._maxSize);
-		blurTextureHeight = Tools.GetExponentOfTwo(blurTextureHeight, this._maxSize);
+		blurTextureWidth = this._engine.needPOTTextures ? Tools.GetExponentOfTwo(blurTextureWidth, this._maxSize) : blurTextureWidth;
+		blurTextureHeight = this._engine.needPOTTextures ? Tools.GetExponentOfTwo(blurTextureHeight, this._maxSize) : blurTextureHeight;
 		
 		this._mainTexture = new RenderTargetTexture("HighlightLayerMainRTT", 
 			{
@@ -348,7 +348,7 @@ class HighlightLayer {
                 return;
             }
 			
-			var hardwareInstancedRendering = (engine.getCaps().instancedArrays != null) && (batch.visibleInstances[subMesh._id] != null) && (batch.visibleInstances[subMesh._id] != null);
+			var hardwareInstancedRendering = (engine.getCaps().instancedArrays) && (batch.visibleInstances[subMesh._id] != null) && (batch.visibleInstances[subMesh._id] != null);
 			
 			var highlightLayerMesh:IHighlightLayerMesh = this._meshes[mesh.uniqueId];
 			var material = subMesh.getMaterial();
@@ -547,6 +547,9 @@ class HighlightLayer {
 		var previousStencilBuffer = engine.getStencilBuffer();
 		var previousStencilFunction = engine.getStencilFunction();
 		var previousStencilMask = engine.getStencilMask();
+		var previousStencilOperationPass = engine.getStencilOperationPass();
+		var previousStencilOperationFail = engine.getStencilOperationFail();
+		var previousStencilOperationDepthFail = engine.getStencilOperationDepthFail(); 
 		var previousAlphaMode = engine.getAlphaMode();
 		
 		// Texture
@@ -554,6 +557,11 @@ class HighlightLayer {
 		
 		// VBOs
 		engine.bindBuffers(this._vertexBuffers, this._indexBuffer, currentEffect);
+		
+		// Stencil operations
+		engine.setStencilOperationPass(Engine.REPLACE);
+		engine.setStencilOperationFail(Engine.KEEP);
+		engine.setStencilOperationDepthFail(Engine.KEEP);
 		
 		// Draw order
 		engine.setAlphaMode(this._options.alphaBlendingMode);
@@ -577,6 +585,11 @@ class HighlightLayer {
 		engine.setStencilMask(previousStencilMask);
 		engine.setAlphaMode(previousAlphaMode);
 		engine.setStencilBuffer(previousStencilBuffer);
+		engine.setStencilOperationPass(previousStencilOperationPass);
+		engine.setStencilOperationFail(previousStencilOperationFail);
+		engine.setStencilOperationDepthFail(previousStencilOperationDepthFail);
+		
+		engine._stencilState.reset();
 		
 		this.onAfterComposeObservable.notifyObservers(this);
 		
@@ -698,8 +711,8 @@ class HighlightLayer {
 			this._mainTextureDesiredSize.width = Std.int(this._engine.getRenderingCanvas().width * this._options.mainTextureRatio);
 			this._mainTextureDesiredSize.height = Std.int(this._engine.getRenderingCanvas().height * this._options.mainTextureRatio);
 			
-			this._mainTextureDesiredSize.width = Tools.GetExponentOfTwo(this._mainTextureDesiredSize.width, this._maxSize);
-			this._mainTextureDesiredSize.height = Tools.GetExponentOfTwo(this._mainTextureDesiredSize.height, this._maxSize);
+			this._mainTextureDesiredSize.width = this._engine.needPOTTextures ? Tools.GetExponentOfTwo(this._mainTextureDesiredSize.width, this._maxSize) : this._mainTextureDesiredSize.width;
+			this._mainTextureDesiredSize.height = this._engine.needPOTTextures ? Tools.GetExponentOfTwo(this._mainTextureDesiredSize.height, this._maxSize) : this._mainTextureDesiredSize.height;
 		}
 	}
 

@@ -1,9 +1,9 @@
 package com.babylonhx.states;
 
-import com.babylonhx.utils.GL;
+import lime.graphics.opengl.GL;
 
 #if (!js && !purejs)
-import com.babylonhx.utils.GL in Gl;
+import lime.graphics.opengl.GL in Gl;
 #end
 
 /**
@@ -15,8 +15,17 @@ import com.babylonhx.utils.GL in Gl;
 	
 	private var _isAlphaBlendDirty:Bool = false;
 	private var _isBlendFunctionParametersDirty:Bool = false;
+	private var _isBlendEquationParametersDirty:Bool = false;
+	private var _isBlendConstantsDirty = false;
 	private var _alphaBlend:Bool = false;
-	private var _blendFunctionParameters:Array<Int> = [];
+	private var _blendFunctionParameters:Array<Null<Int>> = [];
+	private var _blendEquationParameters:Array<Null<Int>> = [];
+	private var _blendConstants:Array<Null<Float>> = [];
+	
+	
+	public function new() {
+		this.reset();
+	}
 
 	public var isDirty(get, never):Bool;
 	private function get_isDirty():Bool {
@@ -37,9 +46,23 @@ import com.babylonhx.utils.GL in Gl;
 		return value;
 	}
 	
-	public function new() {
-		//
-	}
+	public function setAlphaBlendConstants(r:Float, g:Float, b:Float, a:Float) {
+		if (
+			this._blendConstants[0] == r &&
+			this._blendConstants[1] == g &&
+			this._blendConstants[2] == b &&
+			this._blendConstants[3] == a
+		) {
+			return;
+		}
+		
+		this._blendConstants[0] = r;
+		this._blendConstants[1] = g;
+		this._blendConstants[2] = b;
+		this._blendConstants[3] = a;
+		
+		this._isBlendConstantsDirty = true;
+	} 
 
 	public function setAlphaBlendFunctionParameters(value0:Int, value1:Int, value2:Int, value3:Int) {
 		if (
@@ -58,16 +81,40 @@ import com.babylonhx.utils.GL in Gl;
 		
 		this._isBlendFunctionParametersDirty = true;
 	}
+	
+	public function setAlphaEquationParameters(rgb:Int, alpha:Int) {
+		if (
+			this._blendEquationParameters[0] == rgb &&
+			this._blendEquationParameters[1] == alpha
+		) {
+			return;
+		}
+		
+		this._blendEquationParameters[0] = rgb;
+		this._blendEquationParameters[1] = alpha;
+		
+		this._isBlendEquationParametersDirty = true;
+	}
 
 	public function reset() {
 		this._alphaBlend = false;
-		this._blendFunctionParameters[0] = -1;
-		this._blendFunctionParameters[1] = -1;
-		this._blendFunctionParameters[2] = -1;
-		this._blendFunctionParameters[3] = -1;
+		this._blendFunctionParameters[0] = null;
+		this._blendFunctionParameters[1] = null;
+		this._blendFunctionParameters[2] = null;
+		this._blendFunctionParameters[3] = null;
+		
+		this._blendEquationParameters[0] = null;
+		this._blendEquationParameters[1] = null; 
+		
+		this._blendConstants[0] = null;
+		this._blendConstants[1] = null;
+		this._blendConstants[2] = null;
+		this._blendConstants[3] = null;
 		
 		this._isAlphaBlendDirty = true;
 		this._isBlendFunctionParametersDirty = false;
+		this._isBlendEquationParametersDirty = false;
+		this._isBlendConstantsDirty = false;
 	}
 
 	public function apply(#if (js || purejs) Gl:js.html.webgl.RenderingContext #end) {
@@ -93,6 +140,18 @@ import com.babylonhx.utils.GL in Gl;
 			Gl.blendFuncSeparate(this._blendFunctionParameters[0], this._blendFunctionParameters[1], this._blendFunctionParameters[2], this._blendFunctionParameters[3]);
 			this._isBlendFunctionParametersDirty = false;
 		}
+		
+		// Alpha equation
+		if (this._isBlendEquationParametersDirty) {
+			Gl.blendEquationSeparate(this._blendEquationParameters[0], this._blendEquationParameters[1]);
+			this._isBlendEquationParametersDirty = false;
+		}
+		
+		// Constants
+		if (this._isBlendConstantsDirty) {
+			Gl.blendColor(this._blendConstants[0], this._blendConstants[1], this._blendConstants[2], this._blendConstants[3]);
+			this._isBlendConstantsDirty = false;
+		} 
 	}
 	
 }

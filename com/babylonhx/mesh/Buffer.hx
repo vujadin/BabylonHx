@@ -1,6 +1,6 @@
 package com.babylonhx.mesh;
 
-import com.babylonhx.utils.typedarray.Float32Array;
+import lime.utils.Float32Array;
 
 import haxe.ds.Either;
 
@@ -31,6 +31,7 @@ class Buffer {
 	private var _updatable:Bool;
 	private var _strideSize:Int;
 	private var _instanced:Bool;
+	private var _instanceDivisor:Int;
 	
 
 	public function new(engine:Engine, data:Array<Float>, updatable:Bool, stride:Int, postponeInternalCreation:Bool = false, instanced:Bool = false) {
@@ -44,6 +45,7 @@ class Buffer {
 		}
 		
 		this._instanced = instanced;
+		this._instanceDivisor = instanced ? 1 : 0;
 	}
 
 	public function createVertexBuffer(kind:String, offset:Int, size:Int, ?stride:Int):VertexBuffer {
@@ -52,7 +54,7 @@ class Buffer {
 	}
 
 	// Properties
-	public function isUpdatable():Bool {
+	inline public function isUpdatable():Bool {
 		return this._updatable;
 	}
 
@@ -60,23 +62,38 @@ class Buffer {
 		return this._data;
 	}
 
-	public function getBuffer():WebGLBuffer {
+	inline public function getBuffer():WebGLBuffer {
 		return this._buffer;
 	}
 
-	public function getStrideSize():Int {
+	inline public function getStrideSize():Int {
 		return this._strideSize;
 	}
 
-	public function getIsInstanced():Bool {
+	inline public function getIsInstanced():Bool {
 		return this._instanced;
+	}
+	
+	public var instanceDivisor(get, set):Int;
+	inline private function get_instanceDivisor():Int {
+		return this._instanceDivisor;
+	}
+	private function set_instanceDivisor(value:Int):Int {
+		this._instanceDivisor = value;
+		if (value == 0) {
+			this._instanced = false;
+		} 
+		else {
+			this._instanced = true;
+		}
+		return value;
 	}
 
 	// Methods
 	public function create(?data:Array<Float>) {
-		/*if (data == null && this._buffer != null) {
+		if (data == null && this._buffer != null) {
 			return; // nothing to do
-		}*/
+		}
 		
 		if (data == null) {
 			data = this._data;

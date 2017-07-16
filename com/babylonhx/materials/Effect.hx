@@ -10,12 +10,20 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector4;
 import com.babylonhx.postprocess.PostProcess;
 import com.babylonhx.materials.textures.BaseTexture;
-import com.babylonhx.utils.GL;
-import com.babylonhx.utils.GL.GLUniformLocation;
-import com.babylonhx.utils.GL.GLProgram;
-import com.babylonhx.utils.GL.GLTexture;
-import com.babylonhx.utils.typedarray.Float32Array;
-import com.babylonhx.utils.typedarray.Int32Array;
+import com.babylonhx.mesh.WebGLBuffer;
+import com.babylonhx.tools.Observable;
+import com.babylonhx.tools.Observer;
+
+import lime.graphics.opengl.GL;
+import lime.graphics.opengl.GLUniformLocation;
+import lime.graphics.opengl.GLProgram;
+import lime.graphics.opengl.GLTexture;
+import lime.utils.Float32Array;
+import lime.utils.Int32Array;
+
+#if (js || purejs)
+import js.html.Element;
+#end
 
 using StringTools;
 
@@ -32,100 +40,134 @@ using StringTools;
 	public var onCompiled:Effect->Void;
 	public var onError:Effect->String->Void;
 	public var onBind:Effect->Void;
+	public var uniqueId:Int = 0;
+	public var onCompileObservable:Observable<Effect> = new Observable<Effect>();
+	public var onErrorObservable:Observable<Effect> = new Observable<Effect>();
+	public var onBindObservable:Observable<Effect> = new Observable<Effect>();
 	
 	public var isSupported(get, never):Bool;
 
+	private static var _uniqueIdSeed:Int = 0;
 	private var _engine:Engine;
+	private var _uniformBuffersNames:Map<String, Int> = new Map();
 	private var _uniformsNames:Array<String>;
 	private var _samplers:Array<String>;
 	private var _isReady:Bool = false;
 	private var _compilationError:String = "";
 	private var _attributesNames:Array<String>;
 	private var _attributes:Array<Int>;
-	private var _uniforms:Map<String, GLUniformLocation>;
+	private var _uniforms:Array<GLUniformLocation>;
 	public var _key:String;
 	private var _indexParameters:Dynamic;
+	private var _fallbacks:EffectFallbacks;
 	
-	@:allow(com.babylonhx.Engine.dispose) 
+	@:allow(com.babylonhx.Engine) 
 	private var _program:GLProgram;
 	
-	private var _valueCache:Map<String, Array<Float>>;	
-	private var _valueCacheMatrix:Map<String, Matrix>;	// VK: for matrices only
+	private var _valueCache:Map<String, Array<Float>> = new Map();	
+	private var _valueCacheMatrix:Map<String, Matrix> = new Map();	// VK: for matrices only
+	private static var _baseCache:Map<Int, WebGLBuffer> = new Map();
 	
 
-	public function new(baseName:Dynamic, attributesNames:Array<String>, uniformsNames:Array<String>, samplers:Array<String>, engine:Engine, ?defines:String, ?fallbacks:EffectFallbacks, ?onCompiled:Effect->Void, ?onError:Effect->String->Void, ?indexParameters:Dynamic) {
-		this._engine = engine;
+	public function new(baseName:Dynamic, attributesNamesOrOptions:Dynamic, uniformsNamesOrEngine:Dynamic, samplers:Array<String>, engine:Engine, ?defines:String, ?fallbacks:EffectFallbacks, ?onCompiled:Effect->Void, ?onError:Effect->String->Void, ?indexParameters:Dynamic) {
 		this.name = baseName;
-		this.defines = defines;
-		this._uniformsNames = uniformsNames.concat(samplers);
-		this._samplers = samplers;
-		this._attributesNames = attributesNames;
-		this._indexParameters = indexParameters;
 		
-		this.onError = onError;
-		this.onCompiled = onCompiled;
-		
-		var vertex:String = baseName.vertex != null ? baseName.vertex : baseName;
-        var fragment:String = baseName.fragment != null ? baseName.fragment : baseName;
-		
-        var vertexShaderUrl:String = "";
-        if (vertex.charAt(0) == ".") {
-            vertexShaderUrl = vertex;
-        } 
+		if (attributesNamesOrOptions.attributes != null) {
+			var options:EffectCreationOptions = cast attributesNamesOrOptions;
+			this._engine = cast uniformsNamesOrEngine;
+			
+			this._attributesNames = options.attributes;
+			this._uniformsNames = options.uniformsNames.concat(options.samplers);
+			this._samplers = options.samplers;
+			this.defines = options.defines;
+			this.onError = options.onError;
+			this.onCompiled = options.onCompiled;
+			this._fallbacks = options.fallbacks;
+			this._indexParameters = options.indexParameters; 
+			
+			if (options.uniformBuffersNames != null) {
+				for (i in 0...options.uniformBuffersNames.length) {
+					this._uniformBuffersNames[options.uniformBuffersNames[i]] = i;
+				}          
+			}    
+		}
 		else {
-            vertexShaderUrl = Engine.ShadersRepository + vertex;
-        }
+			this._engine = engine;
+			this.defines = defines;
+			this._uniformsNames = uniformsNamesOrEngine.concat(samplers);
+			this._samplers = samplers;
+			this._attributesNames = attributesNamesOrOptions;
+			
+			this.onError = onError;
+			this.onCompiled = onCompiled;
+			
+			this._indexParameters = indexParameters;
+			this._fallbacks = fallbacks;
+		}
 		
-        var fragmentShaderUrl:String = "";
-        if (fragment.charAt(0) == ".") {
-            fragmentShaderUrl = fragment;
-        } 
-		else {
-            fragmentShaderUrl = Engine.ShadersRepository + fragment;
-        }
+		this.uniqueId = Effect._uniqueIdSeed++;
 		
-        var _vertexCode:String = "";
-		var prepareEffect = function(_fragmentCode:String) {
-			this._prepareEffect(_vertexCode, _fragmentCode, attributesNames, defines, fallbacks);					
-			// Cache
-			this._valueCache = new Map<String, Array<Float>>();
-			this._valueCacheMatrix = new Map<String, Matrix>();
-		};
-		var getFragmentCode = function() {
-			var _fragmentCode:String = "";
-			if (ShadersStore.Shaders.exists(fragment + ".fragment")) {
-				_fragmentCode = ShadersStore.Shaders.get(fragment + ".fragment");
-				this._processIncludes(_fragmentCode, function(fragmentCodeWithIncludes:String) {
-					_fragmentCode = fragmentCodeWithIncludes;
-					prepareEffect(_fragmentCode);
-				});
-			} 
-			else {
-				Tools.LoadFile(fragmentShaderUrl + ".fragment.fx", function(content:String) {
-					_fragmentCode = content;
-					prepareEffect(_fragmentCode);
-				}, "text");
+		#if (js || purejs)
+		var vertexSource:Dynamic;
+		var fragmentSource:Dynamic;
+		#else
+		var vertexSource:String = "";
+		var fragmentSource:String = "";
+		#end
+		
+		if (baseName.vertexElement != null) {
+			#if (js || purejs)
+			vertexSource = js.Browser.document.getElementById(baseName.vertexElement);
+			
+			if (vertexSource == null) {
+				vertexSource = baseName.vertexElement;
 			}
-		};
-		
-        if (ShadersStore.Shaders.exists(vertex + ".vertex")) {
-            _vertexCode = ShadersStore.Shaders.get(vertex + ".vertex");
-			this._processIncludes(_vertexCode, function(vertexCodeWithIncludes:String) {
-				_vertexCode = vertexCodeWithIncludes;
-				getFragmentCode();
-			});
-        } 
+			#end
+		} 
 		else {
-			Tools.LoadFile(vertexShaderUrl + ".vertex.fx", function(content:String) {
-				_vertexCode = content;				
-				getFragmentCode();
-			}, "text");
-        }  
+			vertexSource = baseName.vertex != null ? baseName.vertex : baseName;
+		}
+		
+		if (baseName.fragmentElement != null) {
+			#if (js || purejs)
+			fragmentSource = js.Browser.document.getElementById(baseName.fragmentElement);
+			
+			if (fragmentSource == null) {
+				fragmentSource = baseName.fragmentElement;
+			}
+			#end
+		} 
+		else {
+			fragmentSource = baseName.fragment != null ? baseName.fragment : baseName;
+		}
+		
+		this._loadVertexShader(vertexSource, function(vertexCode:String) {
+			this._processIncludes(vertexCode, function(vertexCodeWithIncludes:String) {
+				this._processShaderConversion(vertexCodeWithIncludes, false, function(migratedVertexCode:String) {
+					this._loadFragmentShader(fragmentSource, function(fragmentCode:String) {
+						this._processIncludes(fragmentCode, function(fragmentCodeWithIncludes:String) {
+							this._processShaderConversion(fragmentCodeWithIncludes, true, function(migratedFragmentCode:String) {
+								this._prepareEffect(migratedVertexCode, migratedFragmentCode, this._attributesNames, this.defines, this._fallbacks);
+							});
+						});
+					});
+				});
+			});
+		});  
+	}
+	
+	public var key(get, never):String;
+	inline private function get_key():String {
+		return this._key;
 	}
 
 	// Properties
 	inline public function isReady():Bool {
 		return this._isReady;
+	}
+	
+	inline public function getEngine():Engine {
+		return this._engine;
 	}
 
 	inline public function getProgram():GLProgram {
@@ -155,11 +197,7 @@ using StringTools;
 	}
 
 	inline public function getUniform(uniformName:String):GLUniformLocation {
-		#if (cpp && lime)
-		return (this._uniforms.exists(uniformName) ? this._uniforms[uniformName] : -1);
-		#else
-		return this._uniforms[uniformName];
-		#end
+		return this._uniforms[this._uniformsNames.indexOf(uniformName)];
 	}
 
 	inline public function getSamplers():Array<String> {
@@ -172,36 +210,181 @@ using StringTools;
 	
 	public function getVertexShaderSource():String {
 		return this._evaluateDefinesOnString(this._engine.getVertexShaderSource(this._program));
-        //return this._engine.getVertexShaderSource(this._program);
     }
 
     public function getFragmentShaderSource():String {
 		return this._evaluateDefinesOnString(this._engine.getFragmentShaderSource(this._program));
-        //return this._engine.getFragmentShaderSource(this._program);	
     }
 
 	// Methods
-	public function _loadVertexShader(vertex:String, callbackFn:String->Void) {
+	var observer:Observer<Effect>;
+	public function executeWhenCompiled(func:Effect->Void) {
+		if (this.isReady()) {
+			func(this);
+			return;
+		}
+		
+		observer = this.onCompileObservable.add(function(effect:Effect, _) {
+			this.onCompileObservable.remove(observer);
+			func(effect);
+		});
+	}
+	
+	public function _loadVertexShader(vertex:Dynamic, callbackFn:Dynamic->Void) {
+		#if (js || purejs)
+		// DOM element ?
+		if (Std.is(vertex, Element)) {
+			var vertexCode = Tools.GetDOMTextContent(vertex);
+			callbackFn(vertexCode);
+			return;
+		}
+		
+		// Base64 encoded ?
+		if (vertex.substr(0, 7) == "base64:") {
+			var vertexBinary = js.Browser.window.atob(vertex.substr(7));
+			callbackFn(vertexBinary);
+			return;
+		}
+		#end
+		
         // Is in local store ?
         if (ShadersStore.Shaders.exists(vertex + "VertexShader")) {
             callbackFn(ShadersStore.Shaders.get(vertex + "VertexShader"));
             return;
         }
+		
+		var vertexShaderUrl:String = "";
+		
+		if (vertex[0] == "." || vertex[0] == "/" || vertex.indexOf("http") > -1) {
+			vertexShaderUrl = vertex;
+		} 
+		else {
+			vertexShaderUrl = Engine.ShadersRepository + vertex;
+		}
         
         // Vertex shader
-		Tools.LoadFile("assets/shaders/" + vertex + ".vertex.fx", callbackFn, "text");
+		Tools.LoadFile(vertexShaderUrl + ".vertex.fx", callbackFn, "text");
     }
 	
-	public function _loadFragmentShader(fragment:String, callbackFn:String->Void) {
+	public function _loadFragmentShader(fragment:Dynamic, callbackFn:Dynamic->Void) {
+		#if (js || purejs)
+		// DOM element ?
+		if (Std.is(fragment, Element)) {
+			var fragmentCode = Tools.GetDOMTextContent(fragment);
+			callbackFn(fragmentCode);
+			return;
+		}
+		
+		// Base64 encoded ?
+		if (fragment.substr(0, 7) == "base64:") {
+			var fragmentBinary = js.Browser.window.atob(fragment.substr(7));
+			callbackFn(fragmentBinary);
+			return;
+		}
+		#end
+		
         // Is in local store ?
-        if (ShadersStore.Shaders.exists(fragment + "PixelShader")) {
-            callbackFn(ShadersStore.Shaders.get(fragment + "PixelShader"));
+        if (ShadersStore.Shaders.exists(fragment + "FragmentShader")) {
+            callbackFn(ShadersStore.Shaders.get(fragment + "FragmentShader"));
             return;
         }
+		
+		if (ShadersStore.Shaders.exists(fragment + "PixelShader")) {
+			callbackFn(ShadersStore.Shaders.get(fragment + "PixelShader"));
+			return;
+		}
+		
+		var fragmentShaderUrl:String = "";
+		
+		if (fragment[0] == "." || fragment[0] == "/" || fragment.indexOf("http") > -1) {
+			fragmentShaderUrl = fragment;
+		} 
+		else {
+			fragmentShaderUrl = Engine.ShadersRepository + fragment;
+		}
         
         // Fragment shader
-		Tools.LoadFile("assets/shaders/" + fragment + ".fragment.fx", callbackFn, "text");
+		Tools.LoadFile(fragmentShaderUrl + ".fragment.fx", callbackFn, "text");
     }
+	
+	private function _dumpShadersSource(vertexCode:String, fragmentCode:String, defines:String) {
+		// VK TODO:
+		/*// Rebuild shaders source code
+		var shaderVersion = (this._engine.webGLVersion > 1) ? "#version 300 es\n" : "";
+		var prefix = shaderVersion + (defines != null ? defines + "\n" : "");
+		vertexCode = prefix + vertexCode;
+		fragmentCode = prefix + fragmentCode;
+		
+		// Number lines of shaders source code
+		var i = 2;
+		var regex:EReg = ~/\n/gm;
+		var formattedVertexCode = "\n1\t" + regex. vertexCode.replace(regex, function() { return "\n" + (i++) + "\t"; });
+		i = 2;
+		var formattedFragmentCode = "\n1\t" + fragmentCode.replace(regex, function() { return "\n" + (i++) + "\t"; });
+		
+		// Dump shaders name and formatted source code
+		if (this.name.vertexElement) {
+			Tools.Error("Vertex shader: " + this.name.vertexElement + formattedVertexCode);
+			Tools.Error("Fragment shader: " + this.name.fragmentElement + formattedFragmentCode);
+		}
+		else if (this.name.vertex) {
+			Tools.Error("Vertex shader: " + this.name.vertex + formattedVertexCode);
+			Tools.Error("Fragment shader: " + this.name.fragment + formattedFragmentCode);
+		}
+		else {
+			Tools.Error("Vertex shader: " + this.name + formattedVertexCode);
+			Tools.Error("Fragment shader: " + this.name + formattedFragmentCode);
+		}*/
+	}
+
+	private function _processShaderConversion(sourceCode:String, isFragment:Bool, callback:Dynamic->Void) {
+		var preparedSourceCode = this._processPrecision(sourceCode);
+		
+		if (this._engine.webGLVersion == 1) {
+			callback(preparedSourceCode);
+			return;
+		}
+		
+		// Already converted
+		if (preparedSourceCode.indexOf("#version 3") != -1) {
+			callback(StringTools.replace(preparedSourceCode, "#version 300 es", ""));
+			return;
+		}
+		
+		// Remove extensions 
+		// #extension GL_OES_standard_derivatives : enable
+		// #extension GL_EXT_shader_texture_lod : enable
+		// #extension GL_EXT_frag_depth : enable
+		var regex:EReg = ~/#extension.+(GL_OES_standard_derivatives|GL_EXT_shader_texture_lod|GL_EXT_frag_depth).+enable/g;
+		var result = regex.replace(preparedSourceCode, "");
+		
+		// Migrate to GLSL v300
+		regex = ~/varying(?![\n\r])\s/g;
+		result = regex.replace(result, isFragment ? "in " : "out ");
+		regex = ~/attribute[ \t]/g;
+		result = regex.replace(result, "in ");
+		regex = ~/[ \t]attribute/g;
+		result = regex.replace(result, " in");
+		
+		if (isFragment) {
+			regex = ~/texture2DLodEXT\(/g;
+			result = regex.replace(result, "textureLod(");
+			regex = ~/textureCubeLodEXT\(/g;
+			result = regex.replace(result, "textureLod(");
+			regex = ~/texture2D\(/g;
+			result = regex.replace(result, "texture(");
+			regex = ~/textureCube\(/g;
+			result = regex.replace(result, "texture(");
+			regex = ~/gl_FragDepthEXT/g;
+			result = regex.replace(result, "gl_FragDepth");
+			regex = ~/gl_FragColor/g;
+			result = regex.replace(result, "glFragColor");
+			regex = ~/void\s+?main\(/g;
+			result = regex.replace(result, "out vec4 glFragColor;\nvoid main(");
+		}
+		
+		callback(result);
+	}
 	
 	private function _processIncludes(sourceCode:String, callback:Dynamic->Void) {
 		var regex:EReg = ~/#include<(.+)>(\((.*)\))*(\[(.*)\])*/g;
@@ -211,6 +394,19 @@ using StringTools;
 		
 		while (match) {
 			var includeFile:String = regex.matched(1);
+			
+			// Uniform declaration
+			if (includeFile.indexOf("__decl__") != -1) {
+				var rgex:EReg = ~/__decl__/;
+				includeFile = rgex.replace(includeFile, "");
+				if (this._engine.webGLVersion != 1) {
+					rgex = ~/Vertex/;
+					includeFile = rgex.replace(includeFile, "Ubo");
+					rgex = ~/Fragment/;
+					includeFile = rgex.replace(includeFile, "Ubo");
+				}
+				includeFile = includeFile + "Declaration";
+			}
 			
 			if (IncludesShadersStore.Shaders[includeFile] != null) {
 				sourceCode = StringTools.replace(sourceCode, regex.matched(0), IncludesShadersStore.Shaders[includeFile]);
@@ -249,10 +445,24 @@ using StringTools;
 						}
 						
 						for (i in minIndex...maxIndex + 1) {
+							// VK TODO:
+							/*if (this._engine.webGLVersion == 1) {
+								// Ubo replacement
+								sourceIncludeContent = sourceIncludeContent.replace(/light\{X\}.(\w*)/g, (str: string, p1: string) => {
+									return p1 + "{X}";
+								});
+							}*/
 							includeContent += rx.replace(sourceIncludeContent, i + "") + "\n";
 						}
 					} 
 					else {
+						if (this._engine.webGLVersion == 1) {
+							// Ubo replacement
+							// VK TODO:
+							/*includeContent = StringTools.replace(includeContent.replace(, (str: string, p1: string) => {
+								return p1 + "{X}";
+							});*/
+						}
 						includeContent = rx.replace(includeContent, indexString);
 					}
 				}
@@ -307,11 +517,13 @@ using StringTools;
         try {
             var engine = this._engine;
 			
-			// Precision
-			vertexSourceCode = this._processPrecision(vertexSourceCode);
-			fragmentSourceCode = this._processPrecision(fragmentSourceCode);
-			
             this._program = engine.createShaderProgram(vertexSourceCode, fragmentSourceCode, defines);
+			
+			if (engine.webGLVersion > 1) {
+				for (name in this._uniformBuffersNames.keys()) {
+					this.bindUniformBlock(name, this._uniformBuffersNames[name]);
+				}
+			}
 			
             this._uniforms = engine.getUniforms(this._program, this._uniformsNames);
             this._attributes = engine.getAttributes(this._program, attributesNames);
@@ -333,15 +545,14 @@ using StringTools;
 			
             engine.bindSamplers(this);
 			
-            this._isReady = true;
-			
+			this._compilationError = "";
+            this._isReady = true;			
 			if (this.onCompiled != null) {
 				this.onCompiled(this);
-			}
-			
-        } catch (e:Dynamic) {		
-			
-			#if (js || purejs)
+			}			
+        } 
+		catch (e:Dynamic) {
+			/*#if (js || purejs)
 			// Is it a problem with precision?
 			if (e.indexOf("highp") != -1) {
 				vertexSourceCode = StringTools.replace(vertexSourceCode, "precision highp float", "precision mediump float");
@@ -351,10 +562,14 @@ using StringTools;
 				
 				return;
 			}
-			#end
+			#end*/
+			trace(e);
             // Let's go through fallbacks then
 			if (fallbacks != null && fallbacks.isMoreFallbacks) {
+				Tools.Error(this.name + " - Trying next fallback.");
+				trace(defines);
 				defines = fallbacks.reduce(defines);
+				trace(defines);
 				this._prepareEffect(vertexSourceCode, fragmentSourceCode, attributesNames, defines, fallbacks);
             } 
 			else {
@@ -368,6 +583,9 @@ using StringTools;
 				#end
                 this._compilationError = cast e;
 				
+				//trace("VERTEX SHADER: \n" + vertexSourceCode);
+				//trace("FRAGMENT SHADER: \n" + fragmentSourceCode);
+				
 				if (this.onError != null) {
 					this.onError(this, this._compilationError);
 				}
@@ -379,8 +597,8 @@ using StringTools;
 		return this._compilationError == "";
 	}
 
-	inline public function _bindTexture(channel:String, texture:WebGLTexture) {
-		this._engine._bindTexture(this._samplers.indexOf(channel), texture.data);
+	inline public function _bindTexture(channel:String, texture:GLTexture) {
+		this._engine._bindTexture(this._samplers.indexOf(channel), texture);
 	}
 
 	public function setTexture(channel:String, texture:BaseTexture) {
@@ -405,7 +623,7 @@ using StringTools;
 	public function _cacheMatrix(uniformName:String, matrix:Matrix):Bool {
 		var changed:Bool = false;
 		var cache:Matrix = this._valueCacheMatrix[uniformName];
-		if (cache == null || !Std.is(cache, Matrix)) {
+		if (cache == null) {
 			changed = true;
 			cache = new Matrix();
 		}
@@ -451,6 +669,7 @@ using StringTools;
 		if (cache == null) {
 			cache = [x, y, z];
 			this._valueCache[uniformName] = cache;
+			
 			return true;
 		}
 		
@@ -501,7 +720,19 @@ using StringTools;
 		return changed;
 	}
 	
-	/*inline public function setIntArray(uniformName:String, array:Int32Array):Effect {
+	public function bindUniformBuffer(buffer:WebGLBuffer, name:String) {
+		if (Effect._baseCache[this._uniformBuffersNames[name]] == buffer) {
+			return;
+		}
+		Effect._baseCache[this._uniformBuffersNames[name]] = buffer;
+		this._engine.bindUniformBufferBase(buffer, this._uniformBuffersNames[name]);
+	}
+
+	public function bindUniformBlock(blockName:String, index:Int) {
+		this._engine.bindUniformBlock(this._program, blockName, index);
+	}
+	
+	inline public function setIntArray(uniformName:String, array:Int32Array):Effect {
 		this._valueCache[uniformName] = null;
 		this._engine.setIntArray(this.getUniform(uniformName), array);
 		
@@ -555,7 +786,7 @@ using StringTools;
 		this._engine.setFloatArray4(this.getUniform(uniformName), array);
 		
 		return this;
-	}*/
+	}
 
 	inline public function setArray(uniformName:String, array:Array<Float>):Effect {
 		this._valueCache[uniformName] = null;
@@ -742,7 +973,9 @@ using StringTools;
 				continue;
 			}
 			
-			result += line + "\r\n";
+			if (line.length > 0) {
+				result += line + "\r\n";
+			}
 		}
 		
 		return result;

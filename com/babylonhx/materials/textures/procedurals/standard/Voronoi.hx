@@ -162,8 +162,8 @@ void main(){
 	
 
 	public function new(name:String, size:Float, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
-		if (!ShadersStore.Shaders.exists("voronoitexture.fragment")) {
-			ShadersStore.Shaders.set("voronoitexture.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("voronoitextureFragmentShader")) {
+			ShadersStore.Shaders.set("voronoitextureFragmentShader", fragmentShader);
 		}
 		
 		super(name, size, "voronoitexture", scene, fallbackTexture, generateMipMaps);

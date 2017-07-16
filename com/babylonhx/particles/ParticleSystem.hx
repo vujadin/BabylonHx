@@ -8,7 +8,7 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.mesh.VertexBuffer;
-import com.babylonhx.mesh.Buffer;
+import com.babylonhx.mesh.Buffer2;
 import com.babylonhx.particles.Particle;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.animations.IAnimatable;
@@ -17,7 +17,7 @@ import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
 
-import com.babylonhx.utils.typedarray.Float32Array;
+import lime.utils.Float32Array;
 
 
 /**
@@ -43,8 +43,6 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public var updateSpeed:Float = 0.01;
 	public var targetStopDuration:Float = 0;
 	public var disposeOnStop:Bool = false;
-	
-	public var __smartArrayFlags:Array<Int> = [];
 
 	public var minEmitPower:Float = 1;
 	public var maxEmitPower:Float = 1;
@@ -60,6 +58,11 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	public var particleTexture:Texture;
 	
 	public var layerMask:Int = 0x0FFFFFFF;
+	
+	public var customShader:Dynamic = null;
+	public var preventAutoStart:Bool = false;
+	
+	public var __smartArrayFlags:Array<Int> = [];	// BHX
 
 	/**
 	* An event triggered when the system is disposed.
@@ -76,7 +79,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		return callback;
 	}
-		
+	
 	public var updateFunction:Array<Particle>->Void;
 
 	public var blendMode:Int = ParticleSystem.BLENDMODE_ONEONE;
@@ -102,8 +105,8 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _scene:Scene;
 	private var _stockParticles:Array<Particle> = [];
 	private var _newPartsExcess:Int = 0;
-	private var _vertexData:Array<Float>; // Float32Array;
-	private var _vertexBuffer:Buffer;
+	private var _vertexData:Float32Array;
+	private var _vertexBuffer:Buffer2;
 	private var _vertexBuffers:Map<String, VertexBuffer> = new Map();
 	private var _indexBuffer:WebGLBuffer;	
 	private var _effect:Effect;
@@ -125,13 +128,13 @@ import com.babylonhx.utils.typedarray.Float32Array;
 	private var _engine:Engine;
 	
 
-	public function new(name:String, capacity:Int, scene:Scene, ?customEffect:Effect) {
+	public function new(name:String, capacity:Int, ?scene:Scene, ?customEffect:Effect) {
 		this.name = name;
 		this.id = name;
 		this._capacity = capacity;
 		
-		this._scene = scene;
-		this._engine = scene.getEngine();
+		this._scene = scene != null ? scene : Engine.LastCreatedScene;
+		this._engine = this._scene.getEngine();
 		
 		this._customEffect = customEffect;
 		
@@ -152,11 +155,11 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._indexBuffer = this._engine.createIndexBuffer(indices);
 		
 		// 11 floats per particle (x, y, z, r, g, b, a, angle, size, offsetX, offsetY) + 1 filler
-        this._vertexData = [];// new Float32Array(Std.int(capacity * 11 * 4));
+        this._vertexData = new Float32Array(Std.int(capacity * 11 * 4)); 
 		for (i in 0...Std.int(capacity * 11 * 4)) {
 			this._vertexData[i] = 0;
 		}
-		this._vertexBuffer = new Buffer(scene.getEngine(), this._vertexData, true, 11);
+		this._vertexBuffer = new Buffer2(this._engine, this._vertexData, true, 11);
 		
 		var positions = this._vertexBuffer.createVertexBuffer(VertexBuffer.PositionKind, 0, 3);
 		var colors = this._vertexBuffer.createVertexBuffer(VertexBuffer.ColorKind, 3, 4);
@@ -185,13 +188,13 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		
 		this.updateFunction = function(particles:Array<Particle>):Void {
 			var index:Int = 0;
-			while (index < particles.length) {
+			while (index < particles.length && index >= 0) {
 				var particle = particles[index];
 				particle.age += this._scaledUpdateSpeed;
 				
 				if (particle.age >= particle.lifeTime) { // Recycle by swapping with last particle
 					this.recycleParticle(particle);
-					//index--;
+					index--;
 					continue;
 				}
 				else {
@@ -249,7 +252,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		this._stopped = true;
 	}
 
-	inline public function _appendParticleVertex(index:Int, particle:Particle, offsetX:Float, offsetY:Float):Void {
+	inline public function _appendParticleVertex(index:Int, particle:Particle, offsetX:Float, offsetY:Float) {
 		var offset = index * 11;
 		this._vertexData[offset] = particle.position.x;
 		this._vertexData[offset + 1] = particle.position.y;
@@ -455,7 +458,7 @@ import com.babylonhx.utils.typedarray.Float32Array;
 		return this.particles.length;
 	}
 
-	inline public function dispose(doNotRecurse:Bool = false) {
+	public function dispose(_:Bool = false) {
 		if (this._vertexBuffer != null) {
 			this._vertexBuffer.dispose();
 			this._vertexBuffer = null;

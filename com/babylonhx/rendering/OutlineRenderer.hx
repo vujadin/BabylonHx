@@ -18,6 +18,8 @@ import com.babylonhx.math.Matrix;
 	private var _effect:Effect;
 	private var _cachedDefines:String;
 	
+	public var zOffset:Float = 1;
+	
 
 	public function new(scene:Scene) {
 		this._scene = scene;
@@ -27,7 +29,7 @@ import com.babylonhx.math.Matrix;
 		var scene = this._scene;
 		var engine = this._scene.getEngine();
 		
-		var hardwareInstancedRendering = (engine.getCaps().instancedArrays != null) && (batch.visibleInstances[subMesh._id] != null);
+		var hardwareInstancedRendering = (engine.getCaps().instancedArrays) && (batch.visibleInstances[subMesh._id] != null);
 		
 		if (!this.isReady(subMesh, hardwareInstancedRendering)) {
 			return;
@@ -55,8 +57,12 @@ import com.babylonhx.math.Matrix;
 			this._effect.setMatrix("diffuseMatrix", alphaTexture.getTextureMatrix());
 		}
 		
+		engine.setZOffset(-this.zOffset);
+		
 		mesh._processRendering(subMesh, this._effect, Material.TriangleFillMode, batch, hardwareInstancedRendering,
-					function(isInstance:Bool, world:Matrix, ?mat:Material) { this._effect.setMatrix("world", world); } );
+					function(isInstance:Bool, world:Matrix, ?mat:Material) { this._effect.setMatrix("world", world); });
+					
+		engine.setZOffset(0);
 	}
 
 	public function isReady(subMesh:SubMesh, useInstances:Bool):Bool {

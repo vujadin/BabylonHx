@@ -10,13 +10,12 @@ import com.babylonhx.math.Vector3;
 * @author Krtolica Vujadin
 */
 
-@:expose('BABYLON.BoundingInfo') class BoundingInfo {
-	
-	public var boundingBox:BoundingBox;
-	public var boundingSphere:BoundingSphere;
+@:expose('BABYLON.BoundingInfo') class BoundingInfo implements ICullable {
 	
 	public var minimum:Vector3;
 	public var maximum:Vector3;
+	public var boundingBox:BoundingBox;
+	public var boundingSphere:BoundingSphere;
 	
 	public var isLocked(get, set):Bool;
 	private var _isLocked:Bool = false;
@@ -29,15 +28,15 @@ import com.babylonhx.math.Vector3;
 		this.boundingSphere = new BoundingSphere(minimum, maximum);
 	}
 	
-	private function get_isLocked():Bool {
+	inline private function get_isLocked():Bool {
 		return this._isLocked;
 	}
-	private function set_isLocked(value:Bool):Bool {
+	inline private function set_isLocked(value:Bool):Bool {
 		return this._isLocked = value;
 	}
 
 	// Methods
-	inline public function _update(world:Matrix) {
+	inline public function update(world:Matrix) {
 		if (this._isLocked) {
 			return;
 		}
@@ -118,7 +117,7 @@ import com.babylonhx.math.Vector3;
 	}
 	
 	// Statics
-	inline private static function computeBoxExtents(axis:Vector3, box:BoundingBox):Dynamic {
+	private static function computeBoxExtents(axis:Vector3, box:BoundingBox):Dynamic {
         var p = Vector3.Dot(box.center, axis);
 		
         var r0 = Math.abs(Vector3.Dot(box.directions[0], axis)) * box.extendSize.x;

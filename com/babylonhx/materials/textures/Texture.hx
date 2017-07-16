@@ -5,6 +5,8 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Plane;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.utils.Image;
+import com.babylonhx.tools.Observable;
+import com.babylonhx.tools.serialization.SerializationHelper;
 
 /**
  * ...
@@ -27,22 +29,44 @@ import com.babylonhx.utils.Image;
 	public static inline var INVCUBIC_MODE:Int = 6;
 	public static inline var EQUIRECTANGULAR_MODE:Int = 7;
 	public static inline var FIXED_EQUIRECTANGULAR_MODE:Int = 8;
+	public static inline var FIXED_EQUIRECTANGULAR_MIRRORED_MODE:Int = 9;
 
 	public static inline var CLAMP_ADDRESSMODE:Int = 0;
 	public static inline var WRAP_ADDRESSMODE:Int = 1;
 	public static inline var MIRROR_ADDRESSMODE:Int = 2;
 
 	// Members
+	@serialize()
 	public var url:String;
+	
+	@serialize()
 	public var uOffset:Float = 0;
+	
+	@serialize()
 	public var vOffset:Float = 0;
+	
+	@serialize()
 	public var uScale:Float = 1.0;
+	
+	@serialize()
 	public var vScale:Float = 1.0;
+	
+	@serialize()
 	public var uAng:Float = 0;
+	
+	@serialize()
 	public var vAng:Float = 0;
+	
+	@serialize()
 	public var wAng:Float = 0;
 
 	private var _noMipmap:Bool;
+	
+	public var noMipmap(get, never):Bool;
+	inline private function get_noMipmap():Bool {
+		return this._noMipmap;
+	}
+	
 	public var _invertY:Bool;
 	private var _rowGenerationMatrix:Matrix;
 	private var _cachedTextureMatrix:Matrix;
@@ -62,12 +86,27 @@ import com.babylonhx.utils.Image;
 	public var _samplingMode:Int;
 	private var _buffer:Dynamic;
 	private var _deleteBuffer:Bool;
+	public var _format:Int;
+	private var _delayedOnLoad:Void->Void;
+	private var _delayedOnError:Void->Void;
+	private var _onLoadObservarble:Observable<Bool>;
+	
+	// MOVED TO BaseTexture for BHX !!!
+	/*private var _isBlocking:Bool = true;
+	@serialize()
+	public var isBlocking(get, set):Bool;
+	private function set_isBlocking(value:Bool):Bool {
+		return this._isBlocking = value;
+	}
+	private function get_isBlocking():Bool {
+		return this._isBlocking;
+	}*/
 	
 	// for creating from Image
 	public static var _tmpImage:Image;
 
 	
-	public function new(url:String, scene:Scene, noMipmap:Bool = false, invertY:Bool = true, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, onLoad:Void->Void = null, onError:Void->Void = null, buffer:Dynamic = null, deleteBuffer:Bool = false) {
+	public function new(url:String, scene:Scene, noMipmap:Bool = false, invertY:Bool = true, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, onLoad:Void->Void = null, onError:Void->Void = null, buffer:Dynamic = null, deleteBuffer:Bool = false, ?format:Int) {
 		super(scene);
 		
 		this.name = url;
@@ -77,12 +116,26 @@ import com.babylonhx.utils.Image;
 		this._samplingMode = samplingMode;
 		this._buffer = buffer;
 		this._deleteBuffer = deleteBuffer;
+		this._format = format;
 		
 		if (url == null || StringTools.trim(url) == "") {
 			return;
 		}
 		
 		this._texture = this._getFromCache(url, noMipmap, samplingMode);
+		
+		var load = function() {
+			if (this._onLoadObservarble != null && this._onLoadObservarble.hasObservers()) {
+				this.onLoadObservable.notifyObservers(true);
+			}
+			if (onLoad != null) {
+				onLoad();
+			}
+			
+			if (!this.isBlocking) {
+				scene.resetCachedMaterial();
+			}
+		};
 		
 		if (this._texture == null) {
 			if (StringTools.startsWith(url, "from_image") && _tmpImage != null) {	// VK: DO NOT REMOVE!!
@@ -91,7 +144,7 @@ import com.babylonhx.utils.Image;
 			}
 			else if (!scene.useDelayedTextureLoading) {
 				if(url.indexOf(".") != -1) {	// protection for cube texture, url is not full path !
-					this._texture = scene.getEngine().createTexture(url, noMipmap, invertY, scene, this._samplingMode, onLoad, onError, this._buffer);
+					this._texture = scene.getEngine().createTexture(url, noMipmap, invertY, scene, this._samplingMode, load, onError, this._buffer);
 					if (deleteBuffer) {
 						this._buffer = null;
 					}
@@ -99,6 +152,9 @@ import com.babylonhx.utils.Image;
 			} 
 			else {
 				this.delayLoadState = Engine.DELAYLOADSTATE_NOTLOADED;
+				
+				this._delayedOnLoad = load;
+				this._delayedOnError = onError;
 			}
 		}
 	}
@@ -124,6 +180,7 @@ import com.babylonhx.utils.Image;
             return;
         }
 		
+		this._samplingMode = samplingMode;
         this.getScene().getEngine().updateTextureSamplingMode(samplingMode, this._texture);
     }
 
@@ -202,6 +259,10 @@ import com.babylonhx.utils.Image;
 			this._projectionModeMatrix = Matrix.Zero();
 		}
 		
+		this._cachedUOffset = this.uOffset;
+        this._cachedVOffset = this.vOffset;
+        this._cachedUScale = this.uScale;
+        this._cachedVScale = this.vScale;
 		this._cachedCoordinatesMode = this.coordinatesMode;
 		
 		switch (this.coordinatesMode) {	                
@@ -232,48 +293,34 @@ import com.babylonhx.utils.Image;
 		
 		return this._cachedTextureMatrix;
 	}
-
-	override public function clone():Texture {
-		var newTexture = new Texture(this._texture.url, this.getScene(), this._noMipmap, this._invertY, this._samplingMode);
-		
-		// Base texture
-		newTexture.hasAlpha = this.hasAlpha;
-		newTexture.level = this.level;
-		newTexture.wrapU = this.wrapU;
-		newTexture.wrapV = this.wrapV;
-		newTexture.coordinatesIndex = this.coordinatesIndex;
-		newTexture.coordinatesMode = this.coordinatesMode;
-		
-		// Texture
-		newTexture.uOffset = this.uOffset;
-		newTexture.vOffset = this.vOffset;
-		newTexture.uScale = this.uScale;
-		newTexture.vScale = this.vScale;
-		newTexture.uAng = this.uAng;
-		newTexture.vAng = this.vAng;
-		newTexture.wAng = this.wAng;
-		newTexture.anisotropicFilteringLevel = this.anisotropicFilteringLevel;
-		newTexture.getAlphaFromRGB = this.getAlphaFromRGB;
-		
-		return newTexture;
+	
+	public static function fromImage(img:Image, scene:Scene, noMipmap:Bool = false, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE):Texture {
+		Texture._tmpImage = img;
+		var tex:Texture = new Texture("from_image", scene, noMipmap, false, samplingMode);
+		return tex;
 	}
 	
-	override public function serialize():Dynamic {
-		if (this.name == null) {
-			return null;
+	public var onLoadObservable(get, never):Observable<Bool>;
+	private function get_onLoadObservable():Observable<Bool> {
+		if (this._onLoadObservarble == null) {
+			this._onLoadObservarble = new Observable<Bool>();
 		}
-		
+		return this._onLoadObservarble;
+	}
+
+	override public function clone():Texture {
+		return SerializationHelper.Clone(function() {
+			return new Texture(this._texture.url, this.getScene(), this._noMipmap, this._invertY, this._samplingMode);
+		}, this);
+	}
+	
+	override public function serialize():Dynamic {		
 		var serializationObject = super.serialize();
 		
-		serializationObject.uOffset = this.uOffset;
-		serializationObject.vOffset = this.vOffset;
-		serializationObject.uScale = this.uScale;
-		serializationObject.vScale = this.vScale;
-		serializationObject.uAng = this.uAng;
-		serializationObject.vAng = this.vAng;
-		serializationObject.wAng = this.wAng;
-		serializationObject.anisotropicFilteringLevel = this.anisotropicFilteringLevel;
-		serializationObject.getAlphaFromRGB = this.getAlphaFromRGB;
+		if (Std.is(this._buffer, String) && this._buffer.substr(0, 5) == "data:") {
+			serializationObject.base64String = this._buffer;
+			serializationObject.name = StringTools.replace(serializationObject.name, "data:", "");
+		}
 		
 		return serializationObject;
 	}

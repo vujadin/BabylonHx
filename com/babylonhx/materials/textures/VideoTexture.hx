@@ -28,7 +28,7 @@ import com.babylonhx.Scene;
         video.loop = true;
 		
         this.video.oncanplaythrough = function() {
-            if(Tools.IsExponentOfTwo(video.videoWidth) && Tools.IsExponentOfTwo(video.videoHeight)) {
+            if(!this.getScene().getEngine().needPOTTextures || (Tools.IsExponentOfTwo(video.videoWidth) && Tools.IsExponentOfTwo(video.videoHeight))) {
                 wrapU = Texture.WRAP_ADDRESSMODE;
                 wrapV = Texture.WRAP_ADDRESSMODE;
             }

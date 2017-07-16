@@ -13,8 +13,8 @@ class Bloom2PostProcess extends PostProcess {
 	
 
 	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {	
-		if (!ShadersStore.Shaders.exists("bloom2.fragment")) {			
-			ShadersStore.Shaders.set("bloom2.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("bloom2FragmentShader")) {			
+			ShadersStore.Shaders.set("bloom2FragmentShader", fragmentShader);
 		}
 		
 		super(name, "bloom2", null, null, ratio, camera, samplingMode, engine, reusable);

@@ -30,8 +30,6 @@ import com.babylonhx.tools.EventState;
 
 	public var applyParameters:PostProcess->Void;
 	
-	public var isSupported(get, never):Bool;
-	
 
 	public function new(engine:Engine, name:String, getPostProcess:Void->PostProcess, singleInstance:Bool = true) {
 		this._engine = engine;
@@ -49,6 +47,7 @@ import com.babylonhx.tools.EventState;
 		this._renderEffectAsPasses = new Map<String, PostProcessRenderEffect>();
 	}
 	
+	public var isSupported(get, never):Bool;
 	private function get_isSupported():Bool {
 		for (index in this._postProcesses.keys()) {
 			if (!this._postProcesses[index].isSupported) {
@@ -94,7 +93,7 @@ import com.babylonhx.tools.EventState;
 	}
 
 	public function emptyPasses() {
-		this._renderPasses = new Map<String, PostProcessRenderPass>();
+		this._renderPasses = new Map();
 		
 		this._linkParameters();
 	}

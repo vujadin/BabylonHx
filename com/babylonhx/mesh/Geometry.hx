@@ -6,12 +6,14 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Color4;
 import com.babylonhx.tools.Tags;
+import com.babylonhx.materials.Effect;
 
 import haxe.Json;
 
-import com.babylonhx.utils.typedarray.ArrayBufferView;
-import com.babylonhx.utils.typedarray.Float32Array;
-import com.babylonhx.utils.typedarray.Int32Array;
+import lime.utils.ArrayBufferView;
+import lime.utils.Float32Array;
+import lime.utils.Int32Array;
+import lime.graphics.opengl.GLVertexArrayObject;
 
 
 /**
@@ -25,7 +27,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	public var id:String;
 	public var delayLoadState = Engine.DELAYLOADSTATE_NONE;
 	public var delayLoadingFile:String;
-	public var onGeometryUpdated:Geometry->String->Void;
+	public var onGeometryUpdated:Geometry->Null<String>->Void;
 
 	// Private
 	private var _scene:Scene;
@@ -42,17 +44,39 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	public var _boundingInfo:BoundingInfo;
 	public var _delayLoadingFunction:Dynamic->Geometry->Void;
 	public var _softwareSkinningRenderId:Int = 0;
+	private var _vertexArrayObjects:Map<String, GLVertexArrayObject>;
 	
+	// Cache
+	public var _positions:Array<Vector3>;
+	
+	
+	/**
+	 * The Bias Vector to apply on the bounding elements (box/sphere), 
+	 * the max extend is computed as v += v * bias.x + bias.y, the min is computed as v -= v * bias.x + bias.y
+	 * @returns The Bias Vector
+	 */
 	public var boundingBias(get, set):Vector2;
-	public var extend(get, never):BabylonMinMax;
+	inline private function get_boundingBias():Vector2 {
+		return this._boundingBias;
+	}
+	private function set_boundingBias(value:Vector2):Vector2 {
+		if (this._boundingBias != null && this._boundingBias.equals(value)) {
+			return value;
+		}
+		
+		this._boundingBias = value.clone();
+		
+		this.updateBoundingInfo(true, null);
+		
+		return value;
+	}
 	
 
 	public function new(id:String, scene:Scene, ?vertexData:VertexData, updatable:Bool = false, ?mesh:Mesh) {
 		this.id = id;
 		this._engine = scene.getEngine();
 		this._meshes = [];
-		this._scene = scene;
-		
+		this._scene = scene;		
 		//Init vertex buffer cache
 		this._vertexBuffers = new Map();
 		this._indices = [];
@@ -65,9 +89,13 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			this._totalVertices = 0;
 		}
 		
+		if (this._engine.getCaps().vertexArrayObject) {
+			this._vertexArrayObjects = new Map();
+		}
+		
 		// applyToMesh
 		if (mesh != null) {
-			if (Std.is(mesh, LinesMesh)) {
+			if (mesh.getClassName() == 'LinesMesh') {
 				this.boundingBias = new Vector2(0, cast(mesh, LinesMesh).intersectionThreshold);
 				this.updateExtend();
 			}
@@ -77,28 +105,11 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		}
 	}
 	
-	/**
-	 *  The Bias Vector to apply on the bounding elements (box/sphere), the max extend is computed as v += v * bias.x + bias.y, the min is computed as v -= v * bias.x + bias.y 
-	 * @returns The Bias Vector 
-	 */
-	private function get_boundingBias():Vector2 {
-		return this._boundingBias;
-	}
-	private function set_boundingBias(value:Vector2):Vector2 {
-		if (this._boundingBias != null && this._boundingBias.equals(value)) {
-			return value;
-		}
-		
-		this._boundingBias = value.clone();
-		this.updateExtend();
-		
-		return value;
-	}
-	
+	public var extend(get, never):BabylonMinMax;
 	private function get_extend():BabylonMinMax {
 		return this._extend;
 	}
-
+	
 	inline public function getScene():Scene {
 		return this._scene;
 	}
@@ -110,6 +121,17 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	inline public function isReady():Bool {
 		return this.delayLoadState == Engine.DELAYLOADSTATE_LOADED || this.delayLoadState == Engine.DELAYLOADSTATE_NONE;
 	}
+	
+	public var doNotSerialize(get, never):Bool;
+	private function get_doNotSerialize():Bool {
+		for (index in 0...this._meshes.length) {
+			if (!this._meshes[index].doNotSerialize) {
+				return false;
+			}
+		}
+		
+		return true;
+	}
 
 	public function setAllVerticesData(vertexData:VertexData, updatable:Bool = false) {
 		vertexData.applyToGeometry(this, updatable);
@@ -120,6 +142,13 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		var buffer = new VertexBuffer(this._engine, data, kind, updatable, this._meshes.length == 0, stride);
 		
 		this.setVerticesBuffer(buffer);
+	}
+	
+	public function removeVerticesData(kind:String) {
+		if (this._vertexBuffers[kind] != null) {
+			this._vertexBuffers[kind].dispose();
+			this._vertexBuffers.remove(kind);
+		}
 	}
 	
 	public function setVerticesBuffer(buffer:VertexBuffer) {
@@ -137,6 +166,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			this._totalVertices = Std.int(data.length / stride);
 			
 			this.updateExtend(data, stride);
+			this._resetPointsArrayCache();
 			
 			var meshes = this._meshes;
 			var numOfMeshes = meshes.length;
@@ -151,18 +181,25 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		}
 		
 		this.notifyUpdate(kind);
+		
+		if (this._vertexArrayObjects != null) {
+			this._disposeVertexArrayObjects();
+			this._vertexArrayObjects = new Map(); // Will trigger a rebuild of the VAO if supported
+		}
 	}
 
 	inline public function updateVerticesDataDirectly(kind:String, data:Array<Float>, offset:Int) {
 		var vertexBuffer = this.getVertexBuffer(kind);
 		
-		if (vertexBuffer != null) {
-			vertexBuffer.updateDirectly(data, offset);
-			this.notifyUpdate();
-		}		
+		if (vertexBuffer == null) {
+			return;
+		}
+		
+		vertexBuffer.updateDirectly(data, offset);
+		this.notifyUpdate();
 	}
 	
-	// makeItUnique required by IGetSetVerticesData
+	// BHX: makeItUnique required by IGetSetVerticesData
 	public function updateVerticesData(kind:String, data:Array<Float>, updateExtends:Bool = false, makeItUnique:Bool = false) {
 		var vertexBuffer = this.getVertexBuffer(kind);
 		
@@ -175,10 +212,6 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		if (kind == VertexBuffer.PositionKind) {			
 			var stride = vertexBuffer.getStrideSize();
 			this._totalVertices = cast data.length / stride;
-			
-			if (updateExtends) {
-				this.updateExtend(data);
-			}
 			
 			this.updateBoundingInfo(updateExtends, data);
 		}
@@ -193,6 +226,7 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		
 		var meshes = this._meshes;
 		var numOfMeshes = meshes.length;
+		this._resetPointsArrayCache();
 		
 		for (index in 0...numOfMeshes) {
 			var mesh = meshes[index];
@@ -208,6 +242,24 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			}
 		}            
 	}
+	
+	public function _bind(effect:Effect, indexToBind:WebGLBuffer = null) {
+		if (indexToBind == null) {
+			indexToBind = this._indexBuffer;
+		}
+		
+		if (indexToBind != this._indexBuffer || this._vertexArrayObjects == null) {
+			this._engine.bindBuffers(this.getVertexBuffers(), indexToBind, effect);
+			return;
+		}
+		
+		// Using VAO
+		if (this._vertexArrayObjects[effect.key] == null) {
+			this._vertexArrayObjects[effect.key] = this._engine.recordVertexArrayObject(this.getVertexBuffers(), indexToBind, effect);
+		}
+		
+		this._engine.bindVertexArrayObject(this._vertexArrayObjects[effect.key], indexToBind);
+	}
 
 	public function getTotalVertices():Int {
 		if (!this.isReady()) {
@@ -217,14 +269,14 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		return this._totalVertices;
 	}
 
-	public function getVerticesData(kind:String, copyWhenShared:Bool = false):Array<Float> {
+	public function getVerticesData(kind:String, copyWhenShared:Bool = false, forceCopy:Bool = false):Array<Float> {
 		var vertexBuffer:VertexBuffer = this.getVertexBuffer(kind);
 		if (vertexBuffer == null) {
 			return null;
 		}
 		
 		var orig:Array<Float> = vertexBuffer.getData();
-		if (!copyWhenShared || this._meshes.length == 1){
+		if (!forceCopy && (!copyWhenShared || this._meshes.length == 1)) {
 			return orig;
 		}
 		else {
@@ -287,6 +339,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			this._engine._releaseBuffer(this._indexBuffer);
 		}
 		
+		this._disposeVertexArrayObjects();
+		
 		this._indices = indices;
 		if (this._meshes.length != 0 && this._indices != null) {
 			this._indexBuffer = this._engine.createIndexBuffer(this._indices);
@@ -342,6 +396,17 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		
 		return this._indexBuffer;
 	}
+	
+	public function _releaseVertexArrayObject(effect:Effect) {
+		if (effect == null || this._vertexArrayObjects == null) {
+			return;
+		}
+		
+		if (this._vertexArrayObjects[effect.key] != null) {
+			this._engine.releaseVertexArrayObject(this._vertexArrayObjects[effect.key]);
+			this._vertexArrayObjects.remove(effect.key);
+		}
+	}
 
 	public function releaseForMesh(mesh:Mesh, shouldDispose:Bool = false) {
 		var meshes = this._meshes;
@@ -349,14 +414,6 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		
 		if (index == -1) {
 			return;
-		}
-		
-		for (key in this._vertexBuffers.keys()) {
-			this._vertexBuffers[key].dispose();
-		}
-		
-		if (this._indexBuffer != null && this._engine._releaseBuffer(this._indexBuffer)) {
-			this._indexBuffer = null;
 		}
 		
 		meshes.splice(index, 1);
@@ -411,20 +468,21 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			if (numOfMeshes == 1) {
 				this._vertexBuffers[kind].create();
 			}
-			this._vertexBuffers[kind].getBuffer().references = numOfMeshes;
+			var buffer = this._vertexBuffers[kind].getBuffer();
+			if (buffer != null) {
+				buffer.references = numOfMeshes;
+			}
 			
 			if (kind == VertexBuffer.PositionKind) {
-				mesh._resetPointsArrayCache();
-				
 				if (this._extend == null) {
-                    this.updateExtend(this._vertexBuffers[kind].getData());
-                }
-                mesh._boundingInfo = new BoundingInfo(this._extend.minimum, this._extend.maximum);
+					this.updateExtend(this._vertexBuffers[kind].getData());
+				}
+				mesh._boundingInfo = new BoundingInfo(this._extend.minimum, this._extend.maximum);
 				
 				mesh._createGlobalSubMesh();
 				
 				//bounding info was just created again, world matrix should be applied again.
-                mesh._updateBoundingInfo();
+				mesh._updateBoundingInfo();
 			}
 		}
 		
@@ -440,6 +498,10 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	private function notifyUpdate(?kind:String) {
 		if (this.onGeometryUpdated != null) {
 			this.onGeometryUpdated(this, kind);
+		}
+		
+		for (mesh in this._meshes) {
+			mesh._markSubMeshesAsAttributesDirty();
 		}
 	}
 
@@ -458,21 +520,25 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		
 		this.delayLoadState = Engine.DELAYLOADSTATE_LOADING;
 		
-		scene._addPendingData(this);
-		/*Tools.LoadFile(this.delayLoadingFile, function(data) {
+		this._queueLoad(scene, onLoaded);
+	}
+	
+	private function _queueLoad(scene:Scene, onLoaded:Void->Void = null) {
+		/*scene._addPendingData(this);
+		Tools.LoadFile(this.delayLoadingFile, function(data) {
 			this._delayLoadingFunction(Json.parse(data), this);
-
+			
 			this.delayLoadState = Engine.DELAYLOADSTATE_LOADED;
 			this._delayInfo = [];
-
+			
 			scene._removePendingData(this);
-
+			
 			var meshes = this._meshes;
 			var numOfMeshes = meshes.length;
 			for (index in 0...numOfMeshes) {
 				this._applyToMesh(meshes[index]);
 			}
-
+			
 			if (onLoaded != null) {
 				onLoaded();
 			}
@@ -480,8 +546,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 	}
 	
 	/**
-         * Invert the geometry to move from a right handed system to a left handed one.
-         */
+	 * Invert the geometry to move from a right handed system to a left handed one.
+	 */
 	public function toLeftHanded() {
 		// Flip faces
 		var tIndices = this.getIndices(false);
@@ -519,8 +585,44 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		}
 	}
 	
-	public function isDisposed():Bool {
+	// Cache
+	public function _resetPointsArrayCache() {
+		this._positions = null;
+	}
+
+	public function _generatePointsArray():Bool {
+		if (this._positions != null) {
+			return true;
+		}
+		
+		this._positions = [];
+		
+		var data = this.getVerticesData(VertexBuffer.PositionKind);
+		
+		if (data == null) {
+			return false;
+		}
+		
+		var index:Int = 0;
+		while (index < data.length) {
+			this._positions.push(Vector3.FromArray(data, index));
+			index += 3;
+		}
+		
+		return true;
+	}
+	
+	inline public function isDisposed():Bool {
 		return this._isDisposed;
+	}
+	
+	private function _disposeVertexArrayObjects() {
+		if (this._vertexArrayObjects != null) {
+			for (kind in this._vertexArrayObjects.keys()) {
+				this._engine.releaseVertexArrayObject(this._vertexArrayObjects[kind]);
+			}
+			this._vertexArrayObjects = new Map();
+		}
 	}
 
 	public function dispose() {
@@ -531,6 +633,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			this.releaseForMesh(meshes[index]);
 		}
 		this._meshes = [];
+		
+		this._disposeVertexArrayObjects();
 		
 		for (kind in this._vertexBuffers.keys()) {
 			this._vertexBuffers[kind].dispose();
@@ -551,13 +655,14 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		
 		this._boundingInfo = null; // todo:.dispose()
 		
-		this._scene.removeGeometry(this);
-		
+		this._scene.removeGeometry(this);		
 		this._isDisposed = true;
 	}
 
 	public function copy(id:String):Geometry {
 		var vertexData:VertexData = new VertexData();
+		
+		vertexData.indices = [];
 		
 		var indices = this.getIndices();		
 		for (index in 0...indices.length) {
@@ -565,11 +670,16 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		}
 		
 		var updatable = false;
-		var stopChecking = false;
-		
+		var stopChecking = false;		
 		for (kind in this._vertexBuffers.keys()) {
-			vertexData.set(this.getVerticesData(kind).copy(), kind);
+			var data = this.getVerticesData(kind);
 			
+			//if (Std.is(data, Float32Array)) {
+				//vertexData.set(new Float32Array(data), kind);
+			//} 
+			//else {
+				vertexData.set(data.copy(), kind);
+			//}
 			if (!stopChecking) {
 				updatable = this.getVertexBuffer(kind).isUpdatable();
 				stopChecking = !updatable;
@@ -591,6 +701,113 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		geometry._boundingInfo = new BoundingInfo(this._extend.minimum, this._extend.maximum);
 		
 		return geometry;
+	}
+	
+	public function serialize():Dynamic {
+		var serializationObject:Dynamic = { };
+		
+		serializationObject.id = this.id;
+		
+		if (Tags.HasTags(this)) {
+			serializationObject.tags = Tags.GetTags(this);
+		}
+		
+		return serializationObject;
+	}
+
+	/*private function toNumberArray(origin:Dynamic):Array<Dynamic> {
+		if (Std.is(origin, Array)) {
+			return origin;
+		} 
+		else {
+			return Array.prototype.slice.call(origin);
+		}
+	}*/
+
+	public function serializeVerticeData():Dynamic {
+		var serializationObject = this.serialize();
+		
+		if (this.isVerticesDataPresent(VertexBuffer.PositionKind)) {
+			serializationObject.positions = this.getVerticesData(VertexBuffer.PositionKind);
+			if (this.getVertexBuffer(VertexBuffer.PositionKind).isUpdatable()) {
+				//serializationObject.positions._updatable = true;
+			}
+		}
+		
+		if (this.isVerticesDataPresent(VertexBuffer.NormalKind)) {
+			serializationObject.normals = this.getVerticesData(VertexBuffer.NormalKind);
+			if (this.getVertexBuffer(VertexBuffer.NormalKind).isUpdatable()) {
+				//serializationObject.normals._updatable = true;
+			}
+		}
+		
+		if (this.isVerticesDataPresent(VertexBuffer.UVKind)) {
+			serializationObject.uvs = this.getVerticesData(VertexBuffer.UVKind);
+			if (this.getVertexBuffer(VertexBuffer.UVKind).isUpdatable()) {
+				//serializationObject.uvs._updatable = true;
+			}
+		}
+
+		if (this.isVerticesDataPresent(VertexBuffer.UV2Kind)) {
+			serializationObject.uv2s = this.getVerticesData(VertexBuffer.UV2Kind);
+			if (this.getVertexBuffer(VertexBuffer.UV2Kind).isUpdatable()) {
+				//serializationObject.uv2s._updatable = true;
+			}
+		}
+		
+		if (this.isVerticesDataPresent(VertexBuffer.UV3Kind)) {
+			serializationObject.uv3s = this.getVerticesData(VertexBuffer.UV3Kind);
+			if (this.getVertexBuffer(VertexBuffer.UV3Kind).isUpdatable()) {
+				//serializationObject.uv3s._updatable = true;
+			}
+		}
+		
+		if (this.isVerticesDataPresent(VertexBuffer.UV4Kind)) {
+			serializationObject.uv4s = this.getVerticesData(VertexBuffer.UV4Kind);
+			if (this.getVertexBuffer(VertexBuffer.UV4Kind).isUpdatable()) {
+				//serializationObject.uv4s._updatable = true;
+			}
+		}
+		
+		if (this.isVerticesDataPresent(VertexBuffer.UV5Kind)) {
+			serializationObject.uv5s = this.getVerticesData(VertexBuffer.UV5Kind);
+			if (this.getVertexBuffer(VertexBuffer.UV5Kind).isUpdatable()) {
+				//serializationObject.uv5s._updatable = true;
+			}
+		}
+		
+		if (this.isVerticesDataPresent(VertexBuffer.UV6Kind)) {
+			serializationObject.uv6s = this.getVerticesData(VertexBuffer.UV6Kind);
+			if (this.getVertexBuffer(VertexBuffer.UV6Kind).isUpdatable()) {
+				//serializationObject.uv6s._updatable = true;
+			}
+		}
+		
+		if (this.isVerticesDataPresent(VertexBuffer.ColorKind)) {
+			serializationObject.colors = this.getVerticesData(VertexBuffer.ColorKind);
+			if (this.getVertexBuffer(VertexBuffer.ColorKind).isUpdatable()) {
+				//serializationObject.colors._updatable = true;
+			}
+		}
+		
+		if (this.isVerticesDataPresent(VertexBuffer.MatricesIndicesKind)) {
+			serializationObject.matricesIndices = this.getVerticesData(VertexBuffer.MatricesIndicesKind);
+			//serializationObject.matricesIndices._isExpanded = true;
+			if (this.getVertexBuffer(VertexBuffer.MatricesIndicesKind).isUpdatable()) {
+				//serializationObject.matricesIndices._updatable = true;
+			}
+		}
+		
+		if (this.isVerticesDataPresent(VertexBuffer.MatricesWeightsKind)) {
+			serializationObject.matricesWeights = this.getVerticesData(VertexBuffer.MatricesWeightsKind);
+			if (this.getVertexBuffer(VertexBuffer.MatricesWeightsKind).isUpdatable()) {
+				//serializationObject.matricesWeights._updatable = true;
+			}
+		}
+		
+		serializationObject.indices = this.getIndices();
+		
+		return serializationObject;
 	}
 
 	// Statics
@@ -800,8 +1017,8 @@ import com.babylonhx.utils.typedarray.Int32Array;
 		mesh.computeWorldMatrix(true);
 		
 		// Octree
-		if (scene.SelectionOctree != null) {
-			scene.SelectionOctree.addMesh(mesh);
+		if (scene._selectionOctree != null) {
+			scene._selectionOctree.addMesh(mesh);
 		}
 	}
 	

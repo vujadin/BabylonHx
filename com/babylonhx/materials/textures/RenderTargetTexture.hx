@@ -1,7 +1,6 @@
 package com.babylonhx.materials.textures;
 
 import com.babylonhx.Engine;
-import com.babylonhx.rendering.RenderingManager;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.SubMesh;
@@ -10,6 +9,9 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
+import com.babylonhx.rendering.RenderingManager;
+import com.babylonhx.postprocess.PostProcess;
+import com.babylonhx.postprocess.PostProcessManager;
 
 /**
  * ...
@@ -45,6 +47,9 @@ typedef RenderTargetOptions = {
 	public var activeCamera:Camera;
 	public var customRenderFunction:Dynamic;//SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void->Void->Void;
 	public var useCameraPostProcesses:Bool;
+	
+	private var _postProcessManager:PostProcessManager;
+    private var _postProcesses:Array<PostProcess>;
 	
 	// Events
 
@@ -123,12 +128,19 @@ typedef RenderTargetOptions = {
 	private var _currentRefreshId:Int = -1;
 	private var _refreshRate:Int = 1;
 	private var _textureMatrix:Matrix;
+	private var _samples:Int = 1;
 	private var _renderTargetOptions:RenderTargetOptions;
+	public var renderTargetOptions(get, never):RenderTargetOptions;
+	inline private function get_renderTargetOptions():RenderTargetOptions {
+		return this._renderTargetOptions;
+	}
 
 	
-	public function new(name:String, size:Dynamic, scene:Scene, ?generateMipMaps:Bool, doNotChangeAspectRatio:Bool = true, type:Int = Engine.TEXTURETYPE_UNSIGNED_INT, isCube:Bool = false, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, generateDepthBuffer:Bool = true, generateStencilBuffer:Bool = false) {
+	public function new(name:String, size:Dynamic, scene:Scene, ?generateMipMaps:Bool, doNotChangeAspectRatio:Bool = true, type:Int = Engine.TEXTURETYPE_UNSIGNED_INT, isCube:Bool = false, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, generateDepthBuffer:Bool = true, generateStencilBuffer:Bool = false, isMulti:Bool = false) {
 		super(null, scene, !generateMipMaps);
+		scene = this.getScene();
 		
+		// BHX
 		this.coordinatesMode = Texture.PROJECTION_MODE;
 		
 		this.name = name;
@@ -143,7 +155,14 @@ typedef RenderTargetOptions = {
 		}
 		this._generateMipMaps = generateMipMaps;
 		this._doNotChangeAspectRatio = doNotChangeAspectRatio;
+		
+		// Rendering groups
+		this._renderingManager = new RenderingManager(scene);
 		this.isCube = isCube;
+		
+		if (isMulti) {
+			return;
+		}
 		
 		this._renderTargetOptions = {
 			generateMipMaps: generateMipMaps,
@@ -166,9 +185,19 @@ typedef RenderTargetOptions = {
 		else {
 			this._texture = scene.getEngine().createRenderTargetTexture(this._size, this._renderTargetOptions);
 		}
+	}
+	
+	public var samples(get, set):Int;
+	inline private function get_samples():Int {
+		return this._samples;
+	}
+	private function set_samples(value:Int):Int {
+		if (this._samples == value) {
+			return value;
+		}
 		
-		// Rendering groups
-		this._renderingManager = new RenderingManager(scene);
+		this._samples = this.getScene().getEngine().updateRenderTargetTextureSampleCount(this._texture, value);
+		return value;
 	}
 
 	public function resetRefreshCounter() {
@@ -184,6 +213,49 @@ typedef RenderTargetOptions = {
 		this.resetRefreshCounter();
 		
 		return value;
+	}
+	
+	public function addPostProcess(postProcess:PostProcess) {
+		if (this._postProcessManager == null) {
+			this._postProcessManager = new PostProcessManager(this.getScene());
+			this._postProcesses = new Array<PostProcess>();
+		}
+		
+		this._postProcesses.push(postProcess);
+		this._postProcesses[0].autoClear = false;
+	}
+
+	public function clearPostProcesses(dispose:Bool = false) {
+		if (this._postProcesses == null) {
+			return;
+		}
+		
+		if (dispose) {
+			for (postProcess in this._postProcesses) {
+				postProcess.dispose();
+				postProcess = null;
+			}
+		}
+		
+		this._postProcesses = [];
+	}
+
+	public function removePostProcess(postProcess:PostProcess) {
+		if (this._postProcesses == null) {
+			return;
+		}
+		
+		var index = this._postProcesses.indexOf(postProcess);
+		
+		if (index == -1) {
+			return;
+		}
+		
+		this._postProcesses.splice(index, 1);
+		
+		if (this._postProcesses.length > 0) {
+			this._postProcesses[0].autoClear = false;
+		}
 	}
 
 	public function _shouldRender():Bool {
@@ -245,9 +317,9 @@ typedef RenderTargetOptions = {
 		var scene = this.getScene();
 		var engine = scene.getEngine();
 		
-		if (this.useCameraPostProcesses == false) {
-            useCameraPostProcess = this.useCameraPostProcesses;
-        }
+		if (this.useCameraPostProcesses != null) {
+			useCameraPostProcess = this.useCameraPostProcesses;
+		}
 		
 		if (this._waitingRenderList != null) {
 			this.renderList = [];
@@ -261,7 +333,7 @@ typedef RenderTargetOptions = {
 		
 		// Is predicate defined?
 		if (this.renderListPredicate != null) {
-			this.renderList.splice(0, this.renderList.length - 1); // Clear previous renderList
+			this.renderList.splice(0, 1); // Clear previous renderList
 			
 			var sceneMeshes = this.getScene().meshes;
 			
@@ -278,24 +350,26 @@ typedef RenderTargetOptions = {
 		}
 		
 		// Set custom projection.
-        // Needs to be before binding to prevent changing the aspect ratio.
-        if (this.activeCamera != null) {
-            engine.setViewport(this.activeCamera.viewport);
+		// Needs to be before binding to prevent changing the aspect ratio.
+		var camera:Camera = null;
+		if (this.activeCamera != null) {
+			camera = this.activeCamera;
+			engine.setViewport(this.activeCamera.viewport);
 			
-            if (this.activeCamera != scene.activeCamera) {
-                scene.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(true));
-            }
-        }
-        else {
-            engine.setViewport(scene.activeCamera.viewport);
-        }
+			if (this.activeCamera != scene.activeCamera) {
+				scene.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(true));
+			}
+		}
+		else {
+			camera = scene.activeCamera;
+			engine.setViewport(scene.activeCamera.viewport);
+		}
 		
 		// Prepare renderingManager
 		this._renderingManager.reset();
 		
 		var currentRenderList = this.renderList != null ? this.renderList : scene.getActiveMeshes().data;
-		var currentRenderListLength = cast this.renderList != null ? this.renderList.length : cast scene.getActiveMeshes().length;
-		
+		var currentRenderListLength = this.renderList != null ? this.renderList.length : scene.getActiveMeshes().length;
 		var sceneRenderId = scene.getRenderId();
 		for (meshIndex in 0...currentRenderListLength) {
 			var mesh = currentRenderList[meshIndex];
@@ -304,20 +378,37 @@ typedef RenderTargetOptions = {
 				if (!mesh.isReady()) {
 					// Reset _currentRefreshId
 					this.resetRefreshCounter();
-					
 					continue;
 				}
 				
 				mesh._preActivateForIntermediateRendering(sceneRenderId);
 				
-				if (mesh.isEnabled() && mesh.isVisible && mesh.subMeshes != null && ((mesh.layerMask & scene.activeCamera.layerMask) != 0)) {
+				var isMasked:Bool = false;
+				if (this.renderList == null) {
+					isMasked = ((mesh.layerMask & camera.layerMask) == 0);
+				}
+				
+				if (mesh.isEnabled() && mesh.isVisible && mesh.subMeshes != null && !isMasked) {
 					mesh._activate(sceneRenderId);
 					
-					for (subMesh in mesh.subMeshes) {
-						scene._activeIndices += subMesh.indexCount;
+					for (subIndex in 0...mesh.subMeshes.length) {
+						var subMesh = mesh.subMeshes[subIndex];
+						scene._activeIndices.addCount(subMesh.indexCount, false);
 						this._renderingManager.dispatch(subMesh);
 					}
 				}
+			}
+		}
+		
+		for (particleIndex in 0...scene.particleSystems.length) {
+			var particleSystem = scene.particleSystems[particleIndex];
+			
+			if (!particleSystem.isStarted() || particleSystem.emitter == null || particleSystem.emitter.position == null || !particleSystem.emitter.isEnabled()) {
+				continue;
+			}
+			
+			if (currentRenderList.indexOf(particleSystem.emitter) >= 0) {
+				this._renderingManager.dispatchParticles(particleSystem);
 			}
 		}
 		
@@ -335,20 +426,22 @@ typedef RenderTargetOptions = {
 		this.onAfterUnbindObservable.notifyObservers(this);
 		
 		if (this.activeCamera != null && this.activeCamera != scene.activeCamera) {
-    		scene.setTransformMatrix(scene.activeCamera.getViewMatrix(), scene.activeCamera.getProjectionMatrix(true));
-    	}
-		
+			scene.setTransformMatrix(scene.activeCamera.getViewMatrix(), scene.activeCamera.getProjectionMatrix(true));
+		}
 		engine.setViewport(scene.activeCamera.viewport);
 		
 		scene.resetCachedMaterial();
 	}
-	
-	public function renderToTarget(faceIndex:Int, currentRenderList:Array<AbstractMesh>, currentRenderListLength:Int, useCameraPostProcess:Bool = false) {
+
+	private function renderToTarget(faceIndex:Int, currentRenderList:Array<AbstractMesh>, currentRenderListLength:Int, useCameraPostProcess:Bool, dumpForDebug:Bool = false) {
 		var scene = this.getScene();
 		var engine = scene.getEngine();
 		
 		// Bind
-		if (!useCameraPostProcess || !scene.postProcessManager._prepareFrame(this._texture)) {
+		if (this._postProcessManager != null) {
+			this._postProcessManager._prepareFrame(this._texture, this._postProcesses);
+		}
+		else if (!useCameraPostProcess || !scene.postProcessManager._prepareFrame(this._texture)) {
 			if (this.isCube) {
 				engine.bindFramebuffer(this._texture, faceIndex);
 			} 
@@ -374,7 +467,10 @@ typedef RenderTargetOptions = {
 		// Render
 		this._renderingManager.render(this.customRenderFunction, currentRenderList, this.renderParticles, this.renderSprites);
 		
-		if (useCameraPostProcess) {
+		if (this._postProcessManager != null) {
+			this._postProcessManager._finalizeFrame(false, this._texture, faceIndex, this._postProcesses);
+		}
+		else if (useCameraPostProcess) {
 			scene.postProcessManager._finalizeFrame(false, this._texture, faceIndex);
 		}
 		
@@ -382,8 +478,11 @@ typedef RenderTargetOptions = {
 			scene.updateTransformMatrix(true);
 		}
 		
-		this.onAfterRenderObservable.notifyObservers(faceIndex);
-		
+		// Dump ?
+		/*if (dumpForDebug) {
+			Tools.DumpFramebuffer(this._size, this._size, engine);
+		}*/
+
 		// Unbind
 		if (!this.isCube || faceIndex == 5) {
 			if (this.isCube) {
@@ -392,7 +491,12 @@ typedef RenderTargetOptions = {
 				}
 			}
 			
-			engine.unBindFramebuffer(this._texture, this.isCube);
+			engine.unBindFramebuffer(this._texture, this.isCube, function() {
+				this.onAfterRenderObservable.notifyObservers(faceIndex);    
+			});
+		} 
+		else {
+			this.onAfterRenderObservable.notifyObservers(faceIndex);
 		}
 	}
 	
@@ -467,6 +571,38 @@ typedef RenderTargetOptions = {
 		}
 		
 		return serializationObject;
+	}
+	
+	// This will remove the attached framebuffer objects. The texture will not be able to be used as render target anymore
+	public function disposeFramebufferObjects() {
+		this.getScene().getEngine()._releaseFramebufferObjects(this.getInternalTexture());
+	}
+	
+	override public function dispose() {
+		if (this._postProcessManager != null) {
+			this._postProcessManager.dispose();
+			this._postProcessManager = null;
+		}
+		
+		this.clearPostProcesses(true);
+		
+		// Remove from custom render targets
+		var scene = this.getScene();
+		var index = scene.customRenderTargets.indexOf(this);
+		
+		if (index >= 0) {
+			scene.customRenderTargets.splice(index, 1);
+		}
+		
+		for (camera in scene.cameras) {
+			index = camera.customRenderTargets.indexOf(this);
+			
+			if (index >= 0) {
+				camera.customRenderTargets.splice(index, 1);
+			}
+		}
+		
+		super.dispose();
 	}
 	
 }

@@ -77,8 +77,8 @@ void main(void) {
 	
 
 	public function new(name:String, size:Float, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
-		if (!ShadersStore.Shaders.exists("dreamtexture.fragment")) {
-			ShadersStore.Shaders.set("dreamtexture.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("dreamtextureFragmentShader")) {
+			ShadersStore.Shaders.set("dreamtextureFragmentShader", fragmentShader);
 		}
 		
 		super(name, size, "dreamtexture", scene, fallbackTexture, generateMipMaps);

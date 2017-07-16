@@ -22,8 +22,8 @@ package com.babylonhx.materials.textures.procedurals.standard;
 	
 
 	public function new(name:String, size:Int, scene:Scene, ?fallbackTexture:Texture, generateMipMaps:Bool = false) {
-		if (!ShadersStore.Shaders.exists("starfieldtexture.fragment")) {
-			ShadersStore.Shaders.set("starfieldtexture.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("starfieldtextureFragmentShader")) {
+			ShadersStore.Shaders.set("starfieldtextureFragmentShader", fragmentShader);
 		}
 		
 		super(name, size, "starfieldtexture", scene, fallbackTexture, generateMipMaps);

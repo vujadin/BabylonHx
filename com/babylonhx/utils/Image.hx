@@ -1,6 +1,6 @@
 package com.babylonhx.utils;
 
-import com.babylonhx.utils.typedarray.UInt8Array;
+import lime.utils.UInt8Array;
 
 
 /**

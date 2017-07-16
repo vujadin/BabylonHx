@@ -25,6 +25,11 @@ import com.babylonhx.tools.Tools;
      * The min id used for rendering groups (included)
      */
     inline public static var MIN_RENDERINGGROUPS:Int = 0;
+	
+	/**
+	 * Used to globally prevent autoclearing scenes.
+	 */
+	public static var AUTOCLEAR:Bool = true;
 
 	private var _scene:Scene;
 	private var _renderingGroups:Array<RenderingGroup> = [];
@@ -133,6 +138,17 @@ import com.babylonhx.tools.Tools;
 			}
 		}
 	}
+	
+	public function dispose() {
+		for (index in RenderingManager.MIN_RENDERINGGROUPS...RenderingManager.MAX_RENDERINGGROUPS) {
+			var renderingGroup = this._renderingGroups[index];
+			if (renderingGroup != null) {
+				renderingGroup.dispose();
+			}
+		}
+		
+		this._renderingGroups.splice(0, this._renderingGroups.length);
+	}
 
 	private function _prepareRenderingGroup(renderingGroupId:Int) {
 		if (this._renderingGroups[renderingGroupId] == null) {
@@ -208,5 +224,5 @@ import com.babylonhx.tools.Tools;
             "stencil" => stencil
         ];
 	}
-
+	
 }

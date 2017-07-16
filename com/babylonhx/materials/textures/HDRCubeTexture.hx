@@ -1,18 +1,19 @@
 package com.babylonhx.materials.textures;
 
 import com.babylonhx.math.Color3;
-import com.babylonhx.utils.typedarray.ArrayBuffer;
-import com.babylonhx.utils.typedarray.ArrayBufferView;
 import com.babylonhx.math.SphericalHarmonics;
 import com.babylonhx.math.SphericalPolynomial;
 import com.babylonhx.math.Matrix;
+import com.babylonhx.math.Tools;
 import com.babylonhx.tools.hdr.CubeMapToSphericalPolynomialTools;
 import com.babylonhx.tools.hdr.PMREMGenerator;
 import com.babylonhx.tools.hdr.HDRTools;
-import com.babylonhx.utils.typedarray.Float32Array;
-import com.babylonhx.utils.typedarray.UInt8Array;
-import com.babylonhx.utils.typedarray.Int32Array;
-import com.babylonhx.math.Tools;
+
+import lime.utils.ArrayBuffer;
+import lime.utils.ArrayBufferView;
+import lime.utils.Float32Array;
+import lime.utils.UInt8Array;
+import lime.utils.Int32Array;
 
 
 /**
@@ -28,10 +29,14 @@ import com.babylonhx.math.Tools;
  */
 class HDRCubeTexture extends BaseTexture {
 	
-	/**
-	 * The texture URL.
-	 */
-	public var url:String;
+	private static var _facesMapping = [
+		"right",
+		"left",
+		"up",
+		"down",
+		"front",
+		"back"
+	];
 
 	private var _useInGammaSpace:Bool = false;
     private var _generateHarmonics:Bool = true;
@@ -41,15 +46,13 @@ class HDRCubeTexture extends BaseTexture {
 	private var _size:Int;
 	private var _usePMREMGenerator:Bool;
 	private var _isBABYLONPreprocessed:Bool = false;
+	private var _onLoad:Void->Void = null;
+    private var _onError:Void->Void = null;
 	
-	private static var _facesMapping = [
-		"left",
-		"down",
-		"front",
-		"right",
-		"up",
-		"back"
-	];
+	/**
+	 * The texture URL.
+	 */
+	public var url:String;
 
 	/**
 	 * The spherical polynomial data extracted from the texture.
@@ -61,6 +64,21 @@ class HDRCubeTexture extends BaseTexture {
 	 * This is usefull at run time to apply the good shader.
 	 */
 	public var isPMREM:Bool = false;
+	
+	private var _isBlocking:Bool = true;
+	public var isBlocking(get, set):Bool;
+	/**
+	 * Sets wether or not the texture is blocking during loading.
+	 */
+	private inline function set_isBlocking(value:Bool):Bool {
+		return this._isBlocking = value;
+	}
+	/**
+	 * Gets wether or not the texture is blocking during loading.
+	 */
+	private inline function get_isBlocking():Bool {
+		return this._isBlocking;
+	}
 	
 
 	/**
@@ -77,7 +95,7 @@ class HDRCubeTexture extends BaseTexture {
 	 * @param usePMREMGenerator Specifies wether or not to generate the CubeMap through CubeMapGen 
 	 * to avoid seams issue at run time.
 	 */
-	public function new(url:String = "", scene:Scene, size:Int = -1, noMipmap:Bool = false, generateHarmonics:Bool = true, useInGammaSpace:Bool = false, usePMREMGenerator:Bool = false) {
+	public function new(url:String = "", scene:Scene, size:Int = -1, noMipmap:Bool = false, generateHarmonics:Bool = true, useInGammaSpace:Bool = false, usePMREMGenerator:Bool = false, onLoad:Void->Void = null, onError:Void->Void = null) {
 		super(scene);
 		
 		if (url == "") {
@@ -91,6 +109,9 @@ class HDRCubeTexture extends BaseTexture {
 		this.hasAlpha = false;
 		this.isCube = true;
 		this._textureMatrix = Matrix.Identity();
+		this._onLoad = onLoad;
+		this._onError = onError;
+		this.gammaSpace = false;
 		
 		if (size > 0) {
 			this._isBABYLONPreprocessed = false;
@@ -190,11 +211,14 @@ class HDRCubeTexture extends BaseTexture {
 			for (k in 0...6) {
 				var dataFace:Float32Array = null;
 				
-				// If special cases.
-				if (mipmapGenerator == null) {
-					var j:Int = [0, 2, 4, 1, 3, 5][k]; // Transforms +X+Y+Z... to +X-X+Y-Y... if no mipmapgenerator...
+				// To be deprecated.
+				if (version == 1) {
+					var j:Int = ([0, 2, 4, 1, 3, 5])[k]; // Transforms +X+Y+Z... to +X-X+Y-Y...
 					dataFace = data[j];
-					
+				}
+				
+				// If special cases.
+				if (mipmapGenerator == null) {					
 					if (!this.getScene().getEngine().getCaps().textureFloat) {
 						// 3 channels of 1 bytes per pixel in bytes.
 						var byteBuffer = new ArrayBuffer(faceSize);
@@ -230,9 +254,6 @@ class HDRCubeTexture extends BaseTexture {
 						}
 					}
 				}
-				else {
-					dataFace = data[k];
-				}
 				
 				// Fill the array accordingly.
 				if (byteArray != null) {
@@ -246,12 +267,12 @@ class HDRCubeTexture extends BaseTexture {
 			return results;
 		}
 		
-		this._texture = this.getScene().getEngine().createRawCubeTexture(this.url, this.getScene(), this._size, 
+		this._texture = this.getScene().getEngine().createRawCubeTextureFromUrl(this.url, this.getScene(), this._size, 
 			Engine.TEXTUREFORMAT_RGB, 
 			this.getScene().getEngine().getCaps().textureFloat ? Engine.TEXTURETYPE_FLOAT : Engine.TEXTURETYPE_UNSIGNED_INT, 
 			this._noMipmap, 
 			callback, 
-			mipmapGenerator);
+			mipmapGenerator, this._onLoad, this._onError);
 	}
 
 	/**
@@ -325,32 +346,34 @@ class HDRCubeTexture extends BaseTexture {
 		}
 		
 		var mipmapGenerator = null;
-		if (!this._noMipmap && this._usePMREMGenerator) {
-			mipmapGenerator = function(data:Array<ArrayBufferView>):Array<Array<ArrayBufferView>> {
-				// Custom setup of the generator matching with the PBR shader values.
-				var generator = new PMREMGenerator(
-					data,
-					this._size,
-					this._size,
-					0,
-					3,
-					this.getScene().getEngine().getCaps().textureFloat,
-					2048,
-					0.25,
-					false,
-					true
-				);
-				
-				return generator.filterCubeMap();
-			};
-		}
 		
-		this._texture = this.getScene().getEngine().createRawCubeTexture(this.url, this.getScene(), this._size, 
+		// TODO. Implement In code PMREM Generator following the LYS toolset generation.
+		//if (!this._noMipmap && this._usePMREMGenerator) {
+			//mipmapGenerator = function(data:Array<ArrayBufferView>):Array<Array<ArrayBufferView>> {
+				//// Custom setup of the generator matching with the PBR shader values.
+				//var generator = new PMREMGenerator(
+					//data,
+					//this._size,
+					//this._size,
+					//0,
+					//3,
+					//this.getScene().getEngine().getCaps().textureFloat,
+					//2048,
+					//0.25,
+					//false,
+					//true
+				//);
+				//
+				//return generator.filterCubeMap();
+			//};
+		//}
+		
+		this._texture = this.getScene().getEngine().createRawCubeTextureFromUrl(this.url, this.getScene(), this._size, 
 			Engine.TEXTUREFORMAT_RGB, 
 			this.getScene().getEngine().getCaps().textureFloat ? Engine.TEXTURETYPE_FLOAT : Engine.TEXTURETYPE_UNSIGNED_INT, 
 			this._noMipmap, 
 			callback, 
-			mipmapGenerator);
+			mipmapGenerator, this._onLoad, this._onError);
 	}
 
 	/**
@@ -397,6 +420,10 @@ class HDRCubeTexture extends BaseTexture {
 		return this._textureMatrix;
 	}
 	
+	public function setReflectionTextureMatrix(value:Matrix) {
+        this._textureMatrix = value;
+    }
+	
 	public static function Parse(parsedTexture:Dynamic, scene:Scene, rootUrl:String):HDRCubeTexture {
 		var texture:HDRCubeTexture = null;
 		if (parsedTexture.name != null && (parsedTexture.isRenderTarget == null || parsedTexture.isRenderTarget == false)) {
@@ -406,6 +433,7 @@ class HDRCubeTexture extends BaseTexture {
 			texture.hasAlpha = parsedTexture.hasAlpha;
 			texture.level = parsedTexture.level;
 			texture.coordinatesMode = parsedTexture.coordinatesMode;
+			texture.isBlocking = parsedTexture.isBlocking;
 		}
 		
 		return texture;

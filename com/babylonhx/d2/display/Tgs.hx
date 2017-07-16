@@ -1,10 +1,11 @@
 package com.babylonhx.d2.display;
 
 import com.babylonhx.d2.display.Stage;
-import com.babylonhx.utils.GL;
-import com.babylonhx.utils.GL.GLBuffer;
-import com.babylonhx.utils.typedarray.Float32Array;
-import com.babylonhx.utils.typedarray.UInt16Array;
+
+import lime.graphics.opengl.GL;
+import lime.graphics.opengl.GLBuffer;
+import lime.utils.Float32Array;
+import lime.utils.UInt16Array;
 
 /**
  * ...
@@ -63,7 +64,7 @@ class Tgs {
 			
 			this.ibuf = Gl.createBuffer();
 			this.stage._setEBF(this.ibuf);
-			Gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, this.ind, GL.STATIC_DRAW);
+			Gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, #if cpp this.ind.length, #end this.ind, GL.STATIC_DRAW);
 		}
 		else {
 			this.vrt = new Float32Array(ind.length * 3);
@@ -77,12 +78,12 @@ class Tgs {
 		
 		this.vbuf = Gl.createBuffer();
 		this.stage._setBF(this.vbuf);
-		Gl.bufferData(GL.ARRAY_BUFFER, this.vrt, GL.STATIC_DRAW);
+		Gl.bufferData(GL.ARRAY_BUFFER, #if cpp this.vrt.length, #end this.vrt, GL.STATIC_DRAW);
 		
 		this.tbuf = Gl.createBuffer();
 		this.stage._setBF(this.tbuf);
-		Gl.bufferData(GL.ARRAY_BUFFER, this.uvt, GL.STATIC_DRAW);
-	}
+		Gl.bufferData(GL.ARRAY_BUFFER, #if cpp this.uvt.length, #end this.uvt, GL.STATIC_DRAW);
+	} 
 	
 	public function Set(stage:Stage, vrt:Array<Float>, ind:Array<Int>, uvt:Array<Float>, color:Float32Array, ?bdata:BitmapData) {
 		this.stage = stage;
@@ -111,7 +112,7 @@ class Tgs {
 			}
 			
 			this.stage._setEBF(this.ibuf);
-			Gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, this.ind, GL.STATIC_DRAW);
+			Gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, #if cpp this.ind.length, #end this.ind, GL.STATIC_DRAW);
 			
 		}
 		else {
@@ -122,10 +123,10 @@ class Tgs {
 		}
 		
 		this.stage._setBF(this.vbuf);
-		Gl.bufferData(GL.ARRAY_BUFFER, this.vrt, GL.STATIC_DRAW);
+		Gl.bufferData(GL.ARRAY_BUFFER, #if cpp this.vrt.length, #end this.vrt, GL.STATIC_DRAW);
 		
 		this.stage._setBF(this.tbuf);
-		Gl.bufferData(GL.ARRAY_BUFFER, this.uvt, GL.STATIC_DRAW);
+		Gl.bufferData(GL.ARRAY_BUFFER, #if cpp this.uvt.length, #end this.uvt, GL.STATIC_DRAW);
 	}
 	
 	public function render() {
@@ -161,7 +162,7 @@ class Tgs {
 				}
 				
 				this.stage._setBF(this.tbuf);
-				Gl.bufferSubData(GL.ARRAY_BUFFER, 0, this.uvt);
+				Gl.bufferSubData(GL.ARRAY_BUFFER, 0, #if cpp this.uvt.length, #end this.uvt);
 			}
 			
 			this.stage._setUT(1);
@@ -169,7 +170,7 @@ class Tgs {
 		}
 		else {
 			this.stage._setUT(0);
-			Gl.uniform4fv(this.stage._sprg.color, this.color);
+			Gl.uniform4fv(this.stage._sprg.color, #if cpp this.color.length, #end this.color);
 		}
 		
 		this.stage._setTC(this.tbuf);

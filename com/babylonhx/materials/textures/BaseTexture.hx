@@ -4,9 +4,15 @@ import com.babylonhx.animations.Animation;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
+import com.babylonhx.math.SphericalPolynomial;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
+import com.babylonhx.tools.Tools;
+import com.babylonhx.tools.hdr.CubeMapToSphericalPolynomialTools;
+
+import lime.utils.ArrayBufferView;
+import lime.utils.UInt8Array;
 
 /**
  * ...
@@ -15,20 +21,93 @@ import com.babylonhx.tools.EventState;
 
 @:expose('BABYLON.BaseTexture') class BaseTexture implements IAnimatable implements ISmartArrayCompatible {
 	
+	public static var DEFAULT_ANISOTROPIC_FILTERING_LEVEL:Int = 4;
+	
+	@serialize()
 	public var name:String;
-	public var delayLoadState:Int = Engine.DELAYLOADSTATE_NONE;
-	public var hasAlpha:Bool = false;
+
+	@serialize("hasAlpha")
+	private var _hasAlpha:Bool = false;
+	public var hasAlpha(get, set):Bool;
+	private function set_hasAlpha(value:Bool):Bool {
+		if (this._hasAlpha == value) {
+			return value;
+		}
+		this._hasAlpha = value;
+		this._scene.markAllMaterialsAsDirty(Material.TextureDirtyFlag);
+		return value;
+	}
+	private function get_hasAlpha():Bool {
+		return this._hasAlpha;
+	}    
+
+	@serialize()
 	public var getAlphaFromRGB:Bool = false;
+
+	@serialize()
 	public var level:Float = 1;
-	public var isCube:Bool = false;
-	public var isRenderTarget:Bool = false;
-	public var animations:Array<Animation> = [];
+
+	@serialize()
 	public var coordinatesIndex:Int = 0;
-	public var coordinatesMode:Int = Texture.EXPLICIT_MODE;
+
+	@serialize("coordinatesMode")
+	private var _coordinatesMode:Int = Texture.EXPLICIT_MODE;
+	public var coordinatesMode(get, set):Int;
+	private function set_coordinatesMode(value:Int):Int {
+		if (this._coordinatesMode == value) {
+			return value;
+		}
+		this._coordinatesMode = value;
+		this._scene.markAllMaterialsAsDirty(Material.TextureDirtyFlag);
+		return value;
+	}
+	inline private function get_coordinatesMode():Int {
+		return this._coordinatesMode;
+	}            
+
+	@serialize()
 	public var wrapU:Int = Texture.WRAP_ADDRESSMODE;
+
+	@serialize()
 	public var wrapV:Int = Texture.WRAP_ADDRESSMODE;
-	public var anisotropicFilteringLevel:Int = 4;
-	public var _cachedAnisotropicFilteringLevel:Int;
+
+	@serialize()
+	public var anisotropicFilteringLevel:Int = BaseTexture.DEFAULT_ANISOTROPIC_FILTERING_LEVEL;
+
+	@serialize()
+	public var isCube:Bool = false;
+	
+	@serialize()
+	public var gammaSpace:Bool = true;
+
+	@serialize()
+	public var invertZ:Bool = false;
+
+	@serialize()
+	public var lodLevelInAlpha:Bool = false;
+
+	@serialize()
+	public var lodGenerationOffset:Float = 0.0;
+
+	@serialize()
+	public var lodGenerationScale:Float = 0.8;
+
+	@serialize()
+	public var isRenderTarget:Bool = false;
+
+	public var uid(get, never):String;
+	private function get_uid():String {
+		if (this._uid == null) {
+			this._uid = Tools.uuid();
+		}
+		return this._uid;
+	}
+	
+	private function toString():String {
+		return this.name;
+	}
+
+	public var animations:Array<Animation> = [];
 	
 	/**
 	* An event triggered when the texture is disposed.
@@ -46,17 +125,33 @@ import com.babylonhx.tools.EventState;
 		return callback;
 	}
 	
-	public var __smartArrayFlags:Array<Int> = [];
-	
-	public var __serializableMembers:Dynamic;
+	public var delayLoadState:Int = Engine.DELAYLOADSTATE_NONE;
+
+	public var _cachedAnisotropicFilteringLevel:Int;
 
 	private var _scene:Scene;
 	public var _texture:WebGLTexture;
+	private var _uid:String;
+	
+	private var _isBlocking:Bool = true;
+	@serialize()
+	public var isBlocking(get, set):Bool;
+	private function set_isBlocking(value:Bool):Bool {
+		return this._isBlocking = value;
+	}
+	private function get_isBlocking():Bool {
+		return this._isBlocking;
+	}
+	
+	public var __smartArrayFlags:Array<Int> = [];	// BHX
+	
+	public var __serializableMembers:Dynamic;		// BHX
 	
 
 	public function new(scene:Scene) {
 		this._scene = scene;
 		this._scene.textures.push(this);
+		this._uid = null;
 	}
 
 	public function getScene():Scene {
@@ -74,9 +169,14 @@ import com.babylonhx.tools.EventState;
 	public function getInternalTexture():WebGLTexture {
 		return this._texture;
 	}
+	
+	public function isReadyOrNotBlocking():Bool {
+		return !this.isBlocking || this.isReady();
+	}
 
 	public function isReady():Bool {
 		if (this.delayLoadState == Engine.DELAYLOADSTATE_NOTLOADED) {
+			this.delayLoad();
 			return true;
 		}
 		
@@ -123,7 +223,7 @@ import com.babylonhx.tools.EventState;
 		for (index in 0...texturesCache.length) {
 			var texturesCacheEntry = texturesCache[index];
 			
-			if (texturesCacheEntry.url == url && texturesCacheEntry.noMipmap == noMipmap) {
+			if (texturesCacheEntry.url == url && texturesCacheEntry.generateMipMaps == !noMipmap) {
 				texturesCache.splice(index, 1);
 				return;
 			}
@@ -135,7 +235,7 @@ import com.babylonhx.tools.EventState;
         for (index in 0...texturesCache.length) {
             var texturesCacheEntry:WebGLTexture = texturesCache[index];
 			
-            if (texturesCacheEntry.url == url && texturesCacheEntry.noMipmap == noMipmap) {
+            if (texturesCacheEntry.url == url && texturesCacheEntry.generateMipMaps == !noMipmap) {
 				if(sampling == null || sampling == texturesCacheEntry.samplingMode) {
 					texturesCacheEntry.references++;
 					return texturesCacheEntry;
@@ -148,24 +248,80 @@ import com.babylonhx.tools.EventState;
 
 	public function delayLoad() {
 	}
+	
+	public var textureType(get, never):Int;
+	private function get_textureType():Int {
+		if (this._texture == null) {
+			return Engine.TEXTURETYPE_UNSIGNED_INT;
+		}
+		
+		return (this._texture.type != null) ? this._texture.type : Engine.TEXTURETYPE_UNSIGNED_INT;
+	}
+	
+	public function readPixels(faceIndex:Int = 0, lodIndex:Int = 0):ArrayBufferView {
+		if (this._texture == null) {
+			return null;
+		}
+		
+		var size = this.getSize();
+		var engine = this.getScene().getEngine();
+		
+		if (this._texture.isCube) {
+			return engine._readTexturePixels(this._texture, size.width, size.height, faceIndex);
+		}
+		
+		return engine._readTexturePixels(this._texture, size.width, size.height, -1);
+	}
 
 	public function releaseInternalTexture() {
-        if (this._texture == null) {
-            return;
-        }
-		
-        var texturesCache:Array<WebGLTexture> = this._scene.getEngine().getLoadedTexturesCache();
-        this._texture.references--;
-		
-        // Final reference ?
-        if (this._texture.references == 0) {
-			texturesCache.remove(this._texture);
-			
-            this._scene.getEngine()._releaseTexture(this._texture);
-			
-            this._texture = null;
-        }
+        if (this._texture != null) {
+			this._scene.getEngine().releaseInternalTexture(this._texture);
+			this._texture = null;
+		}
     }
+	
+	public var sphericalPolynomial(get, set):SphericalPolynomial;
+	private function get_sphericalPolynomial():SphericalPolynomial {
+		if (this._texture == null || !this.isReady()) {
+			return null;
+		}
+		
+		if (this._texture._sphericalPolynomial == null) {
+			this._texture._sphericalPolynomial = CubeMapToSphericalPolynomialTools.ConvertCubeMapTextureToSphericalPolynomial(this);
+		}
+		
+		return this._texture._sphericalPolynomial;
+	}
+	private function set_sphericalPolynomial(value:SphericalPolynomial):SphericalPolynomial {
+		if (this._texture != null) {
+			this._texture._sphericalPolynomial = value;
+		}
+		return value;
+	}
+
+	public var _lodTextureHigh(get, never):BaseTexture;
+	private function get__lodTextureHigh():BaseTexture {
+		if (this._texture != null) {
+			return this._texture._lodTextureHigh;
+		}
+		return null;
+	}
+	
+	public var _lodTextureMid(get, never):BaseTexture;
+	private function get__lodTextureMid():BaseTexture {
+		if (this._texture != null) {
+			return this._texture._lodTextureMid;
+		}
+		return null;
+	}
+
+	public var _lodTextureLow(get, never):BaseTexture;
+	private function get__lodTextureLow():BaseTexture {
+		if (this._texture != null) {
+			return this._texture._lodTextureLow;
+		}
+		return null;
+	}
 
 	public function clone():BaseTexture {
 		return null;
@@ -176,6 +332,7 @@ import com.babylonhx.tools.EventState;
         this.getScene().stopAnimation(this);
 		
 		// Remove from scene
+		this._scene._removePendingData(this);
 		var index = this._scene.textures.indexOf(this);
 		
 		if (index >= 0) {

@@ -24,12 +24,13 @@ class Polygon {
 		this.plane = Plane.FromPoints(vertices[0].pos, vertices[1].pos, vertices[2].pos);
 	}
 
-	public function clone():Polygon {
-		var vertices = this.vertices.copy();
+	inline public function clone():Polygon {
+		var vertices = this.vertices.copy(); // this.vertices.map(function(v) { return v.clone(); } ).filter(function(v) { v.plane; } );
+		
 		return new Polygon(vertices, this.shared);
 	}
 
-	public function flip() {
+	inline public function flip() {
 		this.vertices.reverse();
 		this.vertices.map(function(v) { v.flip(); } );
 		this.plane.flip();

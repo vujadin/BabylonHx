@@ -27,8 +27,8 @@ class ColorCorrectionPostProcess extends PostProcess {
 	private var _colorTableTexture:Texture;
 	
 
-	public function new(name:String, colorTableUrl:String, ratio:Float, camera:Camera, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, ?engine:Engine, reusable:Bool = false) {
-		super(name, 'colorCorrection', null, ['colorTable'], ratio, camera, samplingMode, engine, reusable);
+	public function new(name:String, colorTableUrl:String, options:Dynamic, camera:Camera, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, ?engine:Engine, reusable:Bool = false) {
+		super(name, 'colorCorrection', null, ['colorTable'], ratio, options, samplingMode, engine, reusable);
 		
 		this._colorTableTexture = new Texture(colorTableUrl, camera.getScene(), true, false, Texture.TRILINEAR_SAMPLINGMODE);
 		this._colorTableTexture.anisotropicFilteringLevel = 1;

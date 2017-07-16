@@ -18,7 +18,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 	private var _renderTargetTexture:RenderTargetTexture;
 	private var _projectionMatrix:Matrix;
 	private var _viewMatrix:Matrix = Matrix.Identity();
-	private var _target = Vector3.Zero();
+	private var _target:Vector3 = Vector3.Zero();
 	private var _add:Vector3 = Vector3.Zero();
 	private var _attachedMesh:AbstractMesh;
 
@@ -27,10 +27,6 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 	
 	public var name:String;
 	public var size:Int;
-	
-	public var refreshRate(get, set):Int;
-	public var cubeTexture(get, never):RenderTargetTexture;
-	public var renderList(get, never):Array<AbstractMesh>;
 	
 
 	public function new(name:String, size:Int, scene:Scene, generateMipMaps:Bool = true) {
@@ -79,10 +75,18 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 		this._projectionMatrix = Matrix.PerspectiveFovLH(Math.PI / 2, 1, scene.activeCamera.minZ, scene.activeCamera.maxZ);
 	}
 	
-	private function get_refreshRate():Int {
+	public var samples(get, set):Int;
+	inline private function get_samples():Int {
+		return this._renderTargetTexture.samples;
+	}
+	private function set_samples(value:Int):Int {
+		return this._renderTargetTexture.samples = value;
+	}
+	
+	public var refreshRate(get, set):Int;
+	inline private function get_refreshRate():Int {
 		return this._renderTargetTexture.refreshRate;
 	}
-
 	private function set_refreshRate(value:Int):Int {
 		this._renderTargetTexture.refreshRate = value;
 		
@@ -93,16 +97,28 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 		return this._scene;
 	}
 
+	public var cubeTexture(get, never):RenderTargetTexture;
 	private function get_cubeTexture():RenderTargetTexture {
 		return this._renderTargetTexture;
 	}
 
+	public var renderList(get, never):Array<AbstractMesh>;
 	private function get_renderList():Array<AbstractMesh> {
 		return this._renderTargetTexture.renderList;
 	}
 
 	public function attachToMesh(mesh:AbstractMesh) {
 		this._attachedMesh = mesh;
+	}
+	
+	/**
+	 * Specifies whether or not the stencil and depth buffer are cleared between two rendering groups.
+	 * 
+	 * @param renderingGroupId The rendering group id corresponding to its index
+	 * @param autoClearDepthStencil Automatically clears depth and stencil between groups if true.
+	 */
+	public function setRenderingAutoClearDepthStencil(renderingGroupId:Int, autoClearDepthStencil:Bool) {
+		this._renderTargetTexture.setRenderingAutoClearDepthStencil(renderingGroupId, autoClearDepthStencil);
 	}
 	
 	public function dispose() {

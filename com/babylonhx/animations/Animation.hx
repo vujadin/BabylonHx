@@ -8,6 +8,7 @@ import com.babylonhx.math.Quaternion;
 import com.babylonhx.math.Size;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Scalar;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.Node;
 
@@ -18,7 +19,9 @@ import com.babylonhx.Node;
 
 @:expose('BABYLON.BabylonFrame') typedef BabylonFrame = {
 	frame:Int,
-	value:Dynamic			// Vector3 or Quaternion or Matrix or Float or Color3 or Vector2
+	value:Dynamic,			// Vector3 or Quaternion or Matrix or Float or Color3 or Vector2
+	?outTangent:Dynamic,
+	?inTangent:Dynamic
 }
 
 @:expose('BABYLON.Animation') class Animation {
@@ -46,22 +49,22 @@ import com.babylonhx.Node;
 	// The set of event that will be linked to this animation
 	private var _events:Array<AnimationEvent> = [];
 
-	public var name:String;
-	public var targetProperty:String;
 	public var targetPropertyPath:Array<String>;
-	public var framePerSecond:Int;
-	public var dataType:Int;
-	public var loopMode:Int;
 	public var currentFrame:Int;
 	
 	public var allowMatricesInterpolation:Bool = false;
 	
 	public var blendingSpeed:Float = 0.01;
 	private var _originalBlendValue:Dynamic;
-	
-	public var enableBlending:Bool;
 
 	private var _ranges:Map<String, AnimationRange> = new Map();
+	
+	public var name:String;
+	public var targetProperty:String;	
+	public var framePerSecond:Int;
+	public var dataType:Int;
+	public var loopMode:Int;	
+	public var enableBlending:Bool;
 	
 	
 	private static function _PrepareAnimation(name:String, targetProperty:String, framePerSecond:Int, totalFrame:Int, from:Dynamic, to:Dynamic, ?loopMode:Int, ?easingFunction:EasingFunction):Animation {
@@ -129,6 +132,29 @@ import com.babylonhx.Node;
 	}
 
 	// Methods 
+	
+	/**
+	 * @param {boolean} fullDetails - support for multiple levels of logging within scene loading
+	 */
+	public function toString(fullDetails:Bool = false):String {
+		var ret = "Name: " + this.name + ", property: " + this.targetProperty;
+		ret += ", datatype: " + (["Float", "Vector3", "Quaternion", "Matrix", "Color3", "Vector2"])[this.dataType];
+		ret += ", nKeys: " + (this._keys != null ? this._keys.length + '' : "none");
+		//ret += ", nRanges: " + (this._ranges != null ? this._ranges.keys().length : "none");
+		if (fullDetails) {
+			ret += ", Ranges: {";
+			var first = true;
+			for (name in this._ranges.keys()) {
+				if (first) {
+					ret += ", ";
+					first = false; 
+				}
+				ret += name; 
+			}
+			ret += "}";
+		}
+		return ret;
+	}
 	
 	/**
 	 * Add an event to this animation.
@@ -222,19 +248,35 @@ import com.babylonhx.Node;
 	inline public function floatInterpolateFunction(startValue:Float, endValue:Float, gradient:Float):Float {
 		return startValue + (endValue - startValue) * gradient;
 	}
+	
+	inline public function floatInterpolateFunctionWithTangents(startValue:Float, outTangent:Float, endValue:Float, inTangent:Float, gradient:Float):Float {
+		return Scalar.Hermite(startValue, outTangent, endValue, inTangent, gradient);
+	}
 
 	inline public function quaternionInterpolateFunction(startValue:Quaternion, endValue:Quaternion, gradient:Float):Quaternion {
 		return Quaternion.Slerp(startValue, endValue, gradient);
 	}
+	
+	inline public function quaternionInterpolateFunctionWithTangents(startValue:Quaternion, outTangent:Quaternion, endValue:Quaternion, inTangent:Quaternion, gradient:Float):Quaternion {
+		return Quaternion.Hermite(startValue, outTangent, endValue, inTangent, gradient).normalize();
+	}
 
 	inline public function vector3InterpolateFunction(startValue:Vector3, endValue:Vector3, gradient:Float):Vector3 {
 		return Vector3.Lerp(startValue, endValue, gradient);
+	}
+	
+	inline public function vector3InterpolateFunctionWithTangents(startValue:Vector3, outTangent:Vector3, endValue:Vector3, inTangent:Vector3, gradient:Float): Vector3 {
+		return Vector3.Hermite(startValue, outTangent, endValue, inTangent, gradient);
 	}
 
 	inline public function vector2InterpolateFunction(startValue:Vector2, endValue:Vector2, gradient:Float):Vector2 {
 		return Vector2.Lerp(startValue, endValue, gradient);
 	}
 	
+	inline public function vector2InterpolateFunctionWithTangents(startValue:Vector2, outTangent:Vector2, endValue:Vector2, inTangent:Vector2, gradient:Float): Vector2 {
+		return Vector2.Hermite(startValue, outTangent, endValue, inTangent, gradient);
+	}
+
 	inline public function sizeInterpolateFunction(startValue:Size, endValue:Size, gradient:Float):Size {
         return Size.Lerp(startValue, endValue, gradient);
     }
@@ -249,6 +291,9 @@ import com.babylonhx.Node;
 
 	public function clone():Animation {
 		var clone = new Animation(this.name, this.targetPropertyPath.join("."), this.framePerSecond, this.dataType, this.loopMode, this.enableBlending);
+		
+		clone.enableBlending = this.enableBlending;
+        clone.blendingSpeed = this.blendingSpeed;
 		
 		if (this._keys != null) {
 			clone.setKeys(this._keys);
@@ -286,20 +331,24 @@ import com.babylonhx.Node;
 		this.currentFrame = currentFrame;
 		
 		// Try to get a hash to find the right key
-		var startKey = Std.int(Math.max(0, Math.min(this._keys.length - 1, Math.floor(this._keys.length * (currentFrame - this._keys[0].frame) / (this._keys[this._keys.length - 1].frame - this._keys[0].frame)) - 1)));
+		var startKeyIndex = Std.int(Math.max(0, Math.min(this._keys.length - 1, Math.floor(this._keys.length * (currentFrame - this._keys[0].frame) / (this._keys[this._keys.length - 1].frame - this._keys[0].frame)) - 1)));
 		
-		if (this._keys[startKey].frame >= currentFrame) {
-			while (startKey - 1 >= 0 && this._keys[startKey].frame >= currentFrame) {
-				startKey--;
+		if (this._keys[startKeyIndex].frame >= currentFrame) {
+			while (startKeyIndex - 1 >= 0 && this._keys[startKeyIndex].frame >= currentFrame) {
+				startKeyIndex--;
 			}
 		}
 		
-		for (key in startKey...this._keys.length) {
-			// for each frame, we need the key just before the frame superior
-			if (this._keys[key + 1] != null && this._keys[key + 1].frame >= currentFrame) {
-				
+		for (key in startKeyIndex...this._keys.length) {
+			var endKey = this._keys[key + 1];
+			
+			if (endKey != null && endKey.frame >= currentFrame) {
+				var startKey = this._keys[key];
 				var startValue:Dynamic = this._keys[key].value;
 				var endValue:Dynamic = this._keys[key + 1].value;
+				
+				var useTangent:Bool = startKey.outTangent != null && endKey.inTangent != null;
+				var frameDelta:Float = endKey.frame - startKey.frame;
 				
 				// gradient : percent of currentFrame between the frame inf and the frame sup
 				var gradient:Float = (currentFrame - this._keys[key].frame) / (this._keys[key + 1].frame - this._keys[key].frame);
@@ -312,40 +361,42 @@ import com.babylonhx.Node;
 				switch (this.dataType) {
 					// Float
 					case Animation.ANIMATIONTYPE_FLOAT:
+						var floatValue = useTangent ? this.floatInterpolateFunctionWithTangents(startValue, startKey.outTangent * frameDelta, endValue, endKey.inTangent * frameDelta, gradient) : this.floatInterpolateFunction(startValue, endValue, gradient);
 						switch (loopMode) {
 							case Animation.ANIMATIONLOOPMODE_CYCLE, Animation.ANIMATIONLOOPMODE_CONSTANT:
-								return this.floatInterpolateFunction(cast startValue, cast endValue, gradient);
+								return floatValue;
 							case Animation.ANIMATIONLOOPMODE_RELATIVE:
-								return offsetValue * repeatCount + this.floatInterpolateFunction(startValue, endValue, gradient);
+								return offsetValue * repeatCount + floatValue;
 						}
 						
 					// Quaternion
 					case Animation.ANIMATIONTYPE_QUATERNION:
-						var quaternion = null;
+						var quatValue = useTangent ? this.quaternionInterpolateFunctionWithTangents(startValue, startKey.outTangent.scale(frameDelta), endValue, endKey.inTangent.scale(frameDelta), gradient) : this.quaternionInterpolateFunction(startValue, endValue, gradient);
 						switch (loopMode) {
 							case Animation.ANIMATIONLOOPMODE_CYCLE, Animation.ANIMATIONLOOPMODE_CONSTANT:
-								quaternion = this.quaternionInterpolateFunction(cast startValue, cast endValue, gradient);
-								
+								return quatValue;								
 							case Animation.ANIMATIONLOOPMODE_RELATIVE:
-								quaternion = this.quaternionInterpolateFunction(cast startValue, cast endValue, gradient).add(offsetValue.scale(repeatCount));								
+								return quatValue.add(offsetValue.scale(repeatCount));								
 						}
 						
-						return quaternion;
+						return quatValue;
 					// Vector3
 					case Animation.ANIMATIONTYPE_VECTOR3:
+						var vec3Value = useTangent ? this.vector3InterpolateFunctionWithTangents(startValue, startKey.outTangent.scale(frameDelta), endValue, endKey.inTangent.scale(frameDelta), gradient) : this.vector3InterpolateFunction(startValue, endValue, gradient);
 						switch (loopMode) {
 							case Animation.ANIMATIONLOOPMODE_CYCLE, Animation.ANIMATIONLOOPMODE_CONSTANT:
-								return this.vector3InterpolateFunction(cast startValue, cast endValue, gradient);
+								vec3Value;
 							case Animation.ANIMATIONLOOPMODE_RELATIVE:
-								return this.vector3InterpolateFunction(cast startValue, cast endValue, gradient).add(offsetValue.scale(repeatCount));
+								return vec3Value.add(offsetValue.scale(repeatCount));
 						}
 					// Vector2
 					case Animation.ANIMATIONTYPE_VECTOR2:
+						var vec2Value = useTangent ? this.vector2InterpolateFunctionWithTangents(startValue, startKey.outTangent.scale(frameDelta), endValue, endKey.inTangent.scale(frameDelta), gradient) : this.vector2InterpolateFunction(startValue, endValue, gradient);
 						switch (loopMode) {
 							case Animation.ANIMATIONLOOPMODE_CYCLE, Animation.ANIMATIONLOOPMODE_CONSTANT:
-								return this.vector2InterpolateFunction(cast startValue, cast endValue, gradient);
+								return vec2Value;
 							case Animation.ANIMATIONLOOPMODE_RELATIVE:
-								return this.vector2InterpolateFunction(cast startValue, cast endValue, gradient).add(offsetValue.scale(repeatCount));
+								return vec2Value.add(offsetValue.scale(repeatCount));
 						}
 					// Size	
 					case Animation.ANIMATIONTYPE_SIZE:
@@ -369,8 +420,9 @@ import com.babylonhx.Node;
 					case Animation.ANIMATIONTYPE_MATRIX:
 						switch (loopMode) {
 							case Animation.ANIMATIONLOOPMODE_CYCLE, Animation.ANIMATIONLOOPMODE_CONSTANT:
-								return this.matrixInterpolateFunction(startValue, endValue, gradient);
-								
+								if (this.allowMatricesInterpolation) {
+									return this.matrixInterpolateFunction(startValue, endValue, gradient);
+								}
 							case Animation.ANIMATIONLOOPMODE_RELATIVE:
 								return startValue;
 								
@@ -617,7 +669,12 @@ import com.babylonhx.Node;
 		// Check events
 		var index:Int = 0;
 		while (index < this._events.length) {
-			if (currentFrame >= this._events[index].frame) {
+			// Make sure current frame has passed event frame and that event frame is within the current range
+            // Also, handle both forward and reverse animations
+            if (
+                (range > 0 && currentFrame >= this._events[index].frame && this._events[index].frame >= from) ||
+                (range < 0 && currentFrame <= this._events[index].frame && this._events[index].frame <= from)
+            ) {
 				var event = this._events[index];
 				if (!event.isDone) {
 					// If event should be done only once, remove it.

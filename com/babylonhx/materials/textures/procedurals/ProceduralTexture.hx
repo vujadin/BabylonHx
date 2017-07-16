@@ -112,7 +112,7 @@ import com.babylonhx.Scene;
 			["position"],
 			this._uniforms,
 			this._samplers,
-			"", null, null, function(effect:Effect, msg:String) {
+			"", null, null, function(_, _) {
 				this.releaseInternalTexture();
 				
 				if (this._fallbackTexture != null) {
@@ -249,11 +249,6 @@ import com.babylonhx.Scene;
 		var scene:Scene = this.getScene();
 		var engine:Engine = scene.getEngine();
 		
-		engine.bindFramebuffer(this._texture);
-		
-		// Clear
-		engine.clear(scene.clearColor, true, true);
-		
 		// Render
 		engine.enableEffect(this._effect);
 		engine.setState(false);
@@ -299,12 +294,12 @@ import com.babylonhx.Scene;
 			this._effect.setMatrix(key, this._matrices[key]);
 		}
 		
-		// VBOs
-		engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._effect);
-		
 		if (this.isCube) {
 			for (face in 0...6) {
 				engine.bindFramebuffer(this._texture, face);
+				
+				// VBOs
+				engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._effect);
 				
 				this._effect.setFloat("face", face);
 				
@@ -322,6 +317,9 @@ import com.babylonhx.Scene;
 		} 
 		else {
 			engine.bindFramebuffer(this._texture);
+			
+			// VBOs
+            engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._effect);
 			
 			// Clear
 			engine.clear(scene.clearColor, true, true, true);

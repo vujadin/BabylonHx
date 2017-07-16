@@ -13,7 +13,7 @@ import com.babylonhx.tools.EventState;
  */
 class VRDistortionCorrectionPostProcess extends PostProcess {
 	
-	public var aspectRatio:Float;
+	public var _aspectRatio:Float;
 
 	private var _isRightEye:Bool;
 	private var _distortionFactors:Array<Float>;
@@ -37,8 +37,8 @@ class VRDistortionCorrectionPostProcess extends PostProcess {
 		this._postProcessScaleFactor = vrMetrics.postProcessScaleFactor;
 		this._lensCenterOffset = vrMetrics.lensCenterOffset;
 		
-		this.onSizeChangedObservable.add(function(effect:Effect, es:EventState = null) {
-			this.aspectRatio = this.width * 0.5 / this.height;
+		this.onSizeChangedObservable.add(function(_, _) {
+			this._aspectRatio = this.width * 0.5 / this.height;
 			this._scaleIn = new Vector2(2, 2 / this.aspectRatio);
 			this._scaleFactor = new Vector2(0.5 * (1 / this._postProcessScaleFactor), 0.5 * (1 / this._postProcessScaleFactor) * this.aspectRatio);
 			this._lensCenter = new Vector2(this._isRightEye ? 0.5 - this._lensCenterOffset * 0.5 : 0.5 + this._lensCenterOffset * 0.5, 0.5);

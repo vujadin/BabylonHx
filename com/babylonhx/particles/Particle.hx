@@ -23,9 +23,7 @@ import com.babylonhx.math.Color4;
 	public var angularSpeed:Float = 0;
 	
 
-	public function new() {
-		//
-	}
+	inline public function new() { }
 	
 	inline public function copyTo(other:Particle) {
 		other.position.copyFrom(this.position);

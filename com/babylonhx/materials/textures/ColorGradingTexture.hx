@@ -4,8 +4,8 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.Scene;
 
-import com.babylonhx.utils.typedarray.Float32Array;
-import com.babylonhx.utils.typedarray.UInt8Array;
+import lime.utils.Float32Array;
+import lime.utils.UInt8Array;
 
 /**
  * ...
@@ -21,6 +21,8 @@ import com.babylonhx.utils.typedarray.UInt8Array;
  * More information on LUT: https://en.wikipedia.org/wiki/3D_lookup_table/
  */
 class ColorGradingTexture extends BaseTexture {
+	
+	private static var colorGradeBitmap:String = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAAQCAYAAAD506FJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAABxSURBVHhe7duhEcAwDARBOR2k/2IdFyCgSUDAL1gDzTw95lVV+z7PW+u83X3K3r67T9l/21/tFYggABBMACCYAEAwAYBgAgDBBACCCQAEEwAIJgAQTAAgmABAMAGAYAIAwVZt34G7+5S9fXef+ndf9QBh9xMnzxaE9AAAAABJRU5ErkJggg==";
 
 	/**
 	 * The current internal texture size.
@@ -92,7 +94,7 @@ class ColorGradingTexture extends BaseTexture {
 		
 		var callback = function(text:String) {
 			var data:UInt8Array = null;
-			var tempData:Array<Float> = [];
+			var tempData:Float32Array = null;
 			
 			var line:String = "";
 			var lines = text.split('\n');
@@ -118,7 +120,7 @@ class ColorGradingTexture extends BaseTexture {
 					// Number of space + one
 					size = words.length;
 					data = new UInt8Array(size * size * size * 4); // volume texture of side size and rgb 8
-					//tempData = new Float32Array(size * size * size * 4);
+					tempData = new Float32Array(size * size * size * 4);
 					
 					continue;
 				}
@@ -137,7 +139,6 @@ class ColorGradingTexture extends BaseTexture {
 					tempData[pixelStorageIndex + 0] = r;
 					tempData[pixelStorageIndex + 1] = g;
 					tempData[pixelStorageIndex + 2] = b;
-					tempData[pixelStorageIndex + 3] = 0;
 					
 					pixelIndexSlice++;
 					if (pixelIndexSlice % size == 0) {
@@ -152,16 +153,20 @@ class ColorGradingTexture extends BaseTexture {
 			}
 			
 			for (i in 0...tempData.length) {
-				var value = tempData[i];
-				data[i] = cast (value / maxColor * 255);
+				if (i > 0 && (i + 1) % 4 == 0) {
+					data[i] = 255;
+				}
+				else {
+					var value = tempData[i];
+					data[i] = Std.int(value / maxColor * 255);
+				}
 			}
 			
 			this.getScene().getEngine().updateTextureSize(texture, size * size, size);
 			this.getScene().getEngine().updateRawTexture(texture, data, Engine.TEXTUREFORMAT_RGBA, false);
 		}
 		
-		Tools.LoadFile(this.url, callback);
-		
+		Tools.LoadFile(this.url, callback);		
 		return this._texture;
 	}
 
@@ -269,6 +274,7 @@ class ColorGradingTexture extends BaseTexture {
 		var serializationObject:Dynamic = {};
 		serializationObject.name = this.name;
 		serializationObject.level = this.level;
+		serializationObject.customType = "BABYLON.ColorGradingTexture";
 		
 		return serializationObject;
 	}

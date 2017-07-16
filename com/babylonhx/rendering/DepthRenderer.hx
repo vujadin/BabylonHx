@@ -66,7 +66,7 @@ import com.babylonhx.tools.EventState;
 				return;
 			}
 			
-			var hardwareInstancedRendering:Bool = (engine.getCaps().instancedArrays != null) && (batch.visibleInstances[subMesh._id] != null);
+			var hardwareInstancedRendering:Bool = (engine.getCaps().instancedArrays) && (batch.visibleInstances[subMesh._id] != null);
 			
 			if (this.isReady(subMesh, hardwareInstancedRendering)) {
 				engine.enableEffect(this._effect);

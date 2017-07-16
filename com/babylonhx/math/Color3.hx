@@ -1,5 +1,7 @@
 package com.babylonhx.math;
 
+import lime.utils.Float32Array;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -38,6 +40,14 @@ package com.babylonhx.math;
 
 	// Operators
 	inline public function toArray(array:Array<Float>, index:Int = 0):Color3 {
+		array[index] = this.r;
+		array[index + 1] = this.g;
+		array[index + 2] = this.b;
+		
+		return this;
+	}
+	
+	inline public function toFloat32Array(array:Float32Array, index:Int = 0):Color3 {
 		array[index] = this.r;
 		array[index + 1] = this.g;
 		array[index + 2] = this.b;

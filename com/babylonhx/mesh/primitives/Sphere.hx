@@ -20,7 +20,7 @@ import com.babylonhx.tools.Tags;
 		this.diameter = diameter;
 		this.side = side;
 		
-		super(id, scene, this._regenerateVertexData(), canBeRegenerated, mesh);
+		super(id, scene, canBeRegenerated, mesh);
 	}
 
 	override public function _regenerateVertexData():VertexData {
@@ -29,6 +29,15 @@ import com.babylonhx.tools.Tags;
 
 	override public function copy(id:String):Geometry {
 		return new Sphere(id, this.getScene(), this.segments, this.diameter, this.canBeRegenerated(), null, this.side);
+	}
+	
+	override public function serialize():Dynamic {
+		var serializationObject = super.serialize();
+		
+		serializationObject.segments = this.segments;
+		serializationObject.diameter = this.diameter;
+		
+		return serializationObject;
 	}
 	
 	public static function Parse(parsedSphere:Dynamic, scene:Scene):Sphere {

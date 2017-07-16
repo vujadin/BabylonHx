@@ -17,11 +17,15 @@ import com.babylonhx.animations.AnimationRange;
 
 @:expose('BABYLON.Bone') class Bone extends Node implements IAnimatable {
 	
+	private static var _tmpVecs:Array<Vector3> = [Vector3.Zero(), Vector3.Zero()];
+    private static var _tmpQuat:Quaternion = Quaternion.Identity();
+    private static var _tmpMats:Array<Matrix> = [Matrix.Identity(), Matrix.Identity(), Matrix.Identity(), Matrix.Identity(), Matrix.Identity()];
+	
 	public var children:Array<Bone> = [];
 	public var length:Int = -1;
 
 	private var _skeleton:Skeleton;
-	private var _matrix:Matrix;
+	private var _localMatrix:Matrix;
 	private var _restPose:Matrix;
 	private var _baseMatrix:Matrix;
 	private var _worldTransform:Matrix = new Matrix();
@@ -30,39 +34,70 @@ import com.babylonhx.animations.AnimationRange;
 	private var _parent:Bone;
 	
 	private var _scaleMatrix:Matrix = Matrix.Identity();
-	private var _scaleVector:Vector3 = new Vector3(1, 1, 1);
-	private var _negateScaleChildren:Vector3 = new Vector3(1, 1, 1);
+	private var _scaleVector:Vector3 = Vector3.One();
+	private var _negateScaleChildren:Vector3 = Vector3.One();
 	private var _scalingDeterminant:Float = 1;
+	
+	public var _matrix(get, set):Matrix;
+	inline public function get__matrix():Matrix {
+		return this._localMatrix;
+	}
+	public function set__matrix(val:Matrix):Matrix {
+		if (this._localMatrix != null) {
+			this._localMatrix.copyFrom(val);
+		} 
+		else {
+			this._localMatrix = val;
+		}
+		return val;
+	}
 
 	
-	public function new(name:String, skeleton:Skeleton, parentBone:Bone = null, matrix:Matrix, ?restPose:Matrix) {
+	public function new(name:String, skeleton:Skeleton, parentBone:Bone = null, ?matrix:Matrix, ?restPose:Matrix) {
 		super(name, skeleton.getScene());
 		
 		this._skeleton = skeleton;
-		this._matrix = matrix;
-		this._baseMatrix = matrix;
-		this._restPose = restPose != null ? restPose : matrix.clone();
+		this._localMatrix = matrix != null ? matrix : Matrix.Identity();
+		this._baseMatrix = this._localMatrix.clone();
+		this._restPose = restPose != null ? restPose : this._localMatrix.clone();
 		
 		skeleton.bones.push(this);
 		
-		if (parentBone != null) {
-			this._parent = parentBone;
-			parentBone.children.push(this);
-		} 
-		else {
-			this._parent = null;
-		}
+		this.setParent(parentBone, false);
 		
 		this._updateDifferenceMatrix();
-		
-		if (this.getAbsoluteTransform().determinant() < 0) {
-            this._scalingDeterminant *= -1;
-        }
 	}
 
 	// Members
+	inline public function getSkeleton():Skeleton {
+        return this._skeleton;
+    }
+ 
 	inline public function getParent():Bone {
 		return this._parent;
+	}
+	
+	public function setParent(parent:Bone, updateDifferenceMatrix:Bool = true) {
+		if (this._parent == parent) {
+			return;
+		}
+		
+		if (this._parent != null) {
+			var index = this._parent.children.indexOf(this);
+			if (index != -1) {
+				this._parent.children.splice(index, 1);
+			}
+		}
+		
+		this._parent = parent;
+		
+		if (this._parent != null) {
+			this._parent.children.push(this);
+		}
+		
+		if (updateDifferenceMatrix) {
+			this._updateDifferenceMatrix();
+		}
 	}
 
 	inline public function getLocalMatrix():Matrix {
@@ -91,6 +126,43 @@ import com.babylonhx.animations.AnimationRange;
 	
 	inline public function getAbsoluteTransform():Matrix {
 		return this._absoluteTransform;
+	}
+	
+	// Properties (matches AbstractMesh properties)
+	public var position(get, set):Vector3;
+	inline private function get_position():Vector3 {
+		return this.getPosition();
+	}
+	inline private function set_position(newPosition:Vector3):Vector3 {
+		this.setPosition(newPosition);
+		return newPosition;
+	}
+
+	public var rotation(get, set):Vector3;
+	inline private function get_rotation():Vector3 {
+		return this.getRotation();
+	}
+	inline private function set_rotation(newRotation:Vector3):Vector3 {
+		this.setRotation(newRotation);
+		return newRotation;
+	}
+
+	public var rotationQuaternion(get, set):Quaternion;
+	inline private function get_rotationQuaternion():Quaternion {
+		return this.getRotationQuaternion();
+	}
+	inline private function set_rotationQuaternion(newRotation:Quaternion):Quaternion {
+		this.setRotationQuaternion(newRotation);
+		return newRotation;
+	}
+
+	public var scaling(get, set):Vector3;
+	inline private function get_scaling():Vector3 {
+		return this.getScale();
+	}
+	inline private function set_scaling(newScaling:Vector3):Vector3 {
+		this.setScale(newScaling.x, newScaling.y, newScaling.z);
+		return newScaling;
 	}
 
 	// Methods
@@ -123,6 +195,8 @@ import com.babylonhx.animations.AnimationRange;
 		for (index in 0...this.children.length) {
 			this.children[index]._updateDifferenceMatrix();
 		}
+		
+		this._scalingDeterminant = (this._absoluteTransform.determinant() < 0 ? -1 : 1);
 	}
 
 	inline public function markAsDirty() {
@@ -194,22 +268,35 @@ import com.babylonhx.animations.AnimationRange;
 		return true;
 	}
 	
+	/**
+	 * Translate the bone in local or world space.
+	 * @param vec The amount to translate the bone.
+	 * @param space The space that the translation is in.
+	 * @param mesh The mesh that this bone is attached to.  This is only used in world space.
+	 */
 	public function translate(vec:Vector3, space:Int = Space.LOCAL, ?mesh:AbstractMesh) {
 		var lm = this.getLocalMatrix();
 		
-		if (space == Space.LOCAL){
+		if (space == Space.LOCAL) {
 			lm.m[12] += vec.x;
 			lm.m[13] += vec.y;
 			lm.m[14] += vec.z;
 		}
 		else {
+			var wm:Matrix = null;
+			
+			//mesh.getWorldMatrix() needs to be called before skeleton.computeAbsoluteTransforms()
+			if (mesh != null){
+				wm = mesh.getWorldMatrix();
+			}
+			
 			this._skeleton.computeAbsoluteTransforms();
-			var tmat = Tmp.matrix[0];
-			var tvec = Tmp.vector3[0];
+			var tmat = Bone._tmpMats[0];
+			var tvec = Bone._tmpVecs[0];
 			
 			if (mesh != null) {
 				tmat.copyFrom(this._parent.getAbsoluteTransform());
-				tmat.multiplyToRef(mesh.getWorldMatrix(), tmat);
+				tmat.multiplyToRef(wm, tmat);
 			}
 			else {
 				tmat.copyFrom(this._parent.getAbsoluteTransform());
@@ -230,23 +317,36 @@ import com.babylonhx.animations.AnimationRange;
 		this.markAsDirty();		
 	}
 
+	/**
+	 * Set the postion of the bone in local or world space.
+	 * @param position The position to set the bone.
+	 * @param space The space that the position is in.
+	 * @param mesh The mesh that this bone is attached to.  This is only used in world space.
+	 */
 	public function setPosition(position:Vector3, space:Int = Space.LOCAL, ?mesh:AbstractMesh) {
 		var lm = this.getLocalMatrix();
 		
-		if (space == Space.LOCAL){
+		if (space == Space.LOCAL) {
 			lm.m[12] = position.x;
 			lm.m[13] = position.y;
 			lm.m[14] = position.z;
 		} 
 		else {
+			var wm:Matrix = null;
+			
+			//mesh.getWorldMatrix() needs to be called before skeleton.computeAbsoluteTransforms()
+			if (mesh != null) {
+				wm = mesh.getWorldMatrix();
+			}
+			
 			this._skeleton.computeAbsoluteTransforms();
 			
-			var tmat = Tmp.matrix[0];
-			var vec = Tmp.vector3[0];
+			var tmat = Bone._tmpMats[0];
+			var vec = Bone._tmpVecs[0];
 			
 			if (mesh != null) {
 				tmat.copyFrom(this._parent.getAbsoluteTransform());
-				tmat.multiplyToRef(mesh.getWorldMatrix(), tmat);
+				tmat.multiplyToRef(wm, tmat);
 			}
 			else {
 				tmat.copyFrom(this._parent.getAbsoluteTransform());
@@ -263,10 +363,22 @@ import com.babylonhx.animations.AnimationRange;
 		this.markAsDirty();
 	}
 
+	/**
+	 * Set the absolute postion of the bone (world space).
+	 * @param position The position to set the bone.
+	 * @param mesh The mesh that this bone is attached to.
+	 */
 	public function setAbsolutePosition(position:Vector3, ?mesh:AbstractMesh) {
 		this.setPosition(position, Space.WORLD, mesh);	
 	}
 	
+	/**
+	 * Set the scale of the bone on the x, y and z axes.
+	 * @param x The scale of the bone on the x axis.
+	 * @param x The scale of the bone on the y axis.
+	 * @param z The scale of the bone on the z axis.
+	 * @param scaleChildren Set this to true if children of the bone should be scaled.
+	 */
 	public function setScale(x:Float, y:Float, z:Float, scaleChildren:Bool = false) {
 		if (this.animations[0] != null && !this.animations[0].isStopped()) {
             if (!scaleChildren) {
@@ -281,16 +393,23 @@ import com.babylonhx.animations.AnimationRange;
 		this.scale(x / this._scaleVector.x, y / this._scaleVector.y, z / this._scaleVector.z, scaleChildren);
 	}
 
+	/**
+	 * Scale the bone on the x, y and z axes. 
+	 * @param x The amount to scale the bone on the x axis.
+	 * @param x The amount to scale the bone on the y axis.
+	 * @param z The amount to scale the bone on the z axis.
+	 * @param scaleChildren Set this to true if children of the bone should be scaled.
+	 */
 	public function scale(x:Float, y:Float, z:Float, scaleChildren:Bool = false) {
 		var locMat = this.getLocalMatrix();
-		var origLocMat = Tmp.matrix[0];
+		var origLocMat = Bone._tmpMats[0];
 		origLocMat.copyFrom(locMat);
 		
-		var origLocMatInv = Tmp.matrix[1];
+		var origLocMatInv = Bone._tmpMats[1];
 		origLocMatInv.copyFrom(origLocMat);
 		origLocMatInv.invert();
 		
-		var scaleMat = Tmp.matrix[2];
+		var scaleMat = Bone._tmpMats[2];
 		Matrix.FromValuesToRef(x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1, scaleMat);
 		this._scaleMatrix.multiplyToRef(scaleMat, this._scaleMatrix);
 		this._scaleVector.x *= x;
@@ -335,11 +454,19 @@ import com.babylonhx.animations.AnimationRange;
 		this.markAsDirty();
 	}
 
+	/**
+	 * Set the yaw, pitch, and roll of the bone in local or world space.
+	 * @param yaw The rotation of the bone on the y axis.
+	 * @param pitch The rotation of the bone on the x axis.
+	 * @param roll The rotation of the bone on the z axis.
+	 * @param space The space that the axes of rotation are in.
+	 * @param mesh The mesh that this bone is attached to.  This is only used in world space.
+	 */
 	public function setYawPitchRoll(yaw:Float, pitch:Float, roll:Float, space:Int = Space.LOCAL, ?mesh:AbstractMesh) {
-		var rotMat = Tmp.matrix[0];
+		var rotMat = Bone._tmpMats[0];
 		Matrix.RotationYawPitchRollToRef(yaw, pitch, roll, rotMat);
 		
-		var rotMatInv = Tmp.matrix[1];
+		var rotMatInv = Bone._tmpMats[1];
 		
 		this._getNegativeRotationToRef(rotMatInv, space, mesh);
 		
@@ -348,8 +475,15 @@ import com.babylonhx.animations.AnimationRange;
 		this._rotateWithMatrix(rotMat, space, mesh);		
 	}
 
+	/**
+	 * Rotate the bone on an axis in local or world space.
+	 * @param axis The axis to rotate the bone on.
+	 * @param amount The amount to rotate the bone.
+	 * @param space The space that the axis is in.
+	 * @param mesh The mesh that this bone is attached to.  This is only used in world space.
+	 */
 	public function rotate(axis:Vector3, amount:Float, space:Int = Space.LOCAL, ?mesh:AbstractMesh) {		
-		var rmat = Tmp.matrix[0];
+		var rmat = Bone._tmpMats[0];
 		rmat.m[12] = 0;
 		rmat.m[13] = 0;
 		rmat.m[14] = 0;
@@ -359,10 +493,17 @@ import com.babylonhx.animations.AnimationRange;
 		this._rotateWithMatrix(rmat, space, mesh);		
 	}
 
+	/**
+	 * Set the rotation of the bone to a particular axis angle in local or world space.
+	 * @param axis The axis to rotate the bone on.
+	 * @param angle The angle that the bone should be rotated to.
+	 * @param space The space that the axis is in.
+	 * @param mesh The mesh that this bone is attached to.  This is only used in world space.
+	 */
 	public function setAxisAngle(axis:Vector3, angle:Float, space:Int, ?mesh:AbstractMesh) {
-		var rotMat = Tmp.matrix[0];
+		var rotMat = Bone._tmpMats[0];
 		Matrix.RotationAxisToRef(axis, angle, rotMat);
-		var rotMatInv = Tmp.matrix[1];
+		var rotMatInv = Bone._tmpMats[1];
 		
 		this._getNegativeRotationToRef(rotMatInv, space, mesh);
 		
@@ -370,16 +511,28 @@ import com.babylonhx.animations.AnimationRange;
 		this._rotateWithMatrix(rotMat, space, mesh);
 	}
 	
+	/**
+	 * Set the euler rotation of the bone in local of world space.
+	 * @param rotation The euler rotation that the bone should be set to.
+	 * @param space The space that the rotation is in.
+	 * @param mesh The mesh that this bone is attached to.  This is only used in world space.
+	 */
 	inline public function setRotation(rotation:Vector3, space:Int = Space.LOCAL, ?mesh:AbstractMesh) {
 		this.setYawPitchRoll(rotation.y, rotation.x, rotation.z, space, mesh);
 	}
 	
+	/**
+	 * Set the quaternion rotation of the bone in local of world space.
+	 * @param quat The quaternion rotation that the bone should be set to.
+	 * @param space The space that the rotation is in.
+	 * @param mesh The mesh that this bone is attached to.  This is only used in world space.
+	 */
 	public function setRotationQuaternion(quat:Quaternion, space:Int = Space.LOCAL, ?mesh:AbstractMesh) {
-		var rotMatInv = Tmp.matrix[0];
+		var rotMatInv = Bone._tmpMats[0];
 		
 		this._getNegativeRotationToRef(rotMatInv, space, mesh);
 		
-		var rotMat = Tmp.matrix[1];
+		var rotMat = Bone._tmpMats[1];
 		Matrix.FromQuaternionToRef(quat, rotMat);
 		
 		rotMatInv.multiplyToRef(rotMat, rotMat);
@@ -387,12 +540,18 @@ import com.babylonhx.animations.AnimationRange;
 		this._rotateWithMatrix(rotMat, space, mesh);
 	}
 	
+	/**
+	 * Set the rotation matrix of the bone in local of world space.
+	 * @param rotMat The rotation matrix that the bone should be set to.
+	 * @param space The space that the rotation is in.
+	 * @param mesh The mesh that this bone is attached to.  This is only used in world space.
+	 */
 	public function setRotationMatrix(rotMat:Matrix, space:Int = Space.LOCAL, ?mesh:AbstractMesh) {
-		var rotMatInv = Tmp.matrix[0];
+		var rotMatInv = Bone._tmpMats[0];
 		
 		this._getNegativeRotationToRef(rotMatInv, space, mesh);
 		
-		var rotMat2 = Tmp.matrix[1];
+		var rotMat2 = Bone._tmpMats[1];
 		rotMat2.copyFrom(rotMat);
 		
 		rotMatInv.multiplyToRef(rotMat, rotMat2);
@@ -406,8 +565,8 @@ import com.babylonhx.animations.AnimationRange;
 		var ly = lmat.m[13];
 		var lz = lmat.m[14];
 		var parent = this.getParent();
-		var parentScale = Tmp.matrix[3];
-		var parentScaleInv = Tmp.matrix[4];
+		var parentScale = Bone._tmpMats[3];
+		var parentScaleInv = Bone._tmpMats[4];
 		
 		if (parent != null) {
 			if (space == Space.WORLD) {
@@ -453,12 +612,12 @@ import com.babylonhx.animations.AnimationRange;
 
 	private function _getNegativeRotationToRef(rotMatInv:Matrix, space:Int = Space.LOCAL, ?mesh:AbstractMesh) {
 		if (space == Space.WORLD) {
-			var scaleMatrix = Tmp.matrix[2];
+			var scaleMatrix = Bone._tmpMats[2];
 			scaleMatrix.copyFrom(this._scaleMatrix);
 			rotMatInv.copyFrom(this.getAbsoluteTransform());
 			if (mesh != null) {
 				rotMatInv.multiplyToRef(mesh.getWorldMatrix(), rotMatInv);
-				var meshScale = Tmp.matrix[3];
+				var meshScale = Bone._tmpMats[3];
 				Matrix.ScalingToRef(mesh.scaling.x, mesh.scaling.y, mesh.scaling.z, meshScale);
 				scaleMatrix.multiplyToRef(meshScale, scaleMatrix);
 			}
@@ -470,10 +629,10 @@ import com.babylonhx.animations.AnimationRange;
 		else {
 			rotMatInv.copyFrom(this.getLocalMatrix());
 			rotMatInv.invert();
-			var scaleMatrix = Tmp.matrix[2];
+			var scaleMatrix = Bone._tmpMats[2];
 			scaleMatrix.copyFrom(this._scaleMatrix);
 			if (this._parent != null) {
-				var pscaleMatrix = Tmp.matrix[3];
+				var pscaleMatrix = Bone._tmpMats[3];
 				pscaleMatrix.copyFrom(this._parent._scaleMatrix);
 				pscaleMatrix.invert();
 				pscaleMatrix.multiplyToRef(rotMatInv, rotMatInv);
@@ -486,14 +645,28 @@ import com.babylonhx.animations.AnimationRange;
 		}
 	}
 
+	/**
+	 * Get the scale of the bone
+	 * @returns the scale of the bone
+	 */
 	inline public function getScale():Vector3 {		
 		return this._scaleVector.clone();		
 	}
 
+	/**
+	 * Copy the scale of the bone to a vector3.
+	 * @param result The vector3 to copy the scale to
+	 */
 	inline public function getScaleToRef(result:Vector3) {
 		result.copyFrom(this._scaleVector);		
 	}
 	
+	/**
+	 * Get the position of the bone in local or world space.
+	 * @param space The space that the returned position is in.
+	 * @param mesh The mesh that this bone is attached to.  This is only used in world space.
+	 * @returns The position of the bone
+	 */
 	public function getPosition(space:Int = Space.LOCAL, ?mesh:AbstractMesh):Vector3 {
 		var pos = Vector3.Zero();
 		
@@ -502,6 +675,12 @@ import com.babylonhx.animations.AnimationRange;
 		return pos;
 	}
 
+	/**
+	 * Copy the position of the bone to a vector3 in local or world space.
+	 * @param space The space that the returned position is in.
+	 * @param mesh The mesh that this bone is attached to.  This is only used in world space.
+	 * @param result The vector3 to copy the position to.
+	 */
 	public function getPositionToRef(space:Int = Space.LOCAL, mesh:AbstractMesh, result:Vector3) {
 		if (space == Space.LOCAL) {
 			var lm = this.getLocalMatrix();
@@ -511,13 +690,20 @@ import com.babylonhx.animations.AnimationRange;
 			result.z = lm.m[14];
 		} 
 		else {			
+			var wm:Matrix = null;
+            
+			//mesh.getWorldMatrix() needs to be called before skeleton.computeAbsoluteTransforms()
+			if (mesh != null) {
+				wm = mesh.getWorldMatrix();
+			}
+			
 			this._skeleton.computeAbsoluteTransforms();
 			
-			var tmat = Tmp.matrix[0];
+			var tmat = Bone._tmpMats[0];
 			
 			if (mesh != null) {
 				tmat.copyFrom(this.getAbsoluteTransform());
-				tmat.multiplyToRef(mesh.getWorldMatrix(), tmat);
+				tmat.multiplyToRef(wm, tmat);
 			}
 			else {
 				tmat = this.getAbsoluteTransform();
@@ -529,6 +715,11 @@ import com.babylonhx.animations.AnimationRange;
 		}
 	}
 
+	/**
+	 * Get the absolute position of the bone (world space).
+	 * @param mesh The mesh that this bone is attached to.
+	 * @returns The absolute position of the bone
+	 */
 	public function getAbsolutePosition(?mesh:AbstractMesh):Vector3 {
 		var pos = Vector3.Zero();
 		
@@ -537,10 +728,18 @@ import com.babylonhx.animations.AnimationRange;
 		return pos;
 	}
 
+	/**
+	 * Copy the absolute position of the bone (world space) to the result param.
+	 * @param mesh The mesh that this bone is attached to.
+	 * @param result The vector3 to copy the absolute position to.
+	 */
 	inline public function getAbsolutePositionToRef(mesh:AbstractMesh, result:Vector3) {
 		this.getPositionToRef(Space.WORLD, mesh, result);
 	}
 
+	/**
+	 * Compute the absolute transforms of this bone and its children.
+	 */
 	public function computeAbsoluteTransforms() {
 		if (this._parent != null) {
 			this._matrix.multiplyToRef(this._parent._absoluteTransform, this._absoluteTransform);
@@ -587,6 +786,12 @@ import com.babylonhx.animations.AnimationRange;
 		Matrix.FromValuesToRef(this._scaleVector.x, 0, 0, 0, 0,  this._scaleVector.y, 0, 0, 0, 0,  this._scaleVector.z, 0, 0, 0, 0, 1, this._scaleMatrix);
 	}
 	
+	/**
+	 * Get the world direction from an axis that is in the local space of the bone.
+	 * @param localAxis The local direction that is used to compute the world direction.
+	 * @param mesh The mesh that this bone is attached to.
+	 * @returns The world direction
+	 */
 	public function getDirection(localAxis:Vector3, ?mesh:AbstractMesh):Vector3 {
 		var result = Vector3.Zero();
 		
@@ -595,15 +800,28 @@ import com.babylonhx.animations.AnimationRange;
 		return result;
 	}
 
+	/**
+	 * Copy the world direction to a vector3 from an axis that is in the local space of the bone.
+	 * @param localAxis The local direction that is used to compute the world direction.
+	 * @param mesh The mesh that this bone is attached to.
+	 * @param result The vector3 that the world direction will be copied to.
+	 */
 	public function getDirectionToRef(localAxis:Vector3, mesh:AbstractMesh, result:Vector3) {
+		var wm:Matrix = null;
+		
+		//mesh.getWorldMatrix() needs to be called before skeleton.computeAbsoluteTransforms()
+		if (mesh != null) {
+			wm = mesh.getWorldMatrix();
+		}
+		
 		this._skeleton.computeAbsoluteTransforms();
-        
-		var mat = Tmp.matrix[0];
+		
+		var mat = Bone._tmpMats[0];
 		
 		mat.copyFrom(this.getAbsoluteTransform());
 		
 		if (mesh != null) {
-			mat.multiplyToRef(mesh.getWorldMatrix(), mat);
+			mat.multiplyToRef(wm, mat);
 		}
 		
 		Vector3.TransformNormalToRef(localAxis, mat, result);
@@ -611,6 +829,12 @@ import com.babylonhx.animations.AnimationRange;
 		result.normalize();
 	}
 	
+	/**
+	 * Get the euler rotation of the bone in local or world space.
+	 * @param space The space that the rotation should be in.
+	 * @param mesh The mesh that this bone is attached to.  This is only used in world space.
+	 * @returns The euler rotation
+	 */
 	public function getRotation(space:Int = Space.LOCAL, ?mesh:AbstractMesh):Vector3 {
 		var result = Vector3.Zero();
 		
@@ -619,14 +843,26 @@ import com.babylonhx.animations.AnimationRange;
 		return result;
 	}
 
+	/**
+	 * Copy the euler rotation of the bone to a vector3.  The rotation can be in either local or world space.
+	 * @param space The space that the rotation should be in.
+	 * @param mesh The mesh that this bone is attached to.  This is only used in world space.
+	 * @param result The vector3 that the rotation should be copied to.
+	 */
 	public function getRotationToRef(space:Int = Space.LOCAL, mesh:AbstractMesh, result:Vector3) {
-		var quat = Tmp.quaternion[0];
+		var quat = Bone._tmpQuat;
 		
         this.getRotationQuaternionToRef(space, mesh, quat);
         
         quat.toEulerAnglesToRef(result);
 	}
 	
+	/**
+	 * Get the quaternion rotation of the bone in either local or world space.
+	 * @param space The space that the rotation should be in.
+	 * @param mesh The mesh that this bone is attached to.  This is only used in world space.
+	 * @returns The quaternion rotation
+	 */
 	public function getRotationQuaternion(space:Int = Space.LOCAL, ?mesh:AbstractMesh):Quaternion {
 		var result = Quaternion.Identity();
 		
@@ -635,12 +871,18 @@ import com.babylonhx.animations.AnimationRange;
 		return result;
 	}
 
+	/**
+	 * Copy the quaternion rotation of the bone to a quaternion.  The rotation can be in either local or world space.
+	 * @param space The space that the rotation should be in.
+	 * @param mesh The mesh that this bone is attached to.  This is only used in world space.
+	 * @param result The quaternion that the rotation should be copied to.
+	 */
 	public function getRotationQuaternionToRef(space:Int = Space.LOCAL, mesh:AbstractMesh, result:Quaternion) {
 		if (space == Space.LOCAL) {
-			this.getLocalMatrix().decompose(Tmp.vector3[0], result, Tmp.vector3[1]);
+			this.getLocalMatrix().decompose(Bone._tmpVecs[0], result, Bone._tmpVecs[1]);
 		}
 		else {
-			var mat = Tmp.matrix[0];
+			var mat = Bone._tmpMats[0];
 			var amat = this.getAbsoluteTransform();
 			
 			if (mesh != null) {
@@ -654,10 +896,16 @@ import com.babylonhx.animations.AnimationRange;
 			mat.m[1] *= this._scalingDeterminant;
 			mat.m[2] *= this._scalingDeterminant;
 			
-			mat.decompose(Tmp.vector3[0], result, Tmp.vector3[1]);
+			mat.decompose(Bone._tmpVecs[0], result, Bone._tmpVecs[1]);
 		}
 	}
 	
+	/**
+	 * Get the rotation matrix of the bone in local or world space.
+	 * @param space The space that the rotation should be in.
+	 * @param mesh The mesh that this bone is attached to.  This is only used in world space.
+	 * @returns The rotation matrix
+	 */
 	public function getRotationMatrix(space:Int = Space.LOCAL, mesh:AbstractMesh):Matrix {
 		var result = Matrix.Identity();
 		
@@ -666,12 +914,18 @@ import com.babylonhx.animations.AnimationRange;
 		return result;
 	}
 
+	/**
+	 * Copy the rotation matrix of the bone to a matrix.  The rotation can be in either local or world space.
+	 * @param space The space that the rotation should be in.
+	 * @param mesh The mesh that this bone is attached to.  This is only used in world space.
+	 * @param result The quaternion that the rotation should be copied to.
+	 */
 	public function getRotationMatrixToRef(space:Int = Space.LOCAL, mesh:AbstractMesh, result:Matrix) {
 		if (space == Space.LOCAL) {
 			this.getLocalMatrix().getRotationMatrixToRef(result);
 		}
 		else {
-			var mat = Tmp.matrix[0];
+			var mat = Bone._tmpMats[0];
 			var amat = this.getAbsoluteTransform();
 			
 			if (mesh != null) {
@@ -689,6 +943,12 @@ import com.babylonhx.animations.AnimationRange;
 		}
 	}
 	
+	/**
+	 * Get the world position of a point that is in the local space of the bone.
+	 * @param position The local position
+	 * @param mesh The mesh that this bone is attached to.
+	 * @returns The world position
+	 */
 	public function getAbsolutePositionFromLocal(position:Vector3, ?mesh:AbstractMesh):Vector3 {
 		var result = Vector3.Zero();
 		
@@ -697,15 +957,28 @@ import com.babylonhx.animations.AnimationRange;
 		return result;
 	}
 
+	/**
+	 * Get the world position of a point that is in the local space of the bone and copy it to the result param.
+	 * @param position The local position
+	 * @param mesh The mesh that this bone is attached to.
+	 * @param result The vector3 that the world position should be copied to.
+	 */
 	public function getAbsolutePositionFromLocalToRef(position:Vector3, mesh:AbstractMesh, result:Vector3) {
+		var wm:Matrix = null;
+		
+		//mesh.getWorldMatrix() needs to be called before skeleton.computeAbsoluteTransforms()
+		if (mesh != null) {
+			wm = mesh.getWorldMatrix();
+		}
+		
 		this._skeleton.computeAbsoluteTransforms();
 		
-		var tmat = Tmp.matrix[0];
+		var tmat = Bone._tmpMats[0];
 		
 		if (mesh != null) {
 			tmat.copyFrom(this.getAbsoluteTransform());
-			tmat.multiplyToRef(mesh.getWorldMatrix(), tmat);
-		}
+			tmat.multiplyToRef(wm, tmat);
+		} 
 		else {
 			tmat = this.getAbsoluteTransform();
 		}
@@ -713,6 +986,12 @@ import com.babylonhx.animations.AnimationRange;
 		Vector3.TransformCoordinatesToRef(position, tmat, result);
 	}
 	
+	/**
+	 * Get the local position of a point that is in world space.
+	 * @param position The world position
+	 * @param mesh The mesh that this bone is attached to.
+	 * @returns The local position
+	 */
 	public function getLocalPositionFromAbsolute(position:Vector3, ?mesh:AbstractMesh):Vector3 {
 		var result = Vector3.Zero();
 		
@@ -721,15 +1000,28 @@ import com.babylonhx.animations.AnimationRange;
 		return result;
 	}
 
+	/**
+	 * Get the local position of a point that is in world space and copy it to the result param.
+	 * @param position The world position
+	 * @param mesh The mesh that this bone is attached to.
+	 * @param result The vector3 that the local position should be copied to.
+	 */
 	public function getLocalPositionFromAbsoluteToRef(position:Vector3, mesh:AbstractMesh, result:Vector3) {
+		var wm:Matrix = null;
+		
+		//mesh.getWorldMatrix() needs to be called before skeleton.computeAbsoluteTransforms()
+		if (mesh != null) {
+			wm = mesh.getWorldMatrix();
+		}
+		
 		this._skeleton.computeAbsoluteTransforms();
 		
-		var tmat = Tmp.matrix[0];
+		var tmat = Bone._tmpMats[0];
 		
 		tmat.copyFrom(this.getAbsoluteTransform());
 		
 		if (mesh != null) {
-			tmat.multiplyToRef(mesh.getWorldMatrix(), tmat);
+			tmat.multiplyToRef(wm, tmat);
 		}
 		
 		tmat.invert();

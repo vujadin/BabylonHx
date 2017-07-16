@@ -6,7 +6,7 @@ import com.babylonhx.d2.geom.Point;
 import com.babylonhx.d2.geom.Rectangle;
 import com.babylonhx.d2.geom.Transform;
 
-import com.babylonhx.utils.typedarray.Float32Array;
+import lime.utils.Float32Array;
 
 /**
  * ...

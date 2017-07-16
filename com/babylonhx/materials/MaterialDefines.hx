@@ -8,8 +8,27 @@ import haxe.ds.Vector;
  */
 class MaterialDefines {
 	
-	public var defines:Vector<Bool>;
 	public var _keys:Vector<String>;
+	private var _isDirty:Bool = true;
+	public var _renderId:Int;
+	
+	public var _areLightsDirty:Bool = true;
+	public var _areAttributesDirty:Bool = true;
+	public var _areTexturesDirty:Bool = true;
+	public var _areFresnelDirty:Bool = true;
+	public var _areMiscDirty:Bool = true;  
+	public var _areImageProcessingDirty:Bool = true;
+
+	public var _normals:Bool = false;
+	public var _uvs:Bool = false;
+
+	public var _needNormals:Bool = false;
+	public var _needUVs:Bool = false;
+	
+	public var isDirty(get, never):Bool;
+	inline private function get_isDirty():Bool {
+		return this._isDirty;
+	}
 	
 	public var lights:Array<Bool> = [];
 	public var pointlights:Array<Bool> = [];
@@ -17,8 +36,11 @@ class MaterialDefines {
 	public var hemilights:Array<Bool> = [];
 	public var spotlights:Array<Bool> = [];
 	public var shadows:Array<Bool> = [];
+	public var shadowpcf:Array<Bool> = [];
 	public var shadowvsms:Array<Bool> = [];
-	public var shadowpcfs:Array<Bool> = [];
+	public var shadowwesm:Array<Bool> = [];
+	public var shadowqube:Array<Bool> = [];
+	public var shadowcloseesm:Array<Bool> = [];
 	
 	public var LIGHTMAPEXCLUDED:Bool = false;
 	public var lightmapexcluded:Array<Bool> = [];
@@ -28,18 +50,79 @@ class MaterialDefines {
 	
 
 	public function new() {	}
+
 	
-	public function isEqual(other:MaterialDefines):Bool {
-		if (this._keys.length != other._keys.length) {
-			return false;
+	public function markAsProcessed() {
+		this._isDirty = false;
+		this._areAttributesDirty = false;
+		this._areTexturesDirty = false;
+		this._areFresnelDirty = false;
+		this._areLightsDirty = false;
+		this._areMiscDirty = false;
+		this._areImageProcessingDirty = false;
+	}
+
+	public function markAsUnprocessed() {
+		this._isDirty = true;
+	}
+	
+	public function markAllAsDirty() {
+		this._areTexturesDirty = true;
+		this._areAttributesDirty = true;
+		this._areLightsDirty = true;
+		this._areFresnelDirty = true;
+		this._areMiscDirty = true;
+		this._areImageProcessingDirty = true;
+		this._isDirty = true;
+	}
+	
+	public function markAsImageProcessingDirty() {
+		this._areImageProcessingDirty = true;
+		this._isDirty = true;
+	}
+
+	public function markAsLightDirty() {
+		this._areLightsDirty = true;
+		this._isDirty = true;
+	}
+
+	public function markAsAttributesDirty() {
+		this._areAttributesDirty = true;
+		this._isDirty = true;
+	}
+	
+	public function markAsTexturesDirty() {
+		this._areTexturesDirty = true;
+		this._isDirty = true;
+	}
+
+	public function markAsFresnelDirty() {
+		this._areFresnelDirty = true;
+		this._isDirty = true;
+	}
+
+	public function markAsMiscDirty() {
+		this._areMiscDirty = true;
+		this._isDirty = true;
+	}
+	
+	/*public rebuild() {
+		if (this._keys) {
+			delete this._keys;
 		}
-			
-		for (i in 0...this.defines.length) {
-			if (this.defines[i] != other.defines[i]) {
-				return false;
+
+		this._keys = [];
+
+		for (var key of Object.keys(this)) {
+			if (key[0] === "_") {
+				continue;
 			}
+
+			this._keys.push(key);
 		}
-		
+	}*/
+	
+	public function isEqual(other:MaterialDefines):Bool {		
 		for (i in 0...this.lights.length) {
 			if (this.lights[i] != other.lights[i]) {
 				return false;
@@ -82,8 +165,14 @@ class MaterialDefines {
 			}
 		}
 		
-		for (i in 0...this.shadowpcfs.length) {
-			if (this.shadowpcfs[i] != other.shadowpcfs[i]) {
+		for (i in 0...this.shadowvsms.length) {
+			if (this.shadowwesm[i] != other.shadowwesm[i]) {
+				return false;
+			}
+		}
+		
+		for (i in 0...this.shadowpcf.length) {
+			if (this.shadowpcf[i] != other.shadowpcf[i]) {
 				return false;
 			}
 		}
@@ -91,80 +180,85 @@ class MaterialDefines {
 		return true;
 	}
 
-	public function cloneTo(other:MaterialDefines) {
-		if (this._keys.length != other._keys.length) {
-			for (i in 0...this._keys.length) {
-				other._keys[i] = this._keys[i];
-			}
-		}
-		
-		for (i in 0...this.defines.length) {
-			other.defines[i] = this.defines[i];
-		}	
-		
+	public function cloneTo(other:MaterialDefines) {		
 		other.lights = this.lights.copy();
 		other.pointlights = this.pointlights.copy();
 		other.dirlights = this.dirlights.copy();
 		other.hemilights = this.hemilights.copy();
 		other.spotlights = this.spotlights.copy();
 		other.shadows = this.shadows.copy();
+		other.shadowwesm = this.shadowwesm.copy();
 		other.shadowvsms = this.shadowvsms.copy();
-		other.shadowpcfs = this.shadowpcfs.copy();
+		other.shadowpcf = this.shadowpcf.copy();
 	}
 
-	public function reset() {
-		for (i in 0...this.defines.length) {
-			this.defines[i] = false;
-		}
-		
+	public function reset() {		
 		lights = [];
 		pointlights = [];
 		dirlights = [];
 		hemilights = [];
 		spotlights = [];
 		shadows = [];
+		shadowwesm = [];
 		shadowvsms = [];
-		shadowpcfs = [];
+		shadowpcf = [];
 	}
 
 	public function toString():String {
 		finalString = "";
-		for (i in 0...this.defines.length) {
-			if (this.defines[i] == true) {
-				finalString += "#define " + this._keys[i] + "\n";
+		
+		for (i in 0...this.lights.length) {
+			if (this.lights[i] == true) {
+				finalString += "#define LIGHT" + i + "\n";
 			}
 		}
 		
-		for (i in 0...this.lights.length) {
-			finalString += "#define LIGHT" + i + "\n";
-		}
-		
 		for (i in 0...this.pointlights.length) {
-			finalString += "#define POINTLIGHT" + i + "\n";
+			if (this.pointlights[i] == true) {
+				finalString += "#define POINTLIGHT" + i + "\n";
+			}
 		}
 		
 		for (i in 0...this.dirlights.length) {
-			finalString += "#define DIRLIGHT" + i + "\n";
+			if (this.dirlights[i] == true) {
+				finalString += "#define DIRLIGHT" + i + "\n";
+			}
 		}
 		
 		for (i in 0...this.hemilights.length) {
-			finalString += "#define HEMILIGHT" + i + "\n";
+			if (this.hemilights[i] == true) {
+				finalString += "#define HEMILIGHT" + i + "\n";
+			}
 		}
 		
 		for (i in 0...this.spotlights.length) {
-			finalString += "#define SPOTLIGHT" + i + "\n";
+			if (this.spotlights[i] == true) {
+				finalString += "#define SPOTLIGHT" + i + "\n";
+			}
 		}
 		
 		for (i in 0...this.shadows.length) {
-			finalString += "#define SHADOW" + i + "\n";
+			if (this.shadows[i] == true) {
+				finalString += "#define SHADOW" + i + "\n";
+			}
 		}
 		
 		for (i in 0...this.shadowvsms.length) {
-			finalString += "#define SHADOWVSM" + i + "\n";
+			if (this.shadowvsms[i] == true) {
+				finalString += "#define SHADOWVSM" + i + "\n";
+			}
 		}
 		
-		for (i in 0...this.shadowpcfs.length) {
-			finalString += "#define SHADOWPCF" + i + "\n";
+		for (i in 0...this.shadowwesm.length) {
+			if (this.shadowwesm[i] == true) {
+				finalString += "#define SHADOWWESM" + i + "\n";
+			}
+		}
+		
+		for (i in 0...this.shadowpcf.length) {
+			if (this.shadowpcf[i] == true) {
+				finalString += "#define SHADOWPCF" + i + "\n";
+			}
 		}
 		
 		return finalString;

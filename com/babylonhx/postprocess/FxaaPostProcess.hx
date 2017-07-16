@@ -10,20 +10,11 @@ import com.babylonhx.materials.textures.Texture;
 
 @:expose('BABYLON.FxaaPostProcess') class FxaaPostProcess extends PostProcess {
 	
-	public var texelWidth:Float;
-	public var texelHeight:Float;
-	
-
-	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
-		super(name, "fxaa", ["texelSize"], null, ratio, camera, samplingMode, engine, reusable);
+	public function new(name:String, options:Dynamic, camera:Camera, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, ?engine:Engine, reusable:Bool = false, textureType:Int = Engine.TEXTURETYPE_UNSIGNED_INT) {
+		super(name, "fxaa", ["texelSize"], null, options, camera, samplingMode, engine, reusable, null, textureType, "fxaa");
 		
-		this.onSizeChangedObservable.add(function() {
-			this.texelWidth = 1.0 / this.width;
-			this.texelHeight = 1.0 / this.height;
-		});
-		
-		this.onApplyObservable.add(function(effect:Effect) {
-			effect.setFloat2("texelSize", this.texelWidth, this.texelHeight);
+		this.onApplyObservable.add(function(effect:Effect, _) {
+			effect.setFloat2("texelSize", texelSize.x, texelSize.y);
 		});
 	}
 	

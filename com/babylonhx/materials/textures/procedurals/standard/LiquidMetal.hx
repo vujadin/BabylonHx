@@ -90,8 +90,8 @@ void main() {
 	
 
 	public function new(name:String, size:Float, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
-		if (!ShadersStore.Shaders.exists("liquidmetaltexture.fragment")) {
-			ShadersStore.Shaders.set("liquidmetaltexture.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("liquidmetaltextureFragmentShader")) {
+			ShadersStore.Shaders.set("liquidmetaltextureFragmentShader", fragmentShader);
 		}
 		
 		super(name, size, "liquidmetaltexture", scene, fallbackTexture, generateMipMaps);

@@ -18,7 +18,7 @@ import com.babylonhx.tools.Tags;
 		this.size = size;
 		this.side = side;
 		
-		super(id, scene, this._regenerateVertexData(), canBeRegenerated, mesh);
+		super(id, scene, canBeRegenerated, mesh);
 	}
 
 	override public function _regenerateVertexData():VertexData {
@@ -29,8 +29,16 @@ import com.babylonhx.tools.Tags;
 		return new Box(id, this.getScene(), this.size, this.canBeRegenerated(), null, this.side);
 	}
 	
+	override public function serialize():Dynamic {
+		var serializationObject = super.serialize();
+		
+		serializationObject.size = this.size;
+		
+		return serializationObject;
+	}
+	
 	public static function Parse(parsedBox:Dynamic, scene:Scene):Box {
-        if (Geometry.Parse(parsedBox, scene) != null) {
+        if (scene.getGeometryByID(parsedBox.id) != null) {
             return null; // null since geometry could be something else than a box...
         }
 		

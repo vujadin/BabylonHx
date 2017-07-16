@@ -19,8 +19,8 @@ import com.babylonhx.tools.Tags;
 		this.width = width;
 		this.height = height;
 		this.subdivisions = subdivisions;
-
-		super(id, scene, this._regenerateVertexData(), canBeRegenerated, mesh);
+		
+		super(id, scene, canBeRegenerated, mesh);
 	}
 
 	override public function _regenerateVertexData():VertexData {
@@ -31,8 +31,18 @@ import com.babylonhx.tools.Tags;
 		return new Ground(id, this.getScene(), this.width, this.height, this.subdivisions, this.canBeRegenerated(), null);
 	}
 	
+	override public function serialize():Dynamic {
+		var serializationObject = super.serialize();
+		
+		serializationObject.width = this.width;
+		serializationObject.height = this.height;
+		serializationObject.subdivisions = this.subdivisions;
+		
+		return serializationObject;
+	}
+	
 	public static function Parse(parsedGround:Dynamic, scene:Scene):Ground {
-        if (Geometry.Parse(parsedGround, scene) == null) {
+        if (scene.getGeometryByID(parsedGround.id) != null) {
             return null; // null since geometry could be something else than a ground...
         }
 		

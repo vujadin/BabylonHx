@@ -12,7 +12,8 @@ import com.babylonhx.math.PositionNormalVertex;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.utils.Image;
 import com.babylonhx.Scene;
-import com.babylonhx.utils.typedarray.Float32Array;
+
+import lime.utils.Float32Array;
 
 /**
  * ...
@@ -227,11 +228,6 @@ class MeshBuilder {
 		
 		box.sideOrientation = options.sideOrientation;
 		
-		if (scene.isPhysicsEnabled()) {
-			box.physicsDim = { };
-			box.physicsDim.size = options;
-		}
-		
 		vertexData.applyToMesh(box, options.updatable);
 		
 		return box;
@@ -259,11 +255,6 @@ class MeshBuilder {
 		var vertexData = VertexData.CreateSphere(options);
 		
 		vertexData.applyToMesh(sphere, options.updatable);
-		
-		/*if (scene.isPhysicsEnabled()) {
-			sphere.physicsDim = { };
-			sphere.physicsDim.diameter = options.diameterX / 2;
-		}*/
 		
 		return sphere;		
 	}
@@ -457,12 +448,6 @@ class MeshBuilder {
 		cylinder.sideOrientation = options.sideOrientation;
 		
 		var vertexData = VertexData.CreateCylinder(options);
-		
-		if (scene.isPhysicsEnabled()) {
-			cylinder.physicsDim = { };
-			cylinder.physicsDim.height = options.height;
-			cylinder.physicsDim.diameter = options.diameterBottom > options.diameterTop ? options.diameterBottom : options.diameterTop;
-		}
 		
 		vertexData.applyToMesh(cylinder, options.updatable);
 		

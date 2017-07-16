@@ -44,6 +44,11 @@ package com.babylonhx.tools;
 		this.length = 0;
 		this._duplicateId++;
 	}
+	
+	public function dispose() {
+		this.reset();
+		this.data.splice(0, this.data.length);
+	}
 
 	inline public function concatArray(array:Array<T>) {
 		for (index in 0...array.length) {

@@ -351,7 +351,7 @@ class Earcut {
 		// find a segment intersected by a ray from the hole's leftmost point to the left;
 		// segment's endpoint with lesser x will be potential connection point
 		do {
-			if (hy <= p.y && hy >= p.next.y) {
+			if (hy <= p.y && hy >= p.next.y && p.next.y != p.y) {
 				var x = p.x + (hy - p.y) * (p.next.x - p.x) / (p.next.y - p.y);
 				if (x <= hx && x > qx) {
 					qx = x;
@@ -393,7 +393,7 @@ class Earcut {
 		p = m.next;
 		
 		while (p != stop) {
-			if (hx >= p.x && p.x >= mx && pointInTriangle(hy < my ? hx : qx, hy, mx, my, hy < my ? qx : hx, hy, p.x, p.y)) {
+			if (hx >= p.x && p.x >= mx && hx != p.x && pointInTriangle(hy < my ? hx : qx, hy, mx, my, hy < my ? qx : hx, hy, p.x, p.y)) {
 				tan = Math.abs(hy - p.y) / (hx - p.x); // tangential
 				if ((tan < tanMin || (tan == tanMin && p.x > m.x)) && locallyInside(p, hole)) {
 					m = p;
@@ -602,7 +602,7 @@ class Earcut {
         var py:Float = (a.y + b.y) / 2;
 		
 		do {
-			if (((p.y > py) != (p.next.y > py)) && (px < (p.next.x - p.x) * (py - p.y) / (p.next.y - p.y) + p.x)) {
+			if (((p.y > py) != (p.next.y > py)) && p.next.y != p.y && (px < (p.next.x - p.x) * (py - p.y) / (p.next.y - p.y) + p.x)) {
 				inside = !inside;
 			}
 			

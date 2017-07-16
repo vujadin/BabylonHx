@@ -17,8 +17,8 @@ import com.babylonhx.math.Color4;
 	
 
 	public function new(name:String, size:Float, scene:Scene, ?fallbackTexture:Texture, ?generateMipMaps:Bool) {
-		if (!ShadersStore.Shaders.exists("cloudtexture.fragment")) {
-			ShadersStore.Shaders.set("cloudtexture.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("cloudtextureFragmentShader")) {
+			ShadersStore.Shaders.set("cloudtextureFragmentShader", fragmentShader);
 		}
 		
 		super(name, size, "cloudtexture", scene, fallbackTexture, generateMipMaps);

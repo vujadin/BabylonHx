@@ -2,6 +2,7 @@ package com.babylonhx.actions;
 
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.utils.Keycodes;
+import com.babylonhx.tools.Tools;
 
 /**
  * ...
@@ -21,22 +22,24 @@ import com.babylonhx.utils.Keycodes;
 	public static inline var OnRightPickTrigger:Int = 3;
 	public static inline var OnCenterPickTrigger:Int = 4;
 	public static inline var OnPickDownTrigger:Int = 5;
-	public static inline var OnPickUpTrigger:Int = 6;
-	public static inline var OnLongPressTrigger:Int = 7;
-	public static inline var OnPointerOverTrigger:Int = 8;
-	public static inline var OnPointerOutTrigger:Int = 9;
-	public static inline var OnEveryFrameTrigger:Int = 10;
-	public static inline var OnIntersectionEnterTrigger:Int = 11;
-	public static inline var OnIntersectionExitTrigger:Int = 12;
-	public static inline var OnKeyDownTrigger:Int = 13;
-	public static inline var OnKeyUpTrigger:Int = 14;
-	public static inline var OnPickOutTrigger:Int = 15;
+	public static inline var OnDoublePickTrigger:Int = 6;
+	public static inline var OnPickUpTrigger:Int = 7;
+	public static inline var OnLongPressTrigger:Int = 8;
+	public static inline var OnPointerOverTrigger:Int = 9;
+	public static inline var OnPointerOutTrigger:Int = 10;
+	public static inline var OnEveryFrameTrigger:Int = 11;
+	public static inline var OnIntersectionEnterTrigger:Int = 12;
+	public static inline var OnIntersectionExitTrigger:Int = 13;
+	public static inline var OnKeyDownTrigger:Int = 14;
+	public static inline var OnKeyUpTrigger:Int = 15;
+	public static inline var OnPickOutTrigger:Int = 16;
 	
-	public static inline var DragMovementThreshold:Int = 10; // in pixels
-    public static inline var LongPressDelay:Int = 500; 	  // in milliseconds
+	public static var Triggers:Map<Int, Int> = new Map();
 	
 	// Members
 	public var actions:Array<Action> = [];
+	
+	public var hoverCursor:String = '';
 	
 	private var _scene:Scene;
 	
@@ -50,6 +53,14 @@ import com.babylonhx.utils.Keycodes;
 	// Methods
 	public function dispose():Void {
 		var index = this._scene._actionManagers.indexOf(this);
+		
+		for (i in 0...this.actions.length) {
+			var action = this.actions[i];
+			ActionManager.Triggers[action.trigger] = ActionManager.Triggers[action.trigger] - 1;
+			if (ActionManager.Triggers[action.trigger] == 0) {
+				ActionManager.Triggers.remove(action.trigger);
+			}
+		}
 		
 		if (index > -1) {
 			this._scene._actionManagers.splice(index, 1);
@@ -103,7 +114,7 @@ import com.babylonhx.utils.Keycodes;
 		for (index in 0...this.actions.length) {
 			var action = this.actions[index];
 			
-			if (action.trigger >= ActionManager.OnPickTrigger && action.trigger <= ActionManager.OnPointerOutTrigger) {
+			if (action.trigger >= ActionManager.OnPickTrigger && action.trigger <= ActionManager.OnPickUpTrigger) {
 				return true;
 			}
 		}
@@ -127,6 +138,54 @@ import com.babylonhx.utils.Keycodes;
 		
 		return false;
 	}
+	
+	/**
+	 * Does exist one action manager with at least one trigger 
+	 * @return {boolean} whether or not it exists one action manager with one trigger
+	**/
+	public static var HasTriggers(get, never):Bool;
+	private static function get_HasTriggers():Bool {
+		for (t in ActionManager.Triggers.keys()) {
+			if (ActionManager.Triggers.exists(t)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Does exist one action manager with at least one pick trigger 
+	 * @return {boolean} whether or not it exists one action manager with one pick trigger
+	**/
+	public static var HasPickTriggers(get, never):Bool;
+	private static function get_HasPickTriggers():Bool {
+		for (t in ActionManager.Triggers.keys()) {
+			if (ActionManager.Triggers.exists(t)) {
+				var t_int = t;
+				if (t_int >= ActionManager.OnPickTrigger && t_int <= ActionManager.OnPickUpTrigger) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Does exist one action manager that handles actions of a given trigger
+	 * @param {number} trigger - the trigger to be tested
+	 * @return {boolean} whether the trigger is handeled by at least one action manager
+	**/
+	public static function HasSpecificTrigger(trigger:Int):Bool {
+		for (t in ActionManager.Triggers.keys()) {
+			if (ActionManager.Triggers.exists(t)) {
+				var t_int = t;
+				if (t_int == trigger) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 
 	/**
 	 * Registers an action to this action manager
@@ -136,13 +195,19 @@ import com.babylonhx.utils.Keycodes;
 	public function registerAction(action:Action):Action {
 		if (action.trigger == ActionManager.OnEveryFrameTrigger) {
 			if (this.getScene().actionManager != this) {
-				trace("OnEveryFrameTrigger can only be used with scene.actionManager");
-				
+				Tools.Warn("OnEveryFrameTrigger can only be used with scene.actionManager");				
 				return null;
 			}
 		}
 		
 		this.actions.push(action);
+		
+		if (ActionManager.Triggers[action.trigger] != null) {
+			ActionManager.Triggers[action.trigger] = ActionManager.Triggers[action.trigger] + 1;
+		}
+		else {
+			ActionManager.Triggers[action.trigger] = 1;
+		}
 		
 		action._actionManager = this;
 		action._prepare();
@@ -162,7 +227,7 @@ import com.babylonhx.utils.Keycodes;
 			if (action.trigger == trigger) {
 				if (trigger == ActionManager.OnKeyUpTrigger || trigger == ActionManager.OnKeyDownTrigger) {
 					var parameter = action.getTriggerParameter();
-					if (parameter != null) {
+					if (parameter != null && parameter != evt.sourceEvent.keyCode) {
 						if (Keycodes.name(evt.sourceEvent) != parameter) {
 							continue;
 						}
@@ -188,6 +253,50 @@ import com.babylonhx.utils.Keycodes;
 		var properties = propertyPath.split(".");
 		
 		return properties[properties.length - 1];
+	}
+	
+	public function serialize(name:String):Dynamic {
+		var root = {
+			children: [],
+			name: name,
+			type: 3, // Root node
+			properties: [] // Empty for root but required
+		};
+		
+		for (i in 0...this.actions.length) {
+			var triggerObject = { 
+				type: 0, // Trigger
+				children: [],
+				name: ActionManager.GetTriggerName(this.actions[i].trigger),
+				properties: []
+			};
+			
+			var triggerOptions = this.actions[i].triggerOptions;
+			
+			if (triggerOptions != null && !Std.is(triggerOptions, Int)) {
+				if (Std.is(triggerOptions.parameter, Node)) {
+					triggerObject.properties.push(Action._GetTargetProperty(triggerOptions.parameter));
+				}
+				else {
+					/*var parameter = <any>{};
+					Tools.DeepCopy(triggerOptions.parameter, parameter, ["mesh"]);
+					
+					if (triggerOptions.parameter.mesh) {
+						parameter._meshId = triggerOptions.parameter.mesh.id;
+					}
+					
+					triggerObject.properties.push({ name: "parameter", targetType: null, value: parameter });*/
+				}
+			}
+			
+			// Serialize child action, recursively
+			this.actions[i].serialize(triggerObject);
+			
+			// Add serialized trigger
+			root.children.push(triggerObject);
+		}
+		
+		return root;
 	}
 	
 	public static function Parse(parsedActions:Dynamic, object:AbstractMesh, scene:Scene) {
@@ -371,6 +480,28 @@ import com.babylonhx.utils.Keycodes;
 		}*/
 		
 		return null;
+	}
+	
+	public static function GetTriggerName(trigger:Int):String {
+		switch (trigger) {
+			case 0:  return "NothingTrigger";
+			case 1:  return "OnPickTrigger";
+			case 2:  return "OnLeftPickTrigger";
+			case 3:  return "OnRightPickTrigger";
+			case 4:  return "OnCenterPickTrigger";
+			case 5:  return "OnPickDownTrigger";
+			case 6:  return "OnPickUpTrigger";
+			case 7:  return "OnLongPressTrigger";
+			case 8:  return "OnPointerOverTrigger";
+			case 9:  return "OnPointerOutTrigger";
+			case 10: return "OnEveryFrameTrigger";
+			case 11: return "OnIntersectionEnterTrigger";
+			case 12: return "OnIntersectionExitTrigger";
+			case 13: return "OnKeyDownTrigger";
+			case 14: return "OnKeyUpTrigger";
+			case 15: return "OnPickOutTrigger";
+			default: return "";
+		}
 	}
 	
 }

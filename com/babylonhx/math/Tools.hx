@@ -6,6 +6,7 @@ package com.babylonhx.math;
  */
 @:expose('BABYLON.MathTools') class Tools {
 	
+	static public inline var ToLinearSpace:Float = 2.2;
 	static public inline var Epsilon:Float = 0.001;
 	static public inline var LOG2E:Float = 1.4426950408889634;
 	
@@ -21,12 +22,27 @@ package com.babylonhx.math;
 		return str.toUpperCase();
 	}
 	
+	/**
+     * Returns the log2 of value.
+     */
+    inline public static function Log2(value:Float):Float {
+        return Math.log(value) * LOG2E;
+    }
+	
 	inline public static function Clamp(value:Float, min:Float = 0, max:Float = 1):Float {
 		return Math.min(max, Math.max(min, value));
 	}
 	
 	inline public static function Clamp2(x:Float, a:Float, b:Float):Float {
 		return (x < a) ? a : ((x > b) ? b : x);
+	}
+	
+	/**
+		Uses Math.round to fix a floating point number to a set precision.
+	**/
+	inline public static function Round(number:Float, precision:Int = 2):Float {
+		number *= Math.pow(10, precision);
+		return Math.round(number) / Math.pow(10, precision);
 	}
 	
 	// Returns -1 when value is a negative number and
@@ -48,19 +64,75 @@ package com.babylonhx.math;
 		
 		return count == value;
 	}
+	
+	/**
+	 * Interpolates between a and b via alpha
+	 * @param a The lower value (returned when alpha = 0)
+	 * @param b The upper value (returned when alpha = 1)
+	 * @param alpha The interpolation-factor
+	 * @return The mixed value
+	 */
+	inline public static function Mix(a:Float, b:Float, alpha:Float):Float {
+		return a * (1 - alpha) + b * alpha;
+	}
+	
+	/**
+	 * Find the next highest power of two.
+	 * @param x Number to start search from.
+	 * @return Next highest power of two.
+	 */
+	public static function CeilingPOT(x:Int):Int {
+		x--;
+		x |= x >> 1;
+		x |= x >> 2;
+		x |= x >> 4;
+		x |= x >> 8;
+		x |= x >> 16;
+		x++;
+		return x;
+	}
 
-	inline public static function GetExponentOfTwo(value:Int, max:Int):Int {
-		var count = 1;
+	/**
+	 * Find the next lowest power of two.
+	 * @param x Number to start search from.
+	 * @return Next lowest power of two.
+	 */
+	public static function FloorPOT(x:Int):Int {
+		x = x | (x >> 1);
+		x = x | (x >> 2);
+		x = x | (x >> 4);
+		x = x | (x >> 8);
+		x = x | (x >> 16);
+		return x - (x >> 1);
+	}
+
+	/**
+	 * Find the nearest power of two.
+	 * @param x Number to start search from.
+	 * @return Next nearest power of two.
+	 */
+	public static function NearestPOT(x:Int):Int {
+		var c = Tools.CeilingPOT(x);
+		var f = Tools.FloorPOT(x);
+		return (c - x) > (x - f) ? f : c;
+	} 
+
+	public static function GetExponentOfTwo(value:Int, max:Int, mode:Int = Engine.SCALEMODE_NEAREST):Int {
+		var pot:Int = 0;
 		
-		do {
-			count *= 2;
-		} while (count < value);
-		
-		if (count > max) {
-			count = max;
+		switch (mode) {
+			case Engine.SCALEMODE_FLOOR:
+				pot = Tools.FloorPOT(value);
+			
+			case Engine.SCALEMODE_NEAREST:
+				pot = Tools.NearestPOT(value);
+			
+			case Engine.SCALEMODE_CEILING:
+				pot = Tools.CeilingPOT(value);
+			
 		}
 		
-		return count;
+		return Std.int(Math.min(pot, max));
 	}
 	
 	inline public static function Lerp(v0:Float, v1:Float, t:Float):Float {

@@ -20,18 +20,18 @@ import com.babylonhx.tools.EventState;
 	private var _refTexture:Texture;
 	
 	
-	public function new(name:String, refractionTextureUrl:String, color:Color3, depth:Float, colorLevel:Float, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
-		super(name, "refraction", ["baseColor", "depth", "colorLevel"], ["refractionSampler"], ratio, camera, samplingMode, engine, reusable);
+	public function new(name:String, refractionTextureUrl:String, color:Color3, depth:Float, colorLevel:Float, options:Dynamic, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
+		super(name, "refraction", ["baseColor", "depth", "colorLevel"], ["refractionSampler"], options, camera, samplingMode, engine, reusable);
 		
 		this.color = color;
 		this.depth = depth;
 		this.colorLevel = colorLevel;
 		
-		this.onActivateObservable.add(function(cam:Camera, es:EventState = null) {
+		this.onActivateObservable.add(function(cam:Camera, _) {
 			this._refTexture = this._refTexture != null ? this._refTexture : new Texture(refractionTextureUrl, cam.getScene());
 		});
 		
-		this.onApplyObservable.add(function(effect:Effect, es:EventState = null) {
+		this.onApplyObservable.add(function(effect:Effect, _) {
 			effect.setColor3("baseColor", this.color);
 			effect.setFloat("depth", this.depth);
 			effect.setFloat("colorLevel", this.colorLevel);

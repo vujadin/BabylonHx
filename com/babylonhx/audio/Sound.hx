@@ -5,7 +5,7 @@ import com.babylonhx.tools.Ts2Hx;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.mesh.AbstractMesh;
-import com.babylonhx.utils.typedarray.ArrayBuffer;
+import lime.utils.ArrayBuffer;
 #if (js || purejs)
 import js.html.audio.*;
 import js.html.AudioElement;

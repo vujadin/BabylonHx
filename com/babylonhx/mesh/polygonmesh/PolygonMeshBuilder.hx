@@ -60,7 +60,7 @@ import com.babylonhx.Scene;
 		return this;
 	}
 
-	public function build(updatable:Bool = false, depth:Float = 0):Mesh {
+	public function build(updatable:Bool = false, depth:Float = 50):Mesh {
 		var result = new Mesh(this.name, this.scene);
 		
 		var normals:Array<Float> = [];

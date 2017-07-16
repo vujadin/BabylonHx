@@ -2,7 +2,7 @@ package com.babylonhx.math;
 
 import com.babylonhx.cameras.Camera;
 
-import com.babylonhx.utils.typedarray.Float32Array;
+import lime.utils.Float32Array;
 #if cpp
 import haxe.ds.Vector;
 #end
@@ -19,51 +19,58 @@ import haxe.ds.Vector;
 	private static var _xAxis:Vector3 = Vector3.Zero();
 	private static var _yAxis:Vector3 = Vector3.Zero();
 	private static var _zAxis:Vector3 = Vector3.Zero();
+	private static var _updateFlagSeed:Int = 0;
 
+	private var _isIdentity:Bool = false;
+    private var _isIdentityDirty:Bool = true;
+	public var updateFlag:Int = 0;
 	#if (js || html5 || purejs)
 	public var m:Float32Array;
 	#else
 	public var m:Array<Float>;	
 	#end
 	
+	inline public function _markAsUpdated() {
+		this.updateFlag = Matrix._updateFlagSeed++;
+		this._isIdentityDirty = true;
+	}
+	
 	
 	inline public function new() {
+		this._markAsUpdated();
 		#if (js || html5 || purejs)
 		m = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 		#else
 		m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 		#end
 	}
-	
-	public function toString():String {
-		return m + "";
-	}
-	
-	public function getClassName():String {
-        return "Matrix";
-    }
-
-    public function getHashCode():Int {
-        var hash = Std.int(this.m[0]);
-        for (i in 1...16) {
-            hash = Std.int(hash * 397) ^ Std.int(this.m[i]);
-        }
-		
-        return hash;
-    }
 
 	// Properties
-	public function isIdentity():Bool {
-		if (this.m[0] != 1.0 || this.m[5] != 1.0 || this.m[10] != 1.0 || this.m[15] != 1.0)
-			return false;
+	/**
+	 * Boolean : True is the matrix is the identity matrix
+	 */
+	public function isIdentity(considerAsTextureMatrix:Bool = false):Bool {
+		if (this._isIdentityDirty) {
+			this._isIdentityDirty = false;
+			if (this.m[0] != 1.0 || this.m[5] != 1.0 || this.m[15] != 1.0) {
+				this._isIdentity = false;
+			}
+			else if (this.m[1] != 0.0 || this.m[2] != 0.0 || this.m[3] != 0.0 ||
+				this.m[4] != 0.0 || this.m[6] != 0.0 || this.m[7] != 0.0 ||
+				this.m[8] != 0.0 || this.m[9] != 0.0 || this.m[11] != 0.0 ||
+				this.m[12] != 0.0 || this.m[13] != 0.0 || this.m[14] != 0.0) {
+				this._isIdentity = false;
+			} 
+			else {
+				this._isIdentity = true;
+			}
 			
-		if (this.m[1] != 0.0 || this.m[2] != 0.0 || this.m[3] != 0.0 ||
-			this.m[4] != 0.0 || this.m[6] != 0.0 || this.m[7] != 0.0 ||
-			this.m[8] != 0.0 || this.m[9] != 0.0 || this.m[11] != 0.0 ||
-			this.m[12] != 0.0 || this.m[13] != 0.0 || this.m[14] != 0.0)
-			return false;
-			
-		return true;
+			if (!considerAsTextureMatrix && this.m[10] != 1.0) {
+				this._isIdentity = false;
+			}
+		}
+		
+		return this._isIdentity;
 	}
 
 	inline public function determinant():Float {
@@ -80,52 +87,80 @@ import haxe.ds.Vector;
 	}
 
 	// Methods
+	
+	/**
+	 * Returns the matrix underlying array.  
+	 */
 	inline public function toArray(): #if (js || html5 || purejs) Float32Array #else Array<Float> #end {
 		return this.m;
 	}
 
+	/**
+	* Returns the matrix underlying array.  
+	*/
 	inline public function asArray(): #if (js || html5 || purejs) Float32Array #else Array<Float> #end {
 		return #if (js || html5 || purejs) m #else m #end ;
 	}
 
+	/**
+	 * Inverts in place the Matrix.  
+	 * Returns the Matrix inverted.  
+	 */
 	inline public function invert():Matrix {
-		this.invertToRef(this);
-		
+		this.invertToRef(this);		
 		return this;
 	}
 	
+	/**
+	 * Sets all the matrix elements to zero.  
+	 * Returns the Matrix.  
+	 */
 	inline public function reset():Matrix {
 		for (index in 0...16) {
 			this.m[index] = 0;
 		}
 		
+		this._markAsUpdated();
 		return this;
 	}
 
+	/**
+	 * Returns a new Matrix as the addition result of the current Matrix and the passed one.  
+	 */
 	inline public function add(other:Matrix):Matrix {
-		var result = new Matrix();
-		
-		this.addToRef(other, result);
-		
+		var result = new Matrix();		
+		this.addToRef(other, result);		
 		return result;
 	}
 
+	/**
+	 * Sets the passed matrix "result" with the ddition result of the current Matrix and the passed one.  
+	 * Returns the Matrix.  
+	 */
 	inline public function addToRef(other:Matrix, result:Matrix):Matrix {
 		for (index in 0...16) {
 			result.m[index] = this.m[index] + other.m[index];
 		}
-		
+		result._markAsUpdated();
 		return this;
 	}
 
+	/**
+	 * Adds in place the passed matrix to the current Matrix.  
+	 * Returns the updated Matrix.  
+	 */
 	inline public function addToSelf(other:Matrix):Matrix {
 		for (index in 0...16) {
 			this.m[index] += other.m[index];
 		}
-		
+		this._markAsUpdated();
 		return this;
 	}
 
+	/**
+	 * Sets the passed matrix with the current inverted Matrix.  
+	 * Returns the unmodified current Matrix.  
+	 */
 	inline public function invertToRef(other:Matrix):Matrix {
 		var l1 = this.m[0];
 		var l2 = this.m[1];
@@ -184,49 +219,111 @@ import haxe.ds.Vector;
 		other.m[11] = -(((l1 * l35) - (l2 * l37)) + (l4 * l39)) * l27;
 		other.m[15] = (((l1 * l36) - (l2 * l38)) + (l3 * l39)) * l27;
 		
+		other._markAsUpdated();
 		return this;
 	}
 
+	/**
+	 * Inserts the translation vector (using 3 x floats) in the current Matrix.  
+	 * Returns the updated Matrix.  
+	 */
+	public function setTranslationFromFloats(x:Float, y:Float, z:Float):Matrix {
+		this.m[12] = x;
+		this.m[13] = y;
+		this.m[14] = z;
+		
+		this._markAsUpdated();
+		return this;
+	}
+	
+	/**
+	 * Inserts the translation vector in the current Matrix.  
+	 * Returns the updated Matrix.  
+	 */
 	inline public function setTranslation(vector3:Vector3):Matrix {
 		this.m[12] = vector3.x;
 		this.m[13] = vector3.y;
 		this.m[14] = vector3.z;
 		
+		this._markAsUpdated();
 		return this;
 	}
 	
+	/**
+	 * Returns a new Vector3 as the extracted translation from the Matrix.  
+	 */
 	inline public function getTranslation():Vector3 {
         return new Vector3(this.m[12], this.m[13], this.m[14]);
     }
-
+	
+	/**
+	 * Fill a Vector3 with the extracted translation from the Matrix.  
+	 */
+	inline public function getTranslationToRef(result:Vector3):Matrix {
+		result.x = this.m[12];
+		result.y = this.m[13];
+		result.z = this.m[14];
+		
+		return this;
+	}
+	
+	/**
+	 * Remove rotation and scaling part from the Matrix. 
+	 * Returns the updated Matrix. 
+	 */
+	public function removeRotationAndScaling():Matrix {
+		this.setRowFromFloats(0, 1, 0, 0, 0);
+		this.setRowFromFloats(1, 0, 1, 0, 0);
+		this.setRowFromFloats(2, 0, 0, 1, 0);
+		return this;
+	}
+	
+	/**
+	 * Returns a new Matrix set with the multiplication result of the current Matrix and the passed one.  
+	 */
 	inline public function multiply(other:Matrix):Matrix {
-		var result = new Matrix();
-		
-		this.multiplyToRef(other, result);
-		
+		var result = new Matrix();		
+		this.multiplyToRef(other, result);		
 		return result;
 	}
 
+	/**
+	 * Updates the current Matrix from the passed one values.  
+	 * Returns the updated Matrix.  
+	 */
 	inline public function copyFrom(other:Matrix):Matrix {
 		for (index in 0...16) {
 			this.m[index] = other.m[index];
 		}
 		
+		this._markAsUpdated();
 		return this;
 	}
 
-	inline public function copyToArray<T>(array:T, offset:Int = 0) {
+	/**
+	 * Populates the passed array from the starting index with the Matrix values.  
+	 * Returns the Matrix.  
+	 */
+	inline public function copyToArray<T>(array:T, offset:Int = 0):Matrix {
 		for (index in 0...16) {
 			untyped array[offset + index] = this.m[index];
 		}
-	}
-
-	inline public function multiplyToRef(other:Matrix, result:Matrix):Matrix {
-		this.multiplyToArray(other, result.m, 0);
-		
 		return this;
 	}
 
+	/**
+	 * Sets the passed matrix "result" with the multiplication result of the current Matrix and the passed one.  
+	 */
+	inline public function multiplyToRef(other:Matrix, result:Matrix):Matrix {
+		this.multiplyToArray(other, result.m, 0);
+		
+		result._markAsUpdated();
+		return this;
+	}
+
+	/**
+	 * Sets the Float32Array "result" from the passed index "offset" with the multiplication result of the current Matrix and the passed one.  
+	 */
 	public function multiplyToArray(other:Matrix, result: #if (js || html5 || purejs) Float32Array #else Array<Float> #end, offset:Int) {	
 		var tm0 = this.m[0];
 		var tm1 = this.m[1];
@@ -285,6 +382,9 @@ import haxe.ds.Vector;
 		return this;
 	}
 
+	/**
+	 * Boolean : True is the current Matrix and the passed one values are strictly equal.  
+	 */
 	inline public function equals(value:Matrix):Bool {
 		return value != null &&
 			(this.m[0] == value.m[0] && this.m[1] == value.m[1] && this.m[2] == value.m[2] && this.m[3] == value.m[3] &&
@@ -292,7 +392,10 @@ import haxe.ds.Vector;
 			this.m[8] == value.m[8] && this.m[9] == value.m[9] && this.m[10] == value.m[10] && this.m[11] == value.m[11] &&
 			this.m[12] == value.m[12] && this.m[13] == value.m[13] && this.m[14] == value.m[14] && this.m[15] == value.m[15]);
 	}
-
+	
+	/**
+	 * Returns a new Matrix from the current Matrix.  
+	 */
 	inline public function clone():Matrix {
 		return Matrix.FromValues(this.m[0], this.m[1], this.m[2], this.m[3],
 			this.m[4], this.m[5], this.m[6], this.m[7],
@@ -300,6 +403,31 @@ import haxe.ds.Vector;
 			this.m[12], this.m[13], this.m[14], this.m[15]);
 	}
 	
+	/**
+	 * Returns the string "Matrix"
+	 */
+	public function getClassName():String {
+		return "Matrix";
+	}
+	
+	/**
+	 * Returns the Matrix hash code.  
+	 */
+	public function getHashCode():Float {
+		var hash = this.m[0];
+		for (i in 1...16) {
+			hash = Std.int(hash * 397) ^ Std.int(this.m[i]);
+		}
+		return hash;
+	}
+	
+	/**
+	 * Decomposes the current Matrix into : 
+	 * - a scale vector3 passed as a reference to update, 
+	 * - a rotation quaternion passed as a reference to update,
+	 * - a translation vector3 passed as a reference to update.  
+	 * Returns the boolean `true`.  
+	 */
 	public function decompose(scale:Vector3, rotation:Quaternion, translation:Vector3):Bool {
 		translation.x = this.m[12];
 		translation.y = this.m[13];
@@ -333,6 +461,9 @@ import haxe.ds.Vector;
 		return true;
 	}
 	
+	/**
+	 * Returns a new Matrix as the extracted rotation matrix from the current one.  
+	 */
 	public function getRotationMatrix():Matrix {
 		var result = Matrix.Identity();
 		
@@ -341,7 +472,11 @@ import haxe.ds.Vector;
 		return result;
 	}
 
-	public function getRotationMatrixToRef(result:Matrix) {
+	/**
+	 * Extracts the rotation matrix from the current one and sets it as the passed "result".  
+	 * Returns the current Matrix.  
+	 */
+	public function getRotationMatrixToRef(result:Matrix):Matrix {
 		var xs = m[0] * m[1] * m[2] * m[3] < 0 ? -1 : 1;
 		var ys = m[4] * m[5] * m[6] * m[7] < 0 ? -1 : 1;
 		var zs = m[8] * m[9] * m[10] * m[11] < 0 ? -1 : 1;
@@ -355,9 +490,15 @@ import haxe.ds.Vector;
 			m[4] / sy, m[5] / sy, m[6] / sy, 0,
 			m[8] / sz, m[9] / sz, m[10] / sz, 0,
 			0, 0, 0, 1, result);
+			
+		return this;
 	}
 
 	// Statics
+	
+	/**
+	 * Returns a new Matrix set from the starting index of the passed array.
+	 */
 	inline public static function FromArray(array:Array<Float>, offset:Int = 0):Matrix {
 		var result = new Matrix();
 		
@@ -366,18 +507,27 @@ import haxe.ds.Vector;
 		return result;
 	}
 
+	/**
+	 * Sets the passed "result" matrix from the starting index of the passed array.
+	 */
 	inline public static function FromArrayToRef(array:Array<Float>, offset:Int, result:Matrix) {
 		for (index in 0...16) {
 			result.m[index] = array[index + offset];
 		}
 	}
 	
+	/**
+	 * Sets the passed "result" matrix from the starting index of the passed Float32Array by multiplying each element by the float "scale".  
+	 */
 	inline public static function FromFloat32ArrayToRefScaled(array:Float32Array, offset:Int, scale:Float, result:Matrix) {
         for (index in 0...16) {
             result.m[index] = array[index + offset] * scale;
         }
     }
 
+	/**
+	 * Sets the passed matrix "result" with the 16 passed floats.  
+	 */
 	public static function FromValuesToRef(initialM11:Float, initialM12:Float, initialM13:Float, initialM14:Float,
 		initialM21:Float, initialM22:Float, initialM23:Float, initialM24:Float,
 		initialM31:Float, initialM32:Float, initialM33:Float, initialM34:Float,
@@ -399,8 +549,13 @@ import haxe.ds.Vector;
 		result.m[13] = initialM42;
 		result.m[14] = initialM43;
 		result.m[15] = initialM44;
+		
+		result._markAsUpdated();
 	}
 	
+	/**
+	 * Returns the index-th row of the current matrix as a new Vector4.  
+	 */
 	public function getRow(index:Int):Vector4 {
 		if (index < 0 || index > 3) {
 			return null;
@@ -411,6 +566,10 @@ import haxe.ds.Vector;
 		return new Vector4(this.m[i + 0], this.m[i + 1], this.m[i + 2], this.m[i + 3]);
 	}
 
+	/**
+	 * Sets the index-th row of the current matrix with the passed Vector4 values.
+	 * Returns the updated Matrix.    
+	 */
 	public function setRow(index:Int, row:Vector4):Matrix {
 		if (index < 0 || index > 3) {
 			return null;
@@ -423,14 +582,37 @@ import haxe.ds.Vector;
 		this.m[i + 2] = row.z;
 		this.m[i + 3] = row.w;
 		
+		this._markAsUpdated();
+		
 		return this;
 	}
 
+	/**
+	 * Sets the index-th row of the current matrix with the passed 4 x float values.
+	 * Returns the updated Matrix.    
+	 */
+	public function setRowFromFloats(index:Int, x:Float, y:Float, z:Float, w:Float):Matrix {
+		if (index < 0 || index > 3) {
+			return this;
+		}
+		var i = index * 4;
+		this.m[i + 0] = x;
+		this.m[i + 1] = y;
+		this.m[i + 2] = z;
+		this.m[i + 3] = w;
+		
+		this._markAsUpdated();
+		return this;
+	}
+	
+	/**
+	 * Returns a new Matrix set from the 16 passed floats.  
+	 */
 	inline public static function FromValues(initialM11:Float, initialM12:Float, initialM13:Float, initialM14:Float,
 		initialM21:Float, initialM22:Float, initialM23:Float, initialM24:Float,
 		initialM31:Float, initialM32:Float, initialM33:Float, initialM34:Float,
 		initialM41:Float, initialM42:Float, initialM43:Float, initialM44:Float):Matrix {
-			
+		
 		var result = new Matrix();
 		
 		result.m[0] = initialM11;
@@ -453,23 +635,33 @@ import haxe.ds.Vector;
 		return result;
 	}
 	
-	public static inline function Compose(scale:Vector3, rotation:Quaternion, translation:Vector3):Matrix {
-		var result = Matrix.FromValues(
-			scale.x, 0, 0, 0,
-			0, scale.y, 0, 0,
-			0, 0, scale.z, 0,
-			0, 0, 0, 1
-		);
-		
-		var rotationMatrix = Matrix.Identity();
-		rotation.toRotationMatrix(rotationMatrix);
-		result = result.multiply(rotationMatrix);
-		
-		result.setTranslation(translation);
-		
+	/**
+	 * Returns a new Matrix composed by the passed scale (vector3), rotation (quaternion) and translation (vector3).  
+	 */
+	public static function Compose(scale:Vector3, rotation:Quaternion, translation:Vector3):Matrix {
+		var result = Matrix.Identity();
+		Matrix.ComposeToRef(scale, rotation, translation, result);
 		return result;
 	}
 
+	/**
+	 * Update a Matrix with values composed by the passed scale (vector3), rotation (quaternion) and translation (vector3).  
+	 */
+	public static function ComposeToRef(scale:Vector3, rotation:Quaternion, translation:Vector3, result:Matrix) {
+		Matrix.FromValuesToRef(scale.x, 0, 0, 0,
+			0, scale.y, 0, 0,
+			0, 0, scale.z, 0,
+			0, 0, 0, 1, Tmp.matrix[1]);
+			
+		rotation.toRotationMatrix(Tmp.matrix[0]);
+		Tmp.matrix[1].multiplyToRef(Tmp.matrix[0], result);
+		
+		result.setTranslation(translation);
+	}
+	
+	/**
+	 * Returns a new indentity Matrix.  
+	 */
 	inline public static function Identity():Matrix {
 		return Matrix.FromValues(
 			1.0, 0, 0, 0,
@@ -479,6 +671,9 @@ import haxe.ds.Vector;
 		);
 	}
 
+	/**
+	 * Sets the passed "result" as an identity matrix.  
+	 */
 	inline public static function IdentityToRef(result:Matrix) {
 		Matrix.FromValuesToRef(
 			1.0, 0, 0, 0,
@@ -488,6 +683,9 @@ import haxe.ds.Vector;
 		);
 	}
 
+	/**
+	 * Returns a new zero Matrix.  
+	 */
 	inline public static function Zero():Matrix {
 		return Matrix.FromValues(
 			0, 0, 0, 0,
@@ -497,23 +695,28 @@ import haxe.ds.Vector;
 		);
 	}
 
+	/**
+	 * Returns a new rotation matrix for "angle" radians around the X axis.  
+	 */
 	inline public static function RotationX(angle:Float):Matrix {
-		var result = new Matrix();
-		
-		Matrix.RotationXToRef(angle, result);
-		
+		var result = new Matrix();		
+		Matrix.RotationXToRef(angle, result);		
 		return result;
 	}
 	
+	/**
+	 * Returns a new Matrix as the passed inverted one.  
+	 */
 	inline public static function Invert(source:Matrix):Matrix {
-		var result = new Matrix();
-		
-		source.invertToRef(result);
-		
+		var result = new Matrix();		
+		source.invertToRef(result);		
 		return result;
 	}
 
-	inline public static function RotationXToRef(angle:Float, result:Matrix) {
+	/**
+	 * Sets the passed matrix "result" as a rotation matrix for "angle" radians around the X axis. 
+	 */
+	public static function RotationXToRef(angle:Float, result:Matrix) {
 		var s = Math.sin(angle);
 		var c = Math.cos(angle);
 		
@@ -535,16 +738,22 @@ import haxe.ds.Vector;
 		result.m[12] = 0;
 		result.m[13] = 0;
 		result.m[14] = 0;
+		
+		result._markAsUpdated();
 	}
 
+	/**
+	 * Returns a new rotation matrix for "angle" radians around the Y axis.  
+	 */
 	inline public static function RotationY(angle:Float):Matrix {
-		var result = new Matrix();
-		
-		Matrix.RotationYToRef(angle, result);
-		
+		var result = new Matrix();		
+		Matrix.RotationYToRef(angle, result);		
 		return result;
 	}
 
+	/**
+	 * Sets the passed matrix "result" as a rotation matrix for "angle" radians around the Y axis. 
+	 */
 	inline public static function RotationYToRef(angle:Float, result:Matrix) {
 		var s = Math.sin(angle);
 		var c = Math.cos(angle);
@@ -567,16 +776,22 @@ import haxe.ds.Vector;
 		result.m[12] = 0;
 		result.m[13] = 0;
 		result.m[14] = 0;
+		
+		result._markAsUpdated();
 	}
 
+	/**
+	 * Returns a new rotation matrix for "angle" radians around the Z axis.  
+	 */
 	inline public static function RotationZ(angle:Float):Matrix {
-		var result = new Matrix();
-		
-		Matrix.RotationZToRef(angle, result);
-		
+		var result = new Matrix();		
+		Matrix.RotationZToRef(angle, result);		
 		return result;
 	}
 
+	/**
+	 * Sets the passed matrix "result" as a rotation matrix for "angle" radians around the Z axis. 
+	 */
 	inline public static function RotationZToRef(angle:Float, result:Matrix) {
 		var s = Math.sin(angle);
 		var c = Math.cos(angle);
@@ -599,8 +814,13 @@ import haxe.ds.Vector;
 		result.m[12] = 0;
 		result.m[13] = 0;
 		result.m[14] = 0;
+		
+		result._markAsUpdated();
 	}
 
+	/**
+	 * Returns a new rotation matrix for "angle" radians around the passed axis.  
+	 */
 	inline public static function RotationAxis(axis:Vector3, angle:Float):Matrix {
 		var result = Matrix.Zero();
 		
@@ -609,6 +829,9 @@ import haxe.ds.Vector;
 		return result;
 	}
 	
+	/**
+	 * Sets the passed matrix "result" as a rotation matrix for "angle" radians around the passed axis. 
+	 */
 	public static function RotationAxisToRef(axis:Vector3, angle:Float, result:Matrix) {
 		var s = Math.sin(-angle);
 		var c = Math.cos(-angle);
@@ -632,29 +855,39 @@ import haxe.ds.Vector;
 		result.m[11] = 0.0;
 		
 		result.m[15] = 1.0;
+		
+		result._markAsUpdated();
 	}
 
+	/**
+	 * Returns a new Matrix as a rotation matrix from the Euler angles (y, x, z). 
+	 */
 	inline public static function RotationYawPitchRoll(yaw:Float, pitch:Float, roll:Float):Matrix {
-		var result = new Matrix();
-		
-		Matrix.RotationYawPitchRollToRef(yaw, pitch, roll, result);
-		
+		var result = new Matrix();		
+		Matrix.RotationYawPitchRollToRef(yaw, pitch, roll, result);		
 		return result;
 	}
 
+	/**
+	 * Sets the passed matrix "result" as a rotation matrix from the Euler angles (y, x, z). 
+	 */
 	inline public static function RotationYawPitchRollToRef(yaw:Float, pitch:Float, roll:Float, result:Matrix) {
 		Quaternion.RotationYawPitchRollToRef(yaw, pitch, roll, Matrix._tempQuaternion);
 		Matrix._tempQuaternion.toRotationMatrix(result);
 	}
 
+	/**
+	 * Returns a new Matrix as a scaling matrix from the passed floats (x, y, z). 
+	 */
 	inline public static function Scaling(x:Float, y:Float, z:Float):Matrix {
-		var result = Matrix.Zero();
-		
-		Matrix.ScalingToRef(x, y, z, result);
-		
+		var result = Matrix.Zero();		
+		Matrix.ScalingToRef(x, y, z, result);		
 		return result;
 	}
 
+	/**
+	 * Sets the passed matrix "result" as a scaling matrix from the passed floats (x, y, z). 
+	 */
 	inline public static function ScalingToRef(x:Float, y:Float, z:Float, result:Matrix) {
 		result.m[0] = x;
 		result.m[1] = 0;
@@ -672,16 +905,22 @@ import haxe.ds.Vector;
 		result.m[13] = 0;
 		result.m[14] = 0;
 		result.m[15] = 1.0;
+		
+		result._markAsUpdated();
 	}
 
+	/**
+	 * Returns a new Matrix as a translation matrix from the passed floats (x, y, z). 
+	 */
 	inline public static function Translation(x:Float, y:Float, z:Float):Matrix {
-		var result = Matrix.Identity();
-		
-		Matrix.TranslationToRef(x, y, z, result);
-		
+		var result = Matrix.Identity();		
+		Matrix.TranslationToRef(x, y, z, result);		
 		return result;
 	}
 
+	/**
+	 * Sets the passed matrix "result" as a translation matrix from the passed floats (x, y, z). 
+	 */
 	inline public static function TranslationToRef(x:Float, y:Float, z:Float, result:Matrix) {
 		Matrix.FromValuesToRef(
 			1.0, 0, 0, 0,
@@ -690,56 +929,25 @@ import haxe.ds.Vector;
 			x, y, z, 1.0, result);
 	}
 	
-	inline public static function Lerp(startValue:Matrix, endValue:Matrix, gradient:Float):Matrix {
+	/**
+	 * Returns a new Matrix whose values are the interpolated values for "gradien" (float) between the ones of the matrices "startValue" and "endValue".
+	 */
+	public static function Lerp(startValue:Matrix, endValue:Matrix, gradient:Float):Matrix {
 		var result = Matrix.Zero();
 		
 		for (index in 0...16) {
 			result.m[index] = startValue.m[index] * (1.0 - gradient) + endValue.m[index] * gradient;
 		}
-		
+		result._markAsUpdated();
 		return result;
 	}
 	
-	public static function LerpToRef(startValue:Matrix, endValue:Matrix, gradient:Float, result:Matrix) {            
-		var startm = startValue.m;
-		var endm = endValue.m;
-		var resultm = result.m;
-		
-		var m0 = startm[0] * (1.0 - gradient) + endm[0] * gradient;
-		var m1 = startm[1] * (1.0 - gradient) + endm[1] * gradient;
-		var m2 = startm[2] * (1.0 - gradient) + endm[2] * gradient;
-		var m3 = startm[3] * (1.0 - gradient) + endm[3] * gradient;
-		var m4 = startm[4] * (1.0 - gradient) + endm[4] * gradient;
-		var m5 = startm[5] * (1.0 - gradient) + endm[5] * gradient;
-		var m6 = startm[6] * (1.0 - gradient) + endm[6] * gradient;
-		var m7 = startm[7] * (1.0 - gradient) + endm[7] * gradient;
-		var m8 = startm[8] * (1.0 - gradient) + endm[8] * gradient;
-		var m9 = startm[9] * (1.0 - gradient) + endm[9] * gradient;
-		var m10 = startm[10] * (1.0 - gradient) + endm[10] * gradient;
-		var m11 = startm[11] * (1.0 - gradient) + endm[11] * gradient;
-		var m12 = startm[12] * (1.0 - gradient) + endm[12] * gradient;
-		var m13 = startm[13] * (1.0 - gradient) + endm[13] * gradient;
-		var m14 = startm[14] * (1.0 - gradient) + endm[14] * gradient;
-		var m15 = startm[15] * (1.0 - gradient) + endm[15] * gradient;
-		
-		resultm[0] = m0;
-		resultm[1] = m1;
-		resultm[2] = m2;
-		resultm[3] = m3;
-		resultm[4] = m4;
-		resultm[5] = m5;
-		resultm[6] = m6;
-		resultm[7] = m7;
-		resultm[8] = m8;
-		resultm[9] = m9;
-		resultm[10] = m10;
-		resultm[11] = m11;
-		resultm[12] = m12;
-		resultm[13] = m13;
-		resultm[14] = m14;
-		resultm[15] = m15;		
-	}
-
+	/**
+	 * Returns a new Matrix whose values are computed by : 
+	 * - decomposing the the "startValue" and "endValue" matrices into their respective scale, rotation and translation matrices,
+	 * - interpolating for "gradient" (float) the values between each of these decomposed matrices between the start and the end,
+	 * - recomposing a new matrix from these 3 interpolated scale, rotation and translation matrices.  
+	 */
 	public static function DecomposeLerp(startValue:Matrix, endValue:Matrix, gradient:Float):Matrix {
 		var startScale = new Vector3(0, 0, 0);
 		var startRotation = new Quaternion();
@@ -758,16 +966,22 @@ import haxe.ds.Vector;
 		return Matrix.Compose(resultScale, resultRotation, resultTranslation);
 	} 
 
+	/**
+	 * Returns a new rotation Matrix used to rotate a mesh so as it looks at the target Vector3
+	 * from the eye Vector3, the UP vector3 being orientated like "up".  
+	 * This methods works for a Left-Handed system.  
+	 */
 	inline public static function LookAtLH(eye:Vector3, target:Vector3, up:Vector3):Matrix {
 		var result = Matrix.Zero();
-		Matrix.LookAtLHToRef(eye, target, up, result);
-		
+		Matrix.LookAtLHToRef(eye, target, up, result);		
 		return result;
 	}
 
-	static var ex:Float;
-	static var ey:Float;
-	static var ez:Float;
+	/**
+	 * Sets the passed "result" Matrix as a rotation matrix used to rotate a mesh so as it looks at the target Vector3 
+	 * from the eye Vector3, the UP vector3 being orientated like "up".  
+	 * This methods works for a Left-Handed system.  
+	 */
 	public static function LookAtLHToRef(eye:Vector3, target:Vector3, up:Vector3, result:Matrix) {
 		// Z axis
 		target.subtractToRef(eye, Matrix._zAxis);
@@ -788,9 +1002,9 @@ import haxe.ds.Vector;
 		Matrix._yAxis.normalize();
 		
 		// Eye angles
-		ex = -Vector3.Dot(Matrix._xAxis, eye);
-		ey = -Vector3.Dot(Matrix._yAxis, eye);
-		ez = -Vector3.Dot(Matrix._zAxis, eye);
+		var ex = -Vector3.Dot(Matrix._xAxis, eye);
+		var ey = -Vector3.Dot(Matrix._yAxis, eye);
+		var ez = -Vector3.Dot(Matrix._zAxis, eye);
 		
 		return Matrix.FromValuesToRef(Matrix._xAxis.x, Matrix._yAxis.x, Matrix._zAxis.x, 0,
 			Matrix._xAxis.y, Matrix._yAxis.y, Matrix._zAxis.y, 0,
@@ -798,14 +1012,22 @@ import haxe.ds.Vector;
 			ex, ey, ez, 1, result);
 	}
 	
+	/**
+	 * Returns a new rotation Matrix used to rotate a mesh so as it looks at the target Vector3
+	 * from the eye Vector3, the UP vector3 being orientated like "up".  
+	 * This methods works for a Right-Handed system.  
+	 */
 	public static function LookAtRH(eye:Vector3, target:Vector3, up:Vector3):Matrix {
-		var result = Matrix.Zero();
-		
-		Matrix.LookAtRHToRef(eye, target, up, result);
-		
+		var result = Matrix.Zero();		
+		Matrix.LookAtRHToRef(eye, target, up, result);		
 		return result;
 	}
 
+	/**
+	 * Sets the passed "result" Matrix as a rotation matrix used to rotate a mesh so as it looks at the target Vector3
+	 * from the eye Vector3, the UP vector3 being orientated like "up".  
+	 * This methods works for a Left-Handed system.  
+	 */
 	public static function LookAtRHToRef(eye:Vector3, target:Vector3, up:Vector3, result:Matrix) {
 		// Z axis
 		eye.subtractToRef(target, Matrix._zAxis);
@@ -836,14 +1058,20 @@ import haxe.ds.Vector;
 			ex, ey, ez, 1, result);
 	}
 
+	/**
+	 * Returns a new Matrix as a left-handed orthographic projection matrix computed from the passed floats: 
+	 * width and height of the projection plane, z near and far limits.  
+	 */
 	inline public static function OrthoLH(width:Float, height:Float, znear:Float, zfar:Float):Matrix {
-		var matrix = Matrix.Zero();
-		
-		Matrix.OrthoLHToRef(width, height, znear, zfar, matrix);
-		
+		var matrix = Matrix.Zero();		
+		Matrix.OrthoLHToRef(width, height, znear, zfar, matrix);		
 		return matrix;
 	}
 	
+	/**
+	 * Sets the passed matrix "result" as a left-handed orthographic projection matrix computed from the passed floats: 
+	 * width and height of the projection plane, z near and far limits.  
+	 */
 	public static function OrthoLHToRef(width:Float, height:Float, znear:Float, zfar:Float, result:Matrix) {
 		var n = znear;
 		var f = zfar;
@@ -862,14 +1090,20 @@ import haxe.ds.Vector;
 		);
 	}
 
+	/**
+	 * Returns a new Matrix as a left-handed orthographic projection matrix computed from the passed floats: 
+	 * left, right, top and bottom being the coordinates of the projection plane, z near and far limits.  
+	 */
 	inline public static function OrthoOffCenterLH(left:Float, right:Float, bottom:Float, top:Float, znear:Float, zfar:Float):Matrix {
-		var matrix = Matrix.Zero();
-		
-		Matrix.OrthoOffCenterLHToRef(left, right, bottom, top, znear, zfar, matrix);
-		
+		var matrix = Matrix.Zero();		
+		Matrix.OrthoOffCenterLHToRef(left, right, bottom, top, znear, zfar, matrix);		
 		return matrix;
 	}
 
+	/**
+	 * Sets the passed matrix "result" as a left-handed orthographic projection matrix computed from the passed floats: 
+	 * left, right, top and bottom being the coordinates of the projection plane, z near and far limits.  
+	 */
 	public static function OrthoOffCenterLHToRef(left:Float, right:Float, bottom:Float, top:Float, znear:Float, zfar:Float, result:Matrix) {
 		var n = znear;
 		var f = zfar;
@@ -890,19 +1124,29 @@ import haxe.ds.Vector;
 		);
 	}
 	
+	/**
+	 * Returns a new Matrix as a right-handed orthographic projection matrix computed from the passed floats: 
+	 * left, right, top and bottom being the coordinates of the projection plane, z near and far limits.  
+	 */
 	public static function OrthoOffCenterRH(left:Float, right:Float, bottom:Float, top:Float, znear:Float, zfar:Float):Matrix {
-		var matrix = Matrix.Zero();
-		
-		Matrix.OrthoOffCenterRHToRef(left, right, bottom, top, znear, zfar, matrix);
-		
+		var matrix = Matrix.Zero();		
+		Matrix.OrthoOffCenterRHToRef(left, right, bottom, top, znear, zfar, matrix);		
 		return matrix;
 	}
 
+	/**
+	 * Sets the passed matrix "result" as a right-handed orthographic projection matrix computed from the passed floats: 
+	 * left, right, top and bottom being the coordinates of the projection plane, z near and far limits.  
+	 */
 	public static function OrthoOffCenterRHToRef(left:Float, right:Float, bottom:Float, top:Float, znear:Float, zfar:Float, result:Matrix) {
 		Matrix.OrthoOffCenterLHToRef(left, right, bottom, top, znear, zfar, result);
 		result.m[10] *= -1.0;
 	}
 
+	/**
+	 * Returns a new Matrix as a left-handed perspective projection matrix computed from the passed floats: 
+	 * width and height of the projection plane, z near and far limits.  
+	 */
 	inline public static function PerspectiveLH(width:Float, height:Float, znear:Float, zfar:Float):Matrix {
 		var matrix = Matrix.Zero();
 		
@@ -925,14 +1169,20 @@ import haxe.ds.Vector;
 		return matrix;
 	}
 
+	/**
+	 * Returns a new Matrix as a left-handed perspective projection matrix computed from the passed floats: 
+	 * vertical angle of view (fov), width/height ratio (aspect), z near and far limits.  
+	 */
 	inline public static function PerspectiveFovLH(fov:Float, aspect:Float, znear:Float, zfar:Float):Matrix {
-		var matrix = Matrix.Zero();
-		
-		Matrix.PerspectiveFovLHToRef(fov, aspect, znear, zfar, matrix);
-		
+		var matrix = Matrix.Zero();		
+		Matrix.PerspectiveFovLHToRef(fov, aspect, znear, zfar, matrix);		
 		return matrix;
 	}
 
+	/**
+	 * Sets the passed matrix "result" as a left-handed perspective projection matrix computed from the passed floats: 
+	 * vertical angle of view (fov), width/height ratio (aspect), z near and far limits.  
+	 */
 	public static function PerspectiveFovLHToRef(fov:Float, aspect:Float, znear:Float, zfar:Float, result:Matrix, isVerticalFovFixed:Bool = true) {
 		var n = znear;
 		var f = zfar;
@@ -952,14 +1202,20 @@ import haxe.ds.Vector;
 		);
 	}
 	
+	/**
+	 * Returns a new Matrix as a right-handed perspective projection matrix computed from the passed floats: 
+	 * vertical angle of view (fov), width/height ratio (aspect), z near and far limits.  
+	 */
 	public static function PerspectiveFovRH(fov:Float, aspect:Float, znear:Float, zfar:Float):Matrix {
-		var matrix = Matrix.Zero();
-		
-		Matrix.PerspectiveFovRHToRef(fov, aspect, znear, zfar, matrix);
-		
+		var matrix = Matrix.Zero();		
+		Matrix.PerspectiveFovRHToRef(fov, aspect, znear, zfar, matrix);		
 		return matrix;
 	}
 
+	/**
+	 * Sets the passed matrix "result" as a right-handed perspective projection matrix computed from the passed floats: 
+	 * vertical angle of view (fov), width/height ratio (aspect), z near and far limits.  
+	 */
 	public static function PerspectiveFovRHToRef(fov:Float, aspect:Float, znear:Float, zfar:Float, result:Matrix, isVerticalFovFixed:Bool = true) {
 		//alternatively this could be expressed as:
 		//    m = PerspectiveFovLHToRef
@@ -984,6 +1240,10 @@ import haxe.ds.Vector;
 		);
 	}
 
+	/**
+	 * Sets the passed matrix "result" as a left-handed perspective projection matrix  for WebVR computed from the passed floats: 
+	 * vertical angle of view (fov), width/height ratio (aspect), z near and far limits.  
+	 */
 	public static function PerspectiveFovWebVRToRef(fov:Dynamic, znear:Float, zfar:Float, result:Matrix, isVerticalFovFixed:Bool = true) {
 		// left handed
 		var upTan = Math.tan(fov.upDegrees * Math.PI / 180.0);
@@ -1010,8 +1270,13 @@ import haxe.ds.Vector;
 		result.m[15] = 0;
 		result.m[14] = -(2.0 * zfar * znear) / (zfar - znear);
 		//result.m[14] = (znear * zfar) / (znear - zfar);
+		
+		result._markAsUpdated();
 	}
 
+	/**
+	 * Returns the final transformation matrix : world * view * projection * viewport
+	 */
 	inline public static function GetFinalMatrix(viewport:Viewport, world:Matrix, view:Matrix, projection:Matrix, zmin:Float, zmax:Float):Matrix {
 		var cw = viewport.width;
 		var ch = viewport.height;
@@ -1026,6 +1291,9 @@ import haxe.ds.Vector;
 		return world.multiply(view).multiply(projection).multiply(viewportMatrix);
 	}
 	
+	/**
+	 * Returns a new Float32Array array with 4 elements : the 2x2 matrix extracted from the passed Matrix.  
+	 */
 	inline public static function GetAsMatrix2x2(matrix:Matrix):Float32Array {
 		return new Float32Array([
 			matrix.m[0], matrix.m[1],
@@ -1033,6 +1301,9 @@ import haxe.ds.Vector;
 		]);
 	}
 
+	/**
+	 * Returns a new Float32Array array with 9 elements : the 3x3 matrix extracted from the passed Matrix.  
+	 */
 	inline public static function GetAsMatrix3x3(matrix:Matrix):Float32Array {
 		return new Float32Array([
 			matrix.m[0], matrix.m[1], matrix.m[2],
@@ -1041,6 +1312,10 @@ import haxe.ds.Vector;
 		]);
 	}
 
+	/**
+	 * Compute the transpose of the passed Matrix.  
+	 * Returns a new Matrix.  
+	 */
 	inline public static function Transpose(matrix:Matrix):Matrix {
 		var result = new Matrix();
 		
@@ -1067,14 +1342,18 @@ import haxe.ds.Vector;
 		return result;
 	}
 
+	/**
+	 * Returns a new Matrix as the reflection  matrix across the passed plane.  
+	 */
 	inline public static function Reflection(plane:Plane):Matrix {
-		var matrix = new Matrix();
-		
-		Matrix.ReflectionToRef(plane, matrix);
-		
+		var matrix = new Matrix();		
+		Matrix.ReflectionToRef(plane, matrix);		
 		return matrix;
 	}
 
+	/**
+	 * Sets the passed matrix "result" as the reflection matrix across the passed plane. 
+	 */
 	public static function ReflectionToRef(plane:Plane, result:Matrix) {
 		plane.normalize();
 		var x = plane.normal.x;
@@ -1099,8 +1378,13 @@ import haxe.ds.Vector;
 		result.m[13] = temp2 * plane.d;
 		result.m[14] = temp3 * plane.d;
 		result.m[15] = 1.0;
+		
+		result._markAsUpdated();
 	}
 	
+	/**
+	 * Sets the passed matrix "mat" as a rotation matrix composed from the 3 passed  left handed axis.  
+	 */
 	public static function FromXYZAxesToRef(xaxis:Vector3, yaxis:Vector3, zaxis:Vector3, mat:Matrix) {		
 		mat.m[0] = xaxis.x;
 		mat.m[1] = xaxis.y;
@@ -1125,8 +1409,13 @@ import haxe.ds.Vector;
 		mat.m[14] = 0;
 		
 		mat.m[15] = 1;
+		
+		mat._markAsUpdated();
 	}
 	
+	/**
+	 * Sets the passed matrix "result" as a rotation matrix according to the passed quaternion.  
+	 */
 	public static function FromQuaternionToRef(quat:Quaternion, result:Matrix) {
 		var xx = quat.x * quat.x;
 		var yy = quat.y * quat.y;
@@ -1156,6 +1445,8 @@ import haxe.ds.Vector;
 		result.m[14] = 0;
 		
 		result.m[15] = 1.0;
+		
+		result._markAsUpdated();
 	}
 	
 }

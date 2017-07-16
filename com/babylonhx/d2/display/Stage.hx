@@ -7,22 +7,23 @@ import com.babylonhx.d2.events.EventDispatcher;
 import com.babylonhx.d2.events.MouseEvent;
 import com.babylonhx.d2.geom.Point;
 
-import com.babylonhx.utils.GL;
-import com.babylonhx.utils.GL.GLBuffer;
-import com.babylonhx.utils.GL.GLFramebuffer;
-import com.babylonhx.utils.GL.GLProgram;
-import com.babylonhx.utils.GL.GLShader;
-import com.babylonhx.utils.GL.GLTexture;
-import com.babylonhx.utils.GL.GLUniformLocation;
-import com.babylonhx.utils.typedarray.Float32Array;
-import com.babylonhx.utils.typedarray.UInt16Array;
-import com.babylonhx.utils.Image;
 
+import com.babylonhx.utils.Image;
 import com.babylonhx.cameras.FreeCamera;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.mesh.Mesh;
+
+import lime.graphics.opengl.GL;
+import lime.graphics.opengl.GLBuffer;
+import lime.graphics.opengl.GLFramebuffer;
+import lime.graphics.opengl.GLProgram;
+import lime.graphics.opengl.GLShader;
+import lime.graphics.opengl.GLTexture;
+import lime.graphics.opengl.GLUniformLocation;
+import lime.utils.Float32Array;
+import lime.utils.UInt16Array;
 
 /**
  * ...
@@ -133,13 +134,13 @@ class Stage extends DisplayObjectContainer {
         #if (js || purejs)
         Gl = @:privateAccess _engine.Gl;
         #end
-
+		
 		engine.onResize.push(function() {
 			this.stageWidth = engine.width;
 			this.stageHeight = engine.height;
 			this._resize();
 		});
-		engine.onAfterRender.push(this._drawScene);
+		scene.registerAfterRender(this._drawScene);
 		
 		this._dpr = dpr;
 		
@@ -451,7 +452,7 @@ class Stage extends DisplayObjectContainer {
         this._unitIBuffer = Gl.createBuffer();
 		
 		_setEBF(this._unitIBuffer);
-        Gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, new UInt16Array([0, 1, 2, 1, 2, 3]), GL.STATIC_DRAW);
+        Gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, #if cpp 6, #end new UInt16Array([0, 1, 2, 1, 2, 3]), GL.STATIC_DRAW);
     }
 	
 	public function _setFramebuffer(fbo:GLFramebuffer, w:Int, h:Int, flip:Bool) {
@@ -531,7 +532,7 @@ class Stage extends DisplayObjectContainer {
 		}
 	}
 
-    private function _drawScene() {	
+    private function _drawScene(_, _) {	
 		//_backupGLState();
 		
         Gl.enable(GL.BLEND);

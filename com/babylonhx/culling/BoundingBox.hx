@@ -6,6 +6,7 @@ import com.babylonhx.math.Plane;
 import com.babylonhx.math.Tools;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Tmp;
+
 import haxe.ds.Vector;
 
 /**
@@ -13,23 +14,24 @@ import haxe.ds.Vector;
 * @author Krtolica Vujadin
 */
 
-@:expose('BABYLON.BoundingBox') class BoundingBox implements ISmartArrayCompatible {
+@:expose('BABYLON.BoundingBox') class BoundingBox implements ISmartArrayCompatible implements ICullable {
 	
-	public var minimum:Vector3;
-    public var maximum:Vector3;
-	public var vectors:Vector<Vector3> = new Vector<Vector3>(8);
-	
+	public var vectors:Vector<Vector3> = new Vector<Vector3>(8);	
 	public var center:Vector3;
+	public var centerWorld:Vector3;
 	public var extendSize:Vector3;
+	public var extendSizeWorld:Vector3;
 	public var directions:Vector<Vector3> = new Vector<Vector3>(3);
-	public var vectorsWorld:Vector<Vector3> = new Vector<Vector3>(8);
-	
+	public var vectorsWorld:Vector<Vector3> = new Vector<Vector3>(8);	
 	public var minimumWorld:Vector3;
 	public var maximumWorld:Vector3;
+	
+	public var minimum:Vector3;
+	public var maximum:Vector3;
 
 	private var _worldMatrix:Matrix;
 	
-	public var __smartArrayFlags:Array<Int> = [];
+	public var __smartArrayFlags:Array<Int> = [];	// BHX
 	
 
 	public function new(minimum:Vector3, maximum:Vector3) {
@@ -69,6 +71,8 @@ import haxe.ds.Vector;
 		}
 		this.minimumWorld = Vector3.Zero();
 		this.maximumWorld = Vector3.Zero();
+		this.centerWorld = Vector3.Zero();
+		this.extendSizeWorld = Vector3.Zero();
 		
 		this._update(Matrix.Identity());
 	}
@@ -89,36 +93,32 @@ import haxe.ds.Vector;
 		Vector3.FromFloatsToRef(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, this.minimumWorld);
 		Vector3.FromFloatsToRef(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, this.maximumWorld);
 		
-		var vx:Float = 0;
-		var vy:Float = 0;
-		var vz:Float = 0;
-		
 		for (index in 0...this.vectors.length) {
-			v_update = this.vectorsWorld[index];
-			Vector3.TransformCoordinatesToRef(this.vectors[index], world, v_update);
+			var v = this.vectorsWorld[index];
+			Vector3.TransformCoordinatesToRef(this.vectors[index], world, v);
 			
-			vx = v_update.x;
-			vy = v_update.y;
-			vz = v_update.z;
-			
-			if (vx < this.minimumWorld.x)
-				this.minimumWorld.x = vx;
-			if (vy < this.minimumWorld.y)
-				this.minimumWorld.y = vy;
-			if (vz < this.minimumWorld.z)
-				this.minimumWorld.z = vz;
+			if (v.x < this.minimumWorld.x)
+				this.minimumWorld.x = v.x;
+			if (v.y < this.minimumWorld.y)
+				this.minimumWorld.y = v.y;
+			if (v.z < this.minimumWorld.z)
+				this.minimumWorld.z = v.z;
 				
-			if (vx > this.maximumWorld.x)
-				this.maximumWorld.x = vx;
-			if (vy > this.maximumWorld.y)
-				this.maximumWorld.y = vy;
-			if (vz > this.maximumWorld.z)
-				this.maximumWorld.z = vz;
+			if (v.x > this.maximumWorld.x)
+				this.maximumWorld.x = v.x;
+			if (v.y > this.maximumWorld.y)
+				this.maximumWorld.y = v.y;
+			if (v.z > this.maximumWorld.z)
+				this.maximumWorld.z = v.z;
 		}
 		
+		// Extend
+		this.maximumWorld.subtractToRef(this.minimumWorld, this.extendSizeWorld);
+		this.extendSizeWorld.scaleInPlace(0.5);
+		
 		// OBB
-		this.maximumWorld.addToRef(this.minimumWorld, this.center);
-		this.center.scaleInPlace(0.5);
+		this.maximumWorld.addToRef(this.minimumWorld, this.centerWorld);
+		this.centerWorld.scaleInPlace(0.5);
 		
 		Vector3.FromFloatArrayToRef(world.m, 0, this.directions[0]);
 		Vector3.FromFloatArrayToRef(world.m, 4, this.directions[1]);
@@ -127,11 +127,11 @@ import haxe.ds.Vector;
 		this._worldMatrix = world;
 	}
 
-	inline public function isInFrustum(frustumPlanes:Array<Plane>):Bool {
+	public function isInFrustum(frustumPlanes:Array<Plane>):Bool {
 		return BoundingBox.IsInFrustum(this.vectorsWorld, frustumPlanes);
 	}
 
-	inline public function isCompletelyInFrustum(frustumPlanes:Array<Plane>):Bool {
+	public function isCompletelyInFrustum(frustumPlanes:Array<Plane>):Bool {
 		return BoundingBox.IsCompletelyInFrustum(this.vectorsWorld, frustumPlanes);
 	}
 
@@ -166,6 +166,25 @@ import haxe.ds.Vector;
 			
 		return true;
 	}
+	
+	public function dispose(_:Bool = false) {
+		vectors = null;
+		center = null;
+		centerWorld = null;
+		extendSize = null;
+		extendSizeWorld = null;
+		directions = null;
+		vectorsWorld = null;
+		minimumWorld = null;
+		maximumWorld = null;
+		
+		minimum = null;
+		maximum = null;
+		
+		_worldMatrix = null;
+		
+		__smartArrayFlags = null;
+	}
 
 	// Statics
 	public static function Intersects(box0:BoundingBox, box1:BoundingBox):Bool {
@@ -182,10 +201,8 @@ import haxe.ds.Vector;
 	}
 
 	inline public static function IntersectsSphere(minPoint:Vector3, maxPoint:Vector3, sphereCenter:Vector3, sphereRadius:Float):Bool {
-		Tmp.vector3[0] = Vector3.Clamp(sphereCenter, minPoint, maxPoint);
-		
-		var num = Vector3.DistanceSquared(sphereCenter, Tmp.vector3[0]);
-		
+		Tmp.vector3[0] = Vector3.Clamp(sphereCenter, minPoint, maxPoint);		
+		var num = Vector3.DistanceSquared(sphereCenter, Tmp.vector3[0]);		
 		return (num <= (sphereRadius * sphereRadius));
 	}
 

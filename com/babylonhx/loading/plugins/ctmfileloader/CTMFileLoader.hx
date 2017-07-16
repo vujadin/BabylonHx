@@ -62,7 +62,7 @@ class CTMFileLoader {
 		offsets.push({ start: start, count: i - start, index: minPrev });
 		
 		var vertexData:VertexData = new VertexData();
-			
+		
 		var vertices:Array<Float> = [];
 		for (i in 0...file.body.vertices.length) {
 			vertices.push(file.body.vertices[i]);
@@ -99,6 +99,7 @@ class CTMFileLoader {
 		var meshes:Array<Mesh> = [];
 		for (i in 0...offsets.length) {				
 			var indicesFinal = indices.slice(Std.int(offsets[i].start * 2), offsets[i].count);
+			indicesFinal.reverse();
 			VertexData.ComputeNormals(vertices, indicesFinal, normals);
 			
 			vertexData.positions = vertices;
@@ -108,7 +109,8 @@ class CTMFileLoader {
 			
 			var mesh = new Mesh("ctm", scene);
 			vertexData.applyToMesh(mesh);
-			mesh.flipFaces(true);
+			mesh.scaling.z *= -1;
+			mesh.bakeCurrentTransformIntoVertices();
 			
 			meshes.push(mesh);
 		}

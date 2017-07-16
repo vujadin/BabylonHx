@@ -22,30 +22,35 @@ import com.babylonhx.culling.Ray;
 	public var color:Color3 = new Color3(1, 1, 1);
 	public var alpha:Float = 1;
 	
-	private var _positionBuffer:Map<String, VertexBuffer> = new Map();
+	public var useVertexColor:Bool = false;
 
-	public var intersectionThreshold(get, set):Float;
 	private var _intersectionThreshold:Float;
 	private var _colorShader:ShaderMaterial;
 	
 
-	public function new(name:String, scene:Scene, parent:Node = null, ?source:LinesMesh, doNotCloneChildren:Bool = false) {
+	public function new(name:String, scene:Scene, parent:Node = null, ?source:LinesMesh, doNotCloneChildren:Bool = false, useVertexColor:Bool = false) {
 		super(name, scene, parent, source, doNotCloneChildren);
 		
 		if (source != null) {
             this.color = source.color.clone();
             this.alpha = source.alpha;
+			this.useVertexColor = source.useVertexColor;
         }
 		
 		this._intersectionThreshold = 0.1;
-		this._colorShader = new ShaderMaterial("colorShader", scene, "color",
-			{
-				attributes: ["position"],
-				uniforms: ["worldViewProjection", "color"],
-				needAlphaBlending: true
-			});
-			
-		this._positionBuffer[VertexBuffer.PositionKind] = null;
+		
+		var options = {
+			attributes: [VertexBuffer.PositionKind],
+			uniforms: ["world", "viewProjection"],
+			needAlphaBlending: false,
+		};
+		
+		if (!useVertexColor) {
+			options.uniforms.push("color");
+			options.needAlphaBlending = true;
+		}
+		
+		this._colorShader = new ShaderMaterial("colorShader", scene, "color", options);
 	}
 	
 	/**
@@ -54,10 +59,10 @@ import com.babylonhx.culling.Ray;
 	 * Default value is 0.1
 	 * @returns the intersection Threshold value.
 	 */
+	public var intersectionThreshold(get, set):Float;
 	private function get_intersectionThreshold():Float {
 		return this._intersectionThreshold;
 	}
-
 	/**
 	 * The intersection Threshold is the margin applied when intersection a segment of the LinesMesh with a Ray.
 	 * This margin is expressed in world space coordinates, so its value may vary.
@@ -75,6 +80,10 @@ import com.babylonhx.culling.Ray;
 		
 		return value;
 	}
+	
+	override public function getClassName():String {
+		return "LinesMesh";
+	}
 
 	override private function get_material():Material {
 		return this._colorShader;
@@ -85,24 +94,21 @@ import com.babylonhx.culling.Ray;
 	}
 	
 	override public function createInstance(name:String):InstancedMesh {
-		trace("LinesMeshes do not support createInstance.");
-		
+		trace("LinesMeshes do not support createInstance.");		
 		return null;
 	}
 
 	override public function _bind(subMesh:SubMesh, effect:Effect, fillMode:Int) {
-		var engine = this.getScene().getEngine();
-		
-		this._positionBuffer[VertexBuffer.PositionKind] = this._geometry.getVertexBuffer(VertexBuffer.PositionKind);
-		
 		// VBOs
-		engine.bindBuffers(this._positionBuffer, this._geometry.getIndexBuffer(), this._colorShader.getEffect());
+		this._geometry._bind(this._colorShader.getEffect() );
 		
 		// Color
-		this._colorShader.setColor4("color", this.color.toColor4(this.alpha));
+		if (!this.useVertexColor) {
+			this._colorShader.setColor4("color", this.color.toColor4(this.alpha));
+		}
 	}
 
-	override public function _draw(subMesh:SubMesh, fillMode:Int, ?instancesCount:Int) {
+	override public function _draw(subMesh:SubMesh, fillMode:Int, instancesCount:Int = 0) {
 		if (this._geometry == null || this._geometry.getVertexBuffers() == null || this._geometry.getIndexBuffer() == null) {
 			return;
 		}
@@ -119,7 +125,7 @@ import com.babylonhx.culling.Ray;
 		super.dispose(doNotRecurse);
 	}
 	
-	override public function clone(name:String, ?newParent:Node, doNotCloneChildren:Bool = false):LinesMesh {
+	override public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false, clonePhysicsImpostor:Bool = true):LinesMesh {
 		return new LinesMesh(name, this.getScene(), newParent, this, doNotCloneChildren);
 	}
 	

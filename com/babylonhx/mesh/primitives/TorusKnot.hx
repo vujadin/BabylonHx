@@ -28,7 +28,7 @@ import com.babylonhx.tools.Tags;
 		this.p = p;
 		this.q = q;
 		
-		super(id, scene, this._regenerateVertexData(), canBeRegenerated, mesh);
+		super(id, scene, canBeRegenerated, mesh);
 	}
 
 	override public function _regenerateVertexData():VertexData {
@@ -39,8 +39,21 @@ import com.babylonhx.tools.Tags;
 		return new TorusKnot(id, this.getScene(), this.radius, this.tube, this.radialSegments, this.tubularSegments, this.p, this.q, this.canBeRegenerated(), null, this.side);
 	}
 	
+	override public function serialize():Dynamic {
+		var serializationObject = super.serialize();
+		
+		serializationObject.radius = this.radius;
+		serializationObject.tube = this.tube;
+		serializationObject.radialSegments = this.radialSegments;
+		serializationObject.tubularSegments = this.tubularSegments;
+		serializationObject.p = this.p;
+		serializationObject.q = this.q;
+		
+		return serializationObject;
+	}
+	
 	public static function Parse(parsedTorusKnot:Dynamic, scene:Scene):TorusKnot {
-        if (Geometry.Parse(parsedTorusKnot, scene) == null) {
+        if (scene.getGeometryByID(parsedTorusKnot.id) != null) {
             return null; // null since geometry could be something else than a torusKnot...
         }
 		

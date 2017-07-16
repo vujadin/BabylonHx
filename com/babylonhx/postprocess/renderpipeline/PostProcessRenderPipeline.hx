@@ -20,10 +20,9 @@ import com.babylonhx.tools.Tools;
 	private var _renderEffectsForIsolatedPass:Map<String, PostProcessRenderEffect>;
 
 	private var _cameras:Map<String, Camera>;
-	
-	public var isSupported(get, never):Bool;
 
 	// private
+	@serialize()
 	public var _name:String;
 
 	
@@ -37,6 +36,7 @@ import com.babylonhx.tools.Tools;
 		this._cameras = new Map<String, Camera>();
 	}
 	
+	public var isSupported(get, never):Bool;
 	private function get_isSupported():Bool {
 		for (renderEffectName in this._renderEffects.keys()) {
 			if (!this._renderEffects[renderEffectName].isSupported) {
@@ -170,6 +170,11 @@ import com.babylonhx.tools.Tools;
 				this._renderEffectsForIsolatedPass[cameraName]._update();
 			}
 		}
+	}
+	
+	public function _reset() {
+		this._renderEffects = new Map<String, PostProcessRenderEffect>();
+		this._renderEffectsForIsolatedPass = new Map<String, PostProcessRenderEffect>();
 	}
 	
 	public function dispose(disableDepthRender:Bool = false) {

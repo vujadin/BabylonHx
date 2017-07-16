@@ -22,12 +22,12 @@ import com.babylonhx.tools.EventState;
 	public var kernel:Array<Float>;
 	
 	
-	public function new(name:String, kernel:Array<Float>, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
-		super(name, "convolution", ["kernel", "screenSize"], null, ratio, camera, samplingMode, engine, reusable);
+	public function new(name:String, kernel:Array<Float>, options:Dynamic, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
+		super(name, "convolution", ["kernel", "screenSize"], null, options, camera, samplingMode, engine, reusable);
 		
 		this.kernel = kernel;
 		
-		this.onApplyObservable.add(function(effect:Effect, es:EventState = null) {
+		this.onApplyObservable.add(function(effect:Effect, _) {
 			effect.setFloat2("screenSize", this.width, this.height);
 			effect.setArray("kernel", this.kernel);
 		});

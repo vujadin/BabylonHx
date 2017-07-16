@@ -43,7 +43,21 @@ class SphericalPolynomial {
 		result.zx = harmonics.L21.scale(0.858086);
 		result.xy = harmonics.L2_2.scale(0.858086);
 		
+		result.scale(1.0 / Math.PI);
+		
 		return result;
 	}
+	
+	public function scale(scale:Float) {
+        this.x = this.x.scale(scale);
+        this.y = this.y.scale(scale);
+        this.z = this.z.scale(scale);
+        this.xx = this.xx.scale(scale);
+        this.yy = this.yy.scale(scale);
+        this.zz = this.zz.scale(scale);
+        this.yz = this.yz.scale(scale);
+        this.zx = this.zx.scale(scale);
+        this.xy = this.xy.scale(scale);
+    }
 	
 }

@@ -2,7 +2,8 @@ package com.babylonhx.d2.display;
 
 import com.babylonhx.d2.geom.Point;
 
-import com.babylonhx.utils.typedarray.Float32Array;
+import lime.graphics.opengl.GL;
+import lime.utils.Float32Array;
 
 
 /**
@@ -69,8 +70,8 @@ class CMStack {
         var Gl = st.Gl;
 		if (this.dirty) {
 			var s = this.size - 1;
-			Gl.uniformMatrix4fv(st._sprg.cMatUniform, false, this.mats[s]);
-			Gl.uniform4fv      (st._sprg.cVecUniform, this.vecs[s]);
+			Gl.uniformMatrix4fv(st._sprg.cMatUniform, #if cpp this.mats[s].length, #end false, this.mats[s]);
+			Gl.uniform4fv      (st._sprg.cVecUniform, #if cpp this.vecs[s].length, #end this.vecs[s]);
 			this.dirty = false;
 		}
 		
