@@ -8,10 +8,10 @@ package com.babylonhx.actions;
 @:expose('BABYLON.ValueCondition') class ValueCondition extends Condition {
 	
 	// Statics
-	private static var IsEqual:Int = 0;
-	private static var IsDifferent:Int = 1;
-	private static var IsGreater:Int = 2;
-	private static var IsLesser:Int = 3;
+	public static inline var IsEqual:Int = 0;
+	public static inline var IsDifferent:Int = 1;
+	public static inline var IsGreater:Int = 2;
+	public static inline var IsLesser:Int = 3;
 
 	private var _target:Dynamic;
 	private var _property:String;
@@ -36,17 +36,21 @@ package com.babylonhx.actions;
 	override public function isValid():Bool {
 		switch (this.operator) {
 			case ValueCondition.IsGreater:
-				return this._target[this._property] > this.value;
+				return Reflect.getProperty(this._target, this._property) > this.value;
+				
 			case ValueCondition.IsLesser:
-				return this._target[this._property] < this.value;
+				return Reflect.getProperty(this._target, this._property) < this.value;
+				
 			case ValueCondition.IsEqual, ValueCondition.IsDifferent:
 				var check:Bool = false;
 				
-				if (this.value.equals) {
-					check = this.value.equals(this._target[this._property]);
-				} else {
-					check = this.value == this._target[this._property];
+				if (this.value.equals != null) {
+					check = this.value.equals(Reflect.getProperty(this._target, this._property));
+				} 
+				else {
+					check = this.value == Reflect.getProperty(this._target, this._property);
 				}
+				
 				return this.operator == ValueCondition.IsEqual ? check : !check;
 		}
 		

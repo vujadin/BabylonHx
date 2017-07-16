@@ -6,6 +6,6 @@ package com.babylonhx ;
 
 @:expose('BABYLON.IDisposable') interface IDisposable {
 	
-	function dispose(doNotRecurse:Bool = false/*?doNotRecurse:Bool*/):Void;
+	function dispose(doNotRecurse:Bool = false):Void;
 	
 }

@@ -2,6 +2,7 @@ package com.babylonhx.culling;
 
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
+import com.babylonhx.math.Tools;
 import com.babylonhx.math.Vector3;
 
 /**
@@ -21,19 +22,19 @@ import com.babylonhx.math.Vector3;
 
 	public function new(minimum:Vector3, maximum:Vector3) {
 		var distance = Vector3.Distance(minimum, maximum);
-
+		
 		this.center = Vector3.Lerp(minimum, maximum, 0.5);
 		this.radius = distance * 0.5;
-
+		
 		this.centerWorld = Vector3.Zero();
 		this._update(Matrix.Identity());
 	}
 
 	// Methods
-	public function _update(world:Matrix):Void {
+	inline public function _update(world:Matrix):Void {
 		Vector3.TransformCoordinatesToRef(this.center, world, this.centerWorld);
-		Vector3.TransformNormalFromFloatsToRef(1.0, 1.0, 1.0, world, this._tempRadiusVector);
-		this.radiusWorld = Math.max(Math.max(Math.abs(this._tempRadiusVector.x), Math.abs(this._tempRadiusVector.y)), Math.abs(this._tempRadiusVector.z)) * this.radius;
+        Vector3.TransformNormalFromFloatsToRef(1.0, 1.0, 1.0, world, this._tempRadiusVector);
+        this.radiusWorld = Math.max(Math.max(Math.abs(this._tempRadiusVector.x), Math.abs(this._tempRadiusVector.y)), Math.abs(this._tempRadiusVector.z)) * this.radius;
 	}
 
 	public function isInFrustum(frustumPlanes:Array<Plane>):Bool {
@@ -41,7 +42,7 @@ import com.babylonhx.math.Vector3;
 			if (frustumPlanes[i].dotCoordinate(this.centerWorld) <= -this.radiusWorld)
 				return false;
 		}
-
+		
 		return true;
 	}
 
@@ -49,12 +50,13 @@ import com.babylonhx.math.Vector3;
 		var x = this.centerWorld.x - point.x;
 		var y = this.centerWorld.y - point.y;
 		var z = this.centerWorld.z - point.z;
-
+		
 		var distance = Math.sqrt((x * x) + (y * y) + (z * z));
-
-		if (Math.abs(this.radiusWorld - distance) < Engine.Epsilon)
+		
+		if (Math.abs(this.radiusWorld - distance) < Tools.Epsilon) {
 			return false;
-
+		}
+			
 		return true;
 	}
 
@@ -63,12 +65,13 @@ import com.babylonhx.math.Vector3;
 		var x = sphere0.centerWorld.x - sphere1.centerWorld.x;
 		var y = sphere0.centerWorld.y - sphere1.centerWorld.y;
 		var z = sphere0.centerWorld.z - sphere1.centerWorld.z;
-
+		
 		var distance = Math.sqrt((x * x) + (y * y) + (z * z));
-
-		if (sphere0.radiusWorld + sphere1.radiusWorld < distance)
+		
+		if (sphere0.radiusWorld + sphere1.radiusWorld < distance) {
 			return false;
-
+		}
+		
 		return true;
 	}
 

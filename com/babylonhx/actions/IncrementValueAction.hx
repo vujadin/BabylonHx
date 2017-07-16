@@ -16,7 +16,9 @@ package com.babylonhx.actions;
 
 	public function new(triggerOptions:Dynamic, target:Dynamic, propertyPath:String, value:Dynamic, ?condition:Condition) {
 		super(triggerOptions, condition);
+		
 		this._target = target;
+		
 		this.propertyPath = propertyPath;
 		this.value = value;
 	}
@@ -34,7 +36,11 @@ package com.babylonhx.actions;
 
 	override public function execute(?evt:ActionEvent) {
 		var val = Reflect.getProperty(this._target, this._property);
-		Reflect.setField(this._target, this._property, val + this.value);
+		Reflect.setProperty(this._target, this._property, val + this.value);
+		
+		if (this._target.markAsDirty != null) {
+			this._target.markAsDirty(this._property);
+        }
 	}
 	
 }

@@ -1,5 +1,7 @@
 package com.babylonhx.mesh.primitives;
 
+import com.babylonhx.tools.Tags;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -17,16 +19,39 @@ package com.babylonhx.mesh.primitives;
 		this.width = width;
 		this.height = height;
 		this.subdivisions = subdivisions;
-
-		super(id, scene, this._regenerateVertexData(), canBeRegenerated, mesh);
+		
+		super(id, scene, canBeRegenerated, mesh);
 	}
 
 	override public function _regenerateVertexData():VertexData {
-		return VertexData.CreateGround(this.width, this.height, this.subdivisions);
+		return VertexData.CreateGround({ width: this.width, height: this.height, subdivisions: this.subdivisions });
 	}
 
 	override public function copy(id:String):Geometry {
 		return new Ground(id, this.getScene(), this.width, this.height, this.subdivisions, this.canBeRegenerated(), null);
 	}
+	
+	override public function serialize():Dynamic {
+		var serializationObject = super.serialize();
+		
+		serializationObject.width = this.width;
+		serializationObject.height = this.height;
+		serializationObject.subdivisions = this.subdivisions;
+		
+		return serializationObject;
+	}
+	
+	public static function Parse(parsedGround:Dynamic, scene:Scene):Ground {
+        if (scene.getGeometryByID(parsedGround.id) != null) {
+            return null; // null since geometry could be something else than a ground...
+        }
+		
+        var ground = new Ground(parsedGround.id, scene, parsedGround.width, parsedGround.height, parsedGround.subdivisions, parsedGround.canBeRegenerated, null);
+        Tags.AddTagsTo(ground, parsedGround.tags);
+		
+        scene.pushGeometry(ground, true);
+		
+        return ground;
+    }
 	
 }

@@ -1,7 +1,8 @@
 package com.babylonhx.postprocess;
 
-import com.babylonhx.mesh.BabylonBuffer;
-import com.babylonhx.materials.textures.BabylonTexture;
+import com.babylonhx.mesh.VertexBuffer;
+import com.babylonhx.mesh.WebGLBuffer;
+import com.babylonhx.materials.textures.WebGLTexture;
 
 /**
  * ...
@@ -11,91 +12,70 @@ import com.babylonhx.materials.textures.BabylonTexture;
 @:expose('BABYLON.PostProcessManager') class PostProcessManager {
 	
 	private var _scene:Scene;
-	private var _indexBuffer:BabylonBuffer;
-	private var _vertexDeclaration:Array<Int> = [];
-	private var _vertexStrideSize:Int = 2 * 4;
-	private var _vertexBuffer:BabylonBuffer;
+	private var _indexBuffer:WebGLBuffer;
+	private var _vertexBuffers:Map<String, VertexBuffer> = new Map();
 	
 
 	public function new(scene:Scene) {
 		this._scene = scene;
-		
-		// VBO
-		var vertices:Array<Float> = [];
-		vertices.push(1);
-		vertices.push(1);
-		vertices.push( -1);
-		vertices.push(1);
-		vertices.push( -1);
-		vertices.push(-1);
-		vertices.push(1);
-		vertices.push(-1);
-		this._vertexBuffer = scene.getEngine().createVertexBuffer(vertices);
-		
-		// Indices
-		var indices:Array<Int> = [];
-		indices.push(0);
-		indices.push(1);
-		indices.push(2);
-		
-		indices.push(0);
-		indices.push(2);
-		indices.push(3);
-		
-		this._indexBuffer = scene.getEngine().createIndexBuffer(indices);
 	}
-
-	// Methods
-	public function _prepareFrame(?sourceTexture:BabylonTexture):Bool {
-		var postProcesses = this._scene.activeCamera._postProcesses;
-		var postProcessesTakenIndices = this._scene.activeCamera._postProcessesTakenIndices;
-		
-		if (postProcessesTakenIndices.length == 0 || !this._scene.postProcessesEnabled) {
-			return false;
-		}
-		
-		postProcesses[this._scene.activeCamera._postProcessesTakenIndices[0]].activate(this._scene.activeCamera, sourceTexture);
-		
-		return true;
-	}
-
-	public function _finalizeFrame(doNotPresent:Bool = false, ?targetTexture:BabylonTexture):Void {
-		var postProcesses = this._scene.activeCamera._postProcesses;
-		var postProcessesTakenIndices = this._scene.activeCamera._postProcessesTakenIndices;
-		if (postProcessesTakenIndices.length == 0 || !this._scene.postProcessesEnabled) {
+	
+	private function _prepareBuffers() {
+		if (this._vertexBuffers[VertexBuffer.PositionKind] != null) {
 			return;
 		}
 		
+		// VBO
+		var vertices:Array<Float> = [1, 1, -1, 1, -1, -1, 1, -1];
+		this._vertexBuffers[VertexBuffer.PositionKind] = new VertexBuffer(this._scene.getEngine(), vertices, VertexBuffer.PositionKind, false, false, 2);
+		
+		// Indices
+		var indices:Array<Int> = [0, 1, 2, 0, 2, 3];		
+		this._indexBuffer = this._scene.getEngine().createIndexBuffer(indices);
+	}
+
+	// Methods
+	public function _prepareFrame(?sourceTexture:WebGLTexture, ?postProcesses:Array<PostProcess>):Bool {
+		var postProcesses = postProcesses != null ? postProcesses : this._scene.activeCamera._postProcesses;
+		
+		if (postProcesses.length == 0 || !this._scene.postProcessesEnabled) {
+			return false;
+		}
+		
+		postProcesses[0].activate(this._scene.activeCamera, sourceTexture, postProcesses != null);		
+		return true;
+	}
+	
+	public function directRender(postProcesses:Array<PostProcess>, ?targetTexture:WebGLTexture) {
 		var engine = this._scene.getEngine();
 		
-		for (index in 0...postProcessesTakenIndices.length) {
-			if (index < postProcessesTakenIndices.length - 1) {
-				postProcesses[postProcessesTakenIndices[index + 1]].activate(this._scene.activeCamera);
-			} else {
+		for (index in 0...postProcesses.length) {
+			if (index < postProcesses.length - 1) {
+				postProcesses[index + 1].activate(this._scene.activeCamera, targetTexture);
+			} 
+			else {
 				if (targetTexture != null) {
 					engine.bindFramebuffer(targetTexture);
-				} else {
+				} 
+				else {
 					engine.restoreDefaultFramebuffer();
 				}
 			}
 			
-			if (doNotPresent) {
-				break;
-			}
-			
-			var pp = postProcesses[postProcessesTakenIndices[index]];
+			var pp = postProcesses[index];
 			var effect = pp.apply();
 			
 			if (effect != null) {
-				if (pp.onBeforeRender != null) {
-					pp.onBeforeRender(effect);
-				}
+				pp.onBeforeRenderObservable.notifyObservers(effect);
 				
 				// VBOs
-				engine.bindBuffers(this._vertexBuffer, this._indexBuffer, this._vertexDeclaration, this._vertexStrideSize, effect);
+				this._prepareBuffers();
+				engine.bindBuffers(this._vertexBuffers, this._indexBuffer, effect);
 				
 				// Draw order
 				engine.draw(true, 0, 6);
+				
+				pp.onAfterRenderObservable.notifyObservers(effect);
 			}
 		}
 		
@@ -104,10 +84,62 @@ import com.babylonhx.materials.textures.BabylonTexture;
 		engine.setDepthWrite(true);
 	}
 
-	public function dispose():Void {
-		if (this._vertexBuffer != null) {
-			this._scene.getEngine()._releaseBuffer(this._vertexBuffer);
-			this._vertexBuffer = null;
+	public function _finalizeFrame(doNotPresent:Bool = false, ?targetTexture:WebGLTexture, faceIndex:Int = 0, ?postProcesses:Array<PostProcess>) {
+		if (postProcesses == null) {
+			postProcesses = this._scene.activeCamera._postProcesses;
+		}
+		
+		if (postProcesses.length == 0 || !this._scene.postProcessesEnabled) {
+			return;
+		}
+		
+		var engine = this._scene.getEngine();
+		
+		for (index in 0...postProcesses.length) {
+			if (index < postProcesses.length - 1) {
+				postProcesses[index + 1].activate(this._scene.activeCamera, targetTexture);
+			} 
+			else {
+				if (targetTexture != null) {
+					engine.bindFramebuffer(targetTexture, faceIndex);
+				} 
+				else {
+					engine.restoreDefaultFramebuffer();
+				}
+			}
+			
+			if (doNotPresent) {
+				break;
+			}
+			
+			var pp = postProcesses[index];
+			var effect = pp.apply();
+			
+			if (effect != null) {
+				pp.onBeforeRenderObservable.notifyObservers(effect);
+				
+				// VBOs
+				this._prepareBuffers();
+				engine.bindBuffers(this._vertexBuffers, this._indexBuffer, effect);
+				
+				// Draw order
+				engine.draw(true, 0, 6);
+				
+				pp.onAfterRenderObservable.notifyObservers(effect);
+			}
+		}
+		
+		// Restore depth buffer
+		engine.setDepthBuffer(true);
+		engine.setDepthWrite(true);
+		engine.setAlphaMode(Engine.ALPHA_DISABLE);
+	}
+
+	public function dispose() {
+		var buffer = this._vertexBuffers[VertexBuffer.PositionKind];
+		if (buffer != null) {
+			buffer.dispose();
+			this._vertexBuffers[VertexBuffer.PositionKind] = null;
 		}
 		
 		if (this._indexBuffer != null) {

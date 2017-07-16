@@ -6,7 +6,8 @@ import com.babylonhx.math.Color4;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
-import com.babylonhx.mesh.BabylonBuffer;
+import com.babylonhx.mesh.VertexBuffer;
+import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.Scene;
 
 /**
@@ -18,16 +19,16 @@ import com.babylonhx.Scene;
 	
 	private var _size:Float;
 	public var _generateMipMaps:Bool;
+	public var isEnabled:Bool = true;
 	private var _doNotChangeAspectRatio:Bool;
 	private var _currentRefreshId:Int = -1;
 	private var _refreshRate:Int = 1;
+	
+	public var onGenerated:Void->Void = null;
 
-	private var _vertexBuffer:BabylonBuffer;
-	private var _indexBuffer:BabylonBuffer;
+	private var _vertexBuffers:Map<String, VertexBuffer> = new Map();
+	private var _indexBuffer:WebGLBuffer;
 	private var _effect:Effect;
-
-	private var _vertexDeclaration:Array<Int> = [2];
-	private var _vertexStrideSize:Int = 2 * 4;
 
 	private var _uniforms:Array<String> = [];
 	private var _samplers:Array<String> = [];
@@ -61,32 +62,23 @@ import com.babylonhx.Scene;
 		
 		this._fallbackTexture = fallbackTexture;
 		
-		this._texture = scene.getEngine().createRenderTargetTexture(size, generateMipMaps);
+		var engine = scene.getEngine();
+		
+		if (isCube) {
+			this._texture = engine.createRenderTargetCubeTexture(size, { generateMipMaps: generateMipMaps });
+			this.setFloat("face", 0);
+		}
+		else {
+			this._texture = engine.createRenderTargetTexture(size, generateMipMaps);
+		}
 		
 		// VBO
-		var vertices:Array<Float> = [];
-		vertices.push(1);
-		vertices.push(1);
-		vertices.push(-1);
-		vertices.push(1);
-		vertices.push(-1);
-		vertices.push(-1);
-		vertices.push(1);
-		vertices.push(-1);
-		
-		this._vertexBuffer = scene.getEngine().createVertexBuffer(vertices);
+		var vertices:Array<Float> = [1, 1, -1, 1, -1, -1, 1, -1];
+		this._vertexBuffers[VertexBuffer.PositionKind] = new VertexBuffer(engine, vertices, VertexBuffer.PositionKind, false, false, 2);
 		
 		// Indices
-		var indices:Array<Int> = [];
-		indices.push(0);
-		indices.push(1);
-		indices.push(2);
-		
-		indices.push(0);
-		indices.push(2);
-		indices.push(3);
-		
-		this._indexBuffer = scene.getEngine().createIndexBuffer(indices);
+		var indices:Array<Int> = [0, 1, 2, 0, 2, 3];		
+		this._indexBuffer = engine.createIndexBuffer(indices);
 	}
 
 	public function reset() {
@@ -120,7 +112,7 @@ import com.babylonhx.Scene;
 			["position"],
 			this._uniforms,
 			this._samplers,
-			"", null, null, function(effect:Effect, msg:String) {
+			"", null, null, function(_, _) {
 				this.releaseInternalTexture();
 				
 				if (this._fallbackTexture != null) {
@@ -134,7 +126,7 @@ import com.babylonhx.Scene;
 		return this._effect.isReady();
 	}
 
-	public function resetRefreshCounter() {
+	inline public function resetRefreshCounter() {
 		this._currentRefreshId = -1;
 	}
 
@@ -154,7 +146,7 @@ import com.babylonhx.Scene;
 	}
 
 	public function _shouldRender():Bool {
-		if (!this.isReady() || this._texture == null) {
+		if (!this.isEnabled || !this.isReady() || this._texture == null) {
 			return false;
 		} 
 		
@@ -257,11 +249,6 @@ import com.babylonhx.Scene;
 		var scene:Scene = this.getScene();
 		var engine:Engine = scene.getEngine();
 		
-		engine.bindFramebuffer(this._texture);
-		
-		// Clear
-		engine.clear(scene.clearColor, true, true);
-		
 		// Render
 		engine.enableEffect(this._effect);
 		engine.setState(false);
@@ -307,14 +294,46 @@ import com.babylonhx.Scene;
 			this._effect.setMatrix(key, this._matrices[key]);
 		}
 		
-		// VBOs
-		engine.bindBuffers(this._vertexBuffer, this._indexBuffer, this._vertexDeclaration, this._vertexStrideSize, this._effect);
-		
-		// Draw order
-		engine.draw(true, 0, 6);
+		if (this.isCube) {
+			for (face in 0...6) {
+				engine.bindFramebuffer(this._texture, face);
+				
+				// VBOs
+				engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._effect);
+				
+				this._effect.setFloat("face", face);
+				
+				// Clear
+				engine.clear(scene.clearColor, true, true, true);
+				
+				// Draw order
+				engine.draw(true, 0, 6);
+				
+				// Mipmaps
+				if (face == 5) {
+					engine.generateMipMapsForCubemap(this._texture);
+				}
+			}
+		} 
+		else {
+			engine.bindFramebuffer(this._texture);
+			
+			// VBOs
+            engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._effect);
+			
+			// Clear
+			engine.clear(scene.clearColor, true, true, true);
+			
+			// Draw order
+			engine.draw(true, 0, 6);
+		}
 		
 		// Unbind
-		engine.unBindFramebuffer(this._texture);
+		engine.unBindFramebuffer(this._texture, this.isCube);
+		
+		if (this.onGenerated != null) {
+			this.onGenerated();
+		}
 	}
 
 	override public function clone():ProceduralTexture {
@@ -337,6 +356,17 @@ import com.babylonhx.Scene;
 		if (index >= 0) {
 			this.getScene()._proceduralTextures.splice(index, 1);
 		}
+		
+		var vertexBuffer = this._vertexBuffers[VertexBuffer.PositionKind];
+		if (vertexBuffer != null) {
+			vertexBuffer.dispose();
+			this._vertexBuffers[VertexBuffer.PositionKind] = null;
+		}
+		
+		if (this._indexBuffer != null && this.getScene().getEngine()._releaseBuffer(this._indexBuffer)) {
+			this._indexBuffer = null;
+		}
+		
 		super.dispose();
 	}
 	

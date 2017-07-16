@@ -8,13 +8,14 @@ package com.babylonhx.actions;
 @:expose('BABYLON.SwitchBooleanAction') class SwitchBooleanAction extends Action {
 	
 	private var _target:Dynamic;
-	private var _property:String;
+	private var _property:Dynamic;
 	
 	public var propertyPath:String;
 	
 
 	public function new(triggerOptions:Dynamic, target:Dynamic, propertyPath:String, ?condition:Condition) {
 		super(triggerOptions, condition);
+		
 		this._target = target;
 		this.propertyPath = propertyPath;
 	}
@@ -25,7 +26,8 @@ package com.babylonhx.actions;
 	}
 
 	override public function execute(?evt:ActionEvent) {
-		this._target[this._property] = !this._target[this._property];
+		Reflect.setField(this._target, cast this._property, !cast(Reflect.getProperty(this._target, cast this._property), Bool));
+		//this._target[this._property] = !this._target[this._property];
 	}
 	
 }

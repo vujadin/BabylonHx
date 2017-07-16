@@ -5,6 +5,7 @@ import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh._InstancesBatch;
 import com.babylonhx.materials.Material;
+import com.babylonhx.math.Matrix;
 
 /**
  * ...
@@ -17,6 +18,8 @@ import com.babylonhx.materials.Material;
 	private var _effect:Effect;
 	private var _cachedDefines:String;
 	
+	public var zOffset:Float = 1;
+	
 
 	public function new(scene:Scene) {
 		this._scene = scene;
@@ -26,7 +29,7 @@ import com.babylonhx.materials.Material;
 		var scene = this._scene;
 		var engine = this._scene.getEngine();
 		
-		var hardwareInstancedRendering = (engine.getCaps().instancedArrays != null) && (batch.visibleInstances[subMesh._id] != null);
+		var hardwareInstancedRendering = (engine.getCaps().instancedArrays) && (batch.visibleInstances[subMesh._id] != null);
 		
 		if (!this.isReady(subMesh, hardwareInstancedRendering)) {
 			return;
@@ -36,15 +39,13 @@ import com.babylonhx.materials.Material;
 		var material = subMesh.getMaterial();
 		
 		engine.enableEffect(this._effect);
-		this._effect.setFloat("offset", mesh.outlineWidth);
 		this._effect.setFloat("offset", useOverlay ? 0 : mesh.outlineWidth);
 		this._effect.setColor4("color", useOverlay ? mesh.overlayColor : mesh.outlineColor, useOverlay ? mesh.overlayAlpha : 1.0);
 		this._effect.setMatrix("viewProjection", scene.getTransformMatrix());
 		
 		// Bones
-		var useBones = mesh.skeleton != null && scene.skeletonsEnabled && mesh.isVerticesDataPresent(VertexBuffer.MatricesIndicesKind) && mesh.isVerticesDataPresent(VertexBuffer.MatricesWeightsKind);
-		if (useBones) {
-			this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices());
+		if (mesh.useBones && mesh.computeBonesUsingShaders) {
+			this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices(mesh));
 		}
 		
 		mesh._bind(subMesh, this._effect, Material.TriangleFillMode);
@@ -56,27 +57,12 @@ import com.babylonhx.materials.Material;
 			this._effect.setMatrix("diffuseMatrix", alphaTexture.getTextureMatrix());
 		}
 		
-		if (hardwareInstancedRendering) {
-			mesh._renderWithInstances(subMesh, Material.TriangleFillMode, batch, this._effect, engine);
-		} else {
-			if (batch.renderSelf.length > subMesh._id) {
-				this._effect.setMatrix("world", mesh.getWorldMatrix());
-				
-				// Draw
-				mesh._draw(subMesh, Material.TriangleFillMode);
-			}
-			
-			if (batch.visibleInstances[subMesh._id] != null) {
-				for (instanceIndex in 0...batch.visibleInstances[subMesh._id].length) {
-					var instance = batch.visibleInstances[subMesh._id][instanceIndex];
+		engine.setZOffset(-this.zOffset);
+		
+		mesh._processRendering(subMesh, this._effect, Material.TriangleFillMode, batch, hardwareInstancedRendering,
+					function(isInstance:Bool, world:Matrix, ?mat:Material) { this._effect.setMatrix("world", world); });
 					
-					this._effect.setMatrix("world", instance.getWorldMatrix());
-					
-					// Draw
-					mesh._draw(subMesh, Material.TriangleFillMode);
-				}
-			}
-		}
+		engine.setZOffset(0);
 	}
 
 	public function isReady(subMesh:SubMesh, useInstances:Bool):Bool {
@@ -100,11 +86,18 @@ import com.babylonhx.materials.Material;
 		}
 		
 		// Bones
-		if (mesh.skeleton != null && mesh.isVerticesDataPresent(VertexBuffer.MatricesIndicesKind) && mesh.isVerticesDataPresent(VertexBuffer.MatricesWeightsKind)) {
+		if (mesh.useBones && mesh.computeBonesUsingShaders) {
 			attribs.push(VertexBuffer.MatricesIndicesKind);
 			attribs.push(VertexBuffer.MatricesWeightsKind);
-			defines.push("#define BONES");
+			if (mesh.numBoneInfluencers > 4) {
+                attribs.push(VertexBuffer.MatricesIndicesExtraKind);
+                attribs.push(VertexBuffer.MatricesWeightsExtraKind);
+            }
+            defines.push("#define NUM_BONE_INFLUENCERS " + mesh.numBoneInfluencers);
 			defines.push("#define BonesPerMesh " + (mesh.skeleton.bones.length + 1));
+		} 
+		else {
+			defines.push("#define NUM_BONE_INFLUENCERS 0");
 		}
 		
 		// Instances

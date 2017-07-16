@@ -9,8 +9,8 @@ import com.babylonhx.cameras.Camera;
 
 @:expose('BABYLON.PassPostProcess') class PassPostProcess extends PostProcess {
 	
-	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false/*?reusable:Bool*/) {
-		super(name, "pass", null, null, ratio, camera, samplingMode, engine, reusable);
+	public function new(name:String, options:Dynamic, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false, textureType:Int = Engine.TEXTURETYPE_UNSIGNED_INT, blockCompilation:Bool = false) {
+		super(name, "pass", null, null, options, camera, samplingMode, engine, reusable, null, textureType, "postprocess", null, blockCompilation);
 	}
 	
 }

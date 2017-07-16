@@ -12,14 +12,15 @@ package com.babylonhx.mesh.primitives;
 	private var _canBeRegenerated:Bool;
 	
 
-	public function new(id:String, scene:Scene, ?vertexData:VertexData, canBeRegenerated:Bool = false/*?canBeRegenerated:Bool*/, ?mesh:Mesh) {
-		this._beingRegenerated = true;
+	public function new(id:String, scene:Scene, canBeRegenerated:Bool = false, ?mesh:Mesh) {
+		super(id, scene, null, false, mesh); // updatable = false to be sure not to update vertices
 		this._canBeRegenerated = canBeRegenerated;
-		super(id, scene, vertexData, false, mesh); // updatable = false to be sure not to update vertices
+		this._beingRegenerated = true;
+		this.regenerate();
 		this._beingRegenerated = false;
 	}
 
-	public function canBeRegenerated():Bool {
+	inline public function canBeRegenerated():Bool {
 		return this._canBeRegenerated;
 	}
 
@@ -37,14 +38,14 @@ package com.babylonhx.mesh.primitives;
 	}
 
 	// overrides
-	override public function setAllVerticesData(vertexData:VertexData, updatable:Bool = false/*?updatable:Bool*/) {
+	override public function setAllVerticesData(vertexData:VertexData, updatable:Bool = false) {
 		if (!this._beingRegenerated) {
 			return;
 		}
 		super.setAllVerticesData(vertexData, false);
 	}
 
-	override public function setVerticesData(kind:String, data:Array<Float>, updatable:Bool = false/*?updatable:Bool*/, ?stride:Int) {
+	override public function setVerticesData(kind:String, data:Array<Float>, updatable:Bool = false, ?stride:Int) {
 		if (!this._beingRegenerated) {
 			return;
 		}
@@ -59,6 +60,14 @@ package com.babylonhx.mesh.primitives;
 
 	override public function copy(id:String):Geometry {
 		throw("Must be overriden in sub-classes.");
+	}
+	
+	override public function serialize():Dynamic {
+		var serializationObject = super.serialize();
+		
+		serializationObject.canBeRegenerated = this.canBeRegenerated();
+		
+		return serializationObject;
 	}
 	
 }

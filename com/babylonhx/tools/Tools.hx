@@ -1,34 +1,33 @@
 package com.babylonhx.tools;
 
-#if js
+#if (js || purejs)
+import js.Browser;
 import js.html.Element;
+import js.html.XMLHttpRequest;
+import js.html.XMLHttpRequestResponseType;
 #end
 
 import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Vector2;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.AbstractMesh;
+
+import com.babylonhx.utils.Image;
+import lime.utils.UInt8Array;
+
+import haxe.io.BytesInput;
+import haxe.io.Bytes;
+import haxe.crypto.Base64;
+import haxe.Json;
 import haxe.Timer;
 
-#if nme
-import nme.Assets;
-import nme.display.BitmapData;
-import nme.events.Event;
-import nme.net.URLLoader;
-import nme.net.URLRequest;
-#elseif openfl
-import openfl.Assets;
-import openfl.display.BitmapData;
-import openfl.events.Event;
-import openfl.net.URLLoader;
-import openfl.net.URLRequest;
-#elseif snow
-
-#elseif kha
-
-#elseif foo3d
-
+#if openfl
+typedef Assets = openfl.Assets;
+#elseif lime
+typedef Assets = lime.Assets;
 #end
+
 
 /**
  * ...
@@ -43,23 +42,55 @@ import openfl.net.URLRequest;
 @:expose('BABYLON.Tools') class Tools {
 	
 	public static var BaseUrl:String = "";
-		
+	
 	@:noCompletion private static var __startTime:Float = Timer.stamp();
+	
+	#if snow
+	@:noCompletion public static var app:snow.Snow;
+	#end
 
-	public static function GetExponantOfTwo(value:Int, max:Int):Int {
-		var count = 1;
-		
-		do {
-			count *= 2;
-		} while (count < value);
-		
-		if (count > max) {
-			count = max;
-		}
-		
-		return count;
+	public static function __init__(){
+		#if purejs
+		untyped Browser.window.requestAnimationFrame = window.requestAnimationFrame
+													   || window.mozRequestAnimationFrame
+													   || window.webkitRequestAnimationFrame
+													   || window.msRequestAnimationFrame
+													   || window.oRequestAnimationFrame;
+		#end
+	}
+	
+	public static function Log(msg:String) {
+		trace(msg);
 	}
 
+	public static function Warn(msg:String) {
+		trace('Warning! ' + msg);
+	}
+	
+	public static function Error(msg:String) {
+		trace('!!! ERROR !!! ' + msg);
+	}
+	
+	public static function SetImmediate(action:Void->Void) {
+		delay(action, 1);
+	}
+	
+	#if (js || purejs)
+	public static function GetDOMTextContent(element:js.html.Element):String {
+		var result = "";
+		var child = element.firstChild;
+		
+		while (child != null) {
+			if (child.nodeType == 3) {
+				result += child.textContent;
+			}
+			child = child.nextSibling;
+		}
+		
+		return result;
+	}
+	#end
+	
 	public static function GetFilename(path:String):String {
 		var index = path.lastIndexOf("/");
 		if (index < 0) {
@@ -68,16 +99,18 @@ import openfl.net.URLRequest;
 		
 		return path.substring(index + 1);
 	}
-
-	public static function ToDegrees(angle:Float):Float {
-		return angle * 180 / Math.PI;
+	
+	// Snow build gives an error that haxe.Timer has no delay method...
+	public static function delay(f:Void->Void, time_ms:Int) {
+		var t = new haxe.Timer(time_ms);
+		t.run = function() {
+			t.stop();
+			f();
+		};
+		return t;
 	}
 
-	public static function ToRadians(angle:Float):Float {
-		return angle * Math.PI / 180;
-	}
-
-	inline public static function ExtractMinAndMaxIndexed(positions:Array<Float>, indices:Array<Int>, indexStart:Int, indexCount:Int):BabylonMinMax {
+	inline public static function ExtractMinAndMaxIndexed(positions:Array<Float>, indices:Array<Int>, indexStart:Int, indexCount:Int, bias:Vector2 = null):BabylonMinMax {
 		var minimum = new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY);
 		var maximum = new Vector3(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY);
 		
@@ -87,21 +120,40 @@ import openfl.net.URLRequest;
 			maximum = Vector3.Maximize(current, maximum);
 		}
 		
+		if (bias != null) {
+			minimum.x -= minimum.x * bias.x + bias.y;
+			minimum.y -= minimum.y * bias.x + bias.y;
+			minimum.z -= minimum.z * bias.x + bias.y;
+			maximum.x += maximum.x * bias.x + bias.y;
+			maximum.y += maximum.y * bias.x + bias.y;
+			maximum.z += maximum.z * bias.x + bias.y;
+		}
+		
 		return {
 			minimum: minimum,
 			maximum: maximum
 		};
 	}
 
-	inline public static function ExtractMinAndMax(positions:Array<Float>, start:Int, count:Int):BabylonMinMax {
+	inline public static function ExtractMinAndMax(positions:Array<Float>, start:Int, count:Int, bias:Vector2 = null, stride:Int = 3):BabylonMinMax {
 		var minimum = new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY);
 		var maximum = new Vector3(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY);
 		
+		var current:Vector3 = Vector3.Zero();
 		for (index in start...start + count) {
-			var current = new Vector3(positions[index * 3], positions[index * 3 + 1], positions[index * 3 + 2]);
+			current = new Vector3(positions[index * stride], positions[index * stride + 1], positions[index * stride + 2]);
 			
 			minimum = Vector3.Minimize(current, minimum);
 			maximum = Vector3.Maximize(current, maximum);
+		}
+		
+		if (bias != null) {
+			minimum.x -= minimum.x * bias.x + bias.y;
+			minimum.y -= minimum.y * bias.x + bias.y;
+			minimum.z -= minimum.z * bias.x + bias.y;
+			maximum.x += maximum.x * bias.x + bias.y;
+			maximum.y += maximum.y * bias.x + bias.y;
+			maximum.z += maximum.z * bias.x + bias.y;
 		}
 		
 		return {
@@ -111,90 +163,737 @@ import openfl.net.URLRequest;
 	}
 
 	public static function MakeArray(obj:Dynamic, allowsNullUndefined:Bool = false):Array<Dynamic> {
-		if (allowsNullUndefined != true && obj == null)
+		if (allowsNullUndefined != true && obj == null) {
 			return null;
-			
-		if (Std.is(obj, Map)) {
+		}
+		
+		if(!Std.is(obj, Array) && Reflect.getProperty(obj, "keys") != null) {
 			var ret:Array<Dynamic> = [];
-			for (key in cast(obj, Map<Dynamic, Dynamic>).keys()) {
-				ret.push(obj.get(key));
+			var map:Map<Dynamic, Dynamic> = cast obj;
+			for (key in map.keys()) {
+				ret.push(map[key]);
 			}
 			return ret;
 		}
-
+		
 		return Std.is(obj, Array) ? obj : [obj];
 	}
 	
-	public static function LoadFile(url:String, callbackFn:Dynamic->Void, ?progressCallBack:Dynamic, ?db:Dynamic) {
-		#if html5		// Assets.getText doesn't work in html5 -> Chrome ????
-		var loader:URLLoader = new URLLoader();
-		loader.addEventListener(Event.COMPLETE, function(data) {
-			callbackFn(loader.data);
-		});
-		loader.load(new URLRequest(url));
-		#else
+	// Misc.
+	#if (js || purejs)
+	public static function GetPointerPrefix():String {
+		var eventPrefix = "pointer";
 		
-		#if (nme || openfl)
-		#if openfl
-        //if (Assets.exists(url)) {
-		#end
-			if (StringTools.endsWith(url, "bbin")) {
-				var file = Assets.getBytes(url);
-				callbackFn(file);
-			} else {
-				var file:String = Assets.getText(url);
-				callbackFn(file);
-			}
-		#if openfl
-		//} else {
-		//	trace("File: " + url + " doesn't exist !");
-		//}
-		#end
-		#elseif snow
-			
-		#elseif kha
-		
-		#elseif foo3d
-		
-		#end
-		#end
-    }
-	
-	#if (nme || openfl)
-	public static function LoadImage(url:String, onload:BitmapData->Void, ?onerror:Void->Void, ?db:Dynamic) { 
-		#if openfl
-		//if (Assets.exists(url)) {
-		#end
-			var img:BitmapData = Assets.getBitmapData(url);
-			onload(img);
-		#if openfl
-		//} else {
-		//	trace("Error: Image '" + url + "' doesn't exist !");
-		//}
-		#end
-    }
-	#end
-
-	// Misc. 
-	public static function Clamp(value:Float, min:Float = 0, max:Float = 1):Float {
-		return Math.min(max, Math.max(min, value));
-	}  
-	
-	public static function Clamp2(x:Float, a:Float, b:Float):Float {
-		return (x < a) ? a : ((x > b) ? b : x);
-	}
-	
-	// Returns -1 when value is a negative number and
-	// +1 when value is a positive number. 
-	inline public static function Sign(value:Dynamic):Int {
-		//value = Std.parseFloat(value);
-		
-		if (value == 0/* || Math.isNaN(value)*/) {
-			return 0;
+		// Check if hand.js is referenced or if the browser natively supports pointer events
+		if (untyped !Browser.navigator.pointerEnabled) {
+			eventPrefix = "mouse";
 		}
-			
-		return value > 0 ? 1 : -1;
+		
+		return eventPrefix;
 	}
+
+	public inline static function QueueNewFrame(func:Dynamic->Void):Void {
+		Browser.window.requestAnimationFrame(func);
+	}
+	
+	public static function RegisterTopRootEvents(events:Array<Dynamic>) {
+		for (event in events) {
+			Browser.window.addEventListener(event.name, event.handler, false);
+			
+			try {
+				if (Browser.window.parent != null) {
+					Browser.window.parent.addEventListener(event.name, event.handler, false);
+				}
+			} catch (e:Dynamic) {
+				// Silently fails...
+			}
+		}
+	}
+
+	public static function UnregisterTopRootEvents(events:Array<Dynamic>) {
+		for (event in events) {
+			Browser.window.removeEventListener(event.name, event.handler);
+			
+			try {
+				if (Browser.window.parent != null) {
+					Browser.window.parent.removeEventListener(event.name, event.handler);
+				}
+			} catch (e:Dynamic) {
+				// Silently fails...
+			}
+		}
+	}
+	#end
+	
+	// External files
+	public static function CleanUrl(url:String):String {
+		var regex = ~/#/mg;
+		url = regex.replace(url, "%23");
+		return url;
+	}
+	
+	#if (purejs)
+	public static function LoadFile(url:String, callbackFn:Dynamic->Void, ?progressCallBack:Dynamic->Void, ?database:Dynamic, useArrayBuffer:Bool = false, ?onError:Void->Void) {
+		url = Tools.CleanUrl(url);
+		
+		var noIndexedDB = function() {
+			var request = new XMLHttpRequest();
+			var loadUrl = Tools.BaseUrl + url;
+			request.open('GET', loadUrl, true);
+			
+			if (useArrayBuffer) {
+				request.responseType = XMLHttpRequestResponseType.ARRAYBUFFER;
+			}
+			
+			request.onprogress = progressCallBack;
+			
+			request.onreadystatechange = function(e) {
+				if (request.readyState == 4) {
+					if (request.status == 200/* || Tools.ValidateXHRData(request, !useArrayBuffer ? 1 : 6)*/) {
+						callbackFn(!useArrayBuffer ? request.responseText : request.response);
+					} 
+					else { // Failed
+						if (onError != null) {
+							onError();
+						} 
+						else {
+							throw("Error status: " + request.status + " - Unable to load " + loadUrl);
+						}
+					}
+				}
+			};
+			
+			request.send(null);
+		};
+		
+		var loadFromIndexedDB = function() {
+			database.loadFileFromDB(url, callbackFn, progressCallBack, noIndexedDB, useArrayBuffer);
+		};
+		
+		if (url.indexOf("file:") != -1) {
+			var fileName = url.substring(5);
+			//Tools.ReadFile(FilesInput.FilesToLoad[fileName], callback, progressCallBack, true);
+		}
+		else {
+			// Caching all files
+			if (database != null && database.enableSceneOffline) {
+				database.openAsync(loadFromIndexedDB, noIndexedDB);
+			}
+			else {
+				noIndexedDB();
+			}
+		}
+	}
+	
+	// XHR response validator for local file scenario
+	public static function ValidateXHRData(xhr:XMLHttpRequest, dataType:Int = 7):Bool {
+		// 1 for text (.babylon, manifest and shaders), 2 for TGA, 4 for DDS, 7 for all
+		
+		/*try {
+			if (dataType & 1) {
+				if (xhr.responseText && xhr.responseText.length > 0) {
+					return true;
+				}
+				else if (dataType == 1) {
+					return false;
+				}
+			}
+			
+			if (dataType & 2) {
+				// Check header width and height since there is no "TGA" magic number
+				var tgaHeader = Internals.TGATools.GetTGAHeader(xhr.response);
+				
+				if (tgaHeader.width && tgaHeader.height && tgaHeader.width > 0 && tgaHeader.height > 0) {
+					return true;
+				} 
+				else if (dataType == 2) {
+					return false;
+				}
+			}
+			
+			if (dataType & 4) {
+				// Check for the "DDS" magic number
+				var ddsHeader = new UInt8Array(xhr.response, 0, 3);
+				
+				if (ddsHeader[0] == 68 && ddsHeader[1] == 68 && ddsHeader[2] == 83) {
+					return true;
+				} 
+				else {
+					return false;
+				}
+			}
+			
+		} catch (e) {
+			// Global protection
+		}*/
+		
+		return false;
+	}
+	#elseif snow
+	
+	#if luxe
+	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {	
+		if (type == "") {
+			//if (Luxe.core.app.assets.listed(path)) {
+				if (StringTools.endsWith(path, "bbin")) {
+					var callBackFunction = callbackFn != null ?
+						function(result:Dynamic) {
+							callbackFn(result.bytes);
+						} : function(_) { };
+					Luxe.core.app.assets.bytes(path).then(
+						function(asset:Dynamic) {
+							callBackFunction(asset);
+						}
+					);
+				} 
+				else {
+					var callBackFunction = callbackFn != null ?
+						function(result:Dynamic) {
+							callbackFn(result.text);
+						} : function(_) { };
+					Luxe.core.app.assets.text(path).then(
+						function(asset:Dynamic) {
+							callBackFunction(asset);
+						}
+					);
+				}
+			//} 
+			//else {
+			//	trace("File '" + path + "' doesn't exist!");
+			//}
+		} 
+		else {
+			//if(Luxe.core.app.assets.listed(path)) {
+				switch(type) {
+					case "text":
+						var callBackFunction = callbackFn != null ?
+							function(result:Dynamic) {
+								callbackFn(result.text);
+							} : function(_) { };
+						Luxe.core.app.assets.text(path).then(
+							function(asset:Dynamic) {
+								callBackFunction(asset);
+							}
+						);					
+						
+					case "bin":
+						var callBackFunction = callbackFn != null ?
+							function(result:Dynamic) {
+								callbackFn(result.bytes);
+							} : function(_) { };
+						Luxe.core.app.assets.bytes(path).then(
+							function(asset:Dynamic) {
+								callBackFunction(asset);
+							}
+						);
+						
+					case "img":
+						var callBackFunction = callbackFn != null ?
+							function(img:Dynamic) {
+								var i = new Image(img.image.pixels, img.image.width, img.image.height);
+								callbackFn(i);
+							} : function(_) { };
+						Luxe.core.app.assets.image(path).then(
+							function(asset:Dynamic) {
+								callBackFunction(asset);
+							}
+						);
+				}
+			//} 
+			//else {
+			//	trace("File '" + path + "' doesn't exist!");
+			//}
+		}
+	}
+	#else //snow
+	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {	
+		if (type == "hdr") {
+			var callBackFunction = callbackFn != null ?
+				function(result:Dynamic) {
+					callbackFn(result);
+				} : function(_) { };
+				
+			app.assets.bytes(path).then(
+				function(result:Dynamic) {
+					trace(result.bytes);
+					callBackFunction(result.bytes);	
+				}
+			);
+		}
+		else if (type == "") {
+			//if (SnowApp._snow.assets.listed(path)) {
+				if (StringTools.endsWith(path, "bbin")) {
+					var callBackFunction = callbackFn != null ?
+						function(result:Dynamic) {
+							callbackFn(result.bytes);
+						} : function(_) { };
+					app.assets.text(path).then(
+						function(asset:Dynamic) {
+							callBackFunction(asset);
+						}
+					);
+				} 
+				else {
+					var callBackFunction = callbackFn != null ?
+						function(result:Dynamic) {
+							callbackFn(result.text);
+						} : function(_) { };
+					app.assets.text(path).then(
+						function(asset:Dynamic) {
+							callBackFunction(asset);
+						}
+					);
+				}
+			//} 
+			//else {
+			//	trace("File '" + path + "' doesn't exist!");
+			//}
+		} 
+		else {
+			//if(SnowApp._snow.assets.listed(path)) {
+				switch(type) {
+					case "text":
+						var callBackFunction = callbackFn != null ?
+							function(result:Dynamic) {
+								callbackFn(result.text);
+							} : function(_) { };
+						app.assets.text(path).then(
+							function(asset:Dynamic) {
+								callBackFunction(asset);
+							}
+						);					
+						
+					case "bin":
+						var callBackFunction = callbackFn != null ?
+							function(result:Dynamic) {
+								callbackFn(result.bytes);
+							} : function(_) { };
+						app.assets.bytes(path).then(
+							function(asset:Dynamic) {
+								callBackFunction(asset);
+							}
+						);
+						
+					case "img":
+						var callBackFunction = callbackFn != null ?
+							function(img:Dynamic) {
+								var i = new Image(img.image.pixels, img.image.width, img.image.height);
+								callbackFn(i);
+							} : function(_) { };
+						app.assets.image(path).then(
+							function(asset:Dynamic) {
+								callBackFunction(asset);
+							}
+						);
+						
+					case "ctm":
+						var callBackFunction = callbackFn != null ?
+							function(result:Dynamic) {
+								callbackFn(result.bytes);
+							} : function(_) { };
+						app.assets.bytes(path).then(
+							function(asset:Dynamic) {
+								callBackFunction(asset);
+							}
+						);
+				}
+			//} 
+			//else {
+			//	trace("File '" + path + "' doesn't exist!");
+			//}
+		}
+	}
+	#end // if luxe
+	
+	#elseif (lime || openfl || nme)
+	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {	
+		if (type == "hdr") {
+			var callBackFunction = callbackFn != null ?
+				function(result:Dynamic) {
+					callbackFn(result);
+				} : function(_) { };
+				
+			var data = Assets.getBytes(path);
+			callBackFunction(data);	
+		}
+		else if (type == "" || type == "text") {
+			/*#if ((html5 || js) && (lime || openfl))
+			if (Assets.exists(path)) {
+							
+				var callBackFunction = callbackFn != null ?
+					function(result:Dynamic) {
+						callbackFn(result);
+					} : function(_) { };
+					
+				var future = Assets.loadText(path);
+				future.onComplete(function(data:String):Void {
+					callBackFunction(data);
+				});					
+			} 
+			else {
+				trace("File '" + path + "' doesn't exist!");
+			}
+			#else*/
+			var callBackFunction = callbackFn != null ?
+					function(result:Dynamic) {
+						callbackFn(result);
+					} : function(_) { };
+					
+				var data = Assets.getText(path);
+				callBackFunction(data);			
+			//#end
+		} 
+		else {
+			#if (lime || openfl)
+			if (Assets.exists(path)) {
+			#end
+				switch(type) {						
+					case "img":
+						#if openfl
+						var img = Assets.getBitmapData(path);
+						#if openfl_legacy
+						var image = new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height);
+						#else
+						var image = new Image(img.image.data, img.width, img.height);
+						#end
+
+						if (callbackFn != null) {
+							callbackFn(image);
+						}
+						#elseif lime
+						var img = Assets.getImage(path);
+						var image = new Image(img.data, img.width, img.height);
+						if (callbackFn != null) {
+							callbackFn(image);
+						}						
+						#elseif nme
+						var img = Assets.getBitmapData(path);
+						var image = new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height);
+						if (callbackFn != null) {
+							callbackFn(image);
+						}
+						#end
+						
+					case "ctm":
+						#if lime
+						var file = Assets.getBytes(path);
+						if (callbackFn != null) {
+							callbackFn(file);
+						}
+						#end
+				}
+			} 
+			#if (lime || openfl)
+			else {
+				trace("File '" + path + "' doesn't exist!");
+			}
+			#end
+		}
+	}
+	#elseif kha
+	
+	#end
+	
+	
+	#if (purejs)
+	public static function LoadImage(url:String, ?callbackFn:Dynamic->Void, ?onerror:Dynamic->Void, ?db:Dynamic):Dynamic {
+		url = Tools.CleanUrl(url);
+		
+		var img = new js.html.Image();
+		
+		if (url.substr(0, 5) != "data:") {
+			img.crossOrigin = 'anonymous';
+		}
+		
+		img.onload = function(e) {
+			var canvas:js.html.CanvasElement = Browser.document.createCanvasElement();
+			canvas.width = img.width;
+			canvas.height = img.height;
+			var ctx:js.html.CanvasRenderingContext2D = canvas.getContext2d();
+			ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
+			var imgData = ctx.getImageData(0, 0, img.width, img.height).data;
+			
+			// ugly hack ...
+			var normalArray:Dynamic = null;
+			untyped normalArray = Array.prototype.slice.call(imgData);
+			
+			if (callbackFn != null) {
+				callbackFn(new Image(new UInt8Array(normalArray), img.width, img.height));
+			}			
+		};
+		
+		/*img.onerror = err => {
+			onerror(img, err);
+		};*/
+		
+		/*var noIndexedDB = function() {
+			img.src = url;
+		};
+		
+		var loadFromIndexedDB = function() {
+			database.loadImageFromDB(url, img);
+		};
+		
+		//ANY database to do!
+		if (database && database.enableTexturesOffline && Database.IsUASupportingBlobStorage) {
+			database.openAsync(loadFromIndexedDB, noIndexedDB);
+		}
+		else {
+			if (url.indexOf("file:") === -1) {
+				noIndexedDB();
+			}
+			else {
+				try {
+					var textureName = url.substring(5);
+					var blobURL;
+					try {
+						blobURL = URL.createObjectURL(FilesInput.FilesTextures[textureName], { oneTimeOnly: true });
+					}
+					catch (ex) {
+						// Chrome doesn't support oneTimeOnly parameter
+						blobURL = URL.createObjectURL(FilesInput.FilesTextures[textureName]);
+					}
+					img.src = blobURL;
+				}
+				catch (e) {
+					Tools.Log("Error while trying to load texture: " + textureName);
+					img.src = null;
+				}
+			}
+		}*/
+		
+		img.src = url;
+		
+		return img;
+	}	
+	#elseif snow
+	
+	#if luxe
+	public static function LoadImage(url:String, onload:Image->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
+		//if (Luxe.core.app.assets.listed(url)) {
+			var callBackFunction = function(img:Dynamic) {
+				var i = new Image(img.image.pixels, img.image.width, img.image.height);
+				onload(i);
+			};
+			
+			Luxe.core.app.assets.image(url).then(
+				function(asset:Dynamic) {
+					callBackFunction(asset);
+				}
+			);
+		//} 
+		//else {
+		//	trace("Image '" + url + "' doesn't exist!");
+		//}
+	}
+	#else
+	public static function LoadImage(url:String, onload:Image->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
+		var callBackFunction = function(img:Dynamic) {
+			var i = new Image(img.image.pixels, img.image.width, img.image.height);
+			onload(i);
+		};
+		
+		app.assets.image(url).then(
+			function(asset:Dynamic) {
+				callBackFunction(asset);
+			}
+		);
+	}
+	#end
+	
+	#elseif (lime || openfl || nme)
+	public static function LoadImage(url:String, onload:Image-> Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
+		#if (openfl && !nme)
+		if (Assets.exists(url)) {
+			var img = Assets.getBitmapData(url); 
+			
+			#if openfl_legacy
+			onload(new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height));		
+			#else
+			if (img.image.format != lime.graphics.PixelFormat.RGBA32) {
+				img.image.format = lime.graphics.PixelFormat.RGBA32;
+			}
+			onload(new Image(img.image.data, img.width, img.height));	
+			#end
+		} 
+		else {
+			trace("Image '" + url + "' doesn't exist!");
+			onload(Image.createCheckerboard());
+		}
+		#elseif lime
+		if (Assets.exists(url)) {
+			/*#if (js || html5)
+			var future = Assets.loadImage(url);
+			future.onComplete(function(img:lime.graphics.Image):Void {
+				var image = new Image(img.data, img.width, img.height);
+				onload(image);
+			});		
+			#else*/
+			var img = Assets.getImage(url);
+			var image = new Image(img.data, img.width, img.height);
+			onload(image);
+			//#end
+		} 
+		else {
+			trace("Image '" + url + "' doesn't exist!");
+			onload(Image.createCheckerboard());
+		}		
+		#elseif nme		
+		var img = Assets.getBitmapData(url); 
+		onload(new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height));		
+		#end
+	}
+	#elseif kha
+	
+	#end
+	
+	
+	#if (purejs)
+	public static function LoadImages(url:String, ?callbackFn:Dynamic->Void, ?onerror:Dynamic->Void, ?db:Dynamic):Dynamic {
+		url = Tools.CleanUrl(url);
+		
+		var img = new js.html.Image();
+		
+		if (url.substr(0, 5) != "data:") {
+			img.crossOrigin = 'anonymous';
+		}
+		
+		img.onload = function(e) {
+			var canvas:js.html.CanvasElement = Browser.document.createCanvasElement();
+			canvas.width = img.width;
+			canvas.height = img.height;
+			var ctx:js.html.CanvasRenderingContext2D = canvas.getContext2d();
+			ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
+			var imgData = ctx.getImageData(0, 0, img.width, img.height).data;
+			
+			// ugly hack ...
+			var normalArray:Dynamic = null;
+			untyped normalArray = Array.prototype.slice.call(imgData);
+			
+			if (callbackFn != null) {
+				callbackFn(new Image(new UInt8Array(normalArray), img.width, img.height));
+			}			
+		};
+		
+		/*img.onerror = err => {
+			onerror(img, err);
+		};*/
+		
+		/*var noIndexedDB = function() {
+			img.src = url;
+		};
+		
+		var loadFromIndexedDB = function() {
+			database.loadImageFromDB(url, img);
+		};
+		
+		//ANY database to do!
+		if (database && database.enableTexturesOffline && Database.IsUASupportingBlobStorage) {
+			database.openAsync(loadFromIndexedDB, noIndexedDB);
+		}
+		else {
+			if (url.indexOf("file:") === -1) {
+				noIndexedDB();
+			}
+			else {
+				try {
+					var textureName = url.substring(5);
+					var blobURL;
+					try {
+						blobURL = URL.createObjectURL(FilesInput.FilesTextures[textureName], { oneTimeOnly: true });
+					}
+					catch (ex) {
+						// Chrome doesn't support oneTimeOnly parameter
+						blobURL = URL.createObjectURL(FilesInput.FilesTextures[textureName]);
+					}
+					img.src = blobURL;
+				}
+				catch (e) {
+					Tools.Log("Error while trying to load texture: " + textureName);
+					img.src = null;
+				}
+			}
+		}*/
+		
+		img.src = url;
+		
+		return img;
+	}	
+	#elseif snow
+	
+	#if luxe
+	public static function LoadImages(url:String, onload:Image->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
+		//if (Luxe.core.app.assets.listed(url)) {
+			var callBackFunction = function(img:Dynamic) {
+				var i = new Image(img.image.pixels, img.image.width, img.image.height);
+				onload(i);
+			};
+			
+			Luxe.core.app.assets.image(url).then(
+				function(asset:Dynamic) {
+					callBackFunction(asset);
+				}
+			);
+		//} 
+		//else {
+		//	trace("Image '" + url + "' doesn't exist!");
+		//}
+	}
+	#else
+	public static function LoadImages(url:String, onload:Image->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
+		var callBackFunction = function(img:Dynamic) {
+			var i = new Image(img.image.pixels, img.image.width, img.image.height);
+			onload(i);
+		};
+		
+		app.assets.image(url).then(
+			function(asset:Dynamic) {
+				callBackFunction(asset);
+			}
+		);
+	}
+	#end
+	
+	#elseif (lime || openfl || nme)
+	public static function LoadImages(root:String, urls:Array<String>, onload:Map<String, Image>->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
+		#if (openfl && !nme)
+		var imgs:Map<String, Image> = new Map();
+		for (i in 0...urls.length) {
+			var url = root != "" ? root + urls[i] : urls[i];
+			if (Assets.exists(url)) {
+				var img = Assets.getBitmapData(url); 
+				var image = new Image(img.image.data, img.width, img.height);
+				imgs.set(urls[i], image);
+			} 
+			else {
+				trace("Image '" + url + "' doesn't exist!");
+			}
+			
+			if (i == urls.length - 1) {
+				onload(imgs);
+			}
+		}
+		#elseif lime
+		var imgs:Map<String, Image> = new Map();
+		for (i in 0...urls.length) {
+			var url = root != "" ? root + urls[i] : urls[i];
+			if (Assets.exists(url)) {
+				var img = Assets.getImage(url);
+				var image = new Image(img.data, img.width, img.height);
+				imgs.set(urls[i], image);
+			} 
+			else {
+				trace("Image '" + url + "' doesn't exist!");
+			}
+			
+			if (i == urls.length - 1) {
+				onload(imgs);
+			}
+		}
+		#end
+	}	
+	#end
+	
 
 	public static function Format(value:Float, decimals:Int = 2):String {
 		value = Math.round(value * Math.pow(10, decimals));
@@ -211,214 +910,23 @@ import openfl.net.URLRequest;
 			return str.substr(0, str.length - decimals) + (decimals == 0 ? '' : '.') + str.substr(str.length - decimals);
 		}
 	}
-
-	public static function CheckExtends(v:Vector3, min:Vector3, max:Vector3) {
-		if (v.x < min.x)
-			min.x = v.x;
-		if (v.y < min.y)
-			min.y = v.y;
-		if (v.z < min.z)
-			min.z = v.z;
-
-		if (v.x > max.x)
-			max.x = v.x;
-		if (v.y > max.y)
-			max.y = v.y;
-		if (v.z > max.z)
-			max.z = v.z;
-	}
-
-	inline public static function WithinEpsilon(a:Float, b:Float, epsilon:Float = 1.401298E-45):Bool {
-		var num = a - b;
-		return -epsilon <= num && num <= epsilon;
-	}
-
-	public static function DeepCopy(source:Dynamic, destination:Dynamic, ?doNotCopyList:Array<String>, ?mustCopyList:Array<String>) {
-		var sourceFields = Type.getInstanceFields(source);
-		for (prop in sourceFields) {
-			if (prop.charAt(0) == "_" && (mustCopyList == null || mustCopyList.indexOf(prop) == -1)) {
-				continue;
-			}
-
-			if (doNotCopyList != null && doNotCopyList.indexOf(prop) != -1) {
-				continue;
-			}
-			var sourceValue = Reflect.getProperty(source, prop);
-
-			if (Reflect.isFunction(sourceValue)) {
-				continue;
-			}
+	
+	public static function cloneValue(source:Dynamic, destinationObject:Dynamic):Dynamic {
+		if (source == null)
+			return null;
 			
-			Reflect.setField(destination, prop, dcopy(sourceValue));
-
-			/*if (Reflect.isObject(sourceValue)) {
-				if (Std.is(sourceValue, Array)) {
-					Reflect.setField(destination, prop, new Array<Dynamic>());
-
-					if (sourceValue.length > 0) {
-						var sv = cast(sourceValue, Array<Dynamic>);
-						if (Reflect.isObject(sv[0])) {
-							for (index in 0...sv.length) {
-								var clonedValue = cloneValue(sv[index], destination);
-
-								if (cast(Reflect.getProperty(destination, prop), Array<Dynamic>).indexOf(clonedValue) == -1) { // Test if auto inject was not done
-									cast(Reflect.getProperty(destination, prop), Array<Dynamic>).push(clonedValue);
-								}
-							}
-						} else {
-							Reflect.setField(destination, prop, sv.slice(0));
-						}
-					}
-				} else {
-					Reflect.setField(destination, prop, cloneValue(sourceValue, destination));
-				}
-			} else {
-				Reflect.setField(destination, prop, sourceValue);
-			}*/
-		}
-	}
-	
-	/*public static function copy<T>(v:T):T { 
-		if (!Reflect.isObject(v)) { // simple type 
-			return v; 
-		}
-		else if (Std.is(v, String)) { // string
-			return v;
-		}
-		else if(Std.is( v, Array )) { // array 
-			var result = Type.createInstance(Type.getClass(v), []); 
-			untyped { 
-				for( ii in 0...v.length ) {
-					result.push(copy(v[ii]));
-				}
-			} 
-			return result;
-		}
-		else if(Std.is(v, Map)) { // hashmap
-			var result = Type.createInstance(Type.getClass(v), []);
-			untyped {
-				var keys : Iterator<String> = v.keys();
-				for( key in keys ) {
-					result.set(key, copy(v.get(key)));
-				}
-			} 
-			return result;
-		}
-		else if(Std.is( v, IntHash )) { // integer-indexed hashmap
-			var result = Type.createInstance(Type.getClass(v), []);
-			untyped {
-				var keys : Iterator<Int> = v.keys();
-				for( key in keys ) {
-					result.set(key, copy(v.get(key)));
-				}
-			} 
-			return result;
-		}
-		else if(Std.is( v, List )) { // list
-			//List would be copied just fine without this special case, but I want to avoid going recursive
-			var result = Type.createInstance(Type.getClass(v), []);
-			untyped {
-				var iter:Iterator<Dynamic> = v.iterator();
-				for(ii in iter) {
-					result.add(ii);
-				}
-			} 
-			return result; 
-		}
-		else if(Type.getClass(v) == null) { // anonymous object 
-			var obj : Dynamic = {}; 
-			for( ff in Reflect.fields(v) ) { 
-				Reflect.setField(obj, ff, copy(Reflect.field(v, ff))); 
-			}
-			return obj; 
-		} 
-		else { // class 
-			var obj = Type.createEmptyInstance(Type.getClass(v)); 
-			for(ff in Reflect.fields(v)) {
-				Reflect.setField(obj, ff, copy(Reflect.field(v, ff))); 
-			}
-			return obj; 
-		} 
-		return null; 
-	}*/
-	
-	public static function dcopy<T>(v:T):T {
-		if(Std.is(v, Array)) { // array 		 
-			var r = Type.createInstance(Type.getClass(v), []); 
-			untyped 
-			{ 
-				for( ii in 0...v.length ) 
-				r.push(dcopy(v[ii])); 
-			} 
-			return r; 
-		} 
-		else if(Type.getClass(v) == null) { // anonymous object 
-			var obj : Dynamic = {}; 
-			for(ff in Reflect.fields(v)) {
-				Reflect.setField(obj, ff, dcopy(Reflect.field(v, ff))); 
-			}
-			return obj; 
-		} 
-		else { // class 
-			var obj = Type.createEmptyInstance(Type.getClass(v)); 
-			for(ff in Reflect.fields(v)) {
-				Reflect.setField(obj, ff, dcopy(Reflect.field(v, ff))); 
-			}
-			return obj; 
+		if (Std.is(source, Mesh)) {
+			return null;
 		}
 		
+		if (Std.is(source, SubMesh)) {
+			return cast(source, SubMesh).clone(cast(destinationObject, AbstractMesh));
+		}
+		else if (Reflect.hasField(source, "clone")) {
+			return source.clone();// Reflect.callMethod(source, "clone", []);
+		}
 		return null;
 	}
-	
-	/** 
-		deep copy of anything 
-	**/ 
-	public static function deepCopy<T>(v:T):T { 
-		if (!Reflect.isObject(v)) {  // simple type 		
-		  return v; 
-		} 
-		else if(Std.is(v, Array)) { // array 		 
-			var r = Type.createInstance(Type.getClass(v), []); 
-			untyped 
-			{ 
-				for( ii in 0...v.length ) 
-				r.push(deepCopy(v[ii])); 
-			} 
-			return r; 
-		} 
-		else if(Type.getClass(v) == null) { // anonymous object 
-			var obj : Dynamic = {}; 
-			for(ff in Reflect.fields(v)) {
-				Reflect.setField(obj, ff, deepCopy(Reflect.field(v, ff))); 
-			}
-			return obj; 
-		} 
-		else { // class 
-			var obj = Type.createEmptyInstance(Type.getClass(v)); 
-			for(ff in Reflect.fields(v)) {
-				Reflect.setField(obj, ff, deepCopy(Reflect.field(v, ff))); 
-			}
-			return obj; 
-		}
-		
-		return null; 
-	} 
-		
-	public static function cloneValue(source:Dynamic, destinationObject:Dynamic):Dynamic {
-        if (source == null)
-            return null;
-
-        if (Std.is(source, Mesh)) {
-            return null;
-        }
-
-        if (Std.is(source, SubMesh)) {
-            return cast(source, SubMesh).clone(cast(destinationObject, AbstractMesh));
-        } else if (Reflect.hasField(source, "clone")) {
-            return Reflect.callMethod(source, "clone", []);
-        }
-        return null;
-    };
 
 	public static function IsEmpty(obj:Dynamic):Bool {
 		if(Std.is(obj, Array)) {
@@ -429,16 +937,79 @@ import openfl.net.URLRequest;
 		return true;
 	}
 
-	public static function Now():Float {
+	inline public static function Now():Float {
 		return getTimer();
 	}
 	
-	private static function getTimer():Int {		
+	inline private static function getTimer():Int {		
 		#if flash
 		return flash.Lib.getTimer ();
 		#else
-		return Std.int ((Timer.stamp () - __startTime) * 1000);
+		return Std.int ((Timer.stamp() - __startTime) * 1000);
 		#end		
+	}
+	
+	public static inline function uuid():String {
+		var specialChars = ['8', '9', 'A', 'B'];
+		
+		var createRandomIdentifier = function(length:Int, radix:Int = 61):String {
+			var characters = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
+			var id:Array<String>   = new Array<String>();
+			radix                  = (radix > 61) ? 61 : radix;
+			
+			while (length-- > 0) {
+				id.push(characters[com.babylonhx.math.Tools.randomInt(0, radix)]);
+			}
+			
+			return id.join('');
+		}
+		
+		return createRandomIdentifier(8, 15) + '-' + createRandomIdentifier(4, 15) + '-4' + createRandomIdentifier(3, 15) + '-' + com.babylonhx.math.Tools.randomInt(0, 3) + createRandomIdentifier(3, 15) + '-' + createRandomIdentifier(12, 15);
+	}	
+	
+	/**
+	 * This method can be used with hashCodeFromStream when your input is an array of values that are either: 
+	 * number, string, boolean or custom type implementing the getHashCode():number method.
+	 * @param array
+	 */
+	public static function arrayOrStringFeeder(array:Dynamic):Int->Int {
+		return function(index:Int):Int {
+			if (index >= array.length) {
+				return -9999;
+			}
+			
+			var val:Dynamic = array.charCodeAt != null ? array.charCodeAt(index) : array[index];
+			if (val != null && val.getHashCode != null) {
+				val = val.getHashCode();
+			}
+			if (Std.is(val, String)) {
+				return Tools.hashCodeFromStream(Tools.arrayOrStringFeeder(val));
+			}
+			
+			return val;
+		};
+	}
+
+	/**
+	 * Compute the hashCode of a stream of number
+	 * To compute the HashCode on a string or an Array of data types implementing the getHashCode() method, 
+	 * use the arrayOrStringFeeder method.
+	 * @param feeder a callback that will be called until it returns null, each valid returned values will 
+	 * be used to compute the hash code.
+	 * @return the hash code computed
+	 */
+	public static function hashCodeFromStream(feeder:Int->Int):Int {
+		// Based from here: http://stackoverflow.com/a/7616484/802124
+		var hash = 0;
+		var index = 0;
+		var chr = feeder(index++);
+		while (chr != -9999) {
+			hash = Std.int(((hash << 5) - hash) + chr);
+			//hash |= 0;                          // Convert to 32bit integer
+			chr = feeder(index++);
+		}
+		
+		return hash;
 	}
 	
 }

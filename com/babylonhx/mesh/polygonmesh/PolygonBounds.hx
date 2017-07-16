@@ -6,7 +6,7 @@ import com.babylonhx.math.Vector2;
  * ...
  * @author Krtolica Vujadin
  */
-class PolygonBounds {
+@:expose('BABYLON.PolygonBounds') class PolygonBounds {
 	
 	public var min:Vector2;
 	public var max:Vector2;

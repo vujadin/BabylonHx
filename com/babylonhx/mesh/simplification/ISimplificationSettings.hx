@@ -13,5 +13,6 @@ package com.babylonhx.mesh.simplification;
   
 	var quality:Int;
     var distance:Float;
+	var optimizeMesh:Bool;
 	
 }

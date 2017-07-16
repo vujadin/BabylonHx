@@ -5,11 +5,6 @@ package com.babylonhx.math;
  * @author Krtolica Vujadin
  */
 
-enum Space {
-	LOCAL;
-	WORLD;
-}
-
 @:expose('BABYLON.Axis') class Axis {
 	
 	public static var X:Vector3 = new Vector3(1, 0, 0);

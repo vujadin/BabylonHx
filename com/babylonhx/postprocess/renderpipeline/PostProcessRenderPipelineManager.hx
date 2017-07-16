@@ -11,11 +11,11 @@ package com.babylonhx.postprocess.renderpipeline;
 	
 
 	public function new() {
-		this._renderPipelines = new Map<String, PostProcessRenderPipeline>();
+		this._renderPipelines = new Map();
 	}
 
 	public function addPipeline(renderPipeline:PostProcessRenderPipeline) {
-		this._renderPipelines.set(renderPipeline._name, renderPipeline);
+		this._renderPipelines[renderPipeline._name] = renderPipeline;
 	}
 
 	public function attachCamerasToRenderPipeline(renderPipelineName:String, cameras:Dynamic, unique:Bool = false) {
@@ -80,7 +80,15 @@ package com.babylonhx.postprocess.renderpipeline;
 
 	public function update() {
 		for (renderPipelineName in this._renderPipelines.keys()) {
-			this._renderPipelines[renderPipelineName]._update();
+			var pipeline = this._renderPipelines[renderPipelineName];
+			if (!pipeline.isSupported) {
+				pipeline.dispose();
+				this._renderPipelines[renderPipelineName] = null;
+				this._renderPipelines.remove(renderPipelineName);
+			} 
+			else {
+				pipeline._update();
+			}
 		}
 	}
 	

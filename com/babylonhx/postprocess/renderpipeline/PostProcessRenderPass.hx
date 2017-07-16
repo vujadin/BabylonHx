@@ -1,6 +1,7 @@
 package com.babylonhx.postprocess.renderpipeline;
 
 import com.babylonhx.materials.textures.RenderTargetTexture;
+import com.babylonhx.tools.EventState;
 import com.babylonhx.mesh.Mesh;
 
 /**
@@ -20,14 +21,14 @@ import com.babylonhx.mesh.Mesh;
 	public var _name:String;
 	
 
-	public function new(scene:Scene, name:String, size:Int, renderList:Array<Mesh>, beforeRender:Void->Void, afterRender:Void->Void) {
+	public function new(scene:Scene, name:String, size:Int, renderList:Array<Mesh>, beforeRender:Int->Null<EventState>->Void, afterRender:Int->Null<EventState>->Void) {
 		this._name = name;
 		
 		this._renderTexture = new RenderTargetTexture(name, size, scene);
 		this.setRenderList(renderList);
 		
-		this._renderTexture.onBeforeRender = beforeRender;
-		this._renderTexture.onAfterRender = afterRender;
+		this._renderTexture.onBeforeRenderObservable.add(beforeRender);
+		this._renderTexture.onAfterRenderObservable.add(afterRender);
 		
 		this._scene = scene;
 		
@@ -54,17 +55,17 @@ import com.babylonhx.mesh.Mesh;
 		return this._refCount;
 	}
 
-	public function _update():Void {
+	inline public function _update():Void {
 		this.setRenderList(this._renderList);
 	}
 
 	// public
 
-	public function setRenderList(renderList:Array<Mesh>):Void {
+	inline public function setRenderList(renderList:Array<Mesh>):Void {
 		this._renderTexture.renderList = cast renderList;
 	}
 
-	public function getRenderTexture():RenderTargetTexture {
+	inline public function getRenderTexture():RenderTargetTexture {
 		return this._renderTexture;
 	}
 	

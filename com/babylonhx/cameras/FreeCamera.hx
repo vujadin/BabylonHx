@@ -4,22 +4,10 @@ import com.babylonhx.collisions.Collider;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
+import com.babylonhx.tools.Tools;
 
-#if nme
-import nme.display.Sprite;
-import nme.events.KeyboardEvent;
-import nme.events.MouseEvent;
-import nme.Lib;
-#elseif openfl
-import openfl.display.Sprite;
-import openfl.events.KeyboardEvent;
-import openfl.events.MouseEvent;
-import openfl.Lib;
-#elseif snow
+import com.babylonhx.utils.Keycodes;
 
-#elseif kha
-
-#end
 
 /**
 * ...
@@ -29,10 +17,23 @@ import openfl.Lib;
 @:expose('BABYLON.FreeCamera') class FreeCamera extends TargetCamera {
 	
 	public var ellipsoid:Vector3 = new Vector3(0.5, 1, 0.5);
-	public var keysUp:Array<Int> = [38];
-	public var keysDown:Array<Int> = [40];
-	public var keysLeft:Array<Int> = [37];
-	public var keysRight:Array<Int> = [39];
+	
+#if purejs
+
+	public var keysUp:Array<Int> = [38, 87];
+	public var keysDown:Array<Int> = [40, 83];
+	public var keysLeft:Array<Int> = [37, 65];
+	public var keysRight:Array<Int> = [39, 68];
+	
+#else
+
+	public var keysUp:Array<Int> = [Keycodes.up, Keycodes.key_w];
+	public var keysDown:Array<Int> = [Keycodes.down, Keycodes.key_s];
+	public var keysLeft:Array<Int> = [Keycodes.left, Keycodes.key_a];
+	public var keysRight:Array<Int> = [Keycodes.right, Keycodes.key_d];
+	
+#end
+	
 	public var checkCollisions:Bool = false;
 	public var applyGravity:Bool = false;
 	public var angularSensibility:Float = 2000.0;
@@ -48,15 +49,13 @@ import openfl.Lib;
 	private var _localDirection:Vector3;
 	private var _transformedDirection:Vector3;
 
-	private var _onMouseDown:Dynamic->Void;			// MouseEvent->Dynamic
-	private var _onMouseUp:Dynamic->Void;			// MouseEvent->Dynamic
-	private var _onMouseOut:Dynamic->Void;			// MouseEvent->Dynamic
-	private var _onMouseMove:Dynamic->Void;			// MouseEvent->Dynamic
-	private var _onKeyDown:Dynamic->Void;			// MouseEvent->Dynamic
-	private var _onKeyUp:Dynamic->Void;				// MouseEvent->Dynamic
-	public var _onLostFocus:Void->Void;				// MouseEvent->Dynamic
-
-	//public var _waitingLockedTargetId:String;
+	private var _onMouseDown:Dynamic;			
+	private var _onMouseUp:Dynamic;			
+	private var _onMouseOut:Dynamic;			
+	private var _onMouseMove:Dynamic;			
+	private var _onKeyDown:Dynamic;			
+	private var _onKeyUp:Dynamic;				
+	public var _onLostFocus:Void->Void;				
 	
 
 	public function new(name:String, position:Vector3, scene:Scene) {
@@ -64,121 +63,119 @@ import openfl.Lib;
 	}
 
 	// Controls
-	override public function attachControl(element:Dynamic, noPreventDefault:Bool = false/*?noPreventDefault:Bool*/):Void {
+	override public function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true, enableKeyboard:Bool = true) {
 		var previousPosition:Dynamic = null;// { x: 0, y: 0 };
 		var engine = this.getEngine();
-
-		if (this._attachedElement != null) {
-			return;
-		}
+		
 		this._attachedElement = element;
-
+		
 		if (this._onMouseDown == null) {
-			this._onMouseDown = function(evt:Dynamic) {
+			this._onMouseDown = function(x:Float, y:Float, button:Int) {
 				previousPosition = {
-					x: evt.localX,
-					y: evt.localY
+					x: x,
+					y: y
 				};
-
-				#if js
-				if (noPreventDefault == null) {
-					//evt.preventDefault();
-				}
-				#end
 			};
-
-			this._onMouseUp = function(evt:Dynamic) {
+			
+			this._onMouseUp = function(x:Float, y:Float, button:Int) {
+				previousPosition = null;				
+			};
+			
+			this._onMouseOut = function() {
 				previousPosition = null;
-				#if js
-				if (noPreventDefault == null) {
-					//evt.preventDefault();
-				}
-				#end
+				this._keys = [];				
 			};
-
-			this._onMouseOut = function(evt:Dynamic) {
-				previousPosition = null;
-				this._keys = [];
-				#if js
-				if (noPreventDefault == null) {
-					//evt.preventDefault();
-				}
-				#end
-			};
-
-			this._onMouseMove = function(evt:Dynamic) {
+			
+			this._onMouseMove = function(x:Float, y:Float) {
 				if (previousPosition == null && !engine.isPointerLock) {
 					return;
 				}
-
+				
 				var offsetX:Float = 0;
 				var offsetY:Float = 0;
-
+				
 				if (!engine.isPointerLock) {
-					offsetX = evt.localX - previousPosition.x;
-					offsetY = evt.localY - previousPosition.y;
-				} else {
-					#if js
-					untyped offsetX = evt.movementX || evt.mozMovementX || evt.webkitMovementX || evt.msMovementX || 0;
-					untyped offsetY = evt.movementY || evt.mozMovementY || evt.webkitMovementY || evt.msMovementY || 0;
-					#end
-				}
-
+					offsetX = x - previousPosition.x;
+					offsetY = y - previousPosition.y;
+				} 
+				
 				this.cameraRotation.y += offsetX / this.angularSensibility;
 				this.cameraRotation.x += offsetY / this.angularSensibility;
-
+				
 				previousPosition = {
-					x: evt.localX,
-					y: evt.localY
+					x: x,
+					y: y
+				};				
+			};
+			
+			if (enableKeyboard) {
+				
+			#if purejs
+				
+				this._onKeyDown = function(evt:Dynamic) {
+					var keyCode = evt.keyCode;
+					if (this.keysUp.indexOf(keyCode) != -1 ||
+						this.keysDown.indexOf(keyCode) != -1 ||
+						this.keysLeft.indexOf(keyCode) != -1 ||
+						this.keysRight.indexOf(keyCode) != -1) {
+						var index = this._keys.indexOf(keyCode);
+						
+						if (index == -1) {
+							this._keys.push(keyCode);
+						}
+					}
 				};
 				
-				#if js
-				if (noPreventDefault == null) {
-					//evt.preventDefault();
-				}
-				#end
-			};
-
-			this._onKeyDown = function(evt:Dynamic ) {
-				if (this.keysUp.indexOf(evt.keyCode) != -1 ||
-					this.keysDown.indexOf(evt.keyCode) != -1 ||
-					this.keysLeft.indexOf(evt.keyCode) != -1 ||
-					this.keysRight.indexOf(evt.keyCode) != -1) {
-					var index = this._keys.indexOf(evt.keyCode);
-
-					if (index == -1) {
-						this._keys.push(evt.keyCode);
+				this._onKeyUp = function(evt:Dynamic) {
+					var keyCode = evt.keyCode;
+					if (this.keysUp.indexOf(keyCode) != -1 ||
+						this.keysDown.indexOf(keyCode) != -1 ||
+						this.keysLeft.indexOf(keyCode) != -1 ||
+						this.keysRight.indexOf(keyCode) != -1) {
+						var index = this._keys.indexOf(keyCode);
+						
+						if (index >= 0) {
+							this._keys.splice(index, 1);
+						}
 					}
-					#if js
-					if (noPreventDefault == null) {
-						//evt.preventDefault();
+				};
+				
+			#else
+				
+				this._onKeyDown = function(keyCode:Int) {
+					if (this.keysUp.indexOf(keyCode) != -1 ||
+						this.keysDown.indexOf(keyCode) != -1 ||
+						this.keysLeft.indexOf(keyCode) != -1 ||
+						this.keysRight.indexOf(keyCode) != -1) {
+						var index = this._keys.indexOf(keyCode);
+						
+						if (index == -1) {
+							this._keys.push(keyCode);
+						}
 					}
-					#end
-				}
-			};
-
-			this._onKeyUp = function(evt:Dynamic) {
-				if (this.keysUp.indexOf(evt.keyCode) != -1 ||
-					this.keysDown.indexOf(evt.keyCode) != -1 ||
-					this.keysLeft.indexOf(evt.keyCode) != -1 ||
-					this.keysRight.indexOf(evt.keyCode) != -1) {
-					var index = this._keys.indexOf(evt.keyCode);
-
-					if (index >= 0) {
-						this._keys.splice(index, 1);
+				};
+				
+				this._onKeyUp = function(keyCode:Int) {
+					if (this.keysUp.indexOf(keyCode) != -1 ||
+						this.keysDown.indexOf(keyCode) != -1 ||
+						this.keysLeft.indexOf(keyCode) != -1 ||
+						this.keysRight.indexOf(keyCode) != -1) {
+						var index = this._keys.indexOf(keyCode);
+						
+						if (index >= 0) {
+							this._keys.splice(index, 1);
+						}
 					}
-					#if js
-					if (noPreventDefault == null) {
-						//evt.preventDefault();
-					}
-					#end
-				}
-			};
-
+				};
+				
+			#end
+			
+			}
+			
 			this._onLostFocus = function() {
 				this._keys = [];
 			};
-
+			
 			this._reset = function() {
 				this._keys = [];
 				previousPosition = null;
@@ -186,116 +183,165 @@ import openfl.Lib;
 				this.cameraRotation = new Vector2(0, 0);
 			};
 		}
-
-		Lib.current.stage.addEventListener(MouseEvent.MOUSE_DOWN, this._onMouseDown, false);
-		Lib.current.stage.addEventListener(MouseEvent.MOUSE_UP, this._onMouseUp, false);
-		//Lib.current.stage.addEventListener(MouseEvent.MOUSE_OUT, this._onMouseOut, false);
-		Lib.current.stage.addEventListener(MouseEvent.MOUSE_MOVE, this._onMouseMove, false);
-		Lib.current.stage.addEventListener(KeyboardEvent.KEY_DOWN, this._onKeyDown, false);
-		Lib.current.stage.addEventListener(KeyboardEvent.KEY_UP, this._onKeyUp, false);
-
-		/*Tools.RegisterTopRootEvents([
+		
+	#if purejs
+		
+		this.getScene().getEngine().getRenderingCanvas().addEventListener(eventPrefix + "down", function(e) {
+			this._onMouseDown(e.clientX, e.clientY, e.button);
+		}, false);
+		this.getScene().getEngine().getRenderingCanvas().addEventListener(eventPrefix + "up", function(e) {
+			this._onMouseUp(e.clientX, e.clientY, e.button);
+		}, false);
+		//Engine.app.addEventListener(eventPrefix + "out", this._onMouseUp, false);
+		this.getScene().getEngine().getRenderingCanvas().addEventListener(eventPrefix + "move", function(e) {
+			this._onMouseMove(e.clientX, e.clientY);
+		}, false);
+		this.getScene().getEngine().getRenderingCanvas().addEventListener("mousemove", function(e) {
+			this._onMouseMove(e.clientX, e.clientY);
+		}, false);
+		/*Engine.app.addEventListener("MSPointerDown", this._onGestureStart, false);
+		Engine.app.addEventListener("MSGestureChange", this._onGesture, false);*/
+				
+		Tools.RegisterTopRootEvents([
 			{ name: "keydown", handler: this._onKeyDown },
 			{ name: "keyup", handler: this._onKeyUp },
 			{ name: "blur", handler: this._onLostFocus }
-		]);*/
+		]);
+		
+	#else
+
+		this.getScene().getEngine().keyDown.push(_onKeyDown);
+		this.getScene().getEngine().keyUp.push(_onKeyUp);
+		this.getScene().getEngine().mouseDown.push(_onMouseDown);
+		this.getScene().getEngine().mouseUp.push(_onMouseUp);
+		this.getScene().getEngine().mouseMove.push(_onMouseMove);
+		
+	#end
 	}
 
-	override public function detachControl(element:Dynamic):Void {
-		if (this._attachedElement != element) {
-			return;
-		}
-
-		element.removeEventListener(MouseEvent.MOUSE_DOWN, this._onMouseDown);
-		element.removeEventListener(MouseEvent.MOUSE_UP, this._onMouseUp);
-		element.removeEventListener(MouseEvent.MOUSE_OUT, this._onMouseOut);
-		element.removeEventListener(MouseEvent.MOUSE_MOVE, this._onMouseMove);
-		
-		element.removeEventListener(KeyboardEvent.KEY_DOWN, this._onKeyDown, false);
-		element.removeEventListener(KeyboardEvent.KEY_UP, this._onKeyUp, false);
-
-		/*Tools.UnregisterTopRootEvents([
+	override public function detachControl(?element:Dynamic) {	
+	#if purejs
+	
+		this.getScene().getEngine().getRenderingCanvas().removeEventListener(eventPrefix + "down", this._onMouseDown, false);
+		this.getScene().getEngine().getRenderingCanvas().removeEventListener(eventPrefix + "up", this._onMouseUp, false);
+		this.getScene().getEngine().getRenderingCanvas().removeEventListener(eventPrefix + "out", this._onMouseUp, false);
+		this.getScene().getEngine().getRenderingCanvas().removeEventListener(eventPrefix + "move", this._onMouseMove, false);
+		this.getScene().getEngine().getRenderingCanvas().removeEventListener("mousemove", this._onMouseMove, false);
+		/*Engine.app.addEventListener("MSPointerDown", this._onGestureStart, false);
+		Engine.app.addEventListener("MSGestureChange", this._onGesture, false);*/
+				
+		Tools.UnregisterTopRootEvents([
 			{ name: "keydown", handler: this._onKeyDown },
 			{ name: "keyup", handler: this._onKeyUp },
 			{ name: "blur", handler: this._onLostFocus }
-		]);*/
+		]);
+		
+	#else
 
-		this._attachedElement = null;
+		this.getScene().getEngine().keyDown.remove(_onKeyDown);
+		this.getScene().getEngine().keyUp.remove(_onKeyUp);
+		this.getScene().getEngine().mouseDown.remove(_onMouseDown);
+		this.getScene().getEngine().mouseUp.remove(_onMouseUp);
+		this.getScene().getEngine().mouseMove.remove(_onMouseMove);
+		
+	#end
+		
 		if (this._reset != null) {
 			this._reset();
 		}
 	}
 
-	public function _collideWithWorld(velocity:Vector3):Void {
+	public function _collideWithWorld(velocity:Vector3) {
 		var globalPosition:Vector3 = null;
-
+		
 		if (this.parent != null) {
 			globalPosition = Vector3.TransformCoordinates(this.position, this.parent.getWorldMatrix());
-		} else {
+		} 
+		else {
 			globalPosition = this.position;
 		}
-
+		
 		globalPosition.subtractFromFloatsToRef(0, this.ellipsoid.y, 0, this._oldPosition);
 		this._collider.radius = this.ellipsoid;
-
-		this.getScene()._getNewPosition(this._oldPosition, velocity, this._collider, 3, this._newPosition);
-		this._newPosition.subtractToRef(this._oldPosition, this._diffPosition);
-
-		if (this._diffPosition.length() > Engine.CollisionsEpsilon) {
-			this.position.addInPlace(this._diffPosition);
-			if (this.onCollide != null) {
-				this.onCollide(this._collider.collidedMesh);
+		
+		//no need for clone, as long as gravity is not on.
+		var actualVelocity = velocity;
+		
+		//add gravity to the velocity to prevent the dual-collision checking
+		if (this.applyGravity) {
+			//this prevents mending with cameraDirection, a global variable of the free camera class.
+			actualVelocity = velocity.add(this.getScene().gravity);
+		}
+		
+		this.getScene().collisionCoordinator.getNewPosition(this._oldPosition, actualVelocity, this._collider, 3, null, this._onCollisionPositionChange, this.uniqueId);		
+	}
+	
+	private function _onCollisionPositionChange(collisionId:Int, newPosition:Vector3, collidedMesh:AbstractMesh = null) {
+		//TODO move this to the collision coordinator!
+		if (this.getScene().workerCollisions) {
+			newPosition.multiplyInPlace(this._collider.radius);
+		}
+		
+		var updatePosition = function(newPos:Vector3) {
+			this._newPosition.copyFrom(newPos);
+			
+			this._newPosition.subtractToRef(this._oldPosition, this._diffPosition);
+			
+			var oldPosition = this.position.clone();
+			if (this._diffPosition.length() > Engine.CollisionsEpsilon) {
+				this.position.addInPlace(this._diffPosition);
+				if (this.onCollide != null && collidedMesh != null) {
+					this.onCollide(collidedMesh);
+				}
 			}
 		}
+		
+		updatePosition(newPosition);
 	}
 
-	public function _checkInputs():Void {
+	override public function _checkInputs() {		
 		if (this._localDirection == null) {
 			this._localDirection = Vector3.Zero();
 			this._transformedDirection = Vector3.Zero();
 		}
-
+		
 		// Keyboard
 		for (index in 0...this._keys.length) {
 			var keyCode = this._keys[index];
 			var speed = this._computeLocalCameraSpeed();
-
+			
 			if (this.keysLeft.indexOf(keyCode) != -1) {
-				this._localDirection.copyFromFloats(-speed, 0, 0);
-			} else if (this.keysUp.indexOf(keyCode) != -1) {
+				this._localDirection.copyFromFloats( -speed, 0, 0);
+			} 
+			else if (this.keysUp.indexOf(keyCode) != -1) {
 				this._localDirection.copyFromFloats(0, 0, speed);
-			} else if (this.keysRight.indexOf(keyCode) != -1) {
+			} 
+			else if (this.keysRight.indexOf(keyCode) != -1) {
 				this._localDirection.copyFromFloats(speed, 0, 0);
-			} else if (this.keysDown.indexOf(keyCode) != -1) {
+			} 
+			else if (this.keysDown.indexOf(keyCode) != -1) {
 				this._localDirection.copyFromFloats(0, 0, -speed);
 			}
-
+			
 			this.getViewMatrix().invertToRef(this._cameraTransformMatrix);
 			Vector3.TransformNormalToRef(this._localDirection, this._cameraTransformMatrix, this._transformedDirection);
 			this.cameraDirection.addInPlace(this._transformedDirection);
 		}
+		
+		super._checkInputs();
 	}
 
 	override public function _decideIfNeedsToMove():Bool {
 		return this._needMoveForGravity || Math.abs(this.cameraDirection.x) > 0 || Math.abs(this.cameraDirection.y) > 0 || Math.abs(this.cameraDirection.z) > 0;
 	}
 
-	override public function _updatePosition():Void {
+	override public function _updatePosition() {
 		if (this.checkCollisions && this.getScene().collisionsEnabled) {
 			this._collideWithWorld(this.cameraDirection);
-			if (this.applyGravity) {
-				var oldPosition = this.position;
-				this._collideWithWorld(this.getScene().gravity);
-				this._needMoveForGravity = (Vector3.DistanceSquared(oldPosition, this.position) != 0);
-			}
-		} else {
+		} 
+		else {
 			this.position.addInPlace(this.cameraDirection);
 		}
-	}
-
-	override public function _update():Void {
-		this._checkInputs();
-		super._update();
 	}
 
 }

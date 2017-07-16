@@ -11,8 +11,8 @@ import com.babylonhx.tools.Tools;
 
 @:expose('BABYLON.PostProcessRenderPipeline') class PostProcessRenderPipeline {
 	
-	private static var PASS_EFFECT_NAME:String = "passEffect";
-	private static var PASS_SAMPLER_NAME:String = "passSampler";
+	private static inline var PASS_EFFECT_NAME:String = "passEffect";
+	private static inline var PASS_SAMPLER_NAME:String = "passSampler";
 	
 	private var _engine:Engine;
 
@@ -22,6 +22,7 @@ import com.babylonhx.tools.Tools;
 	private var _cameras:Map<String, Camera>;
 
 	// private
+	@serialize()
 	public var _name:String;
 
 	
@@ -34,9 +35,20 @@ import com.babylonhx.tools.Tools;
 		
 		this._cameras = new Map<String, Camera>();
 	}
+	
+	public var isSupported(get, never):Bool;
+	private function get_isSupported():Bool {
+		for (renderEffectName in this._renderEffects.keys()) {
+			if (!this._renderEffects[renderEffectName].isSupported) {
+				return false;
+			}
+		}
+		
+		return true;
+	}
 
 	public function addEffect(renderEffect:PostProcessRenderEffect) {
-		this._renderEffects.set(renderEffect._name, renderEffect);
+		this._renderEffects[renderEffect._name] = renderEffect;
 	}
 
 	public function _enableEffect(renderEffectName:String, cameras:Dynamic) {
@@ -46,7 +58,7 @@ import com.babylonhx.tools.Tools;
 			return;
 		}
 		
-		renderEffects._enable(cameras != null ? cameras : this._cameras);
+		renderEffects._enable(Tools.MakeArray(cameras != null ? cameras : this._cameras));
 	}
 
 	public function _disableEffect(renderEffectName:String, cameras:Dynamic) {
@@ -69,7 +81,7 @@ import com.babylonhx.tools.Tools;
 			var cameraName:String = camera.name;
 			
 			if (!this._cameras.exists(cameraName)) {
-				this._cameras.set(cameraName, camera);
+				this._cameras[cameraName] = camera;
 			}
 			else if (unique) {
 				indicesToDelete.push(i);
@@ -159,4 +171,14 @@ import com.babylonhx.tools.Tools;
 			}
 		}
 	}
+	
+	public function _reset() {
+		this._renderEffects = new Map<String, PostProcessRenderEffect>();
+		this._renderEffectsForIsolatedPass = new Map<String, PostProcessRenderEffect>();
+	}
+	
+	public function dispose(disableDepthRender:Bool = false) {
+		// Must be implemented by children
+	}
+	
 }

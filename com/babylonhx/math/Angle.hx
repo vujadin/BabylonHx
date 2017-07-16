@@ -14,10 +14,11 @@ import com.babylonhx.math.Vector2;
 
 	private var _radians:Float;
 	
-	public function degrees():Float { 
+	
+	inline public function degrees():Float { 
 		return (this._radians * 180 / Math.PI); 
 	}
-	public function radians():Float { 
+	inline public function radians():Float { 
 		return this._radians; 
 	}
 	
@@ -29,7 +30,7 @@ import com.babylonhx.math.Vector2;
 		}
 	}
 
-	static public function BetweenTwoPoints(a:Vector2, b:Vector2):Angle {
+	inline static public function BetweenTwoPoints(a:Vector2, b:Vector2):Angle {
 		var delta = b.subtract(a);
 		var theta = Math.atan2(delta.y, delta.x);
 		return new Angle(theta);

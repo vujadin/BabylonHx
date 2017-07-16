@@ -12,7 +12,7 @@ package com.babylonhx.math;
 	public var w:Float;
 	
 	
-	public function new(x:Float = 0, y:Float = 0, z:Float = 0, w:Float = 1) {
+	inline public function new(x:Float = 0, y:Float = 0, z:Float = 0, w:Float = 1) {
 		this.x = x;
 		this.y = y;
 		this.z = z;
@@ -22,9 +22,29 @@ package com.babylonhx.math;
 	public function toString():String {
 		return "{X:" + this.x + " Y:" + this.y + " Z:" + this.z + " W:" + this.w + "}";
 	}
+	
+	public function getClassName():String {
+        return "Quaternion";
+    }
+
+    public function getHashCode():Float {
+        var hash = Std.int(this.x);
+        hash = Std.int(hash * 397) ^ Std.int(this.y);
+        hash = Std.int(hash * 397) ^ Std.int(this.z);
+        hash = Std.int(hash * 397) ^ Std.int(this.w);
+		
+        return hash;
+    }
 
 	inline public function asArray():Array<Float> {
 		return [this.x, this.y, this.z, this.w];
+	}
+	
+	inline public function set(x:Float = 0, y:Float = 0, z:Float = 0, w:Float = 1) {
+		this.x = x;
+		this.y = y;
+		this.z = z;
+		this.w = w;
 	}
 
 	inline public function equals(otherQuaternion:Quaternion):Bool {
@@ -68,15 +88,25 @@ package com.babylonhx.math;
 	inline public function multiply(q1:Quaternion):Quaternion {
 		var result = new Quaternion(0, 0, 0, 1.0);
 		this.multiplyToRef(q1, result);
+		
 		return result;
 	}
 
-	inline public function multiplyToRef(q1:Quaternion, result:Quaternion) {
-		result.x = this.x * q1.w + this.y * q1.z - this.z * q1.y + this.w * q1.x;
-		result.y = -this.x * q1.z + this.y * q1.w + this.z * q1.x + this.w * q1.y;
-		result.z = this.x * q1.y - this.y * q1.x + this.z * q1.w + this.w * q1.z;
-		result.w = -this.x * q1.x - this.y * q1.y - this.z * q1.z + this.w * q1.w;
+	inline public function multiplyToRef(q1:Quaternion, result:Quaternion):Quaternion {
+		var x = this.x * q1.w + this.y * q1.z - this.z * q1.y + this.w * q1.x;
+		var y = -this.x * q1.z + this.y * q1.w + this.z * q1.x + this.w * q1.y;
+		var z = this.x * q1.y - this.y * q1.x + this.z * q1.w + this.w * q1.z;
+		var w = -this.x * q1.x - this.y * q1.y - this.z * q1.z + this.w * q1.w;
+		result.copyFromFloats(x, y, z, w);
+		
+		return this;
 	}
+	
+	inline public function multiplyInPlace(q1:Quaternion):Quaternion {
+        this.multiplyToRef(q1, this);
+		
+        return this;
+    }
 
 	inline public function length():Float {
 		return Math.sqrt((this.x * this.x) + (this.y * this.y) + (this.z * this.z) + (this.w * this.w));
@@ -92,48 +122,47 @@ package com.babylonhx.math;
 		return this;
 	}
 	
-	inline public function toEulerAngles():Vector3 {
+	inline public function toEulerAngles(order:String = "YZX"):Vector3 {
 		var result = Vector3.Zero();
-		this.toEulerAnglesToRef(result);
+		this.toEulerAnglesToRef(result, order);
+		
 		return result;
 	}
 	
-	inline public function toEulerAnglesToRef(result:Vector3) {
-		//result is an EulerAngles in the in the z-x-z convention
+	public function toEulerAnglesToRef(result:Vector3, order:String = "YZX"):Quaternion {
+		var qz = this.z;
 		var qx = this.x;
 		var qy = this.y;
-		var qz = this.z;
 		var qw = this.w;
-		var qxy = qx * qy;
-		var qxz = qx * qz;
-		var qwy = qw * qy;
-		var qwz = qw * qz;
-		var qwx = qw * qx;
-		var qyz = qy * qz;
+		
+		var sqw = qw * qw;
+		var sqz = qz * qz;
 		var sqx = qx * qx;
 		var sqy = qy * qy;
 		
-		var determinant = sqx + sqy;
+		var zAxisY = qy * qz - qx * qw;
+		var limit = .4999999;
 		
-		if (determinant != 0.000 && determinant != 1.000) {
-			result.x = Math.atan2(qxz + qwy, qwx - qyz);
-			result.y = Math.acos(1 - 2 * determinant);
-			result.z = Math.atan2(qxz - qwy, qwx + qyz);
-		} else {
-			if (determinant == 0.000) {
-				result.x = 0.0;
-				result.y = 0.0;
-				result.z = Math.atan2(qxy - qwz, 0.5 - sqy - qz * qz); //actually, degeneracy gives us choice with x+z=Math.atan2(qxy-qwz,0.5-sqy-qz*qz)
-			} else //determinant == 1.000
-			{
-				result.x = Math.atan2(qxy - qwz, 0.5 - sqy - qz * qz); //actually, degeneracy gives us choice with x-z=Math.atan2(qxy-qwz,0.5-sqy-qz*qz)
-				result.y = Math.PI;
-				result.z = 0.0;
-			}
+		if (zAxisY < -limit) {
+			result.y = 2 * Math.atan2(qy, qw);
+			result.x = Math.PI / 2;
+			result.z = 0;
 		}
+		else if (zAxisY > limit) {
+			result.y = 2 * Math.atan2(qy, qw);
+			result.x = -Math.PI / 2;
+			result.z = 0;
+		}
+		else {
+			result.z = Math.atan2(2.0 * (qx * qy + qz * qw), ( -sqz - sqx + sqy + sqw));
+			result.x = Math.asin( -2.0 * (qz * qy - qx * qw));
+			result.y = Math.atan2(2.0 * (qz * qx + qy * qw), (sqz - sqx - sqy + sqw));
+		}
+		
+		return this;
 	}
 
-	inline public function toRotationMatrix(result:Matrix) {
+	public function toRotationMatrix(result:Matrix) {
 		var xx = this.x * this.x;
 		var yy = this.y * this.y;
 		var zz = this.z * this.z;
@@ -161,20 +190,45 @@ package com.babylonhx.math;
 		result.m[14] = 0;
 		result.m[15] = 1.0;
 	}
+	
+	public function multVector(vec:Vector3):Vector3 {		  
+		var num = this.x * 2;
+		var num2 = this.y * 2;
+		var num3 = this.z * 2;
+		var num4 = this.x * num;
+		var num5 = this.y * num2;
+		var num6 = this.z * num3;
+		var num7 = this.x * num2;
+		var num8 = this.x * num3;
+		var num9 = this.y * num3;
+		var num10 = this.w * num;
+		var num11 = this.w * num2;
+		var num12 = this.w * num3;
+		
+		var result:Vector3 = new Vector3();
+		result.x = (1 - (num5 + num6)) * vec.x + (num7 - num12) * vec.y + (num8 + num11) * vec.z;
+		result.y = (num7 + num12) * vec.x + (1 - (num4 + num6)) * vec.y + (num9 - num10) * vec.z;
+		result.z = (num8 - num11) * vec.x + (num9 + num10) * vec.y + (1 - (num4 + num5)) * vec.z;
+		
+		return result;
+	}
 
-	public function fromRotationMatrix(matrix:Matrix) {
+	inline public function fromRotationMatrix(matrix:Matrix) {
 		Quaternion.FromRotationMatrixToRef(matrix, this);
+		
 		return this;
 	}
 
 	// Statics
+	
 	inline public static function FromRotationMatrix(matrix:Matrix):Quaternion {
 		var result = new Quaternion();
 		Quaternion.FromRotationMatrixToRef(matrix, result);
+		
 		return result;
 	}
 	
-	inline public static function FromRotationMatrixToRef(matrix:Matrix, result:Quaternion) {
+	public static function FromRotationMatrixToRef(matrix:Matrix, result:Quaternion) {
 		var data = matrix.m;
 		var m11 = data[0];
 		var m12 = data[4];
@@ -188,8 +242,7 @@ package com.babylonhx.math;
 		var _trace = m11 + m22 + m33;
 		var s:Float = 0;
 		
-		if (_trace > 0) {
-			
+		if (_trace > 0) {			
 			s = 0.5 / Math.sqrt(_trace + 1.0);
 			
 			result.w = 0.25 / s;
@@ -197,8 +250,8 @@ package com.babylonhx.math;
 			result.y = (m13 - m31) * s;
 			result.z = (m21 - m12) * s;
 			
-		} else if (m11 > m22 && m11 > m33) {
-			
+		} 
+		else if (m11 > m22 && m11 > m33) {			
 			s = 2.0 * Math.sqrt(1.0 + m11 - m22 - m33);
 			
 			result.w = (m32 - m23) / s;
@@ -206,8 +259,8 @@ package com.babylonhx.math;
 			result.y = (m12 + m21) / s;
 			result.z = (m13 + m31) / s;
 			
-		} else if (m22 > m33) {
-			
+		} 
+		else if (m22 > m33) {			
 			s = 2.0 * Math.sqrt(1.0 + m22 - m11 - m33);
 			
 			result.w = (m13 - m31) / s;
@@ -215,8 +268,8 @@ package com.babylonhx.math;
 			result.y = 0.25 * s;
 			result.z = (m23 + m32) / s;
 			
-		} else {
-			
+		} 
+		else {			
 			s = 2.0 * Math.sqrt(1.0 + m33 - m11 - m22);
 			
 			result.w = (m21 - m12) / s;
@@ -229,10 +282,19 @@ package com.babylonhx.math;
 	inline public static function Inverse(q:Quaternion):Quaternion {
 		return new Quaternion(-q.x, -q.y, -q.z, q.w);
 	}
-
+	
+	inline public static function Identity():Quaternion {
+		return new Quaternion(0, 0, 0, 1);
+	}
+	
 	inline public static function RotationAxis(axis:Vector3, angle:Float):Quaternion {
-		var result = new Quaternion();
+		return Quaternion.RotationAxisToRef(axis, angle, new Quaternion());
+	}
+
+	inline public static function RotationAxisToRef(axis:Vector3, angle:Float, result:Quaternion):Quaternion {
 		var sin = Math.sin(angle / 2);
+		
+		axis.normalize();
 		
 		result.w = Math.cos(angle / 2);
 		result.x = axis.x * sin;
@@ -247,12 +309,14 @@ package com.babylonhx.math;
 	}
 
 	inline public static function RotationYawPitchRoll(yaw:Float, pitch:Float, roll:Float):Quaternion {
-		var result = new Quaternion();
-		Quaternion.RotationYawPitchRollToRef(yaw, pitch, roll, result);
-		return result;
+		var q = new Quaternion();
+		Quaternion.RotationYawPitchRollToRef(yaw, pitch, roll, q);
+		
+		return q;
 	}
 
 	inline public static function RotationYawPitchRollToRef(yaw:Float, pitch:Float, roll:Float, result:Quaternion) {
+		// Produces a quaternion from Euler angles in the z-y-x orientation (Tait-Bryan angles)
 		var halfRoll = roll * 0.5;
 		var halfPitch = pitch * 0.5;
 		var halfYaw = yaw * 0.5;
@@ -270,12 +334,20 @@ package com.babylonhx.math;
 		result.w = (cosYaw * cosPitch * cosRoll) + (sinYaw * sinPitch * sinRoll);
 	}
 
-	inline public static function Slerp(left:Quaternion, right:Quaternion, amount:Float):Quaternion {
-		var num2 = 0.0;
-		var num3 = 0.0;
-		var num = amount;
-		var num4 = (((left.x * right.x) + (left.y * right.y)) + (left.z * right.z)) + (left.w * right.w);
-		var flag = false;
+	public static function Slerp(left:Quaternion, right:Quaternion, amount:Float):Quaternion {
+		var result = Quaternion.Identity();
+		
+        Quaternion.SlerpToRef(left, right, amount, result);
+		
+        return result;
+	}
+	
+	public static function SlerpToRef(left:Quaternion, right:Quaternion, amount:Float, result:Quaternion) {
+		var num2:Float = 0.0;
+		var num3:Float = 0.0;
+		var num:Float = amount;
+		var num4:Float = (((left.x * right.x) + (left.y * right.y)) + (left.z * right.z)) + (left.w * right.w);
+		var flag:Bool = false;
 		
 		if (num4 < 0) {
 			flag = true;
@@ -293,7 +365,28 @@ package com.babylonhx.math;
 			num2 = flag ? ((-Math.sin(num * num5)) * num6) : ((Math.sin(num * num5)) * num6);
 		}
 		
-		return new Quaternion((num3 * left.x) + (num2 * right.x), (num3 * left.y) + (num2 * right.y), (num3 * left.z) + (num2 * right.z), (num3 * left.w) + (num2 * right.w));
+		result.x = (num3 * left.x) + (num2 * right.x);
+        result.y = (num3 * left.y) + (num2 * right.y);
+        result.z = (num3 * left.z) + (num2 * right.z);
+        result.w = (num3 * left.w) + (num2 * right.w);
+	}
+	
+	/**
+	 * Returns a new Quaternion located for "amount" (float) on the Hermite interpolation spline defined by the vectors "value1", "tangent1", "value2", "tangent2".
+	 */
+	public static function Hermite(value1:Quaternion, tangent1:Quaternion, value2:Quaternion, tangent2:Quaternion, amount:Float):Quaternion {
+		var squared = amount * amount;
+		var cubed = amount * squared;
+		var part1 = ((2.0 * cubed) - (3.0 * squared)) + 1.0;
+		var part2 = (-2.0 * cubed) + (3.0 * squared);
+		var part3 = (cubed - (2.0 * squared)) + amount;
+		var part4 = cubed - squared;
+		
+		var x = (((value1.x * part1) + (value2.x * part2)) + (tangent1.x * part3)) + (tangent2.x * part4);
+		var y = (((value1.y * part1) + (value2.y * part2)) + (tangent1.y * part3)) + (tangent2.y * part4);
+		var z = (((value1.z * part1) + (value2.z * part2)) + (tangent1.z * part3)) + (tangent2.z * part4);
+		var w = (((value1.w * part1) + (value2.w * part2)) + (tangent1.w * part3)) + (tangent2.w * part4);
+		return new Quaternion(x, y, z, w);
 	}
 	
 }

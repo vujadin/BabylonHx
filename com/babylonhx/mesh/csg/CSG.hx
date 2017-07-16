@@ -4,14 +4,17 @@ import com.babylonhx.materials.Material;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
+import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.SubMesh;
+import com.babylonhx.mesh.VertexBuffer;
+import com.babylonhx.Scene;
 
 /**
  * ...
  * @author Krtolica Vujadin
  */
 
-class CSG {
+@:expose('BABYLON.CSG') class CSG {
 	
 	private static var currentCSGMeshId:Int = 0;
 	
@@ -47,7 +50,8 @@ class CSG {
 			meshPosition = mesh.position.clone();
 			meshRotation = mesh.rotation.clone();
 			meshScaling = mesh.scaling.clone();
-		} else {
+		} 
+		else {
 			throw 'CSG:Wrong Mesh type, must be Mesh';
 		}
 		

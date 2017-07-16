@@ -16,7 +16,7 @@ package com.babylonhx.math;
 		this.d = d;
 	}
 
-	public function asArray():Array<Float> {
+	inline public function asArray():Array<Float> {
 		return [this.normal.x, this.normal.y, this.normal.z, this.d];
 	}
 
@@ -24,6 +24,17 @@ package com.babylonhx.math;
 	public function clone():Plane {
 		return new Plane(this.normal.x, this.normal.y, this.normal.z, this.d);
 	}
+	
+	public function getClassName():String {
+        return "Plane";
+    }
+
+    public function getHashCode():Int {
+        var hash = Std.int(this.normal.getHashCode());
+        hash = Std.int(hash * 397) ^ Std.int(this.d);
+		
+        return hash;
+    }
 
 	inline public function normalize():Void {
 		var norm = (Math.sqrt((this.normal.x * this.normal.x) + (this.normal.y * this.normal.y) + (this.normal.z * this.normal.z)));
@@ -40,8 +51,9 @@ package com.babylonhx.math;
 		this.d *= magnitude;
 	}
 
+	static var transposedMatrix = new Matrix();
 	inline public function transform(transformation:Matrix):Plane {
-		var transposedMatrix = Matrix.Transpose(transformation);
+		transposedMatrix = Matrix.Transpose(transformation);
 		var x = this.normal.x;
 		var y = this.normal.y;
 		var z = this.normal.z;
@@ -92,16 +104,16 @@ package com.babylonhx.math;
 		return (dot <= epsilon);
 	}
 
-	public function signedDistanceTo(point:Vector3):Float {
+	inline public function signedDistanceTo(point:Vector3):Float {
 		return Vector3.Dot(point, this.normal) + this.d;
 	}
 
 	// Statics
-	public static function FromArray(array:Array<Float>):Plane {
+	inline public static function FromArray(array:Array<Float>):Plane {
 		return new Plane(array[0], array[1], array[2], array[3]);
 	}
 
-	inline public static function FromPoints(point1:Vector3, point2:Vector3, point3:Vector3):Plane {
+	inline inline public static function FromPoints(point1:Vector3, point2:Vector3, point3:Vector3):Plane {
 		var result = new Plane(0, 0, 0, 0);
 		result.copyFromPoints(point1, point2, point3);
 		return result;

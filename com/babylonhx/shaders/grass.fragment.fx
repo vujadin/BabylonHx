@@ -2,14 +2,13 @@
 precision highp float;
 #endif
 
-varying vec2 vPosition;              
-varying vec2 vUV;                    
+varying vec2 vPosition;
+varying vec2 vUV;
 
-uniform float ampScale;
-uniform float ringScale;
-uniform vec3 woodColor1;
-uniform vec3 woodColor2;
-
+uniform vec3 herb1Color;
+uniform vec3 herb2Color;
+uniform vec3 herb3Color;
+uniform vec3 groundColor;
 
 float rand(vec2 n) {
 	return fract(cos(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
@@ -32,18 +31,9 @@ float fbm(vec2 n) {
 }
 
 void main(void) {
-
-	float amplifier = 100.0;
-
-	vec3 dirt = vec3(0.47, 0.27, 0.09);
-	vec3 herb = vec3(0.0, 0.39, 0.09);
-
-	float ratioy = mod(vUV.y * amplifier, 2.0 + fbm(vPosition * 2.0));
-	float ratiox = mod(vUV.x * amplifier, 2.0 + fbm(vUV * 2.0));
-		
-	dirt = dirt * ratioy;
-	herb = herb * ratiox;
-	vec3 ground = mix(dirt, herb, fbm(vUV * 2.0));
-
-	gl_FragColor = vec4(ground, 1.0);
+	vec3 color = mix(groundColor, herb1Color, rand(gl_FragCoord.xy * 4.0));
+	color = mix(color, herb2Color, rand(gl_FragCoord.xy * 8.0));
+	color = mix(color, herb3Color, rand(gl_FragCoord.xy));
+	color = mix(color, herb1Color, fbm(gl_FragCoord.xy * 16.0));
+	gl_FragColor = vec4(color, 1.0);
 }

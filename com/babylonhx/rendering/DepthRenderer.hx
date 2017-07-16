@@ -1,8 +1,10 @@
 package com.babylonhx.rendering;
+
 import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.Material;
 import com.babylonhx.materials.textures.RenderTargetTexture;
 import com.babylonhx.materials.textures.Texture;
+import com.babylonhx.math.Color4;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.mesh._InstancesBatch;
 import com.babylonhx.mesh.Mesh;
@@ -10,6 +12,7 @@ import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.Scene;
 import com.babylonhx.tools.SmartArray;
+import com.babylonhx.tools.EventState;
 
 /**
  * ...
@@ -35,18 +38,23 @@ import com.babylonhx.tools.SmartArray;
 		var engine = scene.getEngine();
 		
 		// Render target
-		this._depthMap = new RenderTargetTexture("depthMap", { width: engine.getRenderWidth(), height: engine.getRenderHeight()}, this._scene, false, true, type);
+		this._depthMap = new RenderTargetTexture("depthMap", { width: engine.getRenderWidth(), height: engine.getRenderHeight() }, this._scene, false, true, type);
 		this._depthMap.wrapU = Texture.CLAMP_ADDRESSMODE;
 		this._depthMap.wrapV = Texture.CLAMP_ADDRESSMODE;
 		this._depthMap.refreshRate = 1;
 		this._depthMap.renderParticles = false;
 		this._depthMap.renderList = null;
 		
+		// set default depth value to 1.0 (far away)
+		this._depthMap.onClearObservable.add(function(engine:Engine, es:EventState = null) {
+			engine.clear(new Color4(1.0, 1.0, 1.0, 1.0), true, true, true);
+		});
+		
 		// Custom render function
 		var renderSubMesh = function(subMesh:SubMesh) {
 			var mesh:Mesh = subMesh.getRenderingMesh();
 			var scene = this._scene;
-			var engine = scene.getEngine();
+			//var engine = scene.getEngine();
 			
 			// Culling
 			engine.setState(subMesh.getMaterial().backFaceCulling);
@@ -58,7 +66,7 @@ import com.babylonhx.tools.SmartArray;
 				return;
 			}
 			
-			var hardwareInstancedRendering:Bool = (engine.getCaps().instancedArrays != null) && (batch.visibleInstances[subMesh._id] != null);
+			var hardwareInstancedRendering:Bool = (engine.getCaps().instancedArrays) && (batch.visibleInstances[subMesh._id] != null);
 			
 			if (this.isReady(subMesh, hardwareInstancedRendering)) {
 				engine.enableEffect(this._effect);
@@ -76,42 +84,21 @@ import com.babylonhx.tools.SmartArray;
 					this._effect.setMatrix("diffuseMatrix", alphaTexture.getTextureMatrix());
 				}
 				
-				// Bones
-				var useBones:Bool = mesh.skeleton != null && scene.skeletonsEnabled && mesh.isVerticesDataPresent(VertexBuffer.MatricesIndicesKind) && mesh.isVerticesDataPresent(VertexBuffer.MatricesWeightsKind);
-				
-				if (useBones) {
-					this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices());
+				// Bones				
+				if (mesh.useBones && mesh.computeBonesUsingShaders) {
+					this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices(mesh));
 				}
 				
-				if (hardwareInstancedRendering) {
-					mesh._renderWithInstances(subMesh, Material.TriangleFillMode, batch, this._effect, engine);
-				} else {
-					if (batch.renderSelf[subMesh._id]) {
-						this._effect.setMatrix("world", mesh.getWorldMatrix());
-						
-						// Draw
-						mesh._draw(subMesh, Material.TriangleFillMode);
-					}
-					
-					if (batch.visibleInstances[subMesh._id] != null) {
-						for (instanceIndex in 0...batch.visibleInstances[subMesh._id].length) {
-							var instance = batch.visibleInstances[subMesh._id][instanceIndex];
-							
-							this._effect.setMatrix("world", instance.getWorldMatrix());
-							
-							// Draw
-							mesh._draw(subMesh, Material.TriangleFillMode);
-						}
-					}
-				}
+				// Draw
+				mesh._processRendering(subMesh, this._effect, Material.TriangleFillMode, batch, hardwareInstancedRendering,
+					function(isInstance:Bool, world:Matrix, ?mat:Material) { this._effect.setMatrix("world", world); } );
 			}
 		};
 		
-		this._depthMap.customRenderFunction = function(opaqueSubMeshes:SmartArray, alphaTestSubMeshes:SmartArray) {			
+		this._depthMap.customRenderFunction = function(opaqueSubMeshes:SmartArray<SubMesh>, alphaTestSubMeshes:SmartArray<SubMesh>) {	
 			for (index in 0...opaqueSubMeshes.length) {
 				renderSubMesh(opaqueSubMeshes.data[index]);
 			}
-			
 			for (index in 0...alphaTestSubMeshes.length) {
 				renderSubMesh(alphaTestSubMeshes.data[index]);
 			}
@@ -119,13 +106,17 @@ import com.babylonhx.tools.SmartArray;
 	}
 
 	public function isReady(subMesh:SubMesh, useInstances:Bool):Bool {
+		var material:Material = subMesh.getMaterial();
+		if (material.disableDepthWrite) {
+			return false;
+		}
+		
 		var defines:Array<String> = [];
 		
-		var attribs:Array<String> = [VertexBuffer.PositionKind];
+		var attribs = [VertexBuffer.PositionKind];
 		
-		var mesh:Mesh = cast subMesh.getMesh();
-		var scene:Scene = mesh.getScene();
-		var material:Material = subMesh.getMaterial();
+		var mesh = subMesh.getMesh();
+		var scene = mesh.getScene();
 		
 		// Alpha test
 		if (material != null && material.needAlphaTesting()) {
@@ -141,11 +132,18 @@ import com.babylonhx.tools.SmartArray;
 		}
 		
 		// Bones
-		if (mesh.skeleton != null && scene.skeletonsEnabled && mesh.isVerticesDataPresent(VertexBuffer.MatricesIndicesKind) && mesh.isVerticesDataPresent(VertexBuffer.MatricesWeightsKind)) {
+		if (mesh.useBones && mesh.computeBonesUsingShaders) {
 			attribs.push(VertexBuffer.MatricesIndicesKind);
 			attribs.push(VertexBuffer.MatricesWeightsKind);
-			defines.push("#define BONES");
+			if (mesh.numBoneInfluencers > 4) {
+                attribs.push(VertexBuffer.MatricesIndicesExtraKind);
+                attribs.push(VertexBuffer.MatricesWeightsExtraKind);
+            }
+            defines.push("#define NUM_BONE_INFLUENCERS " + mesh.numBoneInfluencers);
 			defines.push("#define BonesPerMesh " + (mesh.skeleton.bones.length + 1));
+		}
+		else {
+			defines.push("#define NUM_BONE_INFLUENCERS 0");
 		}
 		
 		// Instances

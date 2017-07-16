@@ -1,13 +1,13 @@
 package com.babylonhx.mesh.polygonmesh;
 
 import com.babylonhx.math.Vector2;
-import org.poly2tri.Point;
+
 
 /**
  * ...
  * @author Krtolica Vujadin
  */
-class IndexedPoint extends Point {
+@:expose('BABYLON.IndexedPoint') class IndexedPoint extends Vector2 {
 	
 	public var index:Int = 0;
 

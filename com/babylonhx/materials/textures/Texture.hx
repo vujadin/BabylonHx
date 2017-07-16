@@ -2,6 +2,11 @@ package com.babylonhx.materials.textures;
 
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Plane;
+import com.babylonhx.animations.Animation;
+import com.babylonhx.utils.Image;
+import com.babylonhx.tools.Observable;
+import com.babylonhx.tools.serialization.SerializationHelper;
 
 /**
  * ...
@@ -21,22 +26,47 @@ import com.babylonhx.math.Vector3;
 	public static inline var CUBIC_MODE:Int = 3;
 	public static inline var PROJECTION_MODE:Int = 4;
 	public static inline var SKYBOX_MODE:Int = 5;
+	public static inline var INVCUBIC_MODE:Int = 6;
+	public static inline var EQUIRECTANGULAR_MODE:Int = 7;
+	public static inline var FIXED_EQUIRECTANGULAR_MODE:Int = 8;
+	public static inline var FIXED_EQUIRECTANGULAR_MIRRORED_MODE:Int = 9;
 
 	public static inline var CLAMP_ADDRESSMODE:Int = 0;
 	public static inline var WRAP_ADDRESSMODE:Int = 1;
 	public static inline var MIRROR_ADDRESSMODE:Int = 2;
 
 	// Members
+	@serialize()
 	public var url:String;
+	
+	@serialize()
 	public var uOffset:Float = 0;
+	
+	@serialize()
 	public var vOffset:Float = 0;
+	
+	@serialize()
 	public var uScale:Float = 1.0;
+	
+	@serialize()
 	public var vScale:Float = 1.0;
+	
+	@serialize()
 	public var uAng:Float = 0;
+	
+	@serialize()
 	public var vAng:Float = 0;
+	
+	@serialize()
 	public var wAng:Float = 0;
 
 	private var _noMipmap:Bool;
+	
+	public var noMipmap(get, never):Bool;
+	inline private function get_noMipmap():Bool {
+		return this._noMipmap;
+	}
+	
 	public var _invertY:Bool;
 	private var _rowGenerationMatrix:Matrix;
 	private var _cachedTextureMatrix:Matrix;
@@ -56,9 +86,27 @@ import com.babylonhx.math.Vector3;
 	public var _samplingMode:Int;
 	private var _buffer:Dynamic;
 	private var _deleteBuffer:Bool;
+	public var _format:Int;
+	private var _delayedOnLoad:Void->Void;
+	private var _delayedOnError:Void->Void;
+	private var _onLoadObservarble:Observable<Bool>;
+	
+	// MOVED TO BaseTexture for BHX !!!
+	/*private var _isBlocking:Bool = true;
+	@serialize()
+	public var isBlocking(get, set):Bool;
+	private function set_isBlocking(value:Bool):Bool {
+		return this._isBlocking = value;
+	}
+	private function get_isBlocking():Bool {
+		return this._isBlocking;
+	}*/
+	
+	// for creating from Image
+	public static var _tmpImage:Image;
 
 	
-	public function new(url:String, scene:Scene, noMipmap:Bool = false, invertY:Bool = true, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, onLoad:Void->Void = null, onError:Void->Void = null, buffer:Dynamic = null, deleteBuffer:Bool = false) {
+	public function new(url:String, scene:Scene, noMipmap:Bool = false, invertY:Bool = true, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, onLoad:Void->Void = null, onError:Void->Void = null, buffer:Dynamic = null, deleteBuffer:Bool = false, ?format:Int) {
 		super(scene);
 		
 		this.name = url;
@@ -68,23 +116,45 @@ import com.babylonhx.math.Vector3;
 		this._samplingMode = samplingMode;
 		this._buffer = buffer;
 		this._deleteBuffer = deleteBuffer;
+		this._format = format;
 		
-		if (url == null/* || StringTools.trim(url) == ""*/) {
+		if (url == null || StringTools.trim(url) == "") {
 			return;
 		}
 		
 		this._texture = this._getFromCache(url, noMipmap, samplingMode);
 		
+		var load = function() {
+			if (this._onLoadObservarble != null && this._onLoadObservarble.hasObservers()) {
+				this.onLoadObservable.notifyObservers(true);
+			}
+			if (onLoad != null) {
+				onLoad();
+			}
+			
+			if (!this.isBlocking) {
+				scene.resetCachedMaterial();
+			}
+		};
+		
 		if (this._texture == null) {
-			if (!scene.useDelayedTextureLoading) {
+			if (StringTools.startsWith(url, "from_image") && _tmpImage != null) {	// VK: DO NOT REMOVE!!
+				this._texture = scene.getEngine().createTextureFromImage(_tmpImage, noMipmap, scene, this._samplingMode);
+				_tmpImage = null;
+			}
+			else if (!scene.useDelayedTextureLoading) {
 				if(url.indexOf(".") != -1) {	// protection for cube texture, url is not full path !
-					this._texture = scene.getEngine().createTexture(url, noMipmap, invertY, scene, this._samplingMode, onLoad, onError, this._buffer);
+					this._texture = scene.getEngine().createTexture(url, noMipmap, invertY, scene, this._samplingMode, load, onError, this._buffer);
 					if (deleteBuffer) {
 						this._buffer = null;
 					}
 				}
-			} else {
+			} 
+			else {
 				this.delayLoadState = Engine.DELAYLOADSTATE_NOTLOADED;
+				
+				this._delayedOnLoad = load;
+				this._delayedOnError = onError;
 			}
 		}
 	}
@@ -104,19 +174,28 @@ import com.babylonhx.math.Vector3;
 			}
 		}
 	}
+	
+	public function updateSamplingMode(samplingMode:Int) {
+        if (this._texture == null) {
+            return;
+        }
+		
+		this._samplingMode = samplingMode;
+        this.getScene().getEngine().updateTextureSamplingMode(samplingMode, this._texture);
+    }
 
 	private function _prepareRowForTextureGeneration(x:Float, y:Float, z:Float, t:Vector3) {
-		x -= this.uOffset + 0.5;
-		y -= this.vOffset + 0.5;
+		x *= this.uScale;
+		y *= this.vScale;
+		
+		x -= 0.5 * this.uScale;
+		y -= 0.5 * this.vScale;
 		z -= 0.5;
 		
 		Vector3.TransformCoordinatesFromFloatsToRef(x, y, z, this._rowGenerationMatrix, t);
 		
-		t.x *= this.uScale;
-		t.y *= this.vScale;
-		
-		t.x += 0.5;
-		t.y += 0.5;
+		t.x += 0.5 * this.uScale + this.uOffset;
+		t.y += 0.5 * this.vScale + this.vOffset;
 		t.z += 0.5;
 	}
 
@@ -180,16 +259,13 @@ import com.babylonhx.math.Vector3;
 			this._projectionModeMatrix = Matrix.Zero();
 		}
 		
+		this._cachedUOffset = this.uOffset;
+        this._cachedVOffset = this.vOffset;
+        this._cachedUScale = this.uScale;
+        this._cachedVScale = this.vScale;
 		this._cachedCoordinatesMode = this.coordinatesMode;
 		
-		switch (this.coordinatesMode) {
-			case Texture.SPHERICAL_MODE:
-				Matrix.IdentityToRef(this._cachedTextureMatrix);
-				this._cachedTextureMatrix.m[0] = -0.5 * this.uScale;
-				this._cachedTextureMatrix.m[5] = -0.5 * this.vScale;
-				this._cachedTextureMatrix.m[12] = 0.5 + this.uOffset;
-				this._cachedTextureMatrix.m[13] = 0.5 + this.vOffset;
-				
+		switch (this.coordinatesMode) {	                
 			case Texture.PLANAR_MODE:
 				Matrix.IdentityToRef(this._cachedTextureMatrix);
 				this._cachedTextureMatrix.m[0] = this.uScale;
@@ -212,37 +288,116 @@ import com.babylonhx.math.Vector3;
 				
 			default:
 				Matrix.IdentityToRef(this._cachedTextureMatrix);
-				
+			
 		}
+		
 		return this._cachedTextureMatrix;
+	}
+	
+	public static function fromImage(img:Image, scene:Scene, noMipmap:Bool = false, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE):Texture {
+		Texture._tmpImage = img;
+		var tex:Texture = new Texture("from_image", scene, noMipmap, false, samplingMode);
+		return tex;
+	}
+	
+	public var onLoadObservable(get, never):Observable<Bool>;
+	private function get_onLoadObservable():Observable<Bool> {
+		if (this._onLoadObservarble == null) {
+			this._onLoadObservarble = new Observable<Bool>();
+		}
+		return this._onLoadObservarble;
 	}
 
 	override public function clone():Texture {
-		var newTexture = new Texture(this._texture.url, this.getScene(), this._noMipmap, this._invertY, this._samplingMode);
+		return SerializationHelper.Clone(function() {
+			return new Texture(this._texture.url, this.getScene(), this._noMipmap, this._invertY, this._samplingMode);
+		}, this);
+	}
+	
+	override public function serialize():Dynamic {		
+		var serializationObject = super.serialize();
 		
-		// Base texture
-		newTexture.hasAlpha = this.hasAlpha;
-		newTexture.level = this.level;
-		newTexture.wrapU = this.wrapU;
-		newTexture.wrapV = this.wrapV;
-		newTexture.coordinatesIndex = this.coordinatesIndex;
-		newTexture.coordinatesMode = this.coordinatesMode;
+		if (Std.is(this._buffer, String) && this._buffer.substr(0, 5) == "data:") {
+			serializationObject.base64String = this._buffer;
+			serializationObject.name = StringTools.replace(serializationObject.name, "data:", "");
+		}
 		
-		// Texture
-		newTexture.uOffset = this.uOffset;
-		newTexture.vOffset = this.vOffset;
-		newTexture.uScale = this.uScale;
-		newTexture.vScale = this.vScale;
-		newTexture.uAng = this.uAng;
-		newTexture.vAng = this.vAng;
-		newTexture.wAng = this.wAng;
-		
-		return newTexture;
+		return serializationObject;
 	}
 	
 	// Statics
 	public static function CreateFromBase64String(data:String, name:String, scene:Scene, ?noMipmap:Bool, ?invertY:Bool, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, ?onLoad:Void->Void, ?onError:Void->Void):Texture {
 		return new Texture("data:" + name, scene, noMipmap, invertY, samplingMode, onLoad, onError, data);
+	}
+	
+	public static function CreateFromImage(data:Image, name:String, scene:Scene, ?noMipmap:Bool, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE):Texture {
+		_tmpImage = data;
+		
+		return new Texture("from_image" + name, scene, noMipmap, false, samplingMode);
+	}
+	
+	public static function Parse(parsedTexture:Dynamic, scene:Scene, rootUrl:String):BaseTexture {
+		if (parsedTexture.customType) { 
+			var customTexture = Type.createEmptyInstance(parsedTexture.customType);
+			return customTexture.Parse(parsedTexture, scene, rootUrl);
+		}
+			
+		if (parsedTexture.isCube) {
+			return CubeTexture.Parse(parsedTexture, scene, rootUrl);
+		}
+		
+		if (parsedTexture.name == null && !parsedTexture.isRenderTarget) {
+			return null;
+		}
+		
+		var texture:Texture = null;
+		
+		if (parsedTexture.mirrorPlane) {
+			texture = new MirrorTexture(parsedTexture.name, parsedTexture.renderTargetSize, scene);
+			cast(texture, MirrorTexture)._waitingRenderList = parsedTexture.renderList;
+			cast(texture, MirrorTexture).mirrorPlane = Plane.FromArray(parsedTexture.mirrorPlane);
+		} 
+		else if (parsedTexture.isRenderTarget) {
+			texture = new RenderTargetTexture(parsedTexture.name, parsedTexture.renderTargetSize, scene);
+			cast(texture, RenderTargetTexture)._waitingRenderList = parsedTexture.renderList;
+		} 
+		else {
+			if (parsedTexture.base64String) {
+				texture = Texture.CreateFromBase64String(parsedTexture.base64String, parsedTexture.name, scene);
+			} 
+			else {
+				texture = new Texture(rootUrl + parsedTexture.name, scene);
+			}
+		}
+		
+		texture.name = parsedTexture.name;
+		texture.hasAlpha = parsedTexture.hasAlpha;
+		texture.getAlphaFromRGB = parsedTexture.getAlphaFromRGB;
+		texture.level = parsedTexture.level;
+		
+		texture.coordinatesIndex = parsedTexture.coordinatesIndex;
+		texture.coordinatesMode = parsedTexture.coordinatesMode;
+		texture.uOffset = parsedTexture.uOffset;
+		texture.vOffset = parsedTexture.vOffset;
+		texture.uScale = parsedTexture.uScale;
+		texture.vScale = parsedTexture.vScale;
+		texture.uAng = parsedTexture.uAng;
+		texture.vAng = parsedTexture.vAng;
+		texture.wAng = parsedTexture.wAng;
+		
+		texture.wrapU = parsedTexture.wrapU;
+		texture.wrapV = parsedTexture.wrapV;
+		
+		// Animations
+		if (parsedTexture.animations != null) {
+			for (animationIndex in 0...parsedTexture.animations.length) {
+				var parsedAnimation = parsedTexture.animations[animationIndex];
+				
+				texture.animations.push(Animation.Parse(parsedAnimation));
+			}
+		}
+		
+		return texture;
 	}
 	
 }

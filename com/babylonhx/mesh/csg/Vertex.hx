@@ -23,19 +23,19 @@ class Vertex {
 	public var uv:Vector2;
 	
 	
-	public function new(pos:Vector3, normal:Vector3, uv:Vector2) {
+	inline public function new(pos:Vector3, normal:Vector3, uv:Vector2) {
 		this.pos = pos;
 		this.normal = normal;
 		this.uv = uv;
 	}
 
-	public function clone():Vertex {
+	inline public function clone():Vertex {
 		return new Vertex(this.pos.clone(), this.normal.clone(), this.uv.clone());
 	}
 
 	// Invert all orientation-specific data (e.g. vertex normal). Called when the
 	// orientation of a polygon is flipped.
-	public function flip() {
+	inline public function flip() {
 		this.normal = this.normal.scale(-1);
 	}
 

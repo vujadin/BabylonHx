@@ -8,6 +8,9 @@ import com.babylonhx.materials.Material;
 import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.culling.BoundingSphere;
 import com.babylonhx.tools.Tools;
+import com.babylonhx.animations.IAnimatable;
+
+import lime.utils.Float32Array;
 
 
 /**
@@ -15,10 +18,15 @@ import com.babylonhx.tools.Tools;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.InstancedMesh') class InstancedMesh extends AbstractMesh {
+/**
+ * Creates an instance based on a source mesh.
+ */
+@:expose('BABYLON.InstancedMesh') class InstancedMesh extends AbstractMesh implements IAnimatable {
 	
 	private var _sourceMesh:Mesh;
 	private var _currentLOD:Mesh;
+	
+	public var sourceMesh(get, null):Mesh;
 	
 
 	public function new(name:String, source:Mesh) {
@@ -45,59 +53,54 @@ import com.babylonhx.tools.Tools;
 	}
 
 	// Methods
-	//public var receiveShadows(get, null):Bool;
 	override private function get_receiveShadows():Bool {
 		return this._sourceMesh.receiveShadows;
 	}
 
-	//public var material(get, null):Material;
 	override private function get_material():Material {
 		return this._sourceMesh.material;
 	}
 
-	//public var visibility(get, null):Float;
-	override private function get_visibility():Float {
+	private function get_visibility():Float {
 		return this._sourceMesh.visibility;
 	}
 
-	//public var skeleton(get, null):Skeleton;
 	override private function get_skeleton():Skeleton {
 		return this._sourceMesh.skeleton;
 	}
+	
+	/*override private function get_renderingGroupId():Int {
+		return this._sourceMesh.renderingGroupId;
+	}*/
 
 	override public function getTotalVertices():Int {
 		return this._sourceMesh.getTotalVertices();
 	}
 
-	public var sourceMesh(get, null):Mesh;
 	private function get_sourceMesh():Mesh {
 		return this._sourceMesh;
 	}
 
-	override public function getVerticesData(kind:String):Array<Float> {
-		return this._sourceMesh.getVerticesData(kind);
+	override public function getVerticesData(kind:String, copyWhenShared:Bool = false, forceCopy:Bool = false):Array<Float> {
+		return this._sourceMesh.getVerticesData(kind, copyWhenShared);
 	}
 
 	override public function isVerticesDataPresent(kind:String):Bool {
 		return this._sourceMesh.isVerticesDataPresent(kind);
 	}
 
-	override public function getIndices():Array<Int> {
-		return this._sourceMesh.getIndices();
+	override public function getIndices(copyWhenShared:Bool = false):Array<Int> {
+		return this._sourceMesh.getIndices(copyWhenShared);
 	}
 
-	//public var _positions(get, null):Array<Vector3>;
-	override private function get_positions():Array<Vector3> {
+	private function get_positions():Array<Vector3> {
 		return this._sourceMesh._positions;
 	}
 
-	public function refreshBoundingInfo() {
-		var data = this._sourceMesh.getVerticesData(VertexBuffer.PositionKind);
+	inline public function refreshBoundingInfo() {
+		var meshBB = this._sourceMesh.getBoundingInfo();
 		
-		if (data != null) {
-			var extend = Tools.ExtractMinAndMax(data, 0, this._sourceMesh.getTotalVertices());
-			this._boundingInfo = new BoundingInfo(extend.minimum, extend.maximum);
-		}
+		this._boundingInfo = new BoundingInfo(meshBB.minimum.clone(), meshBB.maximum.clone());
 		
 		this._updateBoundingInfo();
 	}
@@ -109,7 +112,9 @@ import com.babylonhx.tools.Tools;
 	}
 	
 	override public function _activate(renderId:Int) {
-		this.sourceMesh._registerInstanceForRenderId(this, renderId);
+		if (this._currentLOD != null) {
+			this._currentLOD._registerInstanceForRenderId(this, renderId);
+		}
 	}
 	
 	override public function getLOD(camera:Camera, ?boundingSphere:BoundingSphere):AbstractMesh {
@@ -122,7 +127,7 @@ import com.babylonhx.tools.Tools;
 		return this._currentLOD;
 	}
 
-	public function _syncSubMeshes() {
+	inline public function _syncSubMeshes() {
 		this.releaseSubMeshes();
 		if(this._sourceMesh.subMeshes != null) {
 			for (index in 0...this._sourceMesh.subMeshes.length) {
@@ -136,11 +141,11 @@ import com.babylonhx.tools.Tools;
 	}
 
 	// Clone
-	override public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false/*?doNotCloneChildren:Bool*/):InstancedMesh {
+	override public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false, clonePhysicsImpostor:Bool = true):Mesh {
 		var result = this._sourceMesh.createInstance(name);
 		
-		// Deep copy
-		Tools.DeepCopy(this, result, ["name"], []);
+		// TODO: Deep copy
+		//Tools.DeepCopy(this, result, ["name"], []);
 		
 		// Bounding info
 		this.refreshBoundingInfo();
@@ -163,11 +168,11 @@ import com.babylonhx.tools.Tools;
 		
 		result.computeWorldMatrix(true);
 		
-		return result;
+		return cast result;
 	}
 
 	// Dispose
-	override public function dispose(doNotRecurse:Bool = false/*?doNotRecurse:Bool*/) {
+	override public function dispose(doNotRecurse:Bool = false) {
 		// Remove from mesh
 		this._sourceMesh.instances.remove(this);
 		

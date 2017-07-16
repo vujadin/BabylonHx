@@ -12,6 +12,7 @@ package com.babylonhx.actions;
 	
 	public function new(triggerOptions:Dynamic, func:ActionEvent->Void, ?condition:Condition) {
 		super(triggerOptions, condition);
+		
 		this.func = func;
 	}
 
