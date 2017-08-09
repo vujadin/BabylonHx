@@ -18,21 +18,21 @@ import lime.utils.Int32Array;
 
 @:expose('BABYLON.VertexData') class VertexData {
 	
-	public var positions:Array<Float>;
-	public var normals:Array<Float>;
-	public var tangents:Array<Float>;
-	public var uvs:Array<Float>;
-	public var uvs2:Array<Float>;
-	public var uvs3:Array<Float>;
-	public var uvs4:Array<Float>;
-	public var uvs5:Array<Float>;
-	public var uvs6:Array<Float>;
-	public var colors:Array<Float>;
-	public var matricesIndices:Array<Float>;
-	public var matricesWeights:Array<Float>;
-	public var matricesIndicesExtra:Array<Float>;
-    public var matricesWeightsExtra:Array<Float>;
-	public var indices:Array<Int>;
+	public var positions:Float32Array;
+	public var normals:Float32Array;
+	public var tangents:Float32Array;
+	public var uvs:Float32Array;
+	public var uvs2:Float32Array;
+	public var uvs3:Float32Array;
+	public var uvs4:Float32Array;
+	public var uvs5:Float32Array;
+	public var uvs6:Float32Array;
+	public var colors:Float32Array;
+	public var matricesIndices:Float32Array;
+	public var matricesWeights:Float32Array;
+	public var matricesIndicesExtra:Float32Array;
+    public var matricesWeightsExtra:Float32Array;
+	public var indices:Int32Array;
 	
 	// for ribbon
 	public var _idx:Array<Int>;
@@ -40,7 +40,7 @@ import lime.utils.Int32Array;
 	
 	public function new() { }
 
-	public function set(data:Array<Float>, kind:String) {
+	public function set(data:Float32Array, kind:String) {
 		switch (kind) {
 			case VertexBuffer.PositionKind:
 				this.positions = data;
@@ -259,7 +259,7 @@ import lime.utils.Int32Array;
 			
 			var index:Int = 0;
 			while(index < this.positions.length) {
-				Vector3.FromArrayToRef(this.positions, index, position);
+				Vector3.FromFloat32ArrayToRef(this.positions, index, position);
 				
 				Vector3.TransformCoordinatesToRef(position, matrix, transformed);
 				this.positions[index] = transformed.x;
@@ -275,7 +275,7 @@ import lime.utils.Int32Array;
 			
 			var index:Int = 0;
 			while(index < this.normals.length) {
-				Vector3.FromArrayToRef(this.normals, index, normal);
+				Vector3.FromFloat32ArrayToRef(this.normals, index, normal);
 				
 				Vector3.TransformNormalToRef(normal, matrix, transformed);
 				this.normals[index] = transformed.x;
@@ -292,7 +292,7 @@ import lime.utils.Int32Array;
 			
 			var index:Int = 0;
 			while (index < this.tangents.length) {
-				Vector4.FromArrayToRef(this.tangents, index, tangent);
+				Vector4.FromFloat32ArrayToRef(this.tangents, index, tangent);
 				
 				Vector4.TransformNormalToRef(tangent, matrix, tangentTransformed);
 				this.tangents[index] = tangentTransformed.x;
@@ -309,141 +309,139 @@ import lime.utils.Int32Array;
 
 	public function merge(other:VertexData) {
 		if (other.indices != null) {
-			if (this.indices == null) {
-				this.indices = [];
-			}
+			var tmpIndices:Array<Int> = [];
 			
 			var offset = Std.int(this.positions != null ? this.positions.length / 3 : 0);
 			for (index in 0...other.indices.length) {
-				this.indices.push(other.indices[index] + offset);
+				tmpIndices.push(other.indices[index] + offset);
 			}
+			this.indices = new Int32Array(tmpIndices);
 		}
 		
 		if (other.positions != null) {
-			if (this.positions == null) {
-				this.positions = [];
-			}
+			var tmpPositions:Array<Float> = [];
 			
 			for (index in 0...other.positions.length) {
-				this.positions.push(other.positions[index]);
+				tmpPositions.push(other.positions[index]);
 			}
+			this.positions = new Float32Array(tmpPositions);
 		}
 		
 		if (other.normals != null) {
-			if (this.normals == null) {
-				this.normals = [];
-			}
+			var tmpNormals:Array<Float> = [];
+			
 			for (index in 0...other.normals.length) {
-				this.normals.push(other.normals[index]);
+				tmpNormals.push(other.normals[index]);
 			}
+			this.normals = new Float32Array(tmpNormals);
 		}
 		
 		if (other.tangents != null) {
-			if (this.tangents == null) {
-				this.tangents = [];
-			}
+			var tmpTangents:Array<Float> = [];
+			
 			for (index in 0...other.normals.length) {
-				this.tangents.push(other.tangents[index]);
+				tmpTangents.push(other.tangents[index]);
 			}
+			this.tangents = new Float32Array(tmpTangents);
 		}
 		
 		if (other.uvs != null) {
-			if (this.uvs == null) {
-				this.uvs = [];
-			}
+			var tmpUVs:Array<Float> = [];
+			
 			for (index in 0...other.uvs.length) {
-				this.uvs.push(other.uvs[index]);
+				tmpUVs.push(other.uvs[index]);
 			}
+			this.uvs = new Float32Array(tmpUVs);
 		}
 		
 		if (other.uvs2 != null) {
-			if (this.uvs2 == null) {
-				this.uvs2 = [];
-			}
+			var tmpUVs2:Array<Float> = [];
+			
 			for (index in 0...other.uvs2.length) {
-				this.uvs2.push(other.uvs2[index]);
+				tmpUVs2.push(other.uvs2[index]);
 			}
+			this.uvs2 = new Float32Array(tmpUVs2);
 		}
 		
 		if (other.uvs3 != null) {
-			if (this.uvs3 == null) {
-				this.uvs3 = [];
-			}
+			var tmpUVs3:Array<Float> = [];
+			
 			for (index in 0...other.uvs3.length) {
-				this.uvs3.push(other.uvs3[index]);
+				tmpUVs3.push(other.uvs3[index]);
 			}
+			this.uvs3 = new Float32Array(tmpUVs3);
 		}
 		
 		if (other.uvs4 != null) {
-			if (this.uvs4 == null) {
-				this.uvs4 = [];
-			}
+			var tmpUVs4:Array<Float> = [];
+			
 			for (index in 0...other.uvs4.length) {
-				this.uvs4.push(other.uvs4[index]);
+				tmpUVs4.push(other.uvs4[index]);
 			}
+			this.uvs4 = new Float32Array(tmpUVs4);
 		}
 		
 		if (other.uvs5 != null) {
-			if (this.uvs5 == null) {
-				this.uvs5 = [];
-			}
+			var tmpUVs5:Array<Float> = [];
+			
 			for (index in 0...other.uvs5.length) {
-				this.uvs5.push(other.uvs5[index]);
+				tmpUVs5.push(other.uvs5[index]);
 			}
+			this.uvs5 = new Float32Array(tmpUVs5);
 		}
 		
 		if (other.uvs6 != null) {
-			if (this.uvs6 == null) {
-				this.uvs6 = [];
-			}
+			var tmpUVs6:Array<Float> = [];
+			
 			for (index in 0...other.uvs6.length) {
-				this.uvs6.push(other.uvs6[index]);
+				tmpUVs6.push(other.uvs6[index]);
 			}
+			this.uvs6 = new Float32Array(tmpUVs6);
 		}
 		
 		if (other.matricesIndices != null) {
-			if (this.matricesIndices == null) {
-				this.matricesIndices = [];
-			}
+			var tmpMatricesIndices:Array<Float> = [];
+			
 			for (index in 0...other.matricesIndices.length) {
-				this.matricesIndices.push(other.matricesIndices[index]);
+				tmpMatricesIndices.push(other.matricesIndices[index]);
 			}
+			this.matricesIndices = new Float32Array(tmpMatricesIndices);
 		}
 		
 		if (other.matricesWeights != null) {
-			if (this.matricesWeights == null) {
-				this.matricesWeights = [];
-			}
+			var tmpMatricesWeights:Array<Float> = [];
+			
 			for (index in 0...other.matricesWeights.length) {
-				this.matricesWeights.push(other.matricesWeights[index]);
+				tmpMatricesWeights.push(other.matricesWeights[index]);
 			}
+			this.matricesWeights = new Float32Array(tmpMatricesWeights);
 		}
 		
 		if (other.matricesIndicesExtra != null) {
-            if (this.matricesIndicesExtra == null) {
-                this.matricesIndicesExtra = [];
-            }
+            var tmpMatricesIndicesExtra:Array<Float> = [];
+            
             for (index in 0...other.matricesIndicesExtra.length) {
-                this.matricesIndicesExtra.push(other.matricesIndicesExtra[index]);
+                tmpMatricesIndicesExtra.push(other.matricesIndicesExtra[index]);
             }
+			this.matricesIndicesExtra = new Float32Array(tmpMatricesIndicesExtra);
         }
 		
         if (other.matricesWeightsExtra != null) {
-            if (this.matricesWeightsExtra == null) {
-                this.matricesWeightsExtra = [];
-            }
+            var tmpMatricesWeightsExtra:Array<Float> = [];
+            
             for (index in 0...other.matricesWeightsExtra.length) {
-                this.matricesWeightsExtra.push(other.matricesWeightsExtra[index]);
+                tmpMatricesWeightsExtra.push(other.matricesWeightsExtra[index]);
             }
+			this.matricesWeightsExtra = new Float32Array(tmpMatricesWeightsExtra);
         }
 		
 		if (other.colors != null) {
-			if (this.colors == null) {
-				this.colors = [];
-			}
+			var tmpColors:Array<Float> = [];
+			
 			for (index in 0...other.colors.length) {
-				this.colors.push(other.colors[index]);
+				tmpColors.push(other.colors[index]);
 			}
+			this.colors = new Float32Array(tmpColors);
 		}
 	}
 	
@@ -775,16 +773,21 @@ import lime.utils.Int32Array;
 			}
 		}
 		
+		var _positions = new Float32Array(positions);
+		var _indices = new Int32Array(indices);
+		var _normals = new Float32Array(normals);
+		var _uvs = new Float32Array(uvs);
+		
 		// sides
-		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		VertexData._ComputeSides(sideOrientation, _positions, _indices, _normals, _uvs);
 		
 		// Result
 		var vertexData = new VertexData();
 		
-		vertexData.indices = indices;
-		vertexData.positions = positions;
-		vertexData.normals = normals;
-		vertexData.uvs = uvs;
+		vertexData.indices = _indices;
+		vertexData.positions = _positions;
+		vertexData.normals = _normals;
+		vertexData.uvs = _uvs;
 		
 		if (closePath) {
 			vertexData._idx = idx;
@@ -911,20 +914,25 @@ import lime.utils.Int32Array;
 			}
 		}
 		
+		var _positions = new Float32Array(positions);
+		var _indices = new Int32Array(indices);
+		var _normals = new Float32Array(normals);
+		var _uvs = new Float32Array(uvs);
+		
 		// sides
-		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		VertexData._ComputeSides(sideOrientation, _positions, _indices, _normals, _uvs);
 		
 		// Result
 		var vertexData = new VertexData();
 		
-		vertexData.indices = indices;
-		vertexData.positions = positions;
-		vertexData.normals = normals;
-		vertexData.uvs = uvs;
+		vertexData.indices = _indices;
+		vertexData.positions = _positions;
+		vertexData.normals = _normals;
+		vertexData.uvs = _uvs;
 		
 		if (faceColors != null && faceColors.length > 0) {
 			var totalColors = (sideOrientation == Mesh.DOUBLESIDE) ? colors.concat(colors) : colors;
-			vertexData.colors = totalColors;
+			vertexData.colors = new Float32Array(totalColors);
 		}
 		
 		return vertexData;
@@ -991,16 +999,21 @@ import lime.utils.Int32Array;
 			}
 		}
 		
-		// Sides
-		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		var _positions = new Float32Array(positions);
+		var _indices = new Int32Array(indices);
+		var _normals = new Float32Array(normals);
+		var _uvs = new Float32Array(uvs);
+		
+		// sides
+		VertexData._ComputeSides(sideOrientation, _positions, _indices, _normals, _uvs);
 		
 		// Result
 		var vertexData = new VertexData();
 		
-		vertexData.indices = indices;
-		vertexData.positions = positions;
-		vertexData.normals = normals;
-		vertexData.uvs = uvs;
+		vertexData.indices = _indices;
+		vertexData.positions = _positions;
+		vertexData.normals = _normals;
+		vertexData.uvs = _uvs;
 		
 		return vertexData;
 	}
@@ -1306,208 +1319,24 @@ import lime.utils.Int32Array;
 			createCylinderCap(true);
 		}
 		
-		// Sides
-		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		var _positions = new Float32Array(positions);
+		var _indices = new Int32Array(indices);
+		var _normals = new Float32Array(normals);
+		var _uvs = new Float32Array(uvs);
 		
+		// sides
+		VertexData._ComputeSides(sideOrientation, _positions, _indices, _normals, _uvs);
+		
+		// Result
 		var vertexData = new VertexData();
 		
-		vertexData.indices = indices;
-		vertexData.positions = positions;
-		vertexData.normals = normals;
-		vertexData.uvs = uvs;
+		vertexData.indices = _indices;
+		vertexData.positions = _positions;
+		vertexData.normals = _normals;
+		vertexData.uvs = _uvs;
 		
 		if (faceColors != null) {
-			vertexData.colors = colors;
-		}
-		
-		return vertexData;
-	}
-		
-	public static function CylinderOptions(options:CylinderOptions):VertexData {
-		var height:Float = options.height != null ? options.height : 2;
-		var diameterTop:Float = options.diameterTop != null ? options.diameterTop : 1;
-		var diameterBottom:Float = options.diameterBottom != null ? options.diameterBottom : 1;
-		var tessellation:Int = options.tessellation != null ? options.tessellation : 24;
-		var subdivisions:Int = options.subdivisions != null ? options.subdivisions : 1;
-		var hasRings:Bool = options.hasRings != null ? options.hasRings : false;
-		var arc:Float = options.arc != null ? options.arc : 1.0;
-		if (arc <= 0 || arc > 1) {
-			arc = 1.0;
-		}
-		var sideOrientation:Int = options.sideOrientation;
-		var faceUV:Array<Vector4> = options.faceUV != null ? options.faceUV : new Array<Vector4>();
-		var faceColors:Array<Color4> = options.faceColors;
-		// default face colors and UV if undefined
-		for (f in 0...3) {
-			if (faceColors != null && faceColors[f] == null) {
-				faceColors[f] = new Color4(1, 1, 1, 1);
-			}
-			if (faceUV != null && faceUV[f] == null) {
-				faceUV[f] = new Vector4(0, 0, 1, 1);
-			}
-		}
-		
-		var indices:Array<Int> = [];
-		var positions:Array<Float> = [];
-		var normals:Array<Float> = [];
-		var uvs:Array<Float> = [];
-		var colors:Array<Float> = [];
-		
-		var angle_step:Float = Math.PI * 2 / tessellation;
-		var angle:Float = 0;
-		var h:Float = 0;
-		var radius:Float = 0;
-		var tan:Float = (diameterBottom - diameterTop) / 2 / height;
-		var ringVertex:Vector3 = Vector3.Zero();
-		var ringNormal:Vector3 = Vector3.Zero();
-		
-		// positions, normals, uvs
-		var ringIdx:Int = 1;
-		for (i in 0...subdivisions + 1) {
-			h = i / subdivisions;
-			radius = (h * (diameterTop - diameterBottom) + diameterBottom) / 2;
-			ringIdx = (hasRings && i != 0 && i != subdivisions) ? 2 : 1;
-			for (r in 0...ringIdx) {
-				for (j in 0...tessellation + 1) {
-					angle = j * angle_step;
-					ringVertex.x = Math.cos(-angle) * radius;
-					ringVertex.y = -height / 2 + h * height;
-					ringVertex.z = Math.sin(-angle) * radius;
-					if (diameterTop == 0 && i == subdivisions) {
-						// if no top cap, reuse former normals
-						ringNormal.x = normals[normals.length - (tessellation + 1) * 3];
-						ringNormal.y = normals[normals.length - (tessellation + 1) * 3 + 1];
-						ringNormal.z = normals[normals.length - (tessellation + 1) * 3 + 2];
-					}
-					else {
-						ringNormal.x = ringVertex.x;
-						ringNormal.z = ringVertex.z;
-						ringNormal.y = Math.sqrt(ringNormal.x * ringNormal.x + ringNormal.z * ringNormal.z) * tan;
-						ringNormal.normalize();
-					}
-					positions.push(ringVertex.x);
-					positions.push(ringVertex.y);
-					positions.push(ringVertex.z);
-					normals.push(ringNormal.x);
-					normals.push(ringNormal.y);
-					normals.push(ringNormal.z);
-					uvs.push(faceUV[1].x + (faceUV[1].z - faceUV[1].x) * j / tessellation);
-					uvs.push(faceUV[1].y + (faceUV[1].w - faceUV[1].y) * h);
-					if (faceColors != null) {
-						colors.push(faceColors[1].r);
-						colors.push(faceColors[1].g);
-						colors.push(faceColors[1].b);
-						colors.push(faceColors[1].a);
-					}
-				}
-			}
-		}
-		
-		// indices
-		var i:Int = 0;
-		for (s in 0...subdivisions) {
-			for (j in 0...tessellation) {
-				var i0:Int = Std.int(i * (tessellation + 1) + j);
-				var i1:Int = Std.int((i + 1) * (tessellation + 1) + j);
-				var i2:Int = Std.int(i * (tessellation + 1) + (j + 1));
-				var i3:Int = Std.int((i + 1) * (tessellation + 1) + (j + 1));
-				indices.push(i0);
-				indices.push(i1);
-				indices.push(i2);
-				indices.push(i3);
-				indices.push(i2);
-				indices.push(i1);
-			}
-			i = (hasRings) ? (i + 2) : (i + 1);
-		}
-		
-		// Caps
-		var createCylinderCap = function(isTop:Bool) {
-			var radius:Float = isTop ? diameterTop / 2 : diameterBottom / 2;
-			if (radius == 0) {
-				return;
-			}
-			
-			// Cap positions, normals & uvs
-			var angle:Float = 0;
-			var circleVector:Vector3 = null;
-			var u:Vector4 = isTop ? faceUV[2] : faceUV[0];
-			var c:Color4 = null;
-			if (faceColors != null) {
-				c = isTop ? faceColors[2] : faceColors[0];
-			}
-			// cap center
-			var vbase:Int = Std.int(positions.length / 3);
-			var offset:Float = isTop ? height / 2 : -height / 2;
-			var center:Vector3 = new Vector3(0, offset, 0);
-			positions.push(center.x);
-			positions.push(center.y);
-			positions.push(center.z);
-			normals.push(0);
-			normals.push(isTop ? 1 : -1);
-			normals.push(0);
-			uvs.push(u.x + (u.z - u.x) * 0.5);
-			uvs.push(u.y + (u.w - u.y) * 0.5);
-			if (faceColors != null) {
-				colors.push(c.r);
-				colors.push(c.g);
-				colors.push(c.b);
-				colors.push(c.a);
-			}
-			
-			var textureScale = new Vector2(0.5, 0.5);
-			for (i in 0...tessellation+1) {
-				angle = Math.PI * 2 * i * arc / tessellation;
-				var cos:Float = Math.cos(-angle);
-				var sin:Float = Math.sin(-angle);
-				circleVector = new Vector3(cos * radius, offset, sin * radius);
-				var textureCoordinate:Vector2 = new Vector2(cos * textureScale.x + 0.5, sin * textureScale.y + 0.5);
-				positions.push(circleVector.x);
-				positions.push(circleVector.y);
-				positions.push(circleVector.z);
-				normals.push(0);
-				normals.push(isTop ? 1 : -1);
-				normals.push(0);
-				uvs.push(u.x + (u.z - u.x) * textureCoordinate.x);
-				uvs.push(u.y + (u.w - u.y) * textureCoordinate.y);
-				if (faceColors != null) {
-					colors.push(c.r);
-					colors.push(c.g);
-					colors.push(c.b);
-					colors.push(c.a);
-				}
-			}
-			// Cap indices
-			for (i in 0...tessellation) {
-				if (!isTop) {
-					indices.push(vbase);
-					indices.push(vbase + (i + 1));
-					indices.push(vbase + (i + 2));
-				}
-				else {
-					indices.push(vbase);
-					indices.push(vbase + (i + 2));
-					indices.push(vbase + (i + 1));
-				}
-			}
-		};
-		
-		// add caps to geometry
-		createCylinderCap(false);
-		createCylinderCap(true);
-		
-		// Sides
-		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
-		
-		var vertexData = new VertexData();
-		
-		vertexData.indices = indices;
-		vertexData.positions = positions;
-		vertexData.normals = normals;
-		vertexData.uvs = uvs;
-		
-		if (faceColors != null) {
-			vertexData.colors = colors;
+			vertexData.colors = new Float32Array(colors);
 		}
 		
 		return vertexData;
@@ -1666,16 +1495,21 @@ import lime.utils.Int32Array;
 		
 		uvs = buildUVs(segmentsW, segmentsH);
 		
-        // Sides
-        VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+        var _positions = new Float32Array(positions);
+		var _indices = new Int32Array(indices);
+		var _normals = new Float32Array(normals);
+		var _uvs = new Float32Array(uvs);
+		
+		// sides
+		VertexData._ComputeSides(sideOrientation, _positions, _indices, _normals, _uvs);
 		
 		// Result
 		var vertexData = new VertexData();
 		
-		vertexData.indices = indices;
-		vertexData.positions = positions;
-		vertexData.normals = normals;
-		vertexData.uvs = uvs;
+		vertexData.indices = _indices;
+		vertexData.positions = _positions;
+		vertexData.normals = _normals;
+		vertexData.uvs = _uvs;
 		
 		return vertexData;
     }
@@ -1736,16 +1570,21 @@ import lime.utils.Int32Array;
 			}
 		}
 		
-		// Sides
-        VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		var _positions = new Float32Array(positions);
+		var _indices = new Int32Array(indices);
+		var _normals = new Float32Array(normals);
+		var _uvs = new Float32Array(uvs);
+		
+		// sides
+		VertexData._ComputeSides(sideOrientation, _positions, _indices, _normals, _uvs);
 		
 		// Result
 		var vertexData = new VertexData();
 		
-		vertexData.indices = indices;
-		vertexData.positions = positions;
-		vertexData.normals = normals;
-		vertexData.uvs = uvs;
+		vertexData.indices = _indices;
+		vertexData.positions = _positions;
+		vertexData.normals = _normals;
+		vertexData.uvs = _uvs;
 		
 		return vertexData;
 	}
@@ -1773,8 +1612,8 @@ import lime.utils.Int32Array;
 		}
 		
 		var vertexData = new VertexData();
-		vertexData.indices = indices;
-		vertexData.positions = positions;
+		vertexData.indices = new Int32Array(indices);
+		vertexData.positions = new Float32Array(positions);
 		
 		return vertexData;
 	}
@@ -1798,8 +1637,8 @@ import lime.utils.Int32Array;
 		// Result
 		var vertexData = new VertexData();
 		
-		vertexData.indices = indices;
-		vertexData.positions = positions;
+		vertexData.indices = new Int32Array(indices);
+		vertexData.positions = new Float32Array(positions);
 		
 		return vertexData;
 	}
@@ -1846,8 +1685,8 @@ import lime.utils.Int32Array;
 		
 		// Result
 		var vertexData = new VertexData();
-		vertexData.positions = positions;
-		vertexData.indices = indices;
+		vertexData.indices = new Int32Array(indices);
+		vertexData.positions = new Float32Array(positions);		
 		
 		return vertexData;
 	}
@@ -1894,10 +1733,10 @@ import lime.utils.Int32Array;
 		// Result
 		var vertexData = new VertexData();
 		
-		vertexData.indices = indices;
-		vertexData.positions = positions;
-		vertexData.normals = normals;
-		vertexData.uvs = uvs;
+		vertexData.indices = new Int32Array(indices);
+		vertexData.positions = new Float32Array(positions);
+		vertexData.normals = new Float32Array(normals);
+		vertexData.uvs = new Float32Array(uvs);
 		
 		return vertexData;
 	}
@@ -1982,10 +1821,10 @@ import lime.utils.Int32Array;
 		// Result
 		var vertexData = new VertexData();
 		
-		vertexData.indices = indices;
-		vertexData.positions = positions;
-		vertexData.normals = normals;
-		vertexData.uvs = uvs;
+		vertexData.indices = new Int32Array(indices);
+		vertexData.positions = new Float32Array(positions);
+		vertexData.normals = new Float32Array(normals);
+		vertexData.uvs = new Float32Array(uvs);
 		
 		return vertexData;
 	}
@@ -2059,10 +1898,10 @@ import lime.utils.Int32Array;
 		// Result
 		var vertexData = new VertexData();
 		
-		vertexData.indices = indices;
-		vertexData.positions = positions;
-		vertexData.normals = normals;
-		vertexData.uvs = uvs;
+		vertexData.indices = new Int32Array(indices);
+		vertexData.positions = new Float32Array(positions);
+		vertexData.normals = new Float32Array(normals);
+		vertexData.uvs = new Float32Array(uvs);
 		
 		return vertexData;
 	}
@@ -2127,20 +1966,28 @@ import lime.utils.Int32Array;
 		indices.push(2);
 		indices.push(3);
 		
-		// Sides
-        VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		var _positions = new Float32Array(positions);
+		var _indices = new Int32Array(indices);
+		var _normals = new Float32Array(normals);
+		var _uvs = new Float32Array(uvs);
+		
+		// sides
+		VertexData._ComputeSides(sideOrientation, _positions, _indices, _normals, _uvs);
 		
 		// Result
 		var vertexData = new VertexData();
 		
-		vertexData.indices = indices;
-		vertexData.positions = positions;
-		vertexData.normals = normals;
-		vertexData.uvs = uvs;
+		vertexData.indices = _indices;
+		vertexData.positions = _positions;
+		vertexData.normals = _normals;
+		vertexData.uvs = _uvs;
 		
 		return vertexData;
 	}
 	
+	/**
+	  * Creates the VertexData of the Disc or regular Polygon.
+	  */
 	public static function CreateDisc(options:Dynamic):VertexData {
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
@@ -2189,16 +2036,95 @@ import lime.utils.Int32Array;
 		
 		// result
 		VertexData.ComputeNormals(positions, indices, normals);
-		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
 		
+		var _positions = new Float32Array(positions);
+		var _indices = new Int32Array(indices);
+		var _normals = new Float32Array(normals);
+		var _uvs = new Float32Array(uvs);
+		
+		// sides
+		VertexData._ComputeSides(sideOrientation, _positions, _indices, _normals, _uvs);
+		
+		// Result
 		var vertexData = new VertexData();
 		
+		vertexData.indices = _indices;
+		vertexData.positions = _positions;
+		vertexData.normals = _normals;
+		vertexData.uvs = _uvs;
+		
+		return vertexData;
+	}
+	
+	/**
+	 * Re-creates the VertexData of the Polygon for sideOrientation.  
+	 */
+	public static function CreatePolygon(polygon:Mesh, sideOrientation:Int, ?fUV:Array<Vector4>, ?fColors:Array<Color4>, ?frontUVs:Vector4, ?backUVs:Vector4) {
+		var faceUV:Array<Vector4> = fUV != null ? fUV : [];
+		var faceColors:Array<Color4> = fColors;
+		var colors:Array<Float> = [];
+		
+		// default face colors and UV if undefined
+		for (f in 0...3) {
+			if (faceUV[f] == null) {
+				faceUV[f] = new Vector4(0, 0, 1, 1);
+			}
+			if (faceColors != null && faceColors[f] == null) {
+				faceColors[f] = new Color4(1, 1, 1, 1);
+			}
+		}
+		
+		var positions = polygon.getVerticesData(VertexBuffer.PositionKind);
+		var normals = polygon.getVerticesData(VertexBuffer.NormalKind);
+		var uvs = polygon.getVerticesData(VertexBuffer.UVKind);
+		var indices = polygon.getIndices();
+		
+		// set face colours and textures
+		var idx:Int = 0;
+		var face:Int = 0;
+		var index:Int = 0;
+		while (index < normals.length) { 
+			//Edge Face  no. 1
+			if(Math.abs(normals[index + 1]) < 0.001) {
+			   face = 1; 
+			}
+			//Top Face  no. 0
+			if(Math.abs(normals[index + 1] - 1) < 0.001) {
+			   face = 0; 
+			}
+			//Bottom Face  no. 2
+			if(Math.abs(normals[index + 1] + 1) < 0.001) {
+			   face = 2; 
+			}
+			idx = Std.int(index / 3);
+			uvs[2 * idx] = (1 - uvs[2 * idx]) * faceUV[face].x + uvs[2 * idx] * faceUV[face].z;
+			uvs[2 * idx + 1] = (1 - uvs[2 * idx + 1]) * faceUV[face].y + uvs[2 * idx + 1] * faceUV[face].w;
+			if (faceColors != null) {
+				colors.push(faceColors[face].r);
+				colors.push(faceColors[face].g);
+				colors.push(faceColors[face].b);
+				colors.push(faceColors[face].a);
+			}
+			
+			index += 3;
+		}
+		
+		// sides
+		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs, frontUVs, backUVs);
+		
+		// Result
+		var vertexData = new VertexData();
 		vertexData.indices = indices;
 		vertexData.positions = positions;
 		vertexData.normals = normals;
 		vertexData.uvs = uvs;
 		
-		return vertexData;
+		if (faceColors != null) {
+			var totalColors = (sideOrientation == Mesh.DOUBLESIDE) ? colors.concat(colors) : colors;
+			vertexData.colors = new Float32Array(totalColors);
+		}
+		
+		return vertexData;		
 	}
 	
 	public static function CreateIcoSphere(options:IcoSphereOptions):VertexData {
@@ -2403,15 +2329,21 @@ import lime.utils.Int32Array;
 			}
 		}
 		
-		// Sides
-		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		var _positions = new Float32Array(positions);
+		var _indices = new Int32Array(indices);
+		var _normals = new Float32Array(normals);
+		var _uvs = new Float32Array(uvs);
+		
+		// sides
+		VertexData._ComputeSides(sideOrientation, _positions, _indices, _normals, _uvs);
 		
 		// Result
 		var vertexData = new VertexData();
-		vertexData.indices = indices;
-		vertexData.positions = positions;
-		vertexData.normals = normals;
-		vertexData.uvs = uvs;
+		
+		vertexData.indices = _indices;
+		vertexData.positions = _positions;
+		vertexData.normals = _normals;
+		vertexData.uvs = _uvs;
 		
 		return vertexData;
 	}
@@ -2535,17 +2467,25 @@ import lime.utils.Int32Array;
 		}
 		
 		VertexData.ComputeNormals(positions, indices, normals);
-		VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
 		
+		var _positions = new Float32Array(positions);
+		var _indices = new Int32Array(indices);
+		var _normals = new Float32Array(normals);
+		var _uvs = new Float32Array(uvs);
+		
+		// sides
+		VertexData._ComputeSides(sideOrientation, _positions, _indices, _normals, _uvs);
+		
+		// Result
 		var vertexData = new VertexData();
 		
-		vertexData.positions = positions;
-		vertexData.indices = indices;
-		vertexData.normals = normals;
-		vertexData.uvs = uvs;
+		vertexData.indices = _indices;
+		vertexData.positions = _positions;
+		vertexData.normals = _normals;
+		vertexData.uvs = _uvs;
 		
 		if (faceColors.length > 0) {
-			vertexData.colors = colors;
+			vertexData.colors = new Float32Array(colors);
 		}
 		
 		return vertexData;
@@ -2627,16 +2567,21 @@ import lime.utils.Int32Array;
 		// Normals
 		VertexData.ComputeNormals(positions, indices, normals);
 		
-		// Sides
-        VertexData._ComputeSides(sideOrientation, positions, indices, normals, uvs);
+		var _positions = new Float32Array(positions);
+		var _indices = new Int32Array(indices);
+		var _normals = new Float32Array(normals);
+		var _uvs = new Float32Array(uvs);
+		
+		// sides
+		VertexData._ComputeSides(sideOrientation, _positions, _indices, _normals, _uvs);
 		
 		// Result
 		var vertexData = new VertexData();
 		
-		vertexData.indices = indices;
-		vertexData.positions = positions;
-		vertexData.normals = normals;
-		vertexData.uvs = uvs;
+		vertexData.indices = _indices;
+		vertexData.positions = _positions;
+		vertexData.normals = _normals;
+		vertexData.uvs = _uvs;
 		
 		return vertexData;
 	}
@@ -2647,7 +2592,7 @@ import lime.utils.Int32Array;
 	 * @param {any} - indices   (number[] or Uint16Array)
 	 * @param {any} - normals   (number[] or Float32Array)
 	 */
-	public static function ComputeNormals(positions:Array<Float>, indices:Array<Int>, normals:Array<Float>, ?options:Dynamic) {
+	public static function ComputeNormals(positions:Dynamic, indices:Dynamic, normals:Dynamic, ?options:Dynamic) {
 		// temporary scalar variables
 		var index = 0;                      // facet index     
 		var p1p2x = 0.0;                    // p1p2 vector x coordinate
@@ -2723,13 +2668,13 @@ import lime.utils.Int32Array;
 		var nbFaces = Std.int(indices.length / 3);
 		for (index in 0...nbFaces) {
 			// get the indexes of the coordinates of each vertex of the facet
-			v1x = indices[index * 3] * 3;
+			v1x = Std.int(indices[index * 3] * 3);
 			v1y = v1x + 1;
 			v1z = v1x + 2;
-			v2x = indices[index * 3 + 1] * 3;
+			v2x = Std.int(indices[index * 3 + 1] * 3);
 			v2y = v2x + 1;
 			v2z = v2x + 2;
-			v3x = indices[index * 3 + 2] * 3;
+			v3x = Std.int(indices[index * 3 + 2] * 3);
 			v3y = v3x + 1;
 			v3z = v3x + 2;
 			
@@ -2833,7 +2778,7 @@ import lime.utils.Int32Array;
 		}
 	}
 	
-	public static function _ComputeSides(sideOrientation:Int = Mesh.DEFAULTSIDE, positions:Array<Float>, indices:Array<Int>, normals:Array<Float>, uvs:Array<Float>) {
+	public static function _ComputeSides(sideOrientation:Int = Mesh.DEFAULTSIDE, positions:Float32Array, indices:Int32Array, normals:Float32Array, uvs:Float32Array, ?frontUVs:Vector4, ?backUVs:Vector4) {
 		var li:Int = indices.length;
 		var ln:Int = normals.length;
 		
@@ -2878,8 +2823,19 @@ import lime.utils.Int32Array;
 				
 				// uvs
 				var lu:Int = uvs.length;
+				var u:Int = 0;
 				for (u in 0...lu) {
-					uvs[u + lu] = uvs[u];
+					uvs[u + lu] = uvs[u];                       
+				}
+				var frontUVs = frontUVs != null ? frontUVs : new Vector4(0.0, 0.0, 1.0, 1.0);
+				var backUVs = backUVs != null ? backUVs : new Vector4(0.0, 0.0, 1.0, 1.0); 
+				u = 0;
+				for (i in 0...Std.int(lu / 2)) {    
+					uvs[u] = frontUVs.x + (frontUVs.z - frontUVs.x) * uvs[u];
+					uvs[u + 1] = frontUVs.y + (frontUVs.w - frontUVs.y) * uvs[u + 1];
+					uvs[u + lu] = backUVs.x + (backUVs.z - backUVs.x) * uvs[u + lu];
+					uvs[u + lu + 1] = backUVs.y + (backUVs.w - backUVs.y) * uvs[u + lu + 1];
+					u += 2;
 				}
 		}
 	}
@@ -2944,7 +2900,7 @@ import lime.utils.Int32Array;
 		// colors
 		var colors = parsedVertexData.colors;
 		if (colors != null) {
-			vertexData.set(Color4.CheckColors4(colors, Std.int(positions.length / 3)), VertexBuffer.ColorKind);
+			vertexData.set(new Float32Array(Color4.CheckColors4(colors, Std.int(positions.length / 3))), VertexBuffer.ColorKind);
 		}
 		
 		// matricesIndices

@@ -25,6 +25,9 @@ import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.ISize;
 
+import lime.utils.Float32Array;
+import lime.utils.Int32Array;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -182,18 +185,18 @@ class HighlightLayer {
 		// Adapt options
 		this._options = options != null ? options : {
 			camera: null,
-			mainTextureRatio: 0.25,
+			mainTextureRatio: 0.5,
 			mainTextureFixedSize: 512,
 			blurTextureSizeRatio: 0.5,
-			blurHorizontalSize: 1,
-			blurVerticalSize: 1,
+			blurHorizontalSize: 1.0,
+			blurVerticalSize: 1.0,
 			alphaBlendingMode: Engine.ALPHA_COMBINE
 		};
 		if (this._options.mainTextureRatio == null) {
-			this._options.mainTextureRatio = 0.25; 
+			this._options.mainTextureRatio = 0.5; 
 		}
 		if (this._options.blurTextureSizeRatio == null) {
-			this._options.blurTextureSizeRatio = 0.5;
+			this._options.blurTextureSizeRatio = 1.0;
 		}
 		if (this._options.blurHorizontalSize == null) {
 			this._options.blurHorizontalSize = 1;
@@ -209,12 +212,12 @@ class HighlightLayer {
 		}
 		
 		// VBO
-		var vertices:Array<Float> = [
+		var vertices:Float32Array = new Float32Array([
 			 1,  1,
 			-1,  1,
 			-1, -1,
 			 1, -1
-		];
+		]);
 		
 		var vertexBuffer = new VertexBuffer(engine, vertices, VertexBuffer.PositionKind, false, false, 2);
 		this._vertexBuffers[VertexBuffer.PositionKind] = vertexBuffer;
@@ -228,7 +231,7 @@ class HighlightLayer {
 		indices.push(2);
 		indices.push(3);
 		
-		this._indexBuffer = engine.createIndexBuffer(indices);
+		this._indexBuffer = engine.createIndexBuffer(new Int32Array(indices));
 		
 		// Effect
 		this._glowMapMergeEffect = engine.createEffect("glowMapMerge",

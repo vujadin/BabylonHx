@@ -12,9 +12,9 @@ import lime.utils.Float32Array;
  */
 class MorphTarget implements ISmartArrayCompatible {
 	
-	private var _positions:Array<Float>;// Float32Array;
-	private var _normals:Array<Float>;//Float32Array;
-	private var _tangents:Array<Float>;//Float32Array;
+	private var _positions:Float32Array;
+	private var _normals:Float32Array;
+	private var _tangents:Float32Array;
 	private var _influence:Int;
 	
 	public var name:String;
@@ -57,27 +57,27 @@ class MorphTarget implements ISmartArrayCompatible {
 		return this._tangents != null;
 	}
 
-	inline public function setPositions(data:Array<Float>/*Float32Array*/) {
-		this._positions = data;// new Float32Array(data);
+	inline public function setPositions(data:Float32Array) {
+		this._positions = new Float32Array(data);
 	}
 
-	inline public function getPositions():Array<Float>/*Float32Array*/ {
+	inline public function getPositions():Float32Array {
 		return this._positions;
 	}
 
-	inline public function setNormals(data:Array<Float>/*Float32Array*/) {
-		this._normals = data;// new Float32Array(data);
+	inline public function setNormals(data:Float32Array) {
+		this._normals = new Float32Array(data);
 	}
 
-	inline public function getNormals():Array<Float>/*Float32Array*/ {
+	inline public function getNormals():Float32Array {
 		return this._normals;
 	}
 
-	inline public function setTangents(data:Array<Float>/*Float32Array*/) {
-		this._tangents = data;// new Float32Array(data);
+	inline public function setTangents(data:Float32Array) {
+		this._tangents = new Float32Array(data);
 	}
 
-	inline public function getTangents():Array<Float>/*Float32Array*/ {
+	inline public function getTangents():Float32Array {
 		return this._tangents;
 	}
 	

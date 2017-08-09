@@ -7,6 +7,8 @@ import com.babylonhx.math.Color4;
 import com.babylonhx.tools.AsyncLoop;
 import com.babylonhx.tools.Tools;
 import haxe.Timer;
+import lime.utils.Float32Array;
+import lime.utils.Int32Array;
 
 /**
  * ...
@@ -233,7 +235,7 @@ import haxe.Timer;
 		
 		var vertexInit = function(i:Int) {
 			var offset = i + submesh.verticesStart;
-			var position = Vector3.FromArray(positionData, offset * 3);
+			var position = Vector3.FromFloat32Array(positionData, offset * 3);
 			
 			var vertex = findInVertices(position);
 			if (vertex == null) {
@@ -310,21 +312,33 @@ import haxe.Timer;
 			}
 		}
 		
-		var newPositionData:Array<Float> = this._reconstructedMesh.getVerticesData(VertexBuffer.PositionKind);
-		if (newPositionData == null) {
-			newPositionData = [];
+		var newPositionData:Array<Float> = [];
+		var tmpPD = this._reconstructedMesh.getVerticesData(VertexBuffer.PositionKind);
+		if (tmpPD != null) {
+			for (i in 0...tmpPD.length) {
+				newPositionData[i] = tmpPD[i];
+			}
 		}
-		var newNormalData:Array<Float> = this._reconstructedMesh.getVerticesData(VertexBuffer.NormalKind);
-		if (newNormalData == null) {
-			newNormalData = [];
+		var newNormalData:Array<Float> = [];
+		var tmpND = this._reconstructedMesh.getVerticesData(VertexBuffer.NormalKind);
+		if (tmpND != null) {
+			for (i in 0...tmpND.length) {
+				newNormalData[i] = tmpND[i];
+			}
 		}
-		var newUVsData:Array<Float> = this._reconstructedMesh.getVerticesData(VertexBuffer.UVKind);
-		if (newUVsData == null) {
-			newUVsData = [];
+		var newUVsData:Array<Float> = [];
+		var tmpUVD = this._reconstructedMesh.getVerticesData(VertexBuffer.UVKind);
+		if (tmpUVD != null) {
+			for (i in 0...tmpUVD.length) {
+				newUVsData[i] = tmpUVD[i];
+			}
 		}
-		var newColorsData:Array<Float> = this._reconstructedMesh.getVerticesData(VertexBuffer.ColorKind);
-		if (newColorsData == null) {
-			newColorsData = [];
+		var newColorsData:Array<Float> = [];
+		var tmpCD = this._reconstructedMesh.getVerticesData(VertexBuffer.ColorKind);
+		if (tmpCD != null) {
+			for (i in 0...tmpCD.length) {
+				newColorsData[i] = tmpCD[i];
+			}
 		}
 		
 		var normalData = this._mesh.getVerticesData(VertexBuffer.NormalKind);
@@ -346,7 +360,8 @@ import haxe.Timer;
 					if (uvs != null && uvs.length > 0) {
 						newUVsData.push(uvs[(originalOffset * 2)]);
 						newUVsData.push(uvs[(originalOffset * 2) + 1]);
-					} else if (colorsData != null && colorsData.length > 0) {
+					} 
+					else if (colorsData != null && colorsData.length > 0) {
 						newColorsData.push(colorsData[(originalOffset * 4)]);
 						newColorsData.push(colorsData[(originalOffset * 4) + 1]);
 						newColorsData.push(colorsData[(originalOffset * 4) + 2]);
@@ -363,7 +378,13 @@ import haxe.Timer;
 		var submeshesArray = this._reconstructedMesh.subMeshes;
 		this._reconstructedMesh.subMeshes = [];
 		
-		var newIndicesArray:Array<Int> = this._reconstructedMesh.getIndices(); //[];
+		var newIndicesArray:Array<Int> = [];
+		var tmpIA = this._reconstructedMesh.getIndices(); 
+		if (tmpIA != null) {
+			for (i in 0...tmpIA.length) {
+				newIndicesArray[i] = tmpIA[i];
+			}
+		}
 		var originalIndices = this._mesh.getIndices();
 		for (i in 0...newTriangles.length) {
 			var t = newTriangles[i];
@@ -379,14 +400,14 @@ import haxe.Timer;
 		}
 		
 		//overwriting the old vertex buffers and indices.
-		this._reconstructedMesh.setIndices(newIndicesArray);
-		this._reconstructedMesh.setVerticesData(VertexBuffer.PositionKind, newPositionData);
-		this._reconstructedMesh.setVerticesData(VertexBuffer.NormalKind, newNormalData);
+		this._reconstructedMesh.setIndices(new Int32Array(newIndicesArray));
+		this._reconstructedMesh.setVerticesData(VertexBuffer.PositionKind, new Float32Array(newPositionData));
+		this._reconstructedMesh.setVerticesData(VertexBuffer.NormalKind, new Float32Array(newNormalData));
 		if (newUVsData.length > 0) {
-			this._reconstructedMesh.setVerticesData(VertexBuffer.UVKind, newUVsData);
+			this._reconstructedMesh.setVerticesData(VertexBuffer.UVKind, new Float32Array(newUVsData));
 		}
 		if (newColorsData.length > 0) {
-			this._reconstructedMesh.setVerticesData(VertexBuffer.ColorKind, newColorsData);
+			this._reconstructedMesh.setVerticesData(VertexBuffer.ColorKind, new Float32Array(newColorsData));
 		}
 		
 		//create submesh

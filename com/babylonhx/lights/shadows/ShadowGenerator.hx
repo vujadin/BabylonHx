@@ -22,6 +22,7 @@ import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.EventState;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.Scene;
+import haxe.Timer;
 
 /**
  * ...
@@ -126,9 +127,11 @@ import com.babylonhx.Scene;
 		if (this._light.needCube()) {
 			if (value == ShadowGenerator.FILTER_BLUREXPONENTIALSHADOWMAP) {
 				this.useExponentialShadowMap = true;
+				return value;
 			}
 			else if (value == ShadowGenerator.FILTER_BLURCLOSEEXPONENTIALSHADOWMAP) {
 				this.useCloseExponentialShadowMap = true;
+				return value;
 			}
 		}
 		
@@ -240,6 +243,12 @@ import com.babylonhx.Scene;
 		
 		return this._shadowMap;
 	}
+	
+	/**
+	 * Controls the extent to which the shadows fade out at the edge of the frustum
+     * Used only by directionals and spots
+	*/
+    public var frustumEdgeFalloff:Float = 0; 
 
 	private var _light:IShadowLight;
 	/**
@@ -490,6 +499,46 @@ import com.babylonhx.Scene;
 			this._shadowMap.updateSamplingMode(Texture.BILINEAR_SAMPLINGMODE);
 		}
 	}
+	
+	/**
+	 * Force shader compilation including textures ready check
+	 */
+	var checkReady:Void->Void;
+	public function forceCompilation(onCompiled:ShadowGenerator->Void, useInstances:Bool = false) {
+		var scene = this._scene;
+		var engine = scene.getEngine();
+		var subMeshes:Array<SubMesh> = [];
+		var currentIndex:Int = 0;
+		
+		for (mesh in this.getShadowMap().renderList) {
+			for (m in mesh.subMeshes) {
+				subMeshes.push(m);
+			}
+		}
+		
+		checkReady = function() {
+			if (this._scene == null || this._scene.getEngine() == null) {
+                return;
+            }
+			
+			var subMesh = subMeshes[currentIndex];
+			
+			if (this.isReady(subMesh, useInstances)) {
+				currentIndex++;
+				if (currentIndex >= subMeshes.length) {
+					if (onCompiled != null) {
+						onCompiled(this);
+					}
+					return;
+				}
+			}
+			Timer.delay(checkReady, 16);
+		};
+		
+		if (subMeshes.length > 0) {
+			checkReady();
+		}
+	}
 
 	/**
 	 * Boolean : true when the ShadowGenerator is finally computed.  
@@ -520,8 +569,6 @@ import com.babylonhx.Scene;
 					defines.push("#define UV1");
 				}
 				if (mesh.isVerticesDataPresent(VertexBuffer.UV2Kind)) {
-					var alphaTexture = material.getAlphaTestTexture();
-					
 					if (alphaTexture.coordinatesIndex == 1) {
 						attribs.push(VertexBuffer.UV2Kind);
 						defines.push("#define UV2");
@@ -584,7 +631,7 @@ import com.babylonhx.Scene;
 			defines.shadowpcf[lightIndex] = true;
 		} 
 		else if (this.useExponentialShadowMap || this.useBlurExponentialShadowMap) {
-			defines.shadowwesm[lightIndex] = true;
+			defines.shadowesm[lightIndex] = true;
 		}
 		else if (this.useCloseExponentialShadowMap || this.useBlurCloseExponentialShadowMap) {
 			defines.shadowcloseesm[lightIndex] = true;
@@ -594,7 +641,7 @@ import com.babylonhx.Scene;
 			defines.shadowqube[lightIndex] = true;
 		}
 		
-		trace(defines);
+		//trace(defines);
 	}
 
 	/**
@@ -613,7 +660,7 @@ import com.babylonhx.Scene;
 			effect.setMatrix("lightMatrix" + lightIndex, this.getTransformMatrix());
 		} 
 		effect.setTexture("shadowSampler" + lightIndex, this.getShadowMapForRendering());
-		light._uniformBuffer.updateFloat3("shadowsInfo", this.getDarkness(), this.blurScale / this.getShadowMap().getSize().width, this.depthScale, lightIndex);
+		light._uniformBuffer.updateFloat4("shadowsInfo", this.getDarkness(), this.blurScale / this.getShadowMap().getSize().width, this.depthScale, this.frustumEdgeFalloff, lightIndex);
 		light._uniformBuffer.updateFloat2("depthValues", this.getLight().getDepthMinZ(scene.activeCamera), this.getLight().getDepthMinZ(scene.activeCamera) + this.getLight().getDepthMaxZ(scene.activeCamera));
 	}
 

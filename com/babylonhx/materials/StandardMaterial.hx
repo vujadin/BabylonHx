@@ -782,9 +782,6 @@ typedef SMD = StandardMaterialDefines
 					else {
 						MaterialHelper.PrepareDefinesForMergedUV(this._bumpTexture, defines, "BUMP");
 						
-						defines.INVERTNORMALMAPX = this.invertNormalMapX;
-						defines.INVERTNORMALMAPY = this.invertNormalMapY;
-						
 						defines.PARALLAX = this._useParallax;
 						defines.PARALLAXOCCLUSION = this._useParallaxOcclusion;
 					}
@@ -874,12 +871,6 @@ typedef SMD = StandardMaterialDefines
 		
 		// Values that need to be evaluated on every frame
 		MaterialHelper.PrepareDefinesForFrameBoundValues(scene, engine, defines, useInstances);
-		
-		if (scene._mirroredCameraPosition != null && defines.BUMP) {
-			defines.INVERTNORMALMAPX = !this.invertNormalMapX;
-			defines.INVERTNORMALMAPY = !this.invertNormalMapY;
-			defines.markAsUnprocessed();
-		}
 		
 		// Get correct effect      
 		if (defines.isDirty) {
@@ -981,7 +972,7 @@ typedef SMD = StandardMaterialDefines
 				"mBones",
 				"vClipPlane", "diffuseMatrix", "ambientMatrix", "opacityMatrix", "reflectionMatrix", "emissiveMatrix", "specularMatrix", "bumpMatrix", "lightmapMatrix", "refractionMatrix",
 				"diffuseLeftColor", "diffuseRightColor", "opacityParts", "reflectionLeftColor", "reflectionRightColor", "emissiveLeftColor", "emissiveRightColor", "refractionLeftColor", "refractionRightColor",
-				"logarithmicDepthConstant"
+				"logarithmicDepthConstant", "vNormalReoderParams"
 			];
 			
 			var samplers = ["diffuseSampler", "ambientSampler", "opacitySampler", "reflectionCubeSampler", "reflection2DSampler", "emissiveSampler", "specularSampler", "bumpSampler", "lightmapSampler", "refractionCubeSampler", "refraction2DSampler"];
@@ -1004,6 +995,10 @@ typedef SMD = StandardMaterialDefines
 			}
 			
 			var join = defines.toString();
+			/*trace(join);
+			trace(attribs, attribs.length);
+			trace(uniforms, uniforms.length);
+			trace(samplers, samplers.length);*/
 			subMesh.setEffect(scene.getEngine().createEffect(shaderName, {
 				attributes: attribs,
 				uniformsNames: uniforms,
@@ -1058,6 +1053,7 @@ typedef SMD = StandardMaterialDefines
 		this._uniformBuffer.addUniform("lightmapMatrix", 16);
 		this._uniformBuffer.addUniform("specularMatrix", 16);
 		this._uniformBuffer.addUniform("bumpMatrix", 16);
+		this._uniformBuffer.addUniform("vNormalReoderParams", 4);
 		this._uniformBuffer.addUniform("refractionMatrix", 16);
 		this._uniformBuffer.addUniform("vRefractionInfos", 4);
 		this._uniformBuffer.addUniform("vSpecularColor", 4);
@@ -1171,6 +1167,13 @@ typedef SMD = StandardMaterialDefines
 					if (this._bumpTexture != null && scene.getEngine().getCaps().standardDerivatives && StandardMaterial.BumpTextureEnabled) {
 						this._uniformBuffer.updateFloat3("vBumpInfos", this._bumpTexture.coordinatesIndex, 1.0 / this._bumpTexture.level, this.parallaxScaleBias);
 						MaterialHelper.BindTextureMatrix(this._bumpTexture, this._uniformBuffer, "bump");
+						
+						if (scene._mirroredCameraPosition != null) {
+                            this._uniformBuffer.updateFloat4("vNormalReoderParams", this.invertNormalMapX ? 0 : 1.0, this.invertNormalMapX ? 1.0 : -1.0, this.invertNormalMapY ? 0 : 1.0, this.invertNormalMapY ? 1.0 : -1.0);
+                        } 
+						else {
+                            this._uniformBuffer.updateFloat4("vNormalReoderParams", this.invertNormalMapX ? 1.0 : 0, this.invertNormalMapX ? -1.0 : 1.0, this.invertNormalMapY ? 1.0 : 0, this.invertNormalMapY ? -1.0 : 1.0);
+                        } 
 					}
 					
 					if (this._refractionTexture != null && StandardMaterial.RefractionTextureEnabled) {
@@ -1255,7 +1258,7 @@ typedef SMD = StandardMaterialDefines
 			// Colors
 			scene.ambientColor.multiplyToRef(this.ambientColor, this._globalAmbientColor);
 			
-			effect.setVector3("vEyePosition", scene._mirroredCameraPosition != null ? scene._mirroredCameraPosition : scene.activeCamera.position);
+			effect.setVector3("vEyePosition", scene._mirroredCameraPosition != null ? scene._mirroredCameraPosition : scene.activeCamera.globalPosition);
 			effect.setColor3("vAmbientColor", this._globalAmbientColor);
 		}
 		

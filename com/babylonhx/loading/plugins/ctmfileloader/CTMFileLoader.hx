@@ -4,6 +4,9 @@ import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.VertexData;
 import com.babylonhx.tools.Tools;
 
+import lime.utils.Float32Array;
+import lime.utils.Int32Array;
+
 import haxe.io.Bytes;
 import haxe.io.BytesInput;
 
@@ -88,7 +91,7 @@ class CTMFileLoader {
 			for (i in 0...file.body.attrMaps[0].attr.length) {
 				colors.push(file.body.attrMaps[0].attr[i]);
 			}
-			vertexData.colors = colors;
+			vertexData.colors = new Float32Array(colors);
 		}
 		
 		var indices:Array<Int> = [];
@@ -102,10 +105,10 @@ class CTMFileLoader {
 			indicesFinal.reverse();
 			VertexData.ComputeNormals(vertices, indicesFinal, normals);
 			
-			vertexData.positions = vertices;
-			vertexData.normals = normals;
-			vertexData.uvs = uvs;
-			vertexData.indices = indicesFinal;
+			vertexData.positions = new Float32Array(vertices);
+			vertexData.normals = new Float32Array(normals);
+			vertexData.uvs = new Float32Array(uvs);
+			vertexData.indices = new Int32Array(indicesFinal);
 			
 			var mesh = new Mesh("ctm", scene);
 			vertexData.applyToMesh(mesh);

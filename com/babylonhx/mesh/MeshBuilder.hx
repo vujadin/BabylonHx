@@ -12,6 +12,7 @@ import com.babylonhx.math.PositionNormalVertex;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.utils.Image;
 import com.babylonhx.Scene;
+import lime.utils.Int32Array;
 
 import lime.utils.Float32Array;
 
@@ -339,7 +340,7 @@ class MeshBuilder {
 		if (ribbonInstance != null) {   // existing ribbon instance update
 			// positionFunction : ribbon case
 			// only pathArray and sideOrientation parameters are taken into account for positions update
-			var positionFunction = function (positions:Array<Float>) {
+			var positionFunction = function (positions:Float32Array) {
 				var minlg = pathArray[0].length;
 				var i:Int = 0;
 				var ns = (ribbonInstance.sideOrientation == Mesh.DOUBLESIDE) ? 2 : 1;
@@ -543,7 +544,7 @@ class MeshBuilder {
 		var lines:Array<Array<Vector3>> = options.lines;
 		
 		if (instance != null) { // lines update
-			var positionFunction = function(positions:Array<Float>) {
+			var positionFunction = function(positions:Float32Array) {
 				var i = 0;
 				for (l in 0...lines.length) {
 					var points = lines[l];
@@ -606,7 +607,7 @@ class MeshBuilder {
 		var dashSize:Float = options.dashSize;
 		
 		if (linesInstance != null) {  //  dashed lines update
-			var positionFunction = function(positions:Array<Float>) {
+			var positionFunction = function(positions:Float32Array) {
 				var curvect:Vector3 = Vector3.Zero();
 				var nbSeg:Float = positions.length / 6;
 				var lg:Float = 0;
@@ -1094,14 +1095,14 @@ class MeshBuilder {
 	static var CreateDecal_cameraWorldTarget:Vector3 = new Vector3(0, 0, 0);
 	static var decalWorldMatrix:Matrix = new Matrix();
 	static var inverseDecalWorldMatrix:Matrix = new Matrix();
-	static var CreateDecal_indices:Array<Int> = [];
-	static var CreateDecal_positions:Array<Float> = [];
-	static var CreateDecal_normals:Array<Float> = [];
+	static var CreateDecal_indices:Int32Array = null;
+	static var CreateDecal_positions:Float32Array = null;
+	static var CreateDecal_normals:Float32Array = null;
 	static var CreateDecal_meshWorldMatrix:Matrix = new Matrix();
 	static var CreateDecal_transformMatrix:Matrix = new Matrix();
 	static var CreateDecal_vertexData:VertexData = new VertexData();
     public static function CreateDecal(name:String, sourceMesh:AbstractMesh, options:Dynamic) {
-		var position:Vector3 = options.position != null ? options.position : Vector3.Zero();
+		/*var position:Vector3 = options.position != null ? options.position : Vector3.Zero();
 		var normal:Vector3 = options.normal;// != null ? options.normal : Vector3.Up();
 		var size:Vector3 = options.size != null ? options.size : new Vector3(1, 1, 1);
 		var angle:Float = options.angle;
@@ -1128,10 +1129,11 @@ class MeshBuilder {
         CreateDecal_meshWorldMatrix = sourceMesh.getWorldMatrix();
         CreateDecal_transformMatrix = CreateDecal_meshWorldMatrix.multiply(inverseDecalWorldMatrix);
 		
-        CreateDecal_vertexData.indices = [];
-        CreateDecal_vertexData.positions = [];
-        CreateDecal_vertexData.normals = [];
-        CreateDecal_vertexData.uvs = [];
+		// VK TODO: check
+        CreateDecal_vertexData.indices = new Int32Array();// [];
+        CreateDecal_vertexData.positions = new Float32Array();// [];
+        CreateDecal_vertexData.normals = new Float32Array();// [];
+        CreateDecal_vertexData.uvs = new Float32Array();// [];
 		
         var currentCreateDecal_vertexDataIndex:Int = 0;
 		
@@ -1147,7 +1149,7 @@ class MeshBuilder {
             result.normal = new Vector3(CreateDecal_normals[vertexId * 3], CreateDecal_normals[vertexId * 3 + 1], CreateDecal_normals[vertexId * 3 + 2]);
 			
             return result;
-        }
+        };
         
         // Inspired by https://github.com/mrdoob/three.js/blob/eee231960882f6f3b6113405f524956145148146/examples/js/geometries/DecalGeometry.js
         var clip = function(vertices:Array<PositionNormalVertex>, axis:Vector3):Array<PositionNormalVertex> {
@@ -1272,7 +1274,7 @@ class MeshBuilder {
             }
 			
             return result;
-        }
+        };
 		
 		var faceVertices:Array<PositionNormalVertex> = [];
 		var index = 0;
@@ -1302,11 +1304,11 @@ class MeshBuilder {
             for (vIndex in 0...faceVertices.length) {
                 vertex = faceVertices[vIndex];
 				
-                CreateDecal_vertexData.indices.push(currentCreateDecal_vertexDataIndex);
+                CreateDecal_vertexData.indices[vIndex] = (currentCreateDecal_vertexDataIndex);
                 vertex.position.toArray(CreateDecal_vertexData.positions, currentCreateDecal_vertexDataIndex * 3);
                 vertex.normal.toArray(CreateDecal_vertexData.normals, currentCreateDecal_vertexDataIndex * 3);
-                CreateDecal_vertexData.uvs.push(0.5 + vertex.position.x / size.x);
-                CreateDecal_vertexData.uvs.push(0.5 + vertex.position.y / size.y);
+                CreateDecal_vertexData.uvs[vIndex] = (0.5 + vertex.position.x / size.x);
+                CreateDecal_vertexData.uvs[vIndex] = (0.5 + vertex.position.y / size.y);
 				
                 currentCreateDecal_vertexDataIndex++;
             }
@@ -1321,7 +1323,7 @@ class MeshBuilder {
 		decal.position = position.clone();
 		decal.rotation = new Vector3(pitch, yaw, angle);
 		
-        return decal;
+        return decal;*/
     }
 	
 	

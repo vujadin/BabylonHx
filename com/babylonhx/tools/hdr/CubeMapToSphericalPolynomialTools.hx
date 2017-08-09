@@ -1,5 +1,6 @@
 package com.babylonhx.tools.hdr;
 
+import com.babylonhx.math.Scalar;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.SphericalPolynomial;
@@ -7,6 +8,7 @@ import com.babylonhx.math.SphericalHarmonics;
 import com.babylonhx.tools.hdr.PanoramaToCubeMapTools.CubeMapInfo;
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.math.Tools as MathTools;
+import lime.utils.ArrayBufferView;
 
 import lime.utils.Float32Array;
 
@@ -46,8 +48,18 @@ class CubeMapToSphericalPolynomialTools {
 		var size = texture.getSize().width;
 		var right = texture.readPixels(0);
 		var left = texture.readPixels(1);
-		var up = texture.readPixels(2);
-		var down = texture.readPixels(3);
+		
+		var up:ArrayBufferView = null;
+		var down:ArrayBufferView = null;
+		if (texture.isRenderTarget) {
+			up = texture.readPixels(3);
+			down = texture.readPixels(2);
+		}
+		else {
+			up = texture.readPixels(2);
+			down = texture.readPixels(3);
+		}
+		
 		var front = texture.readPixels(4);
 		var back = texture.readPixels(5);
 		
@@ -129,9 +141,9 @@ class CubeMapToSphericalPolynomialTools {
 					
 					// Handle Gamma space textures.
 					if (cubeInfo.gammaSpace) {
-						r = Math.pow(MathTools.Clamp(r), MathTools.ToLinearSpace);
-						g = Math.pow(MathTools.Clamp(g), MathTools.ToLinearSpace);
-						b = Math.pow(MathTools.Clamp(b), MathTools.ToLinearSpace);
+						r = Math.pow(Scalar.Clamp(r), MathTools.ToLinearSpace);
+						g = Math.pow(Scalar.Clamp(g), MathTools.ToLinearSpace);
+						b = Math.pow(Scalar.Clamp(b), MathTools.ToLinearSpace);
 					}
 					
 					var color = new Color3(r, g, b);

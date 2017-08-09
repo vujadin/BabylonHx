@@ -140,6 +140,10 @@ import com.babylonhx.tools.EventState;
 			effect.setVector2("meshPositionOnScreen", this._screenCoordinates);
 		});
 	}
+	
+	public function getClassName():String {
+		return "VolumetricLightScatteringPostProcess";
+	}
 
 	public function isReady(subMesh:SubMesh, useInstances:Bool):Bool {
 		var mesh:Mesh = cast subMesh.getMesh();

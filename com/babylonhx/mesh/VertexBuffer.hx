@@ -91,7 +91,7 @@ import lime.utils.Float32Array;
 		return this._buffer.isUpdatable();
 	}
 
-	inline public function getData():Array<Float> {
+	inline public function getData():Float32Array {
 		return this._buffer.getData();
 	}
 
@@ -123,15 +123,15 @@ import lime.utils.Float32Array;
     }
 
 	// Methods
-	public function create(?data:Array<Float>) {		
+	public function create(?data:Float32Array) {		
 		return this._buffer.create(data);
 	}
 
-	inline public function update(data:Array<Float>) {
+	inline public function update(data:Float32Array) {
 		this.create(data);
 	}
 
-	public function updateDirectly(data:Array<Float>, offset:Int) {
+	public function updateDirectly(data:Float32Array, offset:Int) {
 		return this._buffer.updateDirectly(data, offset);		
 	}
 

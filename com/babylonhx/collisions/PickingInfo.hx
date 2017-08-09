@@ -39,9 +39,9 @@ import com.babylonhx.sprites.Sprite;
 		if (useVerticesNormals) {
 			var normals = this.pickedMesh.getVerticesData(VertexBuffer.NormalKind);
 			
-			var normal0 = Vector3.FromArray(normals, indices[this.faceId * 3] * 3);
-			var normal1 = Vector3.FromArray(normals, indices[this.faceId * 3 + 1] * 3);
-			var normal2 = Vector3.FromArray(normals, indices[this.faceId * 3 + 2] * 3);
+			var normal0 = Vector3.FromFloat32Array(normals, indices[this.faceId * 3] * 3);
+			var normal1 = Vector3.FromFloat32Array(normals, indices[this.faceId * 3 + 1] * 3);
+			var normal2 = Vector3.FromFloat32Array(normals, indices[this.faceId * 3 + 2] * 3);
 			
 			normal0 = normal0.scale(this.bu);
 			normal1 = normal1.scale(this.bv);
@@ -52,9 +52,9 @@ import com.babylonhx.sprites.Sprite;
 		else {
 			var positions = this.pickedMesh.getVerticesData(VertexBuffer.PositionKind);
 			
-			var vertex1 = Vector3.FromArray(positions, indices[this.faceId * 3] * 3);
-			var vertex2 = Vector3.FromArray(positions, indices[this.faceId * 3 + 1] * 3);
-			var vertex3 = Vector3.FromArray(positions, indices[this.faceId * 3 + 2] * 3);
+			var vertex1 = Vector3.FromFloat32Array(positions, indices[this.faceId * 3] * 3);
+			var vertex2 = Vector3.FromFloat32Array(positions, indices[this.faceId * 3 + 1] * 3);
+			var vertex3 = Vector3.FromFloat32Array(positions, indices[this.faceId * 3 + 2] * 3);
 			
 			var p1p2 = vertex1.subtract(vertex2);
 			var p3p2 = vertex3.subtract(vertex2);
@@ -77,9 +77,9 @@ import com.babylonhx.sprites.Sprite;
 		var indices = this.pickedMesh.getIndices();
 		var uvs = this.pickedMesh.getVerticesData(VertexBuffer.UVKind);
 		
-		var uv0 = Vector2.FromArray(uvs, indices[this.faceId * 3] * 2);
-		var uv1 = Vector2.FromArray(uvs, indices[this.faceId * 3 + 1] * 2);
-		var uv2 = Vector2.FromArray(uvs, indices[this.faceId * 3 + 2] * 2);
+		var uv0 = Vector2.FromFloat32Array(uvs, indices[this.faceId * 3] * 2);
+		var uv1 = Vector2.FromFloat32Array(uvs, indices[this.faceId * 3 + 1] * 2);
+		var uv2 = Vector2.FromFloat32Array(uvs, indices[this.faceId * 3 + 2] * 2);
 		
 		uv0 = uv0.scale(1.0 - this.bu - this.bv);
         uv1 = uv1.scale(this.bu);

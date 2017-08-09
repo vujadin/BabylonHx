@@ -5,7 +5,7 @@ import com.babylonhx.math.Color4;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.sprites.SpriteManager;
-import com.babylonhx.particles.ParticleSystem;
+import com.babylonhx.particles.IParticleSystem;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.Tools;
 
@@ -57,7 +57,7 @@ import com.babylonhx.tools.Tools;
 			return;
 		}
 		
-		this._scene.getEngine().clear(0, false, depth, stencil);
+		this._scene.getEngine().clear(null, false, depth, stencil);
 		this._depthStencilBufferAlreadyCleaned = true;		
 	}
 
@@ -168,7 +168,7 @@ import com.babylonhx.tools.Tools;
         this._renderingGroups[renderingGroupId].dispatchSprites(spriteManager);
     }
 
-    public function dispatchParticles(particleSystem:ParticleSystem) {
+    public function dispatchParticles(particleSystem:IParticleSystem) {
         var renderingGroupId = particleSystem.renderingGroupId;
 		
         this._prepareRenderingGroup(renderingGroupId);

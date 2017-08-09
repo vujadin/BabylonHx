@@ -69,7 +69,7 @@ class ImageProcessingPostProcess extends PostProcess {
 	 * Attaches a new image processing configuration to the PBR Material.
 	 * @param configuration 
 	 */
-	public function _attachImageProcessingConfiguration(configuration:ImageProcessingConfiguration) {
+	public function _attachImageProcessingConfiguration(configuration:ImageProcessingConfiguration, doNotBuild:Bool = false) {
 		if (configuration != null && configuration == this._imageProcessingConfiguration) {
 			return;
 		}
@@ -95,7 +95,9 @@ class ImageProcessingPostProcess extends PostProcess {
 		});
 		
 		// Ensure the effect will be rebuilt.
-		this._updateParameters();
+		if (!doNotBuild) {
+			this._updateParameters();
+		}
 	}
 
 	public var colorCurves(get, set):ColorCurves;
@@ -359,7 +361,7 @@ class ImageProcessingPostProcess extends PostProcess {
 										null, textureType, "postprocess", null, true);
 		
 		// Setup the default processing configuration to the scene.
-		this._attachImageProcessingConfiguration(null);
+		this._attachImageProcessingConfiguration(null, true);
 		
 		this.imageProcessingConfiguration.applyByPostProcess = true;
 		
@@ -368,6 +370,10 @@ class ImageProcessingPostProcess extends PostProcess {
 		this.onApply = function(effect:Effect, _) {
 			this.imageProcessingConfiguration.bind(effect, this.aspectRatio);
 		};
+	}
+	
+	public function getClassName():String {
+		return "ImageProcessingPostProcess";
 	}
 
 	private function _updateParameters() {

@@ -8,7 +8,7 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.mesh.VertexBuffer;
-import com.babylonhx.mesh.Buffer2;
+import com.babylonhx.mesh.Buffer;
 import com.babylonhx.particles.Particle;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.animations.IAnimatable;
@@ -16,6 +16,7 @@ import com.babylonhx.animations.Animation;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
+import lime.utils.Int32Array;
 
 import lime.utils.Float32Array;
 
@@ -25,7 +26,7 @@ import lime.utils.Float32Array;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.ParticleSystem') class ParticleSystem implements IDisposable implements ISmartArrayCompatible implements IAnimatable {
+@:expose('BABYLON.ParticleSystem') class ParticleSystem implements IAnimatable implements IParticleSystem {
 	
 	// Statics
 	public static var BLENDMODE_ONEONE:Int = 0;
@@ -81,6 +82,7 @@ import lime.utils.Float32Array;
 	}
 	
 	public var updateFunction:Array<Particle>->Void;
+	public var onAnimationEnd:Void->Void = null;
 
 	public var blendMode:Int = ParticleSystem.BLENDMODE_ONEONE;
 
@@ -106,7 +108,7 @@ import lime.utils.Float32Array;
 	private var _stockParticles:Array<Particle> = [];
 	private var _newPartsExcess:Int = 0;
 	private var _vertexData:Float32Array;
-	private var _vertexBuffer:Buffer2;
+	private var _vertexBuffer:Buffer;
 	private var _vertexBuffers:Map<String, VertexBuffer> = new Map();
 	private var _indexBuffer:WebGLBuffer;	
 	private var _effect:Effect;
@@ -152,14 +154,14 @@ import lime.utils.Float32Array;
 			index += 4;
 		}
 		
-		this._indexBuffer = this._engine.createIndexBuffer(indices);
+		this._indexBuffer = this._engine.createIndexBuffer(new Int32Array(indices));
 		
 		// 11 floats per particle (x, y, z, r, g, b, a, angle, size, offsetX, offsetY) + 1 filler
         this._vertexData = new Float32Array(Std.int(capacity * 11 * 4)); 
 		for (i in 0...Std.int(capacity * 11 * 4)) {
 			this._vertexData[i] = 0;
 		}
-		this._vertexBuffer = new Buffer2(this._engine, this._vertexData, true, 11);
+		this._vertexBuffer = new Buffer(this._engine, this._vertexData, true, 11);
 		
 		var positions = this._vertexBuffer.createVertexBuffer(VertexBuffer.PositionKind, 0, 3);
 		var colors = this._vertexBuffer.createVertexBuffer(VertexBuffer.ColorKind, 3, 4);
@@ -268,7 +270,7 @@ import lime.utils.Float32Array;
 	}
 
 	static var worldMatrix:Matrix = Matrix.Zero();
-	inline private function _update(newParticles:Int) {
+	private function _update(newParticles:Int) {
 		// Update current
 		this._alive = this.particles.length > 0;
 		
@@ -393,6 +395,9 @@ import lime.utils.Float32Array;
 		if (this._stopped) {
 			if (!this._alive) {
 				this._started = false;
+				if (this.onAnimationEnd != null) {
+                    this.onAnimationEnd();
+                }
 				if (this.disposeOnStop) {
 					this._scene._toBeDisposed.push(this);
 				}
@@ -458,7 +463,7 @@ import lime.utils.Float32Array;
 		return this.particles.length;
 	}
 
-	public function dispose(_:Bool = false) {
+	public function dispose() {
 		if (this._vertexBuffer != null) {
 			this._vertexBuffer.dispose();
 			this._vertexBuffer = null;

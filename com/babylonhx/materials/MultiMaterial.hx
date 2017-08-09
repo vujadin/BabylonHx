@@ -1,7 +1,9 @@
 package com.babylonhx.materials;
 
 import com.babylonhx.mesh.AbstractMesh;
+import com.babylonhx.mesh.BaseSubMesh;
 import com.babylonhx.tools.Tags;
+import com.babylonhx.materials.textures.BaseTexture;
 
 /**
  * ...
@@ -10,13 +12,47 @@ import com.babylonhx.tools.Tags;
 
 @:expose('BABYLON.MultiMaterial') class MultiMaterial extends Material {
 	
-	public var subMaterials:Array<Material> = [];
+	private var _subMaterials:Array<Material>;
+	public var subMaterials(get, set):Array<Material>;
+	private inline function get_subMaterials():Array<Material> {
+		return this._subMaterials;
+	}
+	private inline function set_subMaterials(value:Array<Material>):Array<Material> {
+		this._subMaterials = value;
+		this._hookArray(value);
+		return value;
+	}
 	
 
 	public function new(name:String, scene:Scene) {
 		super(name, scene, true);
 		
 		scene.multiMaterials.push(this);
+		
+		this.subMaterials = [];
+		
+		this.storeEffectOnSubMeshes = true; // multimaterial is considered like a push material
+	}
+	
+	private function _hookArray(array:Array<Material>) {
+		// VK TODO:
+		/*var oldPush = array.push;
+		array.push = (...items: Material[]) => {
+			var result = oldPush.apply(array, items);
+			
+			this._markAllSubMeshesAsTexturesDirty();
+			
+			return result;
+		}
+		
+		var oldSplice = array.splice;
+		array.splice = (index: number, deleteCount?: number) => {
+			var deleted = oldSplice.apply(array, [index, deleteCount]);
+			
+			this._markAllSubMeshesAsTexturesDirty();
+			
+			return deleted;
+		}*/
 	}
 
 	// Properties
@@ -27,12 +63,31 @@ import com.babylonhx.tools.Tags;
 		
 		return this.subMaterials[index];
 	}
+	
+	override public function getActiveTextures():Array<BaseTexture> {
+		for (sm in this.subMaterials) {
+			super.getActiveTextures().concat(sm.getActiveTextures());
+		}
+		//var _st:Array<BaseTexture> = this.subMaterials.map(function(subMaterial:Material):Array<BaseTexture> { return subMaterial.getActiveTextures(); });
+		return super.getActiveTextures();
+	}
 
 	// Methods
-	override public function isReady(?mesh:AbstractMesh, useInstances:Bool = false):Bool {
+	override public function getClassName():String {
+		return "MultiMaterial";
+	}
+
+	override public function isReadyForSubMesh(mesh:AbstractMesh, subMesh:BaseSubMesh, useInstances:Bool = false):Bool {
 		for (index in 0...this.subMaterials.length) {
 			var subMaterial = this.subMaterials[index];
 			if (subMaterial != null) {
+				if (this.subMaterials[index].storeEffectOnSubMeshes) {
+					if (!this.subMaterials[index].isReadyForSubMesh(mesh, subMesh, useInstances)) {
+						return false;
+					}
+					continue;
+				}
+				
 				if (!this.subMaterials[index].isReady(mesh)) {
 					return false;
 				}
@@ -101,6 +156,20 @@ import com.babylonhx.tools.Tags;
 		}
 		
 		return mm;
+	}
+	
+	override public function dispose(forceDisposeEffect:Bool = false, forceDisposeTextures:Bool = false) {
+		var scene = this.getScene();
+		if (scene == null) {
+			return;
+		}
+		
+		var index = scene.multiMaterials.indexOf(this);
+		if (index >= 0) {
+			scene.multiMaterials.splice(index, 1);
+		}
+		
+		super.dispose(forceDisposeEffect, forceDisposeTextures);
 	}
 	
 }

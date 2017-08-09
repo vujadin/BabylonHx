@@ -36,6 +36,10 @@ import com.babylonhx.tools.Tools;
 		this._cameras = new Map<String, Camera>();
 	}
 	
+	public function getClassName():String {
+		return "PostProcessRenderPipeline";
+	}
+	
 	public var isSupported(get, never):Bool;
 	private function get_isSupported():Bool {
 		for (renderEffectName in this._renderEffects.keys()) {

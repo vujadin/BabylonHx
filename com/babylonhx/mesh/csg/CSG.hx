@@ -9,6 +9,9 @@ import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.Scene;
 
+import lime.utils.Float32Array;
+import lime.utils.Int32Array;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -319,10 +322,10 @@ import com.babylonhx.Scene;
 			}
 		}
 		
-		mesh.setVerticesData(VertexBuffer.PositionKind, vertices);
-		mesh.setVerticesData(VertexBuffer.NormalKind, normals);
-		mesh.setVerticesData(VertexBuffer.UVKind, uvs);
-		mesh.setIndices(indices);
+		mesh.setVerticesData(VertexBuffer.PositionKind, new Float32Array(vertices));
+		mesh.setVerticesData(VertexBuffer.NormalKind, new Float32Array(normals));
+		mesh.setVerticesData(VertexBuffer.UVKind, new Float32Array(uvs));
+		mesh.setIndices(new Int32Array(indices));
 		
 		if (keepSubMeshes) {
 			// We offset the materialIndex by the previous number of materials in the CSG mixed meshes

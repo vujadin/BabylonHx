@@ -4,6 +4,9 @@ import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.materials.textures.WebGLTexture;
 
+import lime.utils.Float32Array;
+import lime.utils.Int32Array;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -26,11 +29,11 @@ import com.babylonhx.materials.textures.WebGLTexture;
 		}
 		
 		// VBO
-		var vertices:Array<Float> = [1, 1, -1, 1, -1, -1, 1, -1];
+		var vertices:Float32Array = new Float32Array([1, 1, -1, 1, -1, -1, 1, -1]);
 		this._vertexBuffers[VertexBuffer.PositionKind] = new VertexBuffer(this._scene.getEngine(), vertices, VertexBuffer.PositionKind, false, false, 2);
 		
 		// Indices
-		var indices:Array<Int> = [0, 1, 2, 0, 2, 3];		
+		var indices:Int32Array = new Int32Array([0, 1, 2, 0, 2, 3]);		
 		this._indexBuffer = this._scene.getEngine().createIndexBuffer(indices);
 	}
 

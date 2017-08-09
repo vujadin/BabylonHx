@@ -1,5 +1,7 @@
 package com.babylonhx.cameras;
 
+import com.babylonhx.tools.Tools;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -22,7 +24,7 @@ class CameraInputsManager {
 	public function add(input:ICameraInput) {
 		var type = input.getSimpleName();
 		if (this.attached[type] != null) {
-			trace('camera input of type ${type} already exists on camera');
+			Tools.Warn('camera input of type ${type} already exists on camera');
 			
 			return;
 		}

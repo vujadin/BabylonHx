@@ -6,14 +6,17 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.BaseSubMesh;
 import com.babylonhx.mesh.SubMesh;
-import com.babylonhx.tools.SmartArray;
-import com.babylonhx.tools.Tags;
-import com.babylonhx.math.Matrix;
 import com.babylonhx.mesh.Mesh;
+import com.babylonhx.math.Matrix;
+import com.babylonhx.math.Plane;
+import com.babylonhx.tools.SmartArray;
+import com.babylonhx.tools.Tools;
+import com.babylonhx.tools.Tags;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
 import com.babylonhx.tools.serialization.SerializationHelper;
+import haxe.Timer;
 
 
 /**
@@ -194,8 +197,8 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	
 
 	public function new(name:String, scene:Scene = null, doNotAdd:Bool = false) {
-		this.id = name;
 		this.name = name;
+		this.id = name != null ? name : Tools.uuid();
 		
 		this._scene = scene != null ? scene : Engine.LastCreatedScene;
 		
@@ -368,33 +371,62 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		return result;
 	}
 	
-	// Force shader compilation including textures ready check
-	var beforeRenderCallback:Scene->Null<EventState>->Void;
+	/*
+	 * Force shader compilation including textures ready check
+	 */
+	var checkReady:Void->Void = null;
 	public function forceCompilation(mesh:AbstractMesh, onCompiled:Material->Void, ?options:Dynamic) {
 		var subMesh = new BaseSubMesh();
 		var scene = this.getScene();
-		var engine = scene.getEngine();
+		var engine = getScene().getEngine();
 		
-		beforeRenderCallback = function(_, _) {
+		checkReady = function() {
+			if (this._scene == null || this._scene.getEngine() == null) {
+                return;
+            }
+			
 			if (subMesh._materialDefines != null) {
 				subMesh._materialDefines._renderId = -1;
 			}
 			
 			var alphaTestState = engine.getAlphaTesting();
+			var clipPlaneState = scene.clipPlane;
+			
 			engine.setAlphaTesting(options != null ? options.alphaTest : this.needAlphaTesting());
 			
-			if (this.isReadyForSubMesh(mesh, subMesh)) {
-				scene.unregisterBeforeRender(this.beforeRenderCallback);
-				
-				if (onCompiled != null) {
-					onCompiled(this);
+			if (options.clipPlane != null && options.clipPlane == true) {
+				scene.clipPlane = new Plane(0, 0, 0, 1);
+			}
+			
+			if (this.storeEffectOnSubMeshes) {
+				if (this.isReadyForSubMesh(mesh, subMesh)) {				
+					if (onCompiled != null) {
+						onCompiled(this);
+					}
+				}
+				else {
+					Timer.delay(checkReady, 16);
+				}
+			}
+			else {
+				if (this.isReady(mesh)) {
+					if (onCompiled != null) {
+						onCompiled(this);
+					}
+				}
+				else {
+					Timer.delay(checkReady, 16);
 				}
 			}
 			
 			engine.setAlphaTesting(alphaTestState);
+			
+			if (options.clipPlane != null && options.clipPlane == true) {
+				scene.clipPlane = clipPlaneState;
+			}
 		};
 		
-		scene.registerBeforeRender(this.beforeRenderCallback);
+		checkReady();
 	}
    
 	public function markAsDirty(flag:Int) {
@@ -432,7 +464,7 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 				}
 				
 				if (subMesh._materialDefines == null) {
-					return;
+					continue;
 				}
 				
 				func(subMesh._materialDefines);

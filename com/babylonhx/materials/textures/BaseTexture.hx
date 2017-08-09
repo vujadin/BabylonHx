@@ -106,6 +106,10 @@ import lime.utils.UInt8Array;
 	private function toString():String {
 		return this.name;
 	}
+	
+	public function getClassName():String {
+		return "BaseTexture";
+	}
 
 	public var animations:Array<Animation> = [];
 	
@@ -255,7 +259,7 @@ import lime.utils.UInt8Array;
 			return Engine.TEXTURETYPE_UNSIGNED_INT;
 		}
 		
-		return (this._texture.type != null) ? this._texture.type : Engine.TEXTURETYPE_UNSIGNED_INT;
+		return (this._texture.type != -1) ? this._texture.type : Engine.TEXTURETYPE_UNSIGNED_INT;
 	}
 	
 	public function readPixels(faceIndex:Int = 0, lodIndex:Int = 0):ArrayBufferView {

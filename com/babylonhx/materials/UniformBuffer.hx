@@ -1,8 +1,5 @@
 package com.babylonhx.materials;
 
-import lime.graphics.opengl.GLUniformLocation;
-import lime.utils.Float32Array;
-
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.math.Matrix;
@@ -10,6 +7,9 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Color3;
 import com.babylonhx.tools.Tools;
+
+import lime.graphics.opengl.GLUniformLocation;
+import lime.utils.Float32Array;
 
 /**
  * ...
@@ -124,8 +124,6 @@ class UniformBuffer {
 	 */
 	public var updateColor4:String->Color3->Float->?String->Void;
 	
-	public var useUbo(get, never):Bool;
-	public var isSync(get, never):Bool;
 
 	/**
 	 * Uniform buffer objects.
@@ -148,6 +146,10 @@ class UniformBuffer {
 		this._uniformSizes = new Map();
 		this._uniformLocationPointer = 0;
 		this._needSync = false;
+		
+		/*for (i in 0..._tempBuffer.length) {
+			_tempBuffer[i] = 0;
+		}*/
 		
 		if (this._noUBO) {
 			this.updateMatrix3x3 = this._updateMatrix3x3ForEffect;
@@ -182,6 +184,7 @@ class UniformBuffer {
 	 * Indicates if the buffer is using the WebGL2 UBO implementation,
 	 * or just falling back on setUniformXXX calls.
 	 */
+	public var useUbo(get, never):Bool;
 	private function get_useUbo():Bool {
 		return !this._noUBO;
 	}
@@ -190,6 +193,7 @@ class UniformBuffer {
 	 * Indicates if the WebGL underlying uniform buffer is in sync
 	 * with the javascript cache data.
 	 */
+	public var isSync(get, never):Bool;
 	private function get_isSync():Bool {
 		return !this._needSync;
 	}
@@ -384,10 +388,10 @@ class UniformBuffer {
 		this._bufferData = new Float32Array(this._data);
 		
 		if (this._dynamic) {
-			this._buffer = this._engine.createDynamicUniformBuffer2(this._bufferData);
+			this._buffer = this._engine.createDynamicUniformBuffer(this._bufferData);
 		} 
 		else {
-			this._buffer = this._engine.createUniformBuffer2(this._bufferData);
+			this._buffer = this._engine.createUniformBuffer(this._bufferData);
 		}
 		
 		this._needSync = true;
@@ -408,7 +412,7 @@ class UniformBuffer {
 			return;
 		}
 		
-		this._engine.updateUniformBuffer2(this._buffer, this._bufferData);
+		this._engine.updateUniformBuffer(this._buffer, this._bufferData);
 		
 		this._needSync = false;
 	}
@@ -440,7 +444,7 @@ class UniformBuffer {
 			var changed = false;
 			for (i in 0...size) {
 				if (this._bufferData[location + i] != data[i]) {
-				   changed = true;
+					changed = true;
 					this._bufferData[location + i] = data[i];
 				}
 			}
@@ -536,7 +540,7 @@ class UniformBuffer {
 	}
 
 	private function _updateMatrixForUniform(name:String, mat:Matrix) {
-		this.updateUniform(name, mat.toArray(), 16);
+		this.updateUniform(name, mat.m, 16);
 	}
 
 	private function _updateVector3ForEffect(name:String, vector:Vector3) {
@@ -544,7 +548,7 @@ class UniformBuffer {
 	}
 
 	private function _updateVector3ForUniform(name:String, vector:Vector3) {
-		vector.toArray(UniformBuffer._tempBuffer);
+		vector.toFloat32Array(UniformBuffer._tempBuffer);
 		this.updateUniform(name, UniformBuffer._tempBuffer, 3);
 	}
 

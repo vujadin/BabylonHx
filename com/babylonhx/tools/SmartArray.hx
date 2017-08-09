@@ -48,6 +48,11 @@ package com.babylonhx.tools;
 	public function dispose() {
 		this.reset();
 		this.data.splice(0, this.data.length);
+		
+		if (this.data != null) {
+            this.data.splice(0, this.data.length);
+            this.data = null;
+        }
 	}
 
 	inline public function concatArray(array:Array<T>) {

@@ -2,8 +2,6 @@ package com.babylonhx.mesh;
 
 import lime.utils.Float32Array;
 
-import haxe.ds.Either;
-
 /**
  * ...
  * @author Krtolica Vujadin
@@ -25,16 +23,14 @@ class Buffer {
 	@:allow(com.babylonhx.mesh.Geometry)
 	private var _buffer:WebGLBuffer;	
 	
-	//@:allow(com.babylonhx.mesh.VertexBuffer)
-	//private var _data:OneOf<Array<Float>, Float32Array>;
-	private var _data:Array<Float>;
+	private var _data:Float32Array;
 	private var _updatable:Bool;
 	private var _strideSize:Int;
 	private var _instanced:Bool;
 	private var _instanceDivisor:Int;
 	
 
-	public function new(engine:Engine, data:Array<Float>, updatable:Bool, stride:Int, postponeInternalCreation:Bool = false, instanced:Bool = false) {
+	public function new(engine:Engine, data:Float32Array, updatable:Bool, stride:Int, postponeInternalCreation:Bool = false, instanced:Bool = false) {
 		this._engine = engine;		
 		this._updatable = updatable;
 		this._data = data;
@@ -58,7 +54,7 @@ class Buffer {
 		return this._updatable;
 	}
 
-	inline public function getData() {
+	inline public function getData():Float32Array {
 		return this._data;
 	}
 
@@ -90,7 +86,7 @@ class Buffer {
 	}
 
 	// Methods
-	public function create(?data:Array<Float>) {
+	public function create(?data:Float32Array) {
 		if (data == null && this._buffer != null) {
 			return; // nothing to do
 		}
@@ -104,7 +100,7 @@ class Buffer {
 				this._buffer = this._engine.createDynamicVertexBuffer(data);
 				this._data = data;
 			} 
-			else { 
+			else {
 				this._buffer = this._engine.createVertexBuffer(data);
 			}
 		} 
@@ -114,11 +110,11 @@ class Buffer {
 		}
 	}
 
-	inline public function update(data:Array<Float>) {
+	inline public function update(data:Float32Array) {
 		this.create(data);
 	}
 
-	public function updateDirectly(data:Array<Float>, offset:Int, ?vertexCount:Int) {
+	public function updateDirectly(data:Float32Array, offset:Int, ?vertexCount:Int) {
 		if (this._buffer == null) {
 			return;
 		}

@@ -38,7 +38,7 @@ class MaterialDefines {
 	public var shadows:Array<Bool> = [];
 	public var shadowpcf:Array<Bool> = [];
 	public var shadowvsms:Array<Bool> = [];
-	public var shadowwesm:Array<Bool> = [];
+	public var shadowesm:Array<Bool> = [];
 	public var shadowqube:Array<Bool> = [];
 	public var shadowcloseesm:Array<Bool> = [];
 	
@@ -166,7 +166,7 @@ class MaterialDefines {
 		}
 		
 		for (i in 0...this.shadowvsms.length) {
-			if (this.shadowwesm[i] != other.shadowwesm[i]) {
+			if (this.shadowesm[i] != other.shadowesm[i]) {
 				return false;
 			}
 		}
@@ -187,7 +187,7 @@ class MaterialDefines {
 		other.hemilights = this.hemilights.copy();
 		other.spotlights = this.spotlights.copy();
 		other.shadows = this.shadows.copy();
-		other.shadowwesm = this.shadowwesm.copy();
+		other.shadowesm = this.shadowesm.copy();
 		other.shadowvsms = this.shadowvsms.copy();
 		other.shadowpcf = this.shadowpcf.copy();
 	}
@@ -199,7 +199,7 @@ class MaterialDefines {
 		hemilights = [];
 		spotlights = [];
 		shadows = [];
-		shadowwesm = [];
+		shadowesm = [];
 		shadowvsms = [];
 		shadowpcf = [];
 	}
@@ -249,9 +249,9 @@ class MaterialDefines {
 			}
 		}
 		
-		for (i in 0...this.shadowwesm.length) {
-			if (this.shadowwesm[i] == true) {
-				finalString += "#define SHADOWWESM" + i + "\n";
+		for (i in 0...this.shadowesm.length) {
+			if (this.shadowesm[i] == true) {
+				finalString += "#define SHADOWESM" + i + "\n";
 			}
 		}
 		

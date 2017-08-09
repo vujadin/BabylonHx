@@ -19,6 +19,9 @@ class BaseSubMesh {
 
 	public function setEffect(effect:Effect, ?defines:MaterialDefines) {
 		if (this._materialEffect == effect) {
+			if (effect == null) {
+				this._materialDefines = null;
+			}
 			return;
 		}
 		this._materialDefines = defines;

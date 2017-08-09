@@ -12,9 +12,6 @@ import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
 
-import lime.graphics.opengl.GL;
-
-
 /**
  * ...
  * @author Krtolica Vujadin

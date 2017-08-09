@@ -725,7 +725,7 @@ import lime.utils.Int32Array;
             }
 			
             if (parsedGeometry.colors != null) {
-                mesh.setVerticesData(VertexBuffer.ColorKind, checkColors4(parsedGeometry.colors, Std.int(parsedGeometry.positions.length / 3)), false);
+                mesh.setVerticesData(VertexBuffer.ColorKind, new Float32Array(checkColors4(parsedGeometry.colors, Std.int(parsedGeometry.positions.length / 3))), false);
             }
 			
             if (parsedGeometry.matricesIndices != null) {
@@ -741,7 +741,7 @@ import lime.utils.Int32Array;
                         floatIndices.push(matricesIndex >> 24);
                     }
 					
-                    mesh.setVerticesData(VertexBuffer.MatricesIndicesKind, floatIndices, false);
+                    mesh.setVerticesData(VertexBuffer.MatricesIndicesKind, new Float32Array(floatIndices), false);
                 } 
 				else {
                     parsedGeometry.matricesIndices._isExpanded = null;

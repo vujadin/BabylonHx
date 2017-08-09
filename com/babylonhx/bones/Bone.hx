@@ -99,6 +99,10 @@ import com.babylonhx.animations.AnimationRange;
 			this._updateDifferenceMatrix();
 		}
 	}
+	
+	override public function getClassName():String {
+		return "Bone";
+	}
 
 	inline public function getLocalMatrix():Matrix {
 		return this._matrix;

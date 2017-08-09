@@ -17,8 +17,23 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	
 	// Constants
 	public static inline var NEAREST_SAMPLINGMODE:Int = 1;
+	public static inline var NEAREST_NEAREST_MIPLINEAR:Int = 1; // nearest is mag = nearest and min = nearest and mip = linear
+	
 	public static inline var BILINEAR_SAMPLINGMODE:Int = 2;
+	public static inline var LINEAR_LINEAR_MIPNEAREST:Int = 2; // Bilinear is mag = linear and min = linear and mip = nearest
+	
 	public static inline var TRILINEAR_SAMPLINGMODE:Int = 3;
+	public static inline var LINEAR_LINEAR_MIPLINEAR:Int = 3; // Trilinear is mag = linear and min = linear and mip = linear
+	
+	public static inline var NEAREST_NEAREST_MIPNEAREST:Int = 4;
+	public static inline var NEAREST_LINEAR_MIPNEAREST:Int = 5;
+	public static inline var NEAREST_LINEAR_MIPLINEAR:Int = 6;
+	public static inline var NEAREST_LINEAR:Int = 7;
+	public static inline var NEAREST_NEAREST = 8;
+	public static inline var LINEAR_NEAREST_MIPNEAREST:Int = 9;
+	public static inline var LINEAR_NEAREST_MIPLINEAR:Int = 10;
+	public static inline var LINEAR_LINEAR:Int = 11;
+	public static inline var LINEAR_NEAREST:Int = 12;
 
 	public static inline var EXPLICIT_MODE:Int = 0;
 	public static inline var SPHERICAL_MODE:Int = 1;
@@ -82,6 +97,7 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	private var _cachedUAng:Float;
 	private var _cachedVAng:Float;
 	private var _cachedWAng:Float;
+	private var _cachedProjectionMatrixId:Int;
 	private var _cachedCoordinatesMode:Int;
 	public var _samplingMode:Int;
 	private var _buffer:Dynamic;
@@ -89,7 +105,7 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	public var _format:Int;
 	private var _delayedOnLoad:Void->Void;
 	private var _delayedOnError:Void->Void;
-	private var _onLoadObservarble:Observable<Bool>;
+	private var _onLoadObservable:Observable<Bool>;
 	
 	// MOVED TO BaseTexture for BHX !!!
 	/*private var _isBlocking:Bool = true;
@@ -102,7 +118,12 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		return this._isBlocking;
 	}*/
 	
-	// for creating from Image
+	public var samplingMode(get, never):Int;
+	inline private function get_samplingMode():Int {
+		return _samplingMode;
+	}
+	
+	// BHx: for creating from Image
 	public static var _tmpImage:Image;
 
 	
@@ -125,7 +146,7 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		this._texture = this._getFromCache(url, noMipmap, samplingMode);
 		
 		var load = function() {
-			if (this._onLoadObservarble != null && this._onLoadObservarble.hasObservers()) {
+			if (this._onLoadObservable != null && this._onLoadObservable.hasObservers()) {
 				this.onLoadObservable.notifyObservers(true);
 			}
 			if (onLoad != null) {
@@ -241,17 +262,29 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		this._cachedTextureMatrix.m[4] = this._t2.x; this._cachedTextureMatrix.m[5] = this._t2.y; this._cachedTextureMatrix.m[6] = this._t2.z;
 		this._cachedTextureMatrix.m[8] = this._t0.x; this._cachedTextureMatrix.m[9] = this._t0.y; this._cachedTextureMatrix.m[10] = this._t0.z;
 		
+		this.getScene().markAllMaterialsAsDirty(Material.TextureDirtyFlag, function(mat:Material) {
+            return mat.hasTexture(this);
+        });
+		
 		return this._cachedTextureMatrix;
 	}
 
 	override public function getReflectionTextureMatrix():Matrix {
+		var scene = this.getScene();
 		if (
 			this.uOffset == this._cachedUOffset &&
 			this.vOffset == this._cachedVOffset &&
 			this.uScale == this._cachedUScale &&
 			this.vScale == this._cachedVScale &&
 			this.coordinatesMode == this._cachedCoordinatesMode) {
-			return this._cachedTextureMatrix;
+			if (this.coordinatesMode == Texture.PROJECTION_MODE) {
+				if (this._cachedProjectionMatrixId == scene.getProjectionMatrix().updateFlag) {
+					return this._cachedTextureMatrix;
+				}
+			} 
+			else {
+				return this._cachedTextureMatrix;
+			}
 		}
 		
 		if (this._cachedTextureMatrix == null) {
@@ -284,12 +317,18 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 				this._projectionModeMatrix.m[14] = 1.0;
 				this._projectionModeMatrix.m[15] = 1.0;
 				
-				this.getScene().getProjectionMatrix().multiplyToRef(this._projectionModeMatrix, this._cachedTextureMatrix);
+				var projectionMatrix = scene.getProjectionMatrix();
+                this._cachedProjectionMatrixId = projectionMatrix.updateFlag;
+                projectionMatrix.multiplyToRef(this._projectionModeMatrix, this._cachedTextureMatrix);
 				
 			default:
 				Matrix.IdentityToRef(this._cachedTextureMatrix);
 			
 		}
+		
+		scene.markAllMaterialsAsDirty(Material.TextureDirtyFlag, function(mat:Material) {
+            return (mat.getActiveTextures().indexOf(this) != -1);
+        });
 		
 		return this._cachedTextureMatrix;
 	}
@@ -302,10 +341,10 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	
 	public var onLoadObservable(get, never):Observable<Bool>;
 	private function get_onLoadObservable():Observable<Bool> {
-		if (this._onLoadObservarble == null) {
-			this._onLoadObservarble = new Observable<Bool>();
+		if (this._onLoadObservable == null) {
+			this._onLoadObservable = new Observable<Bool>();
 		}
-		return this._onLoadObservarble;
+		return this._onLoadObservable;
 	}
 
 	override public function clone():Texture {
@@ -324,6 +363,22 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		
 		return serializationObject;
 	}
+	
+	override public function getClassName():String {
+		return "Texture";
+	}
+	
+	override public function dispose() {
+        super.dispose();
+		
+        if (this.onLoadObservable != null) {
+            this.onLoadObservable.clear();
+            this._onLoadObservable = null;
+        }
+		
+        this._delayedOnLoad = null;
+        this._delayedOnError = null;
+    }
 	
 	// Statics
 	public static function CreateFromBase64String(data:String, name:String, scene:Scene, ?noMipmap:Bool, ?invertY:Bool, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, ?onLoad:Void->Void, ?onError:Void->Void):Texture {

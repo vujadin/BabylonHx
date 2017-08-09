@@ -1,6 +1,7 @@
 package com.babylonhx.math;
 
 import com.babylonhx.tools.Tools;
+import lime.utils.Float32Array;
 
 /**
  * ...
@@ -141,7 +142,7 @@ import com.babylonhx.tools.Tools;
 	}
 	
 	inline public function equalsWithEpsilon(otherVector:Vector2, epsilon:Float = Tools.Epsilon):Bool {
-		return otherVector != null && Tools.WithinEpsilon(this.x, otherVector.x, epsilon) && Tools.WithinEpsilon(this.y, otherVector.y, epsilon);
+		return otherVector != null && Scalar.WithinEpsilon(this.x, otherVector.x, epsilon) && Scalar.WithinEpsilon(this.y, otherVector.y, epsilon);
 	}
 
 	// Properties
@@ -188,10 +189,21 @@ import com.babylonhx.tools.Tools;
 	inline public static function FromArray(array:Array<Float>, offset:Int = 0):Vector2 {
 		return new Vector2(array[offset], array[offset + 1]);
 	}
+	
+	inline public static function FromFloat32Array(array:Float32Array, offset:Int = 0):Vector2 {
+		return new Vector2(array[offset], array[offset + 1]);
+	}
 
 	inline public static function FromArrayToRef<T>(array:T, offset:Int, result:Vector2):Vector2 {
 		result.x = untyped array[offset];
 		result.y = untyped array[offset + 1];
+		
+		return result;
+	}
+	
+	inline public static function FromFloat32ArrayToRef(array:Float32Array, offset:Int, result:Vector2):Vector2 {
+		result.x = array[offset];
+		result.y = array[offset + 1];
 		
 		return result;
 	}

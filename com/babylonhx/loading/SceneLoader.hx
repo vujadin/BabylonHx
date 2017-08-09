@@ -16,6 +16,7 @@ import com.babylonhx.loading.plugins.BabylonFileLoader;
 	// Flags
 	public static var ForceFullSceneLoadingForIncremental:Bool = false;
 	public static var ShowLoadingScreen:Bool = true;
+	public static var CleanBoneMatrixWeights:Bool = false;
 
 	// Members
 	private static var _registeredPlugins:Array<ISceneLoaderPlugin> = [];

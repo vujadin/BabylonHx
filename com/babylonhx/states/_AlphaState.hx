@@ -1,10 +1,8 @@
 package com.babylonhx.states;
 
 import lime.graphics.opengl.GL;
+import lime.graphics.opengl.WebGL2Context;
 
-#if (!js && !purejs)
-import lime.graphics.opengl.GL in Gl;
-#end
 
 /**
  * ...
@@ -117,7 +115,7 @@ import lime.graphics.opengl.GL in Gl;
 		this._isBlendConstantsDirty = false;
 	}
 
-	public function apply(#if (js || purejs) Gl:js.html.webgl.RenderingContext #end) {
+	public function apply(gl:WebGL2Context) {
 		
 		if (!this.isDirty) {
 			return;
@@ -126,10 +124,10 @@ import lime.graphics.opengl.GL in Gl;
 		// Alpha blend
 		if (this._isAlphaBlendDirty) {
 			if (this._alphaBlend) {
-				Gl.enable(GL.BLEND);
+				gl.enable(gl.BLEND);
 			} 
 			else {
-				Gl.disable(GL.BLEND);
+				gl.disable(gl.BLEND);
 			}
 			
 			this._isAlphaBlendDirty = false;
@@ -137,19 +135,19 @@ import lime.graphics.opengl.GL in Gl;
 		
 		// Alpha function
 		if (this._isBlendFunctionParametersDirty) {
-			Gl.blendFuncSeparate(this._blendFunctionParameters[0], this._blendFunctionParameters[1], this._blendFunctionParameters[2], this._blendFunctionParameters[3]);
+			gl.blendFuncSeparate(this._blendFunctionParameters[0], this._blendFunctionParameters[1], this._blendFunctionParameters[2], this._blendFunctionParameters[3]);
 			this._isBlendFunctionParametersDirty = false;
 		}
 		
 		// Alpha equation
 		if (this._isBlendEquationParametersDirty) {
-			Gl.blendEquationSeparate(this._blendEquationParameters[0], this._blendEquationParameters[1]);
+			gl.blendEquationSeparate(this._blendEquationParameters[0], this._blendEquationParameters[1]);
 			this._isBlendEquationParametersDirty = false;
 		}
 		
 		// Constants
 		if (this._isBlendConstantsDirty) {
-			Gl.blendColor(this._blendConstants[0], this._blendConstants[1], this._blendConstants[2], this._blendConstants[3]);
+			gl.blendColor(this._blendConstants[0], this._blendConstants[1], this._blendConstants[2], this._blendConstants[3]);
 			this._isBlendConstantsDirty = false;
 		} 
 	}

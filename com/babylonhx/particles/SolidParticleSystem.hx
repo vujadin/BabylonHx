@@ -14,7 +14,8 @@ import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.VertexData;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.MeshBuilder;
-import com.babylonhx.utils.typedarray.Float32Array;
+
+import lime.utils.Float32Array;
 
 
 /**
@@ -445,7 +446,7 @@ class SolidParticleSystem implements IDisposable {
 	}
 
 	// returns a shape array from positions array
-	private function _posToShape(positions:Array<Float>):Array<Vector3> {
+	private function _posToShape(positions:Float32Array):Array<Vector3> {
 		var shape:Array<Vector3> = [];
 		var i:Int = 0;
 		while (i < positions.length) {
@@ -457,11 +458,11 @@ class SolidParticleSystem implements IDisposable {
 	}
 
 	// returns a shapeUV array from a Vector4 uvs
-	private function _uvsToShapeUV(uvs:Array<Float>):Array<Float> {
-		var shapeUV:Array<Float> = [];
+	private function _uvsToShapeUV(uvs:Float32Array):Float32Array {
+		var shapeUV:Float32Array = new Float32Array(uvs.length);
 		if (uvs != null) {
 			for (i in 0...uvs.length) {
-				shapeUV.push(uvs[i]);
+				shapeUV[i] = uvs[i];
 			}
 		}
 		
@@ -474,7 +475,7 @@ class SolidParticleSystem implements IDisposable {
 	}
 
 	/**
-	* Adds sosme particles to the SPS from the model shape.
+	* Adds some particles to the SPS from the model shape.
 	* Please read the doc : http://doc.babylonjs.com/tutorials/Solid_Particle_System#create-an-immutable-sps
 	* @param mesh any Mesh object that will be used as a model for the solid particles.
 	* @param nb the number of particles to be created from this model
@@ -482,14 +483,14 @@ class SolidParticleSystem implements IDisposable {
 	* @param vertexFunction an optional javascript function to called for each vertex of each particle on SPS creation
 	*/
 	public function addShape(mesh:Mesh, nb:Int, ?options:Dynamic):Int {
-		var meshPos:Array<Float> = mesh.getVerticesData(VertexBuffer.PositionKind);
-		var meshInd:Array<Int> = mesh.getIndices();
-		var meshUV:Array<Float> = mesh.getVerticesData(VertexBuffer.UVKind);
-		var meshCol:Array<Float> = mesh.getVerticesData(VertexBuffer.ColorKind);
-		var meshNor:Array<Float> = mesh.getVerticesData(VertexBuffer.NormalKind);
+		var meshPos = mesh.getVerticesData(VertexBuffer.PositionKind);
+		var meshInd = mesh.getIndices();
+		var meshUV = mesh.getVerticesData(VertexBuffer.UVKind);
+		var meshCol = mesh.getVerticesData(VertexBuffer.ColorKind);
+		var meshNor = mesh.getVerticesData(VertexBuffer.NormalKind);
 		
 		var shape:Array<Vector3> = this._posToShape(meshPos);
-		var shapeUV:Array<Float> = this._uvsToShapeUV(meshUV);
+		var shapeUV = this._uvsToShapeUV(meshUV);
 		
 		var posfunc = options != null ? options.positionFunction : null;
 		var vtxfunc = options != null ? options.vertexFunction : null;

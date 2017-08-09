@@ -316,6 +316,10 @@ class ImageProcessingConfiguration {
 	public function _updateParameters() {
 		this.onUpdateParameters.notifyObservers(this);
 	}
+	
+	public function getClassName():String {
+		return "ImageProcessingConfiguration";
+	}
 
 	/**
 	 * Prepare the list of uniforms associated with the Image Processing effects.

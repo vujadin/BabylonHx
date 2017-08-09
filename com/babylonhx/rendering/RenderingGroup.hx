@@ -6,7 +6,7 @@ import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.materials.Material;
 import com.babylonhx.sprites.SpriteManager;
-import com.babylonhx.particles.ParticleSystem;
+import com.babylonhx.particles.IParticleSystem;
 
 
 /**
@@ -22,7 +22,7 @@ import com.babylonhx.particles.ParticleSystem;
 	private var _opaqueSubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>(256);
 	private var _transparentSubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>(256);
 	private var _alphaTestSubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>(256);
-	private var _particleSystems:SmartArray<ParticleSystem> = new SmartArray<ParticleSystem>(256);
+	private var _particleSystems:SmartArray<IParticleSystem> = new SmartArray<IParticleSystem>(256);
 	private var _spriteManagers:SmartArray<SpriteManager> = new SmartArray<SpriteManager>(256);
 	private var _activeVertices:Int = 0;
 	
@@ -156,12 +156,17 @@ import com.babylonhx.particles.ParticleSystem;
 			this._renderTransparent(this._transparentSubMeshes);
 			engine.setAlphaMode(Engine.ALPHA_DISABLE);
 		}
-		engine.setStencilBuffer(stencilState);
+		
+		// Set back stencil to false in case it changes before the edge renderer.
+        engine.setStencilBuffer(false);
 		
 		// Edges
 		for (edgesRendererIndex in 0...this._edgesRenderers.length) {
 			this._edgesRenderers.data[edgesRendererIndex].render();
 		}
+		
+		// Restore Stencil state.
+        engine.setStencilBuffer(stencilState);
 	}
 	
 	/**
@@ -330,7 +335,7 @@ import com.babylonhx.particles.ParticleSystem;
 		this._spriteManagers.push(spriteManager);
 	}
 
-	inline public function dispatchParticles(particleSystem:ParticleSystem) {
+	inline public function dispatchParticles(particleSystem:IParticleSystem) {
 		this._particleSystems.push(particleSystem);
 	}
 
@@ -348,7 +353,9 @@ import com.babylonhx.particles.ParticleSystem;
 			if ((activeCamera.layerMask & particleSystem.layerMask) == 0) {
 				continue;
 			}
-			if (particleSystem.emitter.position == null || activeMeshes == null || activeMeshes.indexOf(particleSystem.emitter) != -1) {
+			
+			var emitter:Dynamic = particleSystem.emitter;
+			if (emitter.position == null || activeMeshes == null || (Std.is(emitter, AbstractMesh) && activeMeshes.indexOf(particleSystem.emitter) != -1)) {
 				//this._scene._activeParticles.addCount(particleSystem.render(), false);
 				particleSystem.render();
 			}

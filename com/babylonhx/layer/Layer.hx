@@ -9,8 +9,7 @@ import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
-
-import lime.graphics.opengl.GL;
+import lime.utils.Int32Array;
 
 /**
  * ...
@@ -121,7 +120,7 @@ import lime.graphics.opengl.GL;
 		indices.push(2);
 		indices.push(3);
 		
-		this._indexBuffer = engine.createIndexBuffer(indices);
+		this._indexBuffer = engine.createIndexBuffer(new Int32Array(indices));
 		
 		// Effects
 		this._effect = engine.createEffect("layer",

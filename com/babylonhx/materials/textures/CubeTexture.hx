@@ -26,12 +26,12 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		return new CubeTexture("", scene, null, noMipmap, files);
 	}
 	
-	public static function CreateFromPrefilteredData(url:String, scene:Scene) {
-		return new CubeTexture(url, scene, null, false, null, null, null, null, true);
+	public static function CreateFromPrefilteredData(url:String, scene:Scene, forcedExtension = null) {
+		return new CubeTexture(url, scene, null, false, null, null, null, Engine.TEXTUREFORMAT_RGBA, true);
 	}
 
 	
-	public function new(rootUrl:String, scene:Scene, ?extensions:Array<String>, noMipmap:Bool = false, ?files:Array<String>, onLoad:Void->Void = null, onError:Void->Void = null, format:Int = Engine.TEXTUREFORMAT_RGBA, prefiltered:Bool = false) {	
+	public function new(rootUrl:String, scene:Scene, ?extensions:Array<String>, noMipmap:Bool = false, ?files:Array<String>, onLoad:Void->Void = null, onError:Void->Void = null, format:Int = Engine.TEXTUREFORMAT_RGBA, prefiltered:Bool = false, forcedExtension = null) {
 		super(scene);
 		
 		this.coordinatesMode = Texture.CUBIC_MODE;
@@ -42,6 +42,11 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		this.hasAlpha = false;
 		this._format = format;
 		this._prefiltered = prefiltered;
+		this.isCube = true;		
+		this._textureMatrix = Matrix.Identity();		
+		if (prefiltered) {
+            this.gammaSpace = false;
+        }
 		
 		if ((rootUrl == null || rootUrl == "") && files == null) {
 			return;
@@ -68,10 +73,10 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		if (this._texture == null) {
 			if (!scene.useDelayedTextureLoading) {
 				if (prefiltered) {
-					this._texture = scene.getEngine().createPrefilteredCubeTexture(rootUrl, scene, this.lodGenerationScale, this.lodGenerationOffset, onLoad, onError, format);
+					this._texture = scene.getEngine().createPrefilteredCubeTexture(rootUrl, scene, this.lodGenerationScale, this.lodGenerationOffset, onLoad, onError, format, forcedExtension);
 				}
 				else {
-					this._texture = scene.getEngine().createCubeTexture(rootUrl, scene, files, noMipmap, onLoad, onError, this._format);
+					this._texture = scene.getEngine().createCubeTexture(rootUrl, scene, files, noMipmap, onLoad, onError, this._format, forcedExtension);
 				}
 			} 
 			else {
@@ -86,14 +91,6 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 				this._texture.onLoadedCallbacks.push(onLoad);
 			}
 		}
-		
-		this.isCube = true;
-		
-		this._textureMatrix = Matrix.Identity();
-		
-		if (prefiltered) {
-            this.gammaSpace = false;
-        }
 	}
 
 	// Methods

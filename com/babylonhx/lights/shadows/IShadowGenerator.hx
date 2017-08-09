@@ -26,6 +26,8 @@ interface IShadowGenerator {
 	function getTransformMatrix():Matrix;
 
 	function recreateShadowMap():Void;
+	
+	function forceCompilation(onCompiled:ShadowGenerator->Void, useInstances:Bool = false):Void;
 
 	function serialize():Dynamic;
 	function dispose():Void;

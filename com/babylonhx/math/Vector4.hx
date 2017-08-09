@@ -155,10 +155,10 @@ import lime.utils.Float32Array;
 
 	inline public function equalsWithEpsilon(otherVector:Vector4, epsilon:Float = Tools.Epsilon):Bool {
 		return otherVector != null  
-		&& Tools.WithinEpsilon(this.x, otherVector.x, epsilon) 
-		&& Tools.WithinEpsilon(this.y, otherVector.y, epsilon) 
-		&& Tools.WithinEpsilon(this.z, otherVector.z, epsilon)
-		&& Tools.WithinEpsilon(this.w, otherVector.w, epsilon);
+		&& Scalar.WithinEpsilon(this.x, otherVector.x, epsilon) 
+		&& Scalar.WithinEpsilon(this.y, otherVector.y, epsilon) 
+		&& Scalar.WithinEpsilon(this.z, otherVector.z, epsilon)
+		&& Scalar.WithinEpsilon(this.w, otherVector.w, epsilon);
 	}
 
 	inline public function equalsToFloats(x:Float, y:Float, z:Float, w:Float):Bool {
@@ -296,14 +296,14 @@ import lime.utils.Float32Array;
 	/**
 	 * Returns a new Vector4 set from the starting index of the passed array.
 	 */
-	inline public static function FromArray(array:Array<Float>, offset:Int = 0):Vector4 {
+	inline public static function FromArray(array:Float32Array, offset:Int = 0):Vector4 {
 		return new Vector4(array[offset], array[offset + 1], array[offset + 2], array[offset + 3]);
 	}
 
 	/**
 	 * Updates the passed vector "result" from the starting index of the passed array.
 	 */
-	inline public static function FromArrayToRef(array:Dynamic, offset:Int, result:Vector4) {
+	inline public static function FromArrayToRef(array:Float32Array, offset:Int, result:Vector4) {
 		result.x = array[offset];
 		result.y = array[offset + 1];
 		result.z = array[offset + 2];
@@ -313,7 +313,7 @@ import lime.utils.Float32Array;
 	/**
 	 * Updates the passed vector "result" from the starting index of the passed Float32Array.
 	 */
-	inline public static function FromFloatArrayToRef(array:Float32Array, offset:Int, result:Vector4) {
+	inline public static function FromFloat32ArrayToRef(array:Float32Array, offset:Int, result:Vector4) {
 		Vector4.FromArrayToRef(array, offset, result);
 	}
 

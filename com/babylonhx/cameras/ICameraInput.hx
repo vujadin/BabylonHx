@@ -5,14 +5,11 @@ package com.babylonhx.cameras;
  */
 interface ICameraInput {
 	
-	var camera:Camera;
-	
-	function getTypeName():String;
+	var camera:Camera;	
+	function getClassName():String;
 	function getSimpleName():String;
-
 	function attachControl():Void;
-	function detachControl():Void;
-	
+	function detachControl():Void;	
 	var checkInputs:Null<Void->Void>;
   
 }

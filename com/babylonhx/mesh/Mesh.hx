@@ -14,9 +14,11 @@ import com.babylonhx.math.PositionNormalVertex;
 import com.babylonhx.math.Quaternion;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Color3;
+import com.babylonhx.math.Tools.BabylonMinMax;
 import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector2;
+import com.babylonhx.math.Tools as MathTools;
 import com.babylonhx.mesh.MeshBuilder.BoxOptions;
 import com.babylonhx.mesh.MeshBuilder.CapsuleOptions;
 import com.babylonhx.mesh.MeshBuilder.CylinderOptions;
@@ -43,6 +45,7 @@ import com.babylonhx.mesh.simplification.SimplificationTask;
 import com.babylonhx.mesh.LinesMesh;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.culling.BoundingInfo;
+import com.babylonhx.particles.IParticleSystem;
 import com.babylonhx.particles.ParticleSystem;
 import com.babylonhx.tools.AsyncLoop;
 import com.babylonhx.tools.Observable;
@@ -64,6 +67,7 @@ import haxe.ds.Vector;
 import lime.utils.Float32Array;
 import lime.utils.UInt8Array;
 import lime.utils.ArrayBuffer;
+import lime.utils.Int32Array;
 
 
 /**
@@ -148,7 +152,7 @@ import lime.utils.ArrayBuffer;
 	private var _batchCache:_InstancesBatch = new _InstancesBatch();
 	private var _instancesBufferSize:Int = Std.int(32 * 16 * 4); // let's start with a maximum of 32 instances
 	private var _instancesBuffer:Buffer;
-	private var _instancesData:Array<Float>;
+	private var _instancesData:Float32Array;
 	private var _overridenInstanceCount:Int;
 	
 	public var _shouldGenerateFlatShading:Bool;
@@ -159,8 +163,8 @@ import lime.utils.ArrayBuffer;
 	public var sideOrientation(get, set):Int;
 	public var areNormalsFrozen(get, never):Bool;
 	
-	private var _sourcePositions:Array<Float>; 	// Will be used to save original positions when using software skinning
-    private var _sourceNormals:Array<Float>; 	// Will be used to save original normals when using software skinning
+	private var _sourcePositions:Float32Array; 	// Will be used to save original positions when using software skinning
+    private var _sourceNormals:Float32Array; 	// Will be used to save original normals when using software skinning
 	
 	public var cap:Int = Mesh.NO_CAP;
 	
@@ -505,7 +509,7 @@ import lime.utils.ArrayBuffer;
 	 * the returned array is a copy of the internal one.
      * Returns null if the mesh has no geometry or no vertex buffer.
      */
-	override public function getVerticesData(kind:String, copyWhenShared:Bool = false, forceCopy:Bool = false):Array<Float> {
+	override public function getVerticesData(kind:String, copyWhenShared:Bool = false, forceCopy:Bool = false):Float32Array {
 		if (this._geometry == null) {
 			return null;
 		}
@@ -576,9 +580,9 @@ import lime.utils.ArrayBuffer;
 	 * is shared among some other meshes, the returned array is a copy of the internal one.
      * Returns an empty array if the mesh has no geometry.
      */
-	override public function getIndices(copyWhenShared:Bool = false):Array<Int> {
+	override public function getIndices(copyWhenShared:Bool = false):Int32Array {
 		if (this._geometry == null) {
-			return [];
+			return null;
 		}
 		
 		return this._geometry.getIndices(copyWhenShared);
@@ -594,10 +598,6 @@ import lime.utils.ArrayBuffer;
 		}
 		
 		return super.isReady();
-	}
-
-	inline public function isDisposed():Bool {
-		return this._isDisposed;
 	}
 	
 	inline private function get_sideOrientation():Int {
@@ -683,7 +683,7 @@ import lime.utils.ArrayBuffer;
 		var data = this.getVerticesData(VertexBuffer.PositionKind);
 		
 		if (data != null) {
-			var extend = Tools.ExtractMinAndMax(data, 0, this.getTotalVertices());
+			var extend = MathTools.ExtractMinAndMax(data, 0, this.getTotalVertices());
 			this._boundingInfo = new BoundingInfo(extend.minimum, extend.maximum);
 		}
 		
@@ -696,7 +696,7 @@ import lime.utils.ArrayBuffer;
 		this._updateBoundingInfo();
 	}
 
-	public function _createGlobalSubMesh():SubMesh {
+	public function _createGlobalSubMesh(force:Bool):SubMesh {
 		var totalVertices = this.getTotalVertices();
 		if (totalVertices == 0 || this.getIndices() == null) {
 			return null;
@@ -707,15 +707,20 @@ import lime.utils.ArrayBuffer;
 			var totalIndices = this.getIndices().length;
 			var needToRecreate = false;
 			
-			for (submesh in this.subMeshes) {
-				if (submesh.indexStart + submesh.indexCount >= totalIndices) {
-					needToRecreate = true;
-					break;
-				}
-				
-				if (submesh.verticesStart + submesh.verticesCount >= totalVertices) {
-					needToRecreate = true;
-					break;
+			if (force) {
+				needToRecreate = true;
+			} 
+			else {
+				for (submesh in this.subMeshes) {
+					if (submesh.indexStart + submesh.indexCount >= totalIndices) {
+						needToRecreate = true;
+						break;
+					}
+					
+					if (submesh.verticesStart + submesh.verticesCount >= totalVertices) {
+						needToRecreate = true;
+						break;
+					}
 				}
 			}
 			
@@ -724,7 +729,7 @@ import lime.utils.ArrayBuffer;
 			}
 		}
 		
-		this.releaseSubMeshes();		
+		this.releaseSubMeshes();
 		return new SubMesh(0, 0, totalVertices, 0, this.getTotalIndices(), this);
 	}
 
@@ -764,7 +769,7 @@ import lime.utils.ArrayBuffer;
      * Note that a new underlying `VertexBuffer` object is created each call.
      * If the `kind` is the `PositionKind`, the mesh `BoundingInfo` is renewed, so the bounding box and sphere, and the mesh World Matrix is recomputed.
      */
-	override public function setVerticesData(kind:String, data:Array<Float>, updatable:Bool = false, ?stride:Int) {
+	override public function setVerticesData(kind:String, data:Float32Array, updatable:Bool = false, ?stride:Int) {
 		if (this._geometry == null) {
 			var vertexData = new VertexData();
 			vertexData.set(data, kind);
@@ -803,7 +808,7 @@ import lime.utils.ArrayBuffer;
      * If the `kind` is the `PositionKind` and if `updateExtends` is true, the mesh `BoundingInfo` is renewed, so the bounding box and sphere, and the mesh World Matrix is recomputed.
      * If the parameter `makeItUnique` is true, a new global geometry is created from this positions and is set to the mesh.
      */
-	override public function updateVerticesData(kind:String, data:Array<Float>, updateExtends:Bool = false, makeItUnique:Bool = false) {
+	override public function updateVerticesData(kind:String, data:Float32Array, updateExtends:Bool = false, makeItUnique:Bool = false) {
 		if (this._geometry == null) {
 			return;
 		}
@@ -821,7 +826,7 @@ import lime.utils.ArrayBuffer;
 	// updates the mesh positions according to the positionFunction returned values.
 	// The positionFunction argument must be a javascript function accepting the mesh "positions" array as parameter.
 	// This dedicated positionFunction computes new mesh positions according to the given mesh type.
-	public function updateMeshPositions(positionFunction:Dynamic, computeNormals:Bool = true) {
+	public function updateMeshPositions(positionFunction:Float32Array->Void, computeNormals:Bool = true) {
 		var positions = this.getVerticesData(VertexBuffer.PositionKind);
 		positionFunction(positions);
 		this.updateVerticesData(VertexBuffer.PositionKind, positions, false, false);
@@ -841,13 +846,13 @@ import lime.utils.ArrayBuffer;
 	public function recomputeNormals(markDataAsUpdatable:Bool = false):Mesh {
 		var positions = this.getVerticesData(VertexBuffer.PositionKind);
 		var indices = this.getIndices();
-		var normals:Array<Float>;// Float32Array;
+		var normals:Float32Array = null;
 		
 		if (this.isVerticesDataPresent(VertexBuffer.NormalKind)) {
 			normals = this.getVerticesData(VertexBuffer.NormalKind);
 		} 
 		else {
-			normals = [];
+			normals = new Float32Array();
 		}
 		VertexData.ComputeNormals(positions, indices, normals);
 		this.setVerticesData(VertexBuffer.NormalKind, normals, markDataAsUpdatable);
@@ -870,7 +875,7 @@ import lime.utils.ArrayBuffer;
 		geometry.applyToMesh(this);
 	}
 
-	override public function setIndices(indices:Array<Int>, totalVertices:Int = -1) {
+	override public function setIndices(indices:Int32Array, totalVertices:Int = -1) {
 		if (this._geometry == null) {
 			var vertexData = new VertexData();
 			vertexData.indices = indices;
@@ -901,7 +906,10 @@ import lime.utils.ArrayBuffer;
 		// Wireframe
 		var indexBufferToBind:WebGLBuffer = null;
 		
-		if (!this._unIndexed) {
+		if (this._unIndexed) {
+            indexBufferToBind = null;
+		} 
+		else {
 			switch (fillMode) {
 				case Material.PointFillMode:
 					indexBufferToBind = null;
@@ -910,15 +918,15 @@ import lime.utils.ArrayBuffer;
 					indexBufferToBind = subMesh.getLinesIndexBuffer(this.getIndices(), engine);
 					
 				case Material.TriangleFillMode:
-					indexBufferToBind = this._geometry.getIndexBuffer();
+					indexBufferToBind = this._unIndexed ? null : this._geometry.getIndexBuffer();
 					
 				default:
-					indexBufferToBind = this._geometry.getIndexBuffer();
+					indexBufferToBind = this._unIndexed ? null : this._geometry.getIndexBuffer();
 			}
 		}
 		
 		// VBOs
-		engine.bindBuffers(this._geometry.getVertexBuffers(), indexBufferToBind, effect);
+		this._geometry._bind(effect, indexBufferToBind);
 	}
 
 	public function _draw(subMesh:SubMesh, fillMode:Int, instancesCount:Int = 0) {	
@@ -1037,7 +1045,7 @@ import lime.utils.ArrayBuffer;
 		}
 		
 		if (this._instancesData == null || currentInstancesBufferSize != this._instancesBufferSize) {
-			this._instancesData = [];
+			this._instancesData = new Float32Array(Std.int(this._instancesBufferSize / 4));
 		}
 		
 		var offset:Int = 0;
@@ -1045,7 +1053,7 @@ import lime.utils.ArrayBuffer;
 		
 		var world:Matrix = this.getWorldMatrix();
 		if (batch.renderSelf[subMesh._id]) {
-			world.copyToArray(this._instancesData, offset);
+			world.copyToFloat32Array(this._instancesData, offset);
 			offset += 16;
 			instancesCount++;
 		}
@@ -1053,7 +1061,7 @@ import lime.utils.ArrayBuffer;
 		if (visibleInstances != null) {
 			for (instanceIndex in 0...visibleInstances.length) {
 				var instance = visibleInstances[instanceIndex];
-				instance.getWorldMatrix().copyToArray(this._instancesData, offset);
+				instance.getWorldMatrix().copyToFloat32Array(this._instancesData, offset);
 				offset += 16;
 				instancesCount++;
 			}
@@ -1157,6 +1165,11 @@ import lime.utils.ArrayBuffer;
 			return;
 		}
 		
+		// Alpha mode
+		if (enableAlphaMode) {
+			engine.setAlphaMode(effectiveMaterial.alphaMode);
+		}
+		
 		// Outline - step 1
 		var savedDepthWrite = engine.getDepthWrite();
 		if (this.renderOutline) {
@@ -1187,11 +1200,6 @@ import lime.utils.ArrayBuffer;
 		else {
 			effectiveMaterial.bind(world, this);
 		}
-		
-		// Alpha mode
-        if (enableAlphaMode) {
-            engine.setAlphaMode(effectiveMaterial.alphaMode);
-        }
 		
 		// Draw
 		this._processRendering(subMesh, effect, fillMode, batch, hardwareInstancedRendering, this._onBeforeDraw, effectiveMaterial);
@@ -1226,8 +1234,8 @@ import lime.utils.ArrayBuffer;
         }
     }
 
-	inline public function getEmittedParticleSystems():Array<ParticleSystem> {
-		var results = new Array<ParticleSystem>();
+	inline public function getEmittedParticleSystems():Array<IParticleSystem> {
+		var results = new Array<IParticleSystem>();
 		for (index in 0...this.getScene().particleSystems.length) {
 			var particleSystem = this.getScene().particleSystems[index];
 			if (particleSystem.emitter == this) {
@@ -1241,14 +1249,16 @@ import lime.utils.ArrayBuffer;
 	/**
 	 * Returns an array populated with ParticleSystem objects whose this mesh or its children are the emitter.
 	 */
-	inline public function getHierarchyEmittedParticleSystems():Array<ParticleSystem> {
-		var results = new Array<ParticleSystem>();
+	inline public function getHierarchyEmittedParticleSystems():Array<IParticleSystem> {
+		var results = new Array<IParticleSystem>();
 		var descendants = this.getDescendants();
 		descendants.push(this);
 		
 		for (index in 0...this.getScene().particleSystems.length) {
 			var particleSystem = this.getScene().particleSystems[index];
-			if (descendants.indexOf(particleSystem.emitter) != -1) {
+			var emitter = particleSystem.emitter;
+			
+			if (Std.is(emitter, Node) && emitter.position != null && descendants.indexOf(cast emitter) != -1) {
 				results.push(particleSystem);
 			}
 		}
@@ -1366,15 +1376,15 @@ import lime.utils.ArrayBuffer;
 		
 		this._resetPointsArrayCache();
 		
-		var data = this.getVerticesData(VertexBuffer.PositionKind);
+		var data:Float32Array = this.getVerticesData(VertexBuffer.PositionKind);
 		var temp:Array<Float> = [];
 		var index:Int = 0;
 		while(index < data.length) {
-			Vector3.TransformCoordinates(Vector3.FromArray(data, index), transform).toArray(temp, index);
+			Vector3.TransformCoordinates(Vector3.FromFloat32Array(data, index), transform).toArray(temp, index);
 			index += 3;
 		}
 		
-		this.setVerticesData(VertexBuffer.PositionKind, temp, this.getVertexBuffer(VertexBuffer.PositionKind).isUpdatable());
+		this.setVerticesData(VertexBuffer.PositionKind, new Float32Array(temp), this.getVertexBuffer(VertexBuffer.PositionKind).isUpdatable());
 		
 		// Normals
 		if (!this.isVerticesDataPresent(VertexBuffer.NormalKind)) {
@@ -1384,10 +1394,10 @@ import lime.utils.ArrayBuffer;
 		temp = [];
 		index = 0;
 		while(index < data.length) {
-			Vector3.TransformNormal(Vector3.FromArray(data, index), transform).normalize().toArray(temp, index);
+			Vector3.TransformNormal(Vector3.FromFloat32Array(data, index), transform).normalize().toArray(temp, index);
 			index += 3;
 		}		
-		this.setVerticesData(VertexBuffer.NormalKind, temp, this.getVertexBuffer(VertexBuffer.NormalKind).isUpdatable());
+		this.setVerticesData(VertexBuffer.NormalKind, new Float32Array(temp), this.getVertexBuffer(VertexBuffer.NormalKind).isUpdatable());
 		
 		// flip faces?
         if (transform.m[0] * transform.m[5] * transform.m[10] < 0) { 
@@ -1550,9 +1560,9 @@ import lime.utils.ArrayBuffer;
 		
 		var index:Int = 0;
 		while (index < positions.length) {
-			Vector3.FromArrayToRef(positions, index, position);
-			Vector3.FromArrayToRef(normals, index, normal);
-			Vector2.FromArrayToRef(uvs, Std.int((index / 3) * 2), uv);
+			Vector3.FromFloat32ArrayToRef(positions, index, position);
+			Vector3.FromFloat32ArrayToRef(normals, index, normal);
+			Vector2.FromFloat32ArrayToRef(uvs, Std.int((index / 3) * 2), uv);
 			
 			// Compute height
 			var u = Std.int((Math.abs(uv.x) * heightMapWidth) % heightMapWidth);
@@ -1578,7 +1588,7 @@ import lime.utils.ArrayBuffer;
 			}
 			position = position.add(normal);
 			
-			position.toArray(positions, index);
+			position.toFloat32Array(positions, index);
 			
 			index += 3;
 		}
@@ -1602,8 +1612,8 @@ import lime.utils.ArrayBuffer;
 		
 		var kinds = this.getVerticesDataKinds();
 		var vbs:Map<String, VertexBuffer> = new Map<String, VertexBuffer>();
-		var data:Map<String, Array<Float>> = new Map<String, Array<Float>>();
-		var newdata:Map<String, Array<Float>> = new Map<String, Array<Float>>();
+		var data:Map<String, Float32Array> = new Map<String, Float32Array>();
+		var newdata:Map<String, Float32Array> = new Map<String, Float32Array>();
 		var updatableNormals = false;		
 		var kindIndex:Int = 0;
 		var kind:String;
@@ -1620,7 +1630,7 @@ import lime.utils.ArrayBuffer;
 			
 			vbs[kind] = vertexBuffer;
 			data[kind] = vbs[kind].getData();
-			newdata[kind] = [];
+			//newdata[kind] = new Float32Array();
 			
 			kindIndex++;
 		}
@@ -1639,24 +1649,26 @@ import lime.utils.ArrayBuffer;
 				var kind = kinds[kindIndex];
 				var stride = vbs[kind].getStrideSize();
 				
+				newdata[kind] = new Float32Array(stride);
 				for (offset in 0...stride) {
-					newdata[kind].push(data[kind][vertexIndex * stride + offset]);
+					newdata[kind][offset] = data[kind][vertexIndex * stride + offset];
 				}
 			}
 		}
 		
 		// Updating faces & normal
-		var normals:Array<Float> = [];
-		var positions = newdata[VertexBuffer.PositionKind];
+		var normals:Float32Array = new Float32Array(totalIndices * 3);
+		var positions:Float32Array = newdata[VertexBuffer.PositionKind];
 		var index:Int = 0;
+		var count:Int = 0;
 		while (index < totalIndices) {
 			indices[index] = index;
 			indices[index + 1] = index + 1;
 			indices[index + 2] = index + 2;
 			
-			var p1 = Vector3.FromArray(positions, index * 3);
-			var p2 = Vector3.FromArray(positions, (index + 1) * 3);
-			var p3 = Vector3.FromArray(positions, (index + 2) * 3);
+			var p1 = Vector3.FromFloat32Array(positions, index * 3);
+			var p2 = Vector3.FromFloat32Array(positions, (index + 1) * 3);
+			var p3 = Vector3.FromFloat32Array(positions, (index + 2) * 3);
 			
 			var p1p2 = p1.subtract(p2);
 			var p3p2 = p3.subtract(p2);
@@ -1665,9 +1677,9 @@ import lime.utils.ArrayBuffer;
 			
 			// Store same normals for every vertex
 			for (localIndex in 0...3) {
-				normals.push(normal.x);
-				normals.push(normal.y);
-				normals.push(normal.z);
+				normals[count++] = normal.x;
+				normals[count++] = normal.y;
+				normals[count++] = normal.z;
 			}
 			index += 3;
 		}
@@ -1701,8 +1713,8 @@ import lime.utils.ArrayBuffer;
 		// Warning: This implies adding vertices to the mesh in order to get exactly 3 vertices per face 
 		var kinds:Array<String> = this.getVerticesDataKinds();
 		var vbs:Map<String, VertexBuffer> = new Map();
-		var data:Map<String, Array<Float>> = new Map();
-		var newdata:Map<String, Array<Float>> = new Map();
+		var data:Map<String, Float32Array> = new Map();
+		var newdata:Map<String, Float32Array> = new Map();
 		var updatableNormals:Bool = false;		
 		var kind:String = "";
 		
@@ -1711,13 +1723,13 @@ import lime.utils.ArrayBuffer;
 			var vertexBuffer:VertexBuffer = this.getVertexBuffer(kind);
 			vbs[kind] = vertexBuffer;
 			data[kind] = vbs[kind].getData();
-			newdata[kind] = [];
+			//newdata[kind] = [];
 		}
 		
 		// Save previous submeshes
 		var previousSubmeshes:Array<SubMesh> = this.subMeshes.slice(0);
 		
-		var indices:Array<Int> = this.getIndices();
+		var indices:Int32Array = this.getIndices();
 		var totalIndices:Int = this.getTotalIndices();
 		
 		// Generating unique vertices per face
@@ -1727,9 +1739,9 @@ import lime.utils.ArrayBuffer;
 			for (kindIndex in 0...kinds.length) {
 				kind = kinds[kindIndex];
 				var stride = vbs[kind].getStrideSize();
-				
+				newdata[kind] = new Float32Array(stride);
 				for (offset in 0...stride) {
-					newdata[kind].push(data[kind][vertexIndex * stride + offset]);
+					newdata[kind][offset] = data[kind][vertexIndex * stride + offset];
 				}
 			}
 		}
@@ -1848,7 +1860,7 @@ import lime.utils.ArrayBuffer;
 		var vectorPositions:Array<Vector3> = [];
 		var pos:Int = 0;
 		while(pos < positions.length) {
-			vectorPositions.push(Vector3.FromArray(positions, pos));
+			vectorPositions.push(Vector3.FromFloat32Array(positions, pos));
 			pos += 3;
 		}
 		var dupes:Array<Int> = [];
@@ -2335,8 +2347,8 @@ import lime.utils.ArrayBuffer;
 	/**
 	 * @returns original positions used for CPU skinning.  Useful for integrating Morphing with skeletons in same mesh.
 	 */
-	public function setPositionsForCPUSkinning():Array<Float> {
-		var source:Array<Float> = null;
+	public function setPositionsForCPUSkinning():Float32Array {
+		var source:Float32Array = null;
 		if (this._sourcePositions == null) {
 			source = this.getVerticesData(VertexBuffer.PositionKind);
 			
@@ -2353,8 +2365,8 @@ import lime.utils.ArrayBuffer;
 	/**
 	 * @returns original normals used for CPU skinning.  Useful for integrating Morphing with skeletons in same mesh.
 	 */
-	public function setNormalsForCPUSkinning():Array<Float> {
-		var source:Array<Float> = null;
+	public function setNormalsForCPUSkinning():Float32Array {
+		var source:Float32Array = null;
 		if (this._sourceNormals == null) {
 			source = this.getVerticesData(VertexBuffer.NormalKind);
 			
@@ -2417,7 +2429,7 @@ import lime.utils.ArrayBuffer;
 		var positionsData = this.getVerticesData(VertexBuffer.PositionKind);
 		var normalsData = this.getVerticesData(VertexBuffer.NormalKind);
 		
-		var matricesIndicesData:Array<Int> = cast this.getVerticesData(VertexBuffer.MatricesIndicesKind);
+		var matricesIndicesData = this.getVerticesData(VertexBuffer.MatricesIndicesKind);
 		var matricesWeightsData = this.getVerticesData(VertexBuffer.MatricesWeightsKind);
 		
 		var needExtras:Bool = this.numBoneInfluencers > 4;
@@ -2436,11 +2448,7 @@ import lime.utils.ArrayBuffer;
 			for (inf in 0...4){
                 var weight = matricesWeightsData[matWeightIdx + inf];
                 if (weight > 0) {
-					#if (cpp || neko)
-					Matrix.FromFloat32ArrayToRefScaled(new Float32Array(skeletonMatrices), matricesIndicesData[matWeightIdx + inf] * 16, weight, tempMatrix);
-					#else
-                    Matrix.FromFloat32ArrayToRefScaled(skeletonMatrices, matricesIndicesData[matWeightIdx + inf] * 16, weight, tempMatrix);
-					#end
+                    Matrix.FromFloat32ArrayToRefScaled(skeletonMatrices, Std.int(matricesIndicesData[matWeightIdx + inf] * 16), weight, tempMatrix);
                     finalMatrix.addToSelf(tempMatrix);                    
                 }
 				else {
@@ -2462,10 +2470,10 @@ import lime.utils.ArrayBuffer;
             }
 			
 			Vector3.TransformCoordinatesFromFloatsToRef(this._sourcePositions[index], this._sourcePositions[index + 1], this._sourcePositions[index + 2], finalMatrix, tempVector3);
-			tempVector3.toArray(positionsData, index);
+			tempVector3.toFloat32Array(positionsData, index);
 			
 			Vector3.TransformNormalFromFloatsToRef(this._sourceNormals[index], this._sourceNormals[index + 1], this._sourceNormals[index + 2], finalMatrix, tempVector3);
-			tempVector3.toArray(normalsData, index);
+			tempVector3.toFloat32Array(normalsData, index);
 			
 			finalMatrix.reset();
 			
@@ -2585,7 +2593,7 @@ import lime.utils.ArrayBuffer;
      * The parameter `rootUrl` is a string, it's the root URL to prefix the `delayLoadingFile` property with
      */
 	public static function Parse(parsedMesh:Dynamic, scene:Scene, rootUrl:String):Mesh {
-        var mesh:Mesh;
+        var mesh:Mesh = null;
 		
 		if (parsedMesh.type != null && parsedMesh.type == "GroundMesh") {
 			mesh = GroundMesh.Parse(parsedMesh, scene);
@@ -2595,7 +2603,9 @@ import lime.utils.ArrayBuffer;
 		}
 		mesh.id = parsedMesh.id;
 		
-		Tags.AddTagsTo(mesh, parsedMesh.tags);
+		/*if (Tags) {
+			Tags.AddTagsTo(mesh, parsedMesh.tags);
+		}*/
 		
 		mesh.position = Vector3.FromArray(parsedMesh.position);
 		
@@ -2685,7 +2695,7 @@ import lime.utils.ArrayBuffer;
 		// Geometry
 		mesh.hasVertexAlpha = parsedMesh.hasVertexAlpha;
 		
-		if (parsedMesh.delayLoadingFile != null) {
+		if (parsedMesh.delayLoadingFile) {
 			mesh.delayLoadState = Engine.DELAYLOADSTATE_NOTLOADED;
 			mesh.delayLoadingFile = rootUrl + parsedMesh.delayLoadingFile;
 			mesh._boundingInfo = new BoundingInfo(Vector3.FromArray(parsedMesh.boundingBoxMinimum), Vector3.FromArray(parsedMesh.boundingBoxMaximum));
@@ -2695,39 +2705,39 @@ import lime.utils.ArrayBuffer;
 			}
 			
 			mesh._delayInfo = [];
-			if (parsedMesh.hasUVs == true) {
+			if (parsedMesh.hasUVs) {
 				mesh._delayInfo.push(VertexBuffer.UVKind);
 			}
 			
-			if (parsedMesh.hasUVs2 == true) {
+			if (parsedMesh.hasUVs2) {
 				mesh._delayInfo.push(VertexBuffer.UV2Kind);
 			}
 			
-			if (parsedMesh.hasUVs3 == true) {
+			if (parsedMesh.hasUVs3) {
 				mesh._delayInfo.push(VertexBuffer.UV3Kind);
 			}
 			
-			if (parsedMesh.hasUVs4 == true) {
+			if (parsedMesh.hasUVs4) {
 				mesh._delayInfo.push(VertexBuffer.UV4Kind);
 			}
 			
-			if (parsedMesh.hasUVs5 == true) {
+			if (parsedMesh.hasUVs5) {
 				mesh._delayInfo.push(VertexBuffer.UV5Kind);
 			}
 			
-			if (parsedMesh.hasUVs6 == true) {
+			if (parsedMesh.hasUVs6) {
 				mesh._delayInfo.push(VertexBuffer.UV6Kind);
 			}
 			
-			if (parsedMesh.hasColors == true) {
+			if (parsedMesh.hasColors) {
 				mesh._delayInfo.push(VertexBuffer.ColorKind);
 			}
 			
-			if (parsedMesh.hasMatricesIndices == true) {
+			if (parsedMesh.hasMatricesIndices) {
 				mesh._delayInfo.push(VertexBuffer.MatricesIndicesKind);
 			}
 			
-			if (parsedMesh.hasMatricesWeights == true) {
+			if (parsedMesh.hasMatricesWeights) {
 				mesh._delayInfo.push(VertexBuffer.MatricesWeightsKind);
 			}
 			
@@ -2772,18 +2782,19 @@ import lime.utils.ArrayBuffer;
 			Node.ParseAnimationRanges(mesh, parsedMesh, scene);
 		}
 		
-		if (parsedMesh.autoAnimate == true) {
+		if (parsedMesh.autoAnimate) {
 			scene.beginAnimation(mesh, parsedMesh.autoAnimateFrom, parsedMesh.autoAnimateTo, parsedMesh.autoAnimateLoop, parsedMesh.autoAnimateSpeed != null ? parsedMesh.autoAnimateSpeed : 1.0);
 		}
 		
 		// Layer Mask
-		if (parsedMesh.layerMask != null && (!Math.isNaN(parsedMesh.layerMask))) {
+		if (parsedMesh.layerMask && (!Math.isNaN(parsedMesh.layerMask))) {
 			mesh.layerMask = Std.parseInt(parsedMesh.layerMask);
 		} 
 		else {
 			mesh.layerMask = 0x0FFFFFFF;
 		}
 		
+		// VK TODO:
 		// Physics
 		/*if (parsedMesh.physicsImpostor != null) {
 			mesh.physicsImpostor = new PhysicsImpostor(mesh, parsedMesh.physicsImpostor, {
@@ -2799,7 +2810,9 @@ import lime.utils.ArrayBuffer;
 				var parsedInstance = parsedMesh.instances[index];
 				var instance = mesh.createInstance(parsedInstance.name);
 				
-				Tags.AddTagsTo(instance, parsedInstance.tags);
+				/*if (Tags) {
+					Tags.AddTagsTo(instance, parsedInstance.tags);
+				}*/
 				
 				instance.position = Vector3.FromArray(parsedInstance.position);
 				

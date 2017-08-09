@@ -7,7 +7,7 @@ import com.babylonhx.tools.Tools;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Color4') class Color4 {
+@:expose('BABYLON.Color4') class Color4 implements IColor {
 	
 	public var r:Float;
 	public var g:Float;
@@ -139,7 +139,49 @@ import com.babylonhx.tools.Tools;
 		var intB = Std.int(this.b * 255);
 		var intA = Std.int(this.a * 255);
 		
-		return "#" + Tools.ToHex(intR) + Tools.ToHex(intG) + Tools.ToHex(intB) + Tools.ToHex(intA);
+		return "#" + Scalar.ToHex(intR) + Scalar.ToHex(intG) + Scalar.ToHex(intB) + Scalar.ToHex(intA);
+	}
+	
+	/**
+	 * Returns a new Color4 converted to linear space.  
+	 */
+	public function toLinearSpace():Color4 {
+		var convertedColor = new Color4();
+		this.toLinearSpaceToRef(convertedColor);
+		return convertedColor;
+	}
+
+	/**
+	 * Converts the Color4 values to linear space and stores the result in "convertedColor".  
+	 * Returns the unmodified Color4.  
+	 */
+	public function toLinearSpaceToRef(convertedColor:Color4):Color4 {
+		convertedColor.r = Math.pow(this.r, Color3.ToLinearSpace);
+		convertedColor.g = Math.pow(this.g, Color3.ToLinearSpace);
+		convertedColor.b = Math.pow(this.b, Color3.ToLinearSpace);
+		convertedColor.a = this.a;
+		return this;
+	}
+
+	/**
+	 * Returns a new Color4 converted to gamma space.  
+	 */
+	public function toGammaSpace():Color4 {
+		var convertedColor = new Color4();
+		this.toGammaSpaceToRef(convertedColor);
+		return convertedColor;
+	}
+
+	/**
+	 * Converts the Color4 values to gamma space and stores the result in "convertedColor".  
+	 * Returns the unmodified Color4.  
+	 */
+	public function toGammaSpaceToRef(convertedColor:Color4):Color4 {
+		convertedColor.r = Math.pow(this.r, Color3.ToGammaSpace);
+		convertedColor.g = Math.pow(this.g, Color3.ToGammaSpace);
+		convertedColor.b = Math.pow(this.b, Color3.ToGammaSpace);
+		convertedColor.a = this.a;
+		return this;
 	}
 
 	// Statics

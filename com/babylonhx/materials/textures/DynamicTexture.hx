@@ -1,7 +1,8 @@
 package com.babylonhx.materials.textures;
 
 import com.babylonhx.utils.Image;
-import com.babylonhx.utils.typedarray.UInt8Array;
+
+import lime.utils.UInt8Array;
 
 
 /**
@@ -25,7 +26,7 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 	
 
 	public function new(name:String, options:Dynamic, scene:Scene, generateMipMaps:Bool, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, format:Int = Engine.TEXTUREFORMAT_RGBA) {
-		super(null, scene, !generateMipMaps, null, samplingMode, null, null, null, null, format);
+		super(null, scene, !generateMipMaps, false, samplingMode, null, null, null, false, format);
 		
 		this.name = name;
 		
@@ -96,7 +97,7 @@ import com.babylonhx.utils.typedarray.UInt8Array;
 	}
 
 	public function update(invertY:Bool = false) {
-		this.getScene().getEngine().updateDynamicTexture(this._texture, this._canvas, invertY, null, this._format);
+		this.getScene().getEngine().updateDynamicTexture(this._texture, this._canvas, invertY, false, this._format);
 	}
 
 	/*public drawText(text: string, x: number, y: number, font: string, color: string, clearColor: string, invertY?: boolean, update = true) {

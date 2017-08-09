@@ -3,9 +3,6 @@ package com.babylonhx.math;
 import com.babylonhx.cameras.Camera;
 
 import lime.utils.Float32Array;
-#if cpp
-import haxe.ds.Vector;
-#end
 
 
 /**
@@ -24,11 +21,8 @@ import haxe.ds.Vector;
 	private var _isIdentity:Bool = false;
     private var _isIdentityDirty:Bool = true;
 	public var updateFlag:Int = 0;
-	#if (js || html5 || purejs)
 	public var m:Float32Array;
-	#else
-	public var m:Array<Float>;	
-	#end
+
 	
 	inline public function _markAsUpdated() {
 		this.updateFlag = Matrix._updateFlagSeed++;
@@ -38,11 +32,7 @@ import haxe.ds.Vector;
 	
 	inline public function new() {
 		this._markAsUpdated();
-		#if (js || html5 || purejs)
 		m = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-		#else
-		m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
-		#end
 	}
 
 	// Properties
@@ -88,18 +78,22 @@ import haxe.ds.Vector;
 
 	// Methods
 	
+	inline public function toArray():Array<Float> {
+		return [m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11], m[12], m[13], m[14], m[15]];
+	}
+	
 	/**
 	 * Returns the matrix underlying array.  
 	 */
-	inline public function toArray(): #if (js || html5 || purejs) Float32Array #else Array<Float> #end {
+	inline public function toFloat32Array():Float32Array {
 		return this.m;
 	}
 
 	/**
 	* Returns the matrix underlying array.  
 	*/
-	inline public function asArray(): #if (js || html5 || purejs) Float32Array #else Array<Float> #end {
-		return #if (js || html5 || purejs) m #else m #end ;
+	inline public function asArray():Float32Array {
+		return this.toFloat32Array();
 	}
 
 	/**
@@ -310,6 +304,13 @@ import haxe.ds.Vector;
 		}
 		return this;
 	}
+	
+	inline public function copyToFloat32Array(array:Float32Array, offset:Int = 0):Matrix {
+		for (index in 0...16) {
+			array[offset + index] = this.m[index];
+		}
+		return this;
+	}
 
 	/**
 	 * Sets the passed matrix "result" with the multiplication result of the current Matrix and the passed one.  
@@ -324,7 +325,7 @@ import haxe.ds.Vector;
 	/**
 	 * Sets the Float32Array "result" from the passed index "offset" with the multiplication result of the current Matrix and the passed one.  
 	 */
-	public function multiplyToArray(other:Matrix, result: #if (js || html5 || purejs) Float32Array #else Array<Float> #end, offset:Int) {	
+	public function multiplyToArray(other:Matrix, result:Float32Array, offset:Int) {	
 		var tm0 = this.m[0];
 		var tm1 = this.m[1];
 		var tm2 = this.m[2];

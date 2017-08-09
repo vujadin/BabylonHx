@@ -2,6 +2,7 @@ package com.babylonhx.animations;
 
 import com.babylonhx.animations.easing.EasingFunction;
 import com.babylonhx.animations.easing.IEasingFunction;
+import com.babylonhx.bones.Bone;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Quaternion;
@@ -438,7 +439,7 @@ import com.babylonhx.Node;
 		return this._getKeyValue(this._keys[this._keys.length - 1].value);
 	}
 	
-	inline public function setValue(currentValue:Dynamic, blend:Bool = false) {
+	public function setValue(currentValue:Dynamic, blend:Bool = false) {
 		// Set value
 		var path:Dynamic;
 		var destination:Dynamic;
@@ -523,7 +524,18 @@ import com.babylonhx.Node;
 			this._blendingFactor += this.blendingSpeed;
 		} 
 		else {
-			Reflect.setField(destination, path, currentValue);
+			switch (destination.getClassName()) {
+				case "Bone":
+					if (path == "_matrix") {
+						cast (destination, Bone)._matrix = currentValue;
+					}
+					else {
+						Reflect.setField(destination, path, currentValue);
+					}
+					
+				default:
+					Reflect.setField(destination, path, currentValue);					
+			}
 		}
 		
 		if (this._target.markAsDirty != null) {

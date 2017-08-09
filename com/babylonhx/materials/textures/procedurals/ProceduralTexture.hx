@@ -9,6 +9,8 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.Scene;
+import lime.utils.Float32Array;
+import lime.utils.Int32Array;
 
 /**
  * ...
@@ -74,11 +76,11 @@ import com.babylonhx.Scene;
 		
 		// VBO
 		var vertices:Array<Float> = [1, 1, -1, 1, -1, -1, 1, -1];
-		this._vertexBuffers[VertexBuffer.PositionKind] = new VertexBuffer(engine, vertices, VertexBuffer.PositionKind, false, false, 2);
+		this._vertexBuffers[VertexBuffer.PositionKind] = new VertexBuffer(engine, new Float32Array(vertices), VertexBuffer.PositionKind, false, false, 2);
 		
 		// Indices
 		var indices:Array<Int> = [0, 1, 2, 0, 2, 3];		
-		this._indexBuffer = engine.createIndexBuffer(indices);
+		this._indexBuffer = engine.createIndexBuffer(new Int32Array(indices));
 	}
 
 	public function reset() {

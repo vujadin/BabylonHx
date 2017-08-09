@@ -3,7 +3,6 @@ package com.babylonhx.materials.textures;
 import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.math.SphericalPolynomial;
 
-import lime.graphics.opengl.GL;
 import lime.graphics.opengl.GLTexture;
 import lime.graphics.opengl.GLFramebuffer;
 import lime.graphics.opengl.GLRenderbuffer;
@@ -20,7 +19,7 @@ import lime.graphics.opengl.GLRenderbuffer;
 	
 	
 	public var generateMipMaps:Bool;
-	public var type:Int;
+	public var type:Int = -1;
 	public var format:Int;
 	public var isCube:Bool;		
 	public var isReady:Bool;
@@ -90,21 +89,21 @@ import lime.graphics.opengl.GLRenderbuffer;
 		this.references = 0;
 	}
 	
-	public function dispose(_:Bool = false) {
-		GL.deleteFramebuffer(_framebuffer);
+	/*public function dispose(_:Bool = false) {
+		Engine.gl.deleteFramebuffer(_framebuffer);
 		_framebuffer = null;
 		
-		GL.deleteRenderbuffer(_depthStencilBuffer);
+		Engine.gl.deleteRenderbuffer(_depthStencilBuffer);
 		_depthStencilBuffer = null;
 		
-		GL.deleteFramebuffer(_MSAAFramebuffer);
+		Engine.gl.deleteFramebuffer(_MSAAFramebuffer);
 		_MSAAFramebuffer = null;
 		
-		GL.deleteRenderbuffer(_MSAARenderBuffer);
+		Engine.gl.deleteRenderbuffer(_MSAARenderBuffer);
 		_MSAARenderBuffer = null;
 		
-		GL.deleteTexture(this.data);
+		Engine.gl.deleteTexture(this.data);
 		this.data = null;
-	}
+	}*/
 	
 }

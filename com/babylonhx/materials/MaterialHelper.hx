@@ -126,9 +126,9 @@ class MaterialHelper {
 		}
 	}
 
-	public static function PrepareDefinesForAttributes(mesh:AbstractMesh, defines:MaterialDefines, useVertexColor:Bool, useBones:Bool, useMorphTargets:Bool = false) {
+	public static function PrepareDefinesForAttributes(mesh:AbstractMesh, defines:MaterialDefines, useVertexColor:Bool, useBones:Bool, useMorphTargets:Bool = false):Bool {
 		if (!defines._areAttributesDirty && defines._needNormals == defines._normals && defines._needUVs == defines._uvs) {
-			return;
+			return false;
 		}
 		
 		defines._normals = defines._needNormals;
@@ -180,6 +180,8 @@ class MaterialHelper {
 				untyped defines.NUM_MORPH_INFLUENCERS = 0;
 			}
 		}
+		
+		return true;
 	}
 
 	public static function PrepareDefinesForLights(scene:Scene, mesh:AbstractMesh, defines:MaterialDefines, specularSupported:Bool, maxSimultaneousLights:Int = 4, disableLighting:Bool = false):Bool {
@@ -230,7 +232,7 @@ class MaterialHelper {
 				// Shadows
 				defines.shadows[lightIndex] = false;
 				defines.shadowpcf[lightIndex] = false;
-				defines.shadowwesm[lightIndex] = false;
+				defines.shadowesm[lightIndex] = false;
 				defines.shadowqube[lightIndex] = false;
 				
 				if (mesh != null && mesh.receiveShadows && scene.shadowsEnabled && light.shadowEnabled) {
@@ -263,7 +265,8 @@ class MaterialHelper {
 		
 		// Resetting all other lights if any
 		for (index in lightIndex...maxSimultaneousLights) {
-			if (defines.lights[index] != null) {
+			if (defines.lights.length >= index) {
+			//if (defines.lights[index] != null) {
 				defines.lights[index] = false;
 				defines.hemilights[index] = false;
 				defines.pointlights[index] = false;
@@ -275,11 +278,13 @@ class MaterialHelper {
 		
 		var caps = scene.getEngine().getCaps();
 		
-		/*if (defines.defines[untyped defines.SHADOWFULLFLOAT] == null) {
+		/*if (defines.defines[untyped defines.SHADOWFLOAT] == null) {
 			needRebuild = true;
 		}*/
 		
-		untyped defines.SHADOWFULLFLOAT = (shadowEnabled && caps.textureFloat && caps.textureFloatLinearFiltering && caps.textureFloatRender);
+		untyped defines.SHADOWFLOAT = shadowEnabled && 
+                                    ((caps.textureFloatRender && caps.textureFloatLinearFiltering) ||
+                                         (caps.textureHalfFloatRender && caps.textureHalfFloatLinearFiltering));
 		untyped defines.LIGHTMAPEXCLUDED = lightmapMode;
 		
 		/*if (needRebuild) {
@@ -319,6 +324,7 @@ class MaterialHelper {
 			uniformsList.push("vLightGround" + lightIndex);
 			uniformsList.push("lightMatrix" + lightIndex);
 			uniformsList.push("shadowsInfo" + lightIndex);
+			uniformsList.push("depthValues" + lightIndex);
 			
 			if (uniformBuffersList != null) {
 				uniformBuffersList.push("Light" + lightIndex);
@@ -338,7 +344,8 @@ class MaterialHelper {
 		}
 		
 		for (lightIndex in 0...maxSimultaneousLights) {
-			if (defines.lights[lightIndex] == null || !defines.lights[lightIndex]) {
+			if (defines.lights.length >= lightIndex || !defines.lights[lightIndex]) {
+			//if (defines.lights[lightIndex] == null || !defines.lights[lightIndex]) {
 				continue;
 			}
 			
@@ -354,8 +361,8 @@ class MaterialHelper {
 				fallbacks.addFallback(0, "SHADOWPCF" + lightIndex);
 			}
 			
-			if (defines.shadowvsms[lightIndex]) {
-				fallbacks.addFallback(0, "SHADOWVSM" + lightIndex);
+			if (defines.shadowesm[lightIndex]) {
+				fallbacks.addFallback(0, "SHADOWESM" + lightIndex);
 			}
 		}
 	}
@@ -400,7 +407,7 @@ class MaterialHelper {
 	}
 
 	public static function PrepareAttributesForInstances(attribs:Array<String>, defines:MaterialDefines) {
-		if (untyped defines.INSTANCES) {
+		if (untyped defines.INSTANCES == true) {
 			attribs.push("world0");
 			attribs.push("world1");
 			attribs.push("world2");

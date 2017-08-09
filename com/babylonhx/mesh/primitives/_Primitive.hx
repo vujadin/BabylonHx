@@ -1,5 +1,7 @@
 package com.babylonhx.mesh.primitives;
 
+import lime.utils.Float32Array;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -45,7 +47,7 @@ package com.babylonhx.mesh.primitives;
 		super.setAllVerticesData(vertexData, false);
 	}
 
-	override public function setVerticesData(kind:String, data:Array<Float>, updatable:Bool = false, ?stride:Int) {
+	override public function setVerticesData(kind:String, data:Float32Array, updatable:Bool = false, ?stride:Int) {
 		if (!this._beingRegenerated) {
 			return;
 		}

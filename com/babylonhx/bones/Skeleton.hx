@@ -31,7 +31,7 @@ import haxe.ds.Vector;
 
 	private var _scene:Scene;
 	private var _isDirty:Bool = true;
-	private var _transformMatrices: #if (js || purejs || web || html5) Float32Array #else Array<Float> #end ;
+	private var _transformMatrices:Float32Array;
 	private var _meshesWithPoseMatrix:Array<AbstractMesh> = [];
 	private var _animatables:Array<IAnimatable>;
 	private var _identity:Matrix = Matrix.Identity();
@@ -58,7 +58,7 @@ import haxe.ds.Vector;
 	}
 	
 	// Members
-	inline public function getTransformMatrices(mesh:AbstractMesh): #if (js || purejs || web || html5) Float32Array #else Array<Float> #end {
+	inline public function getTransformMatrices(mesh:AbstractMesh):Float32Array {
 		if (this.needInitialSkinMatrix && mesh._bonesTransformMatrices != null) {
 			return mesh._bonesTransformMatrices;
 		}
@@ -244,7 +244,7 @@ import haxe.ds.Vector;
 		}
 	}
 	
-	public function _computeTransformMatrices(targetMatrix: #if js Float32Array #else Array<Float> #end, ?initialSkinMatrix:Matrix) {
+	public function _computeTransformMatrices(targetMatrix:Float32Array, ?initialSkinMatrix:Matrix) {
 		for (index in 0...this.bones.length) {
 			var bone = this.bones[index];
 			var parentBone = bone.getParent();
@@ -264,7 +264,7 @@ import haxe.ds.Vector;
 			bone.getInvertedAbsoluteTransform().multiplyToArray(bone.getWorldMatrix(), targetMatrix, cast (index * 16));
 		}
 		
-		this._identity.copyToArray(targetMatrix, this.bones.length * 16);
+		this._identity.copyToFloat32Array(targetMatrix, this.bones.length * 16);
 	}
 
 	public function prepare() {
@@ -277,7 +277,7 @@ import haxe.ds.Vector;
 				var mesh = this._meshesWithPoseMatrix[index];
 				
 				if (mesh._bonesTransformMatrices == null || mesh._bonesTransformMatrices.length != 16 * (this.bones.length + 1)) {
-					mesh._bonesTransformMatrices = #if (js || html5 || purejs) new Float32Array(16 * (this.bones.length + 1)) #else [] #end ;
+					mesh._bonesTransformMatrices = new Float32Array(16 * (this.bones.length + 1));
 				}
 				
 				var poseMatrix = mesh.getPoseMatrix();
@@ -298,7 +298,7 @@ import haxe.ds.Vector;
 		} 
 		else {
 			if (this._transformMatrices == null || this._transformMatrices.length != 16 * (this.bones.length + 1)) {
-				this._transformMatrices = #if (js || html5 || purejs) new Float32Array(16 * (this.bones.length + 1)) #else [] #end ;
+				this._transformMatrices = new Float32Array(16 * (this.bones.length + 1));
 			}
 			
 			this._computeTransformMatrices(this._transformMatrices, null);

@@ -120,9 +120,9 @@ import haxe.ds.Vector;
 		this.maximumWorld.addToRef(this.minimumWorld, this.centerWorld);
 		this.centerWorld.scaleInPlace(0.5);
 		
-		Vector3.FromFloatArrayToRef(world.m, 0, this.directions[0]);
-		Vector3.FromFloatArrayToRef(world.m, 4, this.directions[1]);
-		Vector3.FromFloatArrayToRef(world.m, 8, this.directions[2]);
+		Vector3.FromFloat32ArrayToRef(world.m, 0, this.directions[0]);
+		Vector3.FromFloat32ArrayToRef(world.m, 4, this.directions[1]);
+		Vector3.FromFloat32ArrayToRef(world.m, 8, this.directions[2]);
 		
 		this._worldMatrix = world;
 	}

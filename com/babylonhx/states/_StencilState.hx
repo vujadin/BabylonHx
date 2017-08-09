@@ -1,10 +1,7 @@
 package com.babylonhx.states;
 
 import lime.graphics.opengl.GL;
-
-#if (!js && !purejs)
-import lime.graphics.opengl.GL in Gl;
-#end
+import lime.graphics.opengl.WebGL2Context;
 
 /**
  * ...
@@ -176,7 +173,7 @@ class _StencilState {
 		this._isStencilOpDirty = true;
 	}
 
-	public function apply(#if (js || purejs) Gl:js.html.webgl.RenderingContext #end) {
+	public function apply(gl:WebGL2Context) {
 		if (!this.isDirty) {
 			return;
 		}
@@ -184,29 +181,29 @@ class _StencilState {
 		// Stencil test
 		if (this._isStencilTestDirty) {
 			if (this.stencilTest) {
-				Gl.enable(GL.STENCIL_TEST);
+				gl.enable(gl.STENCIL_TEST);
 			} 
 			else {
-				Gl.disable(GL.STENCIL_TEST);
+				gl.disable(gl.STENCIL_TEST);
 			}
 			this._isStencilTestDirty = false;
 		}
 		
 		// Stencil mask
 		if (this._isStencilMaskDirty) {
-			Gl.stencilMask(this.stencilMask);
+			gl.stencilMask(this.stencilMask);
 			this._isStencilMaskDirty = false;
 		}
 		
 		// Stencil func
 		if (this._isStencilFuncDirty) {
-			Gl.stencilFunc(this.stencilFunc, this.stencilFuncRef, this.stencilFuncMask);
+			gl.stencilFunc(this.stencilFunc, this.stencilFuncRef, this.stencilFuncMask);
 			this._isStencilFuncDirty = false;
 		}
 		
 		// Stencil op
 		if (this._isStencilOpDirty) {
-			Gl.stencilOp(this.stencilOpStencilFail, this.stencilOpDepthFail, this.stencilOpStencilDepthPass);
+			gl.stencilOp(this.stencilOpStencilFail, this.stencilOpDepthFail, this.stencilOpStencilDepthPass);
 			this._isStencilOpDirty = false;
 		}
 	}

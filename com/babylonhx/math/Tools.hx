@@ -1,14 +1,75 @@
 package com.babylonhx.math;
 
+import lime.utils.Float32Array;
+import lime.utils.Int32Array;
+
 /**
  * ...
  * @author Krtolica Vujadin
  */
+
+@:expose('BABYLON.BabylonMinMax') typedef BabylonMinMax = {
+	minimum: Vector3,
+	maximum: Vector3
+}
+ 
 @:expose('BABYLON.MathTools') class Tools {
 	
 	static public inline var ToLinearSpace:Float = 2.2;
 	static public inline var Epsilon:Float = 0.001;
 	static public inline var LOG2E:Float = 1.4426950408889634;
+	
+	public static function ExtractMinAndMaxIndexed(positions:Float32Array, indices:Int32Array, indexStart:Int, indexCount:Int, bias:Vector2 = null):BabylonMinMax {
+		var minimum = new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY);
+		var maximum = new Vector3(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY);
+		
+		for (index in indexStart...indexStart + indexCount) {
+			var current = new Vector3(positions[indices[index] * 3], positions[indices[index] * 3 + 1], positions[indices[index] * 3 + 2]);
+			minimum = Vector3.Minimize(current, minimum);
+			maximum = Vector3.Maximize(current, maximum);
+		}
+		
+		if (bias != null) {
+			minimum.x -= minimum.x * bias.x + bias.y;
+			minimum.y -= minimum.y * bias.x + bias.y;
+			minimum.z -= minimum.z * bias.x + bias.y;
+			maximum.x += maximum.x * bias.x + bias.y;
+			maximum.y += maximum.y * bias.x + bias.y;
+			maximum.z += maximum.z * bias.x + bias.y;
+		}
+		
+		return {
+			minimum: minimum,
+			maximum: maximum
+		};
+	}
+
+	public static function ExtractMinAndMax(positions:Float32Array, start:Int, count:Int, bias:Vector2 = null, stride:Int = 3):BabylonMinMax {
+		var minimum = new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY);
+		var maximum = new Vector3(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY);
+		
+		var current:Vector3 = Vector3.Zero();
+		for (index in start...start + count) {
+			current = new Vector3(positions[index * stride], positions[index * stride + 1], positions[index * stride + 2]);
+			
+			minimum = Vector3.Minimize(current, minimum);
+			maximum = Vector3.Maximize(current, maximum);
+		}
+		
+		if (bias != null) {
+			minimum.x -= minimum.x * bias.x + bias.y;
+			minimum.y -= minimum.y * bias.x + bias.y;
+			minimum.z -= minimum.z * bias.x + bias.y;
+			maximum.x += maximum.x * bias.x + bias.y;
+			maximum.y += maximum.y * bias.x + bias.y;
+			maximum.z += maximum.z * bias.x + bias.y;
+		}
+		
+		return {
+			minimum: minimum,
+			maximum: maximum
+		};
+	}
 	
 
 	public static function ToHex(i:Int):String {
@@ -28,6 +89,32 @@ package com.babylonhx.math;
     inline public static function Log2(value:Float):Float {
         return Math.log(value) * LOG2E;
     }
+	
+	/**
+	 * Loops the value, so that it is never larger than length and never smaller than 0.
+	 * 
+	 * This is similar to the modulo operator but it works with floating point numbers. 
+	 * For example, using 3.0 for t and 2.5 for length, the result would be 0.5. 
+	 * With t = 5 and length = 2.5, the result would be 0.0. 
+	 * Note, however, that the behaviour is not defined for negative numbers as it is for the modulo operator
+	 */
+	inline public static function Repeat(value:Float, length:Float):Float {
+		return value - Math.floor(value / length) * length;
+	}
+	
+	/**
+	 * Normalize the value between 0.0 and 1.0 using min and max values
+	 */
+	inline public static function Normalize(value:Float, min:Float, max:Float):Float {
+		return (value - min) / (max - min);
+	}
+
+	/**
+	 * Denormalize the value from 0.0 and 1.0 using min and max values
+	 */
+	public static function Denormalize(normalized:Float, min:Float, max:Float):Float {
+		return (normalized * (max - min) + min);
+	}
 	
 	inline public static function Clamp(value:Float, min:Float = 0, max:Float = 1):Float {
 		return Math.min(max, Math.max(min, value));

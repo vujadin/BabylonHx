@@ -34,11 +34,6 @@ typedef Assets = lime.Assets;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.BabylonMinMax') typedef BabylonMinMax = {
-	minimum: Vector3,
-	maximum: Vector3
-}
-
 @:expose('BABYLON.Tools') class Tools {
 	
 	public static var BaseUrl:String = "";
@@ -108,58 +103,6 @@ typedef Assets = lime.Assets;
 			f();
 		};
 		return t;
-	}
-
-	inline public static function ExtractMinAndMaxIndexed(positions:Array<Float>, indices:Array<Int>, indexStart:Int, indexCount:Int, bias:Vector2 = null):BabylonMinMax {
-		var minimum = new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY);
-		var maximum = new Vector3(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY);
-		
-		for (index in indexStart...indexStart + indexCount) {
-			var current = new Vector3(positions[indices[index] * 3], positions[indices[index] * 3 + 1], positions[indices[index] * 3 + 2]);
-			minimum = Vector3.Minimize(current, minimum);
-			maximum = Vector3.Maximize(current, maximum);
-		}
-		
-		if (bias != null) {
-			minimum.x -= minimum.x * bias.x + bias.y;
-			minimum.y -= minimum.y * bias.x + bias.y;
-			minimum.z -= minimum.z * bias.x + bias.y;
-			maximum.x += maximum.x * bias.x + bias.y;
-			maximum.y += maximum.y * bias.x + bias.y;
-			maximum.z += maximum.z * bias.x + bias.y;
-		}
-		
-		return {
-			minimum: minimum,
-			maximum: maximum
-		};
-	}
-
-	inline public static function ExtractMinAndMax(positions:Array<Float>, start:Int, count:Int, bias:Vector2 = null, stride:Int = 3):BabylonMinMax {
-		var minimum = new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY);
-		var maximum = new Vector3(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY);
-		
-		var current:Vector3 = Vector3.Zero();
-		for (index in start...start + count) {
-			current = new Vector3(positions[index * stride], positions[index * stride + 1], positions[index * stride + 2]);
-			
-			minimum = Vector3.Minimize(current, minimum);
-			maximum = Vector3.Maximize(current, maximum);
-		}
-		
-		if (bias != null) {
-			minimum.x -= minimum.x * bias.x + bias.y;
-			minimum.y -= minimum.y * bias.x + bias.y;
-			minimum.z -= minimum.z * bias.x + bias.y;
-			maximum.x += maximum.x * bias.x + bias.y;
-			maximum.y += maximum.y * bias.x + bias.y;
-			maximum.z += maximum.z * bias.x + bias.y;
-		}
-		
-		return {
-			minimum: minimum,
-			maximum: maximum
-		};
 	}
 
 	public static function MakeArray(obj:Dynamic, allowsNullUndefined:Bool = false):Array<Dynamic> {

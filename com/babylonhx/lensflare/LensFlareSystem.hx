@@ -11,6 +11,8 @@ import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.tools.Tools;
 
+import lime.utils.Int32Array;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -70,7 +72,7 @@ import com.babylonhx.tools.Tools;
 		indices.push(0);
 		indices.push(2);
 		indices.push(3);
-		this._indexBuffer = engine.createIndexBuffer(indices);
+		this._indexBuffer = engine.createIndexBuffer(new Int32Array(indices));
 		
 		// Effects
 		this._effect = engine.createEffect("lensFlare",

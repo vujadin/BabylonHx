@@ -1,10 +1,7 @@
 package com.babylonhx.states;
 
 import lime.graphics.opengl.GL;
-
-#if (!js && !purejs)
-import lime.graphics.opengl.GL in Gl;
-#end
+import lime.graphics.opengl.WebGL2Context;
 
 /**
  * ...
@@ -138,15 +135,15 @@ import lime.graphics.opengl.GL in Gl;
 		this._isZOffsetDirty = false;
 	}
 
-	public function apply(#if (js || purejs) Gl:js.html.webgl.RenderingContext #end) {
+	public function apply(gl:WebGL2Context) {
 		if (this.isDirty) {
 			// Cull
 			if (this._isCullDirty) {
 				if (this.cull != null && this.cull) {
-					Gl.enable(GL.CULL_FACE);
+					gl.enable(gl.CULL_FACE);
 				} 
 				else {
-					Gl.disable(GL.CULL_FACE);
+					gl.disable(gl.CULL_FACE);
 				}
 				
 				this._isCullDirty = false;
@@ -154,41 +151,41 @@ import lime.graphics.opengl.GL in Gl;
 			
 			// Cull face
 			if (this._isCullFaceDirty) {
-				Gl.cullFace(this.cullFace);
+				gl.cullFace(this.cullFace);
 				this._isCullFaceDirty = false;
 			}
 			
 			// Depth mask
 			if (this._isDepthMaskDirty) {
-				Gl.depthMask(this.depthMask);
+				gl.depthMask(this.depthMask);
 				this._isDepthMaskDirty = false;
 			}
 			
 			// Depth test
 			if (this._isDepthTestDirty) {
 				if (this.depthTest) {
-					Gl.enable(GL.DEPTH_TEST);
+					gl.enable(gl.DEPTH_TEST);
 				} 
 				else {
-					Gl.disable(GL.DEPTH_TEST);
+					gl.disable(gl.DEPTH_TEST);
 				}
 				this._isDepthTestDirty = false;
 			}
 			
 			// Depth func
 			if (this._isDepthFuncDirty) {
-				Gl.depthFunc(this.depthFunc);
+				gl.depthFunc(this.depthFunc);
 				this._isDepthFuncDirty = false;
 			}
 			
 			// zOffset
 			if (this._isZOffsetDirty) {
 				if (this.zOffset != 0) {
-					Gl.enable(GL.POLYGON_OFFSET_FILL);
-					Gl.polygonOffset(this.zOffset, 0);
+					gl.enable(gl.POLYGON_OFFSET_FILL);
+					gl.polygonOffset(this.zOffset, 0);
 				} 
 				else {
-					Gl.disable(GL.POLYGON_OFFSET_FILL);
+					gl.disable(gl.POLYGON_OFFSET_FILL);
 				}
 				
 				this._isZOffsetDirty = false;

@@ -47,7 +47,7 @@ import com.babylonhx.collisions.CollisionCoordinatorLegacy;
 import com.babylonhx.morph.MorphTargetManager;
 import com.babylonhx.mesh.simplification.SimplificationQueue;
 import com.babylonhx.mesh.SubMesh;
-import com.babylonhx.particles.ParticleSystem;
+import com.babylonhx.particles.IParticleSystem;
 import com.babylonhx.physics.PhysicsEngine;
 import com.babylonhx.physics.IPhysicsEnginePlugin;
 import com.babylonhx.physics.PhysicsBodyCreationOptions;
@@ -71,7 +71,7 @@ import com.babylonhx.tools.StringDictionary;
 import com.babylonhx.tools.PerfCounter;
 import haxe.Timer;
 
-import com.babylonhx.d2.display.Stage;
+//import com.babylonhx.d2.display.Stage;
 
 #if (purejs || js)
 import com.babylonhx.audio.*;
@@ -442,11 +442,11 @@ import com.babylonhx.audio.*;
 	public var fogEnd:Float = 1000.0;
 	
 	// 2D
-	private var _stage2D:Stage;
+	/*private var _stage2D:Stage;
 	public var stage2D(get, never):Stage;
 	inline private function get_stage2D():Stage {
 		return _stage2D;
-	}
+	}*/
 
 	// Lights
 	/**
@@ -547,7 +547,7 @@ import com.babylonhx.audio.*;
 
 	// Particles
 	public var particlesEnabled:Bool = true;
-	public var particleSystems:Array<ParticleSystem> = [];
+	public var particleSystems:Array<IParticleSystem> = [];
 
 	// Sprites
 	public var spritesEnabled:Bool = true;
@@ -685,7 +685,7 @@ import com.babylonhx.audio.*;
 	private var _activeMeshes:SmartArray<AbstractMesh> = new SmartArray<AbstractMesh>(256);				
 	private var _processedMaterials:SmartArray<Material> = new SmartArray<Material>(256);		
 	private var _renderTargets:SmartArray<RenderTargetTexture> = new SmartArray<RenderTargetTexture>(256);			
-	public var _activeParticleSystems:SmartArray<ParticleSystem> = new SmartArray<ParticleSystem>(256);		
+	public var _activeParticleSystems:SmartArray<IParticleSystem> = new SmartArray<IParticleSystem>(256);		
 	private var _activeSkeletons:SmartArray<Skeleton> = new SmartArray<Skeleton>(32);			
 	private var _softwareSkinnedMeshes:SmartArray<Mesh> = new SmartArray<Mesh>(32);	
 
@@ -1010,7 +1010,7 @@ import com.babylonhx.audio.*;
     }
     #end
 	
-	public function init2D():Stage {
+	/*public function init2D():Stage {
 		if (this.activeCamera != null) {
 			if (this._stage2D == null) {
 				this._stage2D = new Stage(this);
@@ -1033,7 +1033,7 @@ import com.babylonhx.audio.*;
 			trace("No active camera! You need to initialize your 3D stuff first.");
 			return null;
 		}
-	}
+	}*/
 
 	// Stats
 	inline public function getLastFrameDuration():Float {
@@ -1267,7 +1267,7 @@ import com.babylonhx.audio.*;
 			
 			if (this.pointerMovePredicate == null) {
 				this.pointerMovePredicate = function(mesh:AbstractMesh):Bool { 
-					return mesh.isPickable && mesh.isVisible && mesh.isReady() && (this.constantlyUpdateMeshUnderPointer || mesh.actionManager != null && mesh.actionManager != null); 					
+					return mesh.isPickable && mesh.isVisible && mesh.isReady() && (mesh.enablePointerMoveEvents || this.constantlyUpdateMeshUnderPointer || mesh.actionManager != null && mesh.actionManager != null); 					
 				};
 			}
 			
@@ -1601,7 +1601,7 @@ import com.babylonhx.audio.*;
 	inline public function resetCachedMaterial() {
         this._cachedMaterial = null;
 		this._cachedEffect = null;
-        this._cachedVisibility = null;
+        this._cachedVisibility = 0;
     }
 	
 	public function registerBeforeRender(func:Scene->Null<EventState>->Void) {
@@ -1772,7 +1772,7 @@ import com.babylonhx.audio.*;
 		return this._transformMatrix;
 	}
 
-	inline public function setTransformMatrix(view:Matrix, projection:Matrix) {
+	public function setTransformMatrix(view:Matrix, projection:Matrix) {
 		if (this._viewUpdateFlag == view.updateFlag && this._projectionUpdateFlag == projection.updateFlag) {
 			return;
 		}
@@ -2168,7 +2168,7 @@ import com.babylonhx.audio.*;
 	 * @param id {number} the particle system id
 	 * @return {BABYLON.ParticleSystem|null} the corresponding system or null if none found.
 	 */
-	public function getParticleSystemByID(id:String):ParticleSystem {
+	public function getParticleSystemByID(id:String):IParticleSystem {
 		for (index in 0...this.particleSystems.length) {
 			if (this.particleSystems[index].id == id) {
 				return this.particleSystems[index];
@@ -2587,11 +2587,12 @@ import com.babylonhx.audio.*;
 			for (particleIndex in 0...this.particleSystems.length) {
 				var particleSystem = this.particleSystems[particleIndex];
 				
-				if (!particleSystem.isStarted()) {
+				if (!particleSystem.isStarted() || particleSystem.emitter == null) {
 					continue;
 				}
 				
-				if (particleSystem.emitter.position == null || (particleSystem.emitter != null && particleSystem.emitter.isEnabled())) {
+				var emitter = particleSystem.emitter;
+				if (emitter.position == null || emitter.isEnabled()) {
 					this._activeParticleSystems.push(particleSystem);
 					particleSystem.animate();
 					this._renderingManager.dispatchParticles(particleSystem);
@@ -2639,7 +2640,7 @@ import com.babylonhx.audio.*;
 		}
 	}
 
-	inline public function updateTransformMatrix(force:Bool = false) {
+	public function updateTransformMatrix(force:Bool = false) {
 		this.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(force));
 	}
 
@@ -3031,7 +3032,7 @@ import com.babylonhx.audio.*;
 		if (this.activeCameras.length > 0) {
 			for (cameraIndex in 0...this.activeCameras.length) {
 				if (cameraIndex > 0) {
-                    this._engine.clear(0, false, true, true);
+                    this._engine.clear(null, false, true, true);
                 }
 				
 				this._processSubCameras(this.activeCameras[cameraIndex]);
@@ -3141,6 +3142,8 @@ import com.babylonhx.audio.*;
 		
 		this.importedMeshesFiles = [];
 		
+		this.resetCachedMaterial();
+		
 		if (this._depthRenderer != null) {
 			this._depthRenderer.dispose();
 		}
@@ -3156,6 +3159,8 @@ import com.babylonhx.audio.*;
 		this._activeParticleSystems.dispose();
 		this._activeSkeletons.dispose();
 		this._softwareSkinnedMeshes.dispose();
+		this._renderTargets.dispose();
+		
 		if (this._boundingBoxRenderer != null) {
 			this._boundingBoxRenderer.dispose();
 		}
@@ -3200,6 +3205,13 @@ import com.babylonhx.audio.*;
 		}
 		
 		// Release materials
+		if (this.defaultMaterial != null) {
+            this.defaultMaterial.dispose();
+        }
+        while (this.multiMaterials.length > 0) {
+            this.multiMaterials[0].dispose();
+			this.multiMaterials.shift();
+        }
 		while (this.materials.length > 0) {
 			this.materials[0].dispose();
 			this.materials.shift();
@@ -3253,6 +3265,10 @@ import com.babylonhx.audio.*;
 		
 		this._engine.wipeCaches();
 		this._engine = null;
+		
+		this.defaultMaterial = null;
+        this.multiMaterials = null;
+        this.materials = null;
 	}
 	
 	public var isDisposed(get, never):Bool;
@@ -3636,13 +3652,13 @@ import com.babylonhx.audio.*;
 			var camera:TargetCamera;
 			var radius = worldSize.length() * 1.5;
 			if (createArcRotateCamera) {
-				var arcRotateCamera = new ArcRotateCamera("default camera", 4.712, 1.571, radius, worldCenter, this);
+				var arcRotateCamera = new ArcRotateCamera("default camera", -(Math.PI / 2), Math.PI / 2, radius, worldCenter, this);
 				arcRotateCamera.lowerRadiusLimit = radius * 0.01;
 				arcRotateCamera.wheelPrecision = 100 / radius;
 				camera = arcRotateCamera;
 			}
 			else {
-				var freeCamera = new FreeCamera("default camera", new Vector3(worldCenter.x, worldCenter.y, this.useRightHandedSystem ? -radius : radius), this);
+				var freeCamera = new FreeCamera("default camera", new Vector3(worldCenter.x, worldCenter.y, -radius), this);
 				freeCamera.setTarget(cast (worldCenter, Vector3));
 				camera = freeCamera;
 			}
@@ -3657,7 +3673,7 @@ import com.babylonhx.audio.*;
 		}
 	}
 	
-	public function createDefaultSkybox(?environmentTexture:BaseTexture, pbr:Bool = false, scale:Float = 1000):Mesh {
+	public function createDefaultSkybox(?environmentTexture:BaseTexture, pbr:Bool = false, scale:Float = 1000, blur:Float = 0):Mesh {
 		if (environmentTexture != null) {
 			this.environmentTexture = environmentTexture;
 		}

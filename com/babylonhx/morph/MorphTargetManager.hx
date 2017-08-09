@@ -22,6 +22,7 @@ class MorphTargetManager {
 	private var _supportsTangents:Bool = false;
 	private var _vertexCount:Int = 0;
 	private var _uniqueId:Int = 0;
+	private var _tempInfluences:Array<Int> = [];
 	
 
 	public function new(?scene:Scene) {
@@ -125,14 +126,14 @@ class MorphTargetManager {
 	}
 
 	private function _syncActiveTargets(needUpdate:Bool) {
+		var influenceCount:Int = 0;
 		this._activeTargets.reset();
-		var tempInfluences = [];
 		this._supportsNormals = true;
 		this._supportsTangents = true;
 		for (target in this._targets) {
 			if (target.influence > 0) {
 				this._activeTargets.push(target);
-				tempInfluences.push(target.influence);
+				this._tempInfluences[influenceCount++] = target.influence;
 				
 				this._supportsNormals = this._supportsNormals && target.hasNormals;
 				this._supportsTangents = this._supportsTangents && target.hasTangents;
@@ -143,7 +144,13 @@ class MorphTargetManager {
 			}
 		}
 		
-		this._influences = new Float32Array(tempInfluences);
+		if (this._influences == null || this._influences.length != influenceCount) {
+            this._influences = new Float32Array(influenceCount);
+        }
+		
+        for (index in 0...influenceCount) {
+            this._influences[index] = this._tempInfluences[index];
+        }
 		
 		if (needUpdate) {
 			// Flag meshes as dirty to resync with the active targets

@@ -4,6 +4,7 @@ import com.babylonhx.math.Plane;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.SubMesh;
+import lime.utils.Int32Array;
 
 /**
 * ...
@@ -297,7 +298,7 @@ import com.babylonhx.mesh.SubMesh;
 		}
 	}
 
-	inline public function _collide(trianglePlaneArray:Array<Plane>, pts:Array<Vector3>, indices:Array<Int>, indexStart:Int, indexEnd:Int, decal:Int, hasMaterial:Bool) {
+	inline public function _collide(trianglePlaneArray:Array<Plane>, pts:Array<Vector3>, indices:Int32Array, indexStart:Int, indexEnd:Int, decal:Int, hasMaterial:Bool) {
 		var i:Int = indexStart;
 		while(i < indexEnd) {
 			var p1 = pts[indices[i] - decal];

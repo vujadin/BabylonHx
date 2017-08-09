@@ -444,16 +444,20 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	 * Creates a new typed light from the passed type (integer) : point light = 0, directional light = 1, spot light = 2, hemispheric light = 3.  
 	 * This new light is named "name" and added to the passed scene.  
 	 */
-	static public function GetConstructorFromName(type:Int, name:String, scene:Scene):Light {
+	static public function GetConstructorFromName(type:Int, name:String, scene:Scene):Void->Light {
 		switch (type) {
 			case 0:
-				return new PointLight(name, Vector3.Zero(), scene);
+				return function() { return new PointLight(name, Vector3.Zero(), scene); };
+				
 			case 1:
-				return new DirectionalLight(name, Vector3.Zero(), scene);
+				return function() { return new DirectionalLight(name, Vector3.Zero(), scene); };
+				
 			case 2:
-				return new SpotLight(name, Vector3.Zero(), Vector3.Zero(), 0, 0, scene);
+				return function() { return new SpotLight(name, Vector3.Zero(), Vector3.Zero(), 0, 0, scene); };
+				
 			case 3:
-				return new HemisphericLight(name, Vector3.Zero(), scene);
+				return function() { return new HemisphericLight(name, Vector3.Zero(), scene); };
+				
 		}
 		return null;
 	}
@@ -462,7 +466,7 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	 * Parses the passed "parsedLight" and returns a new instanced Light from this parsing.  
 	 */
 	public static function Parse(parsedLight:Dynamic, scene:Scene):Light {
-		/*var light = SerializationHelper.Parse(Light.GetConstructorFromName(parsedLight.type, parsedLight.name, scene), parsedLight, scene);
+		var light = SerializationHelper.Parse(Light.GetConstructorFromName(parsedLight.type, parsedLight.name, scene), parsedLight, scene);
 		
 		// Inclusion / exclusions
 		if (parsedLight.excludedMeshesIds != null) {
@@ -492,8 +496,7 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 			scene.beginAnimation(light, parsedLight.autoAnimateFrom, parsedLight.autoAnimateTo, parsedLight.autoAnimateLoop, parsedLight.autoAnimateSpeed != null ? parsedLight.autoAnimateSpeed : 1.0);
 		}
 		
-		return light;*/
-		return null;
+		return light;
 	}
 
 	private function _hookArrayForExcluded(array:Array<AbstractMesh>) {

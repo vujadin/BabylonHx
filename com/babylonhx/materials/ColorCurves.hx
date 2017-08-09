@@ -362,6 +362,10 @@ class ColorCurves {
 		return value;
 	}
 	
+	public function getClassName():String {
+		return "ColorCurves";
+	}
+	
 	public function new() { }
 	
 	/**

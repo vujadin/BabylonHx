@@ -6,7 +6,7 @@ import lime.utils.Float32Array;
  * ...
  * @author Krtolica Vujadin
  */
-@:expose('BABYLON.Color3') class Color3 {
+@:expose('BABYLON.Color3') class Color3 implements IColor {
 	
 	static public inline var ToGammaSpace:Float = 1 / 2.2;
 	static public inline var ToLinearSpace:Float = 2.2;
@@ -37,6 +37,12 @@ import lime.utils.Float32Array;
 		
         return hash;
     }
+	
+	inline public function set(r:Float = 0, g:Float = 0, b:Float = 0) {
+		this.r = r;
+		this.g = g;
+		this.b = b;
+	}
 
 	// Operators
 	inline public function toArray(array:Array<Float>, index:Int = 0):Color3 {
@@ -152,7 +158,7 @@ import lime.utils.Float32Array;
 		var intG = Std.int(this.g * 255);
 		var intB = Std.int(this.b * 255);
 		
-		return "#" + Tools.ToHex(intR) + Tools.ToHex(intG) + Tools.ToHex(intB);
+		return "#" + Scalar.ToHex(intR) + Scalar.ToHex(intG) + Scalar.ToHex(intB);
 	}
 	
 	inline public function toLinearSpace():Color3 {
@@ -228,5 +234,7 @@ import lime.utils.Float32Array;
 	inline public static function Magenta():Color3 { return new Color3(1, 0, 1); }
 	inline public static function Yellow():Color3 { return new Color3(1, 1, 0); }
 	inline public static function Gray():Color3 { return new Color3(0.5, 0.5, 0.5); }
+	inline public static function Teal():Color3 { return new Color3(0, 1.0, 1.0); }
+	inline public static function Random():Color3 { return new Color3(Math.random(), Math.random(), Math.random()); }
 	
 }

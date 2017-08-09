@@ -15,6 +15,7 @@ import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
 
+import lime.utils.Int32Array;
 import lime.utils.Float32Array;
 
 
@@ -59,7 +60,7 @@ import lime.utils.Float32Array;
 
 	private var _scene:Scene;
 
-	private var _vertexData:Array<Float>;
+	private var _vertexData:Float32Array;
 	private var _buffer:Buffer;
 	private var _vertexBuffers:Map<String, VertexBuffer> = new Map();
 	private var _indexBuffer:WebGLBuffer;
@@ -67,6 +68,12 @@ import lime.utils.Float32Array;
 	private var _effectFog:Effect;
 	
 	public var texture(get, set):Texture;
+	private function get_texture():Texture {
+		return this._spriteTexture;
+	}
+	private function set_texture(value:Texture):Texture {
+		return this._spriteTexture = value;
+	}
 	
 
 	public function new(name:String, imgUrl:String, capacity:Int, cellSize:Dynamic, scene:Scene, epsilon:Float = 0.01, ?samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE) {
@@ -76,7 +83,6 @@ import lime.utils.Float32Array;
 		this._spriteTexture = new Texture(imgUrl, scene, true, false, samplingMode);
 		this._spriteTexture.wrapU = Texture.CLAMP_ADDRESSMODE;
 		this._spriteTexture.wrapV = Texture.CLAMP_ADDRESSMODE;
-		this._epsilon = epsilon;
 		
 		if (cellSize != null) {
 			if (cellSize.width != null && cellSize.height != null) {
@@ -92,6 +98,7 @@ import lime.utils.Float32Array;
 			return;
 		}
 		
+		this._epsilon = epsilon;
 		this._scene = scene;
 		this._scene.spriteManagers.push(this);
 		
@@ -107,14 +114,11 @@ import lime.utils.Float32Array;
 			index += 4;
 		}
 		
-		this._indexBuffer = scene.getEngine().createIndexBuffer(indices);
+		this._indexBuffer = scene.getEngine().createIndexBuffer(new Int32Array(indices));
 		
 		// VBO
-            // 16 floats per sprite (x, y, z, angle, sizeX, sizeY, offsetX, offsetY, invertU, invertV, cellIndexX, cellIndexY, color r, color g, color b, color a)
-		this._vertexData = [];// new Float32Array(capacity * 16 * 4);
-		for (i in 0...Std.int(capacity * 16 * 4)) {
-			this._vertexData[i] = 0;
-		}
+		// 16 floats per sprite (x, y, z, angle, sizeX, sizeY, offsetX, offsetY, invertU, invertV, cellIndexX, cellIndexY, color r, color g, color b, color a)
+		this._vertexData = new Float32Array(capacity * 16 * 4);
 		this._buffer = new Buffer(scene.getEngine(), this._vertexData, true, 16);
 		
 		var positions = this._buffer.createVertexBuffer(VertexBuffer.PositionKind, 0, 4);
@@ -138,13 +142,6 @@ import lime.utils.Float32Array;
 			["view", "projection", "textureInfos", "alphaTest", "vFogInfos", "vFogColor"],
 			["diffuseSampler"], "#define FOG");
 	}
-	
-	private function get_texture():Texture {
-		return this._spriteTexture;
-	}
-	private function set_texture(value:Texture):Texture {
-		return this._spriteTexture = value;
-	}
 
 	private function _appendSpriteVertex(index:Int, sprite:Sprite, offsetX:Float, offsetY:Float, rowSize:Int) {
 		var arrayOffset = index * 16;
@@ -162,7 +159,7 @@ import lime.utils.Float32Array;
 		else if (offsetY == 1) {
 			offsetY = 1 - this._epsilon;
 		}
-			
+		
 		this._vertexData[arrayOffset] = sprite.position.x;
 		this._vertexData[arrayOffset + 1] = sprite.position.y;
 		this._vertexData[arrayOffset + 2] = sprite.position.z;

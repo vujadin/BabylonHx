@@ -317,7 +317,7 @@ typedef RenderTargetOptions = {
 		var scene = this.getScene();
 		var engine = scene.getEngine();
 		
-		if (this.useCameraPostProcesses != null) {
+		if (this.useCameraPostProcesses) {
 			useCameraPostProcess = this.useCameraPostProcesses;
 		}
 		
@@ -354,7 +354,7 @@ typedef RenderTargetOptions = {
 		var camera:Camera = null;
 		if (this.activeCamera != null) {
 			camera = this.activeCamera;
-			engine.setViewport(this.activeCamera.viewport);
+			engine.setViewport(this.activeCamera.viewport, this._size, this._size);
 			
 			if (this.activeCamera != scene.activeCamera) {
 				scene.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(true));
@@ -362,7 +362,7 @@ typedef RenderTargetOptions = {
 		}
 		else {
 			camera = scene.activeCamera;
-			engine.setViewport(scene.activeCamera.viewport);
+			engine.setViewport(scene.activeCamera.viewport, this._size, this._size);
 		}
 		
 		// Prepare renderingManager
@@ -403,11 +403,12 @@ typedef RenderTargetOptions = {
 		for (particleIndex in 0...scene.particleSystems.length) {
 			var particleSystem = scene.particleSystems[particleIndex];
 			
-			if (!particleSystem.isStarted() || particleSystem.emitter == null || particleSystem.emitter.position == null || !particleSystem.emitter.isEnabled()) {
+			var emitter:Dynamic = particleSystem.emitter;
+			if (!particleSystem.isStarted() || emitter == null || emitter.position == null || !emitter.isEnabled()) {
 				continue;
 			}
 			
-			if (currentRenderList.indexOf(particleSystem.emitter) >= 0) {
+			if (currentRenderList.indexOf(emitter) >= 0) {
 				this._renderingManager.dispatchParticles(particleSystem);
 			}
 		}
@@ -585,6 +586,8 @@ typedef RenderTargetOptions = {
 		}
 		
 		this.clearPostProcesses(true);
+		
+		this.renderList = null;
 		
 		// Remove from custom render targets
 		var scene = this.getScene();

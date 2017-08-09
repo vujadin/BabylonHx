@@ -12,7 +12,9 @@ import com.babylonhx.collisions.Collider;
 import com.babylonhx.collisions.IntersectionInfo;
 import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.culling.ICullable;
-import com.babylonhx.tools.Tools;
+import com.babylonhx.math.Tools as MathTools;
+
+import lime.utils.Int32Array;
 
 
 /**
@@ -108,9 +110,7 @@ import com.babylonhx.tools.Tools;
 			
 			if (this._currentMaterial != effectiveMaterial) {
 				this._currentMaterial = effectiveMaterial;
-				if (this._materialDefines != null) {
-					this._materialDefines.markAllAsDirty();
-				}
+				this._materialDefines = null;
 			}
 			
 			return effectiveMaterial;
@@ -155,7 +155,7 @@ import com.babylonhx.tools.Tools;
 			extend = { minimum: this._renderingMesh.getBoundingInfo().minimum.clone(), maximum: this._renderingMesh.getBoundingInfo().maximum.clone() };
 		}
 		else {
-			extend = Tools.ExtractMinAndMaxIndexed(data, indices, this.indexStart, this.indexCount);
+			extend = MathTools.ExtractMinAndMaxIndexed(data, indices, this.indexStart, this.indexCount);
 		}
 		
 		this._boundingInfo = new BoundingInfo(extend.minimum, extend.maximum);
@@ -193,7 +193,7 @@ import com.babylonhx.tools.Tools;
 		return this.getBoundingInfo().isCompletelyInFrustum(frustumPlanes);
 	}
 
-	inline public function render(enableAlphaMode:Bool):SubMesh {
+	public function render(enableAlphaMode:Bool):SubMesh {
 		this._renderingMesh.render(this, enableAlphaMode);
 		return this;
 	}
@@ -202,18 +202,19 @@ import com.babylonhx.tools.Tools;
 	 * Returns a new Index Buffer.  
 	 * Type returned : WebGLBuffer.  
 	 */
-	inline public function getLinesIndexBuffer(indices:Array<Int>, engine:Engine):WebGLBuffer {
+	inline public function getLinesIndexBuffer(indices:Int32Array, engine:Engine):WebGLBuffer {
 		if (this._linesIndexBuffer == null) {
-			var linesIndices:Array<Int> = [];
+			var linesIndices:Int32Array = new Int32Array(this.indexCount);
 			
 			var index:Int = this.indexStart;
+			var i:Int = 0;
 			while (index < this.indexStart + this.indexCount) {
-				linesIndices.push(indices[index]);
-				linesIndices.push(indices[index + 1]);
-				linesIndices.push(indices[index + 1]);
-				linesIndices.push(indices[index + 2]);
-				linesIndices.push(indices[index + 2]);
-				linesIndices.push(indices[index]);
+				linesIndices[i++] = indices[index];
+				linesIndices[i++] = indices[index + 1];
+				linesIndices[i++] = indices[index + 1];
+				linesIndices[i++] = indices[index + 2];
+				linesIndices[i++] = indices[index + 2];
+				linesIndices[i++] = indices[index];
 				index += 3;
 			}
 			
@@ -235,7 +236,7 @@ import com.babylonhx.tools.Tools;
 	/**
 	 * Returns an object IntersectionInfo.  
 	 */
-	public function intersects(ray:Ray, positions:Array<Vector3>, indices:Array<Int>, fastCheck:Bool = false):IntersectionInfo {
+	public function intersects(ray:Ray, positions:Array<Vector3>, indices:Int32Array, fastCheck:Bool = false):IntersectionInfo {
 		var intersectInfo:IntersectionInfo = null;
 		
 		// fix for picking instances: https://github.com/vujadin/BabylonHx/issues/122

@@ -4,6 +4,7 @@ import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.actions.ActionManager;
+import cpp.Void;
 
 
 /**
@@ -22,7 +23,7 @@ import com.babylonhx.actions.ActionManager;
 	public var cellIndex:Int = 0;
 	public var invertU:Bool = false;
 	public var invertV:Bool = false;
-	public var disposeWhenFinishedAnimating:Bool;
+	public var disposeWhenFinishedAnimating:Bool = false;
 	public var animations:Array<Animation> = [];
 	public var isPickable:Bool = false;
 	public var actionManager:ActionManager;
@@ -36,6 +37,7 @@ import com.babylonhx.actions.ActionManager;
 	private var _frameCount:Int = 0;
 	private var _manager:SpriteManager;
 	private var _time:Float = 0;
+	private var _onAnimationEnd:Void->Void;
 	
 	public var size(get, set):Float;
 	private function get_size():Float {
@@ -57,7 +59,7 @@ import com.babylonhx.actions.ActionManager;
 		this.position = Vector3.Zero();
 	}
 
-	inline public function playAnimation(from:Int, to:Int, loop:Bool, delay:Float) {
+	inline public function playAnimation(from:Int, to:Int, loop:Bool, delay:Float, ?onAnimationEnd:Void->Void) {
 		this._fromIndex = from;
 		this._toIndex = to;
 		this._loopAnimation = loop;
@@ -68,6 +70,8 @@ import com.babylonhx.actions.ActionManager;
 		
 		this.cellIndex = from;
 		this._time = 0;
+		
+		this._onAnimationEnd = onAnimationEnd;
 	}
 
 	public function stopAnimation() {
@@ -86,6 +90,9 @@ import com.babylonhx.actions.ActionManager;
 					} 
 					else {
 						this._animationStarted = false;
+						if (this._onAnimationEnd != null) {
+                            this._onAnimationEnd();
+                        }
 						if (this.disposeWhenFinishedAnimating) {
 							this.dispose();
 						}

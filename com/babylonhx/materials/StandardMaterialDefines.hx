@@ -31,7 +31,8 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 	public var POINTSIZE:Bool = false;
 	public var FOG:Bool = false;
 	public var SPECULARTERM:Bool = false;
-	public var SHADOWS:Bool = false;		// BHX
+	public var SHADOWS:Bool = false;				// BHX
+	//public var SHADOWFULLFLOAT:Bool = false;		// BHX
 	public var DIFFUSEFRESNEL:Bool = false;
 	public var OPACITYFRESNEL:Bool = false;
 	public var REFLECTIONFRESNEL:Bool = false;
@@ -69,8 +70,6 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 	public var REFRACTION:Bool = false;
 	public var REFRACTIONMAP_3D:Bool = false;
 	public var REFLECTIONOVERALPHA:Bool = false;
-	public var INVERTNORMALMAPX:Bool = false;
-	public var INVERTNORMALMAPY:Bool = false;
 	public var TWOSIDEDLIGHTING:Bool = false;
 	public var SHADOWFLOAT:Bool = false;
 	public var MORPHTARGETS:Bool = false;
@@ -193,8 +192,6 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 			if (untyped this.REFRACTION != other.REFRACTION) return false;
 			if (untyped this.REFRACTIONMAP_3D != other.REFRACTIONMAP_3D) return false;
 			if (untyped this.REFLECTIONOVERALPHA != other.REFLECTIONOVERALPHA) return false;
-			if (untyped this.INVERTNORMALMAPX != other.INVERTNORMALMAPX) return false;
-			if (untyped this.INVERTNORMALMAPY != other.INVERTNORMALMAPY) return false;
 			if (untyped this.TWOSIDEDLIGHTING != other.TWOSIDEDLIGHTING) return false;
 			if (untyped this.SHADOWFLOAT != other.SHADOWFLOAT) return false;
 			if (untyped this.MORPHTARGETS != other.MORPHTARGETS) return false;
@@ -277,8 +274,6 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 		untyped other.REFRACTION = this.REFRACTION;
 		untyped other.REFRACTIONMAP_3D = this.REFRACTIONMAP_3D;
 		untyped other.REFLECTIONOVERALPHA = this.REFLECTIONOVERALPHA;
-		untyped other.INVERTNORMALMAPX = this.INVERTNORMALMAPX;
-		untyped other.INVERTNORMALMAPY = this.INVERTNORMALMAPY;
 		untyped other.TWOSIDEDLIGHTING = this.TWOSIDEDLIGHTING;
 		untyped other.SHADOWFLOAT = this.SHADOWFLOAT;
 		untyped other.MORPHTARGETS = this.MORPHTARGETS;
@@ -359,8 +354,6 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 		this.REFRACTION = false;
 		this.REFRACTIONMAP_3D = false;
 		this.REFLECTIONOVERALPHA = false;
-		this.INVERTNORMALMAPX = false;
-		this.INVERTNORMALMAPY = false;
 		this.TWOSIDEDLIGHTING = false;
 		this.SHADOWFLOAT = false;
 		this.MORPHTARGETS = false;
@@ -550,12 +543,6 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 		}
 		if (this.REFLECTIONOVERALPHA) {
 			result += "#define REFLECTIONOVERALPHA \n";
-		}
-		if (this.INVERTNORMALMAPX) {
-			result += "#define INVERTNORMALMAPX \n";
-		}
-		if (this.INVERTNORMALMAPY) {
-			result += "#define INVERTNORMALMAPY \n";
 		}
 		if (this.TWOSIDEDLIGHTING) {
 			result += "#define TWOSIDEDLIGHTING \n";

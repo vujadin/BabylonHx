@@ -68,6 +68,10 @@ using StringTools;
 	private var _valueCacheMatrix:Map<String, Matrix> = new Map();	// VK: for matrices only
 	private static var _baseCache:Map<Int, WebGLBuffer> = new Map();
 	
+	static public function ResetCache() {
+		Effect._baseCache = new Map();
+	}
+	
 
 	public function new(baseName:Dynamic, attributesNamesOrOptions:Dynamic, uniformsNamesOrEngine:Dynamic, samplers:Array<String>, engine:Engine, ?defines:String, ?fallbacks:EffectFallbacks, ?onCompiled:Effect->Void, ?onError:Effect->String->Void, ?indexParameters:Dynamic) {
 		this.name = baseName;
@@ -412,7 +416,7 @@ using StringTools;
 				sourceCode = StringTools.replace(sourceCode, regex.matched(0), IncludesShadersStore.Shaders[includeFile]);
 				
 				// Substitution
-				var includeContent = IncludesShadersStore.Shaders[includeFile];
+				var includeContent:String = IncludesShadersStore.Shaders[includeFile];
 				var match2:String = regex.matched(2);
 				if (match2 != null) {
 					var splits = regex.matched(3).split(",");
@@ -434,34 +438,35 @@ using StringTools;
 					var indexString:String = regex.matched(5);
 					
 					if (indexString.indexOf("..") != -1) {
-						var indexSplits = indexString.split("..");
+						var indexSplits:Array<String> = indexString.split("..");
 						var minIndex = Std.parseInt(indexSplits[0]);
 						var maxIndex = Std.parseInt(indexSplits[1]);
-						var sourceIncludeContent = includeContent.substr(0);
+						var sourceIncludeContent:String = includeContent.substr(0);
 						includeContent = "";
 						
+						// VK: !!! Haxe Std.parseInt will return null instead of NaN !!!   http://api.haxe.org/Std.html#parseInt
 						if (maxIndex == null || Math.isNaN(maxIndex)) {
 							maxIndex = Std.int(Reflect.getProperty(this._indexParameters, indexSplits[1]));
 						}
 						
 						for (i in minIndex...maxIndex + 1) {
-							// VK TODO:
-							/*if (this._engine.webGLVersion == 1) {
+							if (this._engine.webGLVersion == 1) {
 								// Ubo replacement
-								sourceIncludeContent = sourceIncludeContent.replace(/light\{X\}.(\w*)/g, (str: string, p1: string) => {
-									return p1 + "{X}";
-								});
-							}*/
+								var _tmprx:EReg = ~/light\{X\}.(\w*)/g;
+								while (_tmprx.match(sourceIncludeContent)) {
+									sourceIncludeContent = StringTools.replace(sourceIncludeContent, _tmprx.matched(0), _tmprx.matched(1) + "{X}");
+								}
+							}
 							includeContent += rx.replace(sourceIncludeContent, i + "") + "\n";
 						}
 					} 
 					else {
 						if (this._engine.webGLVersion == 1) {
 							// Ubo replacement
-							// VK TODO:
-							/*includeContent = StringTools.replace(includeContent.replace(, (str: string, p1: string) => {
-								return p1 + "{X}";
-							});*/
+							var _tmprx:EReg = ~/light\{X\}.(\w*)/g;
+							while (_tmprx.match(includeContent)) {
+								includeContent = StringTools.replace(includeContent, _tmprx.matched(0), _tmprx.matched(1) + "{X}");
+							}
 						}
 						includeContent = rx.replace(includeContent, indexString);
 					}
@@ -488,6 +493,7 @@ using StringTools;
 	}
 	
 	private function _processPrecision(source:String):String {
+		#if (js || mobile)
 		if (source.indexOf("precision highp float") == -1) {
 			if (!this._engine.getCaps().highPrecisionShaderSupported) {
 				source = "precision mediump float;\n" + source;
@@ -501,13 +507,6 @@ using StringTools;
 				source = StringTools.replace(source, "precision highp float", "precision mediump float");
 			}
 		}		
-		
-		#if (!android && !js && !purejs && !web && !html5)	// TODO !mobile ??
-		// native bug fix for neko / osx / etc http://community.openfl.org/t/lime-2-8-0-shader-issues/7060/2
-		source = StringTools.replace(source, "precision highp float;", "\n");
-		source = StringTools.replace(source, "precision highp float;", "\n");
-		source = StringTools.replace(source, "precision mediump float;", "\n");
-		source = StringTools.replace(source, "precision mediump float;", "\n");
 		#end
 		
 		return source;
@@ -563,13 +562,11 @@ using StringTools;
 				return;
 			}
 			#end*/
-			trace(e);
+			
             // Let's go through fallbacks then
 			if (fallbacks != null && fallbacks.isMoreFallbacks) {
 				Tools.Error(this.name + " - Trying next fallback.");
-				trace(defines);
 				defines = fallbacks.reduce(defines);
-				trace(defines);
 				this._prepareEffect(vertexSourceCode, fragmentSourceCode, attributesNames, defines, fallbacks);
             } 
 			else {
@@ -580,6 +577,7 @@ using StringTools;
 				#else
 				trace("Error #: " + GL.getError());
 				trace("Error: " + e);
+				//trace(fragmentSourceCode);
 				#end
                 this._compilationError = cast e;
 				
@@ -621,25 +619,15 @@ using StringTools;
 	}
 
 	public function _cacheMatrix(uniformName:String, matrix:Matrix):Bool {
-		var changed:Bool = false;
-		var cache:Matrix = this._valueCacheMatrix[uniformName];
-		if (cache == null) {
-			changed = true;
-			cache = new Matrix();
+		var cache = this._valueCache[uniformName];
+		var flag = matrix.updateFlag;
+		if (cache != null && cache == [flag]) {
+			return false;
 		}
 		
-		var tm = cache.m;
-		var om = matrix.m;
-		for (index in 0...16) {
-			if (tm[index] != om[index]) { 
-				tm[index] = om[index];
-				changed = true;
-			}
-		}
+		this._valueCache[uniformName] = [cast flag];
 		
-		this._valueCacheMatrix[uniformName] = cache;
-		
-		return changed;
+		return true;
 	}
 
 	public function _cacheFloat2(uniformName:String, x:Float, y:Float):Bool {
@@ -816,7 +804,11 @@ using StringTools;
         return this;
     }
 
-	inline public function setMatrices(uniformName:String, matrices: #if (js || purejs) Float32Array #else Array<Float> #end ):Effect {
+	inline public function setMatrices(uniformName:String, matrices:Float32Array):Effect {
+		if (matrices == null) {
+			return null;
+		}
+		
 		this._valueCache[uniformName] = null;
 		this._engine.setMatrices(this.getUniform(uniformName), matrices);
 		

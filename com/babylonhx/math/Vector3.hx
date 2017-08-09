@@ -56,10 +56,10 @@ import lime.utils.Float32Array;
 		this.z = z;
 	}
 
-	inline public function toArray<T>(array:T, index:Int = 0) {
-		untyped array[index] = this.x;
-		untyped array[index + 1] = this.y;
-		untyped array[index + 2] = this.z;
+	inline public function toArray(array:Array<Float>, index:Int = 0) {
+		array[index] = this.x;
+		array[index + 1] = this.y;
+		array[index + 2] = this.z;
 	}
 	
 	inline public function toFloat32Array(array:Float32Array, index:Int = 0) {
@@ -165,7 +165,7 @@ import lime.utils.Float32Array;
 	}
 
 	inline public function equalsWithEpsilon(otherVector:Vector3, epsilon:Float = Tools.Epsilon):Bool {
-		return otherVector != null && Tools.WithinEpsilon(this.x, otherVector.x, epsilon) && Tools.WithinEpsilon(this.y, otherVector.y, epsilon) && Tools.WithinEpsilon(this.z, otherVector.z, epsilon);
+		return otherVector != null && Scalar.WithinEpsilon(this.x, otherVector.x, epsilon) && Scalar.WithinEpsilon(this.y, otherVector.y, epsilon) && Scalar.WithinEpsilon(this.z, otherVector.z, epsilon);
 	}
 
 	inline public function equalsToFloats(x:Float, y:Float, z:Float):Bool {
@@ -280,21 +280,21 @@ import lime.utils.Float32Array;
         return s;
     }
 	
-	inline public static function FromArray<T>(array:T, offset:Int = 0):Vector3 {
-		return new Vector3(untyped array[offset], untyped array[offset + 1], untyped array[offset + 2]);
+	inline public static function FromArray(array:Array<Float>, offset:Int = 0):Vector3 {
+		return new Vector3(array[offset], array[offset + 1], array[offset + 2]);
 	}
 	
-	inline public static function FromFloatArray(array:Float32Array, offset:Int = 0):Vector3 {
+	inline public static function FromFloat32Array(array:Float32Array, offset:Int = 0):Vector3 {
         return new Vector3(array[offset], array[offset + 1], array[offset + 2]);
     }
 
-	inline public static function FromArrayToRef<T>(array:T, offset:Int, result:Vector3) {
-		result.x = untyped array[offset];
-		result.y = untyped array[offset + 1];
-		result.z = untyped array[offset + 2];
+	inline public static function FromArrayToRef(array:Array<Float>, offset:Int, result:Vector3) {
+		result.x = array[offset];
+		result.y = array[offset + 1];
+		result.z = array[offset + 2];
 	}
 
-	inline public static function FromFloatArrayToRef(array: #if (js || purejs || web || html5) Float32Array #else Array<Float> #end, offset:Int, result:Vector3) {
+	inline public static function FromFloat32ArrayToRef(array:Float32Array, offset:Int, result:Vector3) {
 		result.x = array[offset];
 		result.y = array[offset + 1];
 		result.z = array[offset + 2];
@@ -512,7 +512,7 @@ import lime.utils.Float32Array;
 		var vector = Vector3.TransformCoordinates(source, matrix);
 		var num = source.x * matrix.m[3] + source.y * matrix.m[7] + source.z * matrix.m[11] + matrix.m[15];
 		
-		if (Tools.WithinEpsilon(num, 1.0)) {
+		if (Scalar.WithinEpsilon(num, 1.0)) {
 			vector = vector.scale(1.0 / num);
 		}
 		
@@ -528,7 +528,7 @@ import lime.utils.Float32Array;
 		var vector = Vector3.TransformCoordinates(screenSource, matrix);
 		var num = screenSource.x * matrix.m[3] + screenSource.y * matrix.m[7] + screenSource.z * matrix.m[11] + matrix.m[15];
 		
-		if (Tools.WithinEpsilon(num, 1.0)) {
+		if (Scalar.WithinEpsilon(num, 1.0)) {
 			vector = vector.scale(1.0 / num);
 		}
 		
@@ -604,10 +604,10 @@ import lime.utils.Float32Array;
 		// Rv3(w) = w1 = w invariant
 		var u1:Vector3 = Tmp.vector3[3];
 		var v1:Vector3 = Tmp.vector3[4];
-		if (Tools.WithinEpsilon(w.z, 0, Tools.Epsilon)) {
+		if (Scalar.WithinEpsilon(w.z, 0, Tools.Epsilon)) {
 			_tF[1] = 1.0;
 		}
-		else if (Tools.WithinEpsilon(w.x, 0, Tools.Epsilon)) {
+		else if (Scalar.WithinEpsilon(w.x, 0, Tools.Epsilon)) {
 			_tF[0] = 1.0;
 		}
 		else {
@@ -645,7 +645,7 @@ import lime.utils.Float32Array;
 		_tF[0] = 0.0;
 		_tF[1] = 0.0;
 		sign = -1;
-		if (Tools.WithinEpsilon(w.z, 0, Tools.Epsilon)) {
+		if (Scalar.WithinEpsilon(w.z, 0, Tools.Epsilon)) {
 			_tF[0] = 1.0;
 		}
 		else {

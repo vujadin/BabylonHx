@@ -10,6 +10,7 @@ import com.babylonhx.culling.BoundingSphere;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.animations.IAnimatable;
 
+import lime.utils.Int32Array;
 import lime.utils.Float32Array;
 
 
@@ -51,6 +52,10 @@ import lime.utils.Float32Array;
 		this.refreshBoundingInfo();
 		this._syncSubMeshes();
 	}
+	
+	override public function getClassName():String {
+		return "InstancedMesh";
+	}
 
 	// Methods
 	override private function get_receiveShadows():Bool {
@@ -69,9 +74,9 @@ import lime.utils.Float32Array;
 		return this._sourceMesh.skeleton;
 	}
 	
-	/*override private function get_renderingGroupId():Int {
+	override private function get_renderingGroupId():Int {
 		return this._sourceMesh.renderingGroupId;
-	}*/
+	}
 
 	override public function getTotalVertices():Int {
 		return this._sourceMesh.getTotalVertices();
@@ -81,15 +86,36 @@ import lime.utils.Float32Array;
 		return this._sourceMesh;
 	}
 
-	override public function getVerticesData(kind:String, copyWhenShared:Bool = false, forceCopy:Bool = false):Array<Float> {
+	/**
+	 * Returns a Float32Array of the requested kind of data : positons, normals, uvs, etc.  
+	 */
+	override public function getVerticesData(kind:String, copyWhenShared:Bool = false, forceCopy:Bool = false):Float32Array {
 		return this._sourceMesh.getVerticesData(kind, copyWhenShared);
+	}
+	
+	override public function setVerticesData(kind:String, data:Float32Array, updatable:Bool = false, ?stride:Int) {
+		if (this.sourceMesh != null) {
+		   this.sourceMesh.setVerticesData(kind, data, updatable, stride);
+		}
+	}
+	
+	override public function updateVerticesData(kind:String, data:Float32Array, updateExtends:Bool = false, makeItUnique:Bool = false) {
+		if (this.sourceMesh != null) {
+		   this.sourceMesh.updateVerticesData(kind, data, updateExtends, makeItUnique);
+		}
+	}
+	
+	override public function setIndices(indices:Int32Array, totalVertices:Int = -1) {
+		if (this.sourceMesh != null) {
+		   this.sourceMesh.setIndices(indices, totalVertices);
+		}
 	}
 
 	override public function isVerticesDataPresent(kind:String):Bool {
 		return this._sourceMesh.isVerticesDataPresent(kind);
 	}
 
-	override public function getIndices(copyWhenShared:Bool = false):Array<Int> {
+	override public function getIndices(copyWhenShared:Bool = false):Int32Array {
 		return this._sourceMesh.getIndices(copyWhenShared);
 	}
 
@@ -117,6 +143,9 @@ import lime.utils.Float32Array;
 		}
 	}
 	
+	/**
+	 * Returns the current associated LOD AbstractMesh.  
+	 */
 	override public function getLOD(camera:Camera, ?boundingSphere:BoundingSphere):AbstractMesh {
 		this._currentLOD = cast this.sourceMesh.getLOD(this.getScene().activeCamera, this.getBoundingInfo().boundingSphere);
 		

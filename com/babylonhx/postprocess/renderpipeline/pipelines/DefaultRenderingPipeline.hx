@@ -43,6 +43,8 @@ class DefaultRenderingPipeline extends PostProcessRenderPipeline implements IDis
 	private var _imageProcessingEnabled:Bool = true;
 	private var _defaultPipelineTextureType:Int;
 	private var _bloomScale:Float = 0.6;
+	
+	private var _buildAllowed:Bool = true;
 
 	/**
 	 * Specifies the size of the bloom blur kernel, relative to the final output size
@@ -143,10 +145,13 @@ class DefaultRenderingPipeline extends PostProcessRenderPipeline implements IDis
 	 * @param {BABYLON.Scene} scene - The scene linked to this pipeline
 	 * @param {any} ratio - The size of the postprocesses (0.5 means that your postprocess will have a width = canvas.width 0.5 and a height = canvas.height 0.5)
 	 * @param {BABYLON.Camera[]} cameras - The array of cameras that the rendering pipeline will be attached to
+	 * @param {boolean} automaticBuild - if false, you will have to manually call prepare() to update the pipeline
 	 */
-	public function new(name:String, hdr:Bool, scene:Scene, ?cameras:Dynamic) {
+	public function new(name:String, hdr:Bool, scene:Scene, ?cameras:Dynamic, automaticBuild:Bool = true) {
 		super(scene.getEngine(), name);
 		this._cameras = cameras != null ? cameras : new Map();
+		
+		this._buildAllowed = automaticBuild;
 		
 		// Initialize
 		this._scene = scene;
@@ -171,8 +176,22 @@ class DefaultRenderingPipeline extends PostProcessRenderPipeline implements IDis
 		
 		this._buildPipeline();
 	}
+	
+	/**
+     * Force the compilation of the entire pipeline.
+     */
+    public function prepare() {
+        var previousState = this._buildAllowed;
+        this._buildAllowed = true;
+        this._buildPipeline();
+        this._buildAllowed = previousState;
+    }
 
 	private function _buildPipeline() {
+		if (!this._buildAllowed) {
+			return;
+		}
+		
 		var engine = this._scene.getEngine();
 		
 		this._disposePostProcesses();

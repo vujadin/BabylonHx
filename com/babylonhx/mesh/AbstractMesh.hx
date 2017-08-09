@@ -34,6 +34,7 @@ import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
 
+import lime.utils.Int32Array;
 import lime.utils.Float32Array;
 import lime.utils.UInt16Array;
 
@@ -142,6 +143,12 @@ import lime.utils.UInt16Array;
 	* @type {BABYLON.Observable}
 	*/
 	public var onAfterWorldMatrixUpdateObservable:Observable<AbstractMesh> = new Observable<AbstractMesh>();
+	
+	/**
+    * An event triggered when material is changed
+    * @type {BABYLON.Observable}
+    */
+    public var onMaterialChangedObservable:Observable<AbstractMesh> = new Observable<AbstractMesh>();
 
 	// Properties
 	public var definedFacingForward:Bool = true; // orientation for POV movement & rotation
@@ -158,7 +165,18 @@ import lime.utils.UInt16Array;
 	public var showBoundingBox:Bool = false;
 	public var showSubMeshesBoundingBox:Bool = false;
 	public var isBlocker:Bool = false;
-	public var renderingGroupId:Int = 0;
+	public var enablePointerMoveEvents:Bool = false;
+	
+	// BHX
+	private var _renderingGroupId:Int = 0;
+	public var renderingGroupId(get, set):Int;
+	private function get_renderingGroupId():Int {
+		return this._renderingGroupId;
+	}
+	private function set_renderingGroupId(value:Int):Int {
+		return this._renderingGroupId = value;
+	}
+	
 	private var _material:Material;
 	public var material(get, set):Material;
 	private function get_material():Material {
@@ -170,6 +188,11 @@ import lime.utils.UInt16Array;
 		}
 		
 		this._material = value;
+		
+		if (this.onMaterialChangedObservable.hasObservers()) {
+            this.onMaterialChangedObservable.notifyObservers(this);
+        }
+		
 		if (this.subMeshes == null) {
 			return value;
 		}
@@ -411,6 +434,13 @@ import lime.utils.UInt16Array;
 		
 		this._resyncLightSources();
 	}
+	
+	/**
+     * Boolean : true if the mesh has been disposed.  
+     */
+    public function isDisposed():Bool {
+        return this._isDisposed;
+    }
 
 	/**
 	 * Returns the string "AbstractMesh"
@@ -630,7 +660,7 @@ import lime.utils.UInt16Array;
 	 * Returns null by default, used by the class Mesh. 
 	 * Returned type : integer array 
 	 */
-	public function getIndices(copyWhenShared:Bool = false):Array<Int>/*UInt16Array*/ {
+	public function getIndices(copyWhenShared:Bool = false):Int32Array {
 		return null;
 	}
 
@@ -638,7 +668,7 @@ import lime.utils.UInt16Array;
 	 * Returns the array of the requested vertex data kind. Used by the class Mesh. Returns null here. 
 	 * Returned type : float array or Float32Array 
 	 */
-	public function getVerticesData(kind:String, copyWhenShared:Bool = false, forceCopy:Bool = false):Array<Float> /*Float32Array*/ {
+	public function getVerticesData(kind:String, copyWhenShared:Bool = false, forceCopy:Bool = false):Float32Array {
 		return null;
 	}
 	/**
@@ -666,7 +696,7 @@ import lime.utils.UInt16Array;
 	 * 
 	 * Returns the Mesh.  
 	 */
-	public function setVerticesData(kind:String, data:Array<Float>/*Float32Array*/, updatable:Bool = false, ?stride:Int) { }
+	public function setVerticesData(kind:String, data:Float32Array, updatable:Bool = false, ?stride:Int) { }
 
 	/**
 	 * Updates the existing vertex data of the mesh geometry for the requested `kind`.
@@ -692,7 +722,7 @@ import lime.utils.UInt16Array;
 	 * 
 	 * Returns the Mesh.  
 	 */
-	public function updateVerticesData(kind:String, data:Array<Float>, updateExtends:Bool = false, makeItUnique:Bool = false) { }
+	public function updateVerticesData(kind:String, data:Float32Array, updateExtends:Bool = false, makeItUnique:Bool = false) { }
 
 	/**
 	 * Sets the mesh indices.  
@@ -701,7 +731,7 @@ import lime.utils.UInt16Array;
 	 * This method creates a new index buffer each call.  
 	 * Returns the Mesh.  
 	 */
-	public function setIndices(indices:Array<Int>, totalVertices:Int = -1) { }
+	public function setIndices(indices:Int32Array, totalVertices:Int = -1) { }
 
 	/** Returns false by default, used by the class Mesh.  
 	 *  Returns a boolean
@@ -2232,7 +2262,7 @@ import lime.utils.UInt16Array;
 			p0 = facetPositions[fib];
 			
 			d = (x - p0.x) * norm.x + (y - p0.y) * norm.y + (z - p0.z) * norm.z;
-			if (checkFace == null || (checkFace != null && facing && d >= 0.0) || (checkFace != null && !facing && d <= 0.0)) {
+			if (!checkFace || (checkFace && facing && d >= 0.0) || (checkFace && !facing && d <= 0.0)) {
 				// compute (x,y,z) projection on the facet = (projx, projy, projz)
 				d = norm.x * p0.x + norm.y * p0.y + norm.z * p0.z; 
 				t0 = -(norm.x * x + norm.y * y + norm.z * z - d) / (norm.x * norm.x + norm.y * norm.y + norm.z * norm.z);
@@ -2287,13 +2317,13 @@ import lime.utils.UInt16Array;
 	public function createNormals(updatable:Bool) {
 		var positions = this.getVerticesData(VertexBuffer.PositionKind);
 		var indices = this.getIndices();
-		var normals:Array<Float>;// | Float32Array;
+		var normals:Float32Array = null;
 		
 		if (this.isVerticesDataPresent(VertexBuffer.NormalKind)) {
 			normals = this.getVerticesData(VertexBuffer.NormalKind);
 		} 
 		else {
-			normals = [];
+			normals = new Float32Array();
 		}
 		
 		VertexData.ComputeNormals(positions, indices, normals, { useRightHandedSystem: this.getScene().useRightHandedSystem });

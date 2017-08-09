@@ -9,6 +9,7 @@ import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.cameras.Camera;
+import lime.utils.Int32Array;
 
 import lime.utils.Float32Array;
 
@@ -306,7 +307,7 @@ class EdgesRenderer implements ISmartArrayCompatible {
 		this._buffers[VertexBuffer.PositionKind] = this._vb0;
 		this._buffers[VertexBuffer.NormalKind] = this._vb1;
 		
-		this._ib = engine.createIndexBuffer(this._linesIndices);
+		this._ib = engine.createIndexBuffer(new Int32Array(this._linesIndices));
 		
 		this._indicesCount = this._linesIndices.length;
 	}
