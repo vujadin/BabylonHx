@@ -20,12 +20,13 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 	 * Number of Simultaneous lights allowed on the material.
 	 */
 	@serialize()
-	//@expandToProperty(null)
+	//@expandToProperty("_markAllSubMeshesAsLightsDirty")
 	public var maxSimultaneousLights(get, set):Int;
 	inline private function get_maxSimultaneousLights():Int {
 		return _maxSimultaneousLights;
 	}
 	inline private function set_maxSimultaneousLights(value:Int):Int {
+		_markAllSubMeshesAsLightsDirty();
 		return _maxSimultaneousLights = value;
 	}
 
@@ -33,12 +34,13 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 	 * If sets to true, disables all the lights affecting the material.
 	 */
 	@serialize()
-	//@expandToProperty(null)
+	//@expandToProperty("_markAllSubMeshesAsLightsDirty")
 	public var disableLighting(get, set):Bool;
 	inline private function get_disableLighting():Bool {
 		return _disableLighting;
 	}
 	inline private function set_disableLighting(value:Bool):Bool {
+		_markAllSubMeshesAsLightsDirty();
 		return _disableLighting = value;
 	}
 
@@ -46,12 +48,13 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 	 * Environment Texture used in the material (this is use for both reflection and environment lighting).
 	 */
 	@serializeAsTexture()
-	//@expandToProperty(null, "_reflectionTexture")
+	//@expandToProperty("_markAllSubMeshesAsTexturesDirty", "_reflectionTexture")
 	public var environmentTexture(get, set):BaseTexture;
 	inline private function get_environmentTexture():BaseTexture {
 		return _reflectionTexture;
 	}
 	inline private function set_environmentTexture(value:BaseTexture):BaseTexture {
+		_markAllSubMeshesAsTexturesDirty();
 		return _reflectionTexture = value;
 	}
 
@@ -59,12 +62,13 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 	 * If sets to true, x component of normal map value will invert (x = 1.0 - x).
 	 */
 	@serialize()
-	//@expandToProperty(null)
+	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
 	public var invertNormalMapX(get, set):Bool;
 	inline private function get_invertNormalMapX():Bool {
 		return _invertNormalMapX;
 	}
 	inline private function set_invertNormalMapX(value:Bool):Bool {
+		_markAllSubMeshesAsTexturesDirty();
 		return _invertNormalMapX = value;
 	}
 
@@ -72,12 +76,13 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 	 * If sets to true, y component of normal map value will invert (y = 1.0 - y).
 	 */
 	@serialize()
-	//@expandToProperty(null)
+	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
 	public var invertNormalMapY(get, set):Bool;
 	inline private function get_invertNormalMapY():Bool {
 		return _invertNormalMapY;
 	}
 	inline private function set_invertNormalMapY(value:Bool):Bool {
+		_markAllSubMeshesAsTexturesDirty();
 		return _invertNormalMapY = value;
 	}
 
@@ -85,12 +90,13 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 	 * Normal map used in the model.
 	 */
 	@serializeAsTexture()
-	//@expandToProperty(null, "_bumpTexture")
+	//@expandToProperty("_markAllSubMeshesAsTexturesDirty", "_bumpTexture")
 	public var normalTexture(get, set):BaseTexture;
 	inline private function get_normalTexture():BaseTexture {
 		return _bumpTexture;
 	}
 	inline private function set_normalTexture(value:BaseTexture):BaseTexture {
+		_markAllSubMeshesAsTexturesDirty();
 		return _bumpTexture = value;
 	}
 
@@ -98,12 +104,13 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 	 * Emissivie color used to self-illuminate the model.
 	 */
 	@serializeAsColor3("emissive")
-	//@expandToProperty(null)
+	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
 	public var emissiveColor(get, set):Color3;
 	inline private function get_emissiveColor():Color3 {
 		return _emissiveColor;
 	}
 	inline private function set_emissiveColor(value:Color3):Color3 {
+		_markAllSubMeshesAsTexturesDirty();
 		return _emissiveColor = value;
 	}
 
@@ -111,12 +118,13 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 	 * Emissivie texture used to self-illuminate the model.
 	 */
 	@serializeAsTexture()
-	//@expandToProperty(null)
+	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
 	public var emissiveTexture(get, set):BaseTexture;
 	inline private function get_emissiveTexture():BaseTexture {
 		return _emissiveTexture;
 	}
 	inline private function set_emissiveTexture(value:BaseTexture):BaseTexture {
+		_markAllSubMeshesAsTexturesDirty();
 		return _emissiveTexture = value;
 	}
 
@@ -124,12 +132,13 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 	 * Occlusion Channel Strenght.
 	 */
 	@serialize()
-	//@expandToProperty(null, "_ambientTextureStrength")
+	//@expandToProperty("_markAllSubMeshesAsTexturesDirty", "_ambientTextureStrength")
 	public var occlusionStrength(get, set):Float;
 	inline private function get_occlusionStrength():Float {
 		return _ambientTextureStrength;
 	}
 	inline private function set_occlusionStrength(value:Float):Float {
+		_markAllSubMeshesAsTexturesDirty();
 		return _ambientTextureStrength = value;
 	}
 
@@ -137,12 +146,13 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 	 * Occlusion Texture of the material (adding extra occlusion effects).
 	 */
 	@serializeAsTexture()
-	//@expandToProperty(null, "_ambientTexture")
+	//@expandToProperty("_markAllSubMeshesAsTexturesDirty", "_ambientTexture")
 	public var occlusionTexture(get, set):BaseTexture;
 	inline private function get_occlusionTexture():BaseTexture {
 		return _ambientTexture;
 	}
 	inline private function set_occlusionTexture(value:BaseTexture):BaseTexture {
+		_markAllSubMeshesAsTexturesDirty();
 		return _ambientTexture = value;
 	}
 
@@ -150,12 +160,13 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 	 * Defines the alpha limits in alpha test mode.
 	 */
 	@serialize()
-	//@expandToProperty(null, "_alphaCutOff")
+	//@expandToProperty("_markAllSubMeshesAsTexturesDirty", "_alphaCutOff")
 	public var alphaCutOff(get, set):Float;
 	inline private function get_alphaCutOff():Float {
 		return _alphaCutOff;
 	}
 	inline private function set_alphaCutOff(value:Float):Float {
+		_markAllSubMeshesAsTexturesDirty();
 		return _alphaCutOff = value;
 	}
 
@@ -172,6 +183,9 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 	 * Sets the transparency mode of the material.
 	 */
 	private function set_transparencyMode(value:Int):Int {
+		if (this._transparencyMode == value) {
+			return;
+		}
 		this._transparencyMode = value;
 		if (value == PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND) {
 			this._forceAlphaTest = true;
@@ -179,6 +193,7 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 		else {
 			this._forceAlphaTest = false;
 		}
+		this._markAllSubMeshesAsTexturesDirty();
 		return value;
 	}
 
@@ -194,8 +209,12 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 	 * If sets to true and backfaceCulling is false, normals will be flipped on the backside.
 	 */
 	inline private function set_doubleSided(value:Bool):Bool {
+		if (this._twoSidedLighting == value) {
+			return;
+		}
 		this._twoSidedLighting = value;
 		this.backFaceCulling = !value;
+		this._markAllSubMeshesAsTexturesDirty();
 		return value;
 	}
 
@@ -231,6 +250,31 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 		return this._shouldUseAlphaFromAlbedoTexture() &&
 			 this._transparencyMode == PBRMaterial.PBRMATERIAL_ALPHATEST;
 	}
+	
+	/**
+	 * Return the active textures of the material.
+	 */
+	public function getActiveTextures():Array<BaseTexture> {
+		var activeTextures = super.getActiveTextures();
+		
+		if (this.environmentTexture != null) {
+			activeTextures.push(this.environmentTexture);
+		}
+		
+		if (this.normalTexture != null) {
+			activeTextures.push(this.normalTexture);
+		}
+		
+		if (this.emissiveTexture != null) {
+			activeTextures.push(this.emissiveTexture);
+		}
+		
+		if (this.occlusionTexture != null) {
+			activeTextures.push(this.occlusionTexture);
+		}
+		
+		return activeTextures;
+	}
 
 	/**
 	 * Instantiates a new PBRMaterial instance.
@@ -241,9 +285,11 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 	public function new(name:String, scene:Scene) {
 		super(name, scene);
 		
-		this._useEmissiveAsIllumination = true;
 		this._useAmbientInGrayScale = true;
-		this._useScalarInLinearSpace = true;
+	}
+	
+	override public function getClassName():String {
+		return "PBRBaseSimpleMaterial";
 	}
 	
 }

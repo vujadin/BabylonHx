@@ -25,15 +25,15 @@ import com.babylonhx.mesh.AbstractMesh;
 	
 	public var gravity:Vector3;
 
-	private var _currentPlugin:IPhysicsEnginePlugin;
+	private var _physicsPlugin:IPhysicsEnginePlugin;
 	
 
 	public function new(plugin:IPhysicsEnginePlugin) {
-		this._currentPlugin = plugin;
+		this._physicsPlugin = plugin;
 	}
 
 	public function _initialize(?gravity:Vector3) {
-		this._currentPlugin.initialize();
+		this._physicsPlugin.initialize();
 		this._setGravity(gravity);
 	}
 
@@ -45,45 +45,63 @@ import com.babylonhx.mesh.AbstractMesh;
 			delta = 1.0 / 60.0;
 		}
 		
-		this._currentPlugin.runOneStep(delta);
+		this._physicsPlugin.runOneStep(delta);
 	}
 
 	public function _setGravity(?gravity:Vector3):Void {
 		this.gravity = gravity != null ? gravity : new Vector3(0, -9.82, 0);
-		this._currentPlugin.setGravity(this.gravity);
+		this._physicsPlugin.setGravity(this.gravity);
+	}
+	
+	/**
+	 * Set the time step of the physics engine.
+	 * default is 1/60.
+	 * To slow it down, enter 1/600 for example.
+	 * To speed it up, 1/30
+	 * @param {number} newTimeStep the new timestep to apply to this world.
+	 */
+	public function setTimeStep(newTimeStep:Float = 1 / 60) {
+		this._physicsPlugin.setTimeStep(newTimeStep);
+	}
+
+	/**
+	 * Get the time step of the physics engine.
+	 */
+	public function getTimeStep():Float {
+		return this._physicsPlugin.getTimeStep();
 	}
 
 	public function _registerMesh(mesh:AbstractMesh, impostor:Int, options:PhysicsBodyCreationOptions):Dynamic {
-		return this._currentPlugin.registerMesh(mesh, impostor, options);
+		return this._physicsPlugin.registerMesh(mesh, impostor, options);
 	}
 
 	public function _registerMeshesAsCompound(parts:Array<PhysicsCompoundBodyPart>, options:PhysicsBodyCreationOptions):Dynamic {
-		return this._currentPlugin.registerMeshesAsCompound(parts, options);
+		return this._physicsPlugin.registerMeshesAsCompound(parts, options);
 	}
 
 	public function _unregisterMesh(mesh:AbstractMesh):Void {
-		this._currentPlugin.unregisterMesh(mesh);
+		this._physicsPlugin.unregisterMesh(mesh);
 	}
 
 	public function _applyImpulse(mesh:AbstractMesh, force:Vector3, contactPoint:Vector3):Void {
-		this._currentPlugin.applyImpulse(mesh, force, contactPoint);
+		this._physicsPlugin.applyImpulse(mesh, force, contactPoint);
 	}
 
 	public function _createLink(mesh1:AbstractMesh, mesh2:AbstractMesh, pivot1:Vector3, pivot2:Vector3, ?options:Dynamic):Bool {
-		return this._currentPlugin.createLink(mesh1, mesh2, pivot1, pivot2, options);
+		return this._physicsPlugin.createLink(mesh1, mesh2, pivot1, pivot2, options);
 	}
 
 	public function _updateBodyPosition(mesh:AbstractMesh):Void {
-		this._currentPlugin.updateBodyPosition(mesh);
+		this._physicsPlugin.updateBodyPosition(mesh);
 	}
 
 	public function dispose():Void {
-		this._currentPlugin.dispose();
+		this._physicsPlugin.dispose();
 	}
 
 	public function isSupported():Bool {
-		if (this._currentPlugin != null) {
-			return this._currentPlugin.isSupported();
+		if (this._physicsPlugin != null) {
+			return this._physicsPlugin.isSupported();
 		}
 		
 		return false;

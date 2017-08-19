@@ -37,7 +37,7 @@ import com.babylonhx.tools.Tools;
 	
 	private var _currentIndex:Int;
 	
-	private var _autoClearDepthStencil:Array<Map<String, Bool>> = [];	// original Array<RenderingManagerAutoClearOptions>
+	private var _autoClearDepthStencil:Array<RenderingManageAutoClearOptions> = [];	
 	private var _customOpaqueSortCompareFn:Array<SubMesh->SubMesh->Int> = [];
 	private var _customAlphaTestSortCompareFn:Array<SubMesh->SubMesh->Int> = [];
 	private var _customTransparentSortCompareFn:Array<SubMesh->SubMesh->Int> = [];
@@ -48,7 +48,7 @@ import com.babylonhx.tools.Tools;
 		this._scene = scene;
 		
 		for (i in RenderingManager.MIN_RENDERINGGROUPS...RenderingManager.MAX_RENDERINGGROUPS) {
-			this._autoClearDepthStencil[i] = ["autoClear" => true, "depth" => true, "stencil" => true];
+			this._autoClearDepthStencil[i] = new RenderingManageAutoClearOptions(true, true, true);
 		}
 	}
 
@@ -104,9 +104,11 @@ import com.babylonhx.tools.Tools;
 			}
 			
 			// Clear depth/stencil if needed
-			var autoClear = this._autoClearDepthStencil[index];
-			if (autoClear != null && autoClear["autoClear"]) {
-				this._clearDepthStencilBuffer(autoClear["depth"], autoClear["stencil"]);
+			if (RenderingManager.AUTOCLEAR) {
+				var autoClear = this._autoClearDepthStencil[index];
+				if (autoClear != null && autoClear.autoClear) {
+					this._clearDepthStencilBuffer(autoClear.depth, autoClear.stencil);
+				}
 			}
 			
 			if (observable != null) {
@@ -218,11 +220,9 @@ import com.babylonhx.tools.Tools;
 	 * @param stencil Automatically clears stencil between groups if true and autoClear is true.
 	 */
 	inline public function setRenderingAutoClearDepthStencil(renderingGroupId:Int, autoClearDepthStencil:Bool, depth:Bool = true, stencil:Bool = true) { 
-		this._autoClearDepthStencil[renderingGroupId] = [ 
-            "autoClear" => autoClearDepthStencil,
-            "depth" => depth,
-            "stencil" => stencil
-        ];
+		this._autoClearDepthStencil[renderingGroupId].autoClear = autoClearDepthStencil;
+        this._autoClearDepthStencil[renderingGroupId].depth = depth;
+        this._autoClearDepthStencil[renderingGroupId].stencil = stencil;
 	}
 	
 }

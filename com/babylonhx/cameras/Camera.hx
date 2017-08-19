@@ -9,6 +9,7 @@ import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.postprocess.PostProcess;
 import com.babylonhx.tools.SmartArray;
+import com.babylonhx.tools.Observable;
 import com.babylonhx.math.Tools;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.postprocess.AnaglyphPostProcess;
@@ -102,6 +103,11 @@ import com.babylonhx.animations.Animation;
 	public var _rigPostProcess:PostProcess;
 	
 	public var customRenderTargets:Array<RenderTargetTexture> = [];
+	
+	// Observables
+    public var onViewMatrixChangedObservable:Observable<Camera> = new Observable<Camera>();
+    public var onProjectionMatrixChangedObservable:Observable<Camera> = new Observable<Camera>();
+	public var onAfterCheckInputsObservable:Observable<Camera> = new Observable<Camera>();
 
 	// Cache
 	private var _computedViewMatrix:Matrix = Matrix.Identity();
@@ -274,7 +280,7 @@ import com.babylonhx.animations.Animation;
 	}
 	
 	public function _checkInputs() {
-    
+		this.onAfterCheckInputsObservable.notifyObservers(this);
 	}
 	
 	private function _cascadePostProcessesToRigCams() {
@@ -464,6 +470,11 @@ import com.babylonhx.animations.Animation;
 	}
 	
 	override public function dispose(doNotRecurse:Bool = false) {
+		// Observables
+        this.onViewMatrixChangedObservable.clear();
+        this.onProjectionMatrixChangedObservable.clear();
+        this.onAfterCheckInputsObservable.clear();
+		
 		// Animations
         this.getScene().stopAnimation(this);
 		

@@ -108,6 +108,26 @@ import com.babylonhx.Node;
 		return animation;
 	}
 	
+	/**
+	 * Sets up an animation.
+	 * @param property the property to animate
+	 * @param animationType the animation type to apply
+	 * @param easingFunction the easing function used in the animation
+	 * @returns The created animation
+	 */
+	public static function CreateAnimation(property:String, animationType:Int, framePerSecond:Int, easingFunction:EasingFunction):Animation {
+		var animation:Animation = new Animation(property + "Animation",
+			property,
+			framePerSecond,
+			animationType,
+			Animation.ANIMATIONLOOPMODE_CONSTANT
+		);
+		
+		animation.setEasingFunction(easingFunction);
+		
+		return animation;
+	}
+	
 	public static function CreateAndStartAnimation(name:String, node:Node, targetProperty:String, framePerSecond:Int, totalFrame:Int, from:Dynamic, to:Dynamic, ?loopMode:Int, ?easingFunction:EasingFunction, ?onAnimationEnd:Void->Void):Animatable {
 		var animation = Animation._PrepareAnimation(name, targetProperty, framePerSecond, totalFrame, from, to, loopMode, easingFunction);
 		
@@ -121,6 +141,49 @@ import com.babylonhx.Node;
 		
 		return node.getScene().beginAnimation(node, 0, totalFrame, (animation.loopMode == 1), 1.0, onAnimationEnd);
 	}
+	
+	/**
+		 * Transition property of the Camera to the target Value.
+		 * @param property The property to transition
+		 * @param targetValue The target Value of the property
+         * @param host The object where the property to animate belongs
+         * @param scene Scene used to run the animation
+         * @param frameRate Framerate (in frame/s) to use
+		 * @param transition The transition type we want to use
+		 * @param duration The duration of the animation, in milliseconds
+		 * @param onAnimationEnd Call back trigger at the end of the animation.
+		 */
+		public static function TransitionTo(property:String, targetValue:Dynamic, host:Dynamic, scene:Scene, frameRate:Int, transition:Animation, duration:Float, onAnimationEnd:Void->Void = null):Animatable {
+		if (duration <= 0) {
+			Reflect.setProperty(host, property, targetValue);
+			if (onAnimationEnd != null) {
+				onAnimationEnd();
+			}
+			return null;
+		}
+		
+		var endFrame:Int = Std.int(frameRate * (duration / 1000));
+		
+		transition.setKeys([{
+			frame: 0,
+			value: Reflect.getProperty(host, property).clone != null ? Reflect.getProperty(host, property).clone() : Reflect.getProperty(host, property)
+		},
+		{
+			frame: endFrame,
+			value: targetValue
+		}]);
+		
+		if (!Reflect.hasField(host, "animations")) {
+			Reflect.setProperty(host, "animations", []);
+		}
+		
+		untyped host.animations.push(transition);
+		
+		var animation:Animatable = scene.beginAnimation(host, 0, endFrame, false);
+		animation.onAnimationEnd = onAnimationEnd;
+		return animation;
+	}
+	
 
 	public function new(name:String, targetProperty:String, framePerSecond:Int, dataType:Int, loopMode:Int = -1, enableBlending:Bool = false) {
 		this.name = name;

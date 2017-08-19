@@ -22,7 +22,7 @@ class PBRMetallicRoughnessMaterial extends PBRBaseSimpleMaterial {
 	 * at normal incidence (F0). For a non-metal the base color represents the reflected diffuse color 
 	 * of the material.
 	 */
-	@serializeAsTexture()
+	@serializeAsColor3()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty", "_albedoColor")
 	public var baseColor(get, set):Color3;
 	inline private function get_baseColor():Color3 {
@@ -101,6 +101,7 @@ class PBRMetallicRoughnessMaterial extends PBRBaseSimpleMaterial {
 	 */
 	public function new(name:String, scene:Scene) {
 		super(name, scene);
+		this._useRoughnessFromMetallicTextureAlpha = false;
 		this._useRoughnessFromMetallicTextureGreen = true;
 		this._useMetallnessFromMetallicTextureBlue = true;
 	}
@@ -110,6 +111,45 @@ class PBRMetallicRoughnessMaterial extends PBRBaseSimpleMaterial {
 	 */
 	override public function getClassName():String {
 		return "PBRMetallicRoughnessMaterial";
+	}
+	
+	/**
+	 * Return the active textures of the material.
+	 */
+	public function getActiveTextures():Array<BaseTexture> {
+		var activeTextures = super.getActiveTextures();
+		
+		if (this.baseTexture != null) {
+			activeTextures.push(this.baseTexture);
+		}
+		
+		if (this.metallicRoughnessTexture != null) {
+			activeTextures.push(this.metallicRoughnessTexture);
+		}
+		
+		return activeTextures;
+	}
+
+	public function hasTexture(texture:BaseTexture):Bool {
+		if (super.hasTexture(texture)) {
+			return true;
+		}
+		
+		if (this.baseTexture == texture) {
+			return true;
+		}
+		
+		if (this.metallicRoughnessTexture == texture) {
+			return true;
+		}  
+		
+		return false;    
+	}
+	
+	public function clone(name:String):PBRMetallicRoughnessMaterial {
+		// VK TODO:
+		//return SerializationHelper.Clone(() => new PBRMetallicRoughnessMaterial(name, this.getScene()), this);
+		return null;
 	}
 
 	/**

@@ -63,6 +63,7 @@ import com.babylonhx.math.Tools;
 
 	
 	public function new(name:String, direction:Vector2, kernel:Float, options:Dynamic, camera:Camera, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, ?engine:Engine, reusable:Bool = false, textureType:Int = Engine.TEXTURETYPE_UNSIGNED_INT) {
+		this.direction = direction;
 		super(name, "kernelBlur", ["delta", "direction"], null, options, camera, samplingMode, engine, reusable, null, textureType, "kernelBlur", {varyingCount: 0, depCount: 0}, true);
 		this.onApplyObservable.add(function(effect:Effect, _) {
 			effect.setFloat2('delta', (1 / this.width) * this.direction.x, (1 / this.height) * this.direction.y);

@@ -63,7 +63,28 @@ import lime.utils.UInt8Array;
 	}
 	inline private function get_coordinatesMode():Int {
 		return this._coordinatesMode;
-	}            
+	}
+	
+	@serialize()
+	public var uOffset:Float = 0;
+	
+	@serialize()
+	public var vOffset:Float = 0;
+	
+	@serialize()
+	public var uScale:Float = 1.0;
+	
+	@serialize()
+	public var vScale:Float = 1.0;
+	
+	@serialize()
+	public var uAng:Float = 0;
+	
+	@serialize()
+	public var vAng:Float = 0;
+	
+	@serialize()
+	public var wAng:Float = 0;
 
 	@serialize()
 	public var wrapU:Int = Texture.WRAP_ADDRESSMODE;

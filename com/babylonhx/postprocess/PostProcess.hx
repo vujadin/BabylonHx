@@ -328,11 +328,11 @@ typedef PostProcessOption = {
 		
 		if (this.enablePixelPerfectMode) {
 			this._scaleRatio.copyFromFloats(requiredWidth / desiredWidth, requiredHeight / desiredHeight);
-			this._engine.bindFramebuffer(target, 0, requiredWidth, requiredHeight);
+			this._engine.bindFramebuffer(target, 0, requiredWidth, requiredHeight, true);
 		}
 		else {
 			this._scaleRatio.copyFromFloats(1, 1);
-			this._engine.bindFramebuffer(target);
+			this._engine.bindFramebuffer(target, 0, null, null, true);
 		}
 		
 		this.onActivateObservable.notifyObservers(camera);

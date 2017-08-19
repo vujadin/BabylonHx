@@ -1,5 +1,8 @@
 package com.babylonhx.cameras;
 
+import com.babylonhx.behaviors.cameras.BouncingBehavior;
+import com.babylonhx.behaviors.cameras.FramingBehavior;
+import com.babylonhx.behaviors.cameras.AutoRotationBehavior;
 import com.babylonhx.collisions.Collider;
 import com.babylonhx.math.Axis;
 import com.babylonhx.math.Matrix;
@@ -9,6 +12,7 @@ import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.math.Tools;
 import com.babylonhx.utils.Keycodes;
+import com.babylonhx.tools.Observable;
 
 
 /**
@@ -77,6 +81,72 @@ import com.babylonhx.utils.Keycodes;
 	private var _transformedDirection:Vector3;
 	private var _isRightClick:Bool = false;
 	private var _isCtrlPushed:Bool = false;
+	
+	// Behaviors
+	private var _bouncingBehavior:BouncingBehavior;
+	public var useBouncingBehavior(get, set):Bool;
+	private function get_useBouncingBehavior():Bool {
+		return this._bouncingBehavior != null;
+	}
+	private function set_useBouncingBehavior(value:Bool):Bool {
+		if (value == this.useBouncingBehavior) {
+			return value;
+		}
+		
+		if (value) {
+			this._bouncingBehavior = new BouncingBehavior();
+			this.addBehavior(cast this._bouncingBehavior);
+		} 
+		else {
+			this.removeBehavior(cast this._bouncingBehavior);
+			this._bouncingBehavior = null;
+		}
+		return value;
+	}
+	
+	private var _framingBehavior:FramingBehavior;
+	public var useFramingBehavior(get, set):Bool;
+	inline private function get_useFramingBehavior():Bool {
+		return this._framingBehavior != null;
+	}
+	private function set_useFramingBehavior(value:Bool):Bool {
+		if (value == this.useFramingBehavior) {
+			return value;
+		}
+		
+		if (value) {
+			this._framingBehavior = new FramingBehavior();
+			this.addBehavior(cast this._framingBehavior);
+		}
+		else {
+			this.removeBehavior(cast this._framingBehavior);
+			this._framingBehavior = null;
+		}
+		return value;
+	}
+
+	private var _autoRotationBehavior:AutoRotationBehavior;
+	public var useAutoRotationBehavior(get, set):Bool; 
+	inline private function get_useAutoRotationBehavior():Bool {
+		return this._autoRotationBehavior != null;
+	}
+	private function set_useAutoRotationBehavior(value:Bool):Bool {
+		if (value == this.useAutoRotationBehavior) {
+			return value;
+		}
+		
+		if (value) {
+			this._autoRotationBehavior = new AutoRotationBehavior();
+			this.addBehavior(cast this._autoRotationBehavior);
+		} 
+		else {
+			this.removeBehavior(cast this._autoRotationBehavior);
+			this._autoRotationBehavior = null;
+		}
+		return value;
+	}
+	
+	public var onMeshTargetChangedObservable:Observable<AbstractMesh> = new Observable<AbstractMesh>();
 
 	// Collisions
 	public var onCollide:AbstractMesh->Void;
@@ -92,25 +162,45 @@ import com.babylonhx.utils.Keycodes;
 	//due to async collision inspection
 	private var _collisionTriggered:Bool;
 	
-	public var alpha:Float;
-	public var beta:Float;
-	public var radius:Float;
-	public var target:Dynamic;
+	public var alpha:Float = 0;
+	public var beta:Float = 0;
+	public var radius:Float = 0;
+	
+	@serializeAsVector3("target")
+	private var _target:Dynamic;
+	private var _targetHost:AbstractMesh;
+	
+	public var target(get, set):Dynamic;
+	inline private function get_target():Dynamic {
+		return this._target;
+	}
+	inline private function set_target(value:Dynamic):Dynamic {
+		this.setTarget(value);
+		return value;
+	}
+	
+	private var _targetBoundingCenter:Vector3;
 	
 
 	public function new(name:String, alpha:Float, beta:Float, radius:Float, target:Dynamic, scene:Scene) {
 		super(name, Vector3.Zero(), scene);
 		
+		this._target = Vector3.Zero();
+		if (target != null) {
+			this.setTarget(target);
+		}
+		
 		this.alpha = alpha;
 		this.beta = beta;
 		this.radius = radius;
-		this.target = target != null ? (target.position != null ? target.position.clone() : target.clone()) : Vector3.Zero();
 		
-		this.getViewMatrix();	
+		this.getViewMatrix();
+		//this.inputs = new ArcRotateCameraInputsManager(this);
+		//this.inputs.addKeyboard().addMouseWheel().addPointers();	
 	}
 
 	public function _getTargetPosition():Vector3 {
-		return this.target.getAbsolutePosition != null ? this.target.getAbsolutePosition() : this.target;
+		return /*this.target.getAbsolutePosition != null ? this.target.getAbsolutePosition() : */this.target;
 	}
 
 	// Cache
@@ -585,6 +675,10 @@ import com.babylonhx.utils.Keycodes;
 		var radiusv3 = this.position.subtract(this._getTargetPosition());
 		this.radius = radiusv3.length();
 		
+		if (this.radius == 0) {
+			this.radius = 0.0001; // Just to avoid division by zero
+		}
+		
 		// Alpha
 		this.alpha = Math.acos(radiusv3.x / Math.sqrt(Math.pow(radiusv3.x, 2) + Math.pow(radiusv3.z, 2)));
 		
@@ -608,11 +702,30 @@ import com.babylonhx.utils.Keycodes;
 		this.rebuildAnglesAndRadius();
 	}
 	
-	override public function setTarget(target:Vector3) {
-		if (this.target.equals(target)) {
-			return;
+	override public function setTarget(target:Dynamic/*AbstractMesh | Vector3*/, toBoundingCenter:Bool = false, allowSamePosition:Bool = false) {
+		if (Std.is(target, AbstractMesh)) {
+			if (toBoundingCenter){
+				this._targetBoundingCenter = cast(target, AbstractMesh).getBoundingInfo().boundingBox.centerWorld.clone();
+			} 
+			else {
+				this._targetBoundingCenter = null;
+			}
+			this._targetHost = cast target;
+			this._target = this._getTargetPosition();
+			
+			this.onMeshTargetChangedObservable.notifyObservers(this._targetHost);
+		} 
+		else {
+			var newTarget:Vector3 = cast target;
+			var currentTarget = this._getTargetPosition();
+			if (currentTarget != null && !allowSamePosition && currentTarget.equals(newTarget)) {
+			    return;
+			}
+			this._target = newTarget;
+			this._targetBoundingCenter = null;
+			this.onMeshTargetChangedObservable.notifyObservers(null);
 		}
-		this.target = target;
+		
 		this.rebuildAnglesAndRadius();
 	}
 

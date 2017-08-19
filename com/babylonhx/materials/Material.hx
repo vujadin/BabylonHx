@@ -326,6 +326,12 @@ import haxe.Timer;
 
 	public function _afterBind(mesh:Mesh, ?effect:Effect) {
 		this._scene._cachedMaterial = this;
+		if (mesh != null) {
+            this._scene._cachedVisibility = mesh.visibility;
+        } 
+		else {
+            this._scene._cachedVisibility = 1;
+        }
 		
 		this.onBindObservable.notifyObservers(mesh);
 		

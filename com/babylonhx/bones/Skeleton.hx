@@ -4,6 +4,7 @@ import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.tools.Tools;
+import com.babylonhx.tools.Observable;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.animations.Animation;
@@ -35,10 +36,18 @@ import haxe.ds.Vector;
 	private var _meshesWithPoseMatrix:Array<AbstractMesh> = [];
 	private var _animatables:Array<IAnimatable>;
 	private var _identity:Matrix = Matrix.Identity();
+	private var _synchronizedWithMesh:AbstractMesh;
 	
 	private var _ranges:Map<String, AnimationRange> = new Map();
 	
 	private var _lastAbsoluteTransformsUpdateId:Int = -1;
+	
+	// Events
+	/**
+	 * An event triggered before computing the skeleton's matrices
+	 * @type {BABYLON.Observable}
+	 */
+	public var onBeforeComputeObservable:Observable<Skeleton> = new Observable<Skeleton>();
 	
 	public var __smartArrayFlags:Array<Int> = [];
 	
@@ -245,9 +254,11 @@ import haxe.ds.Vector;
 	}
 	
 	public function _computeTransformMatrices(targetMatrix:Float32Array, ?initialSkinMatrix:Matrix) {
+		this.onBeforeComputeObservable.notifyObservers(this);
+		
 		for (index in 0...this.bones.length) {
-			var bone = this.bones[index];
-			var parentBone = bone.getParent();
+			var bone:Bone = this.bones[index];
+			var parentBone:Bone = bone.getParent();
 			
 			if (parentBone != null) {
 				bone.getLocalMatrix().multiplyToRef(parentBone.getWorldMatrix(), bone.getWorldMatrix());
@@ -261,7 +272,10 @@ import haxe.ds.Vector;
 				}
 			}
 			
-			bone.getInvertedAbsoluteTransform().multiplyToArray(bone.getWorldMatrix(), targetMatrix, cast (index * 16));
+			if (bone._index != -1) {
+				var mappedIndex = bone._index == null ? index : bone._index;
+				bone.getInvertedAbsoluteTransform().multiplyToArray(bone.getWorldMatrix(), targetMatrix, Std.int(mappedIndex * 16));
+			}
 		}
 		
 		this._identity.copyToFloat32Array(targetMatrix, this.bones.length * 16);
@@ -276,20 +290,24 @@ import haxe.ds.Vector;
 			for (index in 0...this._meshesWithPoseMatrix.length) {
 				var mesh = this._meshesWithPoseMatrix[index];
 				
-				if (mesh._bonesTransformMatrices == null || mesh._bonesTransformMatrices.length != 16 * (this.bones.length + 1)) {
+				var poseMatrix = mesh.getPoseMatrix();
+				
+				if (mesh._bonesTransformMatrices == null || mesh._bonesTransformMatrices.length != (16 * (this.bones.length + 1))) {
 					mesh._bonesTransformMatrices = new Float32Array(16 * (this.bones.length + 1));
 				}
 				
-				var poseMatrix = mesh.getPoseMatrix();
-				
-				// Prepare bones
-				for (boneIndex in 0...this.bones.length) {
-					var bone = this.bones[boneIndex];
+				if (this._synchronizedWithMesh != mesh) {
+                    this._synchronizedWithMesh = mesh;
 					
-					if (bone.getParent() == null) {
-						var matrix = bone.getBaseMatrix();
-						matrix.multiplyToRef(poseMatrix, com.babylonhx.math.Tmp.matrix[0]);
-						bone._updateDifferenceMatrix(com.babylonhx.math.Tmp.matrix[0]);
+					// Prepare bones
+					for (boneIndex in 0...this.bones.length) {
+						var bone = this.bones[boneIndex];
+						
+						if (bone.getParent() == null) {
+							var matrix = bone.getBaseMatrix();
+							matrix.multiplyToRef(poseMatrix, com.babylonhx.math.Tmp.matrix[1]);
+							bone._updateDifferenceMatrix(com.babylonhx.math.Tmp.matrix[1]);
+						}
 					}
 				}
 				
@@ -297,7 +315,7 @@ import haxe.ds.Vector;
 			}
 		} 
 		else {
-			if (this._transformMatrices == null || this._transformMatrices.length != 16 * (this.bones.length + 1)) {
+			if (this._transformMatrices == null || this._transformMatrices.length != (16 * (this.bones.length + 1))) {
 				this._transformMatrices = new Float32Array(16 * (this.bones.length + 1));
 			}
 			
@@ -380,6 +398,36 @@ import haxe.ds.Vector;
 		}
 		
 		return poseMatrix;
+	}
+	
+	public function sortBones() {
+		var bones:Array<Bone> = [];
+		var visited:Array<Bool> = [];
+		for (index in 0...this.bones.length) {
+			this._sortBones(index, bones, visited);
+		}
+		
+		this.bones = bones;
+	}
+
+	private function _sortBones(index:Int, bones:Array<Bone>, visited:Array<Bool>) {
+		if (visited[index]) {
+			return;
+		}
+		
+		visited[index] = true;
+		
+		var bone = this.bones[index];
+		if (bone._index == null) {
+			bone._index = index;
+		}
+		
+		var parentBone = bone.getParent();
+		if (parentBone != null) {
+			this._sortBones(this.bones.indexOf(parentBone), bones, visited);
+		}
+		
+		bones.push(bone);
 	}
 	
 	public function dispose(_:Bool = false) {

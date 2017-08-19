@@ -9,6 +9,7 @@ import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.shaderbuilder.ShaderSetting;
 import com.babylonhx.materials.textures.Texture;
+import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.VertexBuffer;
@@ -41,6 +42,7 @@ import lime.utils.Float32Array;
 	private var _floats:Map<String, Float> = new Map();
 	private var _floatsArrays:Map<String, Array<Float>> = new Map();
 	private var _colors3:Map<String, Color3> = new Map();
+	private var _colors3Arrays:Map<String, Array<Float>> = new Map();
 	private var _colors4:Map<String, Color4> = new Map();
 	private var _vectors2:Map<String, Vector2> = new Map();
 	private var _vectors3:Map<String, Vector3> = new Map();
@@ -73,6 +75,10 @@ import lime.utils.Float32Array;
 		options.defines = options.defines != null ? options.defines : [];
 		
 		this._options = options;
+	}
+	
+	override public function getClassName():String {
+		return "ShaderMaterial";
 	}
 
 	override public function needAlphaBlending():Bool {
@@ -128,6 +134,16 @@ import lime.utils.Float32Array;
 		this._checkUniform(name);
 		this._colors3[name] = value;
 		
+		return this;
+	}
+	
+	public function setColor3Array(name:String, value:Array<Color3>):ShaderMaterial {
+		this._checkUniform(name);
+		var arr:Array<Float> = [];
+		for (c in value) {
+			arr = arr.concat(c.asArray());
+		}
+		this._colors3Arrays[name] = arr;
 		return this;
 	}
 
@@ -227,6 +243,11 @@ import lime.utils.Float32Array;
 			attribs.push(this._options.attributes[index]);
 		}
 		
+		if (mesh != null && mesh.isVerticesDataPresent(VertexBuffer.ColorKind)) {
+			attribs.push(VertexBuffer.ColorKind);
+			defines.push("#define VERTEXCOLOR");
+		}
+		
 		// Bones
 		if (mesh != null && mesh.useBones && mesh.computeBonesUsingShaders) {
 			attribs.push(VertexBuffer.MatricesIndicesKind);
@@ -238,6 +259,10 @@ import lime.utils.Float32Array;
 			defines.push("#define NUM_BONE_INFLUENCERS " + mesh.numBoneInfluencers);
 			defines.push("#define BonesPerMesh " + (mesh.skeleton.bones.length + 1));
 			fallbacks.addCPUSkinningFallback(0, mesh);
+			
+			if (this._options.uniforms.indexOf("mBones") == -1) {
+				this._options.uniforms.push("mBones");
+			}
 		}
 		else {
 			defines.push("#define NUM_BONE_INFLUENCERS 0");
@@ -344,6 +369,10 @@ import lime.utils.Float32Array;
 				this._effect.setColor3(name, this._colors3[name]);
 			}
 			
+			for (name in this._colors3Arrays.keys()) {
+				this._effect.setArray3(name, this._colors3Arrays[name]);
+			}
+			
 			// Color4      
 			for (name in this._colors4.keys()) {
 				var color = this._colors4[name];
@@ -387,6 +416,46 @@ import lime.utils.Float32Array;
 		}
 		
 		this._afterBind(mesh);
+	}
+	
+	override public function getActiveTextures():Array<BaseTexture> {
+		var activeTextures = super.getActiveTextures();
+		
+		for (name in this._textures.keys()) {
+			activeTextures.push(this._textures[name]);
+		}
+		
+		for (name in this._textureArrays.keys()) {
+			var array = this._textureArrays[name];
+			for (index in 0...array.length) {
+				activeTextures.push(array[index]);
+			}
+		}
+		
+		return activeTextures;
+	}
+
+	override public function hasTexture(texture:BaseTexture):Bool {
+		if (super.hasTexture(texture)) {
+			return true;
+		}
+		
+		for (name in this._textures.keys()) {
+			if (this._textures[name] == texture) {
+				return true;
+			}
+		}
+		
+		for (name in this._textureArrays.keys()) {
+			var array = this._textureArrays[name];
+			for (index in 0...array.length) {
+				if (array[index] == texture) {
+					return true;
+				}
+			}
+		}
+		
+		return false;    
 	}
 	
 	override public function clone(name:String, cloneChildren:Bool = false):ShaderMaterial {

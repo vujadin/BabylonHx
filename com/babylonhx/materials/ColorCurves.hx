@@ -40,32 +40,32 @@ class ColorCurves {
 	@serialize()
 	private var _globalExposure:Float = 0;
 	
-	public var GlobalHue(get, set):Float;
+	public var globalHue(get, set):Float;
 	/**
 	 * Gets the global Hue value.
 	 * The hue value is a standard HSB hue in the range [0,360] where 0=red, 120=green and 240=blue. The default value is 30 degrees (orange).
 	 */
-	private function get_GlobalHue():Float {
+	private function get_globalHue():Float {
 		return this._globalHue;
 	}
 	/**
 	 * Sets the global Hue value.
 	 * The hue value is a standard HSB hue in the range [0,360] where 0=red, 120=green and 240=blue. The default value is 30 degrees (orange).
 	 */
-	private function set_GlobalHue(value:Float):Float {
+	private function set_globalHue(value:Float):Float {
 		this._globalHue = value;
 		this._dirty = true;
 		
 		return value;
 	}
 	
-	public var GlobalDensity(get, set):Float;
+	public var globalDensity(get, set):Float;
 	/**
 	 * Gets the global Density value.
 	 * The density value is in range [-100,+100] where 0 means the color filter has no effect and +100 means the color filter has maximum effect. 
 	 * Values less than zero provide a filter of opposite hue.
 	 */
-	private function get_GlobalDensity():Float {
+	private function get_globalDensity():Float {
 		return this._globalDensity;
 	}
 	/**
@@ -73,26 +73,26 @@ class ColorCurves {
 	 * The density value is in range [-100,+100] where 0 means the color filter has no effect and +100 means the color filter has maximum effect. 
 	 * Values less than zero provide a filter of opposite hue.
 	 */
-	private function set_GlobalDensity(value:Float):Float {
+	private function set_globalDensity(value:Float):Float {
 		this._globalDensity = value;
 		this._dirty = true;
 		
 		return value;
 	}
 	
-	public var GlobalSaturation(get, set):Float;
+	public var globalSaturation(get, set):Float;
 	/**
 	 * Gets the global Saturation value.
 	 * This is an adjustment value in the range [-100,+100], where the default value of 0.0 makes no adjustment, positive values increase saturation and negative values decrease saturation.
 	 */
-	private function get_GlobalSaturation():Float {
+	private function get_globalSaturation():Float {
 		return this._globalSaturation;
 	}
 	/**
 	 * Sets the global Saturation value.
 	 * This is an adjustment value in the range [-100,+100], where the default value of 0.0 makes no adjustment, positive values increase saturation and negative values decrease saturation.
 	 */
-	private function set_GlobalSaturation(value:Float):Float {
+	private function set_globalSaturation(value:Float):Float {
 		this._globalSaturation = value;
 		this._dirty = true;
 		
@@ -111,32 +111,32 @@ class ColorCurves {
 	@serialize()
 	private var _highlightsExposure:Float = 0;
 	
-	public var HighlightsHue(get, set):Float;
+	public var highlightsHue(get, set):Float;
 	/**
 	 * Gets the highlights Hue value.
 	 * The hue value is a standard HSB hue in the range [0,360] where 0=red, 120=green and 240=blue. The default value is 30 degrees (orange).
 	 */
-	private function get_HighlightsHue():Float {
+	private function get_highlightsHue():Float {
 		return this._highlightsHue;
 	}
 	/**
 	 * Sets the highlights Hue value.
 	 * The hue value is a standard HSB hue in the range [0,360] where 0=red, 120=green and 240=blue. The default value is 30 degrees (orange).
 	 */
-	private function set_HighlightsHue(value:Float):Float {
+	private function set_highlightsHue(value:Float):Float {
 		this._highlightsHue = value;
 		this._dirty = true;
 		
 		return value;
 	}
 	
-	public var HighlightsDensity(get, set):Float;
+	public var highlightsDensity(get, set):Float;
 	/**
 	 * Gets the highlights Density value.
 	 * The density value is in range [-100,+100] where 0 means the color filter has no effect and +100 means the color filter has maximum effect. 
 	 * Values less than zero provide a filter of opposite hue.
 	 */
-	private function get_HighlightsDensity():Float {
+	private function get_highlightsDensity():Float {
 		return this._highlightsDensity;
 	}
 	/**
@@ -144,45 +144,45 @@ class ColorCurves {
 	 * The density value is in range [-100,+100] where 0 means the color filter has no effect and +100 means the color filter has maximum effect. 
 	 * Values less than zero provide a filter of opposite hue.
 	 */
-	private function set_HighlightsDensity(value:Float):Float {
+	private function set_highlightsDensity(value:Float):Float {
 		this._highlightsDensity = value;
 		this._dirty = true;
 		
 		return value;
 	}
 	
-	public var HighlightsSaturation(get, set):Float;
+	public var highlightsSaturation(get, set):Float;
 	/**
 	 * Gets the highlights Saturation value.
 	 * This is an adjustment value in the range [-100,+100], where the default value of 0.0 makes no adjustment, positive values increase saturation and negative values decrease saturation.
 	 */
-	private function get_HighlightsSaturation():Float {
+	private function get_highlightsSaturation():Float {
 		return this._highlightsSaturation;
 	}
 	/**
 	 * Sets the highlights Saturation value.
 	 * This is an adjustment value in the range [-100,+100], where the default value of 0.0 makes no adjustment, positive values increase saturation and negative values decrease saturation.
 	 */
-	private function set_HighlightsSaturation(value:Float):Float {
+	private function set_highlightsSaturation(value:Float):Float {
 		this._highlightsSaturation = value;
 		this._dirty = true;
 		
 		return value;
 	}
 	
-	public var HighlightsExposure(get, set):Float;
+	public var highlightsExposure(get, set):Float;
 	/**
 	 * Gets the highlights Exposure value.
 	 * This is an adjustment value in the range [-100,+100], where the default value of 0.0 makes no adjustment, positive values increase exposure and negative values decrease exposure.
 	 */
-	private function get_HighlightsExposure():Float {
+	private function get_highlightsExposure():Float {
 		return this._highlightsExposure;
 	}
 	/**
 	 * Sets the highlights Exposure value.
 	 * This is an adjustment value in the range [-100, +100], where the default value of 0.0 makes no adjustment, positive values increase exposure and negative values decrease exposure.
 	 */
-	private function set_HighlightsExposure(value:Float):Float {
+	private function set_highlightsExposure(value:Float):Float {
 		this._highlightsExposure = value;
 		this._dirty = true;
 		
@@ -201,32 +201,32 @@ class ColorCurves {
 	@serialize()
 	private var _midtonesExposure:Float = 0;
 	
-	public var MidtonesHue(get, set):Float;
+	public var hidtonesHue(get, set):Float;
 	/**
 	 * Gets the midtones Hue value.
 	 * The hue value is a standard HSB hue in the range [0, 360] where 0=red, 120=green and 240=blue. The default value is 30 degrees (orange).
 	 */
-	private function get_MidtonesHue():Float {
+	private function get_hidtonesHue():Float {
 		return this._midtonesHue;
 	}
 	/**
 	 * Sets the midtones Hue value.
 	 * The hue value is a standard HSB hue in the range [0, 360] where 0=red, 120=green and 240=blue. The default value is 30 degrees (orange).
 	 */
-	private function set_MidtonesHue(value:Float):Float {
+	private function set_hidtonesHue(value:Float):Float {
 		this._midtonesHue = value;
 		this._dirty = true;
 		
 		return value;
 	}
 	
-	public var MidtonesDensity(get, set):Float;
+	public var midtonesDensity(get, set):Float;
 	/**
 	 * Gets the midtones Density value.
 	 * The density value is in range [-100, +100] where 0 means the color filter has no effect and +100 means the color filter has maximum effect. 
 	 * Values less than zero provide a filter of opposite hue.
 	 */
-	private function get_MidtonesDensity():Float {
+	private function get_midtonesDensity():Float {
 		return this._midtonesDensity;
 	}
 	/**
@@ -234,45 +234,45 @@ class ColorCurves {
 	 * The density value is in range [-100, +100] where 0 means the color filter has no effect and +100 means the color filter has maximum effect. 
 	 * Values less than zero provide a filter of opposite hue.
 	 */
-	private function set_MidtonesDensity(value:Float):Float {
+	private function set_midtonesDensity(value:Float):Float {
 		this._midtonesDensity = value;
 		this._dirty = true;
 		
 		return value;
 	}
 	
-	public var MidtonesSaturation(get, set):Float;
+	public var midtonesSaturation(get, set):Float;
 	/**
 	 * Gets the midtones Saturation value.
 	 * This is an adjustment value in the range [-100, +100], where the default value of 0.0 makes no adjustment, positive values increase saturation and negative values decrease saturation.
 	 */
-	private function get_MidtonesSaturation():Float {
+	private function get_midtonesSaturation():Float {
 		return this._midtonesSaturation;
 	}
 	/**
 	 * Sets the midtones Saturation value.
 	 * This is an adjustment value in the range [-100, +100], where the default value of 0.0 makes no adjustment, positive values increase saturation and negative values decrease saturation.
 	 */
-	private function set_MidtonesSaturation(value:Float):Float {
+	private function set_midtonesSaturation(value:Float):Float {
 		this._midtonesSaturation = value;
 		this._dirty = true;
 		
 		return value;
 	}
 	
-	public var MidtonesExposure(get, set):Float;
+	public var midtonesExposure(get, set):Float;
 	/**
 	 * Gets the midtones Exposure value.
 	 * This is an adjustment value in the range [-100, +100], where the default value of 0.0 makes no adjustment, positive values increase exposure and negative values decrease exposure.
 	 */
-	private function get_MidtonesExposure():Float {
+	private function get_midtonesExposure():Float {
 		return this._midtonesExposure;
 	}
 	/**
 	 * Sets the midtones Exposure value.
 	 * This is an adjustment value in the range [-100, +100], where the default value of 0.0 makes no adjustment, positive values increase exposure and negative values decrease exposure.
 	 */
-	private function set_MidtonesExposure(value:Float):Float {
+	private function set_midtonesExposure(value:Float):Float {
 		this._midtonesExposure = value;
 		this._dirty = true;
 		
@@ -284,32 +284,32 @@ class ColorCurves {
 	private var _shadowsSaturation:Float = 0;
 	private var _shadowsExposure:Float = 0;
 	
-	public var ShadowsHue(get, set):Float;
+	public var shadowsHue(get, set):Float;
 	/**
 	 * Gets the shadows Hue value.
 	 * The hue value is a standard HSB hue in the range [0, 360] where 0=red, 120=green and 240=blue. The default value is 30 degrees (orange).
 	 */
-	private function get_ShadowsHue():Float {
+	private function get_shadowsHue():Float {
 		return this._shadowsHue;
 	}
 	/**
 	 * Sets the shadows Hue value.
 	 * The hue value is a standard HSB hue in the range [0, 360] where 0=red, 120=green and 240=blue. The default value is 30 degrees (orange).
 	 */
-	private function set_ShadowsHue(value:Float):Float {
+	private function set_shadowsHue(value:Float):Float {
 		this._shadowsHue = value;
 		this._dirty = true;
 		
 		return value;
 	}
 	
-	public var ShadowsDensity(get, set):Float;
+	public var shadowsDensity(get, set):Float;
 	/**
 	 * Gets the shadows Density value.
 	 * The density value is in range [-100, +100] where 0 means the color filter has no effect and +100 means the color filter has maximum effect. 
 	 * Values less than zero provide a filter of opposite hue.
 	 */
-	private function get_ShadowsDensity():Float {
+	private function get_shadowsDensity():Float {
 		return this._shadowsDensity;
 	}
 	/**
@@ -317,45 +317,45 @@ class ColorCurves {
 	 * The density value is in range [-100, +100] where 0 means the color filter has no effect and +100 means the color filter has maximum effect. 
 	 * Values less than zero provide a filter of opposite hue.
 	 */
-	private function set_ShadowsDensity(value:Float):Float {
+	private function set_shadowsDensity(value:Float):Float {
 		this._shadowsDensity = value;
 		this._dirty = true;
 		
 		return value;
 	}
 	
-	public var ShadowsSaturation(get, set):Float;
+	public var shadowsSaturation(get, set):Float;
 	/**
 	 * Gets the shadows Saturation value.
 	 * This is an adjustment value in the range [-100, +100], where the default value of 0.0 makes no adjustment, positive values increase saturation and negative values decrease saturation.
 	 */
-	private function get_ShadowsSaturation():Float {
+	private function get_shadowsSaturation():Float {
 		return this._shadowsSaturation;
 	}
 	/**
 	 * Sets the shadows Saturation value.
 	 * This is an adjustment value in the range [-100, +100], where the default value of 0.0 makes no adjustment, positive values increase saturation and negative values decrease saturation.
 	 */
-	private function set_ShadowsSaturation(value:Float):Float {
+	private function set_shadowsSaturation(value:Float):Float {
 		this._shadowsSaturation = value;
 		this._dirty = true;
 		
 		return value;
 	}
 	
-	public var ShadowsExposure(get, set):Float;
+	public var shadowsExposure(get, set):Float;
 	/**
 	 * Gets the shadows Exposure value.
 	 * This is an adjustment value in the range [-100, +100], where the default value of 0.0 makes no adjustment, positive values increase exposure and negative values decrease exposure.
 	 */
-	private function get_ShadowsExposure():Float {
+	private function get_shadowsExposure():Float {
 		return this._shadowsExposure;
 	}
 	/**
 	 * Sets the shadows Exposure value.
 	 * This is an adjustment value in the range [-100, +100], where the default value of 0.0 makes no adjustment, positive values increase exposure and negative values decrease exposure.
 	 */
-	private function set_ShadowsExposure(value:Float):Float {
+	private function set_shadowsExposure(value:Float):Float {
 		this._shadowsExposure = value;
 		this._dirty = true;
 		

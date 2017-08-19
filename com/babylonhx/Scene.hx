@@ -307,6 +307,18 @@ import com.babylonhx.audio.*;
 	public var onMeshRemovedObservable:Observable<AbstractMesh> = new Observable<AbstractMesh>();
 	
 	/**
+     * An event triggered before calculating deterministic simulation step
+     * @type {BABYLON.Observable}
+     */
+    public var onBeforeStepObservable:Observable<Scene> = new Observable<Scene>();
+ 
+    /**
+     * An event triggered after calculating deterministic simulation step
+     * @type {BABYLON.Observable}
+     */
+    public var onAfterStepObservable:Observable<Scene> = new Observable<Scene>();
+	
+	/**
 	 * This Observable will be triggered for each stage of each renderingGroup of each rendered camera.
 	 * The RenderinGroupInfo class contains all the information about the context in which the observable is called
 	 * If you wish to register an Observer only for a given set of renderingGroup, use the mask with a combination 
@@ -377,6 +389,11 @@ import com.babylonhx.audio.*;
 	private var _startingPointerTime:Float = 0;
 	private var _previousStartingPointerTime:Float = 0;
 	
+	// Deterministic lockstep
+    private var _timeAccumulator:Float = 0;
+    private var _currentStepId:Int = 0;
+    private var _currentInternalStep:Int = 0;
+	
 	// Mirror
     public var _mirroredCameraPosition:Vector3;
 
@@ -402,6 +419,18 @@ import com.babylonhx.audio.*;
 	private function get_useRightHandedSystem():Bool {
 		return this._useRightHandedSystem;
 	}
+	
+	public function setStepId(newStepId:Int) {
+        this._currentStepId = newStepId;
+    }
+
+    public function getStepId():Int {
+        return this._currentStepId;
+    }
+
+    public function getInternalStep():Int {
+        return this._currentInternalStep;
+    }
 
 	// Fog
 	/**
@@ -836,7 +865,7 @@ import com.babylonhx.audio.*;
 		return this._cachedVisibility;
 	}
 
-	public function isCachedMaterialValid(material:Material, effect:Effect, visibility:Float = 0) {
+	public function isCachedMaterialInvalid(material:Material, effect:Effect, visibility:Float = 1) {
 		return this._cachedEffect != effect || this._cachedMaterial != material || this._cachedVisibility != visibility;
 	}
 
@@ -1082,11 +1111,6 @@ import com.babylonhx.audio.*;
 		
 		this._unTranslatedPointerX = this._pointerX;
 		this._unTranslatedPointerY = this._pointerY;
-		
-		if (this.cameraToUseForPointers != null) {
-			this._pointerX = this._pointerX - Std.int(this.cameraToUseForPointers.viewport.x) * this._engine.getRenderWidth();
-			this._pointerY = this._pointerY - Std.int(this.cameraToUseForPointers.viewport.y) * this._engine.getRenderHeight();
-		}
 	}
 	
 	private function _createUbo() {
@@ -2574,7 +2598,11 @@ import com.babylonhx.audio.*;
 			if (mesh.alwaysSelectAsActiveMesh || mesh.isVisible && mesh.visibility > 0 && ((mesh.layerMask & this.activeCamera.layerMask) != 0) && mesh.isInFrustum(this._frustumPlanes)) {
 				this._activeMeshes.push(mesh);
 				this.activeCamera._activeMeshes.push(mesh);
+				
 				mesh._activate(this._renderId);
+				if (meshLOD != mesh) {
+                    meshLOD._activate(this._renderId);
+                }
 				
 				this._activeMesh(mesh, meshLOD);
 			}
@@ -2902,7 +2930,7 @@ import com.babylonhx.audio.*;
 		if (this.isDisposed) {
 			return;
 		}
-			
+		
 		this._lastFrameDuration.beginMonitoring();
 		this._particlesDuration.fetchNewFrame();
 		this._spritesDuration.fetchNewFrame();
@@ -2929,18 +2957,64 @@ import com.babylonhx.audio.*;
 			this.simplificationQueue.executeNext();
 		}		
 		
-		// Animations
-		var deltaTime = Math.max(Scene.MinDeltaTime, Math.min(this._engine.getDeltaTime(), Scene.MaxDeltaTime));
-		this._animationRatio = deltaTime * (60.0 / 1000.0);
-		this._animate();
-		
-		// Physics
-		if (this._physicsEngine != null) {
-			//Tools.StartPerformanceCounter("Physics");
-			this._physicsEngine._runOneStep(deltaTime / 1000.0);
-			//Tools.EndPerformanceCounter("Physics");
-		}
+		if (this._engine.isDeterministicLockStep()) {
+			var deltaTime = Math.max(Scene.MinDeltaTime, Math.min(this._engine.getDeltaTime(), Scene.MaxDeltaTime)) / 1000;
 			
+			var defaultTimeStep = (60.0 / 1000.0);
+			if (this._physicsEngine != null) {
+				defaultTimeStep = this._physicsEngine.getTimeStep();
+			}
+			
+			var maxSubSteps = this._engine.getLockstepMaxSteps();
+			
+			this._timeAccumulator += deltaTime;
+			
+			// compute the amount of fixed steps we should have taken since the last step
+			var internalSteps = Math.floor(this._timeAccumulator / defaultTimeStep);
+			internalSteps = Std.int(Math.min(internalSteps, maxSubSteps));
+			
+			//for (this._currentInternalStep in 0...internalSteps) {
+			for (i in 0...internalSteps) {
+				this.onBeforeStepObservable.notifyObservers(this);
+				
+				// Animations
+				this._animationRatio = defaultTimeStep * (60.0 / 1000.0);
+				this._animate();
+				
+				// Physics
+				if (this._physicsEngine != null) {
+					//Tools.StartPerformanceCounter("Physics");
+					//this._physicsEngine._step(defaultTimeStep);
+					//Tools.EndPerformanceCounter("Physics");
+				}
+				this._timeAccumulator -= defaultTimeStep;
+				
+				this.onAfterStepObservable.notifyObservers(this);
+				this._currentStepId++;
+				
+				if ((internalSteps > 1) && (i != internalSteps - 1)) {
+					// Q: can this be optimized by putting some code in the afterStep callback?
+					// I had to put this code here, otherwise mesh attached to bones of another mesh skeleton,
+					// would return incorrect positions for internal stepIds (non-rendered steps)
+					this._evaluateActiveMeshes();
+				}
+			}
+		}
+		else {
+			// Animations
+			var deltaTime = Math.max(Scene.MinDeltaTime, Math.min(this._engine.getDeltaTime(), Scene.MaxDeltaTime));
+			this._animationRatio = deltaTime * (60.0 / 1000.0);
+			this._animate();
+			
+			// Physics
+			if (this._physicsEngine != null) {
+				//Tools.StartPerformanceCounter("Physics");
+				//this._physicsEngine._step(deltaTime / 1000.0);
+				//Tools.EndPerformanceCounter("Physics");
+			}
+		}
+		
+		// Before render
 		this.onBeforeRenderObservable.notifyObservers(this);
 		
 		// Customs render targets
@@ -2949,6 +3023,7 @@ import com.babylonhx.audio.*;
 		var currentActiveCamera = this.activeCamera;
 		if (this.renderTargetsEnabled) {
 			//Tools.StartPerformanceCounter("Custom render targets", this.customRenderTargets.length > 0);
+			this._intermediateRendering = true;
 			for (customIndex in 0...this.customRenderTargets.length) {
 				var renderTarget = this.customRenderTargets[customIndex];
 				if (renderTarget._shouldRender()) {
@@ -2971,6 +3046,7 @@ import com.babylonhx.audio.*;
 			}
 			//Tools.EndPerformanceCounter("Custom render targets", this.customRenderTargets.length > 0);
 			
+			this._intermediateRendering = false;
 			this._renderId++;
 		}
 		

@@ -1,5 +1,7 @@
 package com.babylonhx.utils;
 
+import com.babylonhx.math.RGBA;
+
 import lime.utils.UInt8Array;
 
 
@@ -24,6 +26,15 @@ class Image {
 		else {
 			this.data = new UInt8Array(width * height * 4);
 		}
+	}
+	
+	inline public function at(x:Int, y:Int):RGBA {
+		var r = data[y * width * 4 + x * 4];
+		var g = data[y * width * 4 + x * 4 + 1];
+		var b = data[y * width * 4 + x * 4 + 2];
+		var a = data[y * width * 4 + x * 4 + 3];
+		
+		return RGBA.fromBytes(r, g, b, a);
 	}
 	
 	public static function createCheckerboard(size:Int = 256):Image {			

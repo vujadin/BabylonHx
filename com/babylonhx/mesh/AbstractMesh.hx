@@ -312,7 +312,21 @@ import lime.utils.UInt16Array;
 	public var useOctreeForPicking:Bool = true;
 	public var useOctreeForCollisions:Bool = true;
 
-	public var layerMask:Int = 0x0FFFFFFF;
+	private var _layerMask:Int = 0x0FFFFFFF;
+	public var layerMask(get, set):Int;
+	inline private function get_layerMask():Int {
+		return _layerMask;
+	}
+	private function set_layerMask(value:Int):Int {
+		if (value == this._layerMask) {
+			return value;
+		}
+		
+		this._layerMask = value;
+		this._resyncLightSources();
+		return value;
+	}
+	
 	/**
 	 * True if the mesh must be rendered in any case.  
 	 */
@@ -425,6 +439,10 @@ import lime.utils.UInt16Array;
 	private function get_skeleton():Skeleton {
 		return this._skeleton;
 	}
+	
+	// VK TEMP for memory game:
+	public var extraData:Dynamic;
+	
 
 	// Constructor
 	public function new(name:String, scene:Scene) {

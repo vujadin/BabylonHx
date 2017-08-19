@@ -52,7 +52,7 @@ class PushMaterial extends Material {
 	}
 
 	public function _mustRebind(scene:Scene, effect:Effect, visibility:Float = 0) {
-		return scene.isCachedMaterialValid(this, effect, visibility);
+		return scene.isCachedMaterialInvalid(this, effect, visibility);
 	}
 
 }

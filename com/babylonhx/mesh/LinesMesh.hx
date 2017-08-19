@@ -7,6 +7,7 @@ import com.babylonhx.materials.Material;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.culling.Ray;
+import com.babylonhx.tools.Tools;
 
 
 /**
@@ -26,32 +27,6 @@ import com.babylonhx.culling.Ray;
 
 	private var _intersectionThreshold:Float;
 	private var _colorShader:ShaderMaterial;
-	
-
-	public function new(name:String, scene:Scene, parent:Node = null, ?source:LinesMesh, doNotCloneChildren:Bool = false, useVertexColor:Bool = false) {
-		super(name, scene, parent, source, doNotCloneChildren);
-		
-		if (source != null) {
-            this.color = source.color.clone();
-            this.alpha = source.alpha;
-			this.useVertexColor = source.useVertexColor;
-        }
-		
-		this._intersectionThreshold = 0.1;
-		
-		var options = {
-			attributes: [VertexBuffer.PositionKind],
-			uniforms: ["world", "viewProjection"],
-			needAlphaBlending: false,
-		};
-		
-		if (!useVertexColor) {
-			options.uniforms.push("color");
-			options.needAlphaBlending = true;
-		}
-		
-		this._colorShader = new ShaderMaterial("colorShader", scene, "color", options);
-	}
 	
 	/**
 	 * The intersection Threshold is the margin applied when intersection a segment of the LinesMesh with a Ray.
@@ -81,6 +56,32 @@ import com.babylonhx.culling.Ray;
 		return value;
 	}
 	
+
+	public function new(name:String, scene:Scene, parent:Node = null, ?source:LinesMesh, doNotCloneChildren:Bool = false, useVertexColor:Bool = false) {
+		super(name, scene, parent, source, doNotCloneChildren);
+		
+		if (source != null) {
+            this.color = source.color.clone();
+            this.alpha = source.alpha;
+			this.useVertexColor = source.useVertexColor;
+        }
+		
+		this._intersectionThreshold = 0.1;
+		
+		var options = {
+			attributes: [VertexBuffer.PositionKind],
+			uniforms: ["world", "viewProjection"],
+			needAlphaBlending: false,
+		};
+		
+		if (!useVertexColor) {
+			options.uniforms.push("color");
+			options.needAlphaBlending = true;
+		}
+		
+		this._colorShader = new ShaderMaterial("colorShader", scene, "color", options);
+	}
+	
 	override public function getClassName():String {
 		return "LinesMesh";
 	}
@@ -94,7 +95,7 @@ import com.babylonhx.culling.Ray;
 	}
 	
 	override public function createInstance(name:String):InstancedMesh {
-		trace("LinesMeshes do not support createInstance.");		
+		Tools.Log("LinesMeshes do not support createInstance.");		
 		return null;
 	}
 

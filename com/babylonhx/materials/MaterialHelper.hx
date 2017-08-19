@@ -103,7 +103,7 @@ class MaterialHelper {
 		}
 	}
 
-	public static function PrepareDefinesForFrameBoundValues(scene:Scene, engine:Engine, defines:MaterialDefines, useInstances:Bool) {
+	public static function PrepareDefinesForFrameBoundValues(scene:Scene, engine:Engine, defines:MaterialDefines, useInstances:Bool, forceAlphaTest:Bool = false) {
 		var changed:Bool = false;
 		
 		if (untyped defines.CLIPPLANE != (scene.clipPlane != null)) {
@@ -111,7 +111,7 @@ class MaterialHelper {
 			changed = true;
 		}
 		
-		if (untyped defines.ALPHATEST != engine.getAlphaTesting()) {
+		if (untyped defines.ALPHATEST != engine.getAlphaTesting() || forceAlphaTest) {
 			untyped defines.ALPHATEST = !defines.ALPHATEST;
 			changed = true;
 		}
@@ -265,7 +265,7 @@ class MaterialHelper {
 		
 		// Resetting all other lights if any
 		for (index in lightIndex...maxSimultaneousLights) {
-			if (defines.lights.length >= index) {
+			if (defines.lights.length > index) {
 			//if (defines.lights[index] != null) {
 				defines.lights[index] = false;
 				defines.hemilights[index] = false;

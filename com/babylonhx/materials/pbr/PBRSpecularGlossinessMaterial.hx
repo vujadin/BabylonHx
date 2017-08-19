@@ -19,7 +19,7 @@ class PBRSpecularGlossinessMaterial extends PBRBaseSimpleMaterial {
 	/**
 	 * Specifies the diffuse Color of the material.
 	 */
-	@serializeAsColor3()
+	@serializeAsColor3("diffuse")
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty", "_albedoColor")
 	public var diffuseColor(get, set):Color3;
 	inline private function get_diffuseColor():Color3 {
@@ -48,7 +48,7 @@ class PBRSpecularGlossinessMaterial extends PBRBaseSimpleMaterial {
 	/**
 	 * Specifies the specular color of the material. This indicates how reflective is the material (none to mirror).
 	 */
-	@serializeAsColor3()
+	@serializeAsColor3("specular")
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty", "_reflectivityColor")
 	public var specularColor(get, set):Color3;
 	inline private function get_specularColor():Color3 {
@@ -86,6 +86,7 @@ class PBRSpecularGlossinessMaterial extends PBRBaseSimpleMaterial {
 		_markAllSubMeshesAsTexturesDirty();
 		return _reflectivityTexture = value;
 	}
+	
 
 	/**
 	 * Instantiates a new PBRSpecularGlossinessMaterial instance.
@@ -97,12 +98,51 @@ class PBRSpecularGlossinessMaterial extends PBRBaseSimpleMaterial {
 		super(name, scene);
 		this._useMicroSurfaceFromReflectivityMapAlpha = true;
 	}
-
+	
 	/**
 	 * Return the currrent class name of the material.
 	 */
 	override public function getClassName():String {
 		return "PBRSpecularGlossinessMaterial";
+	}
+	
+	/**
+	 * Return the active textures of the material.
+	 */
+	public function getActiveTextures():Array<BaseTexture> {
+		var activeTextures = super.getActiveTextures();
+		
+		if (this.diffuseTexture != null) {
+			activeTextures.push(this.diffuseTexture);
+		}
+		
+		if (this.specularGlossinessTexture != null) {
+			activeTextures.push(this.specularGlossinessTexture);
+		}
+		
+		return activeTextures;
+	}
+
+	public function hasTexture(texture:BaseTexture):Bool {
+		if (super.hasTexture(texture)) {
+			return true;
+		}
+		
+		if (this.diffuseTexture == texture) {
+			return true;
+		}
+		
+		if (this.specularGlossinessTexture == texture) {
+			return true;
+		}
+		
+		return false;    
+	}
+
+	public function clone(name:String):PBRSpecularGlossinessMaterial {
+		// VK TODO:
+		//return SerializationHelper.Clone(() => new PBRSpecularGlossinessMaterial(name, this.getScene()), this);
+		return null;
 	}
 
 	/**

@@ -57,7 +57,7 @@ class HDRCubeTexture extends BaseTexture {
 	/**
 	 * The spherical polynomial data extracted from the texture.
 	 */
-	public var sphericalPolynomial:SphericalPolynomial = null;
+	//public var sphericalPolynomial:SphericalPolynomial = null;
 	
 	/**
 	 * Specifies wether the texture has been generated through the PMREMGenerator tool.
@@ -65,20 +65,20 @@ class HDRCubeTexture extends BaseTexture {
 	 */
 	public var isPMREM:Bool = false;
 	
-	private var _isBlocking:Bool = true;
-	public var isBlocking(get, set):Bool;
-	/**
-	 * Sets wether or not the texture is blocking during loading.
-	 */
-	private inline function set_isBlocking(value:Bool):Bool {
-		return this._isBlocking = value;
-	}
-	/**
-	 * Gets wether or not the texture is blocking during loading.
-	 */
-	private inline function get_isBlocking():Bool {
-		return this._isBlocking;
-	}
+	//private var _isBlocking:Bool = true;
+	//public var isBlocking(get, set):Bool;
+	///**
+	 //* Sets wether or not the texture is blocking during loading.
+	 //*/
+	//private inline function set_isBlocking(value:Bool):Bool {
+		//return this._isBlocking = value;
+	//}
+	///**
+	 //* Gets wether or not the texture is blocking during loading.
+	 //*/
+	//private inline function get_isBlocking():Bool {
+		//return this._isBlocking;
+	//}
 	
 
 	/**

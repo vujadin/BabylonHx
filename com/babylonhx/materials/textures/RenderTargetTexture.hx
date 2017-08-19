@@ -48,6 +48,8 @@ typedef RenderTargetOptions = {
 	public var customRenderFunction:Dynamic;//SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void->Void->Void;
 	public var useCameraPostProcesses:Bool;
 	
+	public var ignoreCameraViewport:Bool = false;
+	
 	private var _postProcessManager:PostProcessManager;
     private var _postProcesses:Array<PostProcess>;
 	
@@ -443,12 +445,7 @@ typedef RenderTargetOptions = {
 			this._postProcessManager._prepareFrame(this._texture, this._postProcesses);
 		}
 		else if (!useCameraPostProcess || !scene.postProcessManager._prepareFrame(this._texture)) {
-			if (this.isCube) {
-				engine.bindFramebuffer(this._texture, faceIndex);
-			} 
-			else {
-				engine.bindFramebuffer(this._texture);
-			}
+			engine.bindFramebuffer(this._texture, this.isCube ? faceIndex : 0, null, null, this.ignoreCameraViewport);
 		}
 		
 		this.onBeforeRenderObservable.notifyObservers(faceIndex);

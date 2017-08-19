@@ -6,6 +6,9 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.Scene;
 
+import lime.utils.Float32Array;
+import lime.utils.Int32Array;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -60,7 +63,7 @@ import com.babylonhx.Scene;
 		return this;
 	}
 
-	public function build(updatable:Bool = false, depth:Float = 50):Mesh {
+	public function build(updatable:Bool = false, depth:Float = 10):Mesh {
 		var result = new Mesh(this.name, this.scene);
 		
 		var normals:Array<Float> = [];
@@ -117,10 +120,10 @@ import com.babylonhx.Scene;
 			}                            
 		}
 		
-		result.setVerticesData(VertexBuffer.PositionKind, positions, updatable);
-		result.setVerticesData(VertexBuffer.NormalKind, normals, updatable);
-		result.setVerticesData(VertexBuffer.UVKind, uvs, updatable);
-		result.setIndices(indices);
+		result.setVerticesData(VertexBuffer.PositionKind, new Float32Array(positions), updatable);
+		result.setVerticesData(VertexBuffer.NormalKind, new Float32Array(normals), updatable);
+		result.setVerticesData(VertexBuffer.UVKind, new Float32Array(uvs), updatable);
+		result.setIndices(new Int32Array(indices));
 		
 		return result;
 	}

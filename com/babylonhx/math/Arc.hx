@@ -1,7 +1,5 @@
 package com.babylonhx.math;
 
-import com.babylonhx.math.Vector2;
-
 /**
  * ...
  * @author Krtolica Vujadin

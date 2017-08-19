@@ -2,8 +2,16 @@ package com.babylonhx.materials.textures.procedurals;
 
 import com.babylonhx.Scene;
 import com.babylonhx.utils.Image;
+import com.babylonhx.math.RGBA;
+
 import lime.utils.UInt8Array;
 
+/**
+ * ...
+ * @author Krtolica Vujadin
+ */
+
+// port of http://ainc.de/ Texture Editor
 class TextureBuilder {
 
 	// table used for shift operations
@@ -25,16 +33,16 @@ class TextureBuilder {
 	var seedValue:Int = 0;
 	var layerSizeX:Int = 0;
 	var layerSizeY:Int = 0;
-	var SXtimeSY:Float = 0;
+	var SXtimeSY:Int = 0;
 	var andLayerSizeX:Int = 0;
 	var andLayerSizeY:Int = 0;
 
 	public function new(sizeX:Int, sizeY:Int) {
-		SXtimeSY = sizeX * sizeY;
+		SXtimeSY = Std.int(sizeX * sizeY);
 		
 		for (i in 0...this.MAX_LAYERS + 1) {		
 			this.layers[i] = [];
-			for (x in 0...Std.int(SXtimeSY)) {
+			for (x in 0...SXtimeSY) {
 				this.layers[i][x] = RGBA.White;
 			}		
 		}		
@@ -45,19 +53,19 @@ class TextureBuilder {
 		this.andLayerSizeY = sizeY - 1;
 	}
 
-	/*public function setLayer(layer:Int, texture:Texture) {
+	public function setLayer(layer:Int, image:Image) {
 		for (i in 0...layerSizeX) {
 			for (j in 0...layerSizeY) {
-				layers[layer][i + j * layerSizeX] = cast texture.img.at(i, j);
+				layers[layer][i + j * layerSizeX] = cast image.at(i, j);
 			}
 		}
-	}*/
+	}
 
 	public function generateTexture(layer:Int, scene:Scene, name:String):Texture {
 		var data = new UInt8Array(layerSizeX * layerSizeY * 4);
 		var index:Int = 0;
 		
-		for (x in 0...Std.int(SXtimeSY)) {
+		for (x in 0...SXtimeSY) {
 			index = 4 * x;
 			data[index]     = this.layers[layer][x].r;
 			data[index + 1] = this.layers[layer][x].g;
@@ -465,7 +473,7 @@ class TextureBuilder {
 				break;
 			}
 			this.subPlasma(this.TEMPL, dist, 0, amplitude, rgb);
-			for (v in 0...Std.int(SXtimeSY)) {
+			for (v in 0...SXtimeSY) {
 				r = this.layers[l][v].r + this.layers[this.TEMPL][v].r;
 				if (r > 255) {
 					this.layers[l][v].r = 255;
@@ -521,7 +529,7 @@ class TextureBuilder {
 	public function colorLayer(l:Int, r:Int, g:Int, b:Int) {
 		var color = RGBA.White;
 		color.r = r; color.g = g; color.b = b;
-		for (v in 0...Std.int(SXtimeSY)) {
+		for (v in 0...SXtimeSY) {
 			this.layers[l][v] = color;
 		}
 		
@@ -575,7 +583,7 @@ class TextureBuilder {
 			}
 		}
 		
-		oosize = 3 / (SXtimeSY);
+		oosize = 3 / SXtimeSY;
 		for (y in 0...this.layerSizeY) {
 			for (x in 0...this.layerSizeX) {
 				offset = y * this.layerSizeX + x;
@@ -625,7 +633,7 @@ class TextureBuilder {
 		var tg:Int = 0;
 		var tb:Int = 0;
 		
-		for (v in 0...Std.int(SXtimeSY)) {
+		for (v in 0...SXtimeSY) {
 			tr = Std.int(this.layers[src][v].r * r);
 			tg = Std.int(this.layers[src][v].g * g);
 			tb = Std.int(this.layers[src][v].b * b);
@@ -666,7 +674,7 @@ class TextureBuilder {
 		var hsv:Array<Float> = [0, 0, 0];
 		var rgb:Array<Float> = [0, 0, 0];
 		
-		for (k in 0...Std.int(SXtimeSY)) {
+		for (k in 0...SXtimeSY) {
 			rgb2hsv([this.layers[src][k].r, this.layers[src][k].g, this.layers[src][k].b], hsv);			
 			hsv[0] *= h;
 			hsv[1] *= s;
@@ -697,7 +705,7 @@ class TextureBuilder {
 		var tg:Int = 0;
 		var tb:Int = 0;
 		
-		for (v in 0...Std.int(SXtimeSY)) {
+		for (v in 0...SXtimeSY) {
 			tr = Std.int(this.layers[src][v].r + r);
 			tg = Std.int(this.layers[src][v].g + g);
 			tb = Std.int(this.layers[src][v].b + b);
@@ -738,7 +746,7 @@ class TextureBuilder {
 		var hsv:Array<Float> = [0, 0, 0];
 		var rgb:Array<Float> = [0, 0, 0];
 		
-		for (k in 0...Std.int(SXtimeSY)) {
+		for (k in 0...SXtimeSY) {
 			rgb2hsv([this.layers[src][k].r, this.layers[src][k].g, this.layers[src][k].b], hsv);
 			hsv[0] += h;
 			hsv[1] += s;
@@ -768,7 +776,7 @@ class TextureBuilder {
 		r *= Math.PI;
 		g *= Math.PI;
 		b *= Math.PI;
-		for (v in 0...Std.int(SXtimeSY)) {
+		for (v in 0...SXtimeSY) {
 			this.layers[dest][v].r = Std.int(127.5 * (Math.sin(r * this.layers[src][v].r) + 1));
 			this.layers[dest][v].g = Std.int(127.5 * (Math.sin(g * this.layers[src][v].g) + 1));
 			this.layers[dest][v].b = Std.int(127.5 * (Math.sin(b * this.layers[src][v].b) + 1));
@@ -786,20 +794,20 @@ class TextureBuilder {
 		var sumB:Float = 0;
 		var pDiv:Float = 0;
 		
-		for (v in 0...Std.int(SXtimeSY)) {
+		for (v in 0...SXtimeSY) {
 			histogramR[v] = 0;
 			histogramG[v] = 0;
 			histogramB[v] = 0;
 		} 
 		
-		for (v in 0...Std.int(SXtimeSY)) {
+		for (v in 0...SXtimeSY) {
 			histogramR[this.layers[src][v].r]++;
 			histogramG[this.layers[src][v].g]++;
 			histogramB[this.layers[src][v].b]++;
 		}
 		
 		sumR = sumG = sumB = 0;
-		pDiv = 255 / (SXtimeSY);
+		pDiv = 255 / SXtimeSY;
 		for (v in 0...256) {			
 			sumR += histogramR[v] * pDiv;
 			histogramR[v] = (sumR);
@@ -809,7 +817,7 @@ class TextureBuilder {
 			histogramB[v] = (sumB);
 		}
 		
-		for (v in 0...Std.int(SXtimeSY)) {
+		for (v in 0...SXtimeSY) {
 			this.layers[dest][v].r = trunc(histogramR[this.layers[src][v].r]);
 			this.layers[dest][v].g = trunc(histogramG[this.layers[src][v].g]);
 			this.layers[dest][v].b = trunc(histogramB[this.layers[src][v].b]);
@@ -835,13 +843,13 @@ class TextureBuilder {
 		var maxG:Int = 0;
 		var maxB:Int = 0;
 		
-		for (v in 0...Std.int(SXtimeSY)) {
+		for (v in 0...SXtimeSY) {
 			histogramR[v] = 0;
 			histogramG[v] = 0;
 			histogramB[v] = 0;
 		} 
 		
-		for (v in 0...Std.int(SXtimeSY)) {
+		for (v in 0...SXtimeSY) {
 			histogramR[this.layers[src][v].r]++;
 			histogramG[this.layers[src][v].g]++;
 			histogramB[this.layers[src][v].b]++;
@@ -856,9 +864,9 @@ class TextureBuilder {
 		}
 		
 		sumR = minR; sumG = minG; sumB = minB;
-		pDivR = (maxR - minR) / (SXtimeSY);
-		pDivG = (maxG - minG) / (SXtimeSY);
-		pDivB = (maxB - minB) / (SXtimeSY);
+		pDivR = (maxR - minR) / SXtimeSY;
+		pDivG = (maxG - minG) / SXtimeSY;
+		pDivB = (maxB - minB) / SXtimeSY;
 		for (v in 0...256) {
 			sumR += histogramR[v] * pDivR;
 			histogramR[v] = (sumR);
@@ -868,7 +876,7 @@ class TextureBuilder {
 			histogramB[v] = (sumB);
 		}
 		
-		for (v in 0...Std.int(SXtimeSY)) {
+		for (v in 0...SXtimeSY) {
 			this.layers[dest][v].r = trunc(histogramR[this.layers[src][v].r]);
 			this.layers[dest][v].g = trunc(histogramG[this.layers[src][v].g]);
 			this.layers[dest][v].b = trunc(histogramB[this.layers[src][v].b]);
@@ -878,7 +886,7 @@ class TextureBuilder {
 	}
 
 	public function invertLayer(src:Int, dest:Int) {
-		for (v in 0...Std.int(SXtimeSY)) {
+		for (v in 0...SXtimeSY) {
 			this.layers[dest][v].r = 255 - this.layers[src][v].r;
 			this.layers[dest][v].g = 255 - this.layers[src][v].g;
 			this.layers[dest][v].b = 255 - this.layers[src][v].b;
@@ -901,7 +909,7 @@ class TextureBuilder {
 				r = g = b = 0;
 				for (my in 0...3) {
 					for (mx in 0...3) {
-						offset=((x - 1 + mx) & this.andLayerSizeX) + ((y - 1 + my) & this.andLayerSizeY) * this.layerSizeX;
+						offset = ((x - 1 + mx) & this.andLayerSizeX) + ((y - 1 + my) & this.andLayerSizeY) * this.layerSizeX;
 						r += matrix[mx][my] * this.layers[this.TEMPL][offset].r;
 						g += matrix[mx][my] * this.layers[this.TEMPL][offset].g;
 						b += matrix[mx][my] * this.layers[this.TEMPL][offset].b;
@@ -933,9 +941,9 @@ class TextureBuilder {
 					b = 255;
 				}
 				
-				this.layers[dest][trunc(x + y * this.layerSizeX)].r = trunc(r);
-				this.layers[dest][trunc(x + y * this.layerSizeX)].g = trunc(g);
-				this.layers[dest][trunc(x + y * this.layerSizeX)].b = trunc(b);
+				untyped this.layers[dest][x + y * this.layerSizeX].r = r;
+				untyped this.layers[dest][x + y * this.layerSizeX].g = g;
+				untyped this.layers[dest][x + y * this.layerSizeX].b = b;
 			}
 		}
 		
@@ -1023,7 +1031,7 @@ class TextureBuilder {
 
 	public function woodLayer(src:Int, dest:Int, b:Int) {
 		var bm8 = 8 - b;
-		for (v in 0...Std.int(SXtimeSY)) {			
+		for (v in 0...SXtimeSY) {			
 			this.layers[dest][v].r = byteLow((lshift(this.layers[src][v].r, b)) | (rshift(this.layers[src][v].r, bm8)));
 			this.layers[dest][v].g = byteLow((lshift(this.layers[src][v].g, b)) | (rshift(this.layers[src][v].g, bm8)));
 			this.layers[dest][v].b = byteLow((lshift(this.layers[src][v].b, b)) | (rshift(this.layers[src][v].b, bm8)));			
@@ -1034,7 +1042,7 @@ class TextureBuilder {
 
 	public function blurLayer(src:Int, dest:Int) {
 		matrix[0][0] = 0.0625; matrix[1][0] = 0.125; matrix[2][0] = 0.0625;
-		matrix[0][1] = 0.125; matrix[1][1] = 0.25; matrix[2][1] = 0.125;
+		matrix[0][1] = 0.125;  matrix[1][1] = 0.25;  matrix[2][1] = 0.125;
 		matrix[0][2] = 0.0625; matrix[1][2] = 0.125; matrix[2][2] = 0.0625;
 		
 		this.matrixLayer(src, dest, false, matrix);
@@ -1043,8 +1051,8 @@ class TextureBuilder {
 	}
 
 	public function edgeHLayer(src:Int, dest:Int) {
-		matrix[0][0] = 2; matrix[1][0] = 4; matrix[2][0] = 2;
-		matrix[0][1] = 0; matrix[1][1] = 0; matrix[2][1] = 0;
+		matrix[0][0] = 2;  matrix[1][0] = 4;  matrix[2][0] = 2;
+		matrix[0][1] = 0;  matrix[1][1] = 0;  matrix[2][1] = 0;
 		matrix[0][2] = -2; matrix[1][2] = -4; matrix[2][2] = -2;
 		
 		this.matrixLayer(src, dest, true, matrix);
@@ -1064,7 +1072,7 @@ class TextureBuilder {
 
 	public function sharpenLayer(src:Int, dest:Int) {
 		matrix[0][0] = -0.125; matrix[1][0] = -0.25; matrix[2][0] = -0.125;
-		matrix[0][1] = -0.25; matrix[1][1] = 2.5; matrix[2][1] = -0.25;
+		matrix[0][1] = -0.25;  matrix[1][1] = 2.5;   matrix[2][1] = -0.25;
 		matrix[0][2] = -0.125; matrix[1][2] = -0.25; matrix[2][2] = -0.125;
 		
 		this.matrixLayer(src, dest, false, matrix);
@@ -1100,7 +1108,7 @@ class TextureBuilder {
 				this.layers[dest][offset + x].b = trunc(b / sq);
 			}
 		}
-
+		
 		return this;
 	}
 
@@ -1113,9 +1121,9 @@ class TextureBuilder {
 		var sr:Float = 0;
 		var sd:Float = 0;
 		var srm:Float = 0;
-
+		
 		this.copyTemp(src);
-
+		
 		s = this.layerSizeX / 2 - s;
 		sq = (s * s);
 		sd = (this.layerSizeX / 2) * (this.layerSizeY / 2) - sq;
@@ -1158,7 +1166,7 @@ class TextureBuilder {
 				}
 			}
 		}
-
+		
 		return this;
 	}
 
@@ -1175,25 +1183,27 @@ class TextureBuilder {
 				if (a[j] <= v[i]) {
 					last = j;
 				}
-
+				
 				--j;
 			}
 			j = 3;
 			while (j >= last) {
 				a[j + 1] = a[j];
+				
+				--j;
 			}
 			a[last] = v[i];
 		}
-
+		
 		return a[4];
 	}
 
 	public function medianLayer(src:Int, dest:Int) {
 		var offset:Array<Int> = [];
 		var colors:Array<Int> = [];
-
+		
 		this.copyTemp(src);
-
+		
 		for (y in 0...this.layerSizeY) {
 			for (x in 0...this.layerSizeX) {
 				for (i in 0...9) {
@@ -1213,12 +1223,12 @@ class TextureBuilder {
 				this.layers[dest][offset[4]].b = median(colors);
 			}
 		}
-
+		
 		return this;
 	}
 
 	inline function copyTemp(src:Int) {
-		for (x in 0...Std.int(SXtimeSY)) {			
+		for (x in 0...SXtimeSY) {			
 			this.layers[TEMPL][x] = this.layers[src][x];			
 		}
 	}
@@ -1241,8 +1251,8 @@ class TextureBuilder {
 			offsetyp1 = byteLow((y + 1) & this.andLayerSizeY) * this.layerSizeX;
 			for (x in 0...this.layerSizeX) {
 				offsetxm1 = byteLow(x - 1) & this.andLayerSizeX;
-				offsetxp1 = byteLow(x + 1) & this.andLayerSizeX;				
-
+				offsetxp1 = byteLow(x + 1) & this.andLayerSizeX;
+				
 				r =	Math.min(this.layers[this.TEMPL][offsetym1 + offsetxm1].r,
 					Math.min(this.layers[this.TEMPL][offsetym1 + x].r,
 					Math.min(this.layers[this.TEMPL][offsetym1 + offsetxp1].r,
@@ -1276,7 +1286,7 @@ class TextureBuilder {
 				this.layers[dest][offset + x].b = trunc(b);
 			}
 		}
-
+		
 		return this;
 	}
 
@@ -1289,7 +1299,7 @@ class TextureBuilder {
 		var r:Float = 0;
 		var g:Float = 0;
 		var b:Float = 0;
-
+		
 		this.copyTemp(src);
 		
 		for (y in 0...this.layerSizeY) {
@@ -1299,7 +1309,7 @@ class TextureBuilder {
 			for (x in 0...this.layerSizeX) {
 				offsetxm1 = byteLow(x - 1) & this.andLayerSizeX;
 				offsetxp1 = byteLow(x + 1) & this.andLayerSizeX;
-
+				
 				r =	Math.max(this.layers[this.TEMPL][offsetym1 + offsetxm1].r,
 					Math.max(this.layers[this.TEMPL][offsetym1 + x].r,
 					Math.max(this.layers[this.TEMPL][offsetym1 + offsetxp1].r,
@@ -1332,19 +1342,19 @@ class TextureBuilder {
 				this.layers[dest][offset + x].b = trunc(b);
 			}
 		}
-
+		
 		return this;
 	}
 
 	public function sineDistort(src:Int, dest:Int, dx:Float, depthX:Float, dy:Float, depthY:Float) {
 		this.copyTemp(src);
-
+		
 		for (y in 0...this.layerSizeY) {
 			for (x in 0...this.layerSizeX) {
 				this.layers[dest][trunc(x + y * this.layerSizeX)] = this.getBilerPixel(this.TEMPL, Math.sin(dx * y) * depthX + x, Math.sin(dy * x) * depthY + y);
 			}
 		}
-
+		
 		return this;
 	}
 
@@ -1364,9 +1374,9 @@ class TextureBuilder {
 		var inap1:Int = 0;
 		var inbp1:Int = 0;
 		var corner:Array<RGBA> = [RGBA.White, RGBA.White, RGBA.White, RGBA.White];
-
+		
 		this.copyTemp(src);
-
+		
 		ooscale = 1 / (scale * Math.sqrt(2 * SXtimeSY));
 		for (y in 0...this.layerSizeY) {
 			b = (y - this.layerSizeY / 2);
@@ -1396,31 +1406,17 @@ class TextureBuilder {
 				this.layers[dest][trunc(x + y * this.layerSizeX)] = cosineInterpolate(corner, na - ina, nb - inb);
 			}
 		}
-
+		
 		return this;
 	}
-
-	/*public function layerFromTexture(l:Int, tex:Image) {
-		if (tex.width != this.layerSizeX || tex.height != this.layerSizeY) {
-			throw 'TB_Error: Texture size must be the same as layer size!';
-		}
-		
-		for (y in 0...this.layerSizeY) {
-			for (x in 0...this.layerSizeX) {
-				this.layers[l][trunc(x + y * this.layerSizeX)] = cast tex.at(x, y);
-			}
-		}
-		
-		return this;
-	}*/
 
 	public function tileLayer(src:Int, dest:Int) {
 		var offset:Int = 0;
 		var offset2:Int = 0;
 		var offset3:Int = 0;
-
+		
 		this.copyTemp(src);
-
+		
 		for (y in 0...this.layerSizeY) {
 			offset = y * this.layerSizeX;
 			offset2 = ((y * 2) & this.andLayerSizeY) * this.layerSizeX;
@@ -1440,16 +1436,16 @@ class TextureBuilder {
 							this.layers[this.TEMPL][offset3 + this.layerSizeX].b + this.layers[this.TEMPL][offset3 + this.layerSizeX + 1].b) >> 2;
 			}
 		}
-
+		
 		return this;
 	}
 
 	public function noiseDistort(src:Int, dest:Int, seed:Int, radius:Int) {
 		var dx:Int = 0;
 		var dy:Int = 0;
-
+		
 		this.copyTemp(src);
-
+		
 		this.seedValue = seed;
 		radius = 16 - radius;
 		var offset:Int = 0;
@@ -1462,7 +1458,7 @@ class TextureBuilder {
 					this.layers[this.TEMPL][((x + dx) & this.andLayerSizeX) + ((y + dy) & this.andLayerSizeY) * this.layerSizeX];
 			}
 		}
-
+		
 		return this;
 	}
 
@@ -1474,7 +1470,7 @@ class TextureBuilder {
 					this.layers[this.TEMPL][(byteLow(x + dx) & this.andLayerSizeX) + (byteLow(y + dy) & this.andLayerSizeY) * this.layerSizeX];
 			}
 		}
-
+		
 		return this;
 	}
 
@@ -1497,7 +1493,7 @@ class TextureBuilder {
 						this.layers[dest][offset + (this.layerSizeX - 1 - xc)] = this.layers[dest][offset + xc];
 					}				
 				}
-			
+				
 			case 1: 
 				for (yc in 0...Std.int(this.layerSizeY / 2)) {
 					this.move(
@@ -1516,7 +1512,7 @@ class TextureBuilder {
 						this.layers[dest][offset + xc] = this.layers[dest][offset + (this.layerSizeX  - xc)];
 					}
 				}
-			
+							
 			case 3: 
 				for (yc in 0...Std.int(this.layerSizeY / 2) - 1) {
 					this.move(
@@ -1528,19 +1524,19 @@ class TextureBuilder {
 					);
 				}					
 		}
-
+		
 		return this;
 	}
 
 	public function kaleidLayer(src:Int, dest:Int, corner:Int) {
 		corner = corner - 1;
-
+		
 		for (y in 0...Std.int(this.layerSizeY / 2) - 1) {
 			this.MirrorCorner(corner, dest);
 			this.MirrorCorner((corner + 1) % 4, dest);
 			this.MirrorCorner((corner + 2) % 4, dest);
 		}
-
+		
 		return this;		
 	}
 
@@ -1558,9 +1554,9 @@ class TextureBuilder {
 		
 		var arct:Float = 0;
 		var lsd2p:Float = 0;
-
+		
 		this.copyTemp(src);
-
+		
 		var lsd2p = this.layerSizeX / (2 * Math.PI);
 		for (y in 0...this.layerSizeY) {
 			b = -0.5 * this.layerSizeY + y;
@@ -1589,7 +1585,7 @@ class TextureBuilder {
 				this.layers[dest][trunc(x + y * this.layerSizeX)] = cosineInterpolate(corner, na - ina, nb - inb);
 			} 
 		}
-
+		
 		return this;
 	}
 
@@ -1607,9 +1603,9 @@ class TextureBuilder {
 		var b1:Int = 0;
 		var b2:Int = 0;
 		var a:Float = 0;
-
+		
 		this.copyTemp(src);
-
+		
 		for (y in 0...this.layerSizeY) {
 			offset = y * this.layerSizeX;
 			offsetym1 = Std.int(((y - 1) & this.andLayerSizeY) * this.layerSizeX);
@@ -1617,7 +1613,6 @@ class TextureBuilder {
 			for (x in 0...this.layerSizeX) {
 				offsetxm1 = ((x - 1) & this.andLayerSizeX);
 				offsetxp1 = ((x + 1) & this.andLayerSizeX);
-
 				
 				r1 = this.layers[this.TEMPL][offsetxm1 + offsetym1].r
 					+ 2 * this.layers[this.TEMPL][offsetxm1 + offset].r
@@ -1631,7 +1626,7 @@ class TextureBuilder {
 					- this.layers[this.TEMPL][offsetyp1 + offsetxm1].r
 					- 2 * this.layers[this.TEMPL][offsetyp1 + x].r
 					- this.layers[this.TEMPL][offsetyp1 + offsetxp1].r;
-
+					
 				g1 = this.layers[this.TEMPL][offsetxm1 + offsetym1].g
 					+ 2 * this.layers[this.TEMPL][offsetxm1 + offset].g
 					+ this.layers[this.TEMPL][offsetxm1 + offsetyp1].g
@@ -1644,7 +1639,7 @@ class TextureBuilder {
 					- this.layers[this.TEMPL][offsetyp1 + offsetxm1].g
 					- 2 * this.layers[this.TEMPL][offsetyp1 + x].g
 					- this.layers[this.TEMPL][offsetyp1 + offsetxp1].g;
-
+					
 				b1 = this.layers[this.TEMPL][offsetxm1 + offsetym1].b
 					+ 2 * this.layers[this.TEMPL][offsetxm1 + offset].b
 					+ this.layers[this.TEMPL][offsetxm1 + offsetyp1].b
@@ -1657,7 +1652,7 @@ class TextureBuilder {
 					- this.layers[this.TEMPL][offsetyp1 + offsetxm1].b
 					- 2 * this.layers[this.TEMPL][offsetyp1 + x].b
 					- this.layers[this.TEMPL][offsetyp1 + offsetxp1].b;
-
+					
 				if (r1 == 0) {
 					if (r2 > 0) {
 						this.layers[dest][x + offset].r = 196;
@@ -1678,7 +1673,7 @@ class TextureBuilder {
 						this.layers[dest][x + offset].r = trunc(a * ipi);
 					}
 				}
-
+				
 				if (g1 == 0) {
 					if (g2 > 0) {
 						this.layers[dest][x + offset].g = 196;
@@ -1699,7 +1694,7 @@ class TextureBuilder {
 						this.layers[dest][x + offset].g = trunc(a * ipi);
 					}
 				}
-
+				
 				if (b1 == 0) {
 					if (b2 > 0) {
 						this.layers[dest][x + offset].b = 196;
@@ -1722,7 +1717,7 @@ class TextureBuilder {
 				}
 			} 
 		}
-
+		
 		return this;
 	}
 
@@ -1732,18 +1727,18 @@ class TextureBuilder {
 	
 	public function mapDistort(src:Int, dist:Int, dest:Int, xd:Float, yd:Float) {
 		var offset:Int = 0;
-		var v:Int = 0;
-
+		var v:Float = 0;
+		
 		this.copyTemp(src);
-
+		
 		for (y in 0...this.layerSizeY) {
 			for (x in 0...this.layerSizeX) {
 				offset = trunc(y * this.layerSizeX + x);
-				v = trunc(Math.max(this.layers[dist][offset].r, Math.max(this.layers[dist][offset].g, this.layers[dist][offset].b)));
+				v = Math.max(this.layers[dist][offset].r, Math.max(this.layers[dist][offset].g, this.layers[dist][offset].b));
 				this.layers[dest][offset] = this.getBilerPixel(this.TEMPL, xd * v + x, yd * v + y);
 			}
 		}
-
+		
 		return this;
 	}
 
@@ -1751,8 +1746,8 @@ class TextureBuilder {
 		var r:Int = 0;
 		var g:Int = 0;
 		var b:Int = 0;
-
-		for (v in 0...Std.int(SXtimeSY)) {
+		
+		for (v in 0...SXtimeSY) {
 			r = Std.int(this.layers[src1][v].r * perc1 + this.layers[src2][v].r * perc2);
 			g = Std.int(this.layers[src1][v].g * perc1 + this.layers[src2][v].g * perc2);
 			b = Std.int(this.layers[src1][v].b * perc1 + this.layers[src2][v].b * perc2);
@@ -1778,7 +1773,7 @@ class TextureBuilder {
 			this.layers[dest][v].g = g;
 			this.layers[dest][v].b = b;
 		}
-
+		
 		return this;
 	}
 
@@ -1786,9 +1781,9 @@ class TextureBuilder {
 		var r:Int = 0;
 		var g:Int = 0;
 		var b:Int = 0;
-
+		
 		var perc = perc1 * perc2 / 255;
-		for (v in 0...Std.int(SXtimeSY)) {
+		for (v in 0...SXtimeSY) {
 			r = Std.int(this.layers[src1][v].r * this.layers[src2][v].r * perc);
 			g = Std.int(this.layers[src1][v].g * this.layers[src2][v].g * perc);
 			b = Std.int(this.layers[src1][v].b * this.layers[src2][v].b * perc);
@@ -1814,7 +1809,7 @@ class TextureBuilder {
 			this.layers[dest][v].g = g;
 			this.layers[dest][v].b = b;
 		}
-
+		
 		return this;
 	}
 
@@ -1822,8 +1817,8 @@ class TextureBuilder {
 		var r:Int = 0;
 		var g:Int = 0;
 		var b:Int = 0;
-
-		for (v in 0...Std.int(SXtimeSY)) {
+		
+		for (v in 0...SXtimeSY) {
 			r = this.layers[src1][v].r ^ this.layers[src2][v].r;
 			g = this.layers[src1][v].g ^ this.layers[src2][v].g;
 			b = this.layers[src1][v].b ^ this.layers[src2][v].b;
@@ -1848,8 +1843,8 @@ class TextureBuilder {
 			this.layers[dest][v].r = r;
 			this.layers[dest][v].g = g;
 			this.layers[dest][v].b = b;
-		}	
-
+		}
+		
 		return this;
 	}
 
@@ -1857,8 +1852,8 @@ class TextureBuilder {
 		var r:Int = 0;
 		var g:Int = 0;
 		var b:Int = 0;
-
-		for (v in 0...Std.int(SXtimeSY)) {
+		
+		for (v in 0...SXtimeSY) {
 			r = this.layers[src1][v].r & this.layers[src2][v].r;
 			g = this.layers[src1][v].g & this.layers[src2][v].g;
 			b = this.layers[src1][v].b & this.layers[src2][v].b;
@@ -1884,7 +1879,7 @@ class TextureBuilder {
 			this.layers[dest][v].g = g;
 			this.layers[dest][v].b = b;
 		}
-
+		
 		return this;
 	}
 
@@ -1892,8 +1887,8 @@ class TextureBuilder {
 		var r:Int = 0;
 		var g:Int = 0;
 		var b:Int = 0;
-
-		for (v in 0...Std.int(SXtimeSY)) {
+		
+		for (v in 0...SXtimeSY) {
 			r = this.layers[src1][v].r | this.layers[src2][v].r;
 			g = this.layers[src1][v].g | this.layers[src2][v].g;
 			b = this.layers[src1][v].b | this.layers[src2][v].b;
@@ -1922,32 +1917,32 @@ class TextureBuilder {
 	}
 
 	public function randCombineLayers(src1:Int, src2:Int, dest:Int) {
-		for (v in 0...Std.int(SXtimeSY)) {
+		for (v in 0...SXtimeSY) {
 			this.layers[dest][v].r = myRandom() & 1 != 0 ? this.layers[src1][v].r : this.layers[src2][v].r;
 			this.layers[dest][v].g = myRandom() & 1 != 0 ? this.layers[src1][v].g : this.layers[src2][v].g;
 			this.layers[dest][v].b = myRandom() & 1 != 0 ? this.layers[src1][v].b : this.layers[src2][v].b;
 		}
-
+		
 		return this;
 	}
 
 	public function maxCombineLayers(src1:Int, src2:Int, dest:Int) {
-		for (v in 0...Std.int(SXtimeSY)) {
+		for (v in 0...SXtimeSY) {
 			this.layers[dest][v].r = Std.int(Math.max(this.layers[src1][v].r, this.layers[src2][v].r));
 			this.layers[dest][v].g = Std.int(Math.max(this.layers[src1][v].g, this.layers[src2][v].g));
 			this.layers[dest][v].b = Std.int(Math.max(this.layers[src1][v].b, this.layers[src2][v].b));
 		}
-
+		
 		return this;
 	}
 
 	public function minCombineLayers(src1:Int, src2:Int, dest:Int) {
-		for (v in 0...Std.int(SXtimeSY)) {
+		for (v in 0...SXtimeSY) {
 			this.layers[dest][v].r = Std.int(Math.min(this.layers[src1][v].r, this.layers[src2][v].r));
 			this.layers[dest][v].g = Std.int(Math.min(this.layers[src1][v].g, this.layers[src2][v].g));
 			this.layers[dest][v].b = Std.int(Math.min(this.layers[src1][v].b, this.layers[src2][v].b));
 		}
-
+		
 		return this;
 	}
 
@@ -1957,17 +1952,17 @@ class TextureBuilder {
 		var base_off:Int = 0;
 		var m:Int = 0;
 		var c = RGBA.White;
-
+		
 		this.seedValue = seed;
-	
+			
 		c.r = 255; c.g = 255; c.b = 255;
-
+		
 		for (x in 0...this.layerSizeX) {
 			if (((myRandom()) >> 100) == 0) {
 				this.layers[l][x] = c;
 			}
 		}
-
+		
 		base_off = 0;
 		for (y in 1...this.layerSizeY) {
 			for (x in 0...this.layerSizeX) {
@@ -1980,32 +1975,32 @@ class TextureBuilder {
 				if (this.layers[l][x + base_off].r != 0) {	
 					m = m | 2;
 				}
-					
+				
 				if (this.layers[l][((x + 1) & this.andLayerSizeX) + base_off].r != 0) {
 					m = m | 4;
 				}
-
+				
 				if (((1 << m) & rule) != 0) {
 					this.layers[l][x + base_off + this.layerSizeX].r = c.r;
 					this.layers[l][x + base_off + this.layerSizeX].g = c.g;
 					this.layers[l][x + base_off + this.layerSizeX].b = c.b;
 				}
 			}
-		
+			
 			base_off=base_off + this.layerSizeX;
 		}
-
+		
 		return this;
 	}
 
 	public function sepiaLayer(l:Int, dest:Int, type:Int) {
 		var xy:Int = 0;
-
+		
 		switch(type) {
 			case 0:
 				var avg = 0;
 				
-				for (v in 0...Std.int(SXtimeSY)) {
+				for (v in 0...SXtimeSY) {
 					avg = Std.int(0.3 * layers[l][v].r + 0.59 * layers[l][v].g + 0.11 * layers[l][v].b);
 					layers[dest][v].r = avg + 100;
 					layers[dest][v].g = avg + 50;
@@ -2013,26 +2008,26 @@ class TextureBuilder {
 				}
 				
 			case 1:
-				for (v in 0...Std.int(SXtimeSY)) {
+				for (v in 0...SXtimeSY) {
 					layers[dest][v].r = Std.int((layers[l][v].r * 0.393 + layers[l][v].g * 0.769 + layers[l][v].b * 0.189 ) / 1.351);
 					layers[dest][v].g = Std.int((layers[l][v].r * 0.349 + layers[l][v].g * 0.686 + layers[l][v].b * 0.168 ) / 1.203);
 					layers[dest][v].b = Std.int((layers[l][v].r * 0.272 + layers[l][v].g * 0.534 + layers[l][v].b * 0.131 ) / 2.140);
 				}
 		}
-
+		
 		return this;
 	}
 
 	public function gammaLayer(src:Int, dest:Int, factor:Float = 0.5) {
 		var s = layers[src];
 		var d = layers[dest];
-
-		for (v in 0...Std.int(SXtimeSY)) {
+		
+		for (v in 0...SXtimeSY) {
 			d[v].r = Std.int(Math.pow(s[v].r / 255, factor) * 255);
 			d[v].g = Std.int(Math.pow(s[v].g / 255, factor) * 255);
 			d[v].b = Std.int(Math.pow(s[v].b / 255, factor) * 255);
 		}
-
+		
 		return this;
 	}
 
@@ -2043,10 +2038,10 @@ class TextureBuilder {
 		var r = 0;
 		var g = 0;
 		var b = 0;
-
+		
 		switch (colorTo) {
 			case "brg":				
-				for (v in 0...Std.int(SXtimeSY)) {
+				for (v in 0...SXtimeSY) {
 					r = s[v].r;
 					g = s[v].g;
 					b = s[v].b;
@@ -2054,17 +2049,17 @@ class TextureBuilder {
 					d[v].g = r;
 					d[v].b = g;
 				}
-
+				
 			case "rbg":
-				for (v in 0...Std.int(SXtimeSY)) {
+				for (v in 0...SXtimeSY) {
 					g = s[v].b;
 					b = s[v].g;
 					d[v].g = g;
 					d[v].b = b;
 				}
-
+				
 			case "gbr":				
-				for (v in 0...Std.int(SXtimeSY)) {
+				for (v in 0...SXtimeSY) {
 					r = s[v].r;
 					g = s[v].g;
 					b = s[v].b;
@@ -2072,9 +2067,9 @@ class TextureBuilder {
 					d[v].g = b;
 					d[v].b = r;
 				}
-
+				
 			case "grb":				
-				for (v in 0...Std.int(SXtimeSY)) {
+				for (v in 0...SXtimeSY) {
 					r = s[v].r;
 					g = s[v].g;
 					b = s[v].b;
@@ -2082,9 +2077,9 @@ class TextureBuilder {
 					d[v].g = r;
 					d[v].b = b;
 				}
-
+				
 			case "bgr":				
-				for (v in 0...Std.int(SXtimeSY)) {
+				for (v in 0...SXtimeSY) {
 					r = s[v].r;
 					g = s[v].g;
 					b = s[v].b;
@@ -2092,8 +2087,8 @@ class TextureBuilder {
 					d[v].g = g;
 					d[v].b = r;
 				}
-		} 
-
+		}
+		
 		return this;
 	}
 

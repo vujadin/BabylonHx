@@ -298,7 +298,7 @@ import lime.utils.Int32Array;
 		
 		if (this.isCube) {
 			for (face in 0...6) {
-				engine.bindFramebuffer(this._texture, face);
+				engine.bindFramebuffer(this._texture, face, null, null, true);
 				
 				// VBOs
 				engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._effect);
@@ -318,7 +318,7 @@ import lime.utils.Int32Array;
 			}
 		} 
 		else {
-			engine.bindFramebuffer(this._texture);
+			engine.bindFramebuffer(this._texture, 0, null, null, true);
 			
 			// VBOs
             engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._effect);

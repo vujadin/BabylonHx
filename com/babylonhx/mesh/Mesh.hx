@@ -196,6 +196,7 @@ import lime.utils.Int32Array;
 	inline private function get_source():Mesh {
 		return this._source;
 	}
+	
 
 	/**
 	  * @constructor
@@ -1613,7 +1614,7 @@ import lime.utils.Int32Array;
 		var kinds = this.getVerticesDataKinds();
 		var vbs:Map<String, VertexBuffer> = new Map<String, VertexBuffer>();
 		var data:Map<String, Float32Array> = new Map<String, Float32Array>();
-		var newdata:Map<String, Float32Array> = new Map<String, Float32Array>();
+		var newdata:Map<String, Array<Float>> = new Map<String, Array<Float>>();
 		var updatableNormals = false;		
 		var kindIndex:Int = 0;
 		var kind:String;
@@ -1630,7 +1631,7 @@ import lime.utils.Int32Array;
 			
 			vbs[kind] = vertexBuffer;
 			data[kind] = vbs[kind].getData();
-			//newdata[kind] = new Float32Array();
+			newdata[kind] = [];
 			
 			kindIndex++;
 		}
@@ -1649,26 +1650,24 @@ import lime.utils.Int32Array;
 				var kind = kinds[kindIndex];
 				var stride = vbs[kind].getStrideSize();
 				
-				newdata[kind] = new Float32Array(stride);
 				for (offset in 0...stride) {
-					newdata[kind][offset] = data[kind][vertexIndex * stride + offset];
+					newdata[kind].push(data[kind][vertexIndex * stride + offset]);
 				}
 			}
 		}
 		
 		// Updating faces & normal
-		var normals:Float32Array = new Float32Array(totalIndices * 3);
-		var positions:Float32Array = newdata[VertexBuffer.PositionKind];
+		var normals:Array<Float> = [];
+		var positions:Array<Float> = newdata[VertexBuffer.PositionKind];
 		var index:Int = 0;
-		var count:Int = 0;
 		while (index < totalIndices) {
 			indices[index] = index;
 			indices[index + 1] = index + 1;
 			indices[index + 2] = index + 2;
 			
-			var p1 = Vector3.FromFloat32Array(positions, index * 3);
-			var p2 = Vector3.FromFloat32Array(positions, (index + 1) * 3);
-			var p3 = Vector3.FromFloat32Array(positions, (index + 2) * 3);
+			var p1 = Vector3.FromArray(positions, index * 3);
+			var p2 = Vector3.FromArray(positions, (index + 1) * 3);
+			var p3 = Vector3.FromArray(positions, (index + 2) * 3);
 			
 			var p1p2 = p1.subtract(p2);
 			var p3p2 = p3.subtract(p2);
@@ -1677,20 +1676,20 @@ import lime.utils.Int32Array;
 			
 			// Store same normals for every vertex
 			for (localIndex in 0...3) {
-				normals[count++] = normal.x;
-				normals[count++] = normal.y;
-				normals[count++] = normal.z;
+				normals.push(normal.x);
+				normals.push(normal.y);
+				normals.push(normal.z);
 			}
 			index += 3;
 		}
 		
 		this.setIndices(indices);
-		this.setVerticesData(VertexBuffer.NormalKind, normals, updatableNormals);
+		this.setVerticesData(VertexBuffer.NormalKind, new Float32Array(normals), updatableNormals);
 		
 		// Updating vertex buffers
 		for (kindIndex in 0...kinds.length) {
 			var kind = kinds[kindIndex];
-			this.setVerticesData(kind, newdata[kind], vbs[kind].isUpdatable());
+			this.setVerticesData(kind, new Float32Array(newdata[kind]), vbs[kind].isUpdatable());
 		}
 		
 		// Updating submeshes

@@ -4,6 +4,7 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.animations.Animatable;
 import com.babylonhx.animations.AnimationRange;
+import com.babylonhx.behaviors.Behavior;
 import com.babylonhx.math.Quaternion;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
@@ -178,6 +179,50 @@ class NodeCache {
 
 	inline public function getEngine():Engine {
 		return this._scene.getEngine();
+	}
+	
+	// Behaviors
+	private var _behaviors:Array<Behavior<Node>> = [];
+	public var behaviors(get, never):Array<Behavior<Node>>;
+
+	public function addBehavior(behavior:Behavior<Node>):Node {
+		var index = this._behaviors.indexOf(behavior);
+		
+		if (index != -1) {
+			return null;
+		}
+		
+		behavior.attach(this);
+		this._behaviors.push(behavior);
+		
+		return this;
+	}
+
+	public function removeBehavior(behavior:Behavior<Node>):Node {
+		var index = this._behaviors.indexOf(behavior);
+		
+		if (index == -1) {
+			return null;
+		}
+		
+		this._behaviors[index].detach(this);
+		this._behaviors.splice(index, 1);
+		
+		return this;
+	}     
+	
+	inline private function get_behaviors():Array<Behavior<Node>> {
+		return this._behaviors;
+	}
+
+	public function getBehaviorByName(name:String):Behavior<Node> {
+		for (behavior in this._behaviors) {
+			if (behavior.name == name) {
+				return behavior;
+			}
+		}
+		
+		return null;
 	}
 
 	// override it in derived class
@@ -453,6 +498,11 @@ class NodeCache {
 		// Callback
 		this.onDisposeObservable.notifyObservers(this);
 		this.onDisposeObservable.clear();
+		
+		// Behaviors
+		for (behavior in this._behaviors) {
+			behavior.detach(this);
+		}
 	}
 	
 	public static function ParseAnimationRanges(node:Node, parsedNode:Dynamic, scene:Scene) {

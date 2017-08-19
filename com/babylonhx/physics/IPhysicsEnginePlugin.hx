@@ -20,5 +20,7 @@ import com.babylonhx.mesh.AbstractMesh;
 	function dispose():Void;
 	function isSupported():Bool;
 	function updateBodyPosition(mesh:AbstractMesh):Void;
+	function getTimeStep():Float;
+	function setTimeStep(value:Float):Void;
 	
 }

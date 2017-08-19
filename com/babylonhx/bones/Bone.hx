@@ -23,6 +23,10 @@ import com.babylonhx.animations.AnimationRange;
 	
 	public var children:Array<Bone> = [];
 	public var length:Int = -1;
+	
+	// Set this value to map this bone to a different index in the transform matrices.
+	// Set this value to -1 to exclude the bone from the transform matrices.
+	public var _index:Null<Int> = null;
 
 	private var _skeleton:Skeleton;
 	private var _localMatrix:Matrix;
@@ -53,13 +57,14 @@ import com.babylonhx.animations.AnimationRange;
 	}
 
 	
-	public function new(name:String, skeleton:Skeleton, parentBone:Bone = null, ?matrix:Matrix, ?restPose:Matrix) {
+	public function new(name:String, skeleton:Skeleton, parentBone:Bone = null, ?localMatrix:Matrix, ?restPose:Matrix, ?baseMatrix:Matrix, ?index:Int) {
 		super(name, skeleton.getScene());
 		
 		this._skeleton = skeleton;
-		this._localMatrix = matrix != null ? matrix : Matrix.Identity();
-		this._baseMatrix = this._localMatrix.clone();
+		this._localMatrix = localMatrix != null ? localMatrix : Matrix.Identity();
 		this._restPose = restPose != null ? restPose : this._localMatrix.clone();
+		this._baseMatrix = baseMatrix != null ? baseMatrix : this._localMatrix.clone();
+		this._index = index;
 		
 		skeleton.bones.push(this);
 		
@@ -105,7 +110,7 @@ import com.babylonhx.animations.AnimationRange;
 	}
 
 	inline public function getLocalMatrix():Matrix {
-		return this._matrix;
+		return this._localMatrix;
 	}
 
 	inline public function getBaseMatrix():Matrix {
@@ -172,7 +177,7 @@ import com.babylonhx.animations.AnimationRange;
 	// Methods
 	public function updateMatrix(matrix:Matrix, updateDifferenceMatrix:Bool = true) {
 		this._baseMatrix = matrix.clone();
-		this._matrix = matrix.clone();
+		this._localMatrix = matrix.clone();
 		
 		this._skeleton._markAsDirty();
 		
@@ -746,10 +751,10 @@ import com.babylonhx.animations.AnimationRange;
 	 */
 	public function computeAbsoluteTransforms() {
 		if (this._parent != null) {
-			this._matrix.multiplyToRef(this._parent._absoluteTransform, this._absoluteTransform);
+			this._localMatrix.multiplyToRef(this._parent._absoluteTransform, this._absoluteTransform);
 		} 
 		else {
-			this._absoluteTransform.copyFrom(this._matrix);
+			this._absoluteTransform.copyFrom(this._localMatrix);
 			
 			var poseMatrix = this._skeleton.getPoseMatrix();
 			

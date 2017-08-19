@@ -1092,14 +1092,15 @@ typedef SMD = StandardMaterialDefines
 		// Matrices        
 		this.bindOnlyWorldMatrix(world);
 		
+		var mustRebind = this._mustRebind(scene, effect, mesh.visibility);
+		
 		// Bones
 		MaterialHelper.BindBonesParameters(mesh, effect);
-		if (this._mustRebind(scene, effect, mesh.visibility)) {
+		if (mustRebind) {
 			this._uniformBuffer.bindToEffect(effect, "Material");
 			
 			this.bindViewProjection(effect);
 			if (!this._uniformBuffer.useUbo || !this.isFrozen || !this._uniformBuffer.isSync) {
-
 				if (StandardMaterial.FresnelEnabled && defines.FRESNEL) {
 					// Fresnel
 					if (this.diffuseFresnelParameters != null && this.diffuseFresnelParameters.isEnabled) {
@@ -1262,7 +1263,7 @@ typedef SMD = StandardMaterialDefines
 			effect.setColor3("vAmbientColor", this._globalAmbientColor);
 		}
 		
-		if (this._mustRebind(scene, effect) || !this.isFrozen) {
+		if (mustRebind || !this.isFrozen) {
 			// Lights
 			if (scene.lightsEnabled && !this._disableLighting) {
 				MaterialHelper.BindLights(scene, mesh, effect, defines.SPECULARTERM, this._maxSimultaneousLights);

@@ -52,6 +52,16 @@ import com.babylonhx.math.Vector3;
 		
 		return this.boundingBox.isInFrustum(frustumPlanes);
 	}
+	
+	/**
+ 	 * Gets the world distance between the min and max points of the bounding box
+ 	 */
+	public var diagonalLength(get, never):Float;
+	private function get_diagonalLength():Float {
+        var boundingBox = this.boundingBox;
+        var size = boundingBox.maximumWorld.subtract(boundingBox.minimumWorld);
+	    return size.length();
+	} 
 
 	inline public function isCompletelyInFrustum(frustumPlanes:Array<Plane>):Bool {
 		return this.boundingBox.isCompletelyInFrustum(frustumPlanes);

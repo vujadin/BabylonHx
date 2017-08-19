@@ -21,10 +21,6 @@ import lime.graphics.opengl.GLTexture;
 import lime.utils.Float32Array;
 import lime.utils.Int32Array;
 
-#if (js || purejs)
-import js.html.Element;
-#end
-
 using StringTools;
 
 
@@ -151,7 +147,7 @@ using StringTools;
 					this._loadFragmentShader(fragmentSource, function(fragmentCode:String) {
 						this._processIncludes(fragmentCode, function(fragmentCodeWithIncludes:String) {
 							this._processShaderConversion(fragmentCodeWithIncludes, true, function(migratedFragmentCode:String) {
-								this._prepareEffect(migratedVertexCode, migratedFragmentCode, this._attributesNames, this.defines, this._fallbacks);
+								this._prepareEffect(migratedVertexCode, migratedFragmentCode, this._attributesNames, this.defines, this._fallbacks, baseName);
 							});
 						});
 					});
@@ -221,15 +217,13 @@ using StringTools;
     }
 
 	// Methods
-	var observer:Observer<Effect>;
 	public function executeWhenCompiled(func:Effect->Void) {
 		if (this.isReady()) {
 			func(this);
 			return;
 		}
 		
-		observer = this.onCompileObservable.add(function(effect:Effect, _) {
-			this.onCompileObservable.remove(observer);
+		this.onCompileObservable.add(function(effect:Effect, _) {
 			func(effect);
 		});
 	}
@@ -237,7 +231,7 @@ using StringTools;
 	public function _loadVertexShader(vertex:Dynamic, callbackFn:Dynamic->Void) {
 		#if (js || purejs)
 		// DOM element ?
-		if (Std.is(vertex, Element)) {
+		if (Std.is(vertex, js.html.Element)) {
 			var vertexCode = Tools.GetDOMTextContent(vertex);
 			callbackFn(vertexCode);
 			return;
@@ -273,7 +267,7 @@ using StringTools;
 	public function _loadFragmentShader(fragment:Dynamic, callbackFn:Dynamic->Void) {
 		#if (js || purejs)
 		// DOM element ?
-		if (Std.is(fragment, Element)) {
+		if (Std.is(fragment, js.html.Element)) {
 			var fragmentCode = Tools.GetDOMTextContent(fragment);
 			callbackFn(fragmentCode);
 			return;
@@ -392,8 +386,7 @@ using StringTools;
 	
 	private function _processIncludes(sourceCode:String, callback:Dynamic->Void) {
 		var regex:EReg = ~/#include<(.+)>(\((.*)\))*(\[(.*)\])*/g;
-		var match = regex.match(sourceCode);
-		
+		var match = regex.match(sourceCode);		
 		var returnValue = sourceCode;
 		
 		while (match) {
@@ -449,7 +442,7 @@ using StringTools;
 							maxIndex = Std.int(Reflect.getProperty(this._indexParameters, indexSplits[1]));
 						}
 						
-						for (i in minIndex...maxIndex + 1) {
+						for (i in minIndex...maxIndex) {
 							if (this._engine.webGLVersion == 1) {
 								// Ubo replacement
 								var _tmprx:EReg = ~/light\{X\}.(\w*)/g;
@@ -493,7 +486,7 @@ using StringTools;
 	}
 	
 	private function _processPrecision(source:String):String {
-		#if (js || mobile)
+		//#if (js || mobile)
 		if (source.indexOf("precision highp float") == -1) {
 			if (!this._engine.getCaps().highPrecisionShaderSupported) {
 				source = "precision mediump float;\n" + source;
@@ -507,14 +500,20 @@ using StringTools;
 				source = StringTools.replace(source, "precision highp float", "precision mediump float");
 			}
 		}		
-		#end
+		//#end
 		
 		return source;
 	}
 	
-	private function _prepareEffect(vertexSourceCode:String, fragmentSourceCode:String, attributesNames:Array<String>, defines:String, ?fallbacks:EffectFallbacks) {		
+	private function _prepareEffect(vertexSourceCode:String, fragmentSourceCode:String, attributesNames:Array<String>, defines:String, ?fallbacks:EffectFallbacks, baseName:String = "") {		
         try {
             var engine = this._engine;
+			
+			// not needed for BHX...
+			if (baseName != "") {
+                vertexSourceCode = "#define SHADER_NAME vertex:" + baseName + "\n" + vertexSourceCode;
+                fragmentSourceCode = "#define SHADER_NAME fragment:" + baseName + "\n" + fragmentSourceCode;
+            }
 			
             this._program = engine.createShaderProgram(vertexSourceCode, fragmentSourceCode, defines);
 			
@@ -548,7 +547,9 @@ using StringTools;
             this._isReady = true;			
 			if (this.onCompiled != null) {
 				this.onCompiled(this);
-			}			
+			}
+			this.onCompileObservable.notifyObservers(this);
+            this.onCompileObservable.clear();
         } 
 		catch (e:Dynamic) {
 			/*#if (js || purejs)
@@ -566,6 +567,9 @@ using StringTools;
             // Let's go through fallbacks then
 			if (fallbacks != null && fallbacks.isMoreFallbacks) {
 				Tools.Error(this.name + " - Trying next fallback.");
+				trace('Fallback ERROR: ' + e);
+				trace(vertexSourceCode);
+				trace(fragmentSourceCode);
 				defines = fallbacks.reduce(defines);
 				this._prepareEffect(vertexSourceCode, fragmentSourceCode, attributesNames, defines, fallbacks);
             } 

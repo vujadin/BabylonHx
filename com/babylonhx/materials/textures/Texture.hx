@@ -5,6 +5,7 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Plane;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.utils.Image;
+import com.babylonhx.tools.Tools;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.serialization.SerializationHelper;
 
@@ -54,7 +55,8 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	@serialize()
 	public var url:String;
 	
-	@serialize()
+	// VK: Moved to BaseTexture.hx to avoid casting when using
+	/*@serialize()
 	public var uOffset:Float = 0;
 	
 	@serialize()
@@ -73,7 +75,7 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	public var vAng:Float = 0;
 	
 	@serialize()
-	public var wAng:Float = 0;
+	public var wAng:Float = 0;*/
 
 	private var _noMipmap:Bool;
 	
@@ -178,6 +180,20 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 				this._delayedOnError = onError;
 			}
 		}
+		else {
+			if (this._texture.isReady) {
+				Tools.SetImmediate(load);
+			} 
+			else {
+				this._texture.onLoadedCallbacks.push(load);
+			}
+		}
+	}
+	
+	public function updateURL(url:String) {
+		this.url = url;
+		this.delayLoadState = Engine.DELAYLOADSTATE_NOTLOADED;
+		this.delayLoad();
 	}
 
 	override public function delayLoad() {
@@ -192,6 +208,14 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 			this._texture = this.getScene().getEngine().createTexture(this.url, this._noMipmap, this._invertY, this.getScene(), this._samplingMode, null, null, this._buffer);
 			if (this._deleteBuffer) {
 				this._buffer = null;
+			}
+		}
+		else {
+			if (this._texture.isReady) {
+				Tools.SetImmediate(function() { this._delayedOnLoad(); });
+			} 
+			else {
+				this._texture.onLoadedCallbacks.push(this._delayedOnLoad);
 			}
 		}
 	}

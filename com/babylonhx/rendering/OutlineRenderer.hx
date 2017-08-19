@@ -59,9 +59,10 @@ import com.babylonhx.math.Matrix;
 		
 		engine.setZOffset(-this.zOffset);
 		
-		mesh._processRendering(subMesh, this._effect, Material.TriangleFillMode, batch, hardwareInstancedRendering,
-					function(isInstance:Bool, world:Matrix, ?mat:Material) { this._effect.setMatrix("world", world); });
-					
+		mesh._processRendering(subMesh, this._effect, Material.TriangleFillMode, batch, hardwareInstancedRendering, function(_, world:Matrix, _) { 
+			this._effect.setMatrix("world", world);
+		});
+		
 		engine.setZOffset(0);
 	}
 

@@ -4,7 +4,6 @@ import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.actions.ActionManager;
-import cpp.Void;
 
 
 /**

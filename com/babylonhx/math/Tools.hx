@@ -18,6 +18,7 @@ import lime.utils.Int32Array;
 	static public inline var ToLinearSpace:Float = 2.2;
 	static public inline var Epsilon:Float = 0.001;
 	static public inline var LOG2E:Float = 1.4426950408889634;
+	static public var TWOPI:Float = Math.PI * 2;
 	
 	public static function ExtractMinAndMaxIndexed(positions:Float32Array, indices:Int32Array, indexStart:Int, indexCount:Int, bias:Vector2 = null):BabylonMinMax {
 		var minimum = new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY);

@@ -119,7 +119,7 @@ import com.babylonhx.math.Quaternion;
 	// Target
 	static var zUpVector:Vector3 = new Vector3(0, 1.0, 0);
 	static var vDir:Vector3 = Vector3.Zero();
-	public function setTarget(target:Vector3) {
+	public function setTarget(target:Vector3, toBoundingCenter:Bool = false, allowSamePosition:Bool = false) {
 		this.upVector.normalize();
 		
 		Matrix.LookAtLHToRef(this.position, target, this._defaultUpVector, this._camMatrix);

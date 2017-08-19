@@ -2,6 +2,7 @@ package com.babylonhx.materials.pbr;
 
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.math.Color3;
+import com.babylonhx.tools.TextureTools;
 
 /**
  * ...
@@ -87,8 +88,8 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var specularIntensity(get, set):Float;// = 1.0;
-	inline private function get_specularIntensity():Float {
+	public var specularIntensity(get, set):Float;
+	inline private function get_specularIntensity():Float { 
 		return _specularIntensity;
 	}
 	inline private function set_specularIntensity(value:Float):Float {
@@ -101,76 +102,13 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var disableBumpMap:Bool;// = false;
-	inline private function get_disableBumpMap():Float {
+	public var disableBumpMap(get, set):Bool;
+	inline private function get_disableBumpMap():Bool {
 		return _disableBumpMap;
 	}
-	inline private function set_disableBumpMap(value:Float):Float {
+	inline private function set_disableBumpMap(value:Bool):Bool {
 		_markAllSubMeshesAsTexturesDirty();
 		return _disableBumpMap = value;
-	}
-
-	/**
-	 * The camera exposure used on this material.
-	 * This property is here and not in the camera to allow controlling exposure without full screen post process.
-	 * This corresponds to a photographic exposure.
-	 */
-	@serialize()
-	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var cameraExposure:Float;// = 1.0;
-	inline private function get_cameraExposure():Float {
-		return _cameraExposure;
-	}
-	inline private function set_cameraExposure(value:Float):Float {
-		_markAllSubMeshesAsTexturesDirty();
-		return _cameraExposure = value;
-	}
-	
-	/**
-	 * The camera contrast used on this material.
-	 * This property is here and not in the camera to allow controlling contrast without full screen post process.
-	 */
-	@serialize()
-	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var cameraContrast:Float;// = 1.0;
-	inline private function get_cameraContrast():Float {
-		return _cameraContrast;
-	}
-	inline private function set_cameraContrast(value:Float):Float {
-		_markAllSubMeshesAsTexturesDirty();
-		return _cameraContrast = value;
-	}
-	
-	/**
-	 * Color Grading 2D Lookup Texture.
-	 * This allows special effects like sepia, black and white to sixties rendering style. 
-	 */
-	@serializeAsTexture()
-	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var cameraColorGradingTexture(get, set):BaseTexture;// = null;
-	inline private function get_cameraColorGradingTexture():BaseTexture {
-		return _cameraColorGradingTexture;
-	}
-	inline private function set_cameraColorGradingTexture(value:BaseTexture):BaseTexture {
-		_markAllSubMeshesAsTexturesDirty();
-		return _cameraColorGradingTexture = value;
-	}
-	
-	/**
-	 * The color grading curves provide additional color adjustmnent that is applied after any color grading transform (3D LUT). 
-	 * They allow basic adjustment of saturation and small exposure adjustments, along with color filter tinting to provide white balance adjustment or more stylistic effects.
-	 * These are similar to controls found in many professional imaging or colorist software. The global controls are applied to the entire image. For advanced tuning, extra controls are provided to adjust the shadow, midtone and highlight areas of the image; 
-	 * corresponding to low luminance, medium luminance, and high luminance areas respectively.
-	 */
-	@serializeAsColorCurves()
-	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var cameraColorCurves(get, set):ColorCurves;// = null;
-	inline private function get_cameraColorCurves():ColorCurves {
-		return _cameraColorCurves;
-	}
-	inline private function set_cameraColorCurves(value:ColorCurves):ColorCurves {
-		_markAllSubMeshesAsTexturesDirty();
-		return _cameraColorCurves = value;
 	}
 
 	/**
@@ -196,7 +134,7 @@ class PBRMaterial extends PBRBaseMaterial {
 	inline private function get_ambientTexture():BaseTexture {
 		return _ambientTexture;
 	}
-	inline private function set_ambientTexture(value:BaseTexture):BaseTexture {
+	inline private function set_ambientTexture(value:BaseTexture):BaseTexture { 
 		_markAllSubMeshesAsTexturesDirty();
 		return _ambientTexture = value;
 	}
@@ -206,7 +144,7 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var ambientTextureStrength(get, set):Float; //= 1.0;
+	public var ambientTextureStrength(get, set):Float;
 	inline private function get_ambientTextureStrength():Float {
 		return _ambientTextureStrength;
 	}
@@ -356,7 +294,7 @@ class PBRMaterial extends PBRBaseMaterial {
 
 	@serializeAsColor3("ambient")
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var ambientColor(get, set):Color3;// = new Color3(0, 0, 0);
+	public var ambientColor(get, set):Color3;
 	inline private function get_ambientColor():Color3 {
 		return _ambientColor;
 	}
@@ -369,8 +307,8 @@ class PBRMaterial extends PBRBaseMaterial {
 	 * AKA Diffuse Color in other nomenclature.
 	 */
 	@serializeAsColor3("albedo")
-	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var albedoColor(get, set):Color3;// = new Color3(1, 1, 1);
+	@expandToProperty("_markAllSubMeshesAsTexturesDirty")
+	public var albedoColor(get, set):Color3;
 	inline private function get_albedoColor():Color3 {
 		return _albedoColor;
 	}
@@ -384,7 +322,7 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serializeAsColor3("reflectivity")
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var reflectivityColor(get, set):Color3;// = new Color3(1, 1, 1);
+	public var reflectivityColor(get, set):Color3;
 	inline private function get_reflectivityColor():Color3 {
 		return _reflectivityColor;
 	}
@@ -395,7 +333,7 @@ class PBRMaterial extends PBRBaseMaterial {
 
 	@serializeAsColor3("reflection")
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var reflectionColor(get, set):Color3;// = new Color3(0.0, 0.0, 0.0);
+	public var reflectionColor(get, set):Color3;
 	inline private function get_reflectionColor():Color3 {
 		return _reflectionColor;
 	}
@@ -406,7 +344,7 @@ class PBRMaterial extends PBRBaseMaterial {
 
 	@serializeAsColor3("emissive")
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var emissiveColor(get, set):Color3;// = new Color3(0, 0, 0);
+	public var emissiveColor(get, set):Color3;
 	inline private function get_emissiveColor():Color3 {
 		return _emissiveColor;
 	}
@@ -420,7 +358,7 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var microSurface(get, set):Float;// = 0.9;
+	public var microSurface(get, set):Float;
 	inline private function get_microSurface():Float {
 		return _microSurface;
 	}
@@ -434,7 +372,7 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var indexOfRefraction(get, set):Float;// = 0.66;
+	public var indexOfRefraction(get, set):Float;
 	inline private function get_indexOfRefraction():Float {
 		return _indexOfRefraction;
 	}
@@ -448,7 +386,7 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var invertRefractionY(get, set):Bool;// = false;
+	public var invertRefractionY(get, set):Bool;
 	inline private function get_invertRefractionY():Bool {
 		return _invertRefractionY;
 	}
@@ -457,35 +395,13 @@ class PBRMaterial extends PBRBaseMaterial {
 		return _invertRefractionY = value;
 	}
 
-	@serializeAsFresnelParameters()
-	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var opacityFresnelParameters(get, set):FresnelParameters;
-	inline private function get_opacityFresnelParameters():FresnelParameters {
-		return _opacityFresnelParameters;
-	}
-	inline private function set_opacityFresnelParameters(value:FresnelParameters):FresnelParameters {
-		_markAllSubMeshesAsTexturesDirty();
-		return _opacityFresnelParameters = value;
-	}
-
-	@serializeAsFresnelParameters()
-	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var emissiveFresnelParameters(get, set):FresnelParameters;
-	inline private function get_emissiveFresnelParameters():FresnelParameters {
-		return _emissiveFresnelParameters;
-	}
-	inline private function set_emissiveFresnelParameters(value:FresnelParameters):FresnelParameters {
-		_markAllSubMeshesAsTexturesDirty();
-		return _emissiveFresnelParameters = value;
-	}
-
 	/**
 	 * This parameters will make the material used its opacity to control how much it is refracting aginst not.
 	 * Materials half opaque for instance using refraction could benefit from this control.
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var linkRefractionWithTransparency(get, set):Bool;// = false;
+	public var linkRefractionWithTransparency(get, set):Bool;
 	inline private function get_linkRefractionWithTransparency():Bool {
 		return _linkRefractionWithTransparency;
 	}
@@ -496,7 +412,7 @@ class PBRMaterial extends PBRBaseMaterial {
 
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var useLightmapAsShadowmap(get, set):Bool;// = false;
+	public var useLightmapAsShadowmap(get, set):Bool;
 	inline private function get_useLightmapAsShadowmap():Bool {
 		return _useLightmapAsShadowmap;
 	}
@@ -506,32 +422,45 @@ class PBRMaterial extends PBRBaseMaterial {
 	}
 	
 	/**
-	 * In this mode, the emissive informtaion will always be added to the lighting once.
-	 * A light for instance can be thought as emissive.
+	 * Specifies that the alpha is coming form the albedo channel alpha channel.
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var useEmissiveAsIllumination(get, set):Bool;// = false;
-	inline private function get_useEmissiveAsIllumination():Bool {
-		return _useEmissiveAsIllumination;
-	}
-	inline private function set_useEmissiveAsIllumination(value:Bool):Bool {
-		_markAllSubMeshesAsTexturesDirty();
-		return _useEmissiveAsIllumination = value;
-	}
-	
-	/**
-	 * Secifies that the alpha is coming form the albedo channel alpha channel.
-	 */
-	@serialize()
-	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var useAlphaFromAlbedoTexture(get, set):Bool;// = false;
+	public var useAlphaFromAlbedoTexture(get, set):Bool;
 	inline private function get_useAlphaFromAlbedoTexture():Bool {
 		return _useAlphaFromAlbedoTexture;
 	}
 	inline private function set_useAlphaFromAlbedoTexture(value:Bool):Bool {
 		_markAllSubMeshesAsTexturesDirty();
 		return _useAlphaFromAlbedoTexture = value;
+	}
+
+	/**
+	 * Enforces alpha test in opaque or blend mode in order to improve the performances of some situations.
+	 */
+	@serialize()
+	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
+	public var forceAlphaTest(get, set):Bool;
+	inline private function get_forceAlphaTest():Bool {
+		return _forceAlphaTest;
+	}
+	inline private function set_forceAlphaTest(value:Bool):Bool {
+		_markAllSubMeshesAsTexturesDirty();
+		return _forceAlphaTest = value;
+	}
+
+	/**
+	 * Defines the alpha limits in alpha test mode.
+	 */
+	@serialize()
+	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
+	public var alphaCutOff(get, set):Float;
+	inline private function get_alphaCutOff():Float {
+		return _alphaCutOff;
+	}
+	inline private function set_alphaCutOff(value:Float):Float {
+		_markAllSubMeshesAsTexturesDirty();
+		return _alphaCutOff = value;
 	}
 	
 	/**
@@ -540,7 +469,7 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var useSpecularOverAlpha(get, set):Bool;// = true;
+	public var useSpecularOverAlpha(get, set):Bool;
 	inline private function get_useSpecularOverAlpha():Bool {
 		return _useSpecularOverAlpha;
 	}
@@ -554,7 +483,7 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var useMicroSurfaceFromReflectivityMapAlpha(get, set):Bool;// = false;
+	public var useMicroSurfaceFromReflectivityMapAlpha(get, set):Bool;
 	inline private function get_useMicroSurfaceFromReflectivityMapAlpha():Bool {
 		return _useMicroSurfaceFromReflectivityMapAlpha;
 	}
@@ -568,7 +497,7 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var useRoughnessFromMetallicTextureAlpha(get, set):Bool;// = true;
+	public var useRoughnessFromMetallicTextureAlpha(get, set):Bool;
 	inline private function get_useRoughnessFromMetallicTextureAlpha():Bool {
 		return _useRoughnessFromMetallicTextureAlpha;
 	}
@@ -582,7 +511,7 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var useRoughnessFromMetallicTextureGreen(get, set):Bool;// = false;
+	public var useRoughnessFromMetallicTextureGreen(get, set):Bool;
 	inline private function get_useRoughnessFromMetallicTextureGreen():Bool {
 		return _useRoughnessFromMetallicTextureGreen;
 	}
@@ -596,7 +525,7 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var useMetallnessFromMetallicTextureBlue(get, set):Bool;// = false;
+	public var useMetallnessFromMetallicTextureBlue(get, set):Bool;
 	inline private function get_useMetallnessFromMetallicTextureBlue():Bool {
 		return _useMetallnessFromMetallicTextureBlue;
 	}
@@ -610,7 +539,7 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var useAmbientOcclusionFromMetallicTextureRed(get, set):Bool;// = false;
+	public var useAmbientOcclusionFromMetallicTextureRed(get, set):Bool;
 	inline private function get_useAmbientOcclusionFromMetallicTextureRed():Bool {
 		return _useAmbientOcclusionFromMetallicTextureRed;
 	}
@@ -624,7 +553,7 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var useAmbientInGrayScale(get, set):Bool;// = false;
+	public var useAmbientInGrayScale(get, set):Bool;
 	inline private function get_useAmbientInGrayScale():Bool {
 		return _useAmbientInGrayScale;
 	}
@@ -639,7 +568,7 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var useAutoMicroSurfaceFromReflectivityMap(get, set):Bool;// = false;
+	public var useAutoMicroSurfaceFromReflectivityMap(get, set):Bool;
 	inline private function get_useAutoMicroSurfaceFromReflectivityMap():Bool {
 		return _useAutoMicroSurfaceFromReflectivityMap;
 	}
@@ -649,28 +578,13 @@ class PBRMaterial extends PBRBaseMaterial {
 	}
 	
 	/**
-	 * Allows to work with scalar in linear mode. This is definitely a matter of preferences and tools used during
-	 * the creation of the material.
-	 */
-	@serialize()
-	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var useScalarInLinearSpace(get, set):Bool;// = false;
-	inline private function get_useScalarInLinearSpace():Bool {
-		return _useScalarInLinearSpace;
-	}
-	inline private function set_useScalarInLinearSpace(value:Bool):Bool {
-		_markAllSubMeshesAsTexturesDirty();
-		return _useScalarInLinearSpace = value;
-	}
-	
-	/**
 	 * BJS is using an harcoded light falloff based on a manually sets up range.
 	 * In PBR, one way to represents the fallof is to use the inverse squared root algorythm.
 	 * This parameter can help you switch back to the BJS mode in order to create scenes using both materials.
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var usePhysicalLightFalloff(get, set):Bool;// = true;
+	public var usePhysicalLightFalloff(get, set):Bool;
 	inline private function get_usePhysicalLightFalloff():Bool {
 		return _usePhysicalLightFalloff;
 	}
@@ -685,7 +599,7 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var useRadianceOverAlpha(get, set):Bool;// = true;
+	public var useRadianceOverAlpha(get, set):Bool;
 	inline private function get_useRadianceOverAlpha():Bool {
 		return _useRadianceOverAlpha;
 	}
@@ -699,7 +613,7 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var useParallax(get, set):Bool;// = false;
+	public var useParallax(get, set):Bool;
 	inline private function get_useParallax():Bool {
 		return _useParallax;
 	}
@@ -713,7 +627,7 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var useParallaxOcclusion(get, set):Bool;// = false;
+	public var useParallaxOcclusion(get, set):Bool;
 	inline private function get_useParallaxOcclusion():Bool {
 		return _useParallaxOcclusion;
 	}
@@ -727,7 +641,7 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var parallaxScaleBias(get, set):Float;// = 0.05;
+	public var parallaxScaleBias(get, set):Float;
 	inline private function get_parallaxScaleBias():Float {
 		return _parallaxScaleBias;
 	}
@@ -741,13 +655,27 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsLightsDirty")
-	public var disableLighting(get, set):Bool;// = false;
+	public var disableLighting(get, set):Bool;
 	inline private function get_disableLighting():Bool {
 		return _disableLighting;
 	}
 	inline private function set_disableLighting(value:Bool):Bool {
-		_markAllSubMeshesAsLightsDirty();
+		_markAllSubMeshesAsTexturesDirty();
 		return _disableLighting = value;
+	}
+
+	/**
+	 * Force the shader to compute irradiance in the fragment shader in order to take bump in account.
+	 */
+	@serialize()
+	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
+	public var forceIrradianceInFragment(get, set):Bool;
+	inline private function get_forceIrradianceInFragment():Bool {
+		return _forceIrradianceInFragment;
+	}
+	inline private function set_forceIrradianceInFragment(value:Bool):Bool {
+		_markAllSubMeshesAsTexturesDirty();
+		return _forceIrradianceInFragment = value;
 	}
 
 	/**
@@ -755,12 +683,12 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsLightsDirty")
-	public var maxSimultaneousLights(get, set):Int;// = 4;
+	public var maxSimultaneousLights(get, set):Int;
 	inline private function get_maxSimultaneousLights():Int {
 		return _maxSimultaneousLights;
 	}
 	inline private function set_maxSimultaneousLights(value:Int):Int {
-		_markAllSubMeshesAsLightsDirty();
+		_markAllSubMeshesAsTexturesDirty();
 		return _maxSimultaneousLights = value;
 	}
 
@@ -769,13 +697,13 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var invertNormalMapX(get, set):Bool;// = false;
+	public var invertNormalMapX(get, set):Bool;
 	inline private function get_invertNormalMapX():Bool {
 		return _invertNormalMapX;
 	}
 	inline private function set_invertNormalMapX(value:Bool):Bool {
 		_markAllSubMeshesAsTexturesDirty();
-		return _invertNormalMapX;
+		return _invertNormalMapX = value;
 	}
 
 	/**
@@ -783,13 +711,13 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var invertNormalMapY(get, set):Bool;// = false;
+	public var invertNormalMapY(get, set):Bool;
 	inline private function get_invertNormalMapY():Bool {
 		return _invertNormalMapY;
 	}
 	inline private function set_invertNormalMapY(value:Bool):Bool {
 		_markAllSubMeshesAsTexturesDirty();
-		return _invertNormalMapY;
+		return _invertNormalMapY = value;
 	}
 
 	/**
@@ -797,14 +725,189 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
-	public var twoSidedLighting(get, set):Bool;// = false;
+	public var twoSidedLighting(get, set):Bool;
 	inline private function get_twoSidedLighting():Bool {
 		return _twoSidedLighting;
 	}
 	inline private function set_twoSidedLighting(value:Bool):Bool {
 		_markAllSubMeshesAsTexturesDirty();
-		return _twoSidedLighting;
+		return _twoSidedLighting = value;
 	}
+
+	/**
+	 * Specifies that the alpha is premultiplied before output (this enables alpha premultiplied blending).
+	 * in your scene composition.
+	 */
+	@serialize()
+	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
+	public var preMultiplyAlpha(get, set):Bool;
+	inline private function get_preMultiplyAlpha():Bool {
+		return _preMultiplyAlpha;
+	}
+	inline private function set_preMultiplyAlpha(value:Bool):Bool {
+		_markAllSubMeshesAsTexturesDirty();
+		return _preMultiplyAlpha = value;
+	}
+
+	/**
+	 * A fresnel is applied to the alpha of the model to ensure grazing angles edges are not alpha tested.
+	 * And/Or occlude the blended part.
+	 */
+	@serialize()
+	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
+	public var useAlphaFresnel(get, set):Bool;
+	inline private function get_useAlphaFresnel():Bool {
+		return _useAlphaFresnel;
+	}
+	inline private function set_useAlphaFresnel(value:Bool):Bool {
+		_markAllSubMeshesAsTexturesDirty();
+		return _useAlphaFresnel = value;
+	}
+
+	/**
+	 * A fresnel is applied to the alpha of the model to ensure grazing angles edges are not alpha tested.
+	 * And/Or occlude the blended part.
+	 */
+	@serializeAsTexture()
+	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
+	public var environmentBRDFTexture(get, set):BaseTexture;
+	inline private function get_environmentBRDFTexture():BaseTexture {
+		return _environmentBRDFTexture;
+	}
+	inline private function set_environmentBRDFTexture(value:BaseTexture):BaseTexture {
+		_markAllSubMeshesAsTexturesDirty();
+		return _environmentBRDFTexture = value;
+	}
+
+	/**
+	 * Force normal to face away from face.
+	 * (Temporary internal fix to remove before 3.1)
+	 */
+	@serialize()
+	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
+	public var forceNormalForward(get, set):Bool;
+	inline private function get_forceNormalForward():Bool {
+		return _forceNormalForward;
+	}
+	inline private function set_forceNormalForward(value:Bool):Bool {
+		_markAllSubMeshesAsTexturesDirty();
+		return _forceNormalForward = value;
+	}
+	
+	/**
+	 * Gets the image processing configuration used either in this material.
+	 */
+	public var imageProcessingConfiguration(get, set):ImageProcessingConfiguration;
+	inline private function get_imageProcessingConfiguration():ImageProcessingConfiguration {
+		return this._imageProcessingConfiguration;
+	}
+	/**
+	 * Sets the Default image processing configuration used either in the this material.
+	 * 
+	 * If sets to null, the scene one is in use.
+	 */
+	inline private function set_imageProcessingConfiguration(value:ImageProcessingConfiguration):ImageProcessingConfiguration {
+		this._attachImageProcessingConfiguration(value);
+		
+		// Ensure the effect will be rebuilt.
+		this._markAllSubMeshesAsTexturesDirty();
+		
+		return value;
+	}
+
+	/**
+	 * Gets wether the color curves effect is enabled.
+	 */
+	public var cameraColorCurvesEnabled(get, set):Bool;
+	inline private function get_cameraColorCurvesEnabled():Bool {
+		return this.imageProcessingConfiguration.colorCurvesEnabled;
+	}
+	/**
+	 * Sets wether the color curves effect is enabled.
+	 */
+	inline private function set_cameraColorCurvesEnabled(value:Bool):Bool {
+		return this.imageProcessingConfiguration.colorCurvesEnabled = value;
+	}
+
+	/**
+	 * Gets wether the color grading effect is enabled.
+	 */
+	public var cameraColorGradingEnabled(get, set):Bool;
+	inline private function get_cameraColorGradingEnabled():Bool {
+		return this.imageProcessingConfiguration.colorGradingEnabled;
+	}
+	/**
+	 * Gets wether the color grading effect is enabled.
+	 */
+	inline private function set_cameraColorGradingEnabled(value:Bool):Bool {
+		return this.imageProcessingConfiguration.colorGradingEnabled = value;
+	}
+
+	/**
+	 * Gets wether tonemapping is enabled or not.
+	 */
+	public var cameraToneMappingEnabled(get, set):Bool;
+	inline private function get_cameraToneMappingEnabled():Bool {
+		return this._imageProcessingConfiguration.toneMappingEnabled;
+	}
+	/**
+	 * Sets wether tonemapping is enabled or not
+	 */
+	inline private function set_cameraToneMappingEnabled(value:Bool):Bool {
+		return this._imageProcessingConfiguration.toneMappingEnabled = value;
+	}
+	
+	/**
+	 * The camera exposure used on this material.
+	 * This property is here and not in the camera to allow controlling exposure without full screen post process.
+	 * This corresponds to a photographic exposure.
+	 */
+	public var cameraExposure:Float;// = 1.0;
+	inline private function get_cameraExposure():Float {
+		return this._imageProcessingConfiguration.exposure;
+	}
+	inline private function set_cameraExposure(value:Float):Float {
+		return this._imageProcessingConfiguration.exposure = value;
+	}
+	
+	/**
+	 * The camera contrast used on this material.
+	 * This property is here and not in the camera to allow controlling contrast without full screen post process.
+	 */
+	public var cameraContrast:Float;// = 1.0;
+	inline private function get_cameraContrast():Float {
+		return this._imageProcessingConfiguration.contrast;
+	}
+	inline private function set_cameraContrast(value:Float):Float {
+		return this._imageProcessingConfiguration.contrast = value;
+	}
+	
+	/**
+	 * Color Grading 2D Lookup Texture.
+	 * This allows special effects like sepia, black and white to sixties rendering style. 
+	 */
+	public var cameraColorGradingTexture(get, set):BaseTexture;
+	inline private function get_cameraColorGradingTexture():BaseTexture {
+		return this._imageProcessingConfiguration.colorGradingTexture;
+	}
+	inline private function set_cameraColorGradingTexture(value:BaseTexture):BaseTexture {
+		return this._imageProcessingConfiguration.colorGradingTexture = value;
+	}
+	
+	/**
+	 * The color grading curves provide additional color adjustmnent that is applied after any color grading transform (3D LUT). 
+	 * They allow basic adjustment of saturation and small exposure adjustments, along with color filter tinting to provide white balance adjustment or more stylistic effects.
+	 * These are similar to controls found in many professional imaging or colorist software. The global controls are applied to the entire image. For advanced tuning, extra controls are provided to adjust the shadow, midtone and highlight areas of the image; 
+	 * corresponding to low luminance, medium luminance, and high luminance areas respectively.
+	 */
+	public var cameraColorCurves(get, set):ColorCurves;// = null;
+	inline private function get_cameraColorCurves():ColorCurves {
+		return this._imageProcessingConfiguration.colorCurves;
+	}
+	inline private function set_cameraColorCurves(value:ColorCurves):ColorCurves {
+		return this._imageProcessingConfiguration.colorCurves = value;
+	}
+	
 
 	/**
 	 * Instantiates a new PBRMaterial instance.
@@ -814,19 +917,119 @@ class PBRMaterial extends PBRBaseMaterial {
 	 */
 	public function new(name:String, scene:Scene) {
 		super(name, scene);
+		
+		this._environmentBRDFTexture = TextureTools.GetEnvironmentBRDFTexture(scene);
 	}
 
 	override public function getClassName():String {
 		return "PBRMaterial";
 	}
+	
+	override public function getActiveTextures():Array<BaseTexture> {
+		var activeTextures = super.getActiveTextures();
+		
+		if (this._albedoTexture != null) {
+			activeTextures.push(this._albedoTexture);
+		}
+		
+		if (this._ambientTexture != null) {
+			activeTextures.push(this._ambientTexture);
+		}
+		
+		if (this._opacityTexture != null) {
+			activeTextures.push(this._opacityTexture);
+		}
+		
+		if (this._reflectionTexture != null) {
+			activeTextures.push(this._reflectionTexture);
+		}
+		
+		if (this._emissiveTexture != null) {
+			activeTextures.push(this._emissiveTexture);
+		}
+		
+		if (this._reflectivityTexture != null) {
+			activeTextures.push(this._reflectivityTexture);
+		}
+		
+		if (this._metallicTexture != null) {
+			activeTextures.push(this._metallicTexture);
+		}
+		
+		if (this._microSurfaceTexture != null) {
+			activeTextures.push(this._microSurfaceTexture);
+		}
+		
+		if (this._bumpTexture != null) {
+			activeTextures.push(this._bumpTexture);
+		}
+		
+		if (this._lightmapTexture != null) {
+			activeTextures.push(this._lightmapTexture);
+		}
+		
+		if (this._refractionTexture != null) {
+			activeTextures.push(this._refractionTexture);
+		}
+		
+		return activeTextures;
+	}
 
-	override public function clone(name:String):PBRMaterial {
+	override public function hasTexture(texture:BaseTexture):Bool {
+		if (super.hasTexture(texture)) {
+			return true;
+		}
+		
+		if (this._albedoTexture == texture) {
+			return true;
+		}
+		
+		if (this._ambientTexture == texture) {
+			return true;
+		}
+		
+		if (this._opacityTexture == texture) {
+			return true;
+		}
+		
+		if (this._reflectionTexture == texture) {
+			return true;
+		}
+		
+		if (this._reflectivityTexture == texture) {
+			return true;
+		}
+		
+		if (this._metallicTexture == texture) {
+			return true;
+		}
+		
+		if (this._microSurfaceTexture == texture) {
+			return true;
+		}
+		
+		if (this._bumpTexture == texture) {
+			return true;
+		}
+		
+		if (this._lightmapTexture == texture) {
+			return true;
+		}
+		
+		if (this._refractionTexture == texture) {
+			return true;
+		}
+		
+		return false;    
+	}
+
+	override public function clone(name:String, cloneChildren:Bool = false):Material {
 		//return SerializationHelper.Clone(function() { return new PBRMaterial(name, this.getScene()); }, this);
 		// VK TODO:
 		return null;
 	}
 
-	public function serialize():Dynamic {
+	override public function serialize():Dynamic {
 		//var serializationObject = SerializationHelper.Serialize(this);
 		//serializationObject.customType = "BABYLON.PBRMaterial";
 		//return serializationObject;

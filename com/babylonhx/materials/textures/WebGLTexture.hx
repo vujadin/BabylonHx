@@ -17,18 +17,15 @@ import lime.graphics.opengl.GLRenderbuffer;
 	
 	public var data:GLTexture;
 	
-	
+	public var isReady:Bool;
+	public var isCube:Bool;
+	public var url:String;
+	public var samplingMode:Int;
+	public var references:Int;	
 	public var generateMipMaps:Bool;
+	public var samples:Int;	
 	public var type:Int = -1;
 	public var format:Int;
-	public var isCube:Bool;		
-	public var isReady:Bool;
-	public var noMipmap:Bool = true;
-	public var references:Int;
-	public var url:String;
-	public var samples:Int;	
-	public var samplingMode:Int;
-	
 	public var onLoadedCallbacks:Array<Void->Void>;
 	
 	public var _size:Dynamic;
@@ -45,8 +42,7 @@ import lime.graphics.opengl.GLRenderbuffer;
 	public var _cachedWrapV:Int;	
 	public var _isDisabled:Bool;
 	public var _generateStencilBuffer:Bool;
-	public var _generateDepthBuffer:Bool;
-	
+	public var _generateDepthBuffer:Bool;	
 	public var _sphericalPolynomial:SphericalPolynomial;
 	// The following three fields helps sharing generated fixed LODs for texture filtering
     // In environment not supporting the textureLOD extension like EDGE. They are for internal use only.
@@ -85,7 +81,6 @@ import lime.graphics.opengl.GLRenderbuffer;
 		this._isDisabled = false;
 		
 		this.isReady = false;
-		this.noMipmap = false;
 		this.references = 0;
 	}
 	

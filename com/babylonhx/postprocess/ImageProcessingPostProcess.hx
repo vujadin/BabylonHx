@@ -380,19 +380,46 @@ class ImageProcessingPostProcess extends PostProcess {
 		this._defines.FROMLINEARSPACE = this._fromLinearSpace;
 		this.imageProcessingConfiguration.prepareDefines(this._defines);
 		
-		var defines = '#define IMAGEPROCESSING;\r\n';
-		defines += '#define VIGNETTE;\r\n';
-		defines += '#define VIGNETTEBLENDMODEMULTIPLY;\r\n';
-		defines += '#define VIGNETTEBLENDMODEOPAQUE;\r\n';
-		defines += '#define TONEMAPPING;\r\n';
-		defines += '#define CONTRAST;\r\n';
-		defines += '#define COLORCURVES;\r\n';
-		defines += '#define COLORGRADING;\r\n';
-		defines += '#define FROMLINEARSPACE;\r\n';
-		defines += '#define SAMPLER3DGREENDEPTH;\r\n';
-		defines += '#define SAMPLER3DBGRMAP;\r\n';
-		defines += '#define IMAGEPROCESSINGPOSTPROCESS;\r\n';
-		defines += '#define EXPOSURE;\r\n';
+		var defines = "";
+		if (this._defines.IMAGEPROCESSING) {
+			defines = '#define IMAGEPROCESSING;\r\n';
+		}
+		if (this._defines.VIGNETTE) {
+			defines += '#define VIGNETTE;\r\n';
+		}
+		if (this._defines.VIGNETTEBLENDMODEMULTIPLY) {
+			defines += '#define VIGNETTEBLENDMODEMULTIPLY;\r\n';
+		}
+		if (this._defines.VIGNETTEBLENDMODEOPAQUE) {
+			defines += '#define VIGNETTEBLENDMODEOPAQUE;\r\n';
+		}
+		if (this._defines.TONEMAPPING) {
+			defines += '#define TONEMAPPING;\r\n';
+		}
+		if (this._defines.CONTRAST) {
+			defines += '#define CONTRAST;\r\n';
+		}
+		if (this._defines.COLORCURVES) {
+			defines += '#define COLORCURVES;\r\n';
+		}
+		if (this._defines.COLORGRADING) {
+			defines += '#define COLORGRADING;\r\n';
+		}
+		if (this._defines.FROMLINEARSPACE) {
+			defines += '#define FROMLINEARSPACE;\r\n';
+		}
+		if (this._defines.SAMPLER3DGREENDEPTH) {
+			defines += '#define SAMPLER3DGREENDEPTH;\r\n';
+		}
+		if (this._defines.SAMPLER3DBGRMAP) {
+			defines += '#define SAMPLER3DBGRMAP;\r\n';
+		}
+		if (this._defines.IMAGEPROCESSINGPOSTPROCESS) {
+			defines += '#define IMAGEPROCESSINGPOSTPROCESS;\r\n';
+		}
+		if (this._defines.EXPOSURE) {
+			defines += '#define EXPOSURE;\r\n';
+		}
 		
 		var samplers = ["textureSampler"];
 		ImageProcessingConfiguration.PrepareSamplers(samplers, this._defines);
