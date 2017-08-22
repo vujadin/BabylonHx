@@ -16,7 +16,6 @@ import lime.graphics.RenderContext;
 import lime.graphics.Renderer;
 import lime.ui.Touch;
 import lime.ui.Window;
-import samples.MemoryGame;
 
 import com.babylonhx.Engine;
 import com.babylonhx.Scene;
@@ -64,7 +63,7 @@ class MainLime extends Application {
 	}
 	
 	override public function onPreloadComplete() {	
-		//new samples.BScene(scene);
+		new samples.BScene(scene);
 		//new samples.DRPDemo(scene);
 		//new samples.BasicScene(scene);
 		//new samples.BasicElements(scene);
@@ -195,7 +194,7 @@ class MainLime extends Application {
 		//new samples.ShadowTest(scene);
 		//new samples.MultiLights(scene);
 		//new samples.MultiLights2(scene);
-		new samples.HighlightLayerTest(scene);
+		//new samples.HighlightLayerTest(scene);
 		//new samples.PBRWithHighlight(scene);
 		//new samples.BoneScaling(scene);
 		//new samples.MouseFollow(scene);
