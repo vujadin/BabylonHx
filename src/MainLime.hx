@@ -7,13 +7,16 @@ package;
 import haxe.Timer;
 import lime.app.Application;
 import lime.Assets;
-import lime.audio.AudioSource;
+import lime.graphics.GLRenderContext;
+import lime.graphics.opengl.WebGL2Context;
+import lime.graphics.opengl.WebGLContext;
 import lime.ui.KeyCode;
 import lime.ui.KeyModifier;
 import lime.graphics.RenderContext;
 import lime.graphics.Renderer;
 import lime.ui.Touch;
 import lime.ui.Window;
+import samples.MemoryGame;
 
 import com.babylonhx.Engine;
 import com.babylonhx.Scene;
@@ -41,22 +44,36 @@ class MainLime extends Application {
 		super();
 	}
 	
-	override public function onWindowCreate(window:Window):Void {
-		engine = new Engine(window, true);	
-		scene = new Scene(engine);
-		
-		engine.width = this.window.width;
-		engine.height = this.window.height;
+	override public function onWindowCreate(window:Window) {
+		switch (window.renderer.context) {
+			case OPENGL (gl):
+				var gl:WebGL2Context = gl;
+				engine = new Engine(window, gl, true);	
+				scene = new Scene(engine);
+				
+				engine.width = window.width;
+				engine.height = window.height;
+				
+				/*for (c in Reflect.fields(engine.getCaps())) {
+					trace(c + " : " + Reflect.field(engine.getCaps(), c));
+				}*/
+				
+			default:
+				//
+		}
 	}
 	
-	override public function onPreloadComplete():Void {
-		new samples.BasicScene(scene);
+	override public function onPreloadComplete() {	
+		//new samples.BScene(scene);
+		//new samples.DRPDemo(scene);
+		//new samples.BasicScene(scene);
 		//new samples.BasicElements(scene);
 		//new samples.DashedLinesMesh(scene);
 		//new samples.RotationAndScaling(scene);
 		//new samples.Materials(scene);
 		//new samples.Lights(scene);
 		//new samples.BumpMap(scene);
+		//new samples.Bump2(scene);
 		//new samples.Animations(scene);
 		//new samples.Collisions(scene);
 		//new samples.Intersections(scene);
@@ -89,6 +106,7 @@ class MainLime extends Application {
 		//new samples.LoadObjFile(scene);
 		//new samples.LoadStlFile(scene);
 		//new samples.LoadPlyFile(scene);
+		//new samples.LoadCtmFile(scene);
 		//new samples.LOD(scene);
 		//new samples.Instances(scene);
 		//new samples.Instances2(scene);
@@ -96,10 +114,11 @@ class MainLime extends Application {
 		//new samples.VolumetricLights(scene);
 		//new samples.CellShading(scene);
 		//new samples.Particles(scene);
-		//new samples.Particles2(scene);
-		//new samples.Particles3(scene);
+		//new samples.Particles2(scene);					// OK
+		//new samples.Particles3(scene);					// OK
 		//new samples.Particles4(scene);
-		//new samples.Particles5(scene);
+		//new samples.Particles5(scene);					// OK
+		//new samples.Snow(scene);
 		//new samples.Extrusion(scene);
 		//new samples.Sprites(scene);
 		//new samples.PostprocessBloom(scene);
@@ -127,6 +146,7 @@ class MainLime extends Application {
 		//new samples.SolidParticles3(scene);
 		//new samples.SolidParticles4(scene);
 		//new samples.SolidParticles5(scene);
+		//new samples.SolidParticles6(scene);
 		//new samples.PointLightShadow(scene);
 		//new samples.Labyrinth(scene);
 		//new samples.ForestOfPythagoras(scene);		
@@ -138,6 +158,7 @@ class MainLime extends Application {
 		//new samples.PBRMaterialTest3(scene);
 		//new samples.PBRMaterialTest4(scene);
 		//new samples.PBRMaterialTest5(scene);
+		//new samples.PBRMetalicWorkflow(scene);
 		//new samples.TorusThing(scene);
 		//new samples.StarfieldMaterialTest(scene);
 		//new samples.FeaturedDemo1(scene);
@@ -173,17 +194,32 @@ class MainLime extends Application {
 		//new samples.NormalMat(scene);
 		//new samples.ShadowTest(scene);
 		//new samples.MultiLights(scene);
-		//new samples.HighlightLayerTest(scene);
+		//new samples.MultiLights2(scene);
+		new samples.HighlightLayerTest(scene);
 		//new samples.PBRWithHighlight(scene);
 		//new samples.BoneScaling(scene);
 		//new samples.MouseFollow(scene);
+		//new samples.BoneLookControllerDemo(scene);
+		//new samples.BoneIKControllerDemo(scene);
+		//new samples.proceduralcity.City(scene);
+		//new samples.Minimap(scene);
+		//new samples.RayRender(scene);
+		//new samples.ShaderMaterialTest(scene);
+		//new samples.TestInstancesCount(scene);
+		//new samples.HighlightLayerInstances(scene);
 		
 		//new samples.TestRot(scene);
 		
 		//new samples.TestCustomFileStruct(scene);
 		
+		//new samples.MemoryGame(scene);
 		
-		scene.init2D();
+		//new samples.sokoban.Main(scene);
+		
+		//new samples.MultiAnim(scene);
+		
+		
+		//scene.init2D();
 		//new samples.demos2D.Graphics(scene);
 		//new samples.demos2D.Bitmaps(scene);
 		//new samples.demos2D.Bunnymark(scene);
@@ -200,12 +236,14 @@ class MainLime extends Application {
 		//new samples.demos2D.KeyboardEvents(scene);
 		//new samples.demos2D.Physics(scene);
 		//new samples.demos2D.box2Dtests.Box2DMain(scene);
+		//new samples.demos2D.Pendulum(scene);
 		//new samples.demos2D.Text(scene);
 		//new samples.demos2D.Resizable(scene);
 		//new samples.demos2D.TestEarcut(scene);
-		//new samples.demos2D.JellyPhysics(scene);
+		//new samples.demos2D.JellyPhysics(scene);		
+		//new samples.demos2D.JellyPhysics2(scene);
 		
-		scene.stage2D.addChild(new com.babylonhx.d2.text.FPS());
+		//scene.stage2D.addChild(new com.babylonhx.d2.text.FPS());
 	}
 	
 	override function onMouseDown(window:Window, x:Float, y:Float, button:Int) {
@@ -257,20 +295,22 @@ class MainLime extends Application {
 		for(f in engine.keyUp) {
 			f(keycode);
 		}
-		scene.stage2D._onKU(modifier.altKey, modifier.ctrlKey, modifier.shiftKey, keycode, 0);
+		//scene.stage2D._onKU(modifier.altKey, modifier.ctrlKey, modifier.shiftKey, keycode, 0);
 	}
 	
 	override function onKeyDown(window:Window, keycode:Int, modifier:KeyModifier) {
 		for(f in engine.keyDown) {
 			f(keycode);
 		}
-		scene.stage2D._onKD(modifier.altKey, modifier.ctrlKey, modifier.shiftKey, keycode, 0);
+		//scene.stage2D._onKD(modifier.altKey, modifier.ctrlKey, modifier.shiftKey, keycode, 0);
 	}
 	
 	override public function onWindowResize(window:Window, width:Int, height:Int) {
-		engine.width = width;
-		engine.height = height;
-		engine.resize();
+		if (engine != null) {
+			engine.width = width;
+			engine.height = height;
+			engine.resize();
+		}
 	}
 	
 	override function update(deltaTime:Int) {
@@ -281,3 +321,4 @@ class MainLime extends Application {
 	}
 	
 }
+
