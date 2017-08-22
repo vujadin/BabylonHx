@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.voronoi;
+package com.babylonhx.math.coherentnoise.generation.voronoi;
 
 /// <summary>
 /// This generator creates a "valleys" Voronoi diargam, that returns difference between two closest distances. Resulting noise has highest value at control points and 0 away from control points.

@@ -6,6 +6,7 @@ import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.math.Matrix;
+import com.babylonhx.math.Color4;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
@@ -122,6 +123,7 @@ typedef RenderTargetOptions = {
 	public var refreshRate(get, set):Int;
 	public var canRescale(get, never):Bool;
 
+	public var clearColor:Color4;
 	private var _size:Dynamic = { width: 0, height: 0 };
 	public var _generateMipMaps:Bool;
 	private var _renderingManager:RenderingManager;
@@ -141,6 +143,8 @@ typedef RenderTargetOptions = {
 	public function new(name:String, size:Dynamic, scene:Scene, ?generateMipMaps:Bool, doNotChangeAspectRatio:Bool = true, type:Int = Engine.TEXTURETYPE_UNSIGNED_INT, isCube:Bool = false, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, generateDepthBuffer:Bool = true, generateStencilBuffer:Bool = false, isMulti:Bool = false) {
 		super(null, scene, !generateMipMaps);
 		scene = this.getScene();
+		
+		this.clearColor = new Color4(scene.clearColor.r, scene.clearColor.g, scene.clearColor.b);
 		
 		// BHX
 		this.coordinatesMode = Texture.PROJECTION_MODE;
@@ -455,7 +459,7 @@ typedef RenderTargetOptions = {
 			this.onClearObservable.notifyObservers(engine);
 		} 
 		else {
-			engine.clear(scene.clearColor, true, true, true);
+			engine.clear(this.clearColor, true, true, true);
 		}
 		
 		if (!this._doNotChangeAspectRatio) {

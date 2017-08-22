@@ -56,7 +56,7 @@ class TextureBuilder {
 	public function setLayer(layer:Int, image:Image) {
 		for (i in 0...layerSizeX) {
 			for (j in 0...layerSizeY) {
-				layers[layer][i + j * layerSizeX] = cast image.at(i, j);
+				layers[layer][i + j * layerSizeX] = cast image.getPixelAt(i, j);
 			}
 		}
 	}

@@ -303,25 +303,25 @@ class GradientNoise2D extends Generator {
 	override public function GetValue(x:Float, y:Float, z:Float):Float {
 		var ix = Math.floor(x);
 		var iy = Math.floor(y);
-
+		
 		// interpolate the coordinates instead of values - this way we need only 4 calls instead of 7
 		var xs = SCurve.Interpolate(x - ix);
 		var ys = SCurve.Interpolate(y - iy);
-
+		
 		// THEN we can use linear interp to find our value - triliear actually
-
+		
 		var n0 = GetNoise(x, y, ix, iy);
 		var n1 = GetNoise(x, y, ix + 1, iy);
 		var ix0 = math.Tools.Lerp(n0, n1, xs);
-
+		
 		n0 = GetNoise(x, y, ix, iy + 1);
 		n1 = GetNoise(x, y, ix + 1, iy + 1);
 		var ix1 = math.Tools.Lerp(n0, n1, xs);
-
+		
 		return math.Tools.Lerp(ix0, ix1, ys);
 	}
 
-	function GetRandomVector(x:Int, y:Int):Vec2 {
+	function GetRandomVector(x:Int, y:Int):Vector2 {
 		if (Period > 0) {
 			// make periodic lattice. Repeat every Period cells
 			x = x % Period; 
@@ -342,12 +342,12 @@ class GradientNoise2D extends Generator {
 			& 0x7fffffff;
 		vectorIndex = (((vectorIndex >> Constants.ValueShift) ^ vectorIndex) & 0xff) * 2;
 		
-		return new Vec2(Vectors[vectorIndex], Vectors[vectorIndex + 1]);
+		return new Vector2(Vectors[vectorIndex], Vectors[vectorIndex + 1]);
 	}
 
 	private function GetNoise(x:Float, y:Float, ix:Int, iy:Int):Float {
 		var gradient = GetRandomVector(ix, iy);
-		return Vec2.Dot(gradient, new Vec2(x - ix, y - iy)) * 2.12; // scale to [-1,1]
+		return Vector2.Dot(gradient, new Vector2(x - ix, y - iy)) * 2.12; // scale to [-1,1]
 	}
 
 	// #endregion

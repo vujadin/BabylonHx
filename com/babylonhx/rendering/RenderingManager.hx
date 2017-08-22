@@ -52,7 +52,7 @@ import com.babylonhx.tools.Tools;
 		}
 	}
 
-	inline private function _clearDepthStencilBuffer(depth:Bool = true, stencil:Bool = true) {
+	/*inline*/ private function _clearDepthStencilBuffer(depth:Bool = true, stencil:Bool = true) {
 		if (this._depthStencilBufferAlreadyCleaned) {
 			return;
 		}
@@ -84,7 +84,7 @@ import com.babylonhx.tools.Tools;
 		
 		// Render
 		for (index in RenderingManager.MIN_RENDERINGGROUPS...RenderingManager.MAX_RENDERINGGROUPS) {
-			this._depthStencilBufferAlreadyCleaned = index == RenderingManager.MIN_RENDERINGGROUPS;
+			this._depthStencilBufferAlreadyCleaned = (index == RenderingManager.MIN_RENDERINGGROUPS);
 			var renderingGroup = this._renderingGroups[index];
 			
 			if (renderingGroup == null && observable == null) {

@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.voronoi;
+package com.babylonhx.math.coherentnoise.generation.voronoi;
 
 /// <summary>
 /// This generator creates a "pits" Voronoi diargam, that simply returns distance to closest control point. Resulting noise has value 0 at control points (forming pits) and higher values away from control points.

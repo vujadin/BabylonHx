@@ -301,8 +301,7 @@ import lime.utils.Int32Array;
 				engine.bindFramebuffer(this._texture, face, null, null, true);
 				
 				// VBOs
-				engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._effect);
-				
+				engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._effect);				
 				this._effect.setFloat("face", face);
 				
 				// Clear

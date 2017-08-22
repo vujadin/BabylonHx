@@ -1,6 +1,5 @@
-package textures.procedural.coherentnoise.generation.voronoi;
+package com.babylonhx.math.coherentnoise.generation.voronoi;
 
-import math.Vec2;
 
 /// <summary>
 /// Voronoi cell diagram uses a set of control points to partition space into cells. Each point in space belongs to a cell that corresponds to closest control point.
@@ -48,31 +47,31 @@ class VoronoiCells2D extends Generator {
 			if (x < 0) {
 				x += Period;
 			}
-
+			
 			y = y % Period; 
 			if (y < 0) {
 				y += Period;
 			}
 		}
-
+		
 		x *= Frequency;
 		y *= Frequency;
 		var min = Math.POSITIVE_INFINITY;
 		var ix:Int = 0;
 		var iy:Int = 0;
-
+		
 		var xc = Math.floor(x);
 		var yc = Math.floor(y);
-
-		var v = new Vec2(x, y);
-
+		
+		var v = new Vector2(x, y);
+		
 		for (ii in xc - 1...xc + 2) {
 			for (jj in yc - 1...yc + 2) {
-				var displacement:Vec2 = new Vec2(m_ControlPointSource[0].GetValue(ii, jj, 0) * 0.5 + 0.5, m_ControlPointSource[1].GetValue(ii, jj, 0) * 0.5 + 0.5);
-
-				var cp = (new Vec2(ii, jj)).add(displacement);
+				var displacement:Vector2 = new Vector2(m_ControlPointSource[0].GetValue(ii, jj, 0) * 0.5 + 0.5, m_ControlPointSource[1].GetValue(ii, jj, 0) * 0.5 + 0.5);
+				
+				var cp = (new Vector2(ii, jj)).add(displacement);
 				var distance = (cp.add(v)).lengthSquared();
-
+				
 				if (distance < min) {
 					min = distance;
 					ix = ii;
@@ -80,7 +79,7 @@ class VoronoiCells2D extends Generator {
 				}
 			}
 		}
-
+		
 		return m_CellValueSource(ix, iy);
 	}
 

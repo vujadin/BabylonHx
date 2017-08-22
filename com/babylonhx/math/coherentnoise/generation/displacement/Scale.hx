@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.displacement;
+package com.babylonhx.math.coherentnoise.generation.displacement;
 
 ///<summary>
 /// This generator scales its source by given vector.
@@ -19,7 +19,7 @@ class Scale extends Generator {
 	///<param name="z">Scale amount along Z axis</param>
 	public function new(source:Generator, x:Float, y:Float, z:Float) {
 		super();
-
+		
 		m_Source = source;
 		m_Z = z;
 		m_Y = y;

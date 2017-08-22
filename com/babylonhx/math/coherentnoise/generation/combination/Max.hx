@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.combination;
+package com.babylonhx.math.coherentnoise.generation.combination;
 
 /// <summary>
 /// This generator returns maximum value of its two source generators

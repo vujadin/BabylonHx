@@ -1,6 +1,5 @@
-package textures.procedural.coherentnoise.generation.voronoi;
+package com.babylonhx.math.coherentnoise.generation.voronoi;
 
-import math.Vec2;
 
 /// <summary>
 /// Base class for 2D Voronoi diagrams generators. Voronoi diagrams use a set of control points, that are somehow distributed, and for every point calculate distances to the closest control points.
@@ -46,33 +45,33 @@ class VoronoiDiagramBase2D extends Generator {
 			if (x < 0) {
 				x += Period;
 			}
-
+			
 			y = y % Period; 
 			if (y < 0) {
 				y += Period;
 			}
 		}
-
+		
 		// stretch values to match desired frequency
 		x *= Frequency;
 		y *= Frequency;
-
+		
 		var min1 = Math.POSITIVE_INFINITY;
 		var min2 = Math.POSITIVE_INFINITY;
 		var min3 = Math.POSITIVE_INFINITY;
-
+		
 		var xc = Math.floor(x);
 		var yc = Math.floor(y);
-
-		var v = new Vec2(x, y);
-
+		
+		var v = new Vector2(x, y);
+		
 		for (ii in xc - 1...xc + 2) {
 			for (jj in yc - 1...yc + 2) {
-				var displacement = new Vec2(m_ControlPointSource[0].GetValue(ii, jj, 0) * 0.5 + 0.5, m_ControlPointSource[1].GetValue(ii, jj, 0) * 0.5 + 0.5);
-
-				var cp = (new Vec2(ii, jj)).add(displacement);
+				var displacement = new Vector2(m_ControlPointSource[0].GetValue(ii, jj, 0) * 0.5 + 0.5, m_ControlPointSource[1].GetValue(ii, jj, 0) * 0.5 + 0.5);
+				
+				var cp = (new Vector2(ii, jj)).add(displacement);
 				var distance = (cp.addInPlace(v)).lengthSquared();
-
+				
 				if (distance < min1) {
 					min3 = min2;
 					min2 = min1;
@@ -87,7 +86,7 @@ class VoronoiDiagramBase2D extends Generator {
 				}
 			}
 		}
-
+		
 		return GetResult(Math.sqrt(min1), Math.sqrt(min2), Math.sqrt(min3));
 	}
 

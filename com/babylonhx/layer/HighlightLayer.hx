@@ -163,6 +163,7 @@ class HighlightLayer {
 	 * @type {Observable}
 	 */
 	public var onSizeChangedObservable:Observable<HighlightLayer> = new Observable<HighlightLayer>();
+	
 
 	/**
 	 * Instantiates a new highlight Layer and references it to the scene..
@@ -184,9 +185,9 @@ class HighlightLayer {
 		
 		// Adapt options
 		this._options = options != null ? options : {
-			camera: null,
+			//camera: null,
 			mainTextureRatio: 0.5,
-			mainTextureFixedSize: 512,
+			//mainTextureFixedSize: 512,
 			blurTextureSizeRatio: 0.5,
 			blurHorizontalSize: 1.0,
 			blurVerticalSize: 1.0,
@@ -207,9 +208,9 @@ class HighlightLayer {
 		if (this._options.alphaBlendingMode == null) {
 			this._options.alphaBlendingMode = Engine.ALPHA_COMBINE;
 		}
-		if (this._options.mainTextureFixedSize == null) {
+		/*if (this._options.mainTextureFixedSize == null) {
 			this._options.mainTextureFixedSize = 512;
-		}
+		}*/
 		
 		// VBO
 		var vertices:Float32Array = new Float32Array([
@@ -383,8 +384,11 @@ class HighlightLayer {
 				// Alpha test
 				if (material != null && material.needAlphaTesting()) {
 					var alphaTexture = material.getAlphaTestTexture();
-					this._glowMapGenerationEffect.setTexture("diffuseSampler", alphaTexture);
-					this._glowMapGenerationEffect.setMatrix("diffuseMatrix", alphaTexture.getTextureMatrix());
+					
+					if (alphaTexture != null) {
+						this._glowMapGenerationEffect.setTexture("diffuseSampler", alphaTexture);
+						this._glowMapGenerationEffect.setMatrix("diffuseMatrix", alphaTexture.getTextureMatrix());
+					}
 				}
 				
 				// Glow emissive only
@@ -711,8 +715,8 @@ class HighlightLayer {
 			this._mainTextureDesiredSize.height = this._options.mainTextureFixedSize;
 		}
 		else {
-			this._mainTextureDesiredSize.width = Std.int(this._engine.getRenderingCanvas().width * this._options.mainTextureRatio);
-			this._mainTextureDesiredSize.height = Std.int(this._engine.getRenderingCanvas().height * this._options.mainTextureRatio);
+			this._mainTextureDesiredSize.width = Std.int(this._engine.width * this._options.mainTextureRatio);
+			this._mainTextureDesiredSize.height = Std.int(this._engine.height * this._options.mainTextureRatio);
 			
 			this._mainTextureDesiredSize.width = this._engine.needPOTTextures ? Tools.GetExponentOfTwo(this._mainTextureDesiredSize.width, this._maxSize) : this._mainTextureDesiredSize.width;
 			this._mainTextureDesiredSize.height = this._engine.needPOTTextures ? Tools.GetExponentOfTwo(this._mainTextureDesiredSize.height, this._maxSize) : this._mainTextureDesiredSize.height;

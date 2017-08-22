@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.modification;
+package com.babylonhx.math.coherentnoise.generation.modification;
 
 ///<summary>
 /// This generator modifies source noise by applying a curve transorm to it. Curves can be edited using Unity editor's CurveFields, or created procedurally.
@@ -30,7 +30,7 @@ class Curve extends Generator {
 	/// <param name="z">Z coordinate</param><returns>Noise value</returns>
 	override public function GetValue(x:Float, y:Float, z:Float):Float {
 		var v = m_Source.GetValue(x, y, z);
-
+		
 		return m_Curve.Evaluate(v);
 	}
 

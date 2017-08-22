@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.combination;
+package com.babylonhx.math.coherentnoise.generation.combination;
 
 /// <summary>
 /// Generator that adds two noise values together

@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.combination;
+package com.babylonhx.math.coherentnoise.generation.combination;
 
 /// <summary>
 /// This generator blends two noises together, using third as a blend weight. Note that blend weight's value is clamped to [0,1] range
@@ -33,7 +33,7 @@ class Blend extends Generator {
 	/// <param name="z">Z coordinate</param><returns>Noise value</returns>
 	override public function GetValue(x:Float, y:Float, z:Float):Float {
 		var w = math.Tools.Clamp(m_Weight.GetValue(x, y, z));
-
+		
 		return m_A.GetValue(x, y, z) * (1 - w) + m_B.GetValue(x, y, z) * w;
 	}
 

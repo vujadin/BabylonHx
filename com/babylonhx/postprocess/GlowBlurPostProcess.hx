@@ -22,7 +22,7 @@ class GlowBlurPostProcess extends PostProcess {
 	public var kernel:Float;
 	
 	
-	public function new(name:String, direction:Vector2, kernel:Float, options:Dynamic, camera:Camera, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, ?engine: Engine, reusable:Bool = false) {
+	public function new(name:String, direction:Vector2, kernel:Float, options:Dynamic, camera:Camera, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, ?engine:Engine, reusable:Bool = false) {
 		this.direction = direction;
 		this.kernel = kernel;
 		

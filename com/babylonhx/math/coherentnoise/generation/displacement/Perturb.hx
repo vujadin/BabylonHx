@@ -1,6 +1,5 @@
-package textures.procedural.coherentnoise.generation.displacement;
+package com.babylonhx.math.coherentnoise.generation.displacement;
 
-import math.Vec3;
 
 /// <summary>
 /// This generator perturbs its source, using a user-supplied function to obtain displacement values. In other words, <see cref="Perturb"/> nonuniformly displaces each value of
@@ -9,16 +8,16 @@ import math.Vec3;
 class Perturb extends Generator {
 	
 	private var m_Source:Generator;
-	private var m_DisplacementSource:Vec3->Vec3;
+	private var m_DisplacementSource:Vector3->Vector3;
 
 	///<summary>
 	/// Create new perturb generator
 	///</summary>
 	///<param name="source">Source generator</param>
 	///<param name="displacementSource">Displacement generator</param>
-	public function new(source:Generator, displacementSource:Vec3->Vec3) {
+	public function new(source:Generator, displacementSource:Vector3->Vector3) {
 		super();
-
+		
 		m_Source = source;
 		m_DisplacementSource = displacementSource;
 	}
@@ -32,8 +31,8 @@ class Perturb extends Generator {
 	/// <param name="y">Y coordinate</param>
 	/// <param name="z">Z coordinate</param><returns>Noise value</returns>
 	override public function GetValue(x:Float, y:Float, z:Float):Float {
-		var displacement = m_DisplacementSource(new Vec3(x, y, z));
-
+		var displacement = m_DisplacementSource(new Vector3(x, y, z));
+		
 		return m_Source.GetValue(x + displacement.x, y + displacement.y, z + displacement.z);
 	}
 

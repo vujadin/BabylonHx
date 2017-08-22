@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.patterns;
+package com.babylonhx.math.coherentnoise.generation.patterns;
 
 ///<summary>
 /// Generates planes parallel to YZ plane. Resulting "noise" has value -1 on YZ plane, 1 at step distance, -1 at 2*step etc. 
@@ -14,7 +14,7 @@ class Planes extends Function {
 		super(function(x:Float, y:Float, z:Float):Float {
 			return Helpers.Saw(x / step));
 		});
-
+		
 		if (step <= 0) {
 			throw "Step must be > 0";
 		}

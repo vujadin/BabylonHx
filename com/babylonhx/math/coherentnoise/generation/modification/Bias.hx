@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.modification;
+package com.babylonhx.math.coherentnoise.generation.modification;
 
 /// <summary>
 /// Bias generator is used to "shift" mean value of source noise. Source is assumed to have values between -1 and 1; after Bias is applied,
@@ -20,7 +20,7 @@ class Bias extends Generator {
 		if (m_Bias <= -1 || m_Bias >= 1) {
 			throw "Bias must be between -1 and 1";
 		}
-
+		
 		m_Source = source;
 		m_Bias = bias / (1 + bias);
 	}
@@ -42,7 +42,7 @@ class Bias extends Generator {
 		if (f > 1) {
 			f = 1;
 		}
-
+		
 		return (f + 1.0) / (1.0 - m_Bias * (1.0 - f) * 0.5) - 1.0;
 	}
 

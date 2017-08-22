@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.patterns;
+package com.babylonhx.math.coherentnoise.generation.patterns;
 
 class Helpers {
 

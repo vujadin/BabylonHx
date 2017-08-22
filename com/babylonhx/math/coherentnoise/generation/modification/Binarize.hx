@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.modification;
+package com.babylonhx.math.coherentnoise.generation.modification;
 
 /// <summary>
 /// This generator binarizes its source noise, returning only value 0 and 1. A constant treshold value is user for binarization. I.e. result will be 0 where source value is less than treshold,

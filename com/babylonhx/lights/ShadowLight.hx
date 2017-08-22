@@ -28,7 +28,7 @@ class ShadowLight extends Light implements IShadowLight {
 		return this._direction = value;
 	}
 
-	private var _shadowMinZ:Float;
+	private var _shadowMinZ:Float = Math.NEGATIVE_INFINITY;
 	@serialize()
 	public var shadowMinZ(get, set):Float;
 	private function get_shadowMinZ():Float {
@@ -40,7 +40,7 @@ class ShadowLight extends Light implements IShadowLight {
 		return value;
 	}
 
-	private var _shadowMaxZ:Float;
+	private var _shadowMaxZ:Float = Math.POSITIVE_INFINITY;
 	@serialize()
 	public var shadowMaxZ(get, set):Float;
 	private function get_shadowMaxZ():Float {
@@ -51,10 +51,6 @@ class ShadowLight extends Light implements IShadowLight {
 		this.forceProjectionMatrixCompute();
 		return value;
 	}
-	
-	// BHX: Required by IShadowLight
-	public function getDepthMinZ(activeCamera:Camera):Float { return 0; }
-	public function getDepthMaxZ(activeCamera:Camera):Float { return 0; }
 
 	public var customProjectionMatrixBuilder:Matrix->Array<AbstractMesh>->Matrix->Void = null;
 
@@ -159,6 +155,22 @@ class ShadowLight extends Light implements IShadowLight {
 		Matrix.TranslationToRef(this.position.x, this.position.y, this.position.z, this._worldMatrix);
 		
 		return this._worldMatrix;
+	}
+	
+	/**
+	 * Gets the minZ used for shadow according to both the scene and the light.
+	 * @param activeCamera 
+	 */
+	public function getDepthMinZ(activeCamera:Camera):Float {
+		return this.shadowMinZ != Math.NEGATIVE_INFINITY ? this.shadowMinZ : activeCamera.minZ;
+	}
+
+	/**
+	 * Gets the maxZ used for shadow according to both the scene and the light.
+	 * @param activeCamera 
+	 */
+	public function getDepthMaxZ(activeCamera:Camera):Float {
+		return this.shadowMaxZ != Math.POSITIVE_INFINITY ? this.shadowMaxZ : activeCamera.maxZ;
 	}
 
 	/**

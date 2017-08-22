@@ -13,7 +13,7 @@ class Function extends Generator {
 	/// <param name="func">Value function</param>
 	public function new(func:Float->Float->Float->Float) {
 		super();
-
+		
 		m_Func = func;
 	}
 

@@ -95,6 +95,7 @@ import com.babylonhx.audio.*;
 
 	// Members
 	public var autoClear:Bool = true;
+	public var autoClearDepthAndStencil:Bool = true;
 	public var clearColor:Color3 = new Color3(0.2, 0.2, 0.3);
 	public var ambientColor:Color3 = new Color3(0, 0, 0);
 	
@@ -3075,7 +3076,9 @@ import com.babylonhx.audio.*;
 		}
 		
 		// Clear
-		this._engine.clear(this.clearColor, this.autoClear || this.forceWireframe || this.forcePointsCloud, true, true);
+		if (this.autoClearDepthAndStencil || this.autoClear) {
+			this._engine.clear(this.clearColor, this.autoClear || this.forceWireframe || this.forcePointsCloud, this.autoClearDepthAndStencil, this.autoClearDepthAndStencil);
+		}
 		
 		// Shadows
 		if (this.shadowsEnabled) {

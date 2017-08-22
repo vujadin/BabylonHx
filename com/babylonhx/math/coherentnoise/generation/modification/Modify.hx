@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.modification;
+package com.babylonhx.math.coherentnoise.generation.modification;
 
 /// <summary>
 /// This generator takes a source generator and applies a function to its output.

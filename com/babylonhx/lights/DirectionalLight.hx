@@ -100,7 +100,7 @@ import com.babylonhx.cameras.Camera;
 		var activeCamera = this.getScene().activeCamera;
 		
 		Matrix.OrthoLHToRef(this.shadowFrustumSize, this.shadowFrustumSize,
-			this.shadowMinZ != 0 ? this.shadowMinZ : activeCamera.minZ, this.shadowMaxZ != 0 ? this.shadowMaxZ : activeCamera.maxZ, matrix);
+			this.shadowMinZ != Math.NEGATIVE_INFINITY ? this.shadowMinZ : activeCamera.minZ, this.shadowMaxZ != Math.POSITIVE_INFINITY ? this.shadowMaxZ : activeCamera.maxZ, matrix);
 	}
 
 	/**
@@ -159,7 +159,7 @@ import com.babylonhx.cameras.Camera;
 		
 		Matrix.OrthoOffCenterLHToRef(this._orthoLeft - xOffset * this.shadowOrthoScale, this._orthoRight + xOffset * this.shadowOrthoScale,
 			this._orthoBottom - yOffset * this.shadowOrthoScale, this._orthoTop + yOffset * this.shadowOrthoScale,
-			this.shadowMinZ != 0 ? this.shadowMinZ : activeCamera.minZ, this.shadowMaxZ != 0 ? this.shadowMaxZ : activeCamera.maxZ, matrix);
+			this.shadowMinZ != Math.NEGATIVE_INFINITY ? this.shadowMinZ : activeCamera.minZ, this.shadowMaxZ != Math.POSITIVE_INFINITY ? this.shadowMaxZ : activeCamera.maxZ, matrix);
 	}
 
 	override public function _buildUniformLayout() {

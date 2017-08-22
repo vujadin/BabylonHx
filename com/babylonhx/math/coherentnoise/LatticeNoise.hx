@@ -52,7 +52,7 @@ class LatticeNoise {
 			
 		n = (n >> 13) ^ n;
 		n = Std.int(n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff;
-
+		
 		return 1 - (n / 1073741824f); // normalize for [-1,1]
 	}
 

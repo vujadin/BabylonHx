@@ -37,7 +37,7 @@ class SCurve {
 		var t3 = t * t * t;
 		var t4 = t3 * t;
 		var t5 = t4 * t;
-
+		
 		return 6 * t5 - 15 * t4 + 10 * t3;
 	}
 

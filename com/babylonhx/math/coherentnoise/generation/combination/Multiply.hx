@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.combination;
+package com.babylonhx.math.coherentnoise.generation.combination;
 
 /// <summary>
 /// Generator that multiplies two noise values
@@ -15,7 +15,7 @@ class Multiply extends Generator {
 	///<param name="b">Second generator to multiply</param>
 	public function new(a:Generator, b:Generator) {
 		super(0);
-
+		
 		m_A = a;
 		m_B = b;
 	}

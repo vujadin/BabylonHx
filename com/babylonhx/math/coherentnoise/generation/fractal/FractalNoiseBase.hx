@@ -1,7 +1,5 @@
-package textures.procedural.coherentnoise.generation.fractal;
+package com.babylonhx.math.coherentnoise.generation.fractal;
 
-import math.Quat;
-import math.Vec3;
 
 ///<summary>
 /// base class for fractal noise generators. Fractal generators use a source noise, that is sampled at several frequencies. 
@@ -9,7 +7,7 @@ import math.Vec3;
 ///</summary>
 class FractalNoiseBase extends Generator {
 
-	private static var s_Rotation:Quat = Quat.Euler(new Vec3(30, 30, 30));
+	private static var s_Rotation:Quaternion = Quaternion.Euler(new Vec3(30, 30, 30));
 
 	private var m_Noise:Generator;
 	private var m_Frequency:Float;
@@ -18,14 +16,14 @@ class FractalNoiseBase extends Generator {
 
 	public function new(param:Dynamic) {
 		super();
-
+		
 		if (Std.is(param, Int)) {
 			m_Noise = new GradientNoise(param);
 		}
 		else {
 			m_Noise = param;
-		} 
-
+		}
+		
 		Lacunarity = 2.17;
 		OctaveCount = 6;
 		Frequency = 1;
@@ -42,7 +40,7 @@ class FractalNoiseBase extends Generator {
 	inline private function set_Lacunarity(value:Float):Float {
 		m_Lacunarity = value;
 		OnParamsChanged();
-
+		
 		return value;
 	}
 
@@ -56,7 +54,7 @@ class FractalNoiseBase extends Generator {
 	inline private function	set_OctaveCount(value:Int):Int {
 		m_OctaveCount = value;
 		OnParamsChanged();
-
+		
 		return value;
 	}
 
@@ -70,7 +68,7 @@ class FractalNoiseBase extends Generator {
 	inline private function	set_Frequency(value:Float):Float {
 		m_Frequency = value;
 		OnParamsChanged();
-
+		
 		return value;
 	}
 
@@ -83,26 +81,26 @@ class FractalNoiseBase extends Generator {
 	override public function GetValue(x:Float, y:Float, z:Float):Float {
 		var value:Float = 0;
 		var signal:Float = 0;
-
+		
 		x *= Frequency;
 		y *= Frequency;
 		z *= Frequency;
-
+		
 		for (curOctave in 0...OctaveCount) {
 			// Get the coherent-noise value from the input value and add it to the
 			// final result.
 			signal = m_Noise.GetValue(x, y, z);
 			// 
 			value = CombineOctave(curOctave, signal, value);
-
+			
 			// Prepare the next octave.
 			// scale coords to increase frequency, then rotate to break up lattice pattern
-			var rotated = s_Rotation.multVector(new Vec3(x, y, z).scaleInPlace(Lacunarity));
+			var rotated = s_Rotation.multVector(new Vector3(x, y, z).scaleInPlace(Lacunarity));
 			x = rotated.x;
 			y = rotated.y;
 			z = rotated.z;
 		}
-
+		
 		return value;
 	}
 

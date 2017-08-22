@@ -45,18 +45,18 @@ class VoronoiCells extends Generator {
 			if (x < 0) {
 				x += Period;
 			}
-
+			
 			y = y % Period; 
 			if (y < 0) {
 				y += Period;
 			}
-
+			
 			z = z % Period; 
 			if (z < 0) {
 				z += Period;
 			}
 		}
-
+		
 		x *= Frequency;
 		y *= Frequency;
 		z *= Frequency;

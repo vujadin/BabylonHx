@@ -234,7 +234,6 @@ typedef PostProcessOption = {
 			onError,
 			indexParameters != null ? indexParameters : this._indexParameters
 		);
-		trace(name + " - " + samplers + " , " + this._samplers);
 	}
 
 	public function isReusable():Bool {

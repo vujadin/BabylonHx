@@ -1,7 +1,6 @@
-package textures.procedural.coherentnoise.generation.displacement;
+package com.babylonhx.math.coherentnoise.generation.displacement;
 
-import math.Vec3;
-import textures.procedural.coherentnoise.generation.fractal.PinkNoise;
+import com.babylonhx.math.coherentnoise.generation.fractal.PinkNoise;
 
 ///<summary>
 /// Turbulence is a case of Perturb generator, that uses 3 Perlin noise generators as displacement source.
@@ -66,7 +65,7 @@ class Turbulence extends Generator {
 	inline private function	set_OctaveCount(value:Int):Int {
 		m_OctaveCount = value;
 		CreateDisplacementSource();
-
+		
 		return value;
 	}
 
@@ -79,11 +78,11 @@ class Turbulence extends Generator {
 	/// <param name="y">Y coordinate</param>
 	/// <param name="z">Z coordinate</param><returns>Noise value</returns>
 	override public function GetValue(x:Float, y:Float, z:Float):Float {
-		var displacement = new Vec3(
+		var displacement = new Vector3(
 			m_DisplacementX.GetValue(x, y, z),
 			m_DisplacementY.GetValue(x, y, z),
 			m_DisplacementZ.GetValue(x, y, z)).scale(Power);
-
+			
 		return m_Source.GetValue(x + displacement.x, y + displacement.y, z + displacement.z);
 	}
 
@@ -93,11 +92,11 @@ class Turbulence extends Generator {
 		m_DisplacementX = new PinkNoise(m_Seed);
 		m_DisplacementX.Frequency = Frequency;
 		m_DisplacementX.OctaveCount = OctaveCount;
-
+		
 		m_DisplacementY = new PinkNoise(m_Seed + 1);
 		m_DisplacementY.Frequency = Frequency;
 		m_DisplacementY.OctaveCount = OctaveCount;
-
+		
 		m_DisplacementZ = new PinkNoise(m_Seed + 2);
 		m_DisplacementZ.Frequency = Frequency;
 		m_DisplacementZ.OctaveCount = OctaveCount;

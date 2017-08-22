@@ -47,35 +47,35 @@ class ValueNoise extends Generator {
 		var ix = Math.floor(x);
 		var iy = Math.floor(y);
 		var iz = Math.floor(z);
-
+		
 		// interpolate the coordinates instead of values - it's way faster
 		var xs = SCurve.Interpolate(x - ix);
 		var ys = SCurve.Interpolate(y - iy);
 		var zs = SCurve.Interpolate(z - iz);
-
+		
 		// THEN we can use linear interp to find our value - triliear actually
-
+		
 		var n0 = m_Source.GetValue(ix, iy, iz);
 		var n1 = m_Source.GetValue(ix + 1, iy, iz);
-		var ix0 = math.Tools.Lerp(n0, n1, xs);
-
+		var ix0 = Tools.Lerp(n0, n1, xs);
+		
 		n0 = m_Source.GetValue(ix, iy + 1, iz);
 		n1 = m_Source.GetValue(ix + 1, iy + 1, iz);
-		var ix1 = math.Tools.Lerp(n0, n1, xs);
-
-		var iy0 = math.Tools.Lerp(ix0, ix1, ys);
-
+		var ix1 = Tools.Lerp(n0, n1, xs);
+		
+		var iy0 = Tools.Lerp(ix0, ix1, ys);
+		
 		n0 = m_Source.GetValue(ix, iy, iz + 1);
 		n1 = m_Source.GetValue(ix + 1, iy, iz + 1);
-		ix0 = math.Tools.Lerp(n0, n1, xs); // on y=0, z=1 edge
-
+		ix0 = Tools.Lerp(n0, n1, xs); // on y=0, z=1 edge
+		
 		n0 = m_Source.GetValue(ix, iy + 1, iz + 1);
 		n1 = m_Source.GetValue(ix + 1, iy + 1, iz + 1);
-		ix1 = math.Tools.Lerp(n0, n1, xs); // on y=z=1 edge
-
-		var iy1 = math.Tools.Lerp(ix0, ix1, ys);
-
-		return math.Tools.Lerp(iy0, iy1, zs); // inside cube
+		ix1 = Tools.Lerp(n0, n1, xs); // on y=z=1 edge
+		
+		var iy1 = Tools.Lerp(ix0, ix1, ys);
+		
+		return Tools.Lerp(iy0, iy1, zs); // inside cube
 	}
 
 	// #endregion

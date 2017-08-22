@@ -1,6 +1,5 @@
-package textures.procedural.coherentnoise.generation.patterns;
+package com.babylonhx.math.coherentnoise.generation.patterns;
 
-import math.Vec2;
 
 ///<summary>
 /// Generates concentric cylinders centered in (0,0,0) and parallel to Z axis. Resulting "noise" has value -1 in the center, 1 at radius, -1 at 2*radius etc. 
@@ -18,8 +17,8 @@ class Cylinders extends Function {
 		}
 		
 		super(function(x:Float, y:Float, z:Float):Float {
-			var d = new Vec2(x, y).length();
-
+			var d = new Vector2(x, y).length();
+			
 			return Helpers.Saw(d / radius);
 		});
 	}

@@ -62,8 +62,9 @@ class UniformBuffer {
 	 * @param {string} name Name of the uniform, as used in the uniform block in the shader.
 	 * @param {number} x
 	 * @param {number} y
+	 * * @param {string} [suffix] Suffix to add to the uniform name.
 	 */
-	public var updateFloat2:String->Float->Float->Void;
+	public var updateFloat2:String->Float->Float->?String->Void;
 
 	/**
 	 * Wrapper for updateUniform.
@@ -502,11 +503,11 @@ class UniformBuffer {
 		this.updateUniform(name, UniformBuffer._tempBuffer, 1);
 	}
 
-	private function _updateFloat2ForEffect(name:String, x:Float, y:Float) {
-		this._currentEffect.setFloat2(name, x, y);
+	private function _updateFloat2ForEffect(name:String, x:Float, y:Float, suffix:String = '') {
+		this._currentEffect.setFloat2(name + suffix, x, y);
 	}
 
-	private function _updateFloat2ForUniform(name:String, x:Float, y:Float) {
+	private function _updateFloat2ForUniform(name:String, x:Float, y:Float, suffix:String = '') {
 		UniformBuffer._tempBuffer[0] = x;
 		UniformBuffer._tempBuffer[1] = y;
 		this.updateUniform(name, UniformBuffer._tempBuffer, 2);

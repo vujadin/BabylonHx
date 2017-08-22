@@ -1,7 +1,5 @@
-package textures.procedural.coherentnoise.generation.patterns;
+package com.babylonhx.math.coherentnoise.generation.patterns;
 
-import kha.graphics4.TextureAddressing;
-import kha.Color;
 
 ///<summary>
 /// This generator does the opposite of texture generation. It takes a texture and returns its red channel as a noise value.
@@ -9,7 +7,7 @@ import kha.Color;
 ///</summary>
 class TexturePattern extends Generator {
 
-	private var m_Colors:Array<Color>;
+	private var m_Colors:Array<RGBA>;
 	private var m_Width:Int;
 	private var m_Height:Int;
 	private var m_WrapMode:TextureAddressing;
@@ -43,7 +41,7 @@ class TexturePattern extends Generator {
 		ix = Wrap(ix, m_Width);
 		iy = Wrap(iy, m_Height);
 		var c = m_Colors[iy * m_Width + ix];
-
+		
 		return c.Rb * 2 - 1;
 	}
 
@@ -51,10 +49,10 @@ class TexturePattern extends Generator {
 		switch (m_WrapMode) {
 			case TextureAddressing.Repeat:
 				return i >= 0 ? i % size : (i % size + size);
-
+				
 			case TextureAddressing.Clamp:
 				return i < 0 ? 0 : i > size ? size - 1 : i;
-
+				
 			default:
 				throw 'invalid wrap mode';
 		}

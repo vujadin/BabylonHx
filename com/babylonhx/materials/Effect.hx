@@ -625,11 +625,11 @@ using StringTools;
 	public function _cacheMatrix(uniformName:String, matrix:Matrix):Bool {
 		var cache = this._valueCache[uniformName];
 		var flag = matrix.updateFlag;
-		if (cache != null && cache == [flag]) {
+		if (cache != null && cache[0] == flag) {
 			return false;
 		}
 		
-		this._valueCache[uniformName] = [cast flag];
+		this._valueCache.set(uniformName, [flag]);
 		
 		return true;
 	}

@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.combination;
+package com.babylonhx.math.coherentnoise.generation.combination;
 
 /// <summary>
 /// This generator returns minimum value of its two source generators
@@ -15,7 +15,7 @@ class Min extends Generator {
 	///<param name="b">Second generator</param>
 	public function new(a:Generator, b:Generator) {
 		super(0);
-
+		
 		m_A = a;
 		m_B = b;
 	}

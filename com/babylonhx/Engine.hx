@@ -29,8 +29,8 @@ import com.babylonhx.tools.Tools;
 import com.babylonhx.tools.WebGLVertexArrayObject;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.utils.Image;
-import lime.graphics.opengl.WebGLContext;
 
+import lime.graphics.opengl.WebGLContext;
 import lime.graphics.GLRenderContext;
 import lime.graphics.opengl.GLContextType;
 import lime.graphics.opengl.WebGL2Context;

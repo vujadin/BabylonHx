@@ -1,6 +1,8 @@
 package com.babylonhx.utils;
 
 import com.babylonhx.math.RGBA;
+import com.babylonhx.math.Perlin;
+import com.babylonhx.math.Tools;
 
 import lime.utils.UInt8Array;
 
@@ -16,7 +18,7 @@ class Image {
 	public var width:Int = 0;	
 	
 
-	public function new(data:UInt8Array, width:Int, height:Int) {
+	public function new(?data:UInt8Array, width:Int = 256, height:Int = 256) {
 		this.width = width;
 		this.height = height;
 		
@@ -28,13 +30,17 @@ class Image {
 		}
 	}
 	
-	inline public function at(x:Int, y:Int):RGBA {
+	inline public function getPixelAt(x:Int, y:Int):RGBA {
 		var r = data[y * width * 4 + x * 4];
 		var g = data[y * width * 4 + x * 4 + 1];
 		var b = data[y * width * 4 + x * 4 + 2];
 		var a = data[y * width * 4 + x * 4 + 3];
 		
 		return RGBA.fromBytes(r, g, b, a);
+	}
+	
+	inline public function setPixelAt(x:Int, y:Int, pixel:RGBA) {
+		data[y * this.width * 4 + x * 4] = pixel;
 	}
 	
 	public static function createCheckerboard(size:Int = 256):Image {			
@@ -98,9 +104,9 @@ class Image {
 	public static function createPerlinNoise(r:Dynamic, g:Dynamic, b:Dynamic, a:Int, size:Int = 8):Image {
 		var img = new Image(new UInt8Array(size * size * 4), size, size);
 		
-		var perlinNoise = new com.babylonhx.math.Perlin();
+		var perlinNoise = new Perlin();
 		
-		var t = com.babylonhx.math.Tools.randomInt(0, 100);
+		var t = Tools.randomInt(0, 100);
 		
 		var count = Std.int(size / 2);
 		for (x in 0...count) {

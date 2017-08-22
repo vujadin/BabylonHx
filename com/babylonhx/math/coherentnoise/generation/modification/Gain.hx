@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.modification;
+package com.babylonhx.math.coherentnoise.generation.modification;
 
 /// <summary>
 /// This generator is used to "sharpen" noise, shifting extreme values closer to -1 and 1, while leaving 0 in place. Source noise is
@@ -21,7 +21,7 @@ class Gain extends Generator {
 		if (m_Gain <= -1 || m_Gain >= 1) {
 			throw "Gain must be between -1 and 1";
 		}
-
+		
 		m_Source = source;
 		m_Gain = gain;
 	}
@@ -54,7 +54,7 @@ class Gain extends Generator {
 		if (f > 1) {
 			f = 1;
 		}
-
+		
 		// Bias curve that makes a "half" of gain
 		return f * (1.0 + m_Gain) / (1.0 + m_Gain - (1.0 - f) * 2.0 * m_Gain);
 	}

@@ -47,7 +47,7 @@ import com.babylonhx.particles.IParticleSystem;
 	 * Set the opaque sort comparison function.
 	 * If null the sub meshes will be render in the order they were created 
 	 */
-	private function set_opaqueSortCompareFn(value:SubMesh->SubMesh->Int):SubMesh->SubMesh->Int {
+	private function set_opaqueSortCompareFn(?value:SubMesh->SubMesh->Int):SubMesh->SubMesh->Int {
 		this._opaqueSortCompareFn = value;
 		if (value != null) {
 			this._renderOpaque = this.renderOpaqueSorted;
@@ -63,7 +63,7 @@ import com.babylonhx.particles.IParticleSystem;
 	 * Set the alpha test sort comparison function.
 	 * If null the sub meshes will be render in the order they were created 
 	 */
-	private function set_alphaTestSortCompareFn(value:SubMesh->SubMesh->Int):SubMesh->SubMesh->Int {
+	private function set_alphaTestSortCompareFn(?value:SubMesh->SubMesh->Int):SubMesh->SubMesh->Int {
 		this._alphaTestSortCompareFn = value;
 		if (value != null) {
 			this._renderAlphaTest = this.renderAlphaTestSorted;
@@ -79,7 +79,7 @@ import com.babylonhx.particles.IParticleSystem;
 	 * Set the transparent sort comparison function.
 	 * If null the sub meshes will be render in the order they were created 
 	 */
-	private function set_transparentSortCompareFn(value:SubMesh->SubMesh->Int):SubMesh->SubMesh->Int {
+	private function set_transparentSortCompareFn(?value:SubMesh->SubMesh->Int):SubMesh->SubMesh->Int {
 		if (value != null) {
 			this._transparentSortCompareFn = value;
 		}
@@ -116,8 +116,7 @@ import com.babylonhx.particles.IParticleSystem;
      */
 	public function render(?customRenderFunction:SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void, renderSprites:Bool, renderParticles:Bool, activeMeshes:Array<AbstractMesh>) {
 		if (customRenderFunction != null) {
-			customRenderFunction(this._opaqueSubMeshes, this._alphaTestSubMeshes, this._transparentSubMeshes);
-			
+			customRenderFunction(this._opaqueSubMeshes, this._alphaTestSubMeshes, this._transparentSubMeshes);			
 			return;
 		}
 		
@@ -310,15 +309,15 @@ import com.babylonhx.particles.IParticleSystem;
 		this._edgesRenderers.dispose();
 	}
 
-	static var material:Material;
-	static var mesh:AbstractMesh;
+	//static var material:Material;
+	//static var mesh:AbstractMesh;
 	/**
 	 * Inserts the submesh in its correct queue depending on its material.
 	 * @param subMesh The submesh to dispatch
 	 */
 	inline public function dispatch(subMesh:SubMesh) {
-		material = subMesh.getMaterial();
-		mesh = subMesh.getMesh();
+		var material = subMesh.getMaterial();
+		var mesh = subMesh.getMesh();
 		
 		if (material.needAlphaBlending() || mesh.visibility < 1.0 || mesh.hasVertexAlpha) { // Transparent
 			this._transparentSubMeshes.push(subMesh);
@@ -328,6 +327,10 @@ import com.babylonhx.particles.IParticleSystem;
 		} 
 		else {
 			this._opaqueSubMeshes.push(subMesh); // Opaque
+		}
+		
+		if (mesh._edgesRenderer != null) {
+			this._edgesRenderers.push(mesh._edgesRenderer);
 		}
 	}
 	

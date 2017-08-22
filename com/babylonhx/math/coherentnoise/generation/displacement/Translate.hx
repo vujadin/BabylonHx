@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.displacement;
+package com.babylonhx.math.coherentnoise.generation.displacement;
 
 ///<summary>
 /// This generator translates its source by given vector.

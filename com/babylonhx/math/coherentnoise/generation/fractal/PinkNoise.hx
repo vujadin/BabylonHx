@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.fractal;
+package com.babylonhx.math.coherentnoise.generation.fractal;
 
 /// <summary>
 /// Pink noise is a fractal noise that adds together weighted signals sampled at different frequencies, with weight inversely proportional to frequency. .
@@ -47,7 +47,7 @@ class PinkNoise extends FractalNoiseBase {
 		}
 		value = value + signal * m_CurPersistence;
 		m_CurPersistence *= Persistence;
-
+		
 		return value;
 	}
 

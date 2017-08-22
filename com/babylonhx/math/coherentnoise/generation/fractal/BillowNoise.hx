@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.fractal;
+package com.babylonhx.math.coherentnoise.generation.fractal;
 
 /// <summary>
 /// A variation of Perlin noise, this generator creates billowy shapes useful for cloud generation. It uses the same formula as Perlin noise, but adds 
@@ -49,7 +49,7 @@ class BillowNoise extends FractalNoiseBase {
 		}
 		value = value + (2 * Math.abs(signal) - 1) * m_CurPersistence;
 		m_CurPersistence *= Persistence;
-
+		
 		return value;
 	}
 

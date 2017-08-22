@@ -1,4 +1,4 @@
-package textures.procedural.coherentnoise.generation.fractal;
+package com.babylonhx.math.coherentnoise.generation.fractal;
 
 /// <summary>
 /// This generator adds samples with weight decreasing with frequency, like Perlin noise; however, each signal is taken as absolute value, and weighted by previous (i.e. lower-frequency) signal,
@@ -31,7 +31,7 @@ class RidgeNoise extends FractalNoiseBase {
 		rn.Offset = 1;
 		rn.Gain = 2;
 		rn.Exponent = 1;
-
+		
 		return rn;
 	}
 
@@ -46,7 +46,7 @@ class RidgeNoise extends FractalNoiseBase {
 	inline private function	set_Exponent(value:Float):Float {
 		m_Exponent = value;
 		OnParamsChanged();
-
+		
 		return value;
 	}
 
@@ -76,15 +76,15 @@ class RidgeNoise extends FractalNoiseBase {
 		}
 		// Make the ridges.
 		signal = Offset - Math.Abs(signal);
-
+		
 		// Square the signal to increase the sharpness of the ridges.
 		signal *= signal;
-
+		
 		// The weighting from the previous octave is applied to the signal.
 		// Larger values have higher weights, producing sharp points along the
 		// ridges.
 		signal *= m_Weight;
-
+		
 		// Weight successive contributions by the previous signal.
 		m_Weight = signal * Gain;
 		if (m_Weight > 1) {
@@ -93,7 +93,7 @@ class RidgeNoise extends FractalNoiseBase {
 		if (m_Weight < 0) {
 			m_Weight = 0;
 		}
-
+		
 		// Add the signal to the output value.
 		return value + (signal * m_SpectralWeights[curOctave]);
 	}

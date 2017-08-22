@@ -39,7 +39,7 @@ class Cache extends Generator {
 			m_X = x;
 			m_Y = y;
 			m_Z = z;
-
+			
 			return m_Cached = m_Source.GetValue(x, y, z);
 		}
 	}
