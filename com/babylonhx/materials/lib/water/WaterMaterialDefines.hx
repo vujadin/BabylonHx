@@ -10,59 +10,168 @@ import haxe.ds.Vector;
  */
 class WaterMaterialDefines extends MaterialDefines {
 	
-	public static inline var BUMP:Int = 0;
-	public static inline var REFLECTION:Int = 1;
-	public static inline var CLIPPLANE:Int = 2;
-	public static inline var ALPHATEST:Int = 3;
-	public static inline var POINTSIZE:Int = 4;
-	public static inline var FOG:Int = 5;
-	public static inline var NORMAL:Int = 6;
-	public static inline var UV1:Int = 7;
-	public static inline var UV2:Int = 8;
-	public static inline var VERTEXCOLOR:Int = 9;
-	public static inline var VERTEXALPHA:Int = 10;
-	public static inline var INSTANCES:Int = 11;
-	public static inline var SPECULARTERM:Int = 12;	
-	public static inline var SHADOWS:Int = 13;
-	public static inline var LOGARITHMICDEPTH:Int = 14;
-    public static inline var FRESNELSEPARATE:Int = 15;
-    public static inline var BUMPSUPERIMPOSE:Int = 16;
-    public static inline var BUMPAFFECTSREFLECTION:Int = 17;
-	
-	public var BonesPerMesh:Int = 0;
+	public var BUMP:Bool = false;
+	public var REFLECTION:Bool = false;
+	public var CLIPPLANE:Bool = false;
+	public var ALPHATEST:Bool = false;
+	public var POINTSIZE:Bool = false;
+	public var FOG:Bool = false;
+	public var NORMAL:Bool = false;
+	public var UV1:Bool = false;
+	public var UV2:Bool = false;
+	public var VERTEXCOLOR:Bool = false;
+	public var VERTEXALPHA:Bool = false;
 	public var NUM_BONE_INFLUENCERS:Int = 0;
+	public var BonesPerMesh:Int = 0;
+	public var INSTANCES:Bool = false;
+	public var SPECULARTERM:Bool = false;
+	public var LOGARITHMICDEPTH:Bool = false;
+	public var FRESNELSEPARATE:Bool = false;
+	public var BUMPSUPERIMPOSE:Bool = false;
+	public var BUMPAFFECTSREFLECTION:Bool = false;
+	public var USERIGHTHANDEDSYSTEM:Bool = false;
 	
 	
 	public function new() {
-		super();
-		
-		this._keys = Vector.fromArrayCopy(["BUMP", "REFLECTION", "CLIPPLANE", "ALPHATEST", "POINTSIZE", "FOG", "NORMAL", "UV1", "UV2", "VERTEXCOLOR", "VERTEXALPHA", "INSTANCES", "SPECULARTERM", "SHADOWS", "LOGARITHMICDEPTH", "FRESNELSEPARATE", "BUMPSUPERIMPOSE", "BUMPAFFECTSREFLECTION"]);
-		
-		defines = new Vector(this._keys.length);
-		for (i in 0...this._keys.length) {
-			defines[i] = false;
+		super();		
+	}
+	
+	override public function isEqual(other:MaterialDefines):Bool {
+		if (super.isEqual(other)) {
+			if (untyped this.BUMP != other.BUMP) return false;
+			if (untyped this.REFLECTION != other.REFLECTION) return false;
+			if (untyped this.CLIPPLANE != other.CLIPPLANE) return false;
+			if (untyped this.ALPHATEST != other.ALPHATEST) return false;
+			if (untyped this.POINTSIZE != other.POINTSIZE) return false; 
+			if (untyped this.FOG != other.FOG) return false;
+			if (untyped this.NORMAL != other.NORMAL) return false;
+			if (untyped this.UV1 != other.UV1) return false;
+			if (untyped this.UV2 != other.UV2) return false;
+			if (untyped this.VERTEXCOLOR != other.VERTEXCOLOR) return false; 
+			if (untyped this.VERTEXALPHA != other.VERTEXALPHA) return false; 
+			if (untyped this.NUM_BONE_INFLUENCERS != other.NUM_BONE_INFLUENCERS) return false; 
+			if (untyped this.BonesPerMesh != other.BonesPerMesh) return false;
+			if (untyped this.INSTANCES != other.INSTANCES) return false;
+			if (untyped this.SPECULARTERM != other.SPECULARTERM) return false;
+			if (untyped this.LOGARITHMICDEPTH != other.LOGARITHMICDEPTH) return false;
+			if (untyped this.FRESNELSEPARATE != other.FRESNELSEPARATE) return false;
+			if (untyped this.BUMPSUPERIMPOSE != other.BUMPSUPERIMPOSE) return false;
+			if (untyped this.BUMPAFFECTSREFLECTION != other.BUMPAFFECTSREFLECTION) return false;			
+			if (untyped this.USERIGHTHANDEDSYSTEM != other.USERIGHTHANDEDSYSTEM) return false;
+			
+			return true;
 		}
 		
-		BonesPerMesh = 0;
-		NUM_BONE_INFLUENCERS = 0;		
+		return false;
 	}
 	
 	override public function cloneTo(other:MaterialDefines) {
 		super.cloneTo(other);
 		
-		untyped other.BonesPerMesh = this.BonesPerMesh;
-		untyped other.NUM_BONE_INFLUENCERS = this.NUM_BONE_INFLUENCERS;
+		untyped other.BUMP = this.BUMP;
+        untyped other.REFLECTION = this.REFLECTION;
+        untyped other.CLIPPLANE = this.CLIPPLANE;
+        untyped other.ALPHATEST = this.ALPHATEST;
+        untyped other.POINTSIZE = this.POINTSIZE;
+        untyped other.FOG = this.FOG;
+        untyped other.NORMAL = this.NORMAL;
+        untyped other.UV1 = this.UV1;
+        untyped other.UV2 = this.UV2;
+        untyped other.VERTEXCOLOR = this.VERTEXCOLOR;
+        untyped other.VERTEXALPHA = this.VERTEXALPHA;
+        untyped other.NUM_BONE_INFLUENCERS = this.NUM_BONE_INFLUENCERS = 0;
+        untyped other.BonesPerMesh = this.BonesPerMesh = 0;
+        untyped other.INSTANCES = this.INSTANCES;
+        untyped other.SPECULARTERM = this.SPECULARTERM;
+        untyped other.LOGARITHMICDEPTH = this.LOGARITHMICDEPTH;
+        untyped other.FRESNELSEPARATE = this.FRESNELSEPARATE;
+        untyped other.BUMPSUPERIMPOSE = this.BUMPSUPERIMPOSE;
+        untyped other.BUMPAFFECTSREFLECTION = this.BUMPAFFECTSREFLECTION;
+        untyped other.USERIGHTHANDEDSYSTEM = this.USERIGHTHANDEDSYSTEM;
 	}
 	
 	override public function reset() {
 		super.reset();
 		
-		this.BonesPerMesh = 0;
-		this.NUM_BONE_INFLUENCERS = 0;
+		this.BUMP = false;
+        this.REFLECTION = false;
+        this.CLIPPLANE = false;
+        this.ALPHATEST = false;
+        this.POINTSIZE = false;
+        this.FOG = false;
+        this.NORMAL = false;
+        this.UV1 = false;
+        this.UV2 = false;
+        this.VERTEXCOLOR = false;
+        this.VERTEXALPHA = false;
+        this.NUM_BONE_INFLUENCERS = 0;
+        this.BonesPerMesh = 0;
+        this.INSTANCES = false;
+        this.SPECULARTERM = false;
+        this.LOGARITHMICDEPTH = false;
+        this.FRESNELSEPARATE = false;
+        this.BUMPSUPERIMPOSE = false;
+        this.BUMPAFFECTSREFLECTION = false;
+        this.USERIGHTHANDEDSYSTEM = false;
 	}
-
+	
 	override public function toString():String {
 		var result = super.toString();
+		
+		if (this.BUMP) {
+			result += "#define BUMP \n";
+		}
+		if (this.REFLECTION) {
+			result += "#define REFLECTION \n";
+		}
+		if (this.CLIPPLANE) {
+			result += "#define CLIPPLANE \n";
+		}
+		if (this.ALPHATEST) {
+			result += "#define ALPHATEST \n";
+		}
+		if (this.POINTSIZE) {
+			result += "#define POINTSIZE \n";
+		}
+		if (this.FOG) {
+			result += "#define FOG \n";
+		}
+		if (this.NORMAL) {
+			result += "#define NORMAL \n";
+		}
+		if (this.UV1) {
+			result += "#define UV1 \n";
+		}
+		if (this.UV2) {
+			result += "#define UV2 \n";
+		}
+		if (this.VERTEXCOLOR) {
+			result += "#define VERTEXCOLOR \n";
+		}
+		if (this.VERTEXALPHA) {
+			result += "#define VERTEXALPHA \n";
+		}
+		if (this.INSTANCES) {
+			result += "#define INSTANCES \n";
+		}
+		if (this.SPECULARTERM) {
+			result += "#define SPECULARTERM \n";
+		}
+		if (this.LOGARITHMICDEPTH) {
+			result += "#define LOGARITHMICDEPTH \n";
+		}
+		if (this.FRESNELSEPARATE) {
+			result += "#define FRESNELSEPARATE \n";
+		}
+		if (this.BUMPSUPERIMPOSE) {
+			result += "#define BUMPSUPERIMPOSE \n";
+		}
+		if (this.BUMPAFFECTSREFLECTION) {
+			result += "#define BUMPAFFECTSREFLECTION \n";
+		}
+		if (this.USERIGHTHANDEDSYSTEM) {
+			result += "#define USERIGHTHANDEDSYSTEM \n";
+		}
 		
 		result += "#define BonesPerMesh " + this.BonesPerMesh + "\n";
 		result += "#define NUM_BONE_INFLUENCERS " + this.NUM_BONE_INFLUENCERS + "\n";

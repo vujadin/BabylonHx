@@ -11,6 +11,8 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.mesh.Mesh;
+import com.babylonhx.mesh.SubMesh;
+import com.babylonhx.mesh.BaseSubMesh;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.lights.SpotLight;
@@ -20,45 +22,69 @@ import com.babylonhx.lights.PointLight;
 import com.babylonhx.lights.SpotLight;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.tools.EventState;
+import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.serialization.SerializationHelper;
-
-import haxe.ds.Vector;
 
 /**
  * ...
  * @author Krtolica Vujadin
  */
-
-typedef WMD = WaterMaterialDefines
  
-class WaterMaterial extends Material {
+class WaterMaterial extends PushMaterial {
 	
-	static var fragmentShader:String = "precision highp float;\n\nuniform vec3 vEyePosition;\nuniform vec4 vDiffuseColor;\n#ifdef SPECULARTERM\nuniform vec4 vSpecularColor;\n#endif\n\nvarying vec3 vPositionW;\n#ifdef NORMAL\nvarying vec3 vNormalW;\n#endif\n#ifdef VERTEXCOLOR\nvarying vec4 vColor;\n#endif\n\n#include<lightFragmentDeclaration>[0..maxSimultaneousLights]\n#include<lightsFragmentFunctions>\n#include<shadowsFragmentFunctions>\n\n#ifdef BUMP\nvarying vec2 vNormalUV;\nuniform sampler2D normalSampler;\nuniform vec2 vNormalInfos;\n#endif\nuniform sampler2D refractionSampler;\nuniform sampler2D reflectionSampler;\n\nconst float LOG2=1.442695;\nuniform vec3 cameraPosition;\nuniform vec4 waterColor;\nuniform float colorBlendFactor;\nuniform float bumpHeight;\n\nvarying vec3 vRefractionMapTexCoord;\nvarying vec3 vReflectionMapTexCoord;\nvarying vec3 vPosition;\n#include<clipPlaneFragmentDeclaration>\n\n#include<fogFragmentDeclaration>\nvoid main(void) {\n\n#include<clipPlaneFragment>\nvec3 viewDirectionW=normalize(vEyePosition-vPositionW);\n\nvec4 baseColor=vec4(1.,1.,1.,1.);\nvec3 diffuseColor=vDiffuseColor.rgb;\n\nfloat alpha=vDiffuseColor.a;\n#ifdef BUMP\nbaseColor=texture2D(normalSampler,vNormalUV);\nvec3 bumpColor=baseColor.rgb;\n#ifdef ALPHATEST\nif (baseColor.a<0.4)\ndiscard;\n#endif\nbaseColor.rgb*=vNormalInfos.y;\n#else\nvec3 bumpColor=vec3(1.0);\n#endif\n#ifdef VERTEXCOLOR\nbaseColor.rgb*=vColor.rgb;\n#endif\n\n#ifdef NORMAL\nvec3 normalW=normalize(vNormalW);\nvec2 perturbation=bumpHeight*(baseColor.rg-0.5);\n#else\nvec3 normalW=vec3(1.0,1.0,1.0);\nvec2 perturbation=bumpHeight*(vec2(1.0,1.0)-0.5);\n#endif\n#ifdef REFLECTION\n\nvec3 eyeVector=normalize(vEyePosition-vPosition);\nvec2 projectedRefractionTexCoords=clamp(vRefractionMapTexCoord.xy/vRefractionMapTexCoord.z+perturbation,0.0,1.0);\nvec4 refractiveColor=texture2D(refractionSampler,projectedRefractionTexCoords);\nvec2 projectedReflectionTexCoords=clamp(vReflectionMapTexCoord.xy/vReflectionMapTexCoord.z+perturbation,0.0,1.0);\nvec4 reflectiveColor=texture2D(reflectionSampler,projectedReflectionTexCoords);\nvec3 upVector=vec3(0.0,1.0,0.0);\nfloat fresnelTerm=max(dot(eyeVector,upVector),0.0);\nvec4 combinedColor=refractiveColor*fresnelTerm+reflectiveColor*(1.0-fresnelTerm);\nbaseColor=colorBlendFactor*waterColor+(1.0-colorBlendFactor)*combinedColor;\n#endif\n\nvec3 diffuseBase=vec3(0.,0.,0.);\nlightingInfo info;\nfloat shadow=1.;\n#ifdef SPECULARTERM\nfloat glossiness=vSpecularColor.a;\nvec3 specularBase=vec3(0.,0.,0.);\nvec3 specularColor=vSpecularColor.rgb;\n#else\nfloat glossiness=0.;\n#endif\n#include<lightFragment>[0..maxSimultaneousLights]\n#ifdef VERTEXALPHA\nalpha*=vColor.a;\n#endif\n#ifdef SPECULARTERM\nvec3 finalSpecular=specularBase*specularColor;\n#else\nvec3 finalSpecular=vec3(0.0);\n#endif\nvec3 finalDiffuse=clamp(diffuseBase*diffuseColor,0.0,1.0)*baseColor.rgb;\n\nvec4 color=vec4(finalDiffuse+finalSpecular,alpha);\n#include<fogFragment>\ngl_FragColor=color;\n}";
+	static var _fragmentShader:String = "#ifdef LOGARITHMICDEPTH\n#extension GL_EXT_frag_depth : enable\n#endif\nprecision highp float;\n\nuniform vec3 vEyePosition;\nuniform vec4 vDiffuseColor;\n#ifdef SPECULARTERM\nuniform vec4 vSpecularColor;\n#endif\n\nvarying vec3 vPositionW;\n#ifdef NORMAL\nvarying vec3 vNormalW;\n#endif\n#ifdef VERTEXCOLOR\nvarying vec4 vColor;\n#endif\n\n#include<helperFunctions>\n\n#include<__decl__lightFragment>[0..maxSimultaneousLights]\n#include<lightsFragmentFunctions>\n#include<shadowsFragmentFunctions>\n\n#ifdef BUMP\nvarying vec2 vNormalUV;\nvarying vec2 vNormalUV2;\nuniform sampler2D normalSampler;\nuniform vec2 vNormalInfos;\n#endif\nuniform sampler2D refractionSampler;\nuniform sampler2D reflectionSampler;\n\nconst float LOG2=1.442695;\nuniform vec3 cameraPosition;\nuniform vec4 waterColor;\nuniform float colorBlendFactor;\nuniform vec4 waterColor2;\nuniform float colorBlendFactor2;\nuniform float bumpHeight;\nuniform float time;\n\nvarying vec3 vRefractionMapTexCoord;\nvarying vec3 vReflectionMapTexCoord;\nvarying vec3 vPosition;\n#include<clipPlaneFragmentDeclaration>\n#include<logDepthDeclaration>\n\n#include<fogFragmentDeclaration>\nvoid main(void) {\n\n#include<clipPlaneFragment>\nvec3 viewDirectionW=normalize(vEyePosition-vPositionW);\n\nvec4 baseColor=vec4(1.,1.,1.,1.);\nvec3 diffuseColor=vDiffuseColor.rgb;\n\nfloat alpha=vDiffuseColor.a;\n#ifdef BUMP\n#ifdef BUMPSUPERIMPOSE\nbaseColor=0.6*texture2D(normalSampler,vNormalUV)+0.4*texture2D(normalSampler,vec2(vNormalUV2.x,vNormalUV2.y));\n#else\nbaseColor=texture2D(normalSampler,vNormalUV);\n#endif\nvec3 bumpColor=baseColor.rgb;\n#ifdef ALPHATEST\nif (baseColor.a<0.4)\ndiscard;\n#endif\nbaseColor.rgb*=vNormalInfos.y;\n#else\nvec3 bumpColor=vec3(1.0);\n#endif\n#ifdef VERTEXCOLOR\nbaseColor.rgb*=vColor.rgb;\n#endif\n\n#ifdef NORMAL\nvec2 perturbation=bumpHeight*(baseColor.rg-0.5);\n#ifdef BUMPAFFECTSREFLECTION\nvec3 normalW=normalize(vNormalW+vec3(perturbation.x*8.0,0.0,perturbation.y*8.0));\nif (normalW.y<0.0) {\nnormalW.y=-normalW.y;\n}\n#else\nvec3 normalW=normalize(vNormalW);\n#endif\n#else\nvec3 normalW=vec3(1.0,1.0,1.0);\nvec2 perturbation=bumpHeight*(vec2(1.0,1.0)-0.5);\n#endif\n#ifdef FRESNELSEPARATE\n#ifdef REFLECTION\n\nvec3 eyeVector=normalize(vEyePosition-vPosition);\nvec2 projectedRefractionTexCoords=clamp(vRefractionMapTexCoord.xy/vRefractionMapTexCoord.z+perturbation*0.5,0.0,1.0);\nvec4 refractiveColor=texture2D(refractionSampler,projectedRefractionTexCoords);\nvec2 projectedReflectionTexCoords=clamp(vec2(\nvReflectionMapTexCoord.x/vReflectionMapTexCoord.z+perturbation.x*0.3,\nvReflectionMapTexCoord.y/vReflectionMapTexCoord.z+perturbation.y\n),0.0,1.0);\nvec4 reflectiveColor=texture2D(reflectionSampler,projectedReflectionTexCoords);\nvec3 upVector=vec3(0.0,1.0,0.0);\nfloat fresnelTerm=clamp(abs(pow(dot(eyeVector,upVector),3.0)),0.05,0.65);\nfloat IfresnelTerm=1.0-fresnelTerm;\nrefractiveColor=colorBlendFactor*waterColor+(1.0-colorBlendFactor)*refractiveColor;\nreflectiveColor=IfresnelTerm*colorBlendFactor2*waterColor+(1.0-colorBlendFactor2*IfresnelTerm)*reflectiveColor;\nvec4 combinedColor=refractiveColor*fresnelTerm+reflectiveColor*IfresnelTerm;\nbaseColor=combinedColor;\n#endif\n\nvec3 diffuseBase=vec3(0.,0.,0.);\nlightingInfo info;\nfloat shadow=1.;\n#ifdef SPECULARTERM\nfloat glossiness=vSpecularColor.a;\nvec3 specularBase=vec3(0.,0.,0.);\nvec3 specularColor=vSpecularColor.rgb;\n#else\nfloat glossiness=0.;\n#endif\n#include<lightFragment>[0..maxSimultaneousLights]\nvec3 finalDiffuse=clamp(baseColor.rgb,0.0,1.0);\n#ifdef VERTEXALPHA\nalpha*=vColor.a;\n#endif\n#ifdef SPECULARTERM\nvec3 finalSpecular=specularBase*specularColor;\n#else\nvec3 finalSpecular=vec3(0.0);\n#endif\n#else \n#ifdef REFLECTION\n\nvec3 eyeVector=normalize(vEyePosition-vPosition);\nvec2 projectedRefractionTexCoords=clamp(vRefractionMapTexCoord.xy/vRefractionMapTexCoord.z+perturbation,0.0,1.0);\nvec4 refractiveColor=texture2D(refractionSampler,projectedRefractionTexCoords);\nvec2 projectedReflectionTexCoords=clamp(vReflectionMapTexCoord.xy/vReflectionMapTexCoord.z+perturbation,0.0,1.0);\nvec4 reflectiveColor=texture2D(reflectionSampler,projectedReflectionTexCoords);\nvec3 upVector=vec3(0.0,1.0,0.0);\nfloat fresnelTerm=max(dot(eyeVector,upVector),0.0);\nvec4 combinedColor=refractiveColor*fresnelTerm+reflectiveColor*(1.0-fresnelTerm);\nbaseColor=colorBlendFactor*waterColor+(1.0-colorBlendFactor)*combinedColor;\n#endif\n\nvec3 diffuseBase=vec3(0.,0.,0.);\nlightingInfo info;\nfloat shadow=1.;\n#ifdef SPECULARTERM\nfloat glossiness=vSpecularColor.a;\nvec3 specularBase=vec3(0.,0.,0.);\nvec3 specularColor=vSpecularColor.rgb;\n#else\nfloat glossiness=0.;\n#endif\n#include<lightFragment>[0..maxSimultaneousLights]\nvec3 finalDiffuse=clamp(baseColor.rgb,0.0,1.0);\n#ifdef VERTEXALPHA\nalpha*=vColor.a;\n#endif\n#ifdef SPECULARTERM\nvec3 finalSpecular=specularBase*specularColor;\n#else\nvec3 finalSpecular=vec3(0.0);\n#endif\n#endif\n\nvec4 color=vec4(finalDiffuse+finalSpecular,alpha);\n#include<logDepthFragment>\n#include<fogFragment>\ngl_FragColor=color;\n}\n";
 	
-	static var vertexShader:String = "precision highp float;\n\nattribute vec3 position;\n#ifdef NORMAL\nattribute vec3 normal;\n#endif\n#ifdef UV1\nattribute vec2 uv;\n#endif\n#ifdef UV2\nattribute vec2 uv2;\n#endif\n#ifdef VERTEXCOLOR\nattribute vec4 color;\n#endif\n#include<bonesDeclaration>\n\n#include<instancesDeclaration>\nuniform mat4 view;\nuniform mat4 viewProjection;\n#ifdef BUMP\nvarying vec2 vNormalUV;\nuniform mat4 normalMatrix;\nuniform vec2 vNormalInfos;\n#endif\n#ifdef POINTSIZE\nuniform float pointSize;\n#endif\n\nvarying vec3 vPositionW;\n#ifdef NORMAL\nvarying vec3 vNormalW;\n#endif\n#ifdef VERTEXCOLOR\nvarying vec4 vColor;\n#endif\n#include<clipPlaneVertexDeclaration>\n#include<fogVertexDeclaration>\n#include<shadowsVertexDeclaration>\n\nuniform mat4 worldReflectionViewProjection;\nuniform vec2 windDirection;\nuniform float waveLength;\nuniform float time;\nuniform float windForce;\nuniform float waveHeight;\nuniform float waveSpeed;\n\nvarying vec3 vPosition;\nvarying vec3 vRefractionMapTexCoord;\nvarying vec3 vReflectionMapTexCoord;\nvoid main(void) {\n#include<instancesVertex>\n#include<bonesVertex>\nvec4 worldPos=finalWorld*vec4(position,1.0);\nvPositionW=vec3(worldPos);\n#ifdef NORMAL\nvNormalW=normalize(vec3(finalWorld*vec4(normal,0.0)));\n#endif\n\n#ifndef UV1\nvec2 uv=vec2(0.,0.);\n#endif\n#ifndef UV2\nvec2 uv2=vec2(0.,0.);\n#endif\n#ifdef BUMP\nif (vNormalInfos.x == 0.)\n{\nvNormalUV=vec2(normalMatrix*vec4((uv*1.0)/waveLength+time*windForce*windDirection,1.0,0.0));\n}\nelse\n{\nvNormalUV=vec2(normalMatrix*vec4((uv2*1.0)/waveLength+time*windForce*windDirection,1.0,0.0));\n}\n#endif\n\n#include<clipPlaneVertex>\n\n#include<fogVertex>\n\n#include<shadowsVertex>\n\n#ifdef VERTEXCOLOR\nvColor=color;\n#endif\n\n#ifdef POINTSIZE\ngl_PointSize=pointSize;\n#endif\nvec3 p=position;\nfloat newY=(sin(((p.x/0.05)+time*waveSpeed))*waveHeight*windDirection.x*5.0)\n+(cos(((p.z/0.05)+time*waveSpeed))*waveHeight*windDirection.y*5.0);\np.y+=abs(newY);\ngl_Position=viewProjection*finalWorld*vec4(p,1.0);\n#ifdef REFLECTION\nworldPos=viewProjection*finalWorld*vec4(p,1.0);\n\nvPosition=position;\nvRefractionMapTexCoord.x=0.5*(worldPos.w+worldPos.x);\nvRefractionMapTexCoord.y=0.5*(worldPos.w+worldPos.y);\nvRefractionMapTexCoord.z=worldPos.w;\nworldPos=worldReflectionViewProjection*vec4(position,1.0);\nvReflectionMapTexCoord.x=0.5*(worldPos.w+worldPos.x);\nvReflectionMapTexCoord.y=0.5*(worldPos.w+worldPos.y);\nvReflectionMapTexCoord.z=worldPos.w;\n#endif\n}\n";
+	static var _vertexShader:String = "precision highp float;\n\nattribute vec3 position;\n#ifdef NORMAL\nattribute vec3 normal;\n#endif\n#ifdef UV1\nattribute vec2 uv;\n#endif\n#ifdef UV2\nattribute vec2 uv2;\n#endif\n#ifdef VERTEXCOLOR\nattribute vec4 color;\n#endif\n#include<bonesDeclaration>\n\n#include<instancesDeclaration>\nuniform mat4 view;\nuniform mat4 viewProjection;\n#ifdef BUMP\nvarying vec2 vNormalUV;\n#ifdef BUMPSUPERIMPOSE\nvarying vec2 vNormalUV2;\n#endif\nuniform mat4 normalMatrix;\nuniform vec2 vNormalInfos;\n#endif\n#ifdef POINTSIZE\nuniform float pointSize;\n#endif\n\nvarying vec3 vPositionW;\n#ifdef NORMAL\nvarying vec3 vNormalW;\n#endif\n#ifdef VERTEXCOLOR\nvarying vec4 vColor;\n#endif\n#include<clipPlaneVertexDeclaration>\n#include<fogVertexDeclaration>\n#include<__decl__lightFragment>[0..maxSimultaneousLights]\n#include<logDepthDeclaration>\n\nuniform mat4 worldReflectionViewProjection;\nuniform vec2 windDirection;\nuniform float waveLength;\nuniform float time;\nuniform float windForce;\nuniform float waveHeight;\nuniform float waveSpeed;\n\nvarying vec3 vPosition;\nvarying vec3 vRefractionMapTexCoord;\nvarying vec3 vReflectionMapTexCoord;\nvoid main(void) {\n#include<instancesVertex>\n#include<bonesVertex>\nvec4 worldPos=finalWorld*vec4(position,1.0);\nvPositionW=vec3(worldPos);\n#ifdef NORMAL\nvNormalW=normalize(vec3(finalWorld*vec4(normal,0.0)));\n#endif\n\n#ifndef UV1\nvec2 uv=vec2(0.,0.);\n#endif\n#ifndef UV2\nvec2 uv2=vec2(0.,0.);\n#endif\n#ifdef BUMP\nif (vNormalInfos.x == 0.)\n{\nvNormalUV=vec2(normalMatrix*vec4((uv*1.0)/waveLength+time*windForce*windDirection,1.0,0.0));\n#ifdef BUMPSUPERIMPOSE\nvNormalUV2=vec2(normalMatrix*vec4((uv*0.721)/waveLength+time*1.2*windForce*windDirection,1.0,0.0));\n#endif\n}\nelse\n{\nvNormalUV=vec2(normalMatrix*vec4((uv2*1.0)/waveLength+time*windForce*windDirection ,1.0,0.0));\n#ifdef BUMPSUPERIMPOSE\nvNormalUV2=vec2(normalMatrix*vec4((uv2*0.721)/waveLength+time*1.2*windForce*windDirection ,1.0,0.0));\n#endif\n}\n#endif\n\n#include<clipPlaneVertex>\n\n#include<fogVertex>\n\n#include<shadowsVertex>[0..maxSimultaneousLights]\n\n#ifdef VERTEXCOLOR\nvColor=color;\n#endif\n\n#ifdef POINTSIZE\ngl_PointSize=pointSize;\n#endif\nvec3 p=position;\nfloat newY=(sin(((p.x/0.05)+time*waveSpeed))*waveHeight*windDirection.x*5.0)\n+(cos(((p.z/0.05)+time*waveSpeed))*waveHeight*windDirection.y*5.0);\np.y+=abs(newY);\ngl_Position=viewProjection*finalWorld*vec4(p,1.0);\n#ifdef REFLECTION\nworldPos=viewProjection*finalWorld*vec4(p,1.0);\n\nvPosition=position;\nvRefractionMapTexCoord.x=0.5*(worldPos.w+worldPos.x);\nvRefractionMapTexCoord.y=0.5*(worldPos.w+worldPos.y);\nvRefractionMapTexCoord.z=worldPos.w;\nworldPos=worldReflectionViewProjection*vec4(position,1.0);\nvReflectionMapTexCoord.x=0.5*(worldPos.w+worldPos.x);\nvReflectionMapTexCoord.y=0.5*(worldPos.w+worldPos.y);\nvReflectionMapTexCoord.z=worldPos.w;\n#endif\n#include<logDepthVertex>\n}\n";
 	
 	
 	/*
 	* Public members
 	*/
-	@serializeAsTexture()
-	public var bumpTexture:BaseTexture;
-	
+	@serializeAsTexture("bumpTexture")
+	private var _bumpTexture:BaseTexture;
+	@expandToProperty("_markAllSubMeshesAsTexturesDirty")
+	public var bumpTexture(get, set):BaseTexture;
+	private inline function get_bumpTexture():BaseTexture {
+		return _bumpTexture;
+	}
+	private inline function set_bumpTexture(val:BaseTexture):BaseTexture {
+		_markAllSubMeshesAsTexturesDirty();
+		return _bumpTexture = val;
+	}
+
 	@serializeAsColor3()
 	public var diffuseColor:Color3 = new Color3(1, 1, 1);
-	
+
 	@serializeAsColor3()
 	public var specularColor:Color3 = new Color3(0, 0, 0);
-	
+
 	@serialize()
 	public var specularPower:Float = 64;
-	
-	@serialize()
-	public var disableLighting:Bool = false;
-	
-	@serialize()
-	public var maxSimultaneousLights:Int = 4;
-	
+
+	@serialize("disableLighting")
+	private var _disableLighting:Bool = false;
+	@expandToProperty("_markAllSubMeshesAsLightsDirty")
+	public var disableLighting(get, set):Bool;
+	private inline function get_disableLighting():Bool {
+		return _disableLighting;
+	}
+	private inline function set_disableLighting(val:Bool):Bool {
+		_markAllSubMeshesAsLightsDirty();
+		return _disableLighting = val;
+	}
+
+	@serialize("maxSimultaneousLights")
+	private var _maxSimultaneousLights:Int = 4;
+	@expandToProperty("_markAllSubMeshesAsLightsDirty")
+	public var maxSimultaneousLights(get, set):Int;
+	private inline function get_maxSimultaneousLights():Int {
+		return _maxSimultaneousLights;
+	}
+	private inline function set_maxSimultaneousLights(val:Int):Int {
+		_markAllSubMeshesAsLightsDirty();
+		return _maxSimultaneousLights = val;
+	}
+
 	/**
 	* @param {number}: Represents the wind force
 	*/
@@ -82,20 +108,50 @@ class WaterMaterial extends Material {
 	/**
 	 * @param {boolean}: Add a smaller moving bump to less steady waves.
 	 */
-	@serialize()
-	public var bumpSuperimpose:Bool = false;
+	@serialize("bumpSuperimpose")
+	private var _bumpSuperimpose:Bool = false;
+	@expandToProperty("_markAllSubMeshesAsMiscDirty")
+	public var bumpSuperimpose(get, set):Bool;
+	private inline function get_bumpSuperimpose():Bool {
+		return _bumpSuperimpose;
+	}
+	private inline function set_bumpSuperimpose(val:Bool):Bool {
+		_markAllSubMeshesAsMiscDirty();
+		return _bumpSuperimpose = val;
+	}
+
 	/**
 	 * @param {boolean}: Color refraction and reflection differently with .waterColor2 and .colorBlendFactor2. Non-linear (physically correct) fresnel.
 	 */
-	@serialize()
-	public var fresnelSeparate:Bool = false;
+	@serialize("fresnelSeparate")
+	private var _fresnelSeparate:Bool = false;
+	@expandToProperty("_markAllSubMeshesAsMiscDirty")
+	public var fresnelSeparate(get, set):Bool;
+	private inline function get_fresnelSeparate():Bool {
+		return _fresnelSeparate;
+	}
+	private inline function set_fresnelSeparate(val:Bool):Bool {
+		_markAllSubMeshesAsMiscDirty();
+		return _fresnelSeparate = val;
+	}
+
 	/**
 	 * @param {boolean}: bump Waves modify the reflection.
 	 */
-	@serialize()
-	public var bumpAffectsReflection:Bool = false;
+	@serialize("bumpAffectsReflection")
+	private var _bumpAffectsReflection:Bool = false;
+	@expandToProperty("_markAllSubMeshesAsMiscDirty")
+	public var bumpAffectsReflection(get, set):Bool;
+	private inline function get_bumpAffectsReflection():Bool {
+		return _bumpAffectsReflection;
+	}
+	private inline function set_bumpAffectsReflection(val:Bool):Bool {
+		_markAllSubMeshesAsMiscDirty();
+		return _bumpAffectsReflection = val;
+	}
+
 	/**
-	* @param {number}: The water color blended with the reflection and refraction samplers
+	* @param {number}: The water color blended with the refraction (near)
 	*/
 	@serializeAsColor3()
 	public var waterColor:Color3 = new Color3(0.1, 0.1, 0.6);
@@ -119,120 +175,105 @@ class WaterMaterial extends Material {
 	*/
 	@serialize()
 	public var waveLength:Float = 0.1;
-	
+
 	/**
 	* @param {number}: Defines the waves speed
 	*/
 	@serialize()
 	public var waveSpeed:Float = 1.0;
-	
-	public var renderTargetSize:Vector2 = new Vector2(512, 512);
-	
-	public var reflectionTexture(get, never):RenderTargetTexture;
-	
+
+	private var _renderTargets:SmartArray<RenderTargetTexture> = new SmartArray<RenderTargetTexture>(16);
+
 	/*
 	* Private members
 	*/
 	private var _mesh:AbstractMesh = null;
-	
+
 	private var _refractionRTT:RenderTargetTexture;
 	private var _reflectionRTT:RenderTargetTexture;
-	
+
 	private var _material:ShaderMaterial;
-	
+
 	private var _reflectionTransform:Matrix = Matrix.Zero();
 	private var _lastTime:Float = 0;
-	
+	private var _lastDeltaTime:Float = 0;
+
 	private var _renderId:Int;
 
-	private var _defines:WaterMaterialDefines = new WaterMaterialDefines();
-	private var _cachedDefines:WaterMaterialDefines = new WaterMaterialDefines();
-	
 	private var _useLogarithmicDepth:Bool;
 	
-	@serialize()
-	public var useLogarithmicDepth(get, set):Bool;
-	private function get_useLogarithmicDepth():Bool {
-		return this._useLogarithmicDepth;
-	}
-	private function set_useLogarithmicDepth(value:Bool):Bool {
-		this._useLogarithmicDepth = value && this.getScene().getEngine().getCaps().fragmentDepthSupported;
-		return value;
-	}
+	public var renderTargetSize:Vector2;
 	
-	private var defs:Vector<Bool>;
-	
-	
-	private var shaderName:String = "watermat";
-	private var uniforms:Array<String> = ["world", "view", "viewProjection", "vEyePosition", "vLightsType", "vDiffuseColor", "vSpecularColor",
-		"vFogInfos", "vFogColor", "pointSize",
-		"vNormalInfos", 
-		"mBones",
-		"vClipPlane", "normalMatrix",
-		"logarithmicDepthConstant",
-		// Water
-		"worldReflectionViewProjection", "windDirection", "waveLength", "time", "windForce",
-		"cameraPosition", "bumpHeight", "waveHeight", "waterColor", "waterColor2", "colorBlendFactor", "colorBlendFactor2", "waveSpeed"
-	];
-	private var samplers:Array<String> = ["normalSampler",
-		// Water
-		"refractionSampler", "reflectionSampler"
-	];
-	
-	
+
 	/**
 	* Constructor
 	*/
-	public function new(name:String, scene:Scene, renderTargetSize:Vector2 = null) {
+	public function new(name:String, scene:Scene, ?renderTargetSize:Vector2) {
 		super(name, scene);
 		
-		if (!ShadersStore.Shaders.exists("watermat.fragment")) {
-			ShadersStore.Shaders.set("watermat.fragment", fragmentShader);
-			ShadersStore.Shaders.set("watermat.vertex", vertexShader);
+		if (!ShadersStore.Shaders.exists('waterPixelShader')) {
+			ShadersStore.Shaders['waterPixelShader'] = _fragmentShader;
+			ShadersStore.Shaders['waterVertexShader'] = _vertexShader;
 		}
 		
-		if (renderTargetSize != null) {
-			this.renderTargetSize = renderTargetSize;
-		}
+		this.renderTargetSize = renderTargetSize != null ? renderTargetSize : new Vector2(512, 512);
 		
-		this._cachedDefines.BonesPerMesh = -1;
-		
-		// Create render targets
 		this._createRenderTargets(scene, this.renderTargetSize);
 		
-		this.defs = this._defines.defines;
+		// Create render targets
+		this.getRenderTargetTextures = function():SmartArray<RenderTargetTexture> {
+			this._renderTargets.reset();
+			this._renderTargets.push(this._reflectionRTT);
+			this._renderTargets.push(this._refractionRTT);
+			
+			return this._renderTargets;
+		};
 	}
-	
+
+	@serialize()
+	public var useLogarithmicDepth(get, set):Bool;
+	private inline function get_useLogarithmicDepth():Bool {
+		return this._useLogarithmicDepth;
+	}
+	private inline function set_useLogarithmicDepth(value:Bool):Bool {
+		this._useLogarithmicDepth = value && this.getScene().getEngine().getCaps().fragmentDepthSupported;
+		this._markAllSubMeshesAsMiscDirty();
+		return value;
+	}
+
 	// Get / Set
-	private function get_refractionTexture():RenderTargetTexture {
+	public var refractionTexture(get, never):RenderTargetTexture;
+	private inline function get_refractionTexture():RenderTargetTexture {
 		return this._refractionRTT;
 	}
 	
-	private function get_reflectionTexture():RenderTargetTexture {
+	public var reflectionTexture(get, never):RenderTargetTexture;
+	private inline function get_reflectionTexture():RenderTargetTexture {
 		return this._reflectionRTT;
 	}
-	
+
 	// Methods
-	public function addToRenderList(node:AbstractMesh) {
-		this._refractionRTT.renderList.push(node);
-		this._reflectionRTT.renderList.push(node);
+	public inline function addToRenderList(node:Node) {
+		this._refractionRTT.renderList.push(cast node);
+		this._reflectionRTT.renderList.push(cast node);
 	}
-	
+
 	public function enableRenderTargets(enable:Bool) {
 		var refreshRate = enable ? 1 : 0;
 		
 		this._refractionRTT.refreshRate = refreshRate;
 		this._reflectionRTT.refreshRate = refreshRate;
 	}
-	
-	public function getRenderList():Array<AbstractMesh> {
+
+	public inline function getRenderList():Array<AbstractMesh> {
 		return this._refractionRTT.renderList;
 	}
-	
-	private function get_renderTargetsEnabled():Bool {
+
+	public var renderTargetsEnabled(get, never):Bool;
+	private inline function get_renderTargetsEnabled():Bool {
 		return !(this._refractionRTT.refreshRate == 0);
 	}
-	
+
 	override public function needAlphaBlending():Bool {
 		return (this.alpha < 1.0);
 	}
@@ -244,304 +285,275 @@ class WaterMaterial extends Material {
 	override public function getAlphaTestTexture():BaseTexture {
 		return null;
 	}
-	
-	private function _checkCache(scene:Scene, ?mesh:AbstractMesh, useInstances:Bool = false):Bool {
-		if (mesh == null) {
-			return true;
-		}
-		
-		if (this.defs[WMD.INSTANCES] != useInstances) {
-			return false;
-		}
-		
-		if (mesh._materialDefines != null && mesh._materialDefines.isEqual(this._defines)) {
-			return true;
-		}
-		
-		return false;
-	}
-	
-	override public function isReady(?mesh:AbstractMesh, useInstances:Bool = false):Bool {
-		if (this.checkReadyOnlyOnce) {
-			if (this._wasPreviouslyReady) {
+
+	override public function isReadyForSubMesh(mesh:AbstractMesh, subMesh:BaseSubMesh, useInstances:Bool = false):Bool {
+		if (this.isFrozen) {
+			if (this._wasPreviouslyReady && subMesh.effect != null) {
 				return true;
 			}
 		}
 		
+		if (subMesh._materialDefines == null) {
+			subMesh._materialDefines = new WaterMaterialDefines();
+		}
+		
+		var defines:WaterMaterialDefines = cast subMesh._materialDefines;
 		var scene = this.getScene();
 		
-		if (!this.checkReadyOnEveryCall) {
+		if (!this.checkReadyOnEveryCall && subMesh.effect != null) {
 			if (this._renderId == scene.getRenderId()) {
-				if (this._checkCache(scene, mesh, useInstances)) {
-					return true;
-				}
+				return true;
 			}
 		}
 		
 		var engine = scene.getEngine();
-		var needNormals = false;
-		var needUVs = false;
-		
-		this._defines.reset();
 		
 		// Textures
-		if (scene.texturesEnabled) {
-			if (this.bumpTexture != null && StandardMaterial.BumpTextureEnabled) {
-				if (!this.bumpTexture.isReady()) {
-					return false;
-				} 
-				else {
-					needUVs = true;
-					this.defs[WMD.BUMP] = true;
+		if (defines._areTexturesDirty) {
+			defines._needUVs = false;
+			if (scene.texturesEnabled) {
+				if (this.bumpTexture != null && StandardMaterial.BumpTextureEnabled) {
+					if (!this.bumpTexture.isReady()) {
+						return false;
+					} 
+					else {
+						defines._needUVs = true;
+						defines.BUMP = true;
+					}
+				}
+				
+				if (StandardMaterial.ReflectionTextureEnabled) {
+					defines.REFLECTION = true;
 				}
 			}
-			
-			if (StandardMaterial.ReflectionTextureEnabled) {
-				this.defs[WMD.REFLECTION] = true;
+		}
+		
+		MaterialHelper.PrepareDefinesForFrameBoundValues(scene, engine, defines, useInstances);
+		
+		MaterialHelper.PrepareDefinesForMisc(mesh, scene, this._useLogarithmicDepth, this.pointsCloud, this.fogEnabled, defines);
+		
+		if (defines._areMiscDirty) {
+			if (this._fresnelSeparate) {
+				defines.FRESNELSEPARATE = true;
 			}
-		}
-		
-		// Effect
-		if (scene.clipPlane != null) {
-			this.defs[WMD.CLIPPLANE] = true;
-		}
-		
-		if (engine.getAlphaTesting()) {
-			this.defs[WMD.ALPHATEST] = true;
-		}
-		
-		// Point size
-		if (this.pointsCloud || scene.forcePointsCloud) {
-			this.defs[WMD.POINTSIZE] = true;
-		}
-		
-		if (this.useLogarithmicDepth) {
-			this.defs[WMD.LOGARITHMICDEPTH] = true;
-		}
-		
-		if (this.fresnelSeparate) {
-			this.defs[WMD.FRESNELSEPARATE] = true;
-		}
-		
-		if (this.bumpSuperimpose) {
-			this.defs[WMD.BUMPSUPERIMPOSE] = true;
-		}
-		
-		if (this.bumpAffectsReflection) {
-			this.defs[WMD.BUMPAFFECTSREFLECTION] = true;
-		}
-		
-		// Fog
-		if (scene.fogEnabled && mesh != null && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
-			this.defs[WMD.FOG] = true;
+			
+			if (this._bumpSuperimpose) {
+				defines.BUMPSUPERIMPOSE = true;
+			}
+			
+			if (this._bumpAffectsReflection) {
+				defines.BUMPAFFECTSREFLECTION = true;
+			}
 		}
 		
 		// Lights
-		if (scene.lightsEnabled && !this.disableLighting) {
-			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this._defines, maxSimultaneousLights, WMD.SPECULARTERM, WMD.SHADOWS);
-		}
+		defines._needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, defines, true, this._maxSimultaneousLights, this._disableLighting);
 		
 		// Attribs
-		if (mesh != null) {
-			if (needNormals && mesh.isVerticesDataPresent(VertexBuffer.NormalKind)) {
-				this.defs[WMD.NORMAL] = true;
-			}
-			if (needUVs) {
-				if (mesh.isVerticesDataPresent(VertexBuffer.UVKind)) {
-					this.defs[WMD.UV1] = true;
-				}
-				if (mesh.isVerticesDataPresent(VertexBuffer.UV2Kind)) {
-					this.defs[WMD.UV2] = true;
-				}
-			}
-			if (mesh.useVertexColors && mesh.isVerticesDataPresent(VertexBuffer.ColorKind)) {
-				this.defs[WMD.VERTEXCOLOR] = true;
-				
-				if (mesh.hasVertexAlpha) {
-					this.defs[WMD.VERTEXALPHA] = true;
-				}
-			}
-			
-			if (mesh.useBones && mesh.computeBonesUsingShaders) {
-				this._defines.NUM_BONE_INFLUENCERS = mesh.numBoneInfluencers;
-				this._defines.BonesPerMesh = (mesh.skeleton.bones.length + 1);
-			}
-			
-			// Instances
-			if (useInstances) {
-				this.defs[WMD.INSTANCES] = true;
-			}
-		}
+		MaterialHelper.PrepareDefinesForAttributes(mesh, defines, true, true);
 		
 		this._mesh = mesh;
 		
 		// Get correct effect      
-		if (!this._defines.isEqual(this._cachedDefines)) {
-			this._defines.cloneTo(this._cachedDefines);
-			
+		if (defines.isDirty) {
+			defines.markAsProcessed();
 			scene.resetCachedMaterial();
 			
 			// Fallbacks
-			var fallbacks = new EffectFallbacks();             
-			if (this.defs[WMD.FOG]) {
+			var fallbacks = new EffectFallbacks();
+			if (defines.FOG) {
 				fallbacks.addFallback(1, "FOG");
 			}
 			
-			if (this.defs[WMD.LOGARITHMICDEPTH]) {
-                fallbacks.addFallback(0, "LOGARITHMICDEPTH");
-            }
+			if (defines.LOGARITHMICDEPTH) {
+				fallbacks.addFallback(0, "LOGARITHMICDEPTH");
+			}
 			
-			MaterialHelper.HandleFallbacksForShadows(this._defines, fallbacks, this.maxSimultaneousLights);
-		 
-			if (this._defines.NUM_BONE_INFLUENCERS > 0) {
+			MaterialHelper.HandleFallbacksForShadows(defines, fallbacks, this.maxSimultaneousLights);
+			
+			if (defines.NUM_BONE_INFLUENCERS > 0) {
 				fallbacks.addCPUSkinningFallback(0, mesh);
 			}
 			
 			//Attributes
-			var attribs:Array<String> = [VertexBuffer.PositionKind];
+			var attribs = [VertexBuffer.PositionKind];
 			
-			if (this.defs[WMD.NORMAL]) {
+			if (defines.NORMAL) {
 				attribs.push(VertexBuffer.NormalKind);
 			}
 			
-			if (this.defs[WMD.UV1]) {
+			if (defines.UV1) {
 				attribs.push(VertexBuffer.UVKind);
 			}
 			
-			if (this.defs[WMD.UV2]) {
+			if (defines.UV2) {
 				attribs.push(VertexBuffer.UV2Kind);
 			}
 			
-			if (this.defs[WMD.VERTEXCOLOR]) {
+			if (defines.VERTEXCOLOR) {
 				attribs.push(VertexBuffer.ColorKind);
 			}
 			
-			MaterialHelper.PrepareAttributesForBones(attribs, mesh, this._defines.NUM_BONE_INFLUENCERS, fallbacks);
-			MaterialHelper.PrepareAttributesForInstances(attribs, this.defs, WMD.INSTANCES);
+			MaterialHelper.PrepareAttributesForBones(attribs, mesh, defines.NUM_BONE_INFLUENCERS, fallbacks);
+			MaterialHelper.PrepareAttributesForInstances(attribs, defines);
 			
-			var join:String = this._defines.toString();
+			// Legacy browser patch
+			var shaderName:String = "water";
+			var join:String = defines.toString();
+			var uniforms:Array<String> = ["world", "view", "viewProjection", "vEyePosition", "vLightsType", "vDiffuseColor", "vSpecularColor",
+				"vFogInfos", "vFogColor", "pointSize",
+				"vNormalInfos",
+				"mBones",
+				"vClipPlane", "normalMatrix",
+				"logarithmicDepthConstant",
+				
+				// Water
+				"worldReflectionViewProjection", "windDirection", "waveLength", "time", "windForce",
+				"cameraPosition", "bumpHeight", "waveHeight", "waterColor", "waterColor2", "colorBlendFactor", "colorBlendFactor2", "waveSpeed"
+			];
+			var samplers:Array<String> = ["normalSampler",
+				// Water
+				"refractionSampler", "reflectionSampler"
+			];
+			var uniformBuffers:Array<String> = [];
 			
-			MaterialHelper.PrepareUniformsAndSamplersList(uniforms, samplers, this._defines.lights, this.maxSimultaneousLights);
-			
-			this._effect = scene.getEngine().createEffect(shaderName,
-				attribs, uniforms, samplers,
-				join, fallbacks, this.onCompiled, this.onError, { maxSimultaneousLights: this.maxSimultaneousLights });
+			MaterialHelper.PrepareUniformsAndSamplersList({
+				uniformsNames: uniforms,
+				uniformBuffersNames: uniformBuffers,
+				samplers: samplers,
+				defines: defines,
+				maxSimultaneousLights: this.maxSimultaneousLights
+			});
+			subMesh.setEffect(scene.getEngine().createEffect(shaderName,
+				{
+					attributes: attribs,
+					uniformsNames: uniforms,
+					uniformBuffersNames: uniformBuffers,
+					samplers: samplers,
+					defines: join,
+					fallbacks: fallbacks,
+					onCompiled: this.onCompiled,
+					onError: this.onError,
+					indexParameters: { maxSimultaneousLights: this._maxSimultaneousLights }
+				}, engine), defines);
 		}
-		if (!this._effect.isReady()) {
+		if (!subMesh.effect.isReady()) {
 			return false;
 		}
 		
 		this._renderId = scene.getRenderId();
 		this._wasPreviouslyReady = true;
 		
-		if (mesh != null) {
-			if (mesh._materialDefines == null) {
-				mesh._materialDefines = new WaterMaterialDefines();
-			}
-			
-			this._defines.cloneTo(mesh._materialDefines);
-		}
-		
 		return true;
 	}
-	
-	override public function bindOnlyWorldMatrix(world:Matrix) {
-		this._effect.setMatrix("world", world);
-	}
-	
-	override public function bind(world:Matrix, ?mesh:Mesh) {
+
+	override public function bindForSubMesh(world:Matrix, mesh:Mesh, subMesh:SubMesh) {
 		var scene = this.getScene();
+		
+		var defines:WaterMaterialDefines = cast subMesh._materialDefines;
+		if (defines == null) {
+			return;
+		}
+		
+		var effect = subMesh.effect;
+		this._activeEffect = effect;
 		
 		// Matrices        
 		this.bindOnlyWorldMatrix(world);
-		this._effect.setMatrix("viewProjection", scene.getTransformMatrix());
+		this._activeEffect.setMatrix("viewProjection", scene.getTransformMatrix());
 		
 		// Bones
-		MaterialHelper.BindBonesParameters(mesh, this._effect);
+		MaterialHelper.BindBonesParameters(mesh, this._activeEffect);
 		
-		if (scene.getCachedMaterial() != this) {
+		if (this._mustRebind(scene, effect)) {
 			// Textures        
 			if (this.bumpTexture != null && StandardMaterial.BumpTextureEnabled) {
-				this._effect.setTexture("normalSampler", this.bumpTexture);
+				this._activeEffect.setTexture("normalSampler", this.bumpTexture);
 				
-				this._effect.setFloat2("vNormalInfos", this.bumpTexture.coordinatesIndex, this.bumpTexture.level);
-				this._effect.setMatrix("normalMatrix", this.bumpTexture.getTextureMatrix());
+				this._activeEffect.setFloat2("vNormalInfos", this.bumpTexture.coordinatesIndex, this.bumpTexture.level);
+				this._activeEffect.setMatrix("normalMatrix", this.bumpTexture.getTextureMatrix());
 			}
 			// Clip plane
-			MaterialHelper.BindClipPlane(this._effect, scene);
+			MaterialHelper.BindClipPlane(this._activeEffect, scene);
 			
 			// Point size
 			if (this.pointsCloud) {
-				this._effect.setFloat("pointSize", this.pointSize);
+				this._activeEffect.setFloat("pointSize", this.pointSize);
 			}
 			
-			this._effect.setVector3("vEyePosition", scene._mirroredCameraPosition != null ? scene._mirroredCameraPosition : scene.activeCamera.position);                
+			this._activeEffect.setVector3("vEyePosition", scene._mirroredCameraPosition != null ? scene._mirroredCameraPosition : scene.activeCamera.position);
 		}
 		
-		this._effect.setColor4("vDiffuseColor", this.diffuseColor, this.alpha * mesh.visibility);
+		this._activeEffect.setColor4("vDiffuseColor", this.diffuseColor, this.alpha * mesh.visibility);
 		
-		if (this.defs[WMD.SPECULARTERM]) {
-			this._effect.setColor4("vSpecularColor", this.specularColor, this.specularPower);
+		if (defines.SPECULARTERM) {
+			this._activeEffect.setColor4("vSpecularColor", this.specularColor, this.specularPower);
 		}
 		
 		if (scene.lightsEnabled && !this.disableLighting) {
-			MaterialHelper.BindLights(scene, mesh, this._effect, this.defs[WMD.SPECULARTERM], this.maxSimultaneousLights);
+			MaterialHelper.BindLights(scene, mesh, this._activeEffect, defines.SPECULARTERM, this.maxSimultaneousLights);
 		}
 		
 		// View
 		if (scene.fogEnabled && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE) {
-			this._effect.setMatrix("view", scene.getViewMatrix());
+			this._activeEffect.setMatrix("view", scene.getViewMatrix());
 		}
 		
 		// Fog
-		MaterialHelper.BindFogParameters(scene, mesh, this._effect);
+		MaterialHelper.BindFogParameters(scene, mesh, this._activeEffect);
 		
 		// Log. depth
-        MaterialHelper.BindLogDepth(this.defs[WMD.LOGARITHMICDEPTH], this._effect, scene);
+		MaterialHelper.BindLogDepth(defines.LOGARITHMICDEPTH, this._activeEffect, scene);
 		
 		// Water
 		if (StandardMaterial.ReflectionTextureEnabled) {
-			this._effect.setTexture("refractionSampler", this._refractionRTT);
-			this._effect.setTexture("reflectionSampler", this._reflectionRTT);
+			this._activeEffect.setTexture("refractionSampler", this._refractionRTT);
+			this._activeEffect.setTexture("reflectionSampler", this._reflectionRTT);
 		}
 		
 		var wrvp = this._mesh.getWorldMatrix().multiply(this._reflectionTransform).multiply(scene.getProjectionMatrix());
-		this._lastTime += scene.getEngine().getDeltaTime();
 		
-		this._effect.setMatrix("worldReflectionViewProjection", wrvp);
-		this._effect.setVector2("windDirection", this.windDirection);
-		this._effect.setFloat("waveLength", this.waveLength);
-		this._effect.setFloat("time", this._lastTime / 100000);
-		this._effect.setFloat("windForce", this.windForce);
-		this._effect.setFloat("waveHeight", this.waveHeight);
-		this._effect.setFloat("bumpHeight", this.bumpHeight);
-		this._effect.setColor4("waterColor", this.waterColor, 1.0);
-		this._effect.setFloat("colorBlendFactor", this.colorBlendFactor);
-		this._effect.setColor4("waterColor2", this.waterColor2, 1.0);
-        this._effect.setFloat("colorBlendFactor2", this.colorBlendFactor2);
-		this._effect.setFloat("waveSpeed", this.waveSpeed);
+		// Add delta time. Prevent adding delta time if it hasn't changed.
+		var deltaTime = scene.getEngine().getDeltaTime();
+		if (deltaTime != this._lastDeltaTime) {
+			this._lastDeltaTime = deltaTime;
+			this._lastTime += this._lastDeltaTime;
+		}
 		
-		super.bind(world, mesh);
+		this._activeEffect.setMatrix("worldReflectionViewProjection", wrvp);
+		this._activeEffect.setVector2("windDirection", this.windDirection);
+		this._activeEffect.setFloat("waveLength", this.waveLength);
+		this._activeEffect.setFloat("time", this._lastTime / 100000);
+		this._activeEffect.setFloat("windForce", this.windForce);
+		this._activeEffect.setFloat("waveHeight", this.waveHeight);
+		this._activeEffect.setFloat("bumpHeight", this.bumpHeight);
+		this._activeEffect.setColor4("waterColor", this.waterColor, 1.0);
+		this._activeEffect.setFloat("colorBlendFactor", this.colorBlendFactor);
+		this._activeEffect.setColor4("waterColor2", this.waterColor2, 1.0);
+		this._activeEffect.setFloat("colorBlendFactor2", this.colorBlendFactor2);
+		this._activeEffect.setFloat("waveSpeed", this.waveSpeed);
+		
+		this._afterBind(mesh, this._activeEffect);
 	}
-	
+
 	private function _createRenderTargets(scene:Scene, renderTargetSize:Vector2) {
 		// Render targets
-		this._refractionRTT = new RenderTargetTexture(name + "_refraction", {width: renderTargetSize.x, height: renderTargetSize.y}, scene, false, true);
+		this._refractionRTT = new RenderTargetTexture(name + "_refraction", { width: renderTargetSize.x, height: renderTargetSize.y }, scene, false, true);
 		this._refractionRTT.wrapU = Texture.MIRROR_ADDRESSMODE;
-        this._refractionRTT.wrapV = Texture.MIRROR_ADDRESSMODE;
-		this._reflectionRTT = new RenderTargetTexture(name + "_reflection", {width: renderTargetSize.x, height: renderTargetSize.y}, scene, false, true);
+		this._refractionRTT.wrapV = Texture.MIRROR_ADDRESSMODE;
+		this._refractionRTT.ignoreCameraViewport = true;
+		
+		this._reflectionRTT = new RenderTargetTexture(name + "_reflection", { width: renderTargetSize.x, height: renderTargetSize.y }, scene, false, true);
 		this._reflectionRTT.wrapU = Texture.MIRROR_ADDRESSMODE;
-        this._reflectionRTT.wrapV = Texture.MIRROR_ADDRESSMODE;
+		this._reflectionRTT.wrapV = Texture.MIRROR_ADDRESSMODE;
+		this._reflectionRTT.ignoreCameraViewport = true;
 		
-		scene.customRenderTargets.push(this._refractionRTT);
-		scene.customRenderTargets.push(this._reflectionRTT);
-		
-		var isVisible:Bool = true;
-		var clipPlane:Plane = new Plane(0, 0, 0, 0);
+		var isVisible:Bool = false;
+		var clipPlane:Plane = null;
 		var savedViewMatrix:Matrix = null;
 		var mirrorMatrix:Matrix = Matrix.Zero();
 		
-		this._refractionRTT.onBeforeRenderObservable.add(function(index:Int, es:EventState = null) {
+		this._refractionRTT.onBeforeRender = function(_, _) {
 			if (this._mesh != null) {
 				isVisible = this._mesh.isVisible;
 				this._mesh.isVisible = false;
@@ -551,18 +563,18 @@ class WaterMaterial extends Material {
 			
 			var positiony = this._mesh != null ? this._mesh.position.y : 0.0;
 			scene.clipPlane = Plane.FromPositionAndNormal(new Vector3(0, positiony + 0.05, 0), new Vector3(0, 1, 0));
-		});
+		};
 		
-		this._refractionRTT.onAfterRenderObservable.add(function(i:Int, es:EventState = null) {
+		this._refractionRTT.onAfterRender = function(_, _) {
 			if (this._mesh != null) {
 				this._mesh.isVisible = isVisible;
 			}
 			
-			// Clip plane
+			// Clip plane 
 			scene.clipPlane = clipPlane;
-		});
+		};
 		
-		this._reflectionRTT.onBeforeRenderObservable.add(function(i:Int, es:EventState = null) {
+		this._reflectionRTT.onBeforeRender = function(_, _) {
 			if (this._mesh != null) {
 				isVisible = this._mesh.isVisible;
 				this._mesh.isVisible = false;
@@ -582,9 +594,9 @@ class WaterMaterial extends Material {
 			scene.setTransformMatrix(this._reflectionTransform, scene.getProjectionMatrix());
 			scene.getEngine().cullBackFaces = false;
 			scene._mirroredCameraPosition = Vector3.TransformCoordinates(scene.activeCamera.position, mirrorMatrix);
-		});
+		};
 		
-		this._reflectionRTT.onAfterRenderObservable.add(function(i:Int, es:EventState = null) {
+		this._reflectionRTT.onAfterRender = function(_, _) {
 			if (this._mesh != null) {
 				this._mesh.isVisible = isVisible;
 			}
@@ -596,9 +608,9 @@ class WaterMaterial extends Material {
 			scene.setTransformMatrix(savedViewMatrix, scene.getProjectionMatrix());
 			scene.getEngine().cullBackFaces = true;
 			scene._mirroredCameraPosition = null;
-		});
+		};
 	}
-	
+
 	public function getAnimatables():Array<IAnimatable> {
 		var results:Array<IAnimatable> = [];
 		
@@ -615,20 +627,40 @@ class WaterMaterial extends Material {
 		return results;
 	}
 
-	override public function dispose(forceDisposeEffect:Bool = false, forceDisposeTextures:Bool = true) {
-		if (forceDisposeTextures) {
-			if (this.bumpTexture != null) {
-				this.bumpTexture.dispose();
-			}
+	override public function getActiveTextures():Array<BaseTexture> {
+		var activeTextures = super.getActiveTextures();
+		
+		if (this._bumpTexture != null) {
+			activeTextures.push(this._bumpTexture);
 		}
 		
-		var index:Int = this.getScene().customRenderTargets.indexOf(this._refractionRTT);
-		if (index != -1){
+		return activeTextures;
+	}
+
+	override public function hasTexture(texture:BaseTexture):Bool {
+		if (super.hasTexture(texture)) {
+			return true;
+		}
+		
+		if (this._bumpTexture == texture) {
+			return true;
+		}
+		
+		return false;
+	}
+
+	override public function dispose(forceDisposeEffect:Bool = false, forceDisposeTextures:Bool = false) {
+		if (this.bumpTexture != null) {
+			this.bumpTexture.dispose();
+		}
+		
+		var index = this.getScene().customRenderTargets.indexOf(this._refractionRTT);
+		if (index != -1) {
 			this.getScene().customRenderTargets.splice(index, 1);
 		}
 		index = -1;
 		index = this.getScene().customRenderTargets.indexOf(this._reflectionRTT);
-		if (index != -1){
+		if (index != -1) {
 			this.getScene().customRenderTargets.splice(index, 1);
 		}
 		
@@ -643,23 +675,29 @@ class WaterMaterial extends Material {
 	}
 
 	override public function clone(name:String, cloneChildren:Bool = false):WaterMaterial {
-		//return SerializationHelper.Clone(() => new WaterMaterial(name, this.getScene()), this);
-		return null;
+		return SerializationHelper.Clone(function() { return new WaterMaterial(name, this.getScene()); } , this);
 	}
 
 	override public function serialize():Dynamic {
-		return SerializationHelper.Serialize(WaterMaterial, this, super.serialize());
+		/*var serializationObject = SerializationHelper.Serialize(this);
+		serializationObject.customType = "WaterMaterial";
+		serializationObject.reflectionTexture.isRenderTarget = true;
+		serializationObject.refractionTexture.isRenderTarget = true;
+		return serializationObject;*/
+		return null;
+	}
+
+	override public function getClassName():String {
+		return "WaterMaterial";
 	}
 
 	// Statics
 	public static function Parse(source:Dynamic, scene:Scene, rootUrl:String):WaterMaterial {
-		//return SerializationHelper.Parse(() => new WaterMaterial(source.name, scene), source, scene, rootUrl);
-		return null;
+		return SerializationHelper.Parse(function() { return new WaterMaterial(source.name, scene); } , source, scene, rootUrl);
 	}
-	
+
 	public static function CreateDefaultMesh(name:String, scene:Scene):Mesh {
 		var mesh = Mesh.CreateGround(name, 512, 512, 32, scene, false);
-		
 		return mesh;
 	}
 	

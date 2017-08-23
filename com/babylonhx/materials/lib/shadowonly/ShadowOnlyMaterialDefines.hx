@@ -1,22 +1,19 @@
-package com.babylonhx.materials.lib.fire;
+package com.babylonhx.materials.lib.shadowonly;
 
 /**
  * ...
  * @author Krtolica Vujadin
  */
-class FireMaterialDefines extends MaterialDefines {
+class ShadowOnlyMaterialDefines extends MaterialDefines {
 	
-	public var DIFFUSE:Bool = false;
 	public var CLIPPLANE:Bool = false;
-	public var ALPHATEST:Bool = false;
 	public var POINTSIZE:Bool = false;
 	public var FOG:Bool = false;
-	public var UV1:Bool = false;
-	public var VERTEXCOLOR:Bool = false;
-	public var VERTEXALPHA:Bool = false;
-	public var BonesPerMesh:Int = 0;
+	public var NORMAL:Bool = false;
 	public var NUM_BONE_INFLUENCERS:Int = 0;
+	public var BonesPerMesh:Int = 0;
 	public var INSTANCES:Bool = false;
+	public var USERIGHTHANDEDSYSTEM:Bool = false;
 	
 
 	public function new() {
@@ -25,17 +22,14 @@ class FireMaterialDefines extends MaterialDefines {
 	
 	override public function isEqual(other:MaterialDefines):Bool {
 		if (super.isEqual(other)) {
-			if (untyped this.DIFFUSE != other.DIFFUSE) return false;
-			if (untyped this.CLIPPLANE != other.CLIPPLANE) return false;
-			if (untyped this.ALPHATEST != other.ALPHATEST) return false;
+			if (untyped this.CLIPPLANE != other.CLIPPLANE) return false; 
 			if (untyped this.POINTSIZE != other.POINTSIZE) return false; 
 			if (untyped this.FOG != other.FOG) return false;
-			if (untyped this.UV1 != other.UV1) return false;
-			if (untyped this.VERTEXCOLOR != other.VERTEXCOLOR) return false;
-			if (untyped this.VERTEXALPHA != other.VERTEXALPHA) return false; 
+			if (untyped this.NORMAL != other.NORMAL) return false; 
+			if (untyped this.NUM_BONE_INFLUENCERS != other.NUM_BONE_INFLUENCERS) return false; 
 			if (untyped this.BonesPerMesh != other.BonesPerMesh) return false;
-			if (untyped this.NUM_BONE_INFLUENCERS != other.NUM_BONE_INFLUENCERS) return false;
-			if (untyped this.INSTANCES != other.INSTANCES) return false; 
+			if (untyped this.INSTANCES != other.INSTANCES) return false;
+			if (untyped this.USERIGHTHANDEDSYSTEM != other.USERIGHTHANDEDSYSTEM) return false; 
 			
 			return true;
 		}
@@ -46,46 +40,34 @@ class FireMaterialDefines extends MaterialDefines {
 	override public function cloneTo(other:MaterialDefines) {
 		super.cloneTo(other);
 		
-		untyped other.DIFFUSE = this.DIFFUSE;
 		untyped other.CLIPPLANE = this.CLIPPLANE;
-		untyped other.ALPHATEST = this.ALPHATEST;
 		untyped other.POINTSIZE = this.POINTSIZE;
 		untyped other.FOG = this.FOG;
-		untyped other.UV1 = this.UV1;
-		untyped other.VERTEXCOLOR = this.VERTEXCOLOR;
-		untyped other.VERTEXALPHA = this.VERTEXALPHA;		
-		untyped other.BonesPerMesh = this.BonesPerMesh;
+		untyped other.NORMAL = this.NORMAL;
 		untyped other.NUM_BONE_INFLUENCERS = this.NUM_BONE_INFLUENCERS;
+		untyped other.BonesPerMesh = this.BonesPerMesh;
 		untyped other.INSTANCES = this.INSTANCES;
+		untyped other.USERIGHTHANDEDSYSTEM = this.USERIGHTHANDEDSYSTEM;
 	}
 	
 	override public function reset() {
 		super.reset();
 		
-		this.DIFFUSE = false;
 		this.CLIPPLANE = false;
-		this.ALPHATEST = false;
 		this.POINTSIZE = false;
 		this.FOG = false;
-		this.UV1 = false;
-		this.VERTEXCOLOR = false;
-		this.VERTEXALPHA = false;
-		this.BonesPerMesh = 0;
+		this.NORMAL = false;
 		this.NUM_BONE_INFLUENCERS = 0;
+		this.BonesPerMesh = 0;
 		this.INSTANCES = false;
+		this.USERIGHTHANDEDSYSTEM = false;
 	}
 	
 	override public function toString():String {
 		var result = super.toString();
 		
-		if (this.DIFFUSE) {
-			result += "#define DIFFUSE \n";
-		}
 		if (this.CLIPPLANE) {
 			result += "#define CLIPPLANE \n";
-		}
-		if (this.ALPHATEST) {
-			result += "#define ALPHATEST \n";
 		}
 		if (this.POINTSIZE) {
 			result += "#define POINTSIZE \n";
@@ -93,18 +75,15 @@ class FireMaterialDefines extends MaterialDefines {
 		if (this.FOG) {
 			result += "#define FOG \n";
 		}
-		if (this.UV1) {
-			result += "#define UV1 \n";
-		}
-		if (this.VERTEXCOLOR) {
-			result += "#define VERTEXCOLOR \n";
-		}
-		if (this.VERTEXALPHA) {
-			result += "#define VERTEXALPHA \n";
+		if (this.NORMAL) {
+			result += "#define NORMAL \n";
 		}
 		if (this.INSTANCES) {
 			result += "#define INSTANCES \n";
-		}		
+		}
+		if (this.USERIGHTHANDEDSYSTEM) {
+			result += "#define USERIGHTHANDEDSYSTEM \n";
+		}
 		
 		result += "#define BonesPerMesh " + this.BonesPerMesh + "\n";
 		result += "#define NUM_BONE_INFLUENCERS " + this.NUM_BONE_INFLUENCERS + "\n";
