@@ -1,5 +1,0 @@
--D purejs
--D shallow-expose
--cp src
--main GenerateBabylonJS
--js bin_purejs/babylon.js
