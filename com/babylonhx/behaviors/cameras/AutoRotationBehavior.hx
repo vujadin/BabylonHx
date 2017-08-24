@@ -81,6 +81,14 @@ class AutoRotationBehavior implements Behavior<ArcRotateCamera> {
 		return this._idleRotationSpinupTime;
 	}
 	
+	/**
+	 * Gets a value indicating if the camera is currently rotating because of this behavior
+	 */
+	public var rotationInProgress(get, never):Bool;
+	private inline function get_rotationInProgress():Bool {
+		return Math.abs(this._cameraRotationSpeed) > 0;
+	}
+	
 	// Default behavior functions
 	private var _onPrePointerObservableObserver:Observer<PointerInfoPre>;
 	private var _onAfterCheckInputsObserver:Observer<Camera>;
@@ -88,6 +96,7 @@ class AutoRotationBehavior implements Behavior<ArcRotateCamera> {
 	private var _isPointerDown:Bool = false;
 	private var _lastFrameTime:Float = 0;
 	private var _lastInteractionTime:Float = Math.NEGATIVE_INFINITY;
+	private var _cameraRotationSpeed:Float = 0;
 	
 
 	public function new() {
@@ -120,10 +129,10 @@ class AutoRotationBehavior implements Behavior<ArcRotateCamera> {
 			
 			var timeToRotation = now - this._lastInteractionTime - this._idleRotationWaitTime;
 			var scale = Math.max(Math.min(timeToRotation / (this._idleRotationSpinupTime), 1), 0);
-			var cameraRotationSpeed = this._idleRotationSpeed * scale;
+			this._cameraRotationSpeed = this._idleRotationSpeed * scale;
 			
 			// Step camera rotation by rotation speed
-			this._attachedCamera.alpha -= cameraRotationSpeed * (dt / 1000);
+			this._attachedCamera.alpha -= this._cameraRotationSpeed * (dt / 1000);
 		});
 	}
 	

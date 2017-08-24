@@ -4,10 +4,13 @@ import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.mesh.Mesh;
+import com.babylonhx.mesh.SubMesh;
+import com.babylonhx.mesh.BaseSubMesh;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.tools.Tags;
 import com.babylonhx.animations.IAnimatable;
+import com.babylonhx.tools.serialization.SerializationHelper;
 
 /**
  * ...
@@ -18,26 +21,24 @@ import com.babylonhx.animations.IAnimatable;
  * The grid materials allows you to wrap any shape with a grid.
  * Colors are customizable.
  */
-
-typedef GRIDMD = GridMaterialDefines
  
-class GridMaterial extends Material {
+class GridMaterial extends PushMaterial {
 	
-	static var fragmentShader:String = "#extension GL_OES_standard_derivatives : enable\n#define SQRT2 1.41421356\n#define PI 3.14159\nprecision highp float;\nuniform vec3 mainColor;\nuniform vec3 lineColor;\nuniform vec4 gridControl;\n\nvarying vec3 vPosition;\nvarying vec3 vNormal;\n#include<fogFragmentDeclaration>\nfloat getVisibility(float position) {\n\nfloat majorGridFrequency=gridControl.y;\nif (floor(position+0.5) == floor(position/majorGridFrequency+0.5)*majorGridFrequency)\n{\nreturn 1.0;\n} \nreturn gridControl.z;\n}\nfloat getAnisotropicAttenuation(float differentialLength) {\nconst float maxNumberOfLines=10.0;\nreturn clamp(1.0/(differentialLength+1.0)-1.0/maxNumberOfLines,0.0,1.0);\n}\nfloat isPointOnLine(float position,float differentialLength) {\nfloat fractionPartOfPosition=position-floor(position+0.5); \nfractionPartOfPosition/=differentialLength; \nfractionPartOfPosition=clamp(fractionPartOfPosition,-1.,1.);\nfloat result=0.5+0.5*cos(fractionPartOfPosition*PI); \nreturn result; \n}\nfloat contributionOnAxis(float position) {\nfloat differentialLength=length(vec2(dFdx(position),dFdy(position)));\ndifferentialLength*=SQRT2; \n\nfloat result=isPointOnLine(position,differentialLength);\n\nfloat visibility=getVisibility(position);\nresult*=visibility;\n\nfloat anisotropicAttenuation=getAnisotropicAttenuation(differentialLength);\nresult*=anisotropicAttenuation;\nreturn result;\n}\nfloat normalImpactOnAxis(float x) {\nfloat normalImpact=clamp(1.0-2.8*abs(x*x*x),0.0,1.0);\nreturn normalImpact;\n}\nvoid main(void) {\n\nfloat gridRatio=gridControl.x;\nvec3 gridPos=vPosition/gridRatio;\n\nfloat x=contributionOnAxis(gridPos.x);\nfloat y=contributionOnAxis(gridPos.y);\nfloat z=contributionOnAxis(gridPos.z); \n\nvec3 normal=normalize(vNormal);\nx*=normalImpactOnAxis(normal.x);\ny*=normalImpactOnAxis(normal.y);\nz*=normalImpactOnAxis(normal.z);\n\nfloat grid=clamp(x+y+z,0.,1.);\n\nvec3 color=mix(mainColor,lineColor,grid);\n#ifdef FOG\n#include<fogFragment>\n#endif\n#ifdef TRANSPARENT\nfloat opacity=clamp(grid,0.08,color.w);\ngl_FragColor=vec4(color.rgb,opacity);\n#else\n\ngl_FragColor=vec4(color.rgb,1.0);\n#endif\n}";
+	static var _fragmentShader:String = "#extension GL_OES_standard_derivatives : enable\n#define SQRT2 1.41421356\n#define PI 3.14159\nprecision highp float;\nuniform vec3 mainColor;\nuniform vec3 lineColor;\nuniform vec4 gridControl;\n\n#ifdef TRANSPARENT\nvarying vec4 vCameraSpacePosition;\n#endif\nvarying vec3 vPosition;\nvarying vec3 vNormal;\n#include<fogFragmentDeclaration>\nfloat getVisibility(float position) {\n\nfloat majorGridFrequency=gridControl.y;\nif (floor(position+0.5) == floor(position/majorGridFrequency+0.5)*majorGridFrequency)\n{\nreturn 1.0;\n} \nreturn gridControl.z;\n}\nfloat getAnisotropicAttenuation(float differentialLength) {\nconst float maxNumberOfLines=10.0;\nreturn clamp(1.0/(differentialLength+1.0)-1.0/maxNumberOfLines,0.0,1.0);\n}\nfloat isPointOnLine(float position,float differentialLength) {\nfloat fractionPartOfPosition=position-floor(position+0.5); \nfractionPartOfPosition/=differentialLength; \nfractionPartOfPosition=clamp(fractionPartOfPosition,-1.,1.);\nfloat result=0.5+0.5*cos(fractionPartOfPosition*PI); \nreturn result; \n}\nfloat contributionOnAxis(float position) {\nfloat differentialLength=length(vec2(dFdx(position),dFdy(position)));\ndifferentialLength*=SQRT2; \n\nfloat result=isPointOnLine(position,differentialLength);\n\nfloat visibility=getVisibility(position);\nresult*=visibility;\n\nfloat anisotropicAttenuation=getAnisotropicAttenuation(differentialLength);\nresult*=anisotropicAttenuation;\nreturn result;\n}\nfloat normalImpactOnAxis(float x) {\nfloat normalImpact=clamp(1.0-3.0*abs(x*x*x),0.0,1.0);\nreturn normalImpact;\n}\nvoid main(void) {\n\nfloat gridRatio=gridControl.x;\nvec3 gridPos=vPosition/gridRatio;\n\nfloat x=contributionOnAxis(gridPos.x);\nfloat y=contributionOnAxis(gridPos.y);\nfloat z=contributionOnAxis(gridPos.z);\n\nvec3 normal=normalize(vNormal);\nx*=normalImpactOnAxis(normal.x);\ny*=normalImpactOnAxis(normal.y);\nz*=normalImpactOnAxis(normal.z);\n\nfloat grid=clamp(x+y+z,0.,1.);\n\nvec3 color=mix(mainColor,lineColor,grid);\n#ifdef FOG\n#include<fogFragment>\n#endif\n#ifdef TRANSPARENT\nfloat distanceToFragment=length(vCameraSpacePosition.xyz);\nfloat cameraPassThrough=clamp(distanceToFragment-0.25,0.0,1.0);\nfloat opacity=clamp(grid,0.08,cameraPassThrough*gridControl.w*grid);\ngl_FragColor=vec4(color.rgb,opacity);\n#ifdef PREMULTIPLYALPHA\ngl_FragColor.rgb*=opacity;\n#endif\n#else\n\ngl_FragColor=vec4(color.rgb,1.0);\n#endif\n}";
 	
-	static var vertexShader:String = "precision highp float;\n\nattribute vec3 position;\nattribute vec3 normal;\n\nuniform mat4 worldViewProjection;\nuniform mat4 world;\nuniform mat4 view;\n\nvarying vec3 vPosition;\nvarying vec3 vNormal;\n#include<fogVertexDeclaration>\nvoid main(void) {\n#ifdef FOG\nvec4 worldPos=world*vec4(position,1.0);\n#endif\n#include<fogVertex>\ngl_Position=worldViewProjection*vec4(position,1.0);\nvPosition=position;\nvNormal=normal;\n}";
+	static var _vertexShader:String = "precision highp float;\n\nattribute vec3 position;\nattribute vec3 normal;\n\nuniform mat4 projection;\nuniform mat4 world;\nuniform mat4 view;\nuniform mat4 worldView;\n\n#ifdef TRANSPARENT\nvarying vec4 vCameraSpacePosition;\n#endif\nvarying vec3 vPosition;\nvarying vec3 vNormal;\n#include<fogVertexDeclaration>\nvoid main(void) {\n#ifdef FOG\nvec4 worldPos=world*vec4(position,1.0);\n#endif\n#include<fogVertex>\nvec4 cameraSpacePosition=worldView*vec4(position,1.0);\ngl_Position=projection*cameraSpacePosition;\n#ifdef TRANSPARENT\nvCameraSpacePosition=cameraSpacePosition;\n#endif\nvPosition=position;\nvNormal=normal;\n}";
 
 	/**
 	 * Main color of the grid (e.g. between lines)
 	 */
 	@serializeAsColor3()
-	public var mainColor:Color3 = Color3.White();
+	public var mainColor:Color3 = Color3.Black();
 	
 	/**
 	 * Color of the grid lines.
 	 */
 	@serializeAsColor3()
-	public var lineColor:Color3 = Color3.Black();
+	public var lineColor:Color3 = Color3.Teal();
 	
 	/**
 	 * The scale of the grid compared to unit.
@@ -63,11 +64,15 @@ class GridMaterial extends Material {
 	@serialize()
 	public var opacity:Float = 1.0;
 	
+	/**
+	 * Determine RBG output is premultiplied by alpha value.
+	 */
+	@serialize()
+	public var preMultiplyAlpha:Bool = false;
+	
 	private var _gridControl:Vector4;
 	
 	private var _renderId:Int;
-	private var _defines = new GridMaterialDefines();
-	private var _cachedDefines = new GridMaterialDefines();
 	
 	/**
 	 * constructor
@@ -77,9 +82,9 @@ class GridMaterial extends Material {
 	public function new(name:String, scene:Scene) {
 		super(name, scene);
 		
-		if (!ShadersStore.Shaders.exists("gridmat.fragment")) {
-			ShadersStore.Shaders.set("gridmat.fragment", fragmentShader);
-			ShadersStore.Shaders.set("gridmat.vertex", vertexShader);
+		if (!ShadersStore.Shaders.exists("gridPixelShader")) {
+			ShadersStore.Shaders.set("gridPixelShader", _fragmentShader);
+			ShadersStore.Shaders.set("gridVertexShader", _vertexShader);
 		}
 		
 		this._gridControl = new Vector4(this.gridRatio, this.majorUnitFrequency, this.minorUnitVisibility, this.opacity);
@@ -92,74 +97,61 @@ class GridMaterial extends Material {
 		return this.opacity < 1.0;
 	}
 	
-	private function _checkCache(scene:Scene, ?mesh:AbstractMesh, useInstances:Bool = false):Bool {
-		if (mesh == null) {
-			return true;
-		}
-		
-		if (mesh._materialDefines != null && mesh._materialDefines.isEqual(this._defines)) {
-			return true;
-		}
-		
-		return false;
-	}
-
-	override public function isReady(?mesh:AbstractMesh, useInstances:Bool = false):Bool {
-		if (this.checkReadyOnlyOnce) {
-			if (this._wasPreviouslyReady) {
+	override public function isReadyForSubMesh(mesh:AbstractMesh, subMesh:BaseSubMesh, useInstances:Bool = false):Bool {
+		if (this.isFrozen) {
+			if (this._wasPreviouslyReady && subMesh.effect != null) {
 				return true;
 			}
 		}
 		
+		if (subMesh._materialDefines == null) {
+			subMesh._materialDefines = new GridMaterialDefines();
+		}
+		
+		var defines:GridMaterialDefines = cast subMesh._materialDefines;
 		var scene = this.getScene();
 		
-		if (!this.checkReadyOnEveryCall) {
+		if (!this.checkReadyOnEveryCall && subMesh.effect != null) {
 			if (this._renderId == scene.getRenderId()) {
-				if (this._checkCache(scene, mesh, useInstances)) {
-					return true;
-				}
+				return true;
 			}
 		}
 		
 		var engine = scene.getEngine();
-		var needNormals = true;
 		
-		this._defines.reset();
-		
-		if (this.opacity < 1.0) {
-			this._defines.defines[GRIDMD.TRANSPARENT] = true;
+		if (defines.TRANSPARENT != (this.opacity < 1.0)) {
+			defines.TRANSPARENT = !defines.TRANSPARENT;
+			defines.markAsUnprocessed();
 		}
 		
-		// Fog
-        if (scene.fogEnabled && mesh != null && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
-            this._defines.defines[GRIDMD.FOG] = true;
-        }
+		if (defines.PREMULTIPLYALPHA != this.preMultiplyAlpha) {
+			defines.PREMULTIPLYALPHA = !defines.PREMULTIPLYALPHA;
+			defines.markAsUnprocessed();
+		}
+		
+		MaterialHelper.PrepareDefinesForMisc(mesh, scene, false, false, this.fogEnabled, defines);
 		
 		// Get correct effect      
-		if (this._effect == null || !this._defines.isEqual(this._cachedDefines)) {
-			this._defines.cloneTo(this._cachedDefines);
+		if (defines.isDirty) {
+			defines.markAsProcessed();
 			scene.resetCachedMaterial();
 			
 			// Attributes
 			var attribs = [VertexBuffer.PositionKind, VertexBuffer.NormalKind];
 			
-			// Effect
-			var shaderName = scene.getEngine().getCaps().standardDerivatives ? "gridmat" : "legacygridmat";
-			
 			// Defines
-			var join = this._defines.toString();
-			this._effect = scene.getEngine().createEffect(shaderName,
+			var join:String = defines.toString();
+			subMesh.setEffect(scene.getEngine().createEffect("grid",
 				attribs,
-				["worldViewProjection", "mainColor", "lineColor", "gridControl", "vFogInfos", "vFogColor", "world", "view"],
+				["projection", "worldView", "mainColor", "lineColor", "gridControl", "vFogInfos", "vFogColor", "world", "view"],
 				[],
-				join, 
-				null, 
-				this.onCompiled, 
-				this.onError
-			);
+				join,
+				null,
+				this.onCompiled,
+				this.onError), defines);
 		}
 		
-		if (!this._effect.isReady()) {
+		if (!subMesh.effect.isReady()) {
 			return false;
 		}
 		
@@ -169,51 +161,46 @@ class GridMaterial extends Material {
 		return true;
 	}
 	
-	override public function bindOnlyWorldMatrix(world:Matrix) {
+	override public function bindForSubMesh(world:Matrix, mesh:Mesh, subMesh:SubMesh) {
 		var scene = this.getScene();
 		
-		this._effect.setMatrix("worldViewProjection", world.multiply(scene.getTransformMatrix()));
-		this._effect.setMatrix("world", world);
-        this._effect.setMatrix("view", scene.getViewMatrix());
-	}
-
-	override public function bind(world:Matrix, ?mesh:Mesh) {
-		var scene = this.getScene();
+		var defines:GridMaterialDefines = cast subMesh._materialDefines;
+		if (defines == null) {
+			return;
+		}
 		
-		// Matrices        
+		var effect = subMesh.effect;
+		this._activeEffect = effect;
+		
+		// Matrices
 		this.bindOnlyWorldMatrix(world);
+		this._activeEffect.setMatrix("worldView", world.multiply(scene.getViewMatrix()));
+		this._activeEffect.setMatrix("view", scene.getViewMatrix());
+		this._activeEffect.setMatrix("projection", scene.getProjectionMatrix());
 		
 		// Uniforms
-		if (scene.getCachedMaterial() != this) {
-			this._effect.setColor3("mainColor", this.mainColor);
-			this._effect.setColor3("lineColor", this.lineColor);
+		if (this._mustRebind(scene, effect)) {
+			this._activeEffect.setColor3("mainColor", this.mainColor);
+			this._activeEffect.setColor3("lineColor", this.lineColor);
 			
 			this._gridControl.x = this.gridRatio;
 			this._gridControl.y = Math.round(this.majorUnitFrequency);
 			this._gridControl.z = this.minorUnitVisibility;
 			this._gridControl.w = this.opacity;
-			this._effect.setVector4("gridControl", this._gridControl);
+			this._activeEffect.setVector4("gridControl", this._gridControl);
 		}
+		// Fog
+		MaterialHelper.BindFogParameters(scene, mesh, this._activeEffect);
 		
-		// View
-        if (scene.fogEnabled && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE) {
-            this._effect.setMatrix("view", scene.getViewMatrix());
-        }
-		
-        // Fog
-        MaterialHelper.BindFogParameters(scene, mesh, this._effect);
-		
-		super.bind(world, mesh);
+		this._afterBind(mesh, this._activeEffect);
 	}
 	
-	override public function dispose(forceDisposeEffect:Bool = false, forceDisposeTextures:Bool = true) {
+	override public function dispose(forceDisposeEffect:Bool = false, forceDisposeTextures:Bool = false) {
 		super.dispose(forceDisposeEffect, forceDisposeTextures);
 	}
 	
 	override public function clone(name:String, cloneChildren:Bool = false):GridMaterial {
-		// TODO
-		//return SerializationHelper.Clone(() => new GridMaterial(name, this.getScene()), this);
-		return null;
+		return SerializationHelper.Clone(function() { return new GridMaterial(name, this.getScene()); } , this);
 	}
 
 	override public function serialize():Dynamic {
@@ -226,9 +213,7 @@ class GridMaterial extends Material {
 	}
 
 	public static function Parse(source:Dynamic, scene:Scene, rootUrl:String):GridMaterial {
-		// TODO
-		//return SerializationHelper.Parse(() => new GridMaterial(source.name, scene), source, scene, rootUrl);
-		return null;
+		return SerializationHelper.Parse(function() { return new GridMaterial(source.name, scene); } , source, scene, rootUrl);
 	}
 	
 }

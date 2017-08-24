@@ -33,6 +33,7 @@ import com.babylonhx.math.Tmp;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
+import lime.graphics.opengl.GLQuery;
 
 import lime.utils.Int32Array;
 import lime.utils.Float32Array;
@@ -45,11 +46,17 @@ import lime.utils.UInt16Array;
 @:expose('BABYLON.AbstractMesh') class AbstractMesh extends Node implements IDisposable implements ICullable implements IGetSetVerticesData implements IHasBoundingInfo {
 	
 	// Statics
-	public static var BILLBOARDMODE_NONE:Int = 0;
-	public static var BILLBOARDMODE_X:Int = 1;
-	public static var BILLBOARDMODE_Y:Int = 2;
-	public static var BILLBOARDMODE_Z:Int = 4;
-	public static var BILLBOARDMODE_ALL:Int = 7;
+	public static inline var BILLBOARDMODE_NONE:Int = 0;
+	public static inline var BILLBOARDMODE_X:Int = 1;
+	public static inline var BILLBOARDMODE_Y:Int = 2;
+	public static inline var BILLBOARDMODE_Z:Int = 4;
+	public static inline var BILLBOARDMODE_ALL:Int = 7;
+	
+	public static inline var OCCLUSION_TYPE_NONE:Int = 0;
+	public static inline var OCCLUSION_TYPE_OPTIMISITC:Int = 1;
+	public static inline var OCCLUSION_TYPE_STRICT:Int = 2;
+	public static inline var OCCLUSION_ALGORITHM_TYPE_ACCURATE:Int = 0;
+	public static inline var OCCLUSION_ALGORITHM_TYPE_CONSERVATIVE:Int = 1;
 	
 	
 	// facetData private properties
@@ -153,6 +160,29 @@ import lime.utils.UInt16Array;
 	// Properties
 	public var definedFacingForward:Bool = true; // orientation for POV movement & rotation
 	public var position:Vector3 = Vector3.Zero();
+	
+	private var _isOcclusionQueryInProgress:Bool = false;
+	public var isOcclusionQueryInProgress(get, never):Bool;
+	public inline function get_isOcclusionQueryInProgress():Bool {
+		return _isOcclusionQueryInProgress;
+	}
+
+	public var occlusionQueryAlgorithmType:Int = AbstractMesh.OCCLUSION_ALGORITHM_TYPE_CONSERVATIVE;
+	public var occlusionType:Int = AbstractMesh.OCCLUSION_TYPE_NONE;
+	public var occlusionRetryCount:Int = -1;
+	private var _occlusionInternalRetryCounter:Int = 0;
+
+	private var _isOccluded:Bool = false;
+	public var isOccluded(get, set):Bool;
+	private inline function get_isOccluded():Bool {
+		return this._isOccluded;
+	}
+	private inline function set_isOccluded(val:Bool):Bool {
+		return this._isOccluded = val;
+	}
+
+	private var _occlusionQuery:GLQuery;
+	
 	private var _rotation:Vector3 = Vector3.Zero();
 	private var _rotationQuaternion:Quaternion;
 	private var _scaling:Vector3 = Vector3.One();
@@ -1863,8 +1893,15 @@ import lime.utils.UInt16Array;
 			}
 		}
 		
+		// Query
+        var engine = this.getScene().getEngine();
+        if (this._occlusionQuery != null) {
+            engine.deleteQuery(this._occlusionQuery);
+            this._occlusionQuery = null;
+        }
+		
 		// Engine
-		this.getScene().getEngine().wipeCaches();
+		engine.wipeCaches();
 		
 		// Remove from scene
 		this.getScene().removeMesh(this);
@@ -2346,6 +2383,53 @@ import lime.utils.UInt16Array;
 		
 		VertexData.ComputeNormals(positions, indices, normals, { useRightHandedSystem: this.getScene().useRightHandedSystem });
 		this.setVerticesData(VertexBuffer.NormalKind, normals, updatable);
-	} 
+	}
+	
+	private function checkOcclusionQuery() {
+		var engine = this.getEngine();
+		
+		if (engine.webGLVersion < 2 || this.occlusionType == AbstractMesh.OCCLUSION_TYPE_NONE) {
+			this._isOccluded = false;
+			return;
+		}
+		
+		if (this._isOcclusionQueryInProgress) {			
+			var isOcclusionQueryAvailable = engine.isQueryResultAvailable(this._occlusionQuery);
+			if (isOcclusionQueryAvailable) {
+				var occlusionQueryResult = engine.getQueryResult(this._occlusionQuery);
+				
+				this._isOcclusionQueryInProgress = false;
+				this._occlusionInternalRetryCounter = 0;
+				this._isOccluded = occlusionQueryResult == 1 ? false : true;
+			}
+			else {
+				this._occlusionInternalRetryCounter++;
+				
+				if (this.occlusionRetryCount != -1 && this._occlusionInternalRetryCounter > this.occlusionRetryCount) {
+					this._isOcclusionQueryInProgress = false;
+					this._occlusionInternalRetryCounter = 0;
+					
+					// if optimistic set isOccluded to false regardless of the status of isOccluded. (Render in the current render loop)
+					// if strict continue the last state of the object.
+					this._isOccluded = this.occlusionType == AbstractMesh.OCCLUSION_TYPE_OPTIMISITC ? false : this._isOccluded;
+				}
+				else {
+					return;
+				}
+			}
+		}
+		
+		var scene = this.getScene();
+		var occlusionBoundingBoxRenderer = scene.getBoundingBoxRenderer();
+		
+		if (this._occlusionQuery == null) {
+			this._occlusionQuery = engine.createQuery();
+		}
+		
+		engine.beginQuery(this.occlusionQueryAlgorithmType, this._occlusionQuery);
+		occlusionBoundingBoxRenderer.renderOcclusionBoundingBox(this);
+		engine.endQuery(this.occlusionQueryAlgorithmType);
+		this._isOcclusionQueryInProgress = true;
+	}
 	
 }

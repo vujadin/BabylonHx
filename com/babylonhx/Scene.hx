@@ -396,7 +396,7 @@ import com.babylonhx.audio.*;
     private var _currentInternalStep:Int = 0;
 	
 	// Mirror
-    public var _mirroredCameraPosition:Vector3;
+    public var _mirroredCameraPosition:Vector3 = null;
 
 	// Keyboard
 	private var _onKeyDown:Dynamic;		// Event->Void

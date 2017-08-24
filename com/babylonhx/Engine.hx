@@ -3,6 +3,7 @@ package com.babylonhx;
 import com.babylonhx.materials.EffectCreationOptions;
 import com.babylonhx.materials.Material;
 import com.babylonhx.math.Scalar;
+import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.states._AlphaState;
 import com.babylonhx.states._DepthCullingState;
 import com.babylonhx.cameras.Camera;
@@ -29,6 +30,7 @@ import com.babylonhx.tools.Tools;
 import com.babylonhx.tools.WebGLVertexArrayObject;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.utils.Image;
+import lime.graphics.opengl.GLQuery;
 
 import lime.graphics.opengl.WebGLContext;
 import lime.graphics.GLRenderContext;
@@ -4068,6 +4070,36 @@ import openfl.display.OpenGLView;
 		}
 		
 		return gl.RGBA;
+	}
+	
+	public inline function createQuery():GLQuery {
+		return this.gl.createQuery();
+	}
+	
+	public inline function deleteQuery(query:GLQuery) {
+		this.deleteQuery(query);
+	}
+
+	public inline function isQueryResultAvailable(query:GLQuery):Bool {
+		return cast this.gl.getQueryParameter(query, this.gl.QUERY_RESULT_AVAILABLE);
+	}
+
+	public inline function getQueryResult(query:GLQuery):Int {
+		return cast this.gl.getQueryParameter(query, this.gl.QUERY_RESULT);
+	}
+
+	public inline function beginQuery(algorithmType:Int, query:GLQuery) {
+		var glAlgorithm = this.getGlAlgorithmType(algorithmType);
+		this.gl.beginQuery(glAlgorithm, query);
+	}
+
+	public inline function endQuery(algorithmType:Int) {
+		var glAlgorithm = this.getGlAlgorithmType(algorithmType);
+		this.gl.endQuery(glAlgorithm);
+	}
+
+	private inline function getGlAlgorithmType(algorithmType:Int):Int {
+		return algorithmType == AbstractMesh.OCCLUSION_ALGORITHM_TYPE_CONSERVATIVE ? this.gl.ANY_SAMPLES_PASSED_CONSERVATIVE : this.gl.ANY_SAMPLES_PASSED;
 	}
 	
 }

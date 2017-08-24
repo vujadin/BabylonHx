@@ -3,6 +3,7 @@ package com.babylonhx.rendering;
 import com.babylonhx.materials.ShaderMaterial;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Matrix;
+import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.VertexData;
@@ -106,6 +107,42 @@ import lime.utils.Float32Array;
 		this._colorShader.unbind();
 		engine.setDepthFunctionToLessOrEqual();
 		engine.setDepthWrite(true);
+	}
+	
+	public function renderOcclusionBoundingBox(mesh:AbstractMesh) {
+		this._prepareRessources();
+		
+		if (!this._colorShader.isReady()) {
+			return;
+		}
+		
+		var engine = this._scene.getEngine();
+		engine.setDepthWrite(false);
+		engine.setColorWrite(false);
+		this._colorShader._preBind();
+		
+		var boundingBox = mesh._boundingInfo.boundingBox;
+		var min = boundingBox.minimum;
+		var max = boundingBox.maximum;
+		var diff = max.subtract(min);
+		var median = min.add(diff.scale(0.5));
+		
+		var worldMatrix = Matrix.Scaling(diff.x, diff.y, diff.z)
+			.multiply(Matrix.Translation(median.x, median.y, median.z))
+			.multiply(boundingBox.getWorldMatrix());
+			
+		engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._colorShader.getEffect());
+		
+		engine.setDepthFunctionToLess();
+		this._scene.resetCachedMaterial();
+		this._colorShader.bind(worldMatrix);
+		
+		engine.draw(false, 0, 24);
+		
+		this._colorShader.unbind();
+		engine.setDepthFunctionToLessOrEqual();
+		engine.setDepthWrite(true);
+		engine.setColorWrite(true);
 	}
 
 	public function dispose() {

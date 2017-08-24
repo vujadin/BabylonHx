@@ -1130,6 +1130,11 @@ import lime.utils.Int32Array;
      * Usually, you don't need to call this method by yourself because the mesh rendering is handled by the scene rendering manager. 
      */
 	public function render(subMesh:SubMesh, enableAlphaMode:Bool) {
+		this.checkOcclusionQuery();
+        if (this._isOccluded) {
+            return;
+        }
+		
 		var scene = this.getScene();
 		
 		// Managing instances

@@ -53,8 +53,11 @@ import com.babylonhx.math.Matrix;
 		// Alpha test
 		if (material != null && material.needAlphaTesting()) {
 			var alphaTexture = material.getAlphaTestTexture();
-			this._effect.setTexture("diffuseSampler", alphaTexture);
-			this._effect.setMatrix("diffuseMatrix", alphaTexture.getTextureMatrix());
+			
+			if (alphaTexture != null) {
+				this._effect.setTexture("diffuseSampler", alphaTexture);
+				this._effect.setMatrix("diffuseMatrix", alphaTexture.getTextureMatrix());
+			}
 		}
 		
 		engine.setZOffset(-this.zOffset);

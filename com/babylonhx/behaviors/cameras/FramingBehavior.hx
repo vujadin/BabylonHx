@@ -38,9 +38,9 @@ class FramingBehavior implements Behavior<ArcRotateCamera> {
 		return "Framing";
 	}
 
-	private var _mode:Int = FramingBehavior.IgnoreBoundsSizeMode;
+	private var _mode:Int = FramingBehavior.FitFrustumSidesMode;
 	private var _radiusScale:Float = 1.0;
-	private var _positionY:Float = 0;
+	private var _positionScale:Float = 0;
 	private var _defaultElevation:Float = 0.3;
 	private var _elevationReturnTime:Float = 1500;
 	private var _elevationReturnWaitTime:Float = 1000;
@@ -86,18 +86,18 @@ class FramingBehavior implements Behavior<ArcRotateCamera> {
 		return this._radiusScale;
 	}
 
-	public var positionY(get, set):Float;
+	public var positionScale(get, set):Float;
 	/**
-	 * Sets the Y offset of the target mesh from the camera's focus.
+	 * Sets the scale to apply on Y axis to position camera focus. 0.5 by default which means the center of the bounding box.
 	 */
-	inline private function set_positionY(positionY:Float):Float {
-		return this._positionY = positionY;
+	inline private function set_positionScale(scale:Float):Float {
+		return this._positionScale = scale;
 	}
 	/**
-	 * Sets the flag that indicates if user zooming should stop animation.
+	 * Gets the scale to apply on Y axis to position camera focus. 0.5 by default which means the center of the bounding box.
 	 */
-	inline private function get_positionY():Float {
-		return this._positionY;
+	inline private function get_positionScale():Float {
+		return this._positionScale;
 	}
 
 	public var defaultElevation(get, set):Float;
@@ -180,6 +180,7 @@ class FramingBehavior implements Behavior<ArcRotateCamera> {
 	private var _onMeshTargetChangedObserver:Observer<AbstractMesh>;
 	private var _attachedCamera:ArcRotateCamera;
 	private var _isPointerDown:Bool = false;
+	private var _lastFrameTime:Float = Math.NEGATIVE_INFINITY;
 	private var _lastInteractionTime:Float = Math.NEGATIVE_INFINITY;
 
 	public function attach(camera:ArcRotateCamera) {
@@ -238,93 +239,93 @@ class FramingBehavior implements Behavior<ArcRotateCamera> {
 	 * Targets the given mesh and updates zoom level accordingly.
 	 * @param mesh  The mesh to target.
 	 * @param radius Optional. If a cached radius position already exists, overrides default.
-	 * @param applyToLowerLimit Optional. Indicates if the calculated target radius should be applied to the
-	 *		camera's lower radius limit too.
 	 * @param framingPositionY Position on mesh to center camera focus where 0 corresponds bottom of its bounding box and 1, the top
 	 * @param focusOnOriginXZ Determines if the camera should focus on 0 in the X and Z axis instead of the mesh
 	 */
-	public function zoomOnMesh(mesh:AbstractMesh, radius:Float = null, applyToLowerLimit:Bool = false, framingPositionY:Float = null, focusOnOriginXZ:Bool = true) {
-		if (framingPositionY == null) {
-			framingPositionY = this._positionY;
-		}
-		
-		// sets the radius and lower radius bounds
+	public function zoomOnMesh(mesh:AbstractMesh, focusOnOriginXZ:Bool = true) {
 		mesh.computeWorldMatrix(true);
-		if (radius == null) {
-			// Small delta ensures camera is not always at lower zoom limit.
-			var delta = 0.1;
-			if (this._mode == FramingBehavior.FitFrustumSidesMode) {
-				var position = this._calculateLowerRadiusFromModelBoundingSphere(mesh);
-				this._attachedCamera.lowerRadiusLimit = position - delta;
-				radius = position;
-			} 
-			else if (this._mode == FramingBehavior.IgnoreBoundsSizeMode) {
-				radius = this._calculateLowerRadiusFromModelBoundingSphere(mesh);
-			}
-		}
 		
+		var boundingBox = mesh.getBoundingInfo().boundingBox;
+		this.zoomOnBoundingInfo(boundingBox.minimumWorld, boundingBox.maximumWorld, focusOnOriginXZ);
+	}
+	
+	/**
+	 * Targets the given mesh and updates zoom level accordingly.
+	 * @param mesh  The mesh to target.
+	 * @param radius Optional. If a cached radius position already exists, overrides default.
+	 * @param framingPositionY Position on mesh to center camera focus where 0 corresponds bottom of its bounding box and 1, the top
+	 * @param focusOnOriginXZ Determines if the camera should focus on 0 in the X and Z axis instead of the mesh
+	 */
+	public function zoomOnBoundingInfo(minimumWorld:Vector3, maximumWorld:Vector3, focusOnOriginXZ:Bool = false) {
 		var zoomTarget:Vector3 = null;
-		var zoomTargetY:Float = 0;
 		
-		var modelWorldPosition = new Vector3(0, 0, 0);
-		var modelWorldScale = new Vector3(0, 0, 0);
-		
-		mesh.getWorldMatrix().decompose(modelWorldScale, new Quaternion(), modelWorldPosition);
-		
-		//find target by interpolating from bottom of bounding box in world-space to top via framingPositionY
-		var bottom = modelWorldPosition.y + mesh.getBoundingInfo().minimum.y;
-		var top = modelWorldPosition.y + mesh.getBoundingInfo().maximum.y;
-		zoomTargetY = bottom + (top - bottom) * framingPositionY;
-		
-		if (applyToLowerLimit) {
-			this._attachedCamera.lowerRadiusLimit = radius;
-		}
+		// Find target by interpolating from bottom of bounding box in world-space to top via framingPositionY
+		var bottom = minimumWorld.y;
+		var top = maximumWorld.y;
+		var zoomTargetY = bottom + (top - bottom) * this._positionScale;
+		var radiusWorld = maximumWorld.subtract(minimumWorld).scale(0.5);
 		
 		if (focusOnOriginXZ) {	
 			zoomTarget = new Vector3(0, zoomTargetY, 0);
 		} 
 		else {
-			zoomTarget = new Vector3(modelWorldPosition.x, zoomTargetY, modelWorldPosition.z);
+			var centerWorld = minimumWorld.add(radiusWorld);
+			zoomTarget = new Vector3(centerWorld.x, zoomTargetY, centerWorld.z);
 		}
 		
 		if (this._vectorTransition == null) {
 			this._vectorTransition = Animation.CreateAnimation("target", Animation.ANIMATIONTYPE_VECTOR3, 60, FramingBehavior._EasingFunction);
 		}
 		
+		this._betaIsAnimating = true;
 		this._animatables.push(Animation.TransitionTo("target", zoomTarget, this._attachedCamera, this._attachedCamera.getScene(), 
 								60, this._vectorTransition, this._framingTime));
-			
+								
+		// sets the radius and lower radius bounds
+		// Small delta ensures camera is not always at lower zoom limit.
+		var delta:Float = 0.1;
+		var radius:Float = 0;
+		if (this._mode == FramingBehavior.FitFrustumSidesMode) {
+			var position = this._calculateLowerRadiusFromModelBoundingSphere(minimumWorld, maximumWorld);
+			this._attachedCamera.lowerRadiusLimit = radiusWorld.length() + this._attachedCamera.minZ;
+			radius = position;
+		} 
+		else if (this._mode == FramingBehavior.IgnoreBoundsSizeMode) {
+			radius = this._calculateLowerRadiusFromModelBoundingSphere(minimumWorld, maximumWorld);
+			this._attachedCamera.lowerRadiusLimit = this._attachedCamera.minZ;
+		}
+		
 		// transition to new radius
 		if (this._radiusTransition == null) {
 			this._radiusTransition = Animation.CreateAnimation("radius", Animation.ANIMATIONTYPE_FLOAT, 60, FramingBehavior._EasingFunction);
 		}
 		
 		this._animatables.push(Animation.TransitionTo("radius", radius, this._attachedCamera, this._attachedCamera.getScene(), 
-								60, this._radiusTransition, this._framingTime));
-	}	
+								60, this._radiusTransition, this._framingTime));															
+	}
 	
 	/**
 	 * Calculates the lowest radius for the camera based on the bounding box of the mesh.
 	 * @param mesh The mesh on which to base the calculation. mesh boundingInfo used to estimate necessary
 	 *			  frustum width.
-	 * @param framingRadius An additional factor to add to the return camera radius.
 	 * @return The minimum distance from the primary mesh's center point at which the camera must be kept in order
 	 *		 to fully enclose the mesh in the viewing frustum.
 	 */
-	private function _calculateLowerRadiusFromModelBoundingSphere(mesh:AbstractMesh):Float {
-		var boxVectorGlobalDiagonal = mesh.getBoundingInfo().diagonalLength;
+	private function _calculateLowerRadiusFromModelBoundingSphere(minimumWorld:Vector3, maximumWorld:Vector3):Float {
+		var size:Vector3 = maximumWorld.subtract(minimumWorld);
+		var boxVectorGlobalDiagonal:Float = size.length();
 		var frustumSlope:Vector2 = this._getFrustumSlope();
 		
 		// Formula for setting distance
 		// (Good explanation: http://stackoverflow.com/questions/2866350/move-camera-to-fit-3d-scene)
-		var radiusWithoutFraming = boxVectorGlobalDiagonal * 0.5;
+		var radiusWithoutFraming:Float = boxVectorGlobalDiagonal * 0.5;
 		
 		// Horizon distance
-		var radius = radiusWithoutFraming * this._radiusScale;
-		var distanceForHorizontalFrustum = radius * Math.sqrt(1.0 + 1.0 / (frustumSlope.x * frustumSlope.x));
-		var distanceForVerticalFrustum = radius * Math.sqrt(1.0 + 1.0 / (frustumSlope.y * frustumSlope.y));
-		var distance = Math.max(distanceForHorizontalFrustum, distanceForVerticalFrustum);
-		var camera = this._attachedCamera;
+		var radius:Float = radiusWithoutFraming * this._radiusScale;
+		var distanceForHorizontalFrustum:Float = radius * Math.sqrt(1.0 + 1.0 / (frustumSlope.x * frustumSlope.x));
+		var distanceForVerticalFrustum:Float = radius * Math.sqrt(1.0 + 1.0 / (frustumSlope.y * frustumSlope.y));
+		var distance:Float = Math.max(distanceForHorizontalFrustum, distanceForVerticalFrustum);
+		var camera:ArcRotateCamera = this._attachedCamera;
 		
 		if (camera.lowerRadiusLimit != null && this._mode == FramingBehavior.IgnoreBoundsSizeMode) {
 			// Don't exceed the requested limit
@@ -386,7 +387,7 @@ class FramingBehavior implements Behavior<ArcRotateCamera> {
 		// Slope of the frustum left/right planes in view space, relative to the forward vector.
 		// Provides the amount that one side (e.g. left) of the frustum gets wider for every unit
 		// along the forward vector.
-		var frustumSlopeX = frustumSlopeY / aspectRatio;
+		var frustumSlopeX = frustumSlopeY * aspectRatio;
 		
 		return new Vector2(frustumSlopeX, frustumSlopeY);
 	}		
@@ -402,7 +403,7 @@ class FramingBehavior implements Behavior<ArcRotateCamera> {
 	 *  Applies any current user interaction to the camera. Takes into account maximum alpha rotation.
 	 */          
 	private function _applyUserInteraction() {
-		if (this._userIsMoving()) {
+		if (this.isUserMoving()) {
 			this._lastInteractionTime = Tools.Now();
 			this.stopAllAnimations();				
 			this._clearAnimationLocks();
@@ -415,14 +416,19 @@ class FramingBehavior implements Behavior<ArcRotateCamera> {
 	public function stopAllAnimations() {
 		this._attachedCamera.animations = [];
 		while (this._animatables.length > 0) {
-			this._animatables[0].onAnimationEnd = null;
-			this._animatables[0].stop();
+			if (this._animatables[0] != null) {
+				this._animatables[0].onAnimationEnd = null;
+				this._animatables[0].stop();
+			}
 			this._animatables.shift();
 		}
 	}        
 
 	// Tools
-	private function _userIsMoving():Bool {
+	/*
+	 * Gets a value indicating if the user is moving the camera
+	 */
+	private function isUserMoving():Bool {
 		return this._attachedCamera.inertialAlphaOffset != 0 ||
 			this._attachedCamera.inertialBetaOffset != 0 ||
 			this._attachedCamera.inertialRadiusOffset != 0 ||
