@@ -1,5 +1,0 @@
--D purejs
--D shallow-expose
--cp src
--main MainJS
--js bin_js/BabylonHxJS.js
