@@ -88,7 +88,7 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 				Tools.SetImmediate(onLoad);
 			} 
 			else {
-				this._texture.onLoadedCallbacks.push(onLoad);
+				this._texture.onLoadedObservable.add(cast onLoad);
 			}
 		}
 	}

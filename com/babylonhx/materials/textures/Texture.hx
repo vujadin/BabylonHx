@@ -185,7 +185,7 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 				Tools.SetImmediate(load);
 			} 
 			else {
-				this._texture.onLoadedCallbacks.push(load);
+				this._texture.onLoadedObservable.add(cast load);
 			}
 		}
 	}
@@ -215,7 +215,7 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 				Tools.SetImmediate(function() { this._delayedOnLoad(); });
 			} 
 			else {
-				this._texture.onLoadedCallbacks.push(this._delayedOnLoad);
+				this._texture.onLoadedObservable.add(cast this._delayedOnLoad);
 			}
 		}
 	}

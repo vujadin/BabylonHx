@@ -136,4 +136,8 @@ import lime.utils.UInt8Array;
 		return newTexture;
 	}
 	
+	override public function _rebuild() {
+		this.update();
+	}
+	
 }

@@ -2,7 +2,7 @@ package com.babylonhx.postprocess;
 
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.materials.Effect;
-import com.babylonhx.materials.textures.WebGLTexture;
+import com.babylonhx.materials.textures.InternalTexture;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector2;
@@ -50,7 +50,7 @@ typedef PostProcessOption = {
 	private var _options:Dynamic; // number | PostProcessOptions
 	private var _reusable:Bool = false;
 	private var _textureType:Int;
-	public var _textures:SmartArray<WebGLTexture> = new SmartArray<WebGLTexture>(2);
+	public var _textures:SmartArray<InternalTexture> = new SmartArray<InternalTexture>(2);
 	public var _currentRenderTextureInd:Int = 0;
 	public var _effect:Effect;	
 	private var _samplers:Array<String>;
@@ -61,7 +61,7 @@ typedef PostProcessOption = {
 	public var _indexParameters:Dynamic;
 	private var _shareOutputWithPostProcess:PostProcess;
 	private var _texelSize:Vector2 = Vector2.Zero();
-	private var _forcedOutputTexture:WebGLTexture;
+	private var _forcedOutputTexture:InternalTexture;
 	
 	// Events
 
@@ -147,11 +147,11 @@ typedef PostProcessOption = {
 		return callback;
 	}
 	
-	public var outputTexture(get, set):WebGLTexture;
-	private function get_outputTexture():WebGLTexture {
+	public var outputTexture(get, set):InternalTexture;
+	private function get_outputTexture():InternalTexture {
 		return this._textures.data[this._currentRenderTextureInd];
 	}
-	private function set_outputTexture(value:WebGLTexture):WebGLTexture {
+	private function set_outputTexture(value:InternalTexture):InternalTexture {
 		return this._forcedOutputTexture = value;
 	}
 
@@ -166,7 +166,7 @@ typedef PostProcessOption = {
 		}
 		
 		if (this._forcedOutputTexture != null) {
-            this._texelSize.copyFromFloats(1.0 / this._forcedOutputTexture._width, 1.0 / this._forcedOutputTexture._height);
+            this._texelSize.copyFromFloats(1.0 / this._forcedOutputTexture.width, 1.0 / this._forcedOutputTexture.height);
         }
 		
 		return this._texelSize;
@@ -245,7 +245,7 @@ typedef PostProcessOption = {
         this.width = -1;
     }
 
-	public function activate(camera:Camera, ?sourceTexture:WebGLTexture, forceDepthStencil:Bool = false) {
+	public function activate(camera:Camera, ?sourceTexture:InternalTexture, forceDepthStencil:Bool = false) {
 		if (camera == null) {
 			camera = this._camera;
 		}
@@ -254,8 +254,8 @@ typedef PostProcessOption = {
 		var engine = scene.getEngine();
         var maxSize = engine.getCaps().maxTextureSize;
 		
-		var requiredWidth = sourceTexture != null ? sourceTexture._width : this._engine.getRenderWidth();
-		var requiredHeight = sourceTexture != null ? sourceTexture._height : this._engine.getRenderHeight();
+		var requiredWidth = sourceTexture != null ? sourceTexture.width : this._engine.getRenderWidth();
+		var requiredHeight = sourceTexture != null ? sourceTexture.height : this._engine.getRenderHeight();
 		
 		var desiredWidth = this._options.width != null ? this._options.width : requiredWidth;
 		var desiredHeight = this._options.height != null ? this._options.height : requiredHeight;
@@ -310,7 +310,7 @@ typedef PostProcessOption = {
 			}
 		}
 		
-		var target:WebGLTexture = null;
+		var target:InternalTexture = null;
         
         if (this._shareOutputWithPostProcess != null) {
             target = this._shareOutputWithPostProcess.outputTexture;
@@ -318,8 +318,8 @@ typedef PostProcessOption = {
 		else if (this._forcedOutputTexture != null) {
             target = this._forcedOutputTexture;
 			
-			this.width = this._forcedOutputTexture._width;
-            this.height = this._forcedOutputTexture._height;
+			this.width = this._forcedOutputTexture.width;
+            this.height = this._forcedOutputTexture.height;
         } 
 		else {
             target = this.outputTexture;
@@ -358,7 +358,7 @@ typedef PostProcessOption = {
 		}
 		
 		if (this._forcedOutputTexture != null) {
-            var size = this._forcedOutputTexture._width / this._forcedOutputTexture._height;
+            var size = this._forcedOutputTexture.width / this._forcedOutputTexture.height;
         }
 		
 		return this.width / this.height;
@@ -383,7 +383,7 @@ typedef PostProcessOption = {
 		}
 		
 		// Texture
-		var source:WebGLTexture = null;                        
+		var source:InternalTexture = null;                        
         if (this._shareOutputWithPostProcess != null) {
             source = this._shareOutputWithPostProcess.outputTexture;
         } 
@@ -393,7 +393,7 @@ typedef PostProcessOption = {
 		else {
             source = this.outputTexture;
         }
-		this._effect._bindTexture("textureSampler", source != null ? source.data : null);
+		this._effect._bindTexture("textureSampler", source != null ? source : null);
 		
 		// Parameters
 		this._effect.setVector2("scale", this._scaleRatio);

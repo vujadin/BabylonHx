@@ -125,7 +125,7 @@ import lime.graphics.opengl.WebGL2Context;
 		this._depthFunc = null;
 		this._cullFace = null;
 		this._cull = null;
-		this._zOffset = 0;
+		this._zOffset = 0.0;
 		
 		this._isDepthTestDirty = true;
 		this._isDepthMaskDirty = true;
@@ -136,60 +136,62 @@ import lime.graphics.opengl.WebGL2Context;
 	}
 
 	public function apply(gl:WebGL2Context) {
-		if (this.isDirty) {
-			// Cull
-			if (this._isCullDirty) {
-				if (this.cull != null && this.cull) {
-					gl.enable(gl.CULL_FACE);
-				} 
-				else {
-					gl.disable(gl.CULL_FACE);
-				}
-				
-				this._isCullDirty = false;
+		if (!this.isDirty) {
+			return;
+		}
+		
+		// Cull
+		if (this._isCullDirty) {
+			if (this.cull) {
+				gl.enable(gl.CULL_FACE);
+			} 
+			else {
+				gl.disable(gl.CULL_FACE);
 			}
 			
-			// Cull face
-			if (this._isCullFaceDirty) {
-				gl.cullFace(this.cullFace);
-				this._isCullFaceDirty = false;
+			this._isCullDirty = false;
+		}
+		
+		// Cull face
+		if (this._isCullFaceDirty) {
+			gl.cullFace(this.cullFace);
+			this._isCullFaceDirty = false;
+		}
+		
+		// Depth mask
+		if (this._isDepthMaskDirty) {
+			gl.depthMask(this.depthMask);
+			this._isDepthMaskDirty = false;
+		}
+		
+		// Depth test
+		if (this._isDepthTestDirty) {
+			if (this.depthTest) {
+				gl.enable(gl.DEPTH_TEST);
+			} 
+			else {
+				gl.disable(gl.DEPTH_TEST);
+			}
+			this._isDepthTestDirty = false;
+		}
+		
+		// Depth func
+		if (this._isDepthFuncDirty) {
+			gl.depthFunc(this.depthFunc);
+			this._isDepthFuncDirty = false;
+		}
+		
+		// zOffset
+		if (this._isZOffsetDirty) {
+			if (this.zOffset != 0) {
+				gl.enable(gl.POLYGON_OFFSET_FILL);
+				gl.polygonOffset(this.zOffset, 0);
+			} 
+			else {
+				gl.disable(gl.POLYGON_OFFSET_FILL);
 			}
 			
-			// Depth mask
-			if (this._isDepthMaskDirty) {
-				gl.depthMask(this.depthMask);
-				this._isDepthMaskDirty = false;
-			}
-			
-			// Depth test
-			if (this._isDepthTestDirty) {
-				if (this.depthTest) {
-					gl.enable(gl.DEPTH_TEST);
-				} 
-				else {
-					gl.disable(gl.DEPTH_TEST);
-				}
-				this._isDepthTestDirty = false;
-			}
-			
-			// Depth func
-			if (this._isDepthFuncDirty) {
-				gl.depthFunc(this.depthFunc);
-				this._isDepthFuncDirty = false;
-			}
-			
-			// zOffset
-			if (this._isZOffsetDirty) {
-				if (this.zOffset != 0) {
-					gl.enable(gl.POLYGON_OFFSET_FILL);
-					gl.polygonOffset(this.zOffset, 0);
-				} 
-				else {
-					gl.disable(gl.POLYGON_OFFSET_FILL);
-				}
-				
-				this._isZOffsetDirty = false;
-			}
+			this._isZOffsetDirty = false;
 		}	
 	}
 	

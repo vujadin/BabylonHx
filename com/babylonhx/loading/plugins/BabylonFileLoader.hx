@@ -7,8 +7,6 @@ import com.babylonhx.actions.ValueCondition;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.bones.Bone;
 import com.babylonhx.bones.Skeleton;
-import com.babylonhx.cameras.AnaglyphArcRotateCamera;
-import com.babylonhx.cameras.AnaglyphFreeCamera;
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.cameras.FollowCamera;
@@ -259,7 +257,7 @@ import lime.utils.Int32Array;
                 // Scene
                 scene.useDelayedTextureLoading = parsedData.useDelayedTextureLoading != null && !SceneLoader.ForceFullSceneLoadingForIncremental;
                 scene.autoClear = parsedData.autoClear;
-                scene.clearColor = Color3.FromArray(parsedData.clearColor);
+                scene.clearColor = Color4.FromArray(parsedData.clearColor);
                 scene.ambientColor = Color3.FromArray(parsedData.ambientColor);
                 if (parsedData.gravity != null) {
                     scene.gravity = Vector3.FromArray(parsedData.gravity);

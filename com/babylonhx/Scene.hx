@@ -31,17 +31,18 @@ import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.materials.textures.procedurals.ProceduralTexture;
 import com.babylonhx.materials.textures.RenderTargetTexture;
 import com.babylonhx.materials.textures.Texture;
-import com.babylonhx.math.Color3;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
-import com.babylonhx.culling.Ray;
+import com.babylonhx.math.Color3;
+import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Frustum;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.Geometry;
 import com.babylonhx.mesh.Mesh;
+import com.babylonhx.culling.Ray;
 import com.babylonhx.collisions.ICollisionCoordinator;
 import com.babylonhx.collisions.CollisionCoordinatorLegacy;
 import com.babylonhx.morph.MorphTargetManager;
@@ -96,7 +97,7 @@ import com.babylonhx.audio.*;
 	// Members
 	public var autoClear:Bool = true;
 	public var autoClearDepthAndStencil:Bool = true;
-	public var clearColor:Color3 = new Color3(0.2, 0.2, 0.3);
+	public var clearColor:Color4 = new Color4(0.2, 0.2, 0.3, 1.0);
 	public var ambientColor:Color3 = new Color3(0, 0, 0);
 	
 	public var _environmentBRDFTexture:BaseTexture;
@@ -147,10 +148,10 @@ import com.babylonhx.audio.*;
 		this.markAllMaterialsAsDirty(Material.MiscDirtyFlag);
 		return value;
 	}
-	private function get_forcePointsCloud():Bool {
+	private inline function get_forcePointsCloud():Bool {
 		return this._forcePointsCloud;
 	} 
-		
+	
 	public var forceShowBoundingBoxes:Bool = false;
 	public var clipPlane:Plane;
 	public var animationsEnabled:Bool = true;
@@ -2974,8 +2975,8 @@ import com.babylonhx.audio.*;
 			var internalSteps = Math.floor(this._timeAccumulator / defaultTimeStep);
 			internalSteps = Std.int(Math.min(internalSteps, maxSubSteps));
 			
-			//for (this._currentInternalStep in 0...internalSteps) {
 			for (i in 0...internalSteps) {
+				this._currentInternalStep = i;
 				this.onBeforeStepObservable.notifyObservers(this);
 				
 				// Animations
@@ -2993,7 +2994,7 @@ import com.babylonhx.audio.*;
 				this.onAfterStepObservable.notifyObservers(this);
 				this._currentStepId++;
 				
-				if ((internalSteps > 1) && (i != internalSteps - 1)) {
+				if ((internalSteps > 1) && (this._currentInternalStep != internalSteps - 1)) {
 					// Q: can this be optimized by putting some code in the afterStep callback?
 					// I had to put this code here, otherwise mesh attached to bones of another mesh skeleton,
 					// would return incorrect positions for internal stepIds (non-rendered steps)
@@ -3051,14 +3052,9 @@ import com.babylonhx.audio.*;
 			this._renderId++;
 		}
 		
-		if (this.offscreenRenderTarget != null) {
-			engine.bindFramebuffer(this.offscreenRenderTarget._texture);
-		}
-		else {
-			// Restore back buffer
-			if (this.customRenderTargets.length > 0) {
-				engine.restoreDefaultFramebuffer();
-			}
+		// Restore back buffer
+		if (this.customRenderTargets.length > 0) {
+			engine.restoreDefaultFramebuffer();
 		}
 			
 		//this._renderTargetsDuration += Tools.Now() - beforeRenderTargetDate;
@@ -3085,9 +3081,11 @@ import com.babylonhx.audio.*;
 			for (lightIndex in 0...this.lights.length) {
 				var light = this.lights[lightIndex];
 				var shadowGenerator = light.getShadowGenerator();
-				
-				if (light.isEnabled() && shadowGenerator != null && shadowGenerator.getShadowMap().getScene().textures.indexOf(shadowGenerator.getShadowMap()) != -1) {
-					this._renderTargets.push(shadowGenerator.getShadowMap());
+				if (light.isEnabled() && light.shadowEnabled && shadowGenerator != null) {
+					var shadowMap = shadowGenerator.getShadowMap();
+					if (shadowMap.getScene().textures.indexOf(shadowMap) != -1) {
+						this._renderTargets.push(shadowMap);
+					}
 				}
 			}
 		}
@@ -3130,7 +3128,7 @@ import com.babylonhx.audio.*;
 		
 		// After render
 		/*if (this.afterRender != null) {
-			this.afterRender();
+			this.afterRender(_, _);
 		}*/
 		
 		this.onAfterRenderObservable.notifyObservers(this);
@@ -3702,6 +3700,18 @@ import com.babylonhx.audio.*;
 	}
 	
 	// Misc.
+	public function _rebuildGeometries() {
+        for (geometry in this._geometries) {
+            geometry._rebuild();
+        }
+    }
+	
+	public function _rebuildTextures() {
+        for (texture in this.textures) {
+            texture._rebuild();
+        }
+    }
+ 
 	public function createDefaultCameraOrLight(createArcRotateCamera:Bool = false, replace:Bool = false, attachCameraControls:Bool = false) {
 		// Dispose existing camera or light in replace mode.
 		if (replace) {

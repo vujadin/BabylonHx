@@ -119,7 +119,7 @@ import lime.utils.Int32Array;
 				
 				if (this._fallbackTexture != null) {
 					this._texture = this._fallbackTexture._texture;
-					this._texture.references++;
+					this._texture.incrementReferences();
 				}
 				
 				this._fallbackTextureUsed = true;

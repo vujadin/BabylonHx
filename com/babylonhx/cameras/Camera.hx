@@ -65,7 +65,7 @@ import com.babylonhx.animations.Animation;
 	public var fov:Float = 0.8;
 	
 	@serialize()
-	public var minZ:Float = 0.0;
+	public var minZ:Float = 1;
 	
 	@serialize()
 	public var maxZ:Float = 10000.0;
@@ -648,7 +648,7 @@ import com.babylonhx.animations.Animation;
 		var lockedTargetMesh:Mesh = parsedCamera.lockedTargetId != null ? cast scene.getLastMeshByID(parsedCamera.lockedTargetId) : null;
 		var interaxial_distance:Float = 0;
 		
-		if (parsedCamera.type == "AnaglyphArcRotateCamera" || parsedCamera.type == "ArcRotateCamera") {
+		/*if (parsedCamera.type == "AnaglyphArcRotateCamera" || parsedCamera.type == "ArcRotateCamera") {
 			var alpha = parsedCamera.alpha;
 			var beta = parsedCamera.beta;
 			var radius = parsedCamera.radius;
@@ -664,7 +664,7 @@ import com.babylonhx.animations.Animation;
 			interaxial_distance = parsedCamera.interaxial_distance;
 			camera = new AnaglyphFreeCamera(parsedCamera.name, position, interaxial_distance, scene);
 		} 
-		else if (parsedCamera.type == "DeviceOrientationCamera") {
+		else*/ if (parsedCamera.type == "DeviceOrientationCamera") {
 			//camera = new DeviceOrientationCamera(parsedCamera.name, position, scene);
 		} 
 		else if (parsedCamera.type == "FollowCamera") {

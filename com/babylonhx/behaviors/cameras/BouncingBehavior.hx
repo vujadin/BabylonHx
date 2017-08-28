@@ -113,8 +113,12 @@ class BouncingBehavior implements Behavior<ArcRotateCamera> {
 		});
 	}
 	
-	public function detach(camera:ArcRotateCamera) {
-		camera.onAfterCheckInputsObservable.remove(this._onAfterCheckInputsObserver);
+	public function detach() {
+		this._attachedCamera.onAfterCheckInputsObservable.remove(this._onAfterCheckInputsObserver);
+		if (this._onMeshTargetChangedObserver != null) {
+			this._attachedCamera.onMeshTargetChangedObservable.remove(this._onMeshTargetChangedObserver);
+		}
+		this._attachedCamera = null;
 	}
 
 	// Animations

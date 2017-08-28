@@ -53,7 +53,7 @@ import lime.utils.UInt16Array;
 	public static inline var BILLBOARDMODE_ALL:Int = 7;
 	
 	public static inline var OCCLUSION_TYPE_NONE:Int = 0;
-	public static inline var OCCLUSION_TYPE_OPTIMISITC:Int = 1;
+	public static inline var OCCLUSION_TYPE_OPTIMISTIC:Int = 1;
 	public static inline var OCCLUSION_TYPE_STRICT:Int = 2;
 	public static inline var OCCLUSION_ALGORITHM_TYPE_ACCURATE:Int = 0;
 	public static inline var OCCLUSION_ALGORITHM_TYPE_CONSERVATIVE:Int = 1;
@@ -160,25 +160,48 @@ import lime.utils.UInt16Array;
 	// Properties
 	public var definedFacingForward:Bool = true; // orientation for POV movement & rotation
 	public var position:Vector3 = Vector3.Zero();
-	
-	private var _isOcclusionQueryInProgress:Bool = false;
-	public var isOcclusionQueryInProgress(get, never):Bool;
-	public inline function get_isOcclusionQueryInProgress():Bool {
-		return _isOcclusionQueryInProgress;
-	}
 
+	/**
+	 * This property determines the type of occlusion query algorithm to run in WebGl, you can use:
+	 * AbstractMesh.OCCLUSION_ALGORITHM_TYPE_ACCURATE which is mapped to GL_ANY_SAMPLES_PASSED.
+	 * or
+	 * AbstractMesh.OCCLUSION_ALGORITHM_TYPE_CONSERVATIVE (Default Value) which is mapped to GL_ANY_SAMPLES_PASSED_CONSERVATIVE which is a false positive  algorithm that is faster than GL_ANY_SAMPLES_PASSED but less accurate.
+ 	 * for more info check WebGl documentations
+	 */
 	public var occlusionQueryAlgorithmType:Int = AbstractMesh.OCCLUSION_ALGORITHM_TYPE_CONSERVATIVE;
+	/**
+	 * This property is responsible for starting the occlusion query within the Mesh or not, this property is also used     to determine what should happen when the occlusionRetryCount is reached. It has supports 3 values:
+	 * OCCLUSION_TYPE_NONE (Default Value): this option means no occlusion query whith the Mesh.
+	 * OCCLUSION_TYPE_OPTIMISTIC: this option is means use occlusion query and if occlusionRetryCount is reached and the query is broken show the mesh.
+	 * OCCLUSION_TYPE_STRICT: this option is means use occlusion query and if occlusionRetryCount is reached and the query is broken restore the last state of the mesh occlusion if the mesh was visible then show the mesh if was hidden then hide don't show.
+	 */
 	public var occlusionType:Int = AbstractMesh.OCCLUSION_TYPE_NONE;
+	/**
+	 * This number indicates the number of allowed retries before stop the occlusion query, this is useful if the        occlusion query is taking long time before to the query result is retireved, the query result indicates if the object is visible within the scene or not and based on that Babylon.Js engine decideds to show or hide the object.
+	 * The default value is -1 which means don't break the query and wait till the result.
+	 */
 	public var occlusionRetryCount:Int = -1;
 	private var _occlusionInternalRetryCounter:Int = 0;
 
 	private var _isOccluded:Bool = false;
+	/**
+	 * Property isOccluded : Gets or sets whether the mesh is occluded or not, it is used also to set the intial state of the mesh to be occluded or not.
+	 */
 	public var isOccluded(get, set):Bool;
 	private inline function get_isOccluded():Bool {
 		return this._isOccluded;
 	}
 	private inline function set_isOccluded(val:Bool):Bool {
 		return this._isOccluded = val;
+	}
+	
+	/**
+	 * Flag to check the progress status of the query
+	 */
+	private var _isOcclusionQueryInProgress:Bool = false;
+	public var isOcclusionQueryInProgress(get, never):Bool;
+	public inline function get_isOcclusionQueryInProgress():Bool {
+		return _isOcclusionQueryInProgress;
 	}
 
 	private var _occlusionQuery:GLQuery;
@@ -941,7 +964,7 @@ import lime.utils.UInt16Array;
 		Tmp.matrix[2].decompose(Tmp.vector3[0], Tmp.quaternion[0], Tmp.vector3[1]);
 		
 		this.position.addInPlace(Tmp.vector3[1]);
-		this.rotationQuaternion.multiplyInPlace(Tmp.quaternion[0]);
+		Tmp.quaternion[0].multiplyToRef(this.rotationQuaternion, this.rotationQuaternion);
 		
 		return this;
 	}
@@ -2411,7 +2434,7 @@ import lime.utils.UInt16Array;
 					
 					// if optimistic set isOccluded to false regardless of the status of isOccluded. (Render in the current render loop)
 					// if strict continue the last state of the object.
-					this._isOccluded = this.occlusionType == AbstractMesh.OCCLUSION_TYPE_OPTIMISITC ? false : this._isOccluded;
+					this._isOccluded = this.occlusionType == AbstractMesh.OCCLUSION_TYPE_OPTIMISTIC ? false : this._isOccluded;
 				}
 				else {
 					return;

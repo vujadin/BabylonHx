@@ -136,11 +136,12 @@ class AutoRotationBehavior implements Behavior<ArcRotateCamera> {
 		});
 	}
 	
-	public function detach(camera:ArcRotateCamera) {
+	public function detach() {
 		var scene = this._attachedCamera.getScene();
 		
 		scene.onPrePointerObservable.remove(this._onPrePointerObservableObserver);
-		camera.onAfterCheckInputsObservable.remove(this._onAfterCheckInputsObserver);
+		this._attachedCamera.onAfterCheckInputsObservable.remove(this._onAfterCheckInputsObserver);
+		this._attachedCamera = null;
 	}
 
 	/**

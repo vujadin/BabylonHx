@@ -82,6 +82,14 @@ import lime.utils.Float32Array;
 		this._kind = kind;
 	}
 	
+	public function _rebuild() {
+        if (this._buffer == null) {
+            return;
+        }
+		
+		this._buffer._rebuild();
+    }
+	
 	inline public function getKind():String {
 		return this._kind;
 	}

@@ -205,7 +205,7 @@ class NodeCache {
 			return null;
 		}
 		
-		this._behaviors[index].detach(this);
+		this._behaviors[index].detach();
 		this._behaviors.splice(index, 1);
 		
 		return this;
@@ -501,8 +501,10 @@ class NodeCache {
 		
 		// Behaviors
 		for (behavior in this._behaviors) {
-			behavior.detach(this);
+			behavior.detach();
 		}
+		
+		this._behaviors = [];
 	}
 	
 	public static function ParseAnimationRanges(node:Node, parsedNode:Dynamic, scene:Scene) {

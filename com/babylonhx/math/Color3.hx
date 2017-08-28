@@ -144,6 +144,14 @@ import lime.utils.Float32Array;
 		
 		return this;
 	}
+	
+	inline public function copyFromColor4(source:Color4):Color3 {
+		this.r = source.r;
+		this.g = source.g;
+		this.b = source.b;
+		
+		return this;
+	}
 
 	inline public function copyFromFloats(r:Float, g:Float, b:Float):Color3 {
 		this.r = r;

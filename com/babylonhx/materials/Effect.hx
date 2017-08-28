@@ -1,6 +1,7 @@
 package com.babylonhx.materials;
 
 import com.babylonhx.Engine;
+import com.babylonhx.materials.textures.InternalTexture;
 import com.babylonhx.materials.textures.WebGLTexture;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.math.Matrix;
@@ -56,6 +57,8 @@ using StringTools;
 	public var _key:String;
 	private var _indexParameters:Dynamic;
 	private var _fallbacks:EffectFallbacks;
+	private var _vertexSourceCode:String;
+    private var _fragmentSourceCode:String;
 	
 	@:allow(com.babylonhx.Engine) 
 	private var _program:GLProgram;
@@ -147,7 +150,16 @@ using StringTools;
 					this._loadFragmentShader(fragmentSource, function(fragmentCode:String) {
 						this._processIncludes(fragmentCode, function(fragmentCodeWithIncludes:String) {
 							this._processShaderConversion(fragmentCodeWithIncludes, true, function(migratedFragmentCode:String) {
-								this._prepareEffect(migratedVertexCode, migratedFragmentCode, this._attributesNames, this.defines, this._fallbacks, baseName);
+								if (baseName != null) {
+									// not needed for BHX !...
+									this._vertexSourceCode = "#define SHADER_NAME vertex:" + baseName + "\n" + migratedVertexCode;
+									this._fragmentSourceCode = "#define SHADER_NAME fragment:" + baseName + "\n" + migratedFragmentCode;
+								}
+								else {
+									this._vertexSourceCode = migratedVertexCode;
+									this._fragmentSourceCode = migratedFragmentCode;
+								}
+								this._prepareEffect();
 							});
 						});
 					});
@@ -505,17 +517,16 @@ using StringTools;
 		return source;
 	}
 	
-	private function _prepareEffect(vertexSourceCode:String, fragmentSourceCode:String, attributesNames:Array<String>, defines:String, ?fallbacks:EffectFallbacks, baseName:String = "") {		
-        try {
+	private function _prepareEffect() {
+		var attributesNames = this._attributesNames;
+		var defines = this.defines;
+		var fallbacks = this._fallbacks;
+		this._valueCache = new Map();
+		
+        try {			
             var engine = this._engine;
 			
-			// not needed for BHX...
-			if (baseName != "") {
-                vertexSourceCode = "#define SHADER_NAME vertex:" + baseName + "\n" + vertexSourceCode;
-                fragmentSourceCode = "#define SHADER_NAME fragment:" + baseName + "\n" + fragmentSourceCode;
-            }
-			
-            this._program = engine.createShaderProgram(vertexSourceCode, fragmentSourceCode, defines);
+            this._program = engine.createShaderProgram(this._vertexSourceCode, this._fragmentSourceCode, defines);
 			
 			if (engine.webGLVersion > 1) {
 				for (name in this._uniformBuffersNames.keys()) {
@@ -568,10 +579,10 @@ using StringTools;
 			if (fallbacks != null && fallbacks.isMoreFallbacks) {
 				Tools.Error(this.name + " - Trying next fallback.");
 				trace('Fallback ERROR: ' + e);
-				trace(vertexSourceCode);
-				trace(fragmentSourceCode);
-				defines = fallbacks.reduce(defines);
-				this._prepareEffect(vertexSourceCode, fragmentSourceCode, attributesNames, defines, fallbacks);
+				trace(_vertexSourceCode);
+				trace(_fragmentSourceCode);
+				this.defines = fallbacks.reduce(this.defines);
+				this._prepareEffect();
             } 
 			else {
                 trace("Unable to compile effect: " + this.name);
@@ -591,6 +602,8 @@ using StringTools;
 				if (this.onError != null) {
 					this.onError(this, this._compilationError);
 				}
+				this.onErrorObservable.notifyObservers(this);
+				this.onErrorObservable.clear();
             }
         }
     }
@@ -599,7 +612,7 @@ using StringTools;
 		return this._compilationError == "";
 	}
 
-	inline public function _bindTexture(channel:String, texture:GLTexture) {
+	inline public function _bindTexture(channel:String, texture:InternalTexture) {
 		this._engine._bindTexture(this._samplers.indexOf(channel), texture);
 	}
 

@@ -2,7 +2,7 @@ package com.babylonhx.postprocess;
 
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.WebGLBuffer;
-import com.babylonhx.materials.textures.WebGLTexture;
+import com.babylonhx.materials.textures.InternalTexture;
 
 import lime.utils.Float32Array;
 import lime.utils.Int32Array;
@@ -38,7 +38,7 @@ import lime.utils.Int32Array;
 	}
 
 	// Methods
-	public function _prepareFrame(?sourceTexture:WebGLTexture, ?postProcesses:Array<PostProcess>):Bool {
+	public function _prepareFrame(?sourceTexture:InternalTexture, ?postProcesses:Array<PostProcess>):Bool {
 		var postProcesses = postProcesses != null ? postProcesses : this._scene.activeCamera._postProcesses;
 		
 		if (postProcesses.length == 0 || !this._scene.postProcessesEnabled) {
@@ -49,7 +49,7 @@ import lime.utils.Int32Array;
 		return true;
 	}
 	
-	public function directRender(postProcesses:Array<PostProcess>, ?targetTexture:WebGLTexture) {
+	public function directRender(postProcesses:Array<PostProcess>, ?targetTexture:InternalTexture) {
 		var engine = this._scene.getEngine();
 		
 		for (index in 0...postProcesses.length) {
@@ -87,7 +87,7 @@ import lime.utils.Int32Array;
 		engine.setDepthWrite(true);
 	}
 
-	public function _finalizeFrame(doNotPresent:Bool = false, ?targetTexture:WebGLTexture, faceIndex:Int = 0, ?postProcesses:Array<PostProcess>) {
+	public function _finalizeFrame(doNotPresent:Bool = false, ?targetTexture:InternalTexture, faceIndex:Int = 0, ?postProcesses:Array<PostProcess>) {
 		if (postProcesses == null) {
 			postProcesses = this._scene.activeCamera._postProcesses;
 		}

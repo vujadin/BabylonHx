@@ -86,7 +86,7 @@ class ColorGradingTexture extends BaseTexture {
 	/**
 	 * Occurs when the file being loaded is a .3dl LUT file.
 	 */
-	private function load3dlTexture():WebGLTexture {
+	private function load3dlTexture():InternalTexture {
 		var mipLevels:Int = 0;
 		var floatArrayView:Float32Array = null;
 		var texture = this.getScene().getEngine().createRawTexture(null, 1, 1, Engine.TEXTUREFORMAT_RGBA, false, false, Texture.BILINEAR_SAMPLINGMODE);
@@ -162,7 +162,7 @@ class ColorGradingTexture extends BaseTexture {
 				}
 			}
 			
-			this.getScene().getEngine().updateTextureSize(texture, size * size, size);
+			texture.updateSize(size * size, size);
 			this.getScene().getEngine().updateRawTexture(texture, data, Engine.TEXTUREFORMAT_RGBA, false);
 		}
 		

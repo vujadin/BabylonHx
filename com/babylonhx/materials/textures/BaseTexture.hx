@@ -155,7 +155,7 @@ import lime.utils.UInt8Array;
 	public var _cachedAnisotropicFilteringLevel:Int;
 
 	private var _scene:Scene;
-	public var _texture:WebGLTexture;
+	public var _texture:InternalTexture;
 	private var _uid:String;
 	
 	private var _isBlocking:Bool = true;
@@ -191,7 +191,7 @@ import lime.utils.UInt8Array;
 		return null;
 	}
 
-	public function getInternalTexture():WebGLTexture {
+	public function getInternalTexture():InternalTexture {
 		return this._texture;
 	}
 	
@@ -213,11 +213,11 @@ import lime.utils.UInt8Array;
 	}
 
 	public function getSize():Dynamic  {
-		if (this._texture._width != -1 && this._texture._width != 0) {
-			return { width: this._texture._width, height: this._texture._height };
+		if (this._texture.width != -1 && this._texture.width != 0) {
+			return { width: this._texture.width, height: this._texture.height };
 		}
 		
-		if (this._texture._size != null) {
+		if (this._texture._size != -1) {
 			return { width: this._texture._size, height: this._texture._size };
 		}
 		
@@ -229,11 +229,11 @@ import lime.utils.UInt8Array;
 			return { width: 0, height: 0 };
 		}
 		
-		if (this._texture._size != null) {
+		if (this._texture._size != -1) {
 			return { width: this._texture._size, height: this._texture._size };
 		}
 		
-		return { width: this._texture._baseWidth, height: this._texture._baseHeight };
+		return { width: this._texture.baseWidth, height: this._texture.baseHeight };
 	}
 
 	public function scale(ratio:Float) { }
@@ -243,26 +243,14 @@ import lime.utils.UInt8Array;
 		return false;
 	}*/
 
-	public function _removeFromCache(url:String, noMipmap:Bool) {
-		var texturesCache:Array<WebGLTexture> = this._scene.getEngine().getLoadedTexturesCache();
-		for (index in 0...texturesCache.length) {
-			var texturesCacheEntry = texturesCache[index];
-			
-			if (texturesCacheEntry.url == url && texturesCacheEntry.generateMipMaps == !noMipmap) {
-				texturesCache.splice(index, 1);
-				return;
-			}
-		}
-	}
-
-	public function _getFromCache(url:String, noMipmap:Bool, ?sampling:Int):WebGLTexture {
-        var texturesCache:Array<WebGLTexture> = this._scene.getEngine().getLoadedTexturesCache();
+	public function _getFromCache(url:String, noMipmap:Bool, ?sampling:Int):InternalTexture {
+        var texturesCache:Array<InternalTexture> = this._scene.getEngine().getLoadedTexturesCache();
         for (index in 0...texturesCache.length) {
-            var texturesCacheEntry:WebGLTexture = texturesCache[index];
+            var texturesCacheEntry:InternalTexture = texturesCache[index];
 			
             if (texturesCacheEntry.url == url && texturesCacheEntry.generateMipMaps == !noMipmap) {
 				if(sampling == null || sampling == texturesCacheEntry.samplingMode) {
-					texturesCacheEntry.references++;
+					texturesCacheEntry.incrementReferences();
 					return texturesCacheEntry;
 				}
             }
@@ -270,8 +258,13 @@ import lime.utils.UInt8Array;
 		
         return null;
     }
+	
+	public function _rebuild() {
+		
+	}
 
 	public function delayLoad() {
+		
 	}
 	
 	public var textureType(get, never):Int;
@@ -300,7 +293,7 @@ import lime.utils.UInt8Array;
 
 	public function releaseInternalTexture() {
         if (this._texture != null) {
-			this._scene.getEngine().releaseInternalTexture(this._texture);
+			this._texture.dispose();
 			this._texture = null;
 		}
     }

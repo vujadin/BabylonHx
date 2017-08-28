@@ -16,6 +16,9 @@ import haxe.rtti.Meta;
  */
 class SerializationHelper {
 	
+	static var __decoratorInitialStore:Map<String, Map<String, Dynamic>> = new Map();
+    static var __mergedStore:Map<String, Dynamic> = new Map();
+	
 	static public function Serialize(className:Dynamic, obj:Dynamic, serializedObject:Dynamic = null):Dynamic {
 		if (serializedObject == null) {
 			serializedObject = { };
@@ -216,6 +219,58 @@ class SerializationHelper {
 		
 		return destination;
 	}
+	
+	/**
+     * Return the list of properties flagged as serializable
+     * @param target: host object
+     */
+    function getMergedStore(target:Dynamic):Dynamic {
+        /*var classKey = target.getClassName();
+		
+        if (__mergedStore[classKey] != null) {
+            return __mergedStore[classKey];
+        }
+		
+        __mergedStore[classKey] = {};
+		
+        var store = __mergedStore[classKey];
+        var currentTarget = target;
+        var currentKey = classKey;
+        while (currentKey != null) {
+            var initialStore = __decoratorInitialStore[currentKey];
+            for (property in initialStore.keys()) {
+                Reflect.setProperty(store, property, initialStore[property]);                
+            }
+			
+            var parent:Dynamic = null;
+            var done:Bool = false;
+			
+            do {
+                parent = Object.getPrototypeOf(currentTarget);
+                if (!parent.getClassName) {
+                    done = true;
+                    break;
+                }
+				
+                if (parent.getClassName() != currentKey) {
+                    break;
+                }
+				
+                currentTarget = parent;
+            }
+            while (parent != null);
+			
+            if (done) {
+                break;
+            }
+            
+            currentKey = parent.getClassName();
+            currentTarget = parent;
+        }
+		
+        return store;*/
+		return null;
+    }
 	
 	static public function generateSerializableMember(type:Int, ?sourceName:String) {
         return function(target:Dynamic, propertyKey:String) {

@@ -47,7 +47,7 @@ typedef RenderTargetOptions = {
 	public var renderSprites:Bool = false;
 	public var activeCamera:Camera;
 	public var customRenderFunction:Dynamic;//SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void->Void->Void;
-	public var useCameraPostProcesses:Bool;
+	public var useCameraPostProcesses:Bool = false;
 	
 	public var ignoreCameraViewport:Bool = false;
 	
@@ -360,7 +360,7 @@ typedef RenderTargetOptions = {
 		var camera:Camera = null;
 		if (this.activeCamera != null) {
 			camera = this.activeCamera;
-			engine.setViewport(this.activeCamera.viewport, this._size, this._size);
+			engine.setViewport(this.activeCamera.viewport, this._size.width, this._size.height);
 			
 			if (this.activeCamera != scene.activeCamera) {
 				scene.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(true));
@@ -368,7 +368,7 @@ typedef RenderTargetOptions = {
 		}
 		else {
 			camera = scene.activeCamera;
-			engine.setViewport(scene.activeCamera.viewport, this._size, this._size);
+			engine.setViewport(scene.activeCamera.viewport, this._size.width, this._size.height);
 		}
 		
 		// Prepare renderingManager
@@ -608,5 +608,11 @@ typedef RenderTargetOptions = {
 		
 		super.dispose();
 	}
+	
+	override public function _rebuild() {
+        if (this.refreshRate == RenderTargetTexture.REFRESHRATE_RENDER_ONCE) {
+            this.refreshRate = RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
+        }
+    }
 	
 }

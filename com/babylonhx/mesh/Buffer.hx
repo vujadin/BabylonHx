@@ -109,6 +109,11 @@ class Buffer {
 			this._data = data;
 		}
 	}
+	
+	public function _rebuild() {
+		this._buffer = null;
+		this.create(this._data);
+	}
 
 	inline public function update(data:Float32Array) {
 		this.create(data);

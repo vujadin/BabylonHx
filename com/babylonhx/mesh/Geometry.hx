@@ -137,6 +137,23 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		
 		return true;
 	}
+	
+	public function _rebuild() {
+		if (this._vertexArrayObjects != null) {
+			this._vertexArrayObjects = new Map<String, GLVertexArrayObject>();
+		}
+		
+		// Index buffer
+		if (this._meshes.length != 0 && this._indices != null) {
+			this._indexBuffer = this._engine.createIndexBuffer(this._indices);
+		}
+		
+		// Vertex buffers
+		for (key in this._vertexBuffers.keys()) {
+			var vertexBuffer:VertexBuffer = this._vertexBuffers[key];
+			vertexBuffer._rebuild();
+		}
+	}
 
 	public function setAllVerticesData(vertexData:VertexData, updatable:Bool = false) {
 		vertexData.applyToGeometry(this, updatable);

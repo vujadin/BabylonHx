@@ -6,7 +6,7 @@ package com.babylonhx.materials.textures;
  */
 class MultiRenderTarget extends RenderTargetTexture {
 
-	private var _webGLTextures:Array<WebGLTexture>;
+	private var _internalTextures:Array<InternalTexture>;
 	private var _textures:Array<Texture>;
 	private var _count:Int;
 
@@ -76,21 +76,21 @@ class MultiRenderTarget extends RenderTargetTexture {
 		this._multiRenderTargetOptions.types = types;
 		this._multiRenderTargetOptions.textureCount = count;
 		
-		this._webGLTextures = scene.getEngine().createMultipleRenderTarget(size, this._multiRenderTargetOptions);
+		this._internalTextures = scene.getEngine().createMultipleRenderTarget(size, this._multiRenderTargetOptions);
 		
 		this._createInternalTextures();
 	}
 
 	private function _createInternalTextures() {
 		this._textures = [];
-		for (i in 0...this._webGLTextures.length) {
+		for (i in 0...this._internalTextures.length) {
 			var texture = new Texture(null, this.getScene());
-			texture._texture = this._webGLTextures[i];
+			texture._texture = this._internalTextures[i];
 			this._textures.push(texture);
 		}
 		
 		// Keeps references to frame buffer and stencil/depth buffer
-		this._texture = this._webGLTextures[0];
+		this._texture = this._internalTextures[0];
 	}
 
 	override private function set_samples(value:Int):Int {
@@ -98,15 +98,15 @@ class MultiRenderTarget extends RenderTargetTexture {
 			return value;
 		}
 		
-		for (i in 0...this._webGLTextures.length) {
-			this._samples = this.getScene().getEngine().updateRenderTargetTextureSampleCount(this._webGLTextures[i], value);
+		for (i in 0...this._internalTextures.length) {
+			this._samples = this.getScene().getEngine().updateRenderTargetTextureSampleCount(this._internalTextures[i], value);
 		}
 		return value;
 	}
 
 	override public function resize(size:Dynamic) {
 		this.releaseInternalTextures();
-		this._webGLTextures = this.getScene().getEngine().createMultipleRenderTarget(size, this._multiRenderTargetOptions);
+		this._internalTextures = this.getScene().getEngine().createMultipleRenderTarget(size, this._multiRenderTargetOptions);
 		this._createInternalTextures();
 	}
 
@@ -117,15 +117,15 @@ class MultiRenderTarget extends RenderTargetTexture {
 	}
 
 	public function releaseInternalTextures() {
-		if (this._webGLTextures == null) {
+		if (this._internalTextures == null) {
 			return;
 		}
 		
-		var i = this._webGLTextures.length - 1;
+		var i = this._internalTextures.length - 1;
 		while (i >= 0) {
-			if (this._webGLTextures[i] != null) {
-				this.getScene().getEngine().releaseInternalTexture(this._webGLTextures[i]);
-				this._webGLTextures.splice(i, 1);
+			if (this._internalTextures[i] != null) {
+				this._internalTextures[i].dispose();
+				this._internalTextures.splice(i, 1);
 			}
 			--i;
 		}

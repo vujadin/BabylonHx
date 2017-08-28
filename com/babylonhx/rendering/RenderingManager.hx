@@ -85,8 +85,7 @@ import com.babylonhx.tools.Tools;
 		// Render
 		for (index in RenderingManager.MIN_RENDERINGGROUPS...RenderingManager.MAX_RENDERINGGROUPS) {
 			this._depthStencilBufferAlreadyCleaned = (index == RenderingManager.MIN_RENDERINGGROUPS);
-			var renderingGroup = this._renderingGroups[index];
-			
+			var renderingGroup = this._renderingGroups[index];			
 			if (renderingGroup == null && observable == null) {
                 continue;
 			}
