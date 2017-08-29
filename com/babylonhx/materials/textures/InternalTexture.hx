@@ -3,6 +3,7 @@ package com.babylonhx.materials.textures;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.math.SphericalPolynomial;
+import lime.utils.ArrayBuffer;
 
 import lime.graphics.opengl.GLTexture;
 import lime.graphics.opengl.GLFramebuffer;
@@ -22,8 +23,8 @@ class InternalTexture implements ISmartArrayCompatible {
 	public static inline var DATASOURCE_RENDERTARGET:Int = 5;
 	public static inline var DATASOURCE_MULTIRENDERTARGET:Int = 6;
 	public static inline var DATASOURCE_CUBE:Int = 7;
-	public static inline var DATASOURCE_CUBELOD:Int = 8;
-	public static inline var DATASOURCE_CUBERAW:Int = 9;
+	public static inline var DATASOURCE_CUBERAW:Int = 8;
+	public static inline var DATASOURCE_CUBEPREFILTERED:Int = 9;
 
 	public var isReady:Bool = false;
 	public var isCube:Bool = false;
@@ -41,8 +42,11 @@ class InternalTexture implements ISmartArrayCompatible {
 	public var invertY:Bool = false;
 
 	// Private
-	private var _dataSource:Int = InternalTexture.DATASOURCE_UNKNOWN;
+	public var _dataSource:Int = InternalTexture.DATASOURCE_UNKNOWN;
+	public var _buffer:ArrayBuffer;
 	public var _size:Int = -1;
+	public var _extension:String;
+	public var _files:Array<String>;
 	//public var _workingCanvas:HTMLCanvasElement;
 	//public var _workingContext:CanvasRenderingContext2D;
 	public var _framebuffer:GLFramebuffer;
@@ -52,10 +56,13 @@ class InternalTexture implements ISmartArrayCompatible {
 	public var _cachedCoordinatesMode:Int = -1;
 	public var _cachedWrapU:Int = -1;
 	public var _cachedWrapV:Int = -1;
+	public var _cachedAnisotropicFilteringLevel:Int = -1;
 	public var _isDisabled:Bool;
 	public var _generateStencilBuffer:Bool;
 	public var _generateDepthBuffer:Bool;
 	public var _sphericalPolynomial:SphericalPolynomial;
+	public var _lodGenerationScale:Float;
+    public var _lodGenerationOffset:Float;
 	// The following three fields helps sharing generated fixed LODs for texture filtering
 	// In environment not supporting the textureLOD extension like EDGE. They are for internal use only.
 	// They are at the level of the gl texture to benefit from the cache.
@@ -99,8 +106,69 @@ class InternalTexture implements ISmartArrayCompatible {
 	}
 	
 	public function _rebuild() {
-		// this._engine.createTexture(this.url, !this.generateMipMaps, this.invertY, scene, this.samplingMode, null, null, this._buffer, null, this._format);
+		var proxy:InternalTexture = null;
+		this.isReady = false;
+		this._cachedCoordinatesMode = -1;
+		this._cachedWrapU = -1;
+		this._cachedWrapV = -1;
+		this._cachedAnisotropicFilteringLevel = -1;
+		
+		switch (this._dataSource) {
+			case InternalTexture.DATASOURCE_TEMP:
+				return;
+				
+			case InternalTexture.DATASOURCE_URL:
+				proxy = this._engine.createTexture(this.url, !this.generateMipMaps, this.invertY, null, this.samplingMode, function() {
+					this.isReady = true;
+				}, null, this._buffer, null, this.format); 
+				proxy._swapAndDie(this);
+				return;
+				
+			case InternalTexture.DATASOURCE_DYNAMIC:
+				proxy = this._engine.createDynamicTexture(this.baseWidth, this.baseHeight, this.generateMipMaps, this.samplingMode); 
+				proxy._swapAndDie(this);
+				
+				// The engine will make sure to update content so no need to flag it as isReady = true
+			return;
+			
+			case InternalTexture.DATASOURCE_CUBE:
+				proxy = this._engine.createCubeTexture(this.url, null, this._files, !this.generateMipMaps, function() {
+					this.isReady = true;
+				}, null, this.format, this._extension);
+				proxy._swapAndDie(this);
+				return;
+				
+			case InternalTexture.DATASOURCE_CUBEPREFILTERED:
+				proxy = this._engine.createPrefilteredCubeTexture(this.url, null, this._lodGenerationScale, this._lodGenerationOffset, function(proxy:InternalTexture) {
+					proxy._swapAndDie(this);
+					
+					this.isReady = true;
+				}, null, this.format, this._extension);
+				return;
+		}
     }
+	
+	private function _swapAndDie(target:InternalTexture) {
+		target._webGLTexture = this._webGLTexture;
+		
+		if (this._lodTextureHigh != null) {
+			target._lodTextureHigh = this._lodTextureHigh;
+		}
+		
+		if (this._lodTextureMid != null) {
+			target._lodTextureMid = this._lodTextureMid;
+		}
+		
+		if (this._lodTextureLow != null) {
+			target._lodTextureLow = this._lodTextureLow;
+		}
+		
+		var cache = this._engine.getLoadedTexturesCache();
+		var index = cache.indexOf(this);
+		if (index != -1) {
+			cache.splice(index, 1);
+		}
+	}
 	
 	public function dispose() {
 		if (this._webGLTexture == null) {

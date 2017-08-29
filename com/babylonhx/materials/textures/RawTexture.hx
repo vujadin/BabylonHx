@@ -1,6 +1,6 @@
 package com.babylonhx.materials.textures;
 
-import com.babylonhx.utils.typedarray.ArrayBufferView;
+import lime.utils.ArrayBufferView;
 
 
 /**

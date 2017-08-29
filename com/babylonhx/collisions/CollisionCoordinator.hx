@@ -1,7 +1,7 @@
 package com.babylonhx.collisions;
 
-import com.babylonhx.utils.typedarray.Float32Array;
-import com.babylonhx.utils.typedarray.Int32Array;
+import lime.utils.Float32Array;
+import lime.utils.Int32Array;
 
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
@@ -107,7 +107,7 @@ enum WorkerReplyType {
 	
 	private var _scene:Scene;
 	
-	public var _finalPosition:Vector3;
+	public var _finalPosition:Vector3 = Vector3.Zero();
 
 	private var _scaledPosition:Vector3 = Vector3.Zero();
 	private var _scaledVelocity:Vector3 = Vector3.Zero();
@@ -132,8 +132,8 @@ enum WorkerReplyType {
 	public function onGeometryUpdated(geometry:Geometry) { }
 	public function onGeometryDeleted(geometry:Geometry) { }
 
-	public function new() {
-		
+	public function new(scene:Scene) {
+		init(scene);
 	}
 	
 	public function init(scene:Scene) {

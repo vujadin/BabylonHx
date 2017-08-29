@@ -66,7 +66,7 @@ typedef Assets = lime.Assets;
 		trace('!!! ERROR !!! ' + msg);
 	}
 	
-	public static function SetImmediate(action:Void->Void) {
+	public static function SetImmediate(action:Dynamic/*Void->Void*/) {
 		delay(action, 1);
 	}
 	

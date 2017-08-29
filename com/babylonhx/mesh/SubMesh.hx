@@ -303,6 +303,12 @@ import lime.utils.Int32Array;
 		
 		return intersectInfo;
 	}
+	
+	public function _rebuild() {
+        if (this._linesIndexBuffer != null) {
+            this._linesIndexBuffer = null;
+        }
+    }
 
 	// Clone    
 	public function clone(newMesh:AbstractMesh, ?newRenderingMesh:Mesh):SubMesh {

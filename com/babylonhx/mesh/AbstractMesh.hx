@@ -535,6 +535,16 @@ import lime.utils.UInt16Array;
 		}
 		return ret;
 	}
+	
+	public function _rebuild() {
+		if (this.subMeshes == null) {
+			return;
+		}
+		
+		for (subMesh in this.subMeshes) {
+			subMesh._rebuild();
+		}
+	}
 
 	public function _resyncLightSources() {
 		this._lightSources.splice(0, this._lightSources.length - 1);

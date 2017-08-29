@@ -3,7 +3,9 @@ package com.babylonhx.tools.serialization;
 import com.babylonhx.materials.FresnelParameters;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.materials.ColorCurves;
+import com.babylonhx.materials.ImageProcessingConfiguration;
 import com.babylonhx.math.Color3;
+import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import haxe.macro.Type;
@@ -147,19 +149,19 @@ class SerializationHelper {
 	
 	public static function Parse<T>(creationFunction:Void->T, source:Dynamic, scene:Scene, ?rootUrl:String):T {
 		var destination:T = creationFunction();
-		trace(Reflect.fields(untyped destination.__serializableMembers));
+		
 		// Tags
 		Tags.AddTagsTo(destination, untyped source.tags);
 		
+		var classStore = getMergedStore(destination);
+		
 		// Properties
-		for (property in Reflect.fields(untyped destination.__serializableMembers)) {
-			trace(property);
-			var propertyDescriptor = Reflect.getProperty(untyped destination.__serializableMembers, property);
+		for (property in Reflect.fields(classStore)) {
+			var propertyDescriptor = Reflect.getProperty(/*classStore*/destination, property);
 			var sourceProperty = Reflect.getProperty(source, propertyDescriptor.sourceName != null ? propertyDescriptor.sourceName : property);
 			var propertyType = propertyDescriptor.type;
-			
+
 			if (sourceProperty != null) {
-				trace(sourceProperty);
 				switch (propertyType) {
 					case 0:     // Value
 						Reflect.setProperty(destination, property, sourceProperty);
@@ -180,16 +182,20 @@ class SerializationHelper {
 						Reflect.setProperty(destination, property, Vector3.FromArray(sourceProperty));
 						
 					case 6:     // Mesh reference
-						//var meshID:String = cast sourceProperty;
-						//Reflect.setProperty(destination, property, scene.getLastMeshByID(meshID));
+						Reflect.setProperty(destination, property, scene.getLastMeshByID(cast sourceProperty));
 						
 					case 7:     // Color Curves
 						Reflect.setProperty(destination, property, ColorCurves.Parse(sourceProperty));
 						
+					case 8:     // Color 4
+						Reflect.setProperty(destination, property, Color4.FromArray(sourceProperty));
+						
+					case 9:     // Image Processing
+						Reflect.setProperty(destination, property, ImageProcessingConfiguration.Parse(sourceProperty));						
 				}
 			}
 		}
-
+		
 		return destination;
 	}
 
@@ -220,12 +226,22 @@ class SerializationHelper {
 		return destination;
 	}
 	
+	static function getDirectStore(target:Dynamic):Dynamic {
+        var classKey = target.getClassName();
+		
+        if (__decoratorInitialStore[classKey] == null) {
+            __decoratorInitialStore[classKey] = new Map();
+        }
+		
+        return __decoratorInitialStore[classKey];
+    }
+	
 	/**
      * Return the list of properties flagged as serializable
      * @param target: host object
      */
-    function getMergedStore(target:Dynamic):Dynamic {
-        /*var classKey = target.getClassName();
+    static function getMergedStore(target:Dynamic):Dynamic {
+        var classKey:String = target.getClassName();
 		
         if (__mergedStore[classKey] != null) {
             return __mergedStore[classKey];
@@ -238,16 +254,21 @@ class SerializationHelper {
         var currentKey = classKey;
         while (currentKey != null) {
             var initialStore = __decoratorInitialStore[currentKey];
-            for (property in initialStore.keys()) {
-                Reflect.setProperty(store, property, initialStore[property]);                
-            }
+			
+			if (initialStore != null) {
+				for (property in initialStore.keys()) {
+					Reflect.setProperty(store, property, initialStore[property]);                
+				}
+			}
 			
             var parent:Dynamic = null;
-            var done:Bool = false;
+            var done:Bool = true;
 			
             do {
-                parent = Object.getPrototypeOf(currentTarget);
-                if (!parent.getClassName) {
+				#if js
+                parent = untyped __js__('Object.getPrototypeOf(currentTarget)');
+				#end
+                if (parent.getClassName == null) {
                     done = true;
                     break;
                 }
@@ -268,8 +289,8 @@ class SerializationHelper {
             currentTarget = parent;
         }
 		
-        return store;*/
-		return null;
+        return store;
+		//return null;
     }
 	
 	static public function generateSerializableMember(type:Int, ?sourceName:String) {

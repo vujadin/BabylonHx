@@ -152,8 +152,6 @@ import lime.utils.UInt8Array;
 	
 	public var delayLoadState:Int = Engine.DELAYLOADSTATE_NONE;
 
-	public var _cachedAnisotropicFilteringLevel:Int;
-
 	private var _scene:Scene;
 	public var _texture:InternalTexture;
 	private var _uid:String;

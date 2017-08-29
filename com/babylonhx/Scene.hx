@@ -3704,6 +3704,14 @@ import com.babylonhx.audio.*;
         for (geometry in this._geometries) {
             geometry._rebuild();
         }
+		
+		for (mesh in this.meshes) {
+            mesh._rebuild();
+        }
+		
+		for (layer in this.layers) {
+            layer._rebuild();
+        }
     }
 	
 	public function _rebuildTextures() {

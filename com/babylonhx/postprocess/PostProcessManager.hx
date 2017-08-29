@@ -49,7 +49,7 @@ import lime.utils.Int32Array;
 		return true;
 	}
 	
-	public function directRender(postProcesses:Array<PostProcess>, ?targetTexture:InternalTexture) {
+	public function directRender(postProcesses:Array<PostProcess>, ?targetTexture:InternalTexture, forceFullscreenViewport:Bool = false) {
 		var engine = this._scene.getEngine();
 		
 		for (index in 0...postProcesses.length) {
@@ -58,7 +58,7 @@ import lime.utils.Int32Array;
 			} 
 			else {
 				if (targetTexture != null) {
-					engine.bindFramebuffer(targetTexture);
+					engine.bindFramebuffer(targetTexture, 0, null, null, forceFullscreenViewport);
 				} 
 				else {
 					engine.restoreDefaultFramebuffer();

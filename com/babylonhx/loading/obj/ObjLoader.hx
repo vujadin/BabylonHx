@@ -1,5 +1,7 @@
 package com.babylonhx.loading.obj;
 
+import com.babylonhx.loading.obj.MtlLine.MtlHeader;
+import com.babylonhx.loading.obj.ObjLine.ObjHeader;
 import com.babylonhx.materials.MultiMaterial;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.materials.textures.Texture;
@@ -10,8 +12,6 @@ import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.Scene;
 import com.babylonhx.tools.Tools;
-import com.babylonhxext.loaders.obj.ObjLine;
-import com.babylonhxext.loaders.obj.MtlLine;
 
 /**
  * ...

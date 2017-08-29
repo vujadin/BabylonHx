@@ -158,7 +158,7 @@ import lime.utils.Int32Array;
 					
                     // Material ?
                     if (Reflect.hasField(parsedMesh, "materialId")) {
-                        var materialFound = (loadedMaterialsIds.indexOf(parsedMesh.materialId) != -1);
+                        var materialFound:Bool = (loadedMaterialsIds.indexOf(parsedMesh.materialId) != -1);
 						
                         if (!materialFound && parsedData.multiMaterials != null) {
 							var pdmm:Array<Dynamic> = cast parsedData.multiMaterials;
@@ -181,7 +181,7 @@ import lime.utils.Int32Array;
                             }
                         }
 						
-                        if (!materialFound) {
+                        if (materialFound == false) {
                             loadedMaterialsIds.push(parsedMesh.materialId);
                             parseMaterialById(cast parsedMesh.materialId, parsedData, scene, rootUrl);
                         }

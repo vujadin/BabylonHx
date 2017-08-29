@@ -1483,9 +1483,96 @@ typedef SMD = StandardMaterialDefines
 	}
 
 	// Statics
-	public static function Parse(source:Dynamic, scene:Scene, rootUrl:String):StandardMaterial {
+	/*public static function Parse(source:Dynamic, scene:Scene, rootUrl:String):StandardMaterial {
 		return SerializationHelper.Parse(function() { return new StandardMaterial(source.name, scene); }, source, scene, rootUrl);
-	}
+	}*/
+	
+	public static function Parse(source:Dynamic, scene:Scene, rootUrl:String):StandardMaterial {
+        var material:StandardMaterial = new StandardMaterial(source.name, scene);
+		
+        material.ambientColor = Color3.FromArray(source.ambient);
+        material.diffuseColor = Color3.FromArray(source.diffuse);
+        material.specularColor = Color3.FromArray(source.specular);
+        material.specularPower = source.specularPower;
+        material.emissiveColor = Color3.FromArray(source.emissive);
+		material.useReflectionFresnelFromSpecular = source.useReflectionFresnelFromSpecular;
+        material.useEmissiveAsIllumination = source.useEmissiveAsIllumination;
+		material.indexOfRefraction = source.indexOfRefraction;
+        material.invertRefractionY = source.invertRefractionY;
+		material.useSpecularOverAlpha = source.useSpecularOverAlpha;
+		material.useReflectionOverAlpha = source.useReflectionOverAlpha;
+		
+        material.alpha = source.alpha;
+		
+        material.id = source.id;
+		
+		if (source.disableDepthWrite != null) {
+            material.disableDepthWrite = source.disableDepthWrite;
+        }
+		
+        Tags.AddTagsTo(material, source.tags);
+        material.backFaceCulling = source.backFaceCulling;
+        material.wireframe = source.wireframe;
+		
+        if (source.diffuseTexture != null) {
+            material.diffuseTexture = Texture.Parse(source.diffuseTexture, scene, rootUrl);
+        }
+		
+        if (source.diffuseFresnelParameters != null) {
+            material.diffuseFresnelParameters = FresnelParameters.Parse(source.diffuseFresnelParameters);
+        }
+		
+        if (source.ambientTexture != null) {
+            material.ambientTexture = Texture.Parse(source.ambientTexture, scene, rootUrl);
+        }
+		
+        if (source.opacityTexture != null) {
+            material.opacityTexture = Texture.Parse(source.opacityTexture, scene, rootUrl);
+        }
+		
+        if (source.opacityFresnelParameters != null) {
+            material.opacityFresnelParameters = FresnelParameters.Parse(source.opacityFresnelParameters);
+        }
+		
+        if (source.reflectionTexture != null) {
+            material.reflectionTexture = Texture.Parse(source.reflectionTexture, scene, rootUrl);
+        }
+		
+        if (source.reflectionFresnelParameters != null) {
+            material.reflectionFresnelParameters = FresnelParameters.Parse(source.reflectionFresnelParameters);
+        }
+		
+        if (source.emissiveTexture != null) {
+            material.emissiveTexture = Texture.Parse(source.emissiveTexture, scene, rootUrl);
+        }
+		
+		if (source.lightmapTexture != null) {
+            material.lightmapTexture = Texture.Parse(source.lightmapTexture, scene, rootUrl);
+            untyped material.lightmapThreshold = source.lightmapThreshold;
+        }
+		
+        if (source.emissiveFresnelParameters != null) {
+            material.emissiveFresnelParameters = FresnelParameters.Parse(source.emissiveFresnelParameters);
+        }
+		
+        if (source.specularTexture != null) {
+            material.specularTexture = Texture.Parse(source.specularTexture, scene, rootUrl);
+        }
+		
+        if (source.bumpTexture != null) {
+            material.bumpTexture = Texture.Parse(source.bumpTexture, scene, rootUrl);
+        }
+		
+		if (source.refractionTexture != null) {
+			material.refractionTexture = Texture.Parse(source.refractionTexture, scene, rootUrl);
+		}
+		
+		if (source.checkReadyOnlyOnce != null) {
+            material.checkReadyOnlyOnce = source.checkReadyOnlyOnce;
+        }
+		
+        return material;
+    }
 
 	// Flags used to enable or disable a type of texture for all Standard Materials
 	static var _DiffuseTextureEnabled:Bool = true;

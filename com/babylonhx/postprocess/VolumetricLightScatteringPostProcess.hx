@@ -334,8 +334,8 @@ import com.babylonhx.tools.EventState;
 		};
 		
 		// Render target texture callbacks
-		var savedSceneClearColor:Color3 = new Color3(0.0, 0.0, 0.0);
-		var sceneClearColor:Color3 = new Color3(0.0, 0.0, 0.0);
+		var savedSceneClearColor:Color4 = new Color4(0.0, 0.0, 0.0, 0.0);
+		var sceneClearColor:Color4 = new Color4(0.0, 0.0, 0.0, 0.0);
 		
 		this._volumetricLightScatteringRTT.onBeforeRenderObservable.add(function(_, _) {
 			savedSceneClearColor = scene.clearColor;

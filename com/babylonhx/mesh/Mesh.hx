@@ -2701,7 +2701,7 @@ import lime.utils.Int32Array;
 		// Geometry
 		mesh.hasVertexAlpha = parsedMesh.hasVertexAlpha;
 		
-		if (parsedMesh.delayLoadingFile) {
+		if (parsedMesh.delayLoadingFile != null) {
 			mesh.delayLoadState = Engine.DELAYLOADSTATE_NOTLOADED;
 			mesh.delayLoadingFile = rootUrl + parsedMesh.delayLoadingFile;
 			mesh._boundingInfo = new BoundingInfo(Vector3.FromArray(parsedMesh.boundingBoxMinimum), Vector3.FromArray(parsedMesh.boundingBoxMaximum));
@@ -2758,7 +2758,7 @@ import lime.utils.Int32Array;
 		}
 		
 		// Material
-		if (parsedMesh.materialId != null) {
+		if (parsedMesh.materialId != null && parsedMesh.materialId != '') {
 			mesh.setMaterialByID(parsedMesh.materialId);
 		} 
 		else {

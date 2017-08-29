@@ -272,6 +272,7 @@ class HighlightLayer {
 		this._mainTexture.updateSamplingMode(Texture.BILINEAR_SAMPLINGMODE);
 		this._mainTexture.renderParticles = false;
 		this._mainTexture.renderList = null;
+		this._mainTexture.ignoreCameraViewport = true;
 		
 		this._blurTexture = new RenderTargetTexture("HighlightLayerBlurRTT",
 			{
@@ -287,6 +288,7 @@ class HighlightLayer {
 		this._blurTexture.anisotropicFilteringLevel = 16;
 		this._blurTexture.updateSamplingMode(Texture.TRILINEAR_SAMPLINGMODE);
 		this._blurTexture.renderParticles = false;
+		this._blurTexture.ignoreCameraViewport = true;
 		
 		this._downSamplePostprocess = new PassPostProcess("HighlightLayerPPP", this._options.blurTextureSizeRatio, 
 			null, Texture.BILINEAR_SAMPLINGMODE, this._scene.getEngine());
@@ -326,7 +328,7 @@ class HighlightLayer {
 			
 			this._scene.postProcessManager.directRender(
 				[this._downSamplePostprocess, this._horizontalBlurPostprocess, this._verticalBlurPostprocess], 
-				this._blurTexture.getInternalTexture()
+				this._blurTexture.getInternalTexture(), true
 			);
 			
 			this.onAfterBlurObservable.notifyObservers(this);

@@ -675,7 +675,8 @@ import openfl.display.OpenGLView;
 	}
 	
 	private function _rebuildInternalTextures() {
-        for (internalTexture in this._internalTexturesCache) {
+		var currentState = this._internalTexturesCache.copy(); // Do a copy because the rebuild will add proxies
+        for (internalTexture in currentState) {
             internalTexture._rebuild();
         }
     }
@@ -2410,11 +2411,14 @@ import openfl.display.OpenGLView;
 		var isDDS = this.getCaps().s3tc != null && (extension == ".dds");
 		var isTGA = (extension == ".tga");
 		
-		scene._addPendingData(texture);
+		if (scene != null) {
+			scene._addPendingData(texture);
+		}
 		texture.url = url;
 		texture.generateMipMaps = !noMipmap;
 		texture.samplingMode = samplingMode;
 		texture.invertY = invertY;
+		texture._buffer = buffer;
 		
 		if (onLoad != null) {
 			texture.onLoadedObservable.add(cast onLoad);
@@ -2424,7 +2428,9 @@ import openfl.display.OpenGLView;
 		}
 		
 		var onerror = function(e:Dynamic) {
-			scene._removePendingData(texture);
+			if (scene != null) {
+				scene._removePendingData(texture);
+			}
 			
 			if (onError != null) {
 				onError();
@@ -2790,7 +2796,9 @@ import openfl.display.OpenGLView;
 		this._bindTextureDirectly(gl.TEXTURE_2D, null);
 		
 		this.resetTextureCache();
-		scene._removePendingData(texture);
+		if (scene != null) {
+			scene._removePendingData(texture);
+		}
 		
 		texture.onLoadedObservable.notifyObservers(texture);
         texture.onLoadedObservable.clear();
@@ -3391,12 +3399,24 @@ import openfl.display.OpenGLView;
 		return texture;
 	}
 	
-	public function createPrefilteredCubeTexture(rootUrl:String, scene:Scene, scale:Float, offset:Float, onLoad:Void->Void, onError:Void->Void = null, ?format:Int, forcedExtension:String = null):InternalTexture {
+	public function createPrefilteredCubeTexture(rootUrl:String, scene:Scene, scale:Float, offset:Float, onLoad:InternalTexture->Void, onError:Void->Void = null, ?format:Int, forcedExtension:String = null):InternalTexture {
 		var callback = function(loadData:Dynamic) {
-			if (this._caps.textureLOD || loadData == null) {
+			if (loadData == null) {
+				if (onLoad != null) {
+					onLoad(null);
+				}
+				return;
+			}
+			
+			var texture:InternalTexture = cast loadData.texture;
+			texture._dataSource = InternalTexture.DATASOURCE_CUBEPREFILTERED;
+			texture._lodGenerationScale = scale;
+			texture._lodGenerationOffset = offset;
+			
+			if (this._caps.textureLOD) {
 				// Do not add extra process if texture lod is supported.
 				if (onLoad != null) {
-					onLoad();
+					onLoad(texture);
 				}
 				return;
 			}
@@ -3421,7 +3441,7 @@ import openfl.display.OpenGLView;
 				var lodIndex = minLODIndex + (maxLODIndex - minLODIndex) * roughness;
 				var mipmapIndex = Math.round(Math.min(Math.max(lodIndex, 0), maxLODIndex));
 				
-				var glTextureFromLod = new InternalTexture(this, InternalTexture.DATASOURCE_CUBELOD);
+				var glTextureFromLod = new InternalTexture(this, InternalTexture.DATASOURCE_TEMP);
 				glTextureFromLod.isCube = true;
 				this._bindTextureDirectly(gl.TEXTURE_CUBE_MAP, glTextureFromLod);
 				
@@ -3450,12 +3470,12 @@ import openfl.display.OpenGLView;
 				textures.push(lodTexture);
 			}
 			
-			cast(loadData.texture, InternalTexture)._lodTextureHigh = textures[2];
-			cast(loadData.texture, InternalTexture)._lodTextureMid = textures[1];
-			cast(loadData.texture, InternalTexture)._lodTextureLow = textures[0];
+			texture._lodTextureHigh = textures[2];
+			texture._lodTextureMid = textures[1];
+			texture._lodTextureLow = textures[0];
 			
 			if (onLoad != null) {
-				onLoad();
+				onLoad(texture);
 			}
 		};
 		
@@ -3467,6 +3487,8 @@ import openfl.display.OpenGLView;
 		texture.isCube = true;
 		texture.url = rootUrl;
 		texture.generateMipMaps = !noMipmap;
+		texture._extension = forcedExtension;
+		texture._files = files;
 		
 		var lastDot = rootUrl.lastIndexOf('.');
 		var extension = forcedExtension != null ? forcedExtension : rootUrl.substring(lastDot).toLowerCase();
@@ -3538,6 +3560,7 @@ import openfl.display.OpenGLView;
 				texture.width = width;
 				texture.height = height;
 				texture.isReady = true;
+				texture.format = format;
 				
 				texture.onLoadedObservable.notifyObservers(texture);
                 texture.onLoadedObservable.clear();
@@ -3831,9 +3854,9 @@ import openfl.display.OpenGLView;
 			value = 1;
 		}
 		
-		if (anisotropicFilterExtension != null && texture._cachedAnisotropicFilteringLevel != value) {
+		if (anisotropicFilterExtension != null && internalTexture._cachedAnisotropicFilteringLevel != value) {
 			gl.texParameterf(key, anisotropicFilterExtension.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(texture.anisotropicFilteringLevel, this._caps.maxAnisotropy));
-			texture._cachedAnisotropicFilteringLevel = value;
+			internalTexture._cachedAnisotropicFilteringLevel = value;
 		}
 	}
 

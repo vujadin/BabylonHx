@@ -150,15 +150,15 @@ using StringTools;
 					this._loadFragmentShader(fragmentSource, function(fragmentCode:String) {
 						this._processIncludes(fragmentCode, function(fragmentCodeWithIncludes:String) {
 							this._processShaderConversion(fragmentCodeWithIncludes, true, function(migratedFragmentCode:String) {
-								if (baseName != null) {
+								//if (baseName != null) {
 									// not needed for BHX !...
-									this._vertexSourceCode = "#define SHADER_NAME vertex:" + baseName + "\n" + migratedVertexCode;
-									this._fragmentSourceCode = "#define SHADER_NAME fragment:" + baseName + "\n" + migratedFragmentCode;
-								}
-								else {
+									//this._vertexSourceCode = "#define SHADER_NAME vertex:" + baseName + "\n" + migratedVertexCode;
+									//this._fragmentSourceCode = "#define SHADER_NAME fragment:" + baseName + "\n" + migratedFragmentCode;
+								//}
+								//else {
 									this._vertexSourceCode = migratedVertexCode;
 									this._fragmentSourceCode = migratedFragmentCode;
-								}
+								//}
 								this._prepareEffect();
 							});
 						});
@@ -319,7 +319,7 @@ using StringTools;
 	
 	private function _dumpShadersSource(vertexCode:String, fragmentCode:String, defines:String) {
 		// VK TODO:
-		/*// Rebuild shaders source code
+		// Rebuild shaders source code
 		var shaderVersion = (this._engine.webGLVersion > 1) ? "#version 300 es\n" : "";
 		var prefix = shaderVersion + (defines != null ? defines + "\n" : "");
 		vertexCode = prefix + vertexCode;
@@ -328,23 +328,23 @@ using StringTools;
 		// Number lines of shaders source code
 		var i = 2;
 		var regex:EReg = ~/\n/gm;
-		var formattedVertexCode = "\n1\t" + regex. vertexCode.replace(regex, function() { return "\n" + (i++) + "\t"; });
+		var formattedVertexCode = vertexCode;// "\n1\t" + regex. vertexCode.replace(regex, function() { return "\n" + (i++) + "\t"; });
 		i = 2;
-		var formattedFragmentCode = "\n1\t" + fragmentCode.replace(regex, function() { return "\n" + (i++) + "\t"; });
+		var formattedFragmentCode = fragmentCode;// "\n1\t" + fragmentCode.replace(regex, function() { return "\n" + (i++) + "\t"; });
 		
 		// Dump shaders name and formatted source code
-		if (this.name.vertexElement) {
+		if (this.name.vertexElement != null) {
 			Tools.Error("Vertex shader: " + this.name.vertexElement + formattedVertexCode);
 			Tools.Error("Fragment shader: " + this.name.fragmentElement + formattedFragmentCode);
 		}
-		else if (this.name.vertex) {
+		else if (this.name.vertex != null) {
 			Tools.Error("Vertex shader: " + this.name.vertex + formattedVertexCode);
 			Tools.Error("Fragment shader: " + this.name.fragment + formattedFragmentCode);
 		}
 		else {
 			Tools.Error("Vertex shader: " + this.name + formattedVertexCode);
 			Tools.Error("Fragment shader: " + this.name + formattedFragmentCode);
-		}*/
+		}
 	}
 
 	private function _processShaderConversion(sourceCode:String, isFragment:Bool, callback:Dynamic->Void) {
@@ -587,8 +587,9 @@ using StringTools;
 			else {
                 trace("Unable to compile effect: " + this.name);
                 trace("Defines: " + defines);
-				#if (js || purejs || web || html5)
+				#if js
                 trace("Error: " + e);
+				trace(_vertexSourceCode);
 				#else
 				trace("Error #: " + GL.getError());
 				trace("Error: " + e);

@@ -96,6 +96,25 @@ import lime.utils.Int32Array;
 		
 		var engine = scene.getEngine();
 		
+		this._rebuild();
+		
+		// Effects
+		this._effect = engine.createEffect("layer",
+			["position"],
+			["textureMatrix", "color", "scale", "offset"],
+			["textureSampler"], "");
+			
+		this._alphaTestEffect = engine.createEffect("layer",
+			["position"],
+			["textureMatrix", "color", "scale", "offset"],
+			["textureSampler"], "#define ALPHATEST");
+			
+		this._rebuild();		
+	}
+	
+	public function _rebuild() {
+		var engine = this._scene.getEngine();
+		
 		// VBO
 		var vertices:Array<Float> = [];
 		vertices.push(1);
@@ -121,17 +140,6 @@ import lime.utils.Int32Array;
 		indices.push(3);
 		
 		this._indexBuffer = engine.createIndexBuffer(new Int32Array(indices));
-		
-		// Effects
-		this._effect = engine.createEffect("layer",
-			["position"],
-			["textureMatrix", "color", "scale", "offset"],
-			["textureSampler"], "");
-			
-		this._alphaTestEffect = engine.createEffect("layer",
-			["position"],
-			["textureMatrix", "color", "scale", "offset"],
-			["textureSampler"], "#define ALPHATEST");
 	}
 
 	public function render() {

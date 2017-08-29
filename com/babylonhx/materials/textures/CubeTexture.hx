@@ -31,7 +31,7 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	}
 
 	
-	public function new(rootUrl:String, scene:Scene, ?extensions:Array<String>, noMipmap:Bool = false, ?files:Array<String>, onLoad:Void->Void = null, onError:Void->Void = null, format:Int = Engine.TEXTUREFORMAT_RGBA, prefiltered:Bool = false, forcedExtension = null) {
+	public function new(rootUrl:String, scene:Scene, ?extensions:Array<String>, noMipmap:Bool = false, ?files:Array<String>, onLoad:InternalTexture->Void = null, onError:Void->Void = null, format:Int = Engine.TEXTUREFORMAT_RGBA, prefiltered:Bool = false, forcedExtension = null) {
 		super(scene);
 		
 		this.coordinatesMode = Texture.CUBIC_MODE;
