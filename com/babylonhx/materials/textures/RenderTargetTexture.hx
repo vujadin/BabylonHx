@@ -19,14 +19,6 @@ import com.babylonhx.postprocess.PostProcessManager;
  * @author Krtolica Vujadin
  */
 
-typedef RenderTargetOptions = {
-	generateMipMaps:Bool,
-    type:Int,
-    samplingMode:Int,
-    generateDepthBuffer:Bool,
-    generateStencilBuffer:Bool
-}
-
 @:expose('BABYLON.RenderTargetTexture') class RenderTargetTexture extends Texture {
 	
 	public static inline var REFRESHRATE_RENDER_ONCE:Int = 0;
@@ -133,9 +125,9 @@ typedef RenderTargetOptions = {
 	private var _refreshRate:Int = 1;
 	private var _textureMatrix:Matrix;
 	private var _samples:Int = 1;
-	private var _renderTargetOptions:RenderTargetOptions;
-	public var renderTargetOptions(get, never):RenderTargetOptions;
-	inline private function get_renderTargetOptions():RenderTargetOptions {
+	private var _renderTargetOptions:RenderTargetCreationOptions;
+	public var renderTargetOptions(get, never):RenderTargetCreationOptions;
+	inline private function get_renderTargetOptions():RenderTargetCreationOptions {
 		return this._renderTargetOptions;
 	}
 
@@ -170,13 +162,12 @@ typedef RenderTargetOptions = {
 			return;
 		}
 		
-		this._renderTargetOptions = {
-			generateMipMaps: generateMipMaps,
-			type: type,
-			samplingMode: samplingMode,
-			generateDepthBuffer: generateDepthBuffer,
-			generateStencilBuffer: generateStencilBuffer
-		};
+		this._renderTargetOptions = new RenderTargetCreationOptions();
+		this._renderTargetOptions.generateMipMaps = generateMipMaps;
+		this._renderTargetOptions.type = type;
+		this._renderTargetOptions.samplingMode = samplingMode;
+		this._renderTargetOptions.generateDepthBuffer = generateDepthBuffer;
+		this._renderTargetOptions.generateStencilBuffer = generateStencilBuffer;
 		
 		if (samplingMode == Texture.NEAREST_SAMPLINGMODE) {
             this.wrapU = Texture.CLAMP_ADDRESSMODE;
@@ -280,14 +271,6 @@ typedef RenderTargetOptions = {
 		return false;
 	}
 	
-	override public function isReady():Bool {
-		if (!this.getScene().renderTargetsEnabled) {
-			return false;
-		}
-		
-		return super.isReady();
-	}
-
 	public function getRenderSize():Dynamic {
 		return this._size;
 	}

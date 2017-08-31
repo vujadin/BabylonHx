@@ -217,7 +217,7 @@ import com.babylonhx.tools.Tools;
 	}
 
 	public static function FromArray(array:Array<Float>, offset:Int = 0):Color4 {
-		return new Color4(array[offset], array[offset + 1], array[offset + 2], array[offset + 3]);
+		return new Color4(array[offset], array[offset + 1], array[offset + 2], array.length == 4 ? array[offset + 3] : 1.0);
 	}
 
 	public static function FromInts(r:Float, g:Float, b:Float, a:Float):Color4 {

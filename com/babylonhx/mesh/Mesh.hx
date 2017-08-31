@@ -88,35 +88,7 @@ import lime.utils.Int32Array;
 	
 	// Events 
 
-	/**
-	 * An event triggered before rendering the mesh
-	 * @type {BABYLON.Observable}
-	 */
-	public var onBeforeRenderObservable:Observable<Mesh> = new Observable<Mesh>();
-
-	/**
-	* An event triggered after rendering the mesh
-	* @type {BABYLON.Observable}
-	*/
-	public var onAfterRenderObservable:Observable<Mesh> = new Observable<Mesh>();
-
-	/**
-	* An event triggered before drawing the mesh
-	* @type {BABYLON.Observable}
-	*/
-	public var onBeforeDrawObservable:Observable<Mesh> = new Observable<Mesh>();
-
-	private var _onBeforeDrawObserver:Observer<Mesh>;
-	public var onBeforeDraw(never, set):Mesh->Null<EventState>->Void;
-	private function set_onBeforeDraw(callback:Mesh->Null<EventState>->Void):Mesh->Null<EventState>->Void {
-		if (this._onBeforeDrawObserver != null) {
-			this.onBeforeDrawObservable.remove(this._onBeforeDrawObserver);
-		}
-		
-		this._onBeforeDrawObserver = this.onBeforeDrawObservable.add(callback);
-		
-		return callback;
-	}
+	// BHX: observables moved to AbstractMesh as InstancedMesh inherits it
 	
 	// Members
 	public var delayLoadState:Int = Engine.DELAYLOADSTATE_NONE;
@@ -155,7 +127,7 @@ import lime.utils.Int32Array;
 	private var _instancesData:Float32Array;
 	private var _overridenInstanceCount:Int;
 	
-	public var _shouldGenerateFlatShading:Bool;
+	public var _shouldGenerateFlatShading:Bool = false;
 	private var _preActivateId:Int;
 	private var _sideOrientation:Int = Mesh.DEFAULTSIDE;
 	private var _areNormalsFrozen:Bool = false; // Will be used by ribbons mainly
@@ -2609,11 +2581,13 @@ import lime.utils.Int32Array;
 		}
 		mesh.id = parsedMesh.id;
 		
-		/*if (Tags) {
+		if (parsedMesh.tags != null) {
 			Tags.AddTagsTo(mesh, parsedMesh.tags);
-		}*/
+		}
 		
-		mesh.position = Vector3.FromArray(parsedMesh.position);
+		if (parsedMesh.position != null) {
+			mesh.position = Vector3.FromArray(parsedMesh.position);
+		}
 		
 		if (parsedMesh.metadata != null) {
 			mesh.metadata = parsedMesh.metadata;
@@ -2626,7 +2600,9 @@ import lime.utils.Int32Array;
 			mesh.rotation = Vector3.FromArray(parsedMesh.rotation);
 		}
 		
-		mesh.scaling = Vector3.FromArray(parsedMesh.scaling);
+		if (parsedMesh.scaling != null) {
+			mesh.scaling = Vector3.FromArray(parsedMesh.scaling);
+		}
 		
 		if (parsedMesh.localMatrix != null) {
 			mesh.setPivotMatrix(Matrix.FromArray(parsedMesh.localMatrix));
@@ -2635,12 +2611,22 @@ import lime.utils.Int32Array;
 			mesh.setPivotMatrix(Matrix.FromArray(parsedMesh.pivotMatrix));
 		}
 		
-		mesh.setEnabled(parsedMesh.isEnabled);
-		mesh.isVisible = parsedMesh.isVisible;
-		mesh.infiniteDistance = parsedMesh.infiniteDistance;
+		if (parsedMesh.isEnabled != null) {
+			mesh.setEnabled(parsedMesh.isEnabled);
+		}
+		if (parsedMesh.isVisible != null) {
+			mesh.isVisible = parsedMesh.isVisible;
+		}
+		if (parsedMesh.infiniteDistance != null) {
+			mesh.infiniteDistance = parsedMesh.infiniteDistance;
+		}
 		
-		mesh.showBoundingBox = parsedMesh.showBoundingBox;
-		mesh.showSubMeshesBoundingBox = parsedMesh.showSubMeshesBoundingBox;
+		if (parsedMesh.showBoundingBox != null) {
+			mesh.showBoundingBox = parsedMesh.showBoundingBox;
+		}
+		if (parsedMesh.showSubMeshesBoundingBox != null) {
+			mesh.showSubMeshesBoundingBox = parsedMesh.showSubMeshesBoundingBox;
+		}
 		
 		if (parsedMesh.applyFog != null) {
 			mesh.applyFog = parsedMesh.applyFog;
@@ -2654,21 +2640,29 @@ import lime.utils.Int32Array;
 			mesh.alphaIndex = parsedMesh.alphaIndex;
 		}
 		
-		mesh.receiveShadows = parsedMesh.receiveShadows;
+		if (parsedMesh.receiveShadows != null) {
+			mesh.receiveShadows = parsedMesh.receiveShadows;
+		}
 		
-		mesh.billboardMode = parsedMesh.billboardMode;
+		if (parsedMesh.billboardMode != null) {
+			mesh.billboardMode = parsedMesh.billboardMode;
+		}
 		
 		if (parsedMesh.visibility != null) {
 			mesh.visibility = parsedMesh.visibility;
 		}
 		
-		mesh.checkCollisions = parsedMesh.checkCollisions;
+		if (parsedMesh.checkCollisions != null) {
+			mesh.checkCollisions = parsedMesh.checkCollisions;
+		}
 		
 		if (parsedMesh.isBlocker != null) {
 			mesh.isBlocker = parsedMesh.isBlocker;
 		}
 		
-		mesh._shouldGenerateFlatShading = parsedMesh.useFlatShading;
+		if (parsedMesh.useFlatShading != null) {
+			mesh._shouldGenerateFlatShading = parsedMesh.useFlatShading;
+		}
 		
 		// freezeWorldMatrix
 		if (parsedMesh.freezeWorldMatrix != null) {
@@ -2699,7 +2693,9 @@ import lime.utils.Int32Array;
 		}
 		
 		// Geometry
-		mesh.hasVertexAlpha = parsedMesh.hasVertexAlpha;
+		if (parsedMesh.hasVertexAlpha != null) {
+			mesh.hasVertexAlpha = parsedMesh.hasVertexAlpha;
+		}
 		
 		if (parsedMesh.delayLoadingFile != null) {
 			mesh.delayLoadState = Engine.DELAYLOADSTATE_NOTLOADED;
@@ -2758,7 +2754,7 @@ import lime.utils.Int32Array;
 		}
 		
 		// Material
-		if (parsedMesh.materialId != null && parsedMesh.materialId != '') {
+		if (parsedMesh.materialId != null) {
 			mesh.setMaterialByID(parsedMesh.materialId);
 		} 
 		else {
@@ -2816,11 +2812,13 @@ import lime.utils.Int32Array;
 				var parsedInstance = parsedMesh.instances[index];
 				var instance = mesh.createInstance(parsedInstance.name);
 				
-				/*if (Tags) {
+				if (parsedInstance.tags != null) {
 					Tags.AddTagsTo(instance, parsedInstance.tags);
-				}*/
+				}
 				
-				instance.position = Vector3.FromArray(parsedInstance.position);
+				if (parsedInstance.position != null) {
+					instance.position = Vector3.FromArray(parsedInstance.position);
+				}
 				
 				if (parsedInstance.parentId != null) {
 					instance._waitingParentId = parsedInstance.parentId;
@@ -2833,9 +2831,13 @@ import lime.utils.Int32Array;
 					instance.rotation = Vector3.FromArray(parsedInstance.rotation);
 				}
 				
-				instance.scaling = Vector3.FromArray(parsedInstance.scaling);
+				if (parsedInstance.scaling != null) {
+					instance.scaling = Vector3.FromArray(parsedInstance.scaling);
+				}
 				
-				instance.checkCollisions = mesh.checkCollisions;
+				if (parsedInstance.checkCollisions != null) {
+					instance.checkCollisions = mesh.checkCollisions;
+				}
 				
 				if (parsedMesh.animations != null) {
 					for (animationIndex in 0...parsedMesh.animations.length) {

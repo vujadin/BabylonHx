@@ -1078,7 +1078,9 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		
         var geometry = new Geometry(parsedVertexData.id, scene, null, parsedVertexData.updatable);
 		
-        Tags.AddTagsTo(geometry, parsedVertexData.tags);
+		if (parsedVertexData.tags != null) {
+			Tags.AddTagsTo(geometry, parsedVertexData.tags);
+		}
 		
         if (parsedVertexData.delayLoadingFile != null && parsedVertexData.delayLoadingFile != "") {
             geometry.delayLoadState = Engine.DELAYLOADSTATE_NOTLOADED;

@@ -18,7 +18,7 @@ class StereoscopicInterlacePostProcess extends PostProcess {
 	public function new(name:String, rigCameras:Array<Camera>, isStereoscopicHoriz:Bool, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
 		super(name, "stereoscopicInterlace", ['stepSize'], ['camASampler'], 1, rigCameras[1], samplingMode, engine, reusable, isStereoscopicHoriz ? "#define IS_STEREOSCOPIC_HORIZ 1" : "");
 		
-		this._passedProcess = rigCameras[0]._rigPostProcess;
+		this._passedProcess = rigCameras[0].rigPostProcess;
 		this._stepSize = new Vector2(1 / this.width, 1 / this.height);
 		
 		this.onSizeChangedObservable.add(function(_, _) {

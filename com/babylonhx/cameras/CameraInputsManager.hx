@@ -1,18 +1,20 @@
 package com.babylonhx.cameras;
 
 import com.babylonhx.tools.Tools;
+import com.babylonhx.tools.serialization.SerializationHelper;
 
 /**
  * ...
  * @author Krtolica Vujadin
  */
+ 
 class CameraInputsManager {
 
 	var attached:Map<String, ICameraInput>;
 	
 	public var noPreventDefault:Bool;
 	var camera:Camera;
-	var checkInputs:Void->Void = null;
+	var checkInputs:Void->Void;
 	
 
 	public function new(camera:Camera) {
@@ -48,8 +50,8 @@ class CameraInputsManager {
 		for (cam in this.attached.keys()) {
 			var input = this.attached[cam];
 			if (input == inputToRemove) {
-				input.detachControl(/*this.attachedElement*/);
-				this.attached[cam] = null;
+				input.detachControl();
+				input.camera = null;
 				this.attached.remove(cam);
 				this.rebuildInputCheck();
 			}
@@ -59,16 +61,16 @@ class CameraInputsManager {
 	public function removeByType(inputType:String) {
 		for (cam in this.attached.keys()) {
 			var input = this.attached[cam];
-			if (input.getTypeName() == inputType) {
-				input.detachControl(/*this.attachedElement*/);
-				this.attached[cam] = null;
+			if (input.getClassName() == inputType) {
+				input.detachControl();
+				input.camera = null;
 				this.attached.remove(cam);
 				this.rebuildInputCheck();
 			}
 		}
 	}
 
-	private function _addCheckInputs(fn:Void->Void) {
+	private function _addCheckInputs(fn:Void->Void):Void->Void {
 		var current = this.checkInputs;
 		return function() {
 			current();
@@ -129,14 +131,14 @@ class CameraInputsManager {
 	}
 
 	public function serialize(serializedCamera:Dynamic) {
-		var inputs:Dynamic = { };
+		/*var inputs:Dynamic = { };
 		for (cam in this.attached.keys()) {
 			var input = this.attached[cam];
 			var res = SerializationHelper.Serialize(input);
 			Reflect.setField(inputs, input.getTypeName(), res);
 		}
 		
-		serializedCamera.inputsmgr = inputs;
+		serializedCamera.inputsmgr = inputs;*/
 	}
 
 	/*public function parse(parsedCamera:Dynamic) {

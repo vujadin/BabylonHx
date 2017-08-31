@@ -25,7 +25,7 @@ import com.babylonhx.math.Vector3;
 		this.angularSensibility = 200000.0;
 	}
 
-	override public function attachControl(?canvas:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true, enableKeyboard:Bool = true) {
+	override public function attachControl(useCtrlForPanning:Bool = true, enableKeyboard:Bool = true) {
 		var previousPosition:Dynamic = null;// { x: 0, y: 0 };
 		
 		if (this._onPointerDown == null) {
@@ -85,7 +85,7 @@ import com.babylonhx.math.Vector3;
 		this.getScene().getEngine().touchMove.push(this._onPointerMove);
 	}
 
-	override public function detachControl(?canvas:Dynamic) {
+	override public function detachControl() {
 		this.getScene().getEngine().touchDown.remove(this._onPointerDown);
 		this.getScene().getEngine().touchUp.remove(this._onPointerUp);
 		this.getScene().getEngine().touchMove.remove(this._onPointerMove);

@@ -239,7 +239,7 @@ import com.babylonhx.tools.Observable;
 	}
 
 	// Methods
-	override public function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true, enableKeyboard:Bool = true) {
+	override public function attachControl(useCtrlForPanning:Bool = true, enableKeyboard:Bool = true) {
 		#if purejs
 		var cacheSoloPointer:Dynamic; // cache pointer object for better perf on camera rotation
 		var previousPinchDistance:Float = 0.0;
@@ -248,11 +248,6 @@ import com.babylonhx.tools.Observable;
 		var previousPosition:Dynamic = null;
 		var pointerId:Int = -1;
 		#end
-		
-		if (this._attachedElement != null) {
-			return;
-		}
-		this._attachedElement = element;
 		
 		var engine = this.getEngine();
 		
@@ -515,11 +510,7 @@ import com.babylonhx.tools.Observable;
 		#end
 	}
 	
-	override public function detachControl(?element:Dynamic) {
-		if (this._attachedElement != element) {
-			return;
-		}
-		
+	override public function detachControl() {
 		#if purejs
 		var canvas = this.getScene().getEngine().getRenderingCanvas();
 		canvas.removeEventListener("contextmenu", this._onContextMenu, false);

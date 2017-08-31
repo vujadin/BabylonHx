@@ -3,8 +3,9 @@ package com.babylonhx.materials.textures;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.math.SphericalPolynomial;
-import lime.utils.ArrayBuffer;
 
+import lime.utils.ArrayBuffer;
+import lime.utils.ArrayBufferView;
 import lime.graphics.opengl.GLTexture;
 import lime.graphics.opengl.GLFramebuffer;
 import lime.graphics.opengl.GLRenderbuffer;
@@ -44,6 +45,7 @@ class InternalTexture implements ISmartArrayCompatible {
 	// Private
 	public var _dataSource:Int = InternalTexture.DATASOURCE_UNKNOWN;
 	public var _buffer:ArrayBuffer;
+	public var _bufferView:ArrayBufferView;
 	public var _size:Int = -1;
 	public var _extension:String;
 	public var _files:Array<String>;
@@ -58,6 +60,7 @@ class InternalTexture implements ISmartArrayCompatible {
 	public var _cachedWrapV:Int = -1;
 	public var _cachedAnisotropicFilteringLevel:Int = -1;
 	public var _isDisabled:Bool;
+	public var _compression:String;
 	public var _generateStencilBuffer:Bool;
 	public var _generateDepthBuffer:Bool;
 	public var _sphericalPolynomial:SphericalPolynomial;
@@ -124,13 +127,44 @@ class InternalTexture implements ISmartArrayCompatible {
 				proxy._swapAndDie(this);
 				return;
 				
+			case InternalTexture.DATASOURCE_RAW:
+                proxy = this._engine.createRawTexture(this._bufferView, this.baseWidth, this.baseHeight, this.format, this.generateMipMaps, 
+                    this.invertY, this.samplingMode, this._compression); 
+                proxy._swapAndDie(this);
+				this.isReady = true;
+				return;
+				
 			case InternalTexture.DATASOURCE_DYNAMIC:
 				proxy = this._engine.createDynamicTexture(this.baseWidth, this.baseHeight, this.generateMipMaps, this.samplingMode); 
 				proxy._swapAndDie(this);
 				
 				// The engine will make sure to update content so no need to flag it as isReady = true
-			return;
-			
+				return;
+				
+			case InternalTexture.DATASOURCE_RENDERTARGET:
+				var options:RenderTargetCreationOptions = new RenderTargetCreationOptions();
+				options.generateDepthBuffer = this._generateDepthBuffer;
+				options.generateMipMaps = this.generateMipMaps;
+				options.generateStencilBuffer = this._generateStencilBuffer;
+				options.samplingMode = this.samplingMode;
+				options.type = this.type;
+				
+				if (this.isCube) {
+					proxy = this._engine.createRenderTargetCubeTexture(this.width, options); 
+				} 
+				else {
+					var size = {
+						width: this.width,
+						height: this.height
+					}
+					
+					proxy = this._engine.createRenderTargetTexture(size, options); 
+				}
+				proxy._swapAndDie(this);
+				
+				this.isReady = true;
+                return;
+				
 			case InternalTexture.DATASOURCE_CUBE:
 				proxy = this._engine.createCubeTexture(this.url, null, this._files, !this.generateMipMaps, function() {
 					this.isReady = true;
@@ -151,15 +185,32 @@ class InternalTexture implements ISmartArrayCompatible {
 	private function _swapAndDie(target:InternalTexture) {
 		target._webGLTexture = this._webGLTexture;
 		
+		if (this._framebuffer != null) {
+			target._framebuffer = this._framebuffer;
+		}
+		
+		if (this._depthStencilBuffer != null) {
+			target._depthStencilBuffer = this._depthStencilBuffer;
+		}
+		
 		if (this._lodTextureHigh != null) {
+			if (target._lodTextureHigh != null) {
+                target._lodTextureHigh.dispose();
+            }
 			target._lodTextureHigh = this._lodTextureHigh;
 		}
 		
 		if (this._lodTextureMid != null) {
+			if (target._lodTextureMid != null) {
+                target._lodTextureMid.dispose();
+            }  
 			target._lodTextureMid = this._lodTextureMid;
 		}
 		
 		if (this._lodTextureLow != null) {
+			if (target._lodTextureLow != null) {
+                target._lodTextureLow.dispose();
+            }
 			target._lodTextureLow = this._lodTextureLow;
 		}
 		

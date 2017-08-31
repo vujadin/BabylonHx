@@ -19,7 +19,11 @@ import com.babylonhx.tools.Tools;
     private var _meshRank:Int;
 	
 	
-	public function new() {	}	
+	public function new() {	}
+	
+	public function unBindMesh() {
+        this._mesh = null;
+    }
 
 	public function addFallback(rank:Int, define:String):Void {
 		if (this._defines[rank] == null) {

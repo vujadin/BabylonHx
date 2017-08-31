@@ -222,7 +222,7 @@ import com.babylonhx.math.Quaternion;
 		super._checkInputs();
 	}
 	
-	private function _updateCameraRotationMatrix() {
+	override private function _updateCameraRotationMatrix() {
 		if (this.rotationQuaternion != null) {
 			this.rotationQuaternion.toRotationMatrix(this._cameraRotationMatrix);
 			//update the up vector!

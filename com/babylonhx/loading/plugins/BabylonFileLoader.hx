@@ -7,6 +7,8 @@ import com.babylonhx.actions.ValueCondition;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.bones.Bone;
 import com.babylonhx.bones.Skeleton;
+//import com.babylonhx.cameras.AnaglyphArcRotateCamera;
+import com.babylonhx.cameras.AnaglyphFreeCamera;
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.cameras.FollowCamera;
@@ -158,9 +160,9 @@ import lime.utils.Int32Array;
 					
                     // Material ?
                     if (Reflect.hasField(parsedMesh, "materialId")) {
-                        var materialFound:Bool = (loadedMaterialsIds.indexOf(parsedMesh.materialId) != -1);
+                        var materialFound = (loadedMaterialsIds.indexOf(parsedMesh.materialId) != -1);
 						
-                        if (!materialFound && parsedData.multiMaterials != null) {
+                        if (!materialFound && parsedData.multiMaterials != null && parsedData.multiMaterials.length > 0) {
 							var pdmm:Array<Dynamic> = cast parsedData.multiMaterials;
                             for (multimatIndex in 0...pdmm.length) {
                                 var parsedMultiMaterial = pdmm[multimatIndex];
@@ -181,7 +183,7 @@ import lime.utils.Int32Array;
                             }
                         }
 						
-                        if (materialFound == false) {
+                        if (!materialFound) {
                             loadedMaterialsIds.push(parsedMesh.materialId);
                             parseMaterialById(cast parsedMesh.materialId, parsedData, scene, rootUrl);
                         }
@@ -571,7 +573,7 @@ import lime.utils.Int32Array;
         }
 	};
 
-	private static function checkColors4(colors:Array<Float>, count:Int):Array<Float> {
+	private static function checkColors4(colors:Array<Float>, count:Int):Float32Array {
         // Check if color3 was used
         if (colors.length == count * 3) {
             var colors4:Array<Float> = [];
@@ -586,10 +588,10 @@ import lime.utils.Int32Array;
 				index += 3;
             }
 			
-            return colors4;
+            return new Float32Array(colors4);
         } 
 		
-        return colors;
+        return new Float32Array(colors);
     }
 
     public static function parseMaterialById(id:String, parsedData:Dynamic, scene:Scene, rootUrl:String):Material {
@@ -723,7 +725,7 @@ import lime.utils.Int32Array;
             }
 			
             if (parsedGeometry.colors != null) {
-                mesh.setVerticesData(VertexBuffer.ColorKind, new Float32Array(checkColors4(parsedGeometry.colors, Std.int(parsedGeometry.positions.length / 3))), false);
+                mesh.setVerticesData(VertexBuffer.ColorKind, checkColors4(parsedGeometry.colors, Std.int(parsedGeometry.positions.length / 3)), false);
             }
 			
             if (parsedGeometry.matricesIndices != null) {

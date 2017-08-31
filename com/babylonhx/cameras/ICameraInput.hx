@@ -10,6 +10,6 @@ interface ICameraInput {
 	function getSimpleName():String;
 	function attachControl():Void;
 	function detachControl():Void;	
-	var checkInputs:Null<Void->Void>;
+	var checkInputs:Void->Void;
   
 }

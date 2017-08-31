@@ -17,7 +17,9 @@ import com.babylonhx.collisions.PickingInfo;
 typedef PointerEvent = {
 	x:Int,
 	y:Int,
-	button:Null<Int>
+	button:Null<Int>,
+	/*pointerId:Null<Int>,
+	pointerType:Null<Int>*/
 }
 
 class PointerInfo {

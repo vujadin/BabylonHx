@@ -112,6 +112,39 @@ import lime.utils.UInt16Array;
 	}
 
 	// Events
+	
+	
+	// BHX: moved from Mesh - (START)
+	/**
+	 * An event triggered before rendering the mesh
+	 * @type {BABYLON.Observable}
+	 */
+	public var onBeforeRenderObservable:Observable<Mesh> = new Observable<Mesh>();
+
+	/**
+	* An event triggered after rendering the mesh
+	* @type {BABYLON.Observable}
+	*/
+	public var onAfterRenderObservable:Observable<Mesh> = new Observable<Mesh>();
+
+	/**
+	* An event triggered before drawing the mesh
+	* @type {BABYLON.Observable}
+	*/
+	public var onBeforeDrawObservable:Observable<Mesh> = new Observable<Mesh>();
+
+	private var _onBeforeDrawObserver:Observer<Mesh>;
+	public var onBeforeDraw(never, set):Mesh->Null<EventState>->Void;
+	private function set_onBeforeDraw(callback:Mesh->Null<EventState>->Void):Mesh->Null<EventState>->Void {
+		if (this._onBeforeDrawObserver != null) {
+			this.onBeforeDrawObservable.remove(this._onBeforeDrawObserver);
+		}
+		
+		this._onBeforeDrawObserver = this.onBeforeDrawObservable.add(callback);
+		
+		return callback;
+	}
+	// BHX: moved from mesh - (END)
 
 	/**
 	* An event triggered when this mesh collides with another one
@@ -537,6 +570,10 @@ import lime.utils.UInt16Array;
 	}
 	
 	public function _rebuild() {
+		if (this._occlusionQuery != null) {
+            this._occlusionQuery = null;
+        }
+		 
 		if (this.subMeshes == null) {
 			return;
 		}
@@ -1929,6 +1966,7 @@ import lime.utils.UInt16Array;
 		// Query
         var engine = this.getScene().getEngine();
         if (this._occlusionQuery != null) {
+			this._isOcclusionQueryInProgress = false;
             engine.deleteQuery(this._occlusionQuery);
             this._occlusionQuery = null;
         }

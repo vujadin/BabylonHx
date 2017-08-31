@@ -4,6 +4,7 @@ import com.babylonhx.materials.EffectCreationOptions;
 import com.babylonhx.materials.Material;
 import com.babylonhx.materials.UniformBuffer;
 import com.babylonhx.materials.textures.InternalTexture;
+import com.babylonhx.materials.textures.RenderTargetCreationOptions;
 import com.babylonhx.math.Scalar;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.states._AlphaState;
@@ -282,6 +283,12 @@ import openfl.display.OpenGLView;
     private var _deterministicLockstep:Bool = false;
     private var _lockstepMaxSteps:Int = 4;
 	
+	// Lost context
+	private var _onContextLost:Dynamic->Void;
+	private var _onContextRestored:Dynamic->Void;
+	private var _contextWasLost:Bool = false;
+	private var _doNotHandleContextLost:Bool = false;
+	
 	// FPS
 	public var fpsRange:Float = 60.0;
 	public var previousFramesDuration:Array<Float> = [];
@@ -447,7 +454,7 @@ import openfl.display.OpenGLView;
 		}
 		#end*/
 		
-		this._webGLVersion = #if !js 1.0 #else gl.version #end ;
+		this._webGLVersion = gl.version;// #if !js 1.0 #else gl.version #end ;
 		
 		#if openfl
 		this._workingContext = new OpenGLView();
@@ -2833,6 +2840,13 @@ import openfl.display.OpenGLView;
 		this._bindTextureDirectly(gl.TEXTURE_2D, texture);
 		//gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, invertY ? 1 : 0);
 		
+		if (!this._doNotHandleContextLost) {
+            texture._bufferView = data;
+            texture.format = format;
+            texture.invertY = invertY;
+            texture._compression = compression;
+        }
+		
 		if (texture.width % 4 != 0) {
 			gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 		}
@@ -2864,8 +2878,15 @@ import openfl.display.OpenGLView;
 		texture.baseHeight = height;
 		texture.width = width;
 		texture.height = height;
+		texture.format = format;
 		texture.generateMipMaps = generateMipMaps;
 		texture.samplingMode = samplingMode;
+		texture.invertY = invertY;
+		texture._compression = compression;
+		
+		if (!this._doNotHandleContextLost) {
+			texture._bufferView = data;
+		}
 		
 		this.updateRawTexture(texture, data, format, invertY, compression);
 		this._bindTextureDirectly(gl.TEXTURE_2D, texture);
@@ -2996,32 +3017,30 @@ import openfl.display.OpenGLView;
 	}
 
 	public function createRenderTargetTexture(size:Dynamic, options:Dynamic):InternalTexture {
-		// old version had a "generateMipMaps" arg instead of options.
-		// if options.generateMipMaps is undefined, consider that options itself if the generateMipmaps value
-		// in the same way, generateDepthBuffer is defaulted to true
-		var generateMipMaps = false;
-		var generateDepthBuffer = true;
-		var generateStencilBuffer = false;
+		var fullOptions:RenderTargetCreationOptions = new RenderTargetCreationOptions();
+		
+		if (options != null && !Std.is(options, Bool)) {
+			fullOptions.generateMipMaps = options.generateMipMaps;
+			fullOptions.generateDepthBuffer = options.generateDepthBuffer == null ? true : options.generateDepthBuffer;
+			fullOptions.generateStencilBuffer = fullOptions.generateDepthBuffer && options.generateStencilBuffer;
+			fullOptions.type = options.type == null ? Engine.TEXTURETYPE_UNSIGNED_INT : options.type;
+			fullOptions.samplingMode = options.samplingMode == null ? Texture.TRILINEAR_SAMPLINGMODE : options.samplingMode;
+		} 
+		else {
+			fullOptions.generateMipMaps = cast options;
+			fullOptions.generateDepthBuffer = true;
+			fullOptions.generateStencilBuffer = false;
+			fullOptions.type = Engine.TEXTURETYPE_UNSIGNED_INT;
+			fullOptions.samplingMode = Texture.TRILINEAR_SAMPLINGMODE;
+		}
 
-		var type = Engine.TEXTURETYPE_UNSIGNED_INT;
-		var samplingMode = Texture.TRILINEAR_SAMPLINGMODE;
-		if (options != null) {
-			generateMipMaps = options.generateMipMaps == null ? options : options.generateMipMaps;
-			generateDepthBuffer = options.generateDepthBuffer == null ? true : options.generateDepthBuffer;
-			generateStencilBuffer = generateDepthBuffer && options.generateStencilBuffer;
-			
-			type = options.type == null ? type : options.type;
-			if (options.samplingMode != null) {
-				samplingMode = options.samplingMode;
-			}
-			if (type == Engine.TEXTURETYPE_FLOAT && !this._caps.textureFloatLinearFiltering) {
-				// if floating point linear (gl.FLOAT) then force to NEAREST_SAMPLINGMODE
-				samplingMode = Texture.NEAREST_SAMPLINGMODE;
-			}
-			else if (type == Engine.TEXTURETYPE_HALF_FLOAT && !this._caps.textureHalfFloatLinearFiltering) {
-				// if floating point linear (HALF_FLOAT) then force to NEAREST_SAMPLINGMODE
-				samplingMode = Texture.NEAREST_SAMPLINGMODE;
-			}
+		if (fullOptions.type == Engine.TEXTURETYPE_FLOAT && !this._caps.textureFloatLinearFiltering) {
+			// if floating point linear (gl.FLOAT) then force to NEAREST_SAMPLINGMODE
+			fullOptions.samplingMode = Texture.NEAREST_SAMPLINGMODE;
+		}
+		else if (fullOptions.type == Engine.TEXTURETYPE_HALF_FLOAT && !this._caps.textureHalfFloatLinearFiltering) {
+			// if floating point linear (HALF_FLOAT) then force to NEAREST_SAMPLINGMODE
+			fullOptions.samplingMode = Texture.NEAREST_SAMPLINGMODE;
 		}
 		
 		var texture = new InternalTexture(this, InternalTexture.DATASOURCE_RENDERTARGET);
@@ -3030,10 +3049,10 @@ import openfl.display.OpenGLView;
 		var width = size.width != null ? size.width : size;
 		var height = size.height != null ? size.height : size;
 		
-		var filters = getSamplingParameters(gl, samplingMode, generateMipMaps);
+		var filters = getSamplingParameters(gl, fullOptions.samplingMode, fullOptions.generateMipMaps);
 		
-		if (type == Engine.TEXTURETYPE_FLOAT && !this._caps.textureFloat) {
-			type = Engine.TEXTURETYPE_UNSIGNED_INT;
+		if (fullOptions.type == Engine.TEXTURETYPE_FLOAT && !this._caps.textureFloat) {
+			fullOptions.type = Engine.TEXTURETYPE_UNSIGNED_INT;
 			Tools.Warn("Float textures are not supported. Render target forced to TEXTURETYPE_UNSIGNED_BYTE type");
 		}
 		
@@ -3042,16 +3061,16 @@ import openfl.display.OpenGLView;
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 		
-		gl.texImage2D(gl.TEXTURE_2D, 0, this._getRGBABufferInternalSizedFormat(type), width, height, 0, gl.RGBA, this._getWebGLTextureType(type), null);
+		gl.texImage2D(gl.TEXTURE_2D, 0, this._getRGBABufferInternalSizedFormat(fullOptions.type), width, height, 0, gl.RGBA, this._getWebGLTextureType(fullOptions.type), null);
 		
 		// Create the framebuffer
 		var framebuffer = gl.createFramebuffer();
 		this.bindUnboundFramebuffer(framebuffer);
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture._webGLTexture, 0);
 		
-		texture._depthStencilBuffer = this._setupFramebufferDepthAttachments(generateStencilBuffer, generateDepthBuffer, width, height);
+		texture._depthStencilBuffer = this._setupFramebufferDepthAttachments(fullOptions.generateStencilBuffer, fullOptions.generateDepthBuffer, width, height);
 		
-		if (generateMipMaps) {
+		if (fullOptions.generateMipMaps) {
 			gl.generateMipmap(gl.TEXTURE_2D);
 		}
 		
@@ -3067,11 +3086,11 @@ import openfl.display.OpenGLView;
 		texture.height = height;
 		texture.isReady = true;
 		texture.samples = 1;
-		texture.generateMipMaps = generateMipMaps;
-		texture.samplingMode = samplingMode;
-		texture.type = type;
-		texture._generateDepthBuffer = generateDepthBuffer;
-		texture._generateStencilBuffer = generateStencilBuffer;
+		texture.generateMipMaps = fullOptions.generateMipMaps;
+		texture.samplingMode = fullOptions.samplingMode;
+		texture.type = fullOptions.type;
+		texture._generateDepthBuffer = fullOptions.generateDepthBuffer;
+		texture._generateStencilBuffer = fullOptions.generateStencilBuffer;
 		
 		this.resetTextureCache();
 		
@@ -3334,7 +3353,7 @@ import openfl.display.OpenGLView;
         gl.compressedTexImage2D(target, lod, internalFormat, width, height, 0, data);
     }
 	
-	public function createRenderTargetCubeTexture(size:Dynamic, ?options:Dynamic):InternalTexture {
+	public function createRenderTargetCubeTexture(size:Dynamic, ?options:RenderTargetCreationOptions):InternalTexture {
 		var texture = new InternalTexture(this, InternalTexture.DATASOURCE_RENDERTARGET);
 		
 		var generateMipMaps:Bool = true;
@@ -3343,13 +3362,13 @@ import openfl.display.OpenGLView;
 		
 		var samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE;
 		if (options != null) {
-			generateMipMaps = options.generateMipMaps == null ? options : options.generateMipMaps;
-			generateDepthBuffer = options.generateDepthBuffer == null ? true : options.generateDepthBuffer;
+			generateMipMaps = /*options.generateMipMaps == null ? true : */options.generateMipMaps;
+			generateDepthBuffer = /*options.generateDepthBuffer == null ? true : */options.generateDepthBuffer;
 			generateStencilBuffer = options.generateStencilBuffer && generateDepthBuffer;
 			
-			if (options.samplingMode != null) {
+			//if (options.samplingMode != null) {
 				samplingMode = options.samplingMode;
-			}
+			//}
 		}
 		
 		texture.isCube = true;
@@ -4096,7 +4115,7 @@ import openfl.display.OpenGLView;
 	}
 	
 	public inline function deleteQuery(query:GLQuery) {
-		this.deleteQuery(query);
+		this.gl.deleteQuery(query);
 	}
 
 	public inline function isQueryResultAvailable(query:GLQuery):Bool {

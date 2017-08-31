@@ -561,6 +561,11 @@ using StringTools;
 			}
 			this.onCompileObservable.notifyObservers(this);
             this.onCompileObservable.clear();
+			
+			// Unbind mesh reference in fallbacks
+            if (this._fallbacks != null) {
+                this._fallbacks.unBindMesh();
+            }
         } 
 		catch (e:Dynamic) {
 			/*#if (js || purejs)
@@ -605,6 +610,11 @@ using StringTools;
 				}
 				this.onErrorObservable.notifyObservers(this);
 				this.onErrorObservable.clear();
+				
+				// Unbind mesh reference in fallbacks
+				if (this._fallbacks != null) {
+					this._fallbacks.unBindMesh();
+				}
             }
         }
     }

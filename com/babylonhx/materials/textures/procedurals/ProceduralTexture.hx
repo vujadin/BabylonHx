@@ -1,6 +1,7 @@
 package com.babylonhx.materials.textures.procedurals;
 
 import com.babylonhx.materials.Effect;
+import com.babylonhx.materials.textures.RenderTargetCreationOptions;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Matrix;
@@ -67,7 +68,9 @@ import lime.utils.Int32Array;
 		var engine = scene.getEngine();
 		
 		if (isCube) {
-			this._texture = engine.createRenderTargetCubeTexture(size, { generateMipMaps: generateMipMaps });
+			var rto = new RenderTargetCreationOptions();
+			rto.generateMipMaps = generateMipMaps;
+			this._texture = engine.createRenderTargetCubeTexture(size, rto);
 			this.setFloat("face", 0);
 		}
 		else {

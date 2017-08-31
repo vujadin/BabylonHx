@@ -2750,7 +2750,7 @@ import com.babylonhx.audio.*;
 				if (highlightLayer.shouldRender() &&
 					(highlightLayer.camera == null ||
 						(highlightLayer.camera.cameraRigMode == Camera.RIG_MODE_NONE && camera == highlightLayer.camera) ||
-						(highlightLayer.camera.cameraRigMode != Camera.RIG_MODE_NONE && highlightLayer.camera._rigCameras.indexOf(camera) > -1))) {
+						(highlightLayer.camera.cameraRigMode != Camera.RIG_MODE_NONE && highlightLayer.camera.rigCameras.indexOf(camera) > -1))) {
 					
 					renderhighlights = true;
 					
@@ -2876,8 +2876,8 @@ import com.babylonhx.audio.*;
 		}
 		
 		// rig cameras
-        for (index in 0...camera._rigCameras.length) {
-            this._renderForCamera(camera._rigCameras[index]);
+        for (index in 0...camera.rigCameras.length) {
+            this._renderForCamera(camera.rigCameras[index]);
         }
 		
 		this.activeCamera = camera;

@@ -488,8 +488,10 @@ import haxe.ds.Vector;
 		if (parsedSkeleton.dimensionsAtRest != null) {
 			skeleton.dimensionsAtRest = Vector3.FromArray(parsedSkeleton.dimensionsAtRest);
 		}
-			
-		skeleton.needInitialSkinMatrix = parsedSkeleton.needInitialSkinMatrix;
+		
+		if (parsedSkeleton.needInitialSkinMatrix != null) {
+			skeleton.needInitialSkinMatrix = parsedSkeleton.needInitialSkinMatrix;
+		}
 		
 		try {
 			for (index in 0...parsedSkeleton.bones.length) {
@@ -503,7 +505,7 @@ import haxe.ds.Vector;
 				var rest:Matrix = parsedBone.rest != null ? Matrix.FromArray(parsedBone.rest) : null;
 				var bone = new Bone(parsedBone.name, skeleton, parentBone, Matrix.FromArray(parsedBone.matrix), rest);
 				
-				if (parsedBone.length != 0) {
+				if (parsedBone != null && parsedBone.length != 0) {
 					bone.length = parsedBone.length;
 				}
 				

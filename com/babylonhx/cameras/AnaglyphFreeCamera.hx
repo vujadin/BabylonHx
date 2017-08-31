@@ -26,7 +26,7 @@ import com.babylonhx.math.Tools;
 		this._leftCamera = new FreeCamera(name + "_left", position.clone(), scene);
 		this._rightCamera = new FreeCamera(name + "_right", position.clone(), scene);
 		
-		AnaglyphArcRotateCamera.buildCamera(this, name);
+		//AnaglyphArcRotateCamera.buildCamera(this, name);
 	}
 
 	public function _getSubCameraPosition(eyeSpace:Float, result:Vector3) {
@@ -38,14 +38,14 @@ import com.babylonhx.math.Tools;
 		Vector3.TransformCoordinatesToRef(this.position, this._transformMatrix, result);
 	}
 
-	override public function _update() {
+	/*override*/ public function _update() {
 		this._getSubCameraPosition(-this._eyeSpace, this._leftCamera.position);
 		this._getSubCameraPosition(this._eyeSpace, this._rightCamera.position);
 		
 		this._updateCamera(this._leftCamera);
 		this._updateCamera(this._rightCamera);
 		
-		super._update();
+		//super._update();
 	}
 
 	public function _updateCamera(camera:FreeCamera) {

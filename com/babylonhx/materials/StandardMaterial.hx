@@ -1487,32 +1487,66 @@ typedef SMD = StandardMaterialDefines
 		return SerializationHelper.Parse(function() { return new StandardMaterial(source.name, scene); }, source, scene, rootUrl);
 	}*/
 	
+	private function _assign(source:Dynamic, target:Dynamic, property:String) {
+		if (Reflect.getProperty(source, property) != null) {
+			Reflect.setProperty(target, "property", Reflect.getProperty(source, property));
+		}
+	}
+	
 	public static function Parse(source:Dynamic, scene:Scene, rootUrl:String):StandardMaterial {
         var material:StandardMaterial = new StandardMaterial(source.name, scene);
 		
-        material.ambientColor = Color3.FromArray(source.ambient);
-        material.diffuseColor = Color3.FromArray(source.diffuse);
-        material.specularColor = Color3.FromArray(source.specular);
-        material.specularPower = source.specularPower;
-        material.emissiveColor = Color3.FromArray(source.emissive);
-		material.useReflectionFresnelFromSpecular = source.useReflectionFresnelFromSpecular;
-        material.useEmissiveAsIllumination = source.useEmissiveAsIllumination;
-		material.indexOfRefraction = source.indexOfRefraction;
-        material.invertRefractionY = source.invertRefractionY;
-		material.useSpecularOverAlpha = source.useSpecularOverAlpha;
-		material.useReflectionOverAlpha = source.useReflectionOverAlpha;
-		
-        material.alpha = source.alpha;
-		
-        material.id = source.id;
-		
+		if (source.ambient != null) {
+			material.ambientColor = Color3.FromArray(source.ambient);
+		}
+		if (source.diffuse != null) {
+			material.diffuseColor = Color3.FromArray(source.diffuse);
+		}
+		if (source.specular != null) {
+			material.specularColor = Color3.FromArray(source.specular);
+		}
+		if (source.specularPower != null) {
+			material.specularPower = source.specularPower;
+		}
+		if (source.emissive != null) {
+			material.emissiveColor = Color3.FromArray(source.emissive);
+		}
+		if (source.useReflectionFresnelFromSpecular != null) {
+			material.useReflectionFresnelFromSpecular = source.useReflectionFresnelFromSpecular;
+		}
+		if (source.useEmissiveAsIllumination != null) {
+			material.useEmissiveAsIllumination = source.useEmissiveAsIllumination;
+		}
+		if (source.indexOfRefraction != null) {
+			material.indexOfRefraction = source.indexOfRefraction;
+		}
+		if (source.invertRefractionY != null) {
+			material.invertRefractionY = source.invertRefractionY;
+		}
+		if (source.useSpecularOverAlpha != null) {
+			material.useSpecularOverAlpha = source.useSpecularOverAlpha;
+		}
+		if (source.useReflectionOverAlpha != null) {
+			material.useReflectionOverAlpha = source.useReflectionOverAlpha;
+		}
+		if (source.alpha != null) {
+			material.alpha = source.alpha;
+		}
+		if (source.id != null) {
+			material.id = source.id;
+		}		
 		if (source.disableDepthWrite != null) {
             material.disableDepthWrite = source.disableDepthWrite;
         }
-		
-        Tags.AddTagsTo(material, source.tags);
-        material.backFaceCulling = source.backFaceCulling;
-        material.wireframe = source.wireframe;
+		if (source.tags != null) {
+			Tags.AddTagsTo(material, source.tags);
+		}
+		if (source.backFaceCulling != null) {
+			material.backFaceCulling = source.backFaceCulling;
+		}
+		if (source.wireframe != null) {
+			material.wireframe = source.wireframe;
+		}
 		
         if (source.diffuseTexture != null) {
             material.diffuseTexture = Texture.Parse(source.diffuseTexture, scene, rootUrl);

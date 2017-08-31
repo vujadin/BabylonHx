@@ -63,11 +63,9 @@ import com.babylonhx.utils.Keycodes;
 	}
 
 	// Controls
-	override public function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = true, enableKeyboard:Bool = true) {
+	override public function attachControl(useCtrlForPanning:Bool = true, enableKeyboard:Bool = true) {
 		var previousPosition:Dynamic = null;// { x: 0, y: 0 };
 		var engine = this.getEngine();
-		
-		this._attachedElement = element;
 		
 		if (this._onMouseDown == null) {
 			this._onMouseDown = function(x:Float, y:Float, button:Int) {
@@ -219,7 +217,7 @@ import com.babylonhx.utils.Keycodes;
 	#end
 	}
 
-	override public function detachControl(?element:Dynamic) {	
+	override public function detachControl() {	
 	#if purejs
 	
 		this.getScene().getEngine().getRenderingCanvas().removeEventListener(eventPrefix + "down", this._onMouseDown, false);
