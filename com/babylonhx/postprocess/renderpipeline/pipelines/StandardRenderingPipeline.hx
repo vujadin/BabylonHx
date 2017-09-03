@@ -1,7 +1,7 @@
 package com.babylonhx.postprocess.renderpipeline.pipelines;
 
 import com.babylonhx.materials.textures.Texture;
-import com.babylonhx.math.Tools;
+import com.babylonhx.math.Tools in MathTools;
 import com.babylonhx.math.Scalar;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector4;
@@ -589,13 +589,13 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 				}
 			};
 			
-			/*if (index == this.luminanceDownSamplePostProcesses.length - 1) {
+			if (index == this.luminanceDownSamplePostProcesses.length - 1) {
 				pp.onAfterRender = function(effect:Effect, _) {
 					var pixel = scene.getEngine().readPixels(0, 0, 1, 1);
 					var bit_shift = new Vector4(1.0 / (255.0 * 255.0 * 255.0), 1.0 / (255.0 * 255.0), 1.0 / 255.0, 1.0);
 					this._hdrCurrentLuminance = (pixel[0] * bit_shift.x + pixel[1] * bit_shift.y + pixel[2] * bit_shift.z + pixel[3] * bit_shift.w) / 100.0;
 				};
-			}*/
+			}
 			
 			this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRLuminanceDownSample" + index, function() { return pp; }, true));
 		}

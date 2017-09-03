@@ -948,6 +948,9 @@ import lime.utils.Int32Array;
 		var	diameterX:Float = options.diameterX != null ? options.diameterX : 1;
 		var	diameterY:Float = options.diameterY != null ? options.diameterY : 1;
 		var	diameterZ:Float = options.diameterZ != null ? options.diameterZ : 1;
+		if (options.diameter != null) {
+			diameterX = diameterY = diameterZ = options.diameter;
+		}
 		
 		var arc:Float = options.arc != null ? options.arc : 1.0;
 		if (arc < 0) {

@@ -11,6 +11,7 @@ import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.tools.Tools;
 
+import lime.utils.Float32Array;
 import lime.utils.Int32Array;
 
 /**
@@ -38,10 +39,10 @@ import lime.utils.Int32Array;
 	private var _isEnabled:Bool = true;	
 	
 
-	public function new(name:String, emitter:Dynamic, scene:Scene) {		
+	public function new(name:String, emitter:Dynamic, ?scene:Scene) {		
 		this.name = name;
 		this.id = name;
-		this._scene = scene;
+		this._scene = scene != null ? scene : Engine.LastCreatedScene;
 		this._emitter = emitter;
 		scene.lensFlareSystems.push(this);
 		
@@ -49,7 +50,7 @@ import lime.utils.Int32Array;
 			return m.material != null && m.isVisible && m.isEnabled() && m.isBlocker && ((m.layerMask & scene.activeCamera.layerMask) != 0);
 		}
 		
-		var engine = scene.getEngine(); 
+		var engine = this._scene.getEngine(); 
 		
 		// VBO
 		var vertices:Array<Float> = []; 
@@ -61,7 +62,19 @@ import lime.utils.Int32Array;
 		vertices.push(-1);
 		vertices.push(1);
 		vertices.push(-1);
-		this._vertexBuffers[VertexBuffer.PositionKind] = new VertexBuffer(engine, vertices, VertexBuffer.PositionKind, false, false, 2);
+		this._vertexBuffers[VertexBuffer.PositionKind] = new VertexBuffer(engine, new Float32Array(vertices), VertexBuffer.PositionKind, false, false, 2);
+		
+		this._createIndexBuffer();
+		
+		// Effects
+		this._effect = engine.createEffect("lensFlare",
+			["position"],
+			["color", "viewportMatrix"],
+			["textureSampler"], "");
+	}
+	
+	private function _createIndexBuffer() {
+		var engine = this._scene.getEngine(); 
 		
 		// Indices
 		var indices:Array<Int> = [];
@@ -73,12 +86,6 @@ import lime.utils.Int32Array;
 		indices.push(2);
 		indices.push(3);
 		this._indexBuffer = engine.createIndexBuffer(new Int32Array(indices));
-		
-		// Effects
-		this._effect = engine.createEffect("lensFlare",
-			["position"],
-			["color", "viewportMatrix"],
-			["textureSampler"], "");
 	}
 
 	public var isEnabled(get, null):Bool;
@@ -128,11 +135,11 @@ import lime.utils.Int32Array;
         }
 		
 		if (position.z > 0) {
-			/*if ((this._positionX > globalViewport.x) && (this._positionX < globalViewport.x + globalViewport.width)) {
+			if ((this._positionX > globalViewport.x) && (this._positionX < globalViewport.x + globalViewport.width)) {
 				if ((this._positionY > globalViewport.y) && (this._positionY < globalViewport.y + globalViewport.height)) {
 					return true;
 				}
-			}*/
+			}
 			return true;
 		}
 		
@@ -234,7 +241,6 @@ import lime.utils.Int32Array;
 		engine.enableEffect(this._effect);
 		engine.setState(false);
 		engine.setDepthBuffer(false);
-		engine.setAlphaMode(Engine.ALPHA_ONEONE);
 		
 		// VBOs
 		engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._effect);
@@ -242,6 +248,8 @@ import lime.utils.Int32Array;
 		// Flares
 		for (index in 0...this.lensFlares.length) {
 			var flare = this.lensFlares[index];
+			
+			engine.setAlphaMode(flare.alphaMode);
 			
 			var x = centerX - (distX * flare.position);
 			var y = centerY - (distY * flare.position);

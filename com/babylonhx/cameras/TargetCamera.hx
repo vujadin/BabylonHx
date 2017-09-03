@@ -66,6 +66,46 @@ import com.babylonhx.math.Quaternion;
 		
 		return this.lockedTarget.absolutePosition != null ? this.lockedTarget.absolutePosition : this.lockedTarget;
 	}
+	
+	// State
+
+	/**
+	 * Store current camera state (fov, position, etc..)
+	 */
+	private var _storedPosition:Vector3;
+	private var _storedRotation:Vector3;
+	private var _storedRotationQuaternion:Quaternion;
+
+	override public function storeState():Camera {
+		this._storedPosition = this.position.clone();
+		this._storedRotation = this.rotation.clone();
+		if (this.rotationQuaternion != null) {
+			this._storedRotationQuaternion = this.rotationQuaternion.clone();
+		}
+		
+		return super.storeState();
+	}
+
+	/**
+	 * Restored camera state. You must call storeState() first
+	 */
+	override public function restoreState():Bool {
+		if (!super.restoreState()) {
+			return false;
+		}
+		
+		this.position = this._storedPosition.clone();
+		this.rotation = this._storedRotation.clone();
+		
+		if (this.rotationQuaternion != null) {
+			this.rotationQuaternion = this._storedRotationQuaternion.clone();
+		}
+		
+		this.cameraDirection.copyFromFloats(0, 0, 0);
+		this.cameraRotation.copyFromFloats(0, 0);
+		
+		return true;
+	}
 
 	// Cache
 	override public function _initCache() {

@@ -47,8 +47,6 @@ class EdgesRenderer implements ISmartArrayCompatible {
 	private var _indicesCount:Int;
 
 	private var _lineShader:ShaderMaterial;
-	private var _vb0:VertexBuffer;
-	private var _vb1:VertexBuffer;
 	private var _ib:WebGLBuffer;
 	private var _buffers:Map<String, VertexBuffer> = new Map();
 	private var _checkVerticesInsteadOfIndices:Bool = false;
@@ -82,10 +80,35 @@ class EdgesRenderer implements ISmartArrayCompatible {
 		this._lineShader.disableDepthWrite = true;
 		this._lineShader.backFaceCulling = false;
 	}
+	
+	public function _rebuild() {
+		var buffer = this._buffers[VertexBuffer.PositionKind];
+		if (buffer != null) {
+			buffer._rebuild();
+		}
+		
+		buffer = this._buffers[VertexBuffer.NormalKind];
+		if (buffer != null) {
+			buffer._rebuild();
+		}
+		
+		var scene = this._source.getScene();
+		var engine = scene.getEngine();
+		this._ib = engine.createIndexBuffer(new Int32Array(this._linesIndices));
+	}
 
 	public function dispose() {
-		this._vb0.dispose();
-		this._vb1.dispose();
+		var buffer = this._buffers[VertexBuffer.PositionKind];
+		if (buffer != null) {
+			buffer.dispose();
+			this._buffers[VertexBuffer.PositionKind] = null;
+		}
+		buffer = this._buffers[VertexBuffer.NormalKind];
+		if (buffer != null) {
+			buffer.dispose();
+			this._buffers[VertexBuffer.NormalKind] = null;
+		}
+		
 		this._source.getScene().getEngine()._releaseBuffer(this._ib);
 		this._lineShader.dispose();
 	}
@@ -301,11 +324,9 @@ class EdgesRenderer implements ISmartArrayCompatible {
 		
 		// Merge into a single mesh
 		var engine = this._source.getScene().getEngine();
-		this._vb0 = new VertexBuffer(engine, this._linesPositions, VertexBuffer.PositionKind, false);
-		this._vb1 = new VertexBuffer(engine, this._linesNormals, VertexBuffer.NormalKind, false, false, 4);
 		
-		this._buffers[VertexBuffer.PositionKind] = this._vb0;
-		this._buffers[VertexBuffer.NormalKind] = this._vb1;
+		this._buffers[VertexBuffer.PositionKind] = new VertexBuffer(engine, new Float32Array(this._linesPositions), VertexBuffer.PositionKind, false);
+		this._buffers[VertexBuffer.NormalKind] = new VertexBuffer(engine, new Float32Array(this._linesNormals), VertexBuffer.NormalKind, false, false, 4);
 		
 		this._ib = engine.createIndexBuffer(new Int32Array(this._linesIndices));
 		

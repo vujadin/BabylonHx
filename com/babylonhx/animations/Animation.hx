@@ -824,6 +824,15 @@ import com.babylonhx.Node;
         var dataType = parsedAnimation.dataType;
         var keys:Array<BabylonFrame> = [];
 		var data:Dynamic = null;
+		
+		if (parsedAnimation.enableBlending != null) {
+			animation.enableBlending = parsedAnimation.enableBlending;
+		}
+		
+		if (parsedAnimation.blendingSpeed != null) {
+			animation.blendingSpeed = parsedAnimation.blendingSpeed;
+		}
+		
         for (index in 0...parsedAnimation.keys.length) {
             var key = parsedAnimation.keys[index];
 			

@@ -596,6 +596,10 @@ import com.babylonhx.postprocess.PostProcessManager;
         if (this.refreshRate == RenderTargetTexture.REFRESHRATE_RENDER_ONCE) {
             this.refreshRate = RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
         }
+		
+		if (this._postProcessManager != null) {
+            this._postProcessManager._rebuild();
+        }
     }
 	
 }

@@ -76,12 +76,28 @@ class MultiRenderTarget extends RenderTargetTexture {
 		this._multiRenderTargetOptions.types = types;
 		this._multiRenderTargetOptions.textureCount = count;
 		
-		this._internalTextures = scene.getEngine().createMultipleRenderTarget(size, this._multiRenderTargetOptions);
-		
 		this._createInternalTextures();
+		this._createTextures();
+	}
+	
+	override public function _rebuild() {
+		this.releaseInternalTextures();
+		this._createInternalTextures();
+		
+		for (i in 0...this._internalTextures.length) {
+			var texture = this._textures[i];
+			texture._texture = this._internalTextures[i];
+		}
+		
+		// Keeps references to frame buffer and stencil/depth buffer
+		this._texture = this._internalTextures[0];
 	}
 
 	private function _createInternalTextures() {
+		this._internalTextures = this.getScene().getEngine().createMultipleRenderTarget(this._size ,this._multiRenderTargetOptions);
+	}
+	
+	private function _createTextures() {
 		this._textures = [];
 		for (i in 0...this._internalTextures.length) {
 			var texture = new Texture(null, this.getScene());

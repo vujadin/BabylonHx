@@ -151,6 +151,9 @@ import haxe.Timer;
 		return this.filter == ShadowGenerator.FILTER_POISSONSAMPLING;
 	}
 	inline private function set_usePoissonSampling(value:Bool):Bool {
+		if (!value && this.filter != ShadowGenerator.FILTER_POISSONSAMPLING) {
+            return value;
+        } 
 		this.filter = (value ? ShadowGenerator.FILTER_POISSONSAMPLING : ShadowGenerator.FILTER_NONE);
 		return value;
 	}
@@ -169,6 +172,9 @@ import haxe.Timer;
 		return this.filter == ShadowGenerator.FILTER_BLUREXPONENTIALSHADOWMAP;
 	}
 	inline private function set_useBlurExponentialShadowMap(value:Bool):Bool {
+		if (!value && this.filter != ShadowGenerator.FILTER_BLUREXPONENTIALSHADOWMAP) {
+            return value;
+        }   
 		this.filter = (value ? ShadowGenerator.FILTER_BLUREXPONENTIALSHADOWMAP : ShadowGenerator.FILTER_NONE);
 		return value;
 	}
@@ -178,6 +184,9 @@ import haxe.Timer;
 		return this.filter == ShadowGenerator.FILTER_CLOSEEXPONENTIALSHADOWMAP;
 	}
 	inline private function set_useCloseExponentialShadowMap(value:Bool):Bool {
+		if (!value && this.filter != ShadowGenerator.FILTER_CLOSEEXPONENTIALSHADOWMAP) {
+            return value;
+        }
 		this.filter = (value ? ShadowGenerator.FILTER_CLOSEEXPONENTIALSHADOWMAP : ShadowGenerator.FILTER_NONE);
 		return value;
 	}
@@ -187,6 +196,9 @@ import haxe.Timer;
 		return this.filter == ShadowGenerator.FILTER_BLURCLOSEEXPONENTIALSHADOWMAP;
 	}
 	inline private function set_useBlurCloseExponentialShadowMap(value:Bool):Bool {
+		if (!value && this.filter != ShadowGenerator.FILTER_BLURCLOSEEXPONENTIALSHADOWMAP) {
+            return value;
+        } 
 		this.filter = (value ? ShadowGenerator.FILTER_BLURCLOSEEXPONENTIALSHADOWMAP : ShadowGenerator.FILTER_NONE);
 		return value;
 	}

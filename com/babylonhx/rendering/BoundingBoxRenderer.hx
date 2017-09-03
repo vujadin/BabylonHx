@@ -48,8 +48,18 @@ import lime.utils.Float32Array;
 		var engine = this._scene.getEngine();
 		var boxdata = VertexData.CreateBox({ width: 1.0, height: 1.0, depth: 1.0 });
 		this._vertexBuffers[VertexBuffer.PositionKind] = new VertexBuffer(engine, boxdata.positions, VertexBuffer.PositionKind, false);
-		this._indexBuffer = engine.createIndexBuffer(new Int32Array([0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 7, 1, 6, 2, 5, 3, 4]));
+		this._createIndexBuffer();
 	}
+	
+	private function _createIndexBuffer() {
+        var engine = this._scene.getEngine();
+        this._indexBuffer = engine.createIndexBuffer(new Int32Array([0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 7, 1, 6, 2, 5, 3, 4]));
+    }
+  
+    public function _rebuild() {
+        this._vertexBuffers[VertexBuffer.PositionKind]._rebuild();
+        this._createIndexBuffer();
+    }
 
 	public function reset() {
 		this.renderList.reset();

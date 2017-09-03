@@ -210,7 +210,7 @@ import haxe.Timer;
 		}
 		
 		this._uniformBuffer = new UniformBuffer(this._scene.getEngine());
-		this._useUBO = this.getScene().getEngine().webGLVersion > 1;
+		this._useUBO = this.getScene().getEngine().supportsUniformBuffers;
 		
 		if (!doNotAdd) {
 			this._scene.materials.push(this);

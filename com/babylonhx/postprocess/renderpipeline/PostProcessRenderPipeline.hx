@@ -43,8 +43,10 @@ import com.babylonhx.tools.Tools;
 	public var isSupported(get, never):Bool;
 	private function get_isSupported():Bool {
 		for (renderEffectName in this._renderEffects.keys()) {
-			if (!this._renderEffects[renderEffectName].isSupported) {
-				return false;
+			if (this._renderEffects[renderEffectName] != null) {
+				if (!this._renderEffects[renderEffectName].isSupported) {
+					return false;
+				}
 			}
 		}
 		
@@ -53,6 +55,10 @@ import com.babylonhx.tools.Tools;
 
 	public function addEffect(renderEffect:PostProcessRenderEffect) {
 		this._renderEffects[renderEffect._name] = renderEffect;
+	}
+	
+	public function _rebuild() {
+		
 	}
 
 	public function _enableEffect(renderEffectName:String, cameras:Dynamic) {
@@ -97,7 +103,9 @@ import com.babylonhx.tools.Tools;
 		}
 		
 		for (renderEffectName in this._renderEffects.keys()) {
-			this._renderEffects[renderEffectName]._attachCameras(_cam);
+			if (this._renderEffects.exists(renderEffectName)) {
+				this._renderEffects[renderEffectName]._attachCameras(_cam);
+			}
 		}
 	}
 
@@ -105,7 +113,9 @@ import com.babylonhx.tools.Tools;
 		var _cam = Tools.MakeArray(cameras != null ? cameras : this._cameras);
 		
 		for (renderEffectName in this._renderEffects.keys()) {
-			this._renderEffects[renderEffectName]._detachCameras(_cam);
+			if (this._renderEffects.exists(renderEffectName)) {
+				this._renderEffects[renderEffectName]._detachCameras(_cam);
+			}
 		}
 		
 		for (c in _cam) {
@@ -119,10 +129,12 @@ import com.babylonhx.tools.Tools;
 		var pass:PostProcessRenderPass = null;
 		
 		for (renderEffectName in this._renderEffects.keys()) {
-			pass = this._renderEffects[renderEffectName].getPass(passName);
-			
-			if (pass != null) {
-				break;
+			if (this._renderEffects.exists(renderEffectName)) {
+				pass = this._renderEffects[renderEffectName].getPass(passName);
+				
+				if (pass != null) {
+					break;
+				}
 			}
 		}
 		
@@ -131,7 +143,9 @@ import com.babylonhx.tools.Tools;
 		}
 		
 		for (renderEffectName in this._renderEffects.keys()) {
-			this._renderEffects[renderEffectName]._disable(_cam);
+			if (this._renderEffects.exists(renderEffectName)) {
+				this._renderEffects[renderEffectName]._disable(_cam);
+			}
 		}
 		
 		pass._name = PostProcessRenderPipeline.PASS_SAMPLER_NAME;
@@ -159,13 +173,17 @@ import com.babylonhx.tools.Tools;
 		}
 		
 		for (renderEffectName in this._renderEffects.keys()) {
-			this._renderEffects[renderEffectName]._enable(_cam);
+			if (this._renderEffects.exists(renderEffectName)) {
+				this._renderEffects[renderEffectName]._enable(_cam);
+			}
 		}
 	}
 
 	public function _update() {
 		for (renderEffectName in this._renderEffects.keys()) {
-			this._renderEffects[renderEffectName]._update();
+			if (this._renderEffects.exists(renderEffectName)) {
+				this._renderEffects[renderEffectName]._update();
+			}
 		}
 		
 		for (key in this._cameras.keys()) {

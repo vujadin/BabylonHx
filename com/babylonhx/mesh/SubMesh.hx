@@ -240,9 +240,9 @@ import lime.utils.Int32Array;
 		var intersectInfo:IntersectionInfo = null;
 		
 		// fix for picking instances: https://github.com/vujadin/BabylonHx/issues/122
-		if (positions == null) {
+		/*if (positions == null) {
 			positions = this._mesh._positions;
-		}
+		}*/
 		
 		// LineMesh first as it's also a Mesh...
 		if (Std.is(this._mesh, LinesMesh)) {

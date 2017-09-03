@@ -223,16 +223,7 @@ class HighlightLayer {
 		var vertexBuffer = new VertexBuffer(engine, vertices, VertexBuffer.PositionKind, false, false, 2);
 		this._vertexBuffers[VertexBuffer.PositionKind] = vertexBuffer;
 		
-		// Indices
-		var indices:Array<Int> = [];
-		indices.push(0);
-		indices.push(1);
-		indices.push(2);
-		indices.push(0);
-		indices.push(2);
-		indices.push(3);
-		
-		this._indexBuffer = engine.createIndexBuffer(new Int32Array(indices));
+		this._createIndexBuffer();
 		
 		// Effect
 		this._glowMapMergeEffect = engine.createEffect("glowMapMerge",
@@ -245,6 +236,27 @@ class HighlightLayer {
 		
 		// Create Textures and post processes
 		this.createTextureAndPostProcesses();
+	}
+	
+	private function _createIndexBuffer() {
+		var engine = this._scene.getEngine();
+		
+		// Indices
+		var indices:Array<Int> = [];
+		indices.push(0);
+		indices.push(1);
+		indices.push(2);
+		indices.push(0);
+		indices.push(2);
+		indices.push(3);
+		
+		this._indexBuffer = engine.createIndexBuffer(new Int32Array(indices));
+	}
+
+	public function _rebuild() {
+		this._vertexBuffers[VertexBuffer.PositionKind]._rebuild();
+		
+		this._createIndexBuffer();
 	}
 
 	/**

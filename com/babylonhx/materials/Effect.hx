@@ -408,7 +408,7 @@ using StringTools;
 			if (includeFile.indexOf("__decl__") != -1) {
 				var rgex:EReg = ~/__decl__/;
 				includeFile = rgex.replace(includeFile, "");
-				if (this._engine.webGLVersion != 1) {
+				if (this._engine.supportsUniformBuffers) {
 					rgex = ~/Vertex/;
 					includeFile = rgex.replace(includeFile, "Ubo");
 					rgex = ~/Fragment/;
@@ -455,7 +455,7 @@ using StringTools;
 						}
 						
 						for (i in minIndex...maxIndex) {
-							if (this._engine.webGLVersion == 1) {
+							if (!this._engine.supportsUniformBuffers) {
 								// Ubo replacement
 								var _tmprx:EReg = ~/light\{X\}.(\w*)/g;
 								while (_tmprx.match(sourceIncludeContent)) {
@@ -466,7 +466,7 @@ using StringTools;
 						}
 					} 
 					else {
-						if (this._engine.webGLVersion == 1) {
+						if (!this._engine.supportsUniformBuffers) {
 							// Ubo replacement
 							var _tmprx:EReg = ~/light\{X\}.(\w*)/g;
 							while (_tmprx.match(includeContent)) {

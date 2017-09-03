@@ -149,6 +149,32 @@ import com.babylonhx.culling.Ray;
 		this.position = position;
 	}
 	
+	private var _storedFov:Float;
+	private var _stateStored:Bool;
+
+	/**
+	 * Store current camera state (fov, position, etc..)
+	 */
+	public function storeState():Camera {
+		this._stateStored = true;
+		this._storedFov = this.fov;
+		
+		return this;
+	}
+
+	/**
+	 * Restored camera state. You must call storeState() first
+	 */
+	public function restoreState():Bool {
+		if (!this._stateStored) {
+			return false;
+		}
+		
+		this.fov = this._storedFov;
+		
+		return true;
+	}
+	
 	override public function getClassName():String {
 		return 'Camera';
 	}

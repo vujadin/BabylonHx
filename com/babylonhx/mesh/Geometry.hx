@@ -935,31 +935,31 @@ import lime.graphics.opengl.GLVertexArrayObject;
 			}
 		} */
 		else if (parsedGeometry.positions != null && parsedGeometry.normals != null && parsedGeometry.indices != null) {
-			mesh.setVerticesData(VertexBuffer.PositionKind, parsedGeometry.positions, false);
-			mesh.setVerticesData(VertexBuffer.NormalKind, parsedGeometry.normals, false);
+			mesh.setVerticesData(VertexBuffer.PositionKind, new Float32Array(parsedGeometry.positions), false);
+			mesh.setVerticesData(VertexBuffer.NormalKind, new Float32Array(parsedGeometry.normals), false);
 			
 			if (parsedGeometry.uvs != null) {
-				mesh.setVerticesData(VertexBuffer.UVKind, parsedGeometry.uvs, false);
+				mesh.setVerticesData(VertexBuffer.UVKind, new Float32Array(parsedGeometry.uvs), false);
 			}
 			
 			if (parsedGeometry.uvs2 != null) {
-				mesh.setVerticesData(VertexBuffer.UV2Kind, parsedGeometry.uvs2, false);
+				mesh.setVerticesData(VertexBuffer.UV2Kind, new Float32Array(parsedGeometry.uvs2), false);
 			}
 			
 			if (parsedGeometry.uvs3 != null) {
-				mesh.setVerticesData(VertexBuffer.UV3Kind, parsedGeometry.uvs3, false);
+				mesh.setVerticesData(VertexBuffer.UV3Kind, new Float32Array(parsedGeometry.uvs3), false);
 			}
 			
 			if (parsedGeometry.uvs4 != null) {
-				mesh.setVerticesData(VertexBuffer.UV4Kind, parsedGeometry.uvs4, false);
+				mesh.setVerticesData(VertexBuffer.UV4Kind, new Float32Array(parsedGeometry.uvs4), false);
 			}
 			
 			if (parsedGeometry.uvs5 != null) {
-				mesh.setVerticesData(VertexBuffer.UV5Kind, parsedGeometry.uvs5, false);
+				mesh.setVerticesData(VertexBuffer.UV5Kind, new Float32Array(parsedGeometry.uvs5), false);
 			}
 			
 			if (parsedGeometry.uvs6 != null) {
-				mesh.setVerticesData(VertexBuffer.UV6Kind, parsedGeometry.uvs6, false);
+				mesh.setVerticesData(VertexBuffer.UV6Kind, new Float32Array(parsedGeometry.uvs6), false);
 			}
 			
 			if (parsedGeometry.colors != null) {
@@ -979,11 +979,11 @@ import lime.graphics.opengl.GLVertexArrayObject;
 						floatIndices.push(matricesIndex >> 24);
 					}
 					
-					mesh.setVerticesData(VertexBuffer.MatricesIndicesKind, cast floatIndices, false);
+					mesh.setVerticesData(VertexBuffer.MatricesIndicesKind, new Float32Array(floatIndices), false);
 				} 
 				else {
 					parsedGeometry.matricesIndices._isExpanded = null;
-					mesh.setVerticesData(VertexBuffer.MatricesIndicesKind, parsedGeometry.matricesIndices, false);
+					mesh.setVerticesData(VertexBuffer.MatricesIndicesKind, new Float32Array(parsedGeometry.matricesIndices), false);
 				}
 			}
 			
@@ -1000,25 +1000,25 @@ import lime.graphics.opengl.GLVertexArrayObject;
 						floatIndices.push(matricesIndex >> 24);
 					}
 					
-					mesh.setVerticesData(VertexBuffer.MatricesIndicesExtraKind, cast floatIndices, false);
+					mesh.setVerticesData(VertexBuffer.MatricesIndicesExtraKind, new Float32Array(floatIndices), false);
 				} 
 				else {
 					parsedGeometry.matricesIndices._isExpanded = null;
-					mesh.setVerticesData(VertexBuffer.MatricesIndicesExtraKind, parsedGeometry.matricesIndicesExtra, false);
+					mesh.setVerticesData(VertexBuffer.MatricesIndicesExtraKind, new Float32Array(parsedGeometry.matricesIndicesExtra), false);
 				}
 			}
 			
 			if (parsedGeometry.matricesWeights != null) {
 				Geometry._CleanMatricesWeights(parsedGeometry.matricesWeights, parsedGeometry.numBoneInfluencers);
-				mesh.setVerticesData(VertexBuffer.MatricesWeightsKind, parsedGeometry.matricesWeights, parsedGeometry.matricesWeights._updatable);
+				mesh.setVerticesData(VertexBuffer.MatricesWeightsKind, new Float32Array(parsedGeometry.matricesWeights), parsedGeometry.matricesWeights._updatable);
 			}
 			
 			if (parsedGeometry.matricesWeightsExtra != null) {
 				Geometry._CleanMatricesWeights(parsedGeometry.matricesWeightsExtra, parsedGeometry.numBoneInfluencers);
-				mesh.setVerticesData(VertexBuffer.MatricesWeightsExtraKind, parsedGeometry.matricesWeightsExtra, parsedGeometry.matricesWeights._updatable);
+				mesh.setVerticesData(VertexBuffer.MatricesWeightsExtraKind, new Float32Array(parsedGeometry.matricesWeightsExtra), parsedGeometry.matricesWeights._updatable);
 			}
 			
-			mesh.setIndices(parsedGeometry.indices);
+			mesh.setIndices(new Int32Array(parsedGeometry.indices));
 		}
 		
 		// SubMeshes

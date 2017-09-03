@@ -142,19 +142,7 @@ import lime.utils.Float32Array;
 		
 		scene.particleSystems.push(this);
 		
-		var indices:Array<Int> = [];
-		var index:Int = 0;
-		for (count in 0...capacity) {
-			indices.push(index);
-			indices.push(index + 1);
-			indices.push(index + 2);
-			indices.push(index);
-			indices.push(index + 2);
-			indices.push(index + 3);
-			index += 4;
-		}
-		
-		this._indexBuffer = this._engine.createIndexBuffer(new Int32Array(indices));
+		this._createIndexBuffer();
 		
 		// 11 floats per particle (x, y, z, r, g, b, a, angle, size, offsetX, offsetY) + 1 filler
         this._vertexData = new Float32Array(Std.int(capacity * 11 * 4)); 
@@ -221,6 +209,22 @@ import lime.utils.Float32Array;
 		}
 		
 		this._effect = this._getEffect();
+	}
+	
+	private function _createIndexBuffer() {
+		var indices:Array<Int> = [];
+		var index:Int = 0;
+		for (count in 0...this._capacity) {
+			indices.push(index);
+			indices.push(index + 1);
+			indices.push(index + 2);
+			indices.push(index);
+			indices.push(index + 2);
+			indices.push(index + 3);
+			index += 4;
+		}
+		
+		this._indexBuffer = this._engine.createIndexBuffer(new Int32Array(indices));
 	}
 	
 	inline public function recycleParticle(particle:Particle) {
@@ -417,6 +421,12 @@ import lime.utils.Float32Array;
 		
 		this._vertexBuffer.update(this._vertexData);
 	}
+	
+	public function rebuild() {
+        this._createIndexBuffer();
+		
+        this._vertexBuffer._rebuild();
+    }
 
 	public function render():Int {		
 		// Check

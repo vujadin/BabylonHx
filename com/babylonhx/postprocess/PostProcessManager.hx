@@ -32,10 +32,22 @@ import lime.utils.Int32Array;
 		var vertices:Float32Array = new Float32Array([1, 1, -1, 1, -1, -1, 1, -1]);
 		this._vertexBuffers[VertexBuffer.PositionKind] = new VertexBuffer(this._scene.getEngine(), vertices, VertexBuffer.PositionKind, false, false, 2);
 		
+		this._buildIndexBuffer();
+	}
+	
+	private function _buildIndexBuffer() {
 		// Indices
 		var indices:Int32Array = new Int32Array([0, 1, 2, 0, 2, 3]);		
 		this._indexBuffer = this._scene.getEngine().createIndexBuffer(indices);
 	}
+	
+	public function _rebuild() {
+        if (this._vertexBuffers[VertexBuffer.PositionKind] == null) {
+            return;
+        }
+        this._vertexBuffers[VertexBuffer.PositionKind]._rebuild();
+        this._buildIndexBuffer();
+    }
 
 	// Methods
 	public function _prepareFrame(?sourceTexture:InternalTexture, ?postProcesses:Array<PostProcess>):Bool {

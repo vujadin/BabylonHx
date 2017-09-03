@@ -573,7 +573,11 @@ import lime.utils.UInt16Array;
 		if (this._occlusionQuery != null) {
             this._occlusionQuery = null;
         }
-		 
+		
+		if (this._edgesRenderer != null) {
+            this._edgesRenderer._rebuild();
+        }
+		
 		if (this.subMeshes == null) {
 			return;
 		}
@@ -1650,7 +1654,7 @@ import lime.utils.UInt16Array;
 		return collisionEnabled;
 	}
 
-	public function moveWithCollisions(velocity:Vector3):AbstractMesh {
+	public function moveWithCollisions(direction:Vector3):AbstractMesh {
 		var globalPosition = this.getAbsolutePosition();
 		
 		globalPosition.subtractFromFloatsToRef(0, this.ellipsoid.y, 0, this._oldPositionForCollisions);
@@ -1662,7 +1666,7 @@ import lime.utils.UInt16Array;
 		
 		this._collider.radius = this.ellipsoid;
 		
-		this.getScene().collisionCoordinator.getNewPosition(this._oldPositionForCollisions, velocity, this._collider, 3, this, this._onCollisionPositionChange, this.uniqueId);
+		this.getScene().collisionCoordinator.getNewPosition(this._oldPositionForCollisions, direction, this._collider, 3, this, this._onCollisionPositionChange, this.uniqueId);
 		return this;
 	}
 
@@ -2221,7 +2225,7 @@ import lime.utils.UInt16Array;
 	 * Returns the AbstractMesh.  
 	 */
 	public function updateFacetData():AbstractMesh {
-		if (this._facetDataEnabled) {
+		if (!this._facetDataEnabled) {
 			this._initFacetData();
 		}
 		var positions = this.getVerticesData(VertexBuffer.PositionKind);

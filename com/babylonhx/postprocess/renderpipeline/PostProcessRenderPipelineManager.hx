@@ -80,14 +80,33 @@ package com.babylonhx.postprocess.renderpipeline;
 
 	public function update() {
 		for (renderPipelineName in this._renderPipelines.keys()) {
-			var pipeline = this._renderPipelines[renderPipelineName];
-			if (!pipeline.isSupported) {
+			if (this._renderPipelines[renderPipelineName] != null) {
+				var pipeline = this._renderPipelines[renderPipelineName];
+				if (!pipeline.isSupported) {
+					pipeline.dispose();
+					this._renderPipelines[renderPipelineName] = null;
+				} 
+				else {
+					pipeline._update();
+				}
+			}
+		}
+	}
+
+	public function _rebuild() {
+		for (renderPipelineName in this._renderPipelines.keys()) {
+			if (this._renderPipelines[renderPipelineName] != null) {
+				var pipeline = this._renderPipelines[renderPipelineName];
+				pipeline._rebuild();
+			}
+		}
+	}
+
+	public function dispose() {
+		for (renderPipelineName in this._renderPipelines.keys()) {
+			if (this._renderPipelines[renderPipelineName] != null) {
+				var pipeline = this._renderPipelines[renderPipelineName];
 				pipeline.dispose();
-				this._renderPipelines[renderPipelineName] = null;
-				this._renderPipelines.remove(renderPipelineName);
-			} 
-			else {
-				pipeline._update();
 			}
 		}
 	}

@@ -249,7 +249,7 @@ import com.babylonhx.utils.Keycodes;
 		}
 	}
 
-	public function _collideWithWorld(velocity:Vector3) {
+	public function _collideWithWorld(direction:Vector3) {
 		var globalPosition:Vector3 = null;
 		
 		if (this.parent != null) {
@@ -263,15 +263,15 @@ import com.babylonhx.utils.Keycodes;
 		this._collider.radius = this.ellipsoid;
 		
 		//no need for clone, as long as gravity is not on.
-		var actualVelocity = velocity;
+		var actualDirection = direction;
 		
 		//add gravity to the velocity to prevent the dual-collision checking
 		if (this.applyGravity) {
 			//this prevents mending with cameraDirection, a global variable of the free camera class.
-			actualVelocity = velocity.add(this.getScene().gravity);
+			actualDirection = direction.add(this.getScene().gravity);
 		}
 		
-		this.getScene().collisionCoordinator.getNewPosition(this._oldPosition, actualVelocity, this._collider, 3, null, this._onCollisionPositionChange, this.uniqueId);		
+		this.getScene().collisionCoordinator.getNewPosition(this._oldPosition, actualDirection, this._collider, 3, null, this._onCollisionPositionChange, this.uniqueId);		
 	}
 	
 	private function _onCollisionPositionChange(collisionId:Int, newPosition:Vector3, collidedMesh:AbstractMesh = null) {

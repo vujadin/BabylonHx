@@ -81,10 +81,24 @@ import lime.utils.Int32Array;
 		var vertices:Array<Float> = [1, 1, -1, 1, -1, -1, 1, -1];
 		this._vertexBuffers[VertexBuffer.PositionKind] = new VertexBuffer(engine, new Float32Array(vertices), VertexBuffer.PositionKind, false, false, 2);
 		
+		this._createIndexBuffer();
+	}
+		
+	private function _createIndexBuffer() {
+        var engine = this.getScene().getEngine();
 		// Indices
 		var indices:Array<Int> = [0, 1, 2, 0, 2, 3];		
 		this._indexBuffer = engine.createIndexBuffer(new Int32Array(indices));
 	}
+	
+	override public function _rebuild() {
+        this._vertexBuffers[VertexBuffer.PositionKind]._rebuild();
+        this._createIndexBuffer();
+		
+        if (this.refreshRate == RenderTargetTexture.REFRESHRATE_RENDER_ONCE) {
+            this.refreshRate = RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
+        }            
+    }
 
 	public function reset() {
 		if (this._effect == null) {

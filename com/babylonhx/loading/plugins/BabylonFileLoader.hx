@@ -713,19 +713,19 @@ import lime.utils.Int32Array;
             }*/
         } 
 		else if (parsedGeometry.positions != null && parsedGeometry.normals != null && parsedGeometry.indices != null) {
-            mesh.setVerticesData(VertexBuffer.PositionKind, parsedGeometry.positions, false);
-            mesh.setVerticesData(VertexBuffer.NormalKind, parsedGeometry.normals, false);
+            mesh.setVerticesData(VertexBuffer.PositionKind, new Float32Array(parsedGeometry.positions), false);
+            mesh.setVerticesData(VertexBuffer.NormalKind, new Float32Array(parsedGeometry.normals), false);
 			
             if (parsedGeometry.uvs != null) {
-                mesh.setVerticesData(VertexBuffer.UVKind, parsedGeometry.uvs, false);
+                mesh.setVerticesData(VertexBuffer.UVKind, new Float32Array(parsedGeometry.uvs), false);
             }
 			
             if (parsedGeometry.uvs2 != null) {
-                mesh.setVerticesData(VertexBuffer.UV2Kind, parsedGeometry.uvs2, false);
+                mesh.setVerticesData(VertexBuffer.UV2Kind, new Float32Array(parsedGeometry.uvs2), false);
             }
 			
             if (parsedGeometry.colors != null) {
-                mesh.setVerticesData(VertexBuffer.ColorKind, checkColors4(parsedGeometry.colors, Std.int(parsedGeometry.positions.length / 3)), false);
+                mesh.setVerticesData(VertexBuffer.ColorKind, new Float32Array(checkColors4(parsedGeometry.colors, Std.int(parsedGeometry.positions.length / 3))), false);
             }
 			
             if (parsedGeometry.matricesIndices != null) {
@@ -745,15 +745,15 @@ import lime.utils.Int32Array;
                 } 
 				else {
                     parsedGeometry.matricesIndices._isExpanded = null;
-                    mesh.setVerticesData(VertexBuffer.MatricesIndicesKind, parsedGeometry.matricesIndices, false);
+                    mesh.setVerticesData(VertexBuffer.MatricesIndicesKind, new Float32Array(parsedGeometry.matricesIndices), false);
                 }
             }
 			
             if (parsedGeometry.matricesWeights != null) {
-                mesh.setVerticesData(VertexBuffer.MatricesWeightsKind, parsedGeometry.matricesWeights, false);
+                mesh.setVerticesData(VertexBuffer.MatricesWeightsKind, new Float32Array(parsedGeometry.matricesWeights), false);
             }
 			
-            mesh.setIndices(parsedGeometry.indices);
+            mesh.setIndices(new Int32Array(parsedGeometry.indices));
 			
             // SubMeshes
             if (parsedGeometry.subMeshes != null) {

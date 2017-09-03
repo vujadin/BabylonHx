@@ -18,6 +18,8 @@ interface IParticleSystem extends ISmartArrayCompatible {
 	function clone(name:String, ?newEmitter:Dynamic):IParticleSystem;
 	function serialize():Dynamic;
 	
+	function rebuild():Void;
+	
 	// BHx
 	var __smartArrayFlags:Array<Int>;
   

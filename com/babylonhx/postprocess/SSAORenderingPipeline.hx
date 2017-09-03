@@ -167,6 +167,11 @@ import com.babylonhx.tools.EventState;
 			this._scene.disableDepthRenderer();
 		}
 	}
+	
+	public function _rebuild() {
+        this._firstUpdate = true;
+        super._rebuild();            
+    }
 
 	// Private Methods
 	private function _createSSAOPostProcess(ratio:Float) {

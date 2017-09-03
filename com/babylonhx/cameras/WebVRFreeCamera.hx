@@ -76,8 +76,8 @@ import js.html.Navigator;
 		super._checkInputs();
 	}
 	
-	override public function attachControl(?element:Dynamic, noPreventDefault:Bool = false, useCtrlForPanning:Bool = false, enableKeyboard:Bool = true) {
-		super.attachControl(element, noPreventDefault);
+	override public function attachControl(useCtrlForPanning:Bool = false, enableKeyboard:Bool = true) {
+		super.attachControl();
 		#if (js || purejs || web || html5) 
 		var nav:Navigator = untyped Browser.window.navigator;
 		if (untyped nav.getVRDevices != null) {
@@ -89,8 +89,8 @@ import js.html.Navigator;
 		#end
 	}
 	
-	override public function detachControl(?element:Dynamic) {
-		super.detachControl(element);
+	override public function detachControl() {
+		super.detachControl();
 		this._vrEnabled = false;
 	}
 	

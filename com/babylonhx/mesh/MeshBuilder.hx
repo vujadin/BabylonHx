@@ -23,6 +23,7 @@ import lime.utils.Float32Array;
 
 typedef SphereOptions = {
 	?segments:Int,
+	?diameter:Float,
 	?diameterX:Float,
 	?diameterY:Float,
 	?diameterZ:Float,

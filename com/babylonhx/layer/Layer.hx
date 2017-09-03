@@ -96,7 +96,21 @@ import lime.utils.Int32Array;
 		
 		var engine = scene.getEngine();
 		
-		this._rebuild();
+		// VBO
+        var vertices:Array<Float> = [];
+		vertices.push(1);
+		vertices.push(1);
+		vertices.push(-1);
+		vertices.push(1);
+		vertices.push(-1);
+		vertices.push(-1);
+		vertices.push(1);
+		vertices.push( -1);
+		
+		var vertexBuffer = new VertexBuffer(engine, vertices, VertexBuffer.PositionKind, false, false, 2);
+		this._vertexBuffers[VertexBuffer.PositionKind] = vertexBuffer;
+		
+		this._createIndexBuffer();
 		
 		// Effects
 		this._effect = engine.createEffect("layer",
@@ -107,27 +121,11 @@ import lime.utils.Int32Array;
 		this._alphaTestEffect = engine.createEffect("layer",
 			["position"],
 			["textureMatrix", "color", "scale", "offset"],
-			["textureSampler"], "#define ALPHATEST");
-			
-		this._rebuild();		
+			["textureSampler"], "#define ALPHATEST");		
 	}
 	
-	public function _rebuild() {
+	public function _createIndexBuffer() {
 		var engine = this._scene.getEngine();
-		
-		// VBO
-		var vertices:Array<Float> = [];
-		vertices.push(1);
-		vertices.push(1);
-		vertices.push(-1);
-		vertices.push(1);
-		vertices.push(-1);
-		vertices.push(-1);
-		vertices.push(1);
-		vertices.push(-1);
-		
-		var vertexBuffer = new VertexBuffer(engine, vertices, VertexBuffer.PositionKind, false, false, 2);
-		this._vertexBuffers[VertexBuffer.PositionKind] = vertexBuffer;
 		
 		// Indices
 		var indices:Array<Int> = [];
@@ -140,6 +138,12 @@ import lime.utils.Int32Array;
 		indices.push(3);
 		
 		this._indexBuffer = engine.createIndexBuffer(new Int32Array(indices));
+	}
+	
+	public function _rebuild() {
+		this._vertexBuffers[VertexBuffer.PositionKind]._rebuild();
+		
+		this._createIndexBuffer();
 	}
 
 	public function render() {

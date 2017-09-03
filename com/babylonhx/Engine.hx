@@ -228,8 +228,13 @@ import openfl.display.OpenGLView;
 	private var _vrAnimationFrameHandler:Float;
 	#end
 	
-	// Uniform buffer list
+	// Uniform buffers list
+	public var disableUniformBuffers:Bool = false;
 	public var _uniformBuffers:Array<UniformBuffer> = [];
+	public var supportsUniformBuffers(get, never):Bool;
+	inline private function get_supportsUniformBuffers():Bool {
+        return this.webGLVersion > 1 && !this.disableUniformBuffers;
+    }
 	
 	// Private Members
 	public var gl:WebGL2Context;
@@ -284,6 +289,8 @@ import openfl.display.OpenGLView;
     private var _lockstepMaxSteps:Int = 4;
 	
 	// Lost context
+	public var onContextLostObservable:Observable<Engine> = new Observable<Engine>();
+    public var onContextRestoredObservable:Observable<Engine> = new Observable<Engine>();
 	private var _onContextLost:Dynamic->Void;
 	private var _onContextRestored:Dynamic->Void;
 	private var _contextWasLost:Bool = false;
@@ -2605,6 +2612,12 @@ import openfl.display.OpenGLView;
 	}
 	
 	public function updateRawCubeTexture(texture:InternalTexture, data:Array<ArrayBufferView>, format:Int, type:Int, invertY:Bool, compression:String = null, level:Int = 0) {
+		texture._bufferViewArray = data;
+        texture.format = format;
+        texture.type = type;
+        texture.invertY = invertY;
+        texture._compression = compression;
+		
 		var textureType = this._getWebGLTextureType(type);
 		var internalFormat = this._getInternalFormat(format);
 		var internalSizedFomat = this._getRGBABufferInternalSizedFormat(type);
@@ -2658,6 +2671,9 @@ import openfl.display.OpenGLView;
 		texture.generateMipMaps = generateMipMaps;
 		texture.format = format;
 		texture.type = type;
+		if (!this._doNotHandleContextLost) {
+            texture._bufferViewArray = data;
+        }
 		
 		var textureType = this._getWebGLTextureType(type);
 		var internalFormat = this._getInternalFormat(format);

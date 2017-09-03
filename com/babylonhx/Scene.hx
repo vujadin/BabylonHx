@@ -1702,6 +1702,10 @@ import com.babylonhx.audio.*;
 	 * @see http://doc.babylonjs.com/page.php?p=22081
 	 */
 	public function beginAnimation(target:Dynamic, from:Int, to:Int, loop:Bool = false, speedRatio:Float = 1.0, ?onAnimationEnd:Void->Void, ?animatable:Animatable):Animatable {
+		if (from > to && speedRatio > 0) {
+			speedRatio *= -1;
+		}
+		
 		this.stopAnimation(target);
 		
 		if (animatable == null) {
@@ -3328,6 +3332,10 @@ import com.babylonhx.audio.*;
 		// Post-processes
 		this.postProcessManager.dispose();
 		
+		if (this._postProcessRenderPipelineManager != null) {
+            this._postProcessRenderPipelineManager.dispose();
+        }
+		
 		// Physics
 		if (this._physicsEngine != null) {
 			this.disablePhysicsEngine();
@@ -3709,8 +3717,28 @@ import com.babylonhx.audio.*;
             mesh._rebuild();
         }
 		
+		if (this.postProcessManager != null) {
+            this.postProcessManager._rebuild();
+        }
+		
 		for (layer in this.layers) {
             layer._rebuild();
+        }
+		
+		for (highlightLayer in this.highlightLayers) {
+            highlightLayer._rebuild();
+        }
+		
+        if (this._boundingBoxRenderer != null) {
+            this._boundingBoxRenderer._rebuild();
+        }
+		
+        for (system in this.particleSystems) {
+            system.rebuild();
+        }
+		
+        if (this._postProcessRenderPipelineManager != null) {
+            this._postProcessRenderPipelineManager._rebuild();
         }
     }
 	

@@ -46,6 +46,7 @@ class InternalTexture implements ISmartArrayCompatible {
 	public var _dataSource:Int = InternalTexture.DATASOURCE_UNKNOWN;
 	public var _buffer:ArrayBuffer;
 	public var _bufferView:ArrayBufferView;
+	public var _bufferViewArray:Array<ArrayBufferView>;
 	public var _size:Int = -1;
 	public var _extension:String;
 	public var _files:Array<String>;
@@ -171,6 +172,13 @@ class InternalTexture implements ISmartArrayCompatible {
 				}, null, this.format, this._extension);
 				proxy._swapAndDie(this);
 				return;
+				
+			case InternalTexture.DATASOURCE_CUBERAW:
+                proxy = this._engine.createRawCubeTexture(this._bufferViewArray, this.width, this.format, this.type, this.generateMipMaps, this.invertY, this.samplingMode, this._compression);
+                proxy._swapAndDie(this);
+				
+                this.isReady = true;
+                return;
 				
 			case InternalTexture.DATASOURCE_CUBEPREFILTERED:
 				proxy = this._engine.createPrefilteredCubeTexture(this.url, null, this._lodGenerationScale, this._lodGenerationOffset, function(proxy:InternalTexture) {

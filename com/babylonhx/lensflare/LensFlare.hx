@@ -11,9 +11,10 @@ import com.babylonhx.math.Color3;
 @:expose('BABYLON.LensFlare') class LensFlare {
 	
 	public var size:Float;
+	public var position:Float;
 	public var color:Color3;
 	public var texture:Texture;
-	public var position:Float;
+	public var alphaMode:Int = Engine.ALPHA_ONEONE;
 
 	private var _system:LensFlareSystem;
 	
@@ -25,14 +26,14 @@ import com.babylonhx.math.Color3;
         this.texture = imgUrl != null ? new Texture(imgUrl, system.getScene(), true) : null;
         this._system = system;
         
-        _system.lensFlares.push(this);
+        this._system.lensFlares.push(this);
 	}
 
 	public function dispose():Void {
 		if (this.texture != null) {
 			this.texture.dispose();
 		}
-
+		
 		// Remove from scene
 		this._system.lensFlares.remove(this);
 	}

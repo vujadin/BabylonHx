@@ -119,7 +119,7 @@ import lime.utils.Float32Array;
 		return this._sourceMesh.getIndices(copyWhenShared);
 	}
 
-	private function get_positions():Array<Vector3> {
+	override private function get__positions():Array<Vector3> {
 		return this._sourceMesh._positions;
 	}
 

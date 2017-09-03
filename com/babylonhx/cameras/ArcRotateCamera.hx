@@ -224,6 +224,45 @@ import com.babylonhx.tools.Observable;
 		this._cache.radius = this.radius;
 		this._cache.targetScreenOffset = this.targetScreenOffset.clone();
 	}
+	
+	// State
+
+	/**
+	 * Store current camera state (fov, position, etc..)
+	 */
+	private var _storedAlpha:Float;
+	private var _storedBeta:Float;
+	private var _storedRadius:Float;
+	private var _storedTarget:Vector3;     
+
+	override public function storeState():Camera {
+		this._storedAlpha = this.alpha;
+		this._storedBeta = this.beta;
+		this._storedRadius = this.radius;
+		this._storedTarget = this._getTargetPosition().clone();
+		
+		return super.storeState();
+	}
+
+	/**
+	 * Restored camera state. You must call storeState() first
+	 */
+	override public function restoreState():Bool {
+		if (!super.restoreState()) {
+			return false;
+		}
+		
+		this.alpha = this._storedAlpha;
+		this.beta = this._storedBeta;
+		this.radius = this._storedRadius;
+		this.setTarget(this._storedTarget);
+		
+		this.inertialAlphaOffset = 0;
+		this.inertialBetaOffset = 0;
+		this.inertialRadiusOffset = 0;
+		
+		return true;
+	}
 
 	// Synchronized
 	override public function _isSynchronizedViewMatrix():Bool {
