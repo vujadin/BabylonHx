@@ -64,6 +64,10 @@ import com.babylonhx.math.Quaternion;
 			return null;
 		}
 		
+		if (this.lockedTarget.absolutePosition != null) {
+			this.lockedTarget.computeWorldMatrix();
+		}
+		
 		return this.lockedTarget.absolutePosition != null ? this.lockedTarget.absolutePosition : this.lockedTarget;
 	}
 	
@@ -89,8 +93,8 @@ import com.babylonhx.math.Quaternion;
 	/**
 	 * Restored camera state. You must call storeState() first
 	 */
-	override public function restoreState():Bool {
-		if (!super.restoreState()) {
+	override public function _restoreStateValues():Bool {
+		if (!super._restoreStateValues()) {
 			return false;
 		}
 		

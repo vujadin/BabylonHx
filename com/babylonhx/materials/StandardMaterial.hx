@@ -1464,7 +1464,7 @@ typedef SMD = StandardMaterialDefines
 			this._imageProcessingConfiguration.onUpdateParameters.remove(this._imageProcessingObserver);
 		}
 		
-		super.dispose(forceDisposeEffect, forceDisposeTextures);
+		super.dispose(forceDisposeEffect);
 	}
 
 	override public function clone(name:String, cloneChildren:Bool = false):StandardMaterial {

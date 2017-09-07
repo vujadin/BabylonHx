@@ -1,4 +1,4 @@
-package com.babylonhx;
+package com.babylonhx.events;
 
 import com.babylonhx.collisions.PickingInfo;
 
@@ -22,16 +22,13 @@ typedef PointerEvent = {
 	pointerType:Null<Int>*/
 }
 
-class PointerInfo {
+class PointerInfo extends PointerInfoBase {
 	
-	public var type:Int;
-	public var event:PointerEvent;
 	public var pickInfo:PickingInfo;
 	
 
 	public function new(type:Int, event:PointerEvent, pickInfo:PickingInfo) {
-		this.type = type;
-		this.event = event;
+		super(type, event);
 		this.pickInfo = pickInfo;
 	}
 	

@@ -126,6 +126,9 @@ import haxe.Timer;
 	public var alphaMode:Int = Engine.ALPHA_COMBINE;
 	
 	@serialize()
+	public var needDepthPrePass:Bool = false;
+	
+	@serialize()
 	public var disableDepthWrite:Bool = false;
 	
 	@serialize("fogEnabled")

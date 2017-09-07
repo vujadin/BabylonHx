@@ -763,10 +763,9 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 	}
 
 	private function _getDepthTexture():Texture {
-		var geometry = this._scene.enableGeometryBufferRenderer();
-		if (geometry != null) {
-			return geometry.getGBuffer().textures[0];
-		}
+		if (this._scene.getEngine().getCaps().drawBuffersExtension) {
+            return this._scene.enableGeometryBufferRenderer().getGBuffer().textures[0];
+        }
 		
 		return this._scene.enableDepthRenderer().getDepthMap();
 	}

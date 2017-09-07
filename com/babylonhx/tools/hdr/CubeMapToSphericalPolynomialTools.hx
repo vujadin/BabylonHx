@@ -1,25 +1,17 @@
 package com.babylonhx.tools.hdr;
 
-import com.babylonhx.math.Scalar;
+import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.SphericalPolynomial;
 import com.babylonhx.math.SphericalHarmonics;
 import com.babylonhx.tools.hdr.PanoramaToCubeMapTools.CubeMapInfo;
-import com.babylonhx.materials.textures.BaseTexture;
-import com.babylonhx.math.Tools as MathTools;
-import lime.utils.ArrayBufferView;
 
 import lime.utils.Float32Array;
 
 /**
  * ...
  * @author Krtolica Vujadin
- */
-
-/**
- * Helper class dealing with the extraction of spherical polynomial dataArray
- * from a cube map.
  */
 class CubeMapToSphericalPolynomialTools {
 	
@@ -45,29 +37,29 @@ class CubeMapToSphericalPolynomialTools {
 			return null;
 		}
 		
-		var size = texture.getSize().width;
-		var right = texture.readPixels(0);
-		var left = texture.readPixels(1);
+		var size:Int = texture.getSize().width;
+		var right:Float32Array = cast texture.readPixels(0);
+		var left:Float32Array = cast texture.readPixels(1);
 		
-		var up:ArrayBufferView = null;
-		var down:ArrayBufferView = null;
+		var up:Float32Array = null;
+		var down:Float32Array = null;
 		if (texture.isRenderTarget) {
-			up = texture.readPixels(3);
-			down = texture.readPixels(2);
+			up = cast texture.readPixels(3);
+			down = cast texture.readPixels(2);
 		}
 		else {
-			up = texture.readPixels(2);
-			down = texture.readPixels(3);
+			up = cast texture.readPixels(2);
+			down = cast texture.readPixels(3);
 		}
 		
-		var front = texture.readPixels(4);
-		var back = texture.readPixels(5);
+		var front:Float32Array = cast texture.readPixels(4);
+		var back:Float32Array = cast texture.readPixels(5);
 		
 		var gammaSpace = texture.gammaSpace;
 		// Always read as RGBA.
 		var format = Engine.TEXTUREFORMAT_RGBA;
 		var type = Engine.TEXTURETYPE_UNSIGNED_INT;
-		if (/*texture.textureType && */texture.textureType != Engine.TEXTURETYPE_UNSIGNED_INT) {
+		if (texture.textureType != Engine.TEXTURETYPE_UNSIGNED_INT) {
 			type = Engine.TEXTURETYPE_FLOAT;
 		}
 		
@@ -87,13 +79,6 @@ class CubeMapToSphericalPolynomialTools {
 		return ConvertCubeMapToSphericalPolynomial(cubeInfo);
 	}
 	
-	/**
-	 * Converts a cubemap to the according Spherical Polynomial data. 
-	 * This extracts the first 3 orders only as they are the only one used in the lighting.
-	 * 
-	 * @param cubeInfo The Cube map to extract the information from.
-	 * @return The Spherical Polynomial data.
-	 */
 	public static function ConvertCubeMapToSphericalPolynomial(cubeInfo:CubeMapInfo):SphericalPolynomial {
 		var sphericalHarmonics = new SphericalHarmonics();
 		var totalSolidAngle = 0.0;
@@ -106,7 +91,8 @@ class CubeMapToSphericalPolynomialTools {
 		var minUV = du * 0.5 - 1.0;
 		
 		for (faceIndex in 0...6) {
-			var fileFace = FileFaces[faceIndex];			
+			var fileFace = FileFaces[faceIndex];
+			
 			var dataArray:Float32Array = Reflect.field(cubeInfo, fileFace.name);
 			var v = minUV;
 			
@@ -114,7 +100,6 @@ class CubeMapToSphericalPolynomialTools {
 			// This is possible because during the summation we do not need the SH-specific properties, e.g. orthogonality.
 			// Because SP is still linear, so summation is fine in that basis.
 			
-			var stride = cubeInfo.format == Engine.TEXTUREFORMAT_RGBA ? 4 : 3;
 			for (y in 0...cubeInfo.size) {
 				var u = minUV;
 				
@@ -122,33 +107,60 @@ class CubeMapToSphericalPolynomialTools {
 					// World direction (not normalised)
 					var worldDirection =
 						fileFace.worldAxisForFileX.scale(u).add(
-							fileFace.worldAxisForFileY.scale(v)).add(
-								fileFace.worldAxisForNormal);
+						fileFace.worldAxisForFileY.scale(v)).add(
+						fileFace.worldAxisForNormal);
 					worldDirection.normalize();
 					
 					var deltaSolidAngle = Math.pow(1.0 + u * u + v * v, -3.0 / 2.0);
 					
-					var r = dataArray[(y * cubeInfo.size * stride) + (x * stride) + 0];
-                    var g = dataArray[(y * cubeInfo.size * stride) + (x * stride) + 1];
-                    var b = dataArray[(y * cubeInfo.size * stride) + (x * stride) + 2];
-					
-					// Handle Integer types.
-					if (cubeInfo.type == Engine.TEXTURETYPE_UNSIGNED_INT) {
-						r /= 255;
-						g /= 255;
-						b /= 255;
+					if (true) {
+						var r = dataArray[(y * cubeInfo.size * 3) + (x * 3) + 0];
+						var g = dataArray[(y * cubeInfo.size * 3) + (x * 3) + 1];
+						var b = dataArray[(y * cubeInfo.size * 3) + (x * 3) + 2];
+						
+						var color = new Color3(r, g, b);
+						
+						sphericalHarmonics.addLight(worldDirection, color, deltaSolidAngle);    
 					}
-					
-					// Handle Gamma space textures.
-					if (cubeInfo.gammaSpace) {
-						r = Math.pow(Scalar.Clamp(r), MathTools.ToLinearSpace);
-						g = Math.pow(Scalar.Clamp(g), MathTools.ToLinearSpace);
-						b = Math.pow(Scalar.Clamp(b), MathTools.ToLinearSpace);
+					else {
+						switch (faceIndex) {
+							case 0:
+								dataArray[(y * cubeInfo.size * 3) + (x * 3) + 0] = 1;
+								dataArray[(y * cubeInfo.size * 3) + (x * 3) + 1] = 0;
+								dataArray[(y * cubeInfo.size * 3) + (x * 3) + 2] = 0;
+							 
+							case 1:
+								dataArray[(y * cubeInfo.size * 3) + (x * 3) + 0] = 0;
+								dataArray[(y * cubeInfo.size * 3) + (x * 3) + 1] = 1;
+								dataArray[(y * cubeInfo.size * 3) + (x * 3) + 2] = 0;
+							
+							case 2:
+								dataArray[(y * cubeInfo.size * 3) + (x * 3) + 0] = 0;
+								dataArray[(y * cubeInfo.size * 3) + (x * 3) + 1] = 0;
+								dataArray[(y * cubeInfo.size * 3) + (x * 3) + 2] = 1;
+							
+							case 3:
+								dataArray[(y * cubeInfo.size * 3) + (x * 3) + 0] = 1;
+								dataArray[(y * cubeInfo.size * 3) + (x * 3) + 1] = 1;
+								dataArray[(y * cubeInfo.size * 3) + (x * 3) + 2] = 0;
+							
+							case 4:
+								dataArray[(y * cubeInfo.size * 3) + (x * 3) + 0] = 1;
+								dataArray[(y * cubeInfo.size * 3) + (x * 3) + 1] = 0;
+								dataArray[(y * cubeInfo.size * 3) + (x * 3) + 2] = 1;
+							
+							case 5:
+								dataArray[(y * cubeInfo.size * 3) + (x * 3) + 0] = 0;
+								dataArray[(y * cubeInfo.size * 3) + (x * 3) + 1] = 1;
+								dataArray[(y * cubeInfo.size * 3) + (x * 3) + 2] = 1;
+						}
+						
+						var color = new Color3(dataArray[(y * cubeInfo.size * 3) + (x * 3) + 0],
+												dataArray[(y * cubeInfo.size * 3) + (x * 3) + 1], 
+												  dataArray[(y * cubeInfo.size * 3) + (x * 3) + 2]);
+							
+						sphericalHarmonics.addLight(worldDirection, color, deltaSolidAngle);
 					}
-					
-					var color = new Color3(r, g, b);
-					
-					sphericalHarmonics.addLight(worldDirection, color, deltaSolidAngle);
 					
 					totalSolidAngle += deltaSolidAngle;
 					
@@ -159,22 +171,13 @@ class CubeMapToSphericalPolynomialTools {
 			}
 		}
 		
-		// Solid angle for entire sphere is 4*pi
-		var sphereSolidAngle = 4.0 * Math.PI;
+		var correctSolidAngle = 4.0 * Math.PI; // Solid angle for entire sphere is 4*pi
+		var correction = correctSolidAngle / totalSolidAngle;
 		
-		// Adjust the solid angle to allow for how many faces we processed.
-		var facesProcessed = 6.0;
-		var expectedSolidAngle = sphereSolidAngle * facesProcessed / 6.0;
+		sphericalHarmonics.scale(correction);
 		
-		// Adjust the harmonics so that the accumulated solid angle matches the expected solid angle. 
-		// This is needed because the numerical integration over the cube uses a 
-		// small angle approximation of solid angle for each texel (see deltaSolidAngle),
-		// and also to compensate for accumulative error due to float precision in the summation.
-		var correctionFactor = expectedSolidAngle / totalSolidAngle;
-		sphericalHarmonics.scale(correctionFactor);
-		
-		sphericalHarmonics.convertIncidentRadianceToIrradiance();
-		sphericalHarmonics.convertIrradianceToLambertianRadiance();
+		// Additionally scale by pi -- audit needed
+		sphericalHarmonics.scale(1.0 / Math.PI);
 		
 		return SphericalPolynomial.getSphericalPolynomialFromHarmonics(sphericalHarmonics);
 	}

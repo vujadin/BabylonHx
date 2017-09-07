@@ -245,6 +245,9 @@ class DefaultRenderingPipeline extends PostProcessRenderPipeline implements IDis
 			if (this._hdr) {
 				this.addEffect(new PostProcessRenderEffect(engine, this.ImageProcessingPostProcessId, function() { return this.imageProcessing; }, true));
 			}
+			else {
+                this._scene.imageProcessingConfiguration.applyByPostProcess = false;
+            }
 		}
 		
 		if (this.fxaaEnabled) {

@@ -162,11 +162,11 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		
 		if (this._texture == null) {
 			if (StringTools.startsWith(url, "from_image") && _tmpImage != null) {	// VK: DO NOT REMOVE!!
-				this._texture = scene.getEngine().createTextureFromImage(_tmpImage, noMipmap, scene, this._samplingMode);
+				this._texture = scene.getEngine().createTextureFromImage(url, _tmpImage, noMipmap, scene, this._samplingMode);
 				_tmpImage = null;
 			}
 			else if (!scene.useDelayedTextureLoading) {
-				if(url.indexOf(".") != -1) {	// protection for cube texture, url is not full path !
+				if(url.indexOf("data:") != -1 || url.indexOf(".") != -1) {	// protection for cube texture, url is not full path !
 					this._texture = scene.getEngine().createTexture(url, noMipmap, invertY, scene, this._samplingMode, load, onError, this._buffer);
 					if (deleteBuffer) {
 						this._buffer = null;
@@ -357,9 +357,9 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		return this._cachedTextureMatrix;
 	}
 	
-	public static function fromImage(img:Image, scene:Scene, noMipmap:Bool = false, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE):Texture {
+	public static function fromImage(uid:String, img:Image, scene:Scene, noMipmap:Bool = false, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE):Texture {
 		Texture._tmpImage = img;
-		var tex:Texture = new Texture("from_image", scene, noMipmap, false, samplingMode);
+		var tex:Texture = new Texture("from_image:" + uid, scene, noMipmap, false, samplingMode);
 		return tex;
 	}
 	

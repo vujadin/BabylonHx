@@ -170,9 +170,9 @@ class HDRCubeTexture extends BaseTexture {
 			return #if js cast #end mips;
 		} : null;
 		
-		var callback = function(buffer:ArrayBuffer):Array<ArrayBufferView> {
+		var callback = function(buffer:UInt8Array):Array<ArrayBufferView> {
 			// Create Native Array Views
-			var intArrayView:Int32Array = new Int32Array(buffer);
+			var intArrayView:Int32Array = new Int32Array(buffer.buffer);
 			floatArrayView = new Float32Array(buffer);
 			
 			// Fill header.
@@ -279,7 +279,7 @@ class HDRCubeTexture extends BaseTexture {
 	 * Occurs when the file is raw .hdr file.
 	 */
 	private function loadHDRTexture() {
-		var callback = function(buffer:ArrayBuffer):Array<ArrayBufferView> {
+		var callback = function(buffer:Dynamic):Array<ArrayBufferView> {
 			// Extract the raw linear data.
 			var data = HDRTools.GetCubeMapTextureData(buffer, this._size);
 			
@@ -343,7 +343,7 @@ class HDRCubeTexture extends BaseTexture {
 			}
 			
 			return results;
-		}
+		};
 		
 		var mipmapGenerator = null;
 		
@@ -471,7 +471,7 @@ class HDRCubeTexture extends BaseTexture {
 	public static function generateBabylonHDROnDisk(url:String, size:Int, onError:Dynamic) {
 		// VK TODO
 		#if js
-		var callback = function (buffer:ArrayBuffer) {
+		var callback = function (buffer:UInt8Array) {
 			/*var data = untyped __js__("new Blob([buffer], { type: 'application/octet-stream' })");
 			
 			// Returns a URL you can use as a href.
@@ -486,7 +486,7 @@ class HDRCubeTexture extends BaseTexture {
 			a.click();*/
 		};
 		#else
-		var callback = function (buffer:ArrayBuffer) {
+		var callback = function (buffer:UInt8Array) {
 			
 		};
 		#end
@@ -503,7 +503,7 @@ class HDRCubeTexture extends BaseTexture {
 	 * @param onError Method called if any error happens during download.
 	 * @return The packed binary data.
 	 */
-	public static function generateBabylonHDR(url:String = "", size:Int, callback:ArrayBuffer->Void, ?onError:Void->Void) {
+	public static function generateBabylonHDR(url:String = "", size:Int, callback:UInt8Array->Void, ?onError:Void->Void) {
 		// Needs the url tho create the texture.
 		if (url == "") {
 			return;
@@ -514,7 +514,7 @@ class HDRCubeTexture extends BaseTexture {
 			return;
 		}
 		
-		var getDataCallback = function(dataBuffer:ArrayBuffer) {
+		var getDataCallback = function(dataBuffer:Dynamic) {
 			// Extract the raw linear data.
 			var cubeData = HDRTools.GetCubeMapTextureData(dataBuffer, size);
 			
@@ -591,7 +591,7 @@ class HDRCubeTexture extends BaseTexture {
 			}
 			
 			// Callback.
-			callback(buffer);
+			callback(new UInt8Array(buffer));
 		};
 		
 		// Download and process.

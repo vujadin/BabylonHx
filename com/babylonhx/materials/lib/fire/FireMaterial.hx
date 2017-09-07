@@ -17,8 +17,6 @@ import com.babylonhx.tools.serialization.SerializationHelper;
  * ...
  * @author Krtolica Vujadin
  */
-
-typedef FMD = FireMaterialDefines
  
 class FireMaterial extends PushMaterial {
 

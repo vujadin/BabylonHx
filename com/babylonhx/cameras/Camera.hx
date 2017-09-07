@@ -114,6 +114,7 @@ import com.babylonhx.culling.Ray;
     public var onViewMatrixChangedObservable:Observable<Camera> = new Observable<Camera>();
     public var onProjectionMatrixChangedObservable:Observable<Camera> = new Observable<Camera>();
 	public var onAfterCheckInputsObservable:Observable<Camera> = new Observable<Camera>();
+	public var onRestoreStateObservable:Observable<Camera> = new Observable<Camera>();
 
 	// Cache
 	private var _computedViewMatrix:Matrix = Matrix.Identity();
@@ -163,9 +164,9 @@ import com.babylonhx.culling.Ray;
 	}
 
 	/**
-	 * Restored camera state. You must call storeState() first
+	 * Restores the camera state values if it has been stored. You must call storeState() first
 	 */
-	public function restoreState():Bool {
+	public function _restoreStateValues():Bool {
 		if (!this._stateStored) {
 			return false;
 		}
@@ -174,6 +175,18 @@ import com.babylonhx.culling.Ray;
 		
 		return true;
 	}
+	
+	/**
+     * Restored camera state. You must call storeState() first
+     */
+    public function restoreState():Bool {
+        if (this._restoreStateValues()) {
+            this.onRestoreStateObservable.notifyObservers(this);
+            return true;
+        }
+		
+        return false;
+    }
 	
 	override public function getClassName():String {
 		return 'Camera';
@@ -571,6 +584,7 @@ import com.babylonhx.culling.Ray;
         this.onViewMatrixChangedObservable.clear();
         this.onProjectionMatrixChangedObservable.clear();
         this.onAfterCheckInputsObservable.clear();
+		this.onRestoreStateObservable.clear();
 		
 		// Inputs
 		if (this.inputs != null) {

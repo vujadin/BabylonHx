@@ -9,6 +9,7 @@ class NormalMaterialDefines extends MaterialDefines {
 	public var DIFFUSE:Bool = false;
 	public var CLIPPLANE:Bool = false;
 	public var ALPHATEST:Bool = false;
+	public var DEPTHPREPASS:Bool = false;
 	public var POINTSIZE:Bool = false;
 	public var FOG:Bool = false;
 	public var LIGHT0:Bool = false;
@@ -64,6 +65,7 @@ class NormalMaterialDefines extends MaterialDefines {
 			if (untyped this.DIFFUSE != other.DIFFUSE) return false;
 			if (untyped this.CLIPPLANE != other.CLIPPLANE) return false;
 			if (untyped this.ALPHATEST != other.ALPHATEST) return false;
+			if (untyped this.DEPTHPREPASS != other.DEPTHPREPASS) return false;
 			if (untyped this.POINTSIZE != other.POINTSIZE) return false;
 			if (untyped this.FOG != other.FOG) return false; 
 			if (untyped this.LIGHT0 != other.LIGHT0) return false;
@@ -118,6 +120,7 @@ class NormalMaterialDefines extends MaterialDefines {
 		untyped other.DIFFUSE = this.DIFFUSE;
 		untyped other.CLIPPLANE = this.CLIPPLANE;
 		untyped other.ALPHATEST = this.ALPHATEST;
+		untyped other.DEPTHPREPASS = this.DEPTHPREPASS;
 		untyped other.POINTSIZE = this.POINTSIZE;
 		untyped other.FOG = this.FOG;
 		untyped other.LIGHT0 = this.LIGHT0;
@@ -170,6 +173,7 @@ class NormalMaterialDefines extends MaterialDefines {
 		this.DIFFUSE = false;
 		this.CLIPPLANE = false;
 		this.ALPHATEST = false;
+		this.DEPTHPREPASS = false;
 		this.POINTSIZE = false;
 		this.FOG = false;
 		this.LIGHT0 = false;
@@ -227,6 +231,9 @@ class NormalMaterialDefines extends MaterialDefines {
 		}
 		if (this.ALPHATEST) {
 			result += "#define ALPHATEST \n";
+		}
+		if (this.DEPTHPREPASS) {
+			result += "#define DEPTHPREPASS \n";
 		}
 		if (this.POINTSIZE) {
 			result += "#define POINTSIZE \n";

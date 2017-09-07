@@ -61,7 +61,7 @@ import com.babylonhx.tools.Tools;
 		this._depthStencilBufferAlreadyCleaned = true;		
 	}
 
-	public function render(customRenderFunction:SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void = null, activeMeshes:Array<AbstractMesh>, renderParticles:Bool, renderSprites:Bool) {
+	public function render(customRenderFunction:SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void = null, activeMeshes:Array<AbstractMesh>, renderParticles:Bool, renderSprites:Bool) {
 		// Check if there's at least on observer on the onRenderingGroupObservable and initialize things to fire it
 		var observable = this._scene.onRenderingGroupObservable.hasObservers() ? this._scene.onRenderingGroupObservable : null;
 		var info:RenderingGroupInfo = null;

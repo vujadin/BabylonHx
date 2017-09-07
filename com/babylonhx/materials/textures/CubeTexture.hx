@@ -138,9 +138,9 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	}
 	
 	override public function clone():CubeTexture {
-		return SerializationHelper.Clone(function() {
+		//return SerializationHelper.Clone(function() {
 			return new CubeTexture(this.url, this.getScene(), this._extensions, this._noMipmap, this._files);
-		}, this);
+		//}, this);
 	}
 	
 }

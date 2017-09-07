@@ -22,6 +22,7 @@ import com.babylonhx.particles.IParticleSystem;
 	private var _opaqueSubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>(256);
 	private var _transparentSubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>(256);
 	private var _alphaTestSubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>(256);
+	private var _depthOnlySubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>(256);
 	private var _particleSystems:SmartArray<IParticleSystem> = new SmartArray<IParticleSystem>(256);
 	private var _spriteManagers:SmartArray<SpriteManager> = new SmartArray<SpriteManager>(256);
 	private var _activeVertices:Int = 0;
@@ -114,13 +115,22 @@ import com.babylonhx.particles.IParticleSystem;
      * Render all the sub meshes contained in the group.
      * @param customRenderFunction Used to override the default render behaviour of the group.
      */
-	public function render(?customRenderFunction:SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void, renderSprites:Bool, renderParticles:Bool, activeMeshes:Array<AbstractMesh>) {
+	public function render(?customRenderFunction:SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void, renderSprites:Bool, renderParticles:Bool, activeMeshes:Array<AbstractMesh>) {
 		if (customRenderFunction != null) {
-			customRenderFunction(this._opaqueSubMeshes, this._alphaTestSubMeshes, this._transparentSubMeshes);			
+			customRenderFunction(this._opaqueSubMeshes, this._alphaTestSubMeshes, this._transparentSubMeshes, this._depthOnlySubMeshes);
 			return;
 		}
 		
 		var engine = this._scene.getEngine();
+		
+		// Depth only
+        if (this._depthOnlySubMeshes.length != 0) {
+            engine.setAlphaTesting(true);
+            engine.setColorWrite(false);
+            this._renderAlphaTest(this._depthOnlySubMeshes);
+            engine.setAlphaTesting(false);
+            engine.setColorWrite(true);
+        } 
 		
 		// Opaque
 		if (this._opaqueSubMeshes.length != 0) {
@@ -136,6 +146,7 @@ import com.babylonhx.particles.IParticleSystem;
 		
 		var stencilState = engine.getStencilBuffer();
 		engine.setStencilBuffer(false);
+		
 		// Sprites
 		if (renderSprites) {
 			this._renderSprites();
@@ -212,6 +223,21 @@ import com.babylonhx.particles.IParticleSystem;
 		
 		for (subIndex in 0...sortedArray.length) {
 			subMesh = sortedArray[subIndex];
+			
+			if (transparent) {
+                var material = subMesh.getMaterial();
+				
+                if (material.needDepthPrePass) {
+                    var engine = material.getScene().getEngine();
+                    engine.setColorWrite(false);
+                    engine.setAlphaTesting(true);
+                    engine.setAlphaMode(Engine.ALPHA_DISABLE);
+                    subMesh.render(false);
+                    engine.setAlphaTesting(false);
+                    engine.setColorWrite(true);
+                }
+            }
+			
 			subMesh.render(transparent);
 		}
 	}
@@ -295,6 +321,7 @@ import com.babylonhx.particles.IParticleSystem;
 		this._opaqueSubMeshes.reset();
 		this._transparentSubMeshes.reset();
 		this._alphaTestSubMeshes.reset();
+		this._depthOnlySubMeshes.reset();
 		this._particleSystems.reset();
         this._spriteManagers.reset();
 		this._edgesRenderers.reset();
@@ -304,6 +331,7 @@ import com.babylonhx.particles.IParticleSystem;
 		this._opaqueSubMeshes.dispose();
 		this._transparentSubMeshes.dispose();
 		this._alphaTestSubMeshes.dispose();
+		this._depthOnlySubMeshes.dispose();
 		this._particleSystems.dispose();
 		this._spriteManagers.dispose();                      
 		this._edgesRenderers.dispose();
@@ -323,9 +351,17 @@ import com.babylonhx.particles.IParticleSystem;
 			this._transparentSubMeshes.push(subMesh);
 		} 
 		else if (material.needAlphaTesting()) { // Alpha test
+			if (material.needDepthPrePass) {
+				this._depthOnlySubMeshes.push(subMesh);
+			}
+			
 			this._alphaTestSubMeshes.push(subMesh);
 		} 
 		else {
+			if (material.needDepthPrePass) {
+				this._depthOnlySubMeshes.push(subMesh);
+			}
+			
 			this._opaqueSubMeshes.push(subMesh); // Opaque
 		}
 		

@@ -428,7 +428,17 @@ import haxe.Timer;
 		}
 	}
 
-	private function _renderForShadowMap(opaqueSubMeshes:SmartArray<SubMesh>, alphaTestSubMeshes:SmartArray<SubMesh>, transparentSubMeshes:SmartArray<SubMesh>) {
+	private function _renderForShadowMap(opaqueSubMeshes:SmartArray<SubMesh>, alphaTestSubMeshes:SmartArray<SubMesh>, transparentSubMeshes:SmartArray<SubMesh>, depthOnlySubMeshes:SmartArray<SubMesh>) {
+		var engine = this._scene.getEngine();
+		
+        if (depthOnlySubMeshes.length > 0) {
+            engine.setColorWrite(false);            
+            for (index in 0...depthOnlySubMeshes.length) {
+                this._renderSubMeshForShadowMap(depthOnlySubMeshes.data[index]);
+            }
+            engine.setColorWrite(true);
+        }
+		
 		for (index in 0...opaqueSubMeshes.length) {
 			this._renderSubMeshForShadowMap(opaqueSubMeshes.data[index]);
 		}

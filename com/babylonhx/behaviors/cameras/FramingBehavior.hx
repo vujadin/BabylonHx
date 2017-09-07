@@ -2,6 +2,9 @@ package com.babylonhx.behaviors.cameras;
 
 import com.babylonhx.animations.easing.BackEase;
 import com.babylonhx.animations.easing.EasingFunction;
+import com.babylonhx.events.PointerInfo;
+import com.babylonhx.events.PointerInfoPre;
+import com.babylonhx.events.PointerEventTypes;
 import com.babylonhx.animations.Animatable;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.cameras.Camera;
@@ -243,12 +246,13 @@ class FramingBehavior implements Behavior<ArcRotateCamera> {
 	 * @param radius Optional. If a cached radius position already exists, overrides default.
 	 * @param framingPositionY Position on mesh to center camera focus where 0 corresponds bottom of its bounding box and 1, the top
 	 * @param focusOnOriginXZ Determines if the camera should focus on 0 in the X and Z axis instead of the mesh
+	 * @param onAnimationEnd Callback triggered at the end of the framing animation
 	 */
-	public function zoomOnMesh(mesh:AbstractMesh, focusOnOriginXZ:Bool = true) {
+	public function zoomOnMesh(mesh:AbstractMesh, focusOnOriginXZ:Bool = true, onAnimationEnd:Void->Void = null) {
 		mesh.computeWorldMatrix(true);
 		
 		var boundingBox = mesh.getBoundingInfo().boundingBox;
-		this.zoomOnBoundingInfo(boundingBox.minimumWorld, boundingBox.maximumWorld, focusOnOriginXZ);
+		this.zoomOnBoundingInfo(boundingBox.minimumWorld, boundingBox.maximumWorld, focusOnOriginXZ, onAnimationEnd);
 	}
 	
 	/**
@@ -257,8 +261,9 @@ class FramingBehavior implements Behavior<ArcRotateCamera> {
 	 * @param radius Optional. If a cached radius position already exists, overrides default.
 	 * @param framingPositionY Position on mesh to center camera focus where 0 corresponds bottom of its bounding box and 1, the top
 	 * @param focusOnOriginXZ Determines if the camera should focus on 0 in the X and Z axis instead of the mesh
+	 * @param onAnimationEnd Callback triggered at the end of the framing animation
 	 */
-	public function zoomOnBoundingInfo(minimumWorld:Vector3, maximumWorld:Vector3, focusOnOriginXZ:Bool = false) {
+	public function zoomOnBoundingInfo(minimumWorld:Vector3, maximumWorld:Vector3, focusOnOriginXZ:Bool = false, onAnimationEnd:Void->Void = null) {
 		var zoomTarget:Vector3 = null;
 		
 		// Find target by interpolating from bottom of bounding box in world-space to top via framingPositionY
@@ -281,7 +286,7 @@ class FramingBehavior implements Behavior<ArcRotateCamera> {
 		
 		this._betaIsAnimating = true;
 		this._animatables.push(Animation.TransitionTo("target", zoomTarget, this._attachedCamera, this._attachedCamera.getScene(), 
-								60, this._vectorTransition, this._framingTime));
+								60, this._vectorTransition, this._framingTime, onAnimationEnd));
 								
 		// sets the radius and lower radius bounds
 		// Small delta ensures camera is not always at lower zoom limit.

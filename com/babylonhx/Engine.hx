@@ -32,6 +32,7 @@ import com.babylonhx.tools.PerfCounter;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.tools.WebGLVertexArrayObject;
 import com.babylonhx.tools.Observable;
+import com.babylonhx.tools.dds.DDSTools;
 import com.babylonhx.utils.Image;
 import lime.graphics.opengl.GLQuery;
 
@@ -200,6 +201,7 @@ import openfl.display.OpenGLView;
 	// To enable/disable IDB support and avoid XHR on .manifest
 	//public var enableOfflineSupport = Database;
 	public var scenes:Array<Scene> = [];
+	public var postProcesses:Array<PostProcess> = [];
 	
 	// Observables
 
@@ -270,6 +272,7 @@ import openfl.display.OpenGLView;
 	private var _pointerLockRequested:Bool;
 	private var _alphaTest:Bool = false;
 	private var _isStencilEnable:Bool;
+	private var _colorWrite:Bool = true;
 	
 	private var _drawCalls:PerfCounter = new PerfCounter();
 	
@@ -313,7 +316,7 @@ import openfl.display.OpenGLView;
 	private var _internalTexturesCache:Array<InternalTexture> = [];
 	private var _maxTextureChannels:Int = 16;
 	private var _activeTexture:Int = 0;
-	public var _activeTexturesCache:Array<InternalTexture>;
+	public var _activeTexturesCache:Map<Int, InternalTexture> = new Map();
 	private var _currentEffect:Effect;
 	private var _currentProgram:GLProgram;
 	private var _compiledEffects:Map<String, Effect> = new Map<String, Effect>();
@@ -365,6 +368,11 @@ import openfl.display.OpenGLView;
 	inline private function get_textureFormatInUse():String {
 		return this._textureFormatInUse;
 	}
+	
+	public var currentViewport(get, never):Viewport;
+	inline private function get_currentViewport():Viewport {
+        return this._cachedViewport;
+    }
 
 	// Empty texture
 	public var emptyTexture(get, never):InternalTexture;
@@ -555,6 +563,18 @@ import openfl.display.OpenGLView;
 		
 		this._caps.textureLOD = this._webGLVersion > 1 || gl.getExtension('EXT_shader_texture_lod');
 		
+		// Depth Texture
+        if (this._webGLVersion > 1) {
+            this._caps.depthTextureExtension = true;
+        } 
+		else {
+            var depthTextureExtension = gl.getExtension('WEBGL_depth_texture');
+			
+            if (depthTextureExtension != null) {
+                this._caps.depthTextureExtension = true;
+            }
+        }
+		
 		// Vertex array object 
 		if (this._webGLVersion > 1) {
 			this._caps.vertexArrayObject = true;
@@ -675,7 +695,7 @@ import openfl.display.OpenGLView;
 		// Pointer lock
 		this.isPointerLock = false;	
 		
-		this._activeTexturesCache = [];// new Vector<GLTexture>(this._maxTextureChannels);
+		this._activeTexturesCache = new Map();// new Vector<GLTexture>(this._maxTextureChannels);
 		
 		// Prepare buffer pointers
         for (i in 0...this._caps.maxVertexAttribs) {
@@ -721,7 +741,6 @@ import openfl.display.OpenGLView;
 	
 	public static function compileShader(gl:Dynamic, source:String, type:String, defines:String, shaderVersion:String):GLShader {
 		var shader:GLShader = gl.createShader(type == "vertex" ? gl.VERTEX_SHADER : gl.FRAGMENT_SHADER);
-		
 		gl.shaderSource(shader, shaderVersion + (defines != null ? defines + "\n" : "") + source);
 		gl.compileShader(shader);
 		
@@ -2015,8 +2034,8 @@ import openfl.display.OpenGLView;
 	inline public function getUniforms(shaderProgram:GLProgram, uniformsNames:Array<String>):Array<GLUniformLocation> {
 		var results:Array<GLUniformLocation> = [];
 		
-		for (index in 0...uniformsNames.length) {
-			results.push(gl.getUniformLocation(shaderProgram, uniformsNames[index]));
+		for (uniformName in uniformsNames) {
+			results.push(gl.getUniformLocation(shaderProgram, uniformName));
 		}
 		
 		return results;
@@ -2231,7 +2250,12 @@ import openfl.display.OpenGLView;
 
 	inline public function setColorWrite(enable:Bool) {
 		gl.colorMask(enable, enable, enable, enable);
+		this._colorWrite = enable;
 	}
+	
+	inline public function getColorWrite():Bool {
+        return this._colorWrite;
+    }
 	
 	inline public function setAlphaConstants(r:Float, g:Float, b:Float, a:Float) {
 		this._alphaState.setAlphaBlendConstants(r, g, b, a);
@@ -2367,11 +2391,11 @@ import openfl.display.OpenGLView;
 		return gl.createTexture();
 	}
 	
-	public function createTextureFromImage(img:Image, noMipmap:Bool, scene:Scene, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE):InternalTexture {	
+	public function createTextureFromImage(uid:String, img:Image, noMipmap:Bool, scene:Scene, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE):InternalTexture {	
 		var texture = new InternalTexture(this, InternalTexture.DATASOURCE_URL);
 		
 		scene._addPendingData(texture);
-		texture.url = "from_image";
+		texture.url = "from_image:" + uid;
 		texture.generateMipMaps = noMipmap;
 		texture.samplingMode = samplingMode;
 		this._internalTexturesCache.push(texture);
@@ -2403,27 +2427,26 @@ import openfl.display.OpenGLView;
 	 * 
 	 * @returns {WebGLTexture} for assignment back into BABYLON.Texture
 	 */
-	public function createTexture(url:String, noMipmap:Bool, invertY:Bool, scene:Scene, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, onLoad:Void->Void = null, onError:Void->Void = null, buffer:Dynamic = null, ?fallBack:InternalTexture, format:Int = -1):InternalTexture {
-		var texture = fallBack != null ? fallBack : new InternalTexture(this, InternalTexture.DATASOURCE_URL, url);
+	public function createTexture(urlArg:String, noMipmap:Bool, invertY:Bool, scene:Scene, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, onLoad:Void->Void = null, onError:Void->Void = null, buffer:Dynamic = null, ?fallBack:InternalTexture, format:Int = -1):InternalTexture {
+		var url = StringTools.trim(urlArg); // assign a new string, so that the original is still available in case of fallback
+		var fromData = url.substr(0, 5) == "data:";
+		var fromBlob = url.substr(0, 5) == "blob:";
+		var isBase64 = fromData && url.indexOf("base64") != -1;
 		
-		var extension:String = "";
-		var fromData:Dynamic = null;
-		if (url.substr(0, 5) == "data:") {
-			fromData = true;
-		}
+		var texture = fallBack != null ? fallBack : new InternalTexture(this, InternalTexture.DATASOURCE_URL);
 		
-		if (fromData == null) {
-			extension = url.substr(url.length - 4, 4).toLowerCase();
-		}
-		else {
-			var oldUrl = url;
-			fromData = oldUrl.split(':');
-			url = oldUrl;
-			extension = fromData[1].substr(fromData[1].length - 4, 4).toLowerCase();
-		}
-		
-		var isDDS = this.getCaps().s3tc != null && (extension == ".dds");
+		// establish the file extension, if possible
+		var lastDot = url.lastIndexOf('.');
+		var extension = (lastDot > 0) ? url.substring(lastDot).toLowerCase() : "";
+		var isDDS = this.getCaps().s3tc && (extension == ".dds");
 		var isTGA = (extension == ".tga");
+		
+		// determine if a ktx file should be substituted
+		/*var isKTX = false;
+		if (this._textureFormatInUse && !isBase64 && !fallBack) {
+			url = url.substring(0, lastDot) + this._textureFormatInUse;
+			isKTX = true;
+		}*/
 		
 		if (scene != null) {
 			scene._addPendingData(texture);
@@ -2432,7 +2455,11 @@ import openfl.display.OpenGLView;
 		texture.generateMipMaps = !noMipmap;
 		texture.samplingMode = samplingMode;
 		texture.invertY = invertY;
-		texture._buffer = buffer;
+		
+		if (!this._doNotHandleContextLost) {
+			// Keep a link to the buffer only if we plan to handle context lost
+			texture._buffer = buffer;
+		}
 		
 		if (onLoad != null) {
 			texture.onLoadedObservable.add(cast onLoad);
@@ -2539,6 +2566,20 @@ import openfl.display.OpenGLView;
 			}
 			else {
 				Tools.LoadImage(buffer, onload, onerror, scene.database);
+			}
+			
+			if (!fromData || isBase64)
+				if (Std.is(buffer, Image)) {
+					onload(buffer);
+				} 
+				else {
+					Tools.LoadImage(url, onload, onerror, scene != null ? scene.database : null);
+				}
+			else if (Std.is(buffer, Array) || Std.is(buffer, String)) {
+				Tools.LoadImage(buffer, onload, onerror);
+			}
+			else {
+				onload(buffer);
 			}
 		}
 		
@@ -2732,10 +2773,11 @@ import openfl.display.OpenGLView;
 		return texture;
 	}
 	
-	public function createRawCubeTextureFromUrl(url:String, scene:Scene, size:Int, format:Int, type:Int, noMipmap:Bool = false, callback:ArrayBuffer->Array<ArrayBufferView>, mipmmapGenerator:Array<ArrayBufferView>->Array<Array<ArrayBufferView>>, onLoad:Void->Void = null, onError:Void->Void = null, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, invertY:Bool = false):InternalTexture {
+	public function createRawCubeTextureFromUrl(url:String, scene:Scene, size:Int, format:Int, type:Int, noMipmap:Bool = false, callback:UInt8Array->Array<ArrayBufferView>, mipmmapGenerator:Array<ArrayBufferView>->Array<Array<ArrayBufferView>>, onLoad:Void->Void = null, onError:Void->Void = null, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, invertY:Bool = false):InternalTexture {
 		var texture = this.createRawCubeTexture(null, size, format, type, !noMipmap, invertY, samplingMode);
 		scene._addPendingData(texture);
 		texture.url = url;
+		this._internalTexturesCache.push(texture);
 		
 		var onerror:Void->Void = function() {
 			scene._removePendingData(texture);
@@ -2755,8 +2797,6 @@ import openfl.display.OpenGLView;
 			];
 			
 			if (mipmmapGenerator != null) {
-				// TODO Remove this once Proper CubeMap Blur... This has nothing to do in engine...
-				// I ll remove ASAP.
 				var textureType = this._getWebGLTextureType(type);
 				var internalFormat = this._getInternalFormat(format);
 				var internalSizedFomat = this._getRGBABufferInternalSizedFormat(type);
@@ -2768,9 +2808,9 @@ import openfl.display.OpenGLView;
 				}
 				
 				this._bindTextureDirectly(gl.TEXTURE_CUBE_MAP, texture);
+				//gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
 				
 				var mipData = mipmmapGenerator(faceDataArrays);
-				var mipFaces = [0, 2, 4, 1, 3, 5];
 				for (level in 0...mipData.length) {
 					var mipSize = width >> level;
 					
@@ -3223,7 +3263,7 @@ import openfl.display.OpenGLView;
 			this._internalTexturesCache.push(texture);
 		}
 		
-		if (generateDepthTexture) {
+		if (generateDepthTexture && this._caps.depthTextureExtension) {
 			// Depth texture
 			var depthTexture = new InternalTexture(this, InternalTexture.DATASOURCE_MULTIRENDERTARGET);
 			
@@ -3236,7 +3276,7 @@ import openfl.display.OpenGLView;
 			gl.texImage2D(
 				gl.TEXTURE_2D,
 				0,
-				gl.DEPTH_COMPONENT16,
+				this.webGLVersion < 2 ? gl.DEPTH_COMPONENT : gl.DEPTH_COMPONENT16,
 				width,
 				height,
 				0,
@@ -3485,14 +3525,13 @@ import openfl.display.OpenGLView;
 				gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 				gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 				
-				// VK TODO:
-				/*if (loadData.isDDS) {
-					var info: Internals.DDSInfo = loadData.info;
-					var data: any = loadData.data;
-					gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, info.isCompressed ? 1 : 0);
+				if (loadData.isDDS) {
+					var info:DDSInfo = loadData.info;
+					var data:Dynamic = loadData.data;
+					//gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, info.isCompressed ? 1 : 0);
 					
-					Internals.DDSTools.UploadDDSLevels(this, data, info, true, 6, mipmapIndex);
-				}*/
+					DDSTools.UploadDDSLevels(this, data, info, true, 6, mipmapIndex);
+				}
 				
 				this._bindTextureDirectly(gl.TEXTURE_CUBE_MAP, null);
 				
@@ -3530,15 +3569,15 @@ import openfl.display.OpenGLView;
 		var isDDS = this.getCaps().s3tc != null && (extension == ".dds");
 		
 		if (isDDS) {
-			/*Tools.LoadFile(rootUrl, data => {
-				var info = Internals.DDSTools.GetDDSInfo(data);
+			Tools.LoadFile(rootUrl, function(data:Dynamic) {
+				var info = DDSTools.GetDDSInfo(data);
 				
 				var loadMipmap = (info.isRGB || info.isLuminance || info.mipmapCount > 1) && !noMipmap;
 				
-				gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
-				gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+				this._bindTextureDirectly(gl.TEXTURE_CUBE_MAP, texture);
+				//gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
 				
-				Internals.DDSTools.UploadDDSLevels(GL, this.getCaps().s3tc, data, info, loadMipmap, 6);
+				DDSTools.UploadDDSLevels(this, data, info, loadMipmap, 6);
 				
 				if (!noMipmap && !info.isFourCC && info.mipmapCount == 1) {
 					gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
@@ -3549,14 +3588,19 @@ import openfl.display.OpenGLView;
 				gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 				gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 				
-				gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
+				this._bindTextureDirectly(gl.TEXTURE_CUBE_MAP, null);
 				
-				this._activeTexturesCache = [];
+				this._activeTexturesCache = new Map();
 				
 				texture.width = info.width;
 				texture.height = info.height;
 				texture.isReady = true;
-			}, null, null, true);*/
+				texture.type = info.textureType;
+				
+				if (onLoad != null) {
+					onLoad({ isDDS: true, width: info.width, info: info, data: data, texture: texture });
+				}
+			}, "dds");
 		} 
 		else {
 			
@@ -3945,6 +3989,12 @@ import openfl.display.OpenGLView;
 	// Dispose
 	public function dispose() {		
 		this.stopRenderLoop();
+		
+		// Release postProcesses
+        while (this.postProcesses.length > 0) {
+            this.postProcesses[0].dispose();
+			this.postProcesses.shift();
+        }
 		
 		// Empty texture
 		if (this._emptyTexture != null) {

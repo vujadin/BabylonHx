@@ -26,6 +26,7 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 	public var OPACITYDIRECTUV:Float = 0;
 	public var OPACITYRGB:Bool = false;
 	public var ALPHATEST:Bool = false;
+	public var DEPTHPREPASS:Bool = false;
 	public var ALPHABLEND:Bool = false;
 	public var ALPHAFROMALBEDO:Bool = false;
 	public var ALPHATESTVALUE:Float = 0.5;
@@ -127,6 +128,7 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 
 	public var FORCENORMALFORWARD:Bool = false;
 	
+	// BHX: reqired by IImageProcessingConfigurationDefines
 	public var FROMLINEARSPACE:Bool = false;
 	
 
@@ -136,8 +138,131 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 	
 	override public function reset() {
 		super.reset();
-		this.ALPHATESTVALUE = 0.5;
+		
 		this.PBR = true;
+		
+		this.MAINUV1 = false;
+		this.MAINUV2 = false;
+		this.UV1 = false;
+		this.UV2 = false;
+		
+		this.ALBEDO = false;
+		this.ALBEDODIRECTUV = 0;
+		this.VERTEXCOLOR = false;
+		
+		this.AMBIENT = false;
+		this.AMBIENTDIRECTUV = 0;
+		this.AMBIENTINGRAYSCALE = false;
+		
+		this.OPACITY = false;
+		this.VERTEXALPHA = false;
+		this.OPACITYDIRECTUV = 0;
+		this.OPACITYRGB = false;
+		this.ALPHATEST = false;
+		this.DEPTHPREPASS = false;
+		this.ALPHABLEND = false;
+		this.ALPHAFROMALBEDO = false;
+		this.ALPHATESTVALUE = 0.5;
+		this.SPECULAROVERALPHA = false;
+		this.RADIANCEOVERALPHA = false;
+		this.ALPHAFRESNEL = false;
+		this.PREMULTIPLYALPHA = false;
+		
+		this.EMISSIVE = false;
+		this.EMISSIVEDIRECTUV = 0;
+		
+		this.REFLECTIVITY = false;
+		this.REFLECTIVITYDIRECTUV = 0;
+		this.SPECULARTERM = false;
+		
+		this.MICROSURFACEFROMREFLECTIVITYMAP = false;
+		this.MICROSURFACEAUTOMATIC = false;
+		this.LODBASEDMICROSFURACE = false;
+		this.MICROSURFACEMAP = false;
+		this.MICROSURFACEMAPDIRECTUV = 0;
+		
+		this.METALLICWORKFLOW = false;
+		this.ROUGHNESSSTOREINMETALMAPALPHA = false;
+		this.ROUGHNESSSTOREINMETALMAPGREEN = false;
+		this.METALLNESSSTOREINMETALMAPBLUE = false;
+		this.AOSTOREINMETALMAPRED = false;
+		this.ENVIRONMENTBRDF = false;
+		
+		this.NORMAL = false;
+		this.TANGENT = false;
+		this.BUMP = false;
+		this.BUMPDIRECTUV = 0;
+		this.PARALLAX = false;
+		this.PARALLAXOCCLUSION = false;
+		this.NORMALXYSCALE = true;
+		
+		this.SHADOWS = false;				// BHX
+		
+		this.LIGHTMAP = false;
+		this.LIGHTMAPDIRECTUV = 0;
+		this.USELIGHTMAPASSHADOWMAP = false;
+		
+		this.REFLECTION = false;
+		this.REFLECTIONMAP_3D = false;
+		this.REFLECTIONMAP_SPHERICAL = false;
+		this.REFLECTIONMAP_PLANAR = false;
+		this.REFLECTIONMAP_CUBIC = false;
+		this.REFLECTIONMAP_PROJECTION = false;
+		this.REFLECTIONMAP_SKYBOX = false;
+		this.REFLECTIONMAP_EXPLICIT = false;
+		this.REFLECTIONMAP_EQUIRECTANGULAR = false;
+		this.REFLECTIONMAP_EQUIRECTANGULAR_FIXED = false;
+		this.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED = false;
+		this.INVERTCUBICMAP = false;
+		this.USESPHERICALFROMREFLECTIONMAP = false;
+		this.USESPHERICALINFRAGMENT = false;
+		this.REFLECTIONMAP_OPPOSITEZ = false;
+		this.LODINREFLECTIONALPHA = false;
+		this.GAMMAREFLECTION = false;
+		
+		this.REFRACTION = false;
+		this.REFRACTIONMAP_3D = false;
+		this.REFRACTIONMAP_OPPOSITEZ = false;
+		this.LODINREFRACTIONALPHA = false;
+		this.GAMMAREFRACTION = false;
+		this.LINKREFRACTIONTOTRANSPARENCY = false;
+		
+		this.INSTANCES = false;
+		
+		this.NUM_BONE_INFLUENCERS = 0;
+		this.BonesPerMesh = 0;
+		
+		this.MORPHTARGETS = false;
+		this.MORPHTARGETS_NORMAL = false;
+		this.MORPHTARGETS_TANGENT = false;
+		this.NUM_MORPH_INFLUENCERS = 0;
+		
+		this.IMAGEPROCESSING = false;
+		this.VIGNETTE = false;
+		this.VIGNETTEBLENDMODEMULTIPLY = false;
+		this.VIGNETTEBLENDMODEOPAQUE = false;
+		this.TONEMAPPING = false;
+		this.CONTRAST = false;
+		this.COLORCURVES = false;
+		this.COLORGRADING = false;
+		this.SAMPLER3DGREENDEPTH = false;
+		this.SAMPLER3DBGRMAP = false;
+		this.IMAGEPROCESSINGPOSTPROCESS = false;
+		this.EXPOSURE = false;
+		
+		this.USEPHYSICALLIGHTFALLOFF = false;
+		this.TWOSIDEDLIGHTING = false;
+		this.SHADOWFLOAT = false;
+		this.USERIGHTHANDEDSYSTEM = false;
+		this.CLIPPLANE = false;
+		this.POINTSIZE = false;
+		this.FOG = false;
+		this.LOGARITHMICDEPTH = false;
+		
+		this.FORCENORMALFORWARD = false;
+		
+		// BHX: reqired by IImageProcessingConfigurationDefines
+		this.FROMLINEARSPACE = false;
 	}
 	
 	public function setReflectionMode(modeToEnable:String) {		
@@ -198,6 +323,7 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 			if (untyped this.OPACITYDIRECTUV != other.OPACITYDIRECTUV) return false;
 			if (untyped this.OPACITYRGB != other.OPACITYRGB) return false;
 			if (untyped this.ALPHATEST != other.ALPHATEST) return false;
+			if (untyped this.DEPTHPREPASS != other.DEPTHPREPASS) return false;
 			if (untyped this.ALPHABLEND != other.ALPHABLEND) return false;
 			if (untyped this.ALPHAFROMALBEDO != other.ALPHAFROMALBEDO) return false;
 			if (untyped this.ALPHATESTVALUE != other.ALPHATESTVALUE) return false;
@@ -328,6 +454,7 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		untyped other.OPACITYDIRECTUV = this.OPACITYDIRECTUV;
 		untyped other.OPACITYRGB = this.OPACITYRGB;
 		untyped other.ALPHATEST = this.ALPHATEST;
+		untyped other.DEPTHPREPASS = this.DEPTHPREPASS;
 		untyped other.ALPHABLEND = this.ALPHABLEND;
 		untyped other.ALPHAFROMALBEDO = this.ALPHAFROMALBEDO;
 		untyped other.ALPHATESTVALUE = this.ALPHATESTVALUE;
@@ -480,6 +607,9 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		}
 		if (this.ALPHATEST) {
 			result += "#define ALPHATEST \n";
+		}
+		if (this.DEPTHPREPASS) {
+			result += "#define DEPTHPREPASS \n";
 		}
 		if (this.ALPHABLEND) {
 			result += "#define ALPHABLEND \n";

@@ -79,6 +79,8 @@ import com.babylonhx.postprocess.BlurPostProcess;
 	public function new(name:String, size:Int, scene:Scene, generateMipMaps:Bool = false, type:Int = Engine.TEXTURETYPE_UNSIGNED_INT, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, generateDepthBuffer:Bool = true) {
 		super(name, size, scene, generateMipMaps, true, type, false, samplingMode, generateDepthBuffer);
 		
+		this.ignoreCameraViewport = true;
+		
 		this.onBeforeRenderObservable.add(function(_, _) {
 			Matrix.ReflectionToRef(this.mirrorPlane, this._mirrorMatrix);
 			this._savedViewMatrix = scene.getViewMatrix();

@@ -12,6 +12,7 @@ import com.babylonhx.math.Vector2;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.AbstractMesh;
+import lime.utils.Int32Array;
 
 import com.babylonhx.utils.Image;
 import lime.utils.UInt8Array;
@@ -450,14 +451,20 @@ typedef Assets = lime.Assets;
 	
 	#elseif (lime || openfl || nme)
 	public static function LoadFile(path:String, ?callbackFn:Dynamic->Void, type:String = "") {	
-		if (type == "hdr") {
+		if (type == "hdr" || type == "dds") {
 			var callBackFunction = callbackFn != null ?
 				function(result:Dynamic) {
 					callbackFn(result);
 				} : function(_) { };
 				
-			var data = Assets.getBytes(path);
-			callBackFunction(data);	
+			// VK: Assets.getBytes returns some crap, must use Assets.loadBytes
+			//var data = Assets.getBytes(path);
+			//callBackFunction(data);
+			
+			var future = Assets.loadBytes(path);
+			future.onComplete(function(data:Dynamic):Void {
+				callBackFunction(data);
+			});
 		}
 		else if (type == "" || type == "text") {
 			/*#if ((html5 || js) && (lime || openfl))
@@ -645,7 +652,18 @@ typedef Assets = lime.Assets;
 	#end
 	
 	#elseif (lime || openfl || nme)
-	public static function LoadImage(url:String, onload:Image-> Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
+	public static function LoadImage(url:String, onload:Image-> Void, ?onerror:Dynamic->Void, ?db:Dynamic) {
+		if (url.indexOf('data:image/png;base64') != -1) {
+			var img = Assets.getImage("assets/img/envBRDF.png");
+			var arr:Array<Int> = [];
+			for (i in 0...img.data.length) {
+				arr.push(img.data[i]);
+			}
+			trace(Base64.encode(img.data.toBytes()));
+			var image = new Image(img.data, img.width, img.height);
+			onload(image);
+			return;
+		}
 		#if (openfl && !nme)
 		if (Assets.exists(url)) {
 			var img = Assets.getBitmapData(url); 

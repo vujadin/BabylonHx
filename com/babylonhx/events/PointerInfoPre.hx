@@ -1,6 +1,6 @@
-package com.babylonhx;
+package com.babylonhx.events;
 
-import com.babylonhx.PointerInfo.PointerEvent;
+import com.babylonhx.events.PointerInfo.PointerEvent;
 import com.babylonhx.math.Vector2;
 
 /**
@@ -13,17 +13,14 @@ import com.babylonhx.math.Vector2;
  * Set the skipOnPointerObservable property to true if you want the engine to stop any process after 
  * this event is triggered, even not calling onPointerObservable
  */
-class PointerInfoPre {
+class PointerInfoPre extends PointerInfoBase {
 	
-	public var type:Int;
-	public var event:PointerEvent;
 	public var localPosition:Vector2;
 	public var skipOnPointerObservable:Bool;
 	
 	
 	public function new(type:Int, event:PointerEvent, localX:Int, localY:Int) {
-		this.type = type;
-		this.event = event;
+		super(type, event);
 		this.skipOnPointerObservable = false;
 		this.localPosition = new Vector2(localX, localY);
 	}

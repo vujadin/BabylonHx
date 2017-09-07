@@ -1,6 +1,8 @@
 package com.babylonhx;
 
-import com.babylonhx.PointerInfoPre;
+import com.babylonhx.events.PointerInfoPre;
+import com.babylonhx.events.PointerInfo;
+import com.babylonhx.events.PointerEventTypes;
 import com.babylonhx.actions.Action;
 import com.babylonhx.actions.ActionManager;
 import com.babylonhx.actions.ActionEvent;
@@ -52,6 +54,7 @@ import com.babylonhx.particles.IParticleSystem;
 import com.babylonhx.physics.PhysicsEngine;
 import com.babylonhx.physics.IPhysicsEnginePlugin;
 import com.babylonhx.physics.PhysicsBodyCreationOptions;
+import com.babylonhx.postprocess.PostProcess;
 import com.babylonhx.postprocess.PostProcessManager;
 import com.babylonhx.postprocess.renderpipeline.PostProcessRenderPipelineManager;
 import com.babylonhx.probes.ReflectionProbe;
@@ -619,6 +622,7 @@ import com.babylonhx.audio.*;
 	public var gravity:Vector3 = new Vector3(0, -9.0, 0);
 
 	// Postprocesses
+	public var postProcesses:Array<PostProcess> = [];
 	public var postProcessesEnabled:Bool = true;
 	public var postProcessManager:PostProcessManager;
 	private var _postProcessRenderPipelineManager:PostProcessRenderPipelineManager;
@@ -3309,6 +3313,12 @@ import com.babylonhx.audio.*;
 			this.spriteManagers[0].dispose();
 			this.spriteManagers.shift();
 		}
+		
+		// Release postProcesses
+        while (this.postProcesses.length > 0) {
+            this.postProcesses[0].dispose();
+			this.postProcesses.shift();
+        }
 		
 		// Release layers
 		while (this.layers.length > 0) {

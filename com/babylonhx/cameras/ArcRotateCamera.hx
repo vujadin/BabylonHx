@@ -247,8 +247,8 @@ import com.babylonhx.tools.Observable;
 	/**
 	 * Restored camera state. You must call storeState() first
 	 */
-	override public function restoreState():Bool {
-		if (!super.restoreState()) {
+	override public function _restoreStateValues():Bool {
+		if (!super._restoreStateValues()) {
 			return false;
 		}
 		

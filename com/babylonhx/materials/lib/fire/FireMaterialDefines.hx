@@ -9,6 +9,7 @@ class FireMaterialDefines extends MaterialDefines {
 	public var DIFFUSE:Bool = false;
 	public var CLIPPLANE:Bool = false;
 	public var ALPHATEST:Bool = false;
+	public var DEPTHPREPASS:Bool = false;
 	public var POINTSIZE:Bool = false;
 	public var FOG:Bool = false;
 	public var UV1:Bool = false;
@@ -28,6 +29,7 @@ class FireMaterialDefines extends MaterialDefines {
 			if (untyped this.DIFFUSE != other.DIFFUSE) return false;
 			if (untyped this.CLIPPLANE != other.CLIPPLANE) return false;
 			if (untyped this.ALPHATEST != other.ALPHATEST) return false;
+			if (untyped this.DEPTHPREPASS != other.DEPTHPREPASS) return false;
 			if (untyped this.POINTSIZE != other.POINTSIZE) return false; 
 			if (untyped this.FOG != other.FOG) return false;
 			if (untyped this.UV1 != other.UV1) return false;
@@ -49,6 +51,7 @@ class FireMaterialDefines extends MaterialDefines {
 		untyped other.DIFFUSE = this.DIFFUSE;
 		untyped other.CLIPPLANE = this.CLIPPLANE;
 		untyped other.ALPHATEST = this.ALPHATEST;
+		untyped other.DEPTHPREPASS = this.DEPTHPREPASS;
 		untyped other.POINTSIZE = this.POINTSIZE;
 		untyped other.FOG = this.FOG;
 		untyped other.UV1 = this.UV1;
@@ -65,6 +68,7 @@ class FireMaterialDefines extends MaterialDefines {
 		this.DIFFUSE = false;
 		this.CLIPPLANE = false;
 		this.ALPHATEST = false;
+		this.DEPTHPREPASS = false;
 		this.POINTSIZE = false;
 		this.FOG = false;
 		this.UV1 = false;
@@ -86,6 +90,9 @@ class FireMaterialDefines extends MaterialDefines {
 		}
 		if (this.ALPHATEST) {
 			result += "#define ALPHATEST \n";
+		}
+		if (this.DEPTHPREPASS) {
+			result += "#define DEPTHPREPASS \n";
 		}
 		if (this.POINTSIZE) {
 			result += "#define POINTSIZE \n";

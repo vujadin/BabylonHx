@@ -39,6 +39,8 @@ import com.babylonhx.Node;
 	public static inline var ANIMATIONLOOPMODE_CYCLE:Int = 1;
 	public static inline var ANIMATIONLOOPMODE_CONSTANT:Int = 2;
 	
+	public static var AllowMatricesInterpolation:Bool = false;
+	
 	private var _keys:Array<BabylonFrame>;
 	private var _offsetsCache:Array<Dynamic> = [];// { };
 	private var _highLimitsCache:Array<Dynamic> = []; // { };
@@ -52,8 +54,6 @@ import com.babylonhx.Node;
 
 	public var targetPropertyPath:Array<String>;
 	public var currentFrame:Int;
-	
-	public var allowMatricesInterpolation:Bool = false;
 	
 	public var blendingSpeed:Float = 0.01;
 	private var _originalBlendValue:Dynamic;
@@ -484,7 +484,7 @@ import com.babylonhx.Node;
 					case Animation.ANIMATIONTYPE_MATRIX:
 						switch (loopMode) {
 							case Animation.ANIMATIONLOOPMODE_CYCLE, Animation.ANIMATIONLOOPMODE_CONSTANT:
-								if (this.allowMatricesInterpolation) {
+								if (Animation.AllowMatricesInterpolation) {
 									return this.matrixInterpolateFunction(startValue, endValue, gradient);
 								}
 							case Animation.ANIMATIONLOOPMODE_RELATIVE:
@@ -685,10 +685,11 @@ import com.babylonhx.Node;
 						// Vector2
 						case Animation.ANIMATIONTYPE_VECTOR2:
 							this._offsetsCache[keyOffset] = cast(toValue, Vector2).subtract(cast(fromValue, Vector2));
+							
 						// Size
                         case Animation.ANIMATIONTYPE_SIZE:
-							var _tmpSize:Size = cast fromValue;
-                            this._offsetsCache[keyOffset] = cast(toValue, Size).subtract(_tmpSize); 
+                            this._offsetsCache[keyOffset] = cast(toValue, Size).subtract(cast(fromValue, Size));
+							
 						// Color3
 						case Animation.ANIMATIONTYPE_COLOR3:
 							this._offsetsCache[keyOffset] = cast(toValue, Color3).subtract(cast(fromValue, Color3));

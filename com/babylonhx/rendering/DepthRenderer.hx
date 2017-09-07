@@ -95,7 +95,15 @@ import com.babylonhx.tools.EventState;
 			}
 		};
 		
-		this._depthMap.customRenderFunction = function(opaqueSubMeshes:SmartArray<SubMesh>, alphaTestSubMeshes:SmartArray<SubMesh>) {	
+		this._depthMap.customRenderFunction = function(opaqueSubMeshes:SmartArray<SubMesh>, alphaTestSubMeshes:SmartArray<SubMesh>, transparentSubMeshes:SmartArray<SubMesh>, depthOnlySubMeshes:SmartArray<SubMesh>) {
+			if (depthOnlySubMeshes.length > 0) {
+                engine.setColorWrite(false);            
+                for (index in 0...depthOnlySubMeshes.length) {
+                    renderSubMesh(depthOnlySubMeshes.data[index]);
+                }
+                engine.setColorWrite(true);
+            }
+			
 			for (index in 0...opaqueSubMeshes.length) {
 				renderSubMesh(opaqueSubMeshes.data[index]);
 			}

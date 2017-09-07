@@ -43,6 +43,7 @@ typedef PostProcessOption = {
 	public var scaleMode:Int = Engine.SCALEMODE_FLOOR;
 	public var alwaysForcePOT:Bool = false;
 	public var samples:Int = 1;
+	public var adaptScaleToCurrentViewport:Bool = false;
 
 	private var _camera:Camera;
 	private var _scene:Scene;
@@ -179,9 +180,12 @@ typedef PostProcessOption = {
 			this._scene = camera.getScene();
 			camera.attachPostProcess(this);
 			this._engine = this._scene.getEngine();
+			
+			this._scene.postProcesses.push(this);
 		}
 		else {
 			this._engine = engine;
+			this._engine.postProcesses.push(this);
 		}
 		
 		this.name = name;
@@ -246,66 +250,77 @@ typedef PostProcessOption = {
     }
 
 	public function activate(camera:Camera, ?sourceTexture:InternalTexture, forceDepthStencil:Bool = false) {
-		if (camera == null) {
-			camera = this._camera;
-		}
-		
-		var scene = camera.getScene();
-		var engine = scene.getEngine();
-        var maxSize = engine.getCaps().maxTextureSize;
-		
 		var requiredWidth = sourceTexture != null ? sourceTexture.width : this._engine.getRenderWidth();
 		var requiredHeight = sourceTexture != null ? sourceTexture.height : this._engine.getRenderHeight();
 		
 		var desiredWidth = this._options.width != null ? this._options.width : requiredWidth;
 		var desiredHeight = this._options.height != null ? this._options.height : requiredHeight;
 		
+		if (camera == null) {
+			camera = this._camera;
+		}
+		
+		var scene = camera.getScene();
+		
+		if (this.adaptScaleToCurrentViewport) {
+            var currentViewport = scene.getEngine().currentViewport;
+			
+            if (currentViewport != null) {
+                desiredWidth = Std.int(desiredWidth *currentViewport.width);
+                desiredHeight = Std.int(desiredHeight * currentViewport.height);
+            }
+        }
+		
 		if (this._shareOutputWithPostProcess == null && this._forcedOutputTexture == null) {
-			var maxSize = camera.getEngine().getCaps().maxTextureSize;
+			var maxSize = this._engine.getCaps().maxTextureSize;
 			
-			if (this.renderTargetSamplingMode == Texture.TRILINEAR_SAMPLINGMODE || this.alwaysForcePOT) {
-				if (this._options.width == null) {
-					desiredWidth = engine.needPOTTextures ? com.babylonhx.math.Tools.GetExponentOfTwo(desiredWidth, maxSize, this.scaleMode) : desiredWidth;
-				}
+			if (this._shareOutputWithPostProcess == null && this._forcedOutputTexture == null) {
+				var maxSize = camera.getEngine().getCaps().maxTextureSize;
 				
-				if (this._options.height == null) {
-					desiredHeight = engine.needPOTTextures ? com.babylonhx.math.Tools.GetExponentOfTwo(desiredHeight, maxSize, this.scaleMode) : desiredHeight;
-				}
-			}
-			
-			if (this.width != desiredWidth || this.height != desiredHeight) {
-				if (this._textures.length > 0) {
-					for (i in 0...this._textures.length) {
-						this._engine._releaseTexture(this._textures.data[i]);
+				if (this.renderTargetSamplingMode == Texture.TRILINEAR_SAMPLINGMODE || this.alwaysForcePOT) {
+					if (this._options.width == null) {
+						desiredWidth = this._engine.needPOTTextures ? com.babylonhx.math.Tools.GetExponentOfTwo(desiredWidth, maxSize, this.scaleMode) : desiredWidth;
 					}
-					this._textures.reset();
-				}         
-				this.width = desiredWidth;
-				this.height = desiredHeight;
-				
-				var textureSize = { width: this.width, height: this.height };
-				var textureOptions = { 
-					generateMipMaps: false, 
-					generateDepthBuffer: forceDepthStencil || camera._postProcesses.indexOf(this) == 0, 
-					generateStencilBuffer: (forceDepthStencil || camera._postProcesses.indexOf(this) == 0) && this._engine.isStencilEnable,
-					samplingMode: this.renderTargetSamplingMode, 
-					type: this._textureType 
-				};
-				
-				this._textures.push(this._engine.createRenderTargetTexture(textureSize, textureOptions));
-				
-				if (this._reusable) {
-					this._textures.push(this._engine.createRenderTargetTexture(textureSize, textureOptions));
+					
+					if (this._options.height == null) {
+						desiredHeight = this._engine.needPOTTextures ? com.babylonhx.math.Tools.GetExponentOfTwo(desiredHeight, maxSize, this.scaleMode) : desiredHeight;
+					}
 				}
 				
-				this._texelSize.copyFromFloats(1.0 / this.width, 1.0 / this.height);
+				if (this.width != desiredWidth || this.height != desiredHeight) {
+					if (this._textures.length > 0) {
+						for (i in 0...this._textures.length) {
+							this._engine._releaseTexture(this._textures.data[i]);
+						}
+						this._textures.reset();
+					}         
+					this.width = desiredWidth;
+					this.height = desiredHeight;
+					
+					var textureSize = { width: this.width, height: this.height };
+					var textureOptions = { 
+						generateMipMaps: false, 
+						generateDepthBuffer: forceDepthStencil || camera._postProcesses.indexOf(this) == 0, 
+						generateStencilBuffer: (forceDepthStencil || camera._postProcesses.indexOf(this) == 0) && this._engine.isStencilEnable,
+						samplingMode: this.renderTargetSamplingMode, 
+						type: this._textureType 
+					};
+					
+					this._textures.push(this._engine.createRenderTargetTexture(textureSize, textureOptions));
+					
+					if (this._reusable) {
+						this._textures.push(this._engine.createRenderTargetTexture(textureSize, textureOptions));
+					}
+					
+					this._texelSize.copyFromFloats(1.0 / this.width, 1.0 / this.height);
+					
+					this.onSizeChangedObservable.notifyObservers(this);
+				}
 				
-				this.onSizeChangedObservable.notifyObservers(this);
-			}
-			
-			for (texture in this._textures.data) {
-				if (texture.samples != this.samples) {
-					this._engine.updateRenderTargetTextureSampleCount(texture, this.samples);
+				for (texture in this._textures.data) {
+					if (texture.samples != this.samples) {
+						this._engine.updateRenderTargetTextureSampleCount(texture, this.samples);
+					}
 				}
 			}
 		}
@@ -419,6 +434,19 @@ typedef PostProcessOption = {
 		camera = camera != null ? camera : this._camera;
 		
 		this._disposeTextures();
+		
+		if (this._scene != null) {
+            var index = this._scene.postProcesses.indexOf(this);
+            if (index != -1) {
+                this._scene.postProcesses.splice(index, 1);
+			}                
+		}
+		else {
+            var index = this._engine.postProcesses.indexOf(this);
+            if (index != -1) {
+                this._engine.postProcesses.splice(index, 1);
+            }         
+        }
 		
 		if (camera == null) {
 			return;

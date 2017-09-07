@@ -1,4 +1,4 @@
-package com.babylonhx;
+package com.babylonhx.events;
 
 /**
  * ...

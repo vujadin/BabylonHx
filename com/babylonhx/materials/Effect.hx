@@ -361,11 +361,14 @@ using StringTools;
 			return;
 		}
 		
+		var dbeRegEx = ~/#extension.+GL_EXT_draw_buffers.+require/g;
+		var hasDrawBuffersExtension = dbeRegEx.match(preparedSourceCode);
+		
 		// Remove extensions 
 		// #extension GL_OES_standard_derivatives : enable
 		// #extension GL_EXT_shader_texture_lod : enable
 		// #extension GL_EXT_frag_depth : enable
-		var regex:EReg = ~/#extension.+(GL_OES_standard_derivatives|GL_EXT_shader_texture_lod|GL_EXT_frag_depth).+enable/g;
+		var regex:EReg = ~/#extension.+(GL_OES_standard_derivatives|GL_EXT_shader_texture_lod|GL_EXT_frag_depth|GL_EXT_draw_buffers).+(enable|require)/g;
 		var result = regex.replace(preparedSourceCode, "");
 		
 		// Migrate to GLSL v300
@@ -389,8 +392,10 @@ using StringTools;
 			result = regex.replace(result, "gl_FragDepth");
 			regex = ~/gl_FragColor/g;
 			result = regex.replace(result, "glFragColor");
+			regex = ~/gl_FragData/g;
+			result = regex.replace(result, "glFragData");
 			regex = ~/void\s+?main\(/g;
-			result = regex.replace(result, "out vec4 glFragColor;\nvoid main(");
+			result = regex.replace(result, (hasDrawBuffersExtension ? "" : "out vec4 glFragColor;\n") + "void main(");
 		}
 		
 		callback(result);

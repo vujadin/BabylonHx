@@ -2,6 +2,7 @@ package com.babylonhx.tools.dds;
 
 import com.babylonhx.math.Scalar;
 
+import lime.utils.ArrayBufferView;
 import lime.utils.ArrayBuffer;
 import lime.utils.Float32Array;
 import lime.utils.Int32Array;
@@ -30,36 +31,36 @@ class DDSTools {
 	// Based on demo done by Brandon Jones - http://media.tojicode.com/webgl-samples/dds.html
     // All values and structures referenced from:
     // http://msdn.microsoft.com/en-us/library/bb943991.aspx/
-    static var DDS_MAGIC:Int = 0x20534444;
+    static inline var DDS_MAGIC:Int = 0x20534444;
 
-    static var DDSD_CAPS:Int = 0x1;
-    static var DDSD_HEIGHT:Int = 0x2;
-    static var DDSD_WIDTH:Int = 0x4;
-    static var DDSD_PITCH:Int = 0x8;
-    static var DDSD_PIXELFORMAT:Int = 0x1000;
-    static var DDSD_MIPMAPCOUNT:Int = 0x20000;
-    static var DDSD_LINEARSIZE:Int = 0x80000;
-    static var DDSD_DEPTH:Int = 0x800000;
+    static inline var DDSD_CAPS:Int = 0x1;
+    static inline var DDSD_HEIGHT:Int = 0x2;
+    static inline var DDSD_WIDTH:Int = 0x4;
+    static inline var DDSD_PITCH:Int = 0x8;
+    static inline var DDSD_PIXELFORMAT:Int = 0x1000;
+    static inline var DDSD_MIPMAPCOUNT:Int = 0x20000;
+    static inline var DDSD_LINEARSIZE:Int = 0x80000;
+    static inline var DDSD_DEPTH:Int = 0x800000;
 
-    static var DDSCAPS_COMPLEX:Int = 0x8;
-    static var DDSCAPS_MIPMAP:Int = 0x400000;
-    static var DDSCAPS_TEXTURE:Int = 0x1000;
+    static inline var DDSCAPS_COMPLEX:Int = 0x8;
+    static inline var DDSCAPS_MIPMAP:Int = 0x400000;
+    static inline var DDSCAPS_TEXTURE:Int = 0x1000;
 
-    static var DDSCAPS2_CUBEMAP:Int = 0x200;
-    static var DDSCAPS2_CUBEMAP_POSITIVEX:Int = 0x400;
-    static var DDSCAPS2_CUBEMAP_NEGATIVEX:Int = 0x800;
-    static var DDSCAPS2_CUBEMAP_POSITIVEY:Int = 0x1000;
-    static var DDSCAPS2_CUBEMAP_NEGATIVEY:Int = 0x2000;
-    static var DDSCAPS2_CUBEMAP_POSITIVEZ:Int = 0x4000;
-    static var DDSCAPS2_CUBEMAP_NEGATIVEZ:Int = 0x8000;
-    static var DDSCAPS2_VOLUME:Int = 0x200000;
+    static inline var DDSCAPS2_CUBEMAP:Int = 0x200;
+    static inline var DDSCAPS2_CUBEMAP_POSITIVEX:Int = 0x400;
+    static inline var DDSCAPS2_CUBEMAP_NEGATIVEX:Int = 0x800;
+    static inline var DDSCAPS2_CUBEMAP_POSITIVEY:Int = 0x1000;
+    static inline var DDSCAPS2_CUBEMAP_NEGATIVEY:Int = 0x2000;
+    static inline var DDSCAPS2_CUBEMAP_POSITIVEZ:Int = 0x4000;
+    static inline var DDSCAPS2_CUBEMAP_NEGATIVEZ:Int = 0x8000;
+    static inline var DDSCAPS2_VOLUME:Int = 0x200000;
 
-    static var DDPF_ALPHAPIXELS:Int = 0x1;
-    static var DDPF_ALPHA:Int = 0x2;
-    static var DDPF_FOURCC:Int = 0x4;
-    static var DDPF_RGB:Int = 0x40;
-    static var DDPF_YUV:Int = 0x200;
-    static var DDPF_LUMINANCE:Int = 0x20000;
+    static inline var DDPF_ALPHAPIXELS:Int = 0x1;
+    static inline var DDPF_ALPHA:Int = 0x2;
+    static inline var DDPF_FOURCC:Int = 0x4;
+    static inline var DDPF_RGB:Int = 0x40;
+    static inline var DDPF_YUV:Int = 0x200;
+    static inline var DDPF_LUMINANCE:Int = 0x20000;
 
     static function FourCCToInt32(value:String):Int {
         return value.charCodeAt(0) +
@@ -69,23 +70,21 @@ class DDSTools {
     }
 
     static function Int32ToFourCC(value:Int):String {
-        return String.fromCharCode(
-            value & 0xff,
-            (value >> 8) & 0xff,
-            (value >> 16) & 0xff,
-            (value >> 24) & 0xff
-            );
+        return String.fromCharCode(value & 0xff) + 
+				String.fromCharCode((value >> 8) & 0xff) + 
+				 String.fromCharCode((value >> 16) & 0xff) +
+				  String.fromCharCode((value >> 24) & 0xff);
     }
 
-    static var FOURCC_DXT1:Int = FourCCToInt32("DXT1");
-    static var FOURCC_DXT3:Int = FourCCToInt32("DXT3");
-    static var FOURCC_DXT5:Int = FourCCToInt32("DXT5");
-    static var FOURCC_DX10:Int = FourCCToInt32("DX10");
-    static var FOURCC_D3DFMT_R16G16B16A16F:Int = 113;
-    static var FOURCC_D3DFMT_R32G32B32A32F:Int = 116;
+    static inline var FOURCC_DXT1:Int = 827611204; // FourCCToInt32("DXT1");
+    static inline var FOURCC_DXT3:Int = 861165636; // FourCCToInt32("DXT3");
+    static inline var FOURCC_DXT5:Int = 894720068; // FourCCToInt32("DXT5");
+    static inline var FOURCC_DX10:Int = 808540228; // FourCCToInt32("DX10");
+    static inline var FOURCC_D3DFMT_R16G16B16A16F:Int = 113;
+    static inline var FOURCC_D3DFMT_R32G32B32A32F:Int = 116;
 
-    static var DXGI_FORMAT_R16G16B16A16_FLOAT:Int = 10;
-    static var DXGI_FORMAT_B8G8R8X8_UNORM:Int = 88;
+    static inline var DXGI_FORMAT_R16G16B16A16_FLOAT:Int = 10;
+    static inline var DXGI_FORMAT_B8G8R8X8_UNORM:Int = 88;
 
     static var headerLengthInt:Int = 31; // The header length in 32 bit ints
 
@@ -116,12 +115,12 @@ class DDSTools {
 	public static var StoreLODInAlphaChannel:Bool = false;
 
 	public static function GetDDSInfo(arrayBuffer:Dynamic):DDSInfo {
-		var header = new Int32Array(arrayBuffer, 0, headerLengthInt);
-		var extendedHeader = new Int32Array(arrayBuffer, 0, headerLengthInt + 4);
+		var header = new Int32Array(arrayBuffer.getData(), 0, headerLengthInt);
+		var extendedHeader = new Int32Array(arrayBuffer.getData(), 0, headerLengthInt + 4);
 		
 		var mipmapCount = 1;
 		if (header[off_flags] & DDSD_MIPMAPCOUNT > 0) {
-			mipmapCount = Math.max(1, header[off_mipmapCount]);
+			mipmapCount = Std.int(Math.max(1, header[off_mipmapCount]));
 		}
 		
 		var fourCC = header[off_pfFourCC];
@@ -129,14 +128,14 @@ class DDSTools {
 		var textureType = Engine.TEXTURETYPE_UNSIGNED_INT;
 		
 		switch (fourCC) {
-			case FOURCC_D3DFMT_R16G16B16A16F:  
+			case DDSTools.FOURCC_D3DFMT_R16G16B16A16F:  
 				textureType = Engine.TEXTURETYPE_HALF_FLOAT;                           
 				
-			case FOURCC_D3DFMT_R32G32B32A32F:
+			case DDSTools.FOURCC_D3DFMT_R32G32B32A32F:
 				textureType = Engine.TEXTURETYPE_FLOAT;
 				
-			case FOURCC_DX10:
-				if (dxgiFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) {
+			case DDSTools.FOURCC_DX10:
+				if (dxgiFormat == DDSTools.DXGI_FORMAT_R16G16B16A16_FLOAT) {
 					textureType = Engine.TEXTURETYPE_HALF_FLOAT;
 				}
 		}
@@ -148,7 +147,7 @@ class DDSTools {
 			isFourCC: (header[off_pfFlags] & DDPF_FOURCC) == DDPF_FOURCC,
 			isRGB: (header[off_pfFlags] & DDPF_RGB) == DDPF_RGB,
 			isLuminance: (header[off_pfFlags] & DDPF_LUMINANCE) == DDPF_LUMINANCE,
-			isCube: (header[off_caps2] & DDSCAPS2_CUBEMAP) === DDSCAPS2_CUBEMAP,
+			isCube: (header[off_caps2] & DDSCAPS2_CUBEMAP) == DDSCAPS2_CUBEMAP,
 			isCompressed: (fourCC == FOURCC_DXT1 || fourCC == FOURCC_DXT3 || FOURCC_DXT1 == FOURCC_DXT5),
 			dxgiFormat: dxgiFormat,
 			textureType: textureType
@@ -158,7 +157,7 @@ class DDSTools {
 	// ref: http://stackoverflow.com/questions/32633585/how-do-you-convert-to-half-floats-in-javascript
 	private static var _FloatView:Float32Array;
 	private static var _Int32View:Int32Array;
-	private static var _ToHalfFloat(value:Int):Float {
+	private static function _ToHalfFloat(value:Int):Int {
 		if (DDSTools._FloatView == null) {
 			DDSTools._FloatView = new Float32Array(1);
 			DDSTools._Int32View = new Int32Array(DDSTools._FloatView.buffer);
@@ -167,9 +166,9 @@ class DDSTools {
 		DDSTools._FloatView[0] = value;
 		var x = DDSTools._Int32View[0];
 		
-		var bits = (x >> 16) & 0x8000; /* Get the sign */
-		var m = (x >> 12) & 0x07ff; /* Keep one extra bit for rounding */
-		var e = (x >> 23) & 0xff; /* Using int is faster here */
+		var bits:Int = (x >> 16) & 0x8000; /* Get the sign */
+		var m:Int = (x >> 12) & 0x07ff; /* Keep one extra bit for rounding */
+		var e:Int = (x >> 23) & 0xff; /* Using int is faster here */
 		
 		/* If zero, or denormal, or exponent underflows too much for a denormal
 		* half, return signed zero. */
@@ -182,7 +181,7 @@ class DDSTools {
 			bits |= 0x7c00;
 			/* If exponent was 0xff and one mantissa bit was set, it means NaN,
 			* not Inf, so make sure we set one mantissa bit too. */
-			bits |= ((e == 255) ? 0 : 1) && (x & 0x007fffff);
+			bits |= ((e == 255) ? 0 : 1) & (x & 0x007fffff);
 			return bits;
 		}
 		
@@ -206,16 +205,16 @@ class DDSTools {
 		var f = value & 0x03FF;
 		
 		if (e == 0) {
-			return (s ? -1 : 1) * Math.pow(2, -14) * (f / Math.pow(2, 10));
+			return (s != 0 ? -1 : 1) * Math.pow(2, -14) * (f / Math.pow(2, 10));
 		} 
 		else if (e == 0x1F) {
-			return f ? Math.NaN : ((s ? -1 : 1) * Math.POSITIVE_INFINITY);
+			return f != 0 ? Math.NaN : ((s != 0 ? -1 : 1) * Math.POSITIVE_INFINITY);
 		}
 		
-		return (s ? -1 : 1) * Math.pow(2, e-15) * (1 + (f / Math.pow(2, 10)));
+		return (s != 0 ? -1 : 1) * Math.pow(2, e-15) * (1 + (f / Math.pow(2, 10)));
 	}
 
-	private static function _GetHalfFloatAsFloatRGBAArrayBuffer(width:Int, height:Int, dataOffset:Int, dataLength:Int, arrayBuffer:ArrayBuffer, lod:INt):Float32Array {   
+	private static function _GetHalfFloatAsFloatRGBAArrayBuffer(width:Int, height:Int, dataOffset:Int, dataLength:Int, arrayBuffer:ArrayBuffer, lod:Int):Float32Array {   
 		var destArray = new Float32Array(dataLength);
 		var srcData = new UInt16Array(arrayBuffer, dataOffset);
 		var index = 0;
@@ -249,7 +248,7 @@ class DDSTools {
 					destArray[index] = srcData[srcPos];
 					destArray[index + 1] = srcData[srcPos + 1];
 					destArray[index + 2] = srcData[srcPos + 2];
-					destArray[index + 3] = DDSTools._ToHalfFloat(lod)
+					destArray[index + 3] = DDSTools._ToHalfFloat(lod);
 					index += 4;
 				}
 			}
@@ -257,7 +256,7 @@ class DDSTools {
 			return destArray;
 		}
 		
-		return new Uint16Array(arrayBuffer, dataOffset, dataLength);
+		return new UInt16Array(arrayBuffer, dataOffset, dataLength);
 	}           
 
 	private static function _GetFloatRGBAArrayBuffer(width:Int, height:Int, dataOffset:Int, dataLength:Int, arrayBuffer:ArrayBuffer, lod:Int):Float32Array {
@@ -282,21 +281,21 @@ class DDSTools {
 		return new Float32Array(arrayBuffer, dataOffset, dataLength);
 	}
 
-	private static function _GetFloatAsUIntRGBAArrayBuffer(width:Int, height:Int, dataOffset:Int, dataLength:Int, arrayBuffer:ArrayBuffer, lod:Int):Float32Array {   
+	private static function _GetFloatAsUIntRGBAArrayBuffer(width:Int, height:Int, dataOffset:Int, dataLength:Int, arrayBuffer:ArrayBuffer, lod:Int) {   
 		var destArray = new UInt8Array(dataLength);
 		var srcData = new Float32Array(arrayBuffer, dataOffset);
 		var index = 0;
 		for (y in 0...height) {
 			for (x in 0...width) {
-				var srcPos = (x + y * width) * 4;
-				destArray[index] = Scalar.Clamp(srcData[srcPos]) * 255;
-				destArray[index + 1] = Scalar.Clamp(srcData[srcPos + 1]) * 255;
-				destArray[index + 2] = Scalar.Clamp(srcData[srcPos + 2]) * 255;
+				var srcPos = Std.int((x + y * width) * 4);
+				destArray[index] = Std.int(Scalar.Clamp(srcData[srcPos]) * 255);
+				destArray[index + 1] = Std.int(Scalar.Clamp(srcData[srcPos + 1]) * 255);
+				destArray[index + 2] = Std.int(Scalar.Clamp(srcData[srcPos + 2]) * 255);
 				if (DDSTools.StoreLODInAlphaChannel) {
 					destArray[index + 3] = lod;
 				} 
 				else {
-					destArray[index + 3] = Scalar.Clamp(srcData[srcPos + 3]) * 255;
+					destArray[index + 3] = Std.int(Scalar.Clamp(srcData[srcPos + 3]) * 255);
 				}
 				index += 4;
 			}
@@ -305,21 +304,21 @@ class DDSTools {
 		return destArray;
 	}
 
-	private static function _GetHalfFloatAsUIntRGBAArrayBuffer(width:Int, height:Int, dataOffset:Int, dataLength:Int, arrayBuffer:ArrayBuffer, lod:Int):Float32Array {   
+	private static function _GetHalfFloatAsUIntRGBAArrayBuffer(width:Int, height:Int, dataOffset:Int, dataLength:Int, arrayBuffer:ArrayBuffer, lod:Int) {   
 		var destArray = new UInt8Array(dataLength);
 		var srcData = new UInt16Array(arrayBuffer, dataOffset);
 		var index = 0;
 		for (y in 0...height) {
 			for (x in 0...width) {
-				var srcPos = (x + y * width) * 4;
-				destArray[index] = Scalar.Clamp(DDSTools._FromHalfFloat(srcData[srcPos])) * 255;
-				destArray[index + 1] = Scalar.Clamp(DDSTools._FromHalfFloat(srcData[srcPos + 1])) * 255;
-				destArray[index + 2] = Scalar.Clamp(DDSTools._FromHalfFloat(srcData[srcPos + 2])) * 255;
+				var srcPos = Std.int((x + y * width) * 4);
+				destArray[index] = Std.int(Scalar.Clamp(DDSTools._FromHalfFloat(srcData[srcPos])) * 255);
+				destArray[index + 1] = Std.int(Scalar.Clamp(DDSTools._FromHalfFloat(srcData[srcPos + 1])) * 255);
+				destArray[index + 2] = Std.int(Scalar.Clamp(DDSTools._FromHalfFloat(srcData[srcPos + 2])) * 255);
 				if (DDSTools.StoreLODInAlphaChannel) {
 					destArray[index + 3] = lod;
 				} 
 				else {
-					destArray[index + 3] = Scalar.Clamp(DDSTools._FromHalfFloat(srcData[srcPos + 3])) * 255;
+					destArray[index + 3] = Std.int(Scalar.Clamp(DDSTools._FromHalfFloat(srcData[srcPos + 3])) * 255);
 				}
 				index += 4;
 			}
@@ -380,20 +379,20 @@ class DDSTools {
 
 	public static function UploadDDSLevels(engine:Engine, arrayBuffer:Dynamic, info:DDSInfo, loadMipmaps:Bool, faces:Int, lodIndex:Int = -1) {
 		var gl = engine.gl;
-		var ext = engine.getCaps().s3tc;
+		var ext:Dynamic = engine.getCaps().s3tc;
 		
-		var header = new Int32Array(arrayBuffer, 0, headerLengthInt);
-		var fourCC:Int;
-		var blockBytes:Int;
-		var internalFormat:Int;
-		var format:Int;
-		var width:Float;
-		var height:Float;
-		var dataLength:Int; 
-		var dataOffset:Int;
-		var byteArray:UInt8Array;
-		var mipmapCount:Int;
-		var mip:Int;
+		var header = new Int32Array(arrayBuffer.getData(), 0, headerLengthInt);
+		var fourCC:Int = 0;
+		var blockBytes:Int = 0;
+		var internalFormat:Int = 0;
+		var format:Int = 0;
+		var width:Int = 0;
+		var height:Int = 0;
+		var dataLength:Int = 0; 
+		var dataOffset:Int = 0;
+		var byteArray:UInt8Array = null;
+		var mipmapCount:Int = 0;
+		var mip:Int = 0;
 		
 		if (header[off_magic] != DDS_MAGIC) {
 			Tools.Error("Invalid magic number in DDS header");
@@ -418,58 +417,54 @@ class DDSTools {
 		if (info.isFourCC) {
 			fourCC = header[off_pfFourCC];
 			switch (fourCC) {
-				case FOURCC_DXT1:
+				case DDSTools.FOURCC_DXT1:
 					blockBytes = 8;
 					internalFormat = ext.COMPRESSED_RGBA_S3TC_DXT1_EXT;
 					
-				case FOURCC_DXT3:
+				case DDSTools.FOURCC_DXT3:
 					blockBytes = 16;
 					internalFormat = ext.COMPRESSED_RGBA_S3TC_DXT3_EXT;
 					
-				case FOURCC_DXT5:
+				case DDSTools.FOURCC_DXT5:
 					blockBytes = 16;
 					internalFormat = ext.COMPRESSED_RGBA_S3TC_DXT5_EXT;
 					
-				case FOURCC_D3DFMT_R16G16B16A16F:  
+				case DDSTools.FOURCC_D3DFMT_R16G16B16A16F:  
 					computeFormats = true;
 					
-				case FOURCC_D3DFMT_R32G32B32A32F:
+				case DDSTools.FOURCC_D3DFMT_R32G32B32A32F:
 					computeFormats = true;
 					
-				case FOURCC_DX10:
+				case DDSTools.FOURCC_DX10:
 					// There is an additionnal header so dataOffset need to be changed
 					dataOffset += 5 * 4; // 5 uints
 					
 					var supported = false;
 					switch (info.dxgiFormat) {
-						case DXGI_FORMAT_R16G16B16A16_FLOAT:
+						case DDSTools.DXGI_FORMAT_R16G16B16A16_FLOAT:
 							computeFormats = true;
 							supported = true;
 							
-						case DXGI_FORMAT_B8G8R8X8_UNORM:
+						case DDSTools.DXGI_FORMAT_B8G8R8X8_UNORM:
 							info.isRGB = true;
 							info.isFourCC = false;
 							bpp = 32;
 							supported = true;					
 					}
 					
-					if (supported) {
-						break;
-					}
-					
 				default:
-					Tools.error("Unsupported FourCC code:", Int32ToFourCC(fourCC));
+					Tools.Error("Unsupported FourCC code: " + Int32ToFourCC(fourCC));
 					return;
 			}
 		}
 		
 		if (computeFormats) {
 			format = engine._getWebGLTextureType(info.textureType);    
-			internalFormat = engine._getRGBABufferInternalSizedFormat(info.textureType);
+			internalFormat = @:privateAccess engine._getRGBABufferInternalSizedFormat(info.textureType);
 		}
 		
 		mipmapCount = 1;
-		if (header[off_flags] & DDSD_MIPMAPCOUNT && loadMipmaps != false) {
+		if ((header[off_flags] & DDSTools.DDSD_MIPMAPCOUNT) != 0 && loadMipmaps != false) {
 			mipmapCount = Std.int(Math.max(1, header[off_mipmapCount]));
 		}
 		
@@ -485,10 +480,10 @@ class DDSTools {
 					var i = (lodIndex == -1) ? mip : 0;
 					
 					if (!info.isCompressed && info.isFourCC) {
-						dataLength = width * height * 4;
-						var floatArray: ArrayBufferView;
+						dataLength = Std.int(width * height * 4);
+						var floatArray:ArrayBufferView = null;
 						
-						if (engine.badOS || engine.badDesktopOS || (!engine.getCaps().textureHalfFloat && !engine.getCaps().textureFloat)) { // Required because iOS has many issues with float and half float generation
+						if ((!engine.getCaps().textureHalfFloat && !engine.getCaps().textureFloat)) { // Required because iOS has many issues with float and half float generation
 							if (bpp == 128) {
 								floatArray = DDSTools._GetFloatAsUIntRGBAArrayBuffer(width, height, dataOffset, dataLength, arrayBuffer, i);   
 							}
@@ -498,7 +493,7 @@ class DDSTools {
 							
 							info.textureType = Engine.TEXTURETYPE_UNSIGNED_INT;
 							format = engine._getWebGLTextureType(info.textureType);
-							internalFormat = engine._getRGBABufferInternalSizedFormat(info.textureType);
+							internalFormat = @:privateAccess engine._getRGBABufferInternalSizedFormat(info.textureType);
 						}
 						else {
 							if (bpp == 128) {
@@ -509,7 +504,7 @@ class DDSTools {
 								
 								info.textureType = Engine.TEXTURETYPE_FLOAT;
 								format = engine._getWebGLTextureType(info.textureType);    
-								internalFormat = engine._getRGBABufferInternalSizedFormat(info.textureType);                            
+								internalFormat = @:privateAccess engine._getRGBABufferInternalSizedFormat(info.textureType);                            
 							} 
 							else { // 64
 								floatArray = DDSTools._GetHalfFloatRGBAArrayBuffer(width, height, dataOffset, dataLength, arrayBuffer, i);
@@ -540,17 +535,17 @@ class DDSTools {
 						engine._uploadDataToTexture(sampler, i, gl.LUMINANCE, width, height, gl.LUMINANCE, gl.UNSIGNED_BYTE, byteArray);
 					} 
 					else {
-						dataLength = Math.max(4, width) / 4 * Math.max(4, height) / 4 * blockBytes;
+						dataLength = Std.int(Math.max(4, width) / 4 * Math.max(4, height) / 4 * blockBytes);
 						byteArray = new UInt8Array(arrayBuffer, dataOffset, dataLength);
 						engine._uploadCompressedDataToTexture(sampler, i, internalFormat, width, height, byteArray);
 					}
 				}
-				dataOffset += width * height * (bpp / 8);
-				width *= 0.5;
-				height *= 0.5;
+				dataOffset += Std.int(width * height * (bpp / 8));
+				width = Std.int(width * 0.5);
+				height = Std.int(height * 0.5);
 				
-				width = Math.max(1.0, width);
-				height = Math.max(1.0, height);
+				width = Std.int(Math.max(1.0, width));
+				height = Std.int(Math.max(1.0, height));
 			}
 		}
 	}

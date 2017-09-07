@@ -316,7 +316,8 @@ class PBRBaseMaterial extends PushMaterial {
 	 * @param configuration 
 	 */
 	private function _attachImageProcessingConfiguration(configuration:ImageProcessingConfiguration) {
-		if (configuration == this._imageProcessingConfiguration) {
+		// BHX: need to check if configuration is null !!
+		if (configuration != null && configuration == this._imageProcessingConfiguration) {
 			return;
 		}
 		
@@ -859,7 +860,7 @@ class PBRBaseMaterial extends PushMaterial {
 				maxSimultaneousLights: this._maxSimultaneousLights
 			});
 			
-			var onCompiled:Effect->Void = function(effect:Effect) {
+			var _onCompiled = function(effect:Effect) {
 				if (this.onCompiled != null) {
 					this.onCompiled(effect);
 				}
@@ -875,7 +876,7 @@ class PBRBaseMaterial extends PushMaterial {
 				samplers: samplers,
 				defines: join,
 				fallbacks: fallbacks,
-				onCompiled: onCompiled,
+				onCompiled: _onCompiled,
 				onError: this.onError,
 				indexParameters: { maxSimultaneousLights: this._maxSimultaneousLights, maxSimultaneousMorphTargets: defines.NUM_MORPH_INFLUENCERS }
 			}, engine), defines);
@@ -972,9 +973,12 @@ class PBRBaseMaterial extends PushMaterial {
 		if (mustRebind) {
 			this._uniformBuffer.bindToEffect(effect, "Material");
 			
-			this.bindViewProjection(effect);
+			this.bindViewProjection(effect);			
+			reflectionTexture = this._getReflectionTexture();
+            refractionTexture = this._getRefractionTexture();
 			
 			if (!this._uniformBuffer.useUbo || !this.isFrozen || !this._uniformBuffer.isSync) {
+				
 				// Texture uniforms
 				if (scene.texturesEnabled) {
 					if (this._albedoTexture != null && StandardMaterial.DiffuseTextureEnabled) {
@@ -992,7 +996,6 @@ class PBRBaseMaterial extends PushMaterial {
 						MaterialHelper.BindTextureMatrix(this._opacityTexture, this._uniformBuffer, "opacity");
 					}
 					
-					reflectionTexture = this._getReflectionTexture();
 					if (reflectionTexture != null && StandardMaterial.ReflectionTextureEnabled) {
 						this._uniformBuffer.updateMatrix("reflectionMatrix", reflectionTexture.getReflectionTextureMatrix());
 						this._uniformBuffer.updateFloat2("vReflectionInfos", reflectionTexture.level, 0);
@@ -1058,7 +1061,6 @@ class PBRBaseMaterial extends PushMaterial {
 						}                                                         
 					}
 					
-					refractionTexture = this._getRefractionTexture();
 					if (refractionTexture != null && StandardMaterial.RefractionTextureEnabled) {
 						this._uniformBuffer.updateMatrix("refractionMatrix", refractionTexture.getReflectionTextureMatrix());
 						

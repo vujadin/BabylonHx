@@ -116,6 +116,11 @@ class MaterialHelper {
 			changed = true;
 		}
 		
+		if (untyped defines.DEPTHPREPASS != !engine.getColorWrite()) {
+            untyped defines.DEPTHPREPASS = !defines.DEPTHPREPASS;
+            changed = true;
+        } 
+		
 		if (untyped defines.INSTANCES != useInstances) {
 			untyped defines.INSTANCES = useInstances;
 			changed = true;

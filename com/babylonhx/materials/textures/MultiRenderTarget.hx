@@ -27,6 +27,23 @@ class MultiRenderTarget extends RenderTargetTexture {
 	private function get_depthTexture():Texture {
 		return this._textures[this._textures.length - 1];
 	}
+	
+	override private function set_wrapU(wrap:Int):Int {
+		if (this._textures != null) {
+			for (i in 0...this._textures.length) {
+				this._textures[i].wrapU = wrap;
+			}
+		}
+		return wrap;
+	}
+	override private function set_wrapV(wrap:Int):Int {
+		if (this._textures != null) {
+			for (i in 0...this._textures.length) {
+				this._textures[i].wrapV = wrap;
+			}
+		}
+		return wrap;
+	}
 
 	
 	public function new(name:String, size:Dynamic, count:Int, scene:Scene, ?options:Dynamic) {

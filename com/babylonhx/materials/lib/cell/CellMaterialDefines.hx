@@ -1,13 +1,12 @@
-package com.babylonhx.materials.lib.fur;
+package com.babylonhx.materials.lib.cell;
 
 /**
  * ...
  * @author Krtolica Vujadin
  */
-class FurMaterialDefines extends MaterialDefines {
+class CellMaterialDefines extends MaterialDefines {
 	
 	public var DIFFUSE:Bool = false;
-	public var HEIGHTMAP:Bool = false;
 	public var CLIPPLANE:Bool = false;
 	public var ALPHATEST:Bool = false;
 	public var DEPTHPREPASS:Bool = false;
@@ -21,9 +20,11 @@ class FurMaterialDefines extends MaterialDefines {
 	public var NUM_BONE_INFLUENCERS:Int = 0;
 	public var BonesPerMesh:Int = 0;
 	public var INSTANCES:Bool = false;
-	public var HIGHLEVEL:Bool = false;
+	public var NDOTL:Bool = true;
+	public var CUSTOMUSERLIGHTING:Bool = true;
+	public var CELLBASIC:Bool = true;
 	public var USERIGHTHANDEDSYSTEM:Bool = false;
-	
+
 	
 	public function new() {
 		super();
@@ -32,7 +33,6 @@ class FurMaterialDefines extends MaterialDefines {
 	override public function isEqual(other:MaterialDefines):Bool {
 		if (super.isEqual(other)) {
 			if (untyped this.DIFFUSE != other.DIFFUSE) return false;
-			if (untyped this.HEIGHTMAP != other.HEIGHTMAP) return false;
 			if (untyped this.CLIPPLANE != other.CLIPPLANE) return false;
 			if (untyped this.ALPHATEST != other.ALPHATEST) return false;
 			if (untyped this.DEPTHPREPASS != other.DEPTHPREPASS) return false;
@@ -45,8 +45,10 @@ class FurMaterialDefines extends MaterialDefines {
 			if (untyped this.VERTEXALPHA != other.VERTEXALPHA) return false; 
 			if (untyped this.BonesPerMesh != other.BonesPerMesh) return false;
 			if (untyped this.NUM_BONE_INFLUENCERS != other.NUM_BONE_INFLUENCERS) return false;
-			if (untyped this.INSTANCES != other.INSTANCES) return false;
-			if (untyped this.HIGHLEVEL != other.HIGHLEVEL) return false;
+			if (untyped this.INSTANCES != other.INSTANCES) return false; 
+			if (untyped this.NDOTL != other.NDOTL) return false;
+			if (untyped this.CUSTOMUSERLIGHTING != other.CUSTOMUSERLIGHTING) return false;
+			if (untyped this.CELLBASIC != other.CELLBASIC) return false;
 			if (untyped this.USERIGHTHANDEDSYSTEM != other.USERIGHTHANDEDSYSTEM) return false;
 			
 			return true;
@@ -59,7 +61,6 @@ class FurMaterialDefines extends MaterialDefines {
 		super.cloneTo(other);
 		
 		untyped other.DIFFUSE = this.DIFFUSE;
-		untyped other.HEIGHTMAP = this.HEIGHTMAP;
 		untyped other.CLIPPLANE = this.CLIPPLANE;
 		untyped other.ALPHATEST = this.ALPHATEST;
 		untyped other.DEPTHPREPASS = this.DEPTHPREPASS;
@@ -73,7 +74,9 @@ class FurMaterialDefines extends MaterialDefines {
 		untyped other.BonesPerMesh = this.BonesPerMesh;
 		untyped other.NUM_BONE_INFLUENCERS = this.NUM_BONE_INFLUENCERS;
 		untyped other.INSTANCES = this.INSTANCES;
-		untyped other.HIGHLEVEL = this.HIGHLEVEL;
+		untyped other.NDOTL = this.NDOTL;
+		untyped other.CUSTOMUSERLIGHTING = this.CUSTOMUSERLIGHTING;
+		untyped other.CELLBASIC = this.CELLBASIC;
 		untyped other.USERIGHTHANDEDSYSTEM = this.USERIGHTHANDEDSYSTEM;
 	}
 	
@@ -81,7 +84,6 @@ class FurMaterialDefines extends MaterialDefines {
 		super.reset();
 		
 		this.DIFFUSE = false;
-		this.HEIGHTMAP = false;
 		this.CLIPPLANE = false;
 		this.ALPHATEST = false;
 		this.DEPTHPREPASS = false;
@@ -95,7 +97,9 @@ class FurMaterialDefines extends MaterialDefines {
 		this.BonesPerMesh = 0;
 		this.NUM_BONE_INFLUENCERS = 0;
 		this.INSTANCES = false;
-		this.HIGHLEVEL = false;
+		this.NDOTL = false;
+		this.CUSTOMUSERLIGHTING = false;
+		this.CELLBASIC = false;
 		this.USERIGHTHANDEDSYSTEM = false;
 	}
 	
@@ -104,9 +108,6 @@ class FurMaterialDefines extends MaterialDefines {
 		
 		if (this.DIFFUSE) {
 			result += "#define DIFFUSE \n";
-		}
-		if (this.HEIGHTMAP) {
-			result += "#define HEIGHTMAP \n";
 		}
 		if (this.CLIPPLANE) {
 			result += "#define CLIPPLANE \n";
@@ -141,8 +142,14 @@ class FurMaterialDefines extends MaterialDefines {
 		if (this.INSTANCES) {
 			result += "#define INSTANCES \n";
 		}
-		if (this.HIGHLEVEL) {
-			result += "#define HIGHLEVEL \n";
+		if (this.NDOTL) {
+			result += "#define NDOTL \n";
+		}
+		if (this.CUSTOMUSERLIGHTING) {
+			result += "#define CUSTOMUSERLIGHTING \n";
+		}
+		if (this.CELLBASIC) {
+			result += "#define CELLBASIC \n";
 		}
 		if (this.USERIGHTHANDEDSYSTEM) {
 			result += "#define USERIGHTHANDEDSYSTEM \n";

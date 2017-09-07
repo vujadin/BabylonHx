@@ -87,10 +87,24 @@ import lime.utils.UInt8Array;
 	public var wAng:Float = 0;
 
 	@serialize()
-	public var wrapU:Int = Texture.WRAP_ADDRESSMODE;
+	private var _wrapU:Int = Texture.WRAP_ADDRESSMODE;
+	public var wrapU(get, set):Int;
+	private function get_wrapU():Int {
+		return this._wrapU;
+	}
+	private function set_wrapU(value:Int):Int {
+		return this._wrapU = value;
+	}
 
 	@serialize()
-	public var wrapV:Int = Texture.WRAP_ADDRESSMODE;
+	private var _wrapV:Int = Texture.WRAP_ADDRESSMODE;
+	public var wrapV(get, set):Int;
+	private function get_wrapV():Int {
+		return this._wrapV;
+	}
+	private function set_wrapV(value:Int):Int {
+		return this._wrapV = value;
+	}
 
 	@serialize()
 	public var anisotropicFilteringLevel:Int = BaseTexture.DEFAULT_ANISOTROPIC_FILTERING_LEVEL;

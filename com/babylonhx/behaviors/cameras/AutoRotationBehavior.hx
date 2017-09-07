@@ -2,6 +2,8 @@ package com.babylonhx.behaviors.cameras;
 
 import com.babylonhx.animations.easing.BackEase;
 import com.babylonhx.animations.easing.EasingFunction;
+import com.babylonhx.events.PointerInfoPre;
+import com.babylonhx.events.PointerEventTypes;
 import com.babylonhx.animations.Animatable;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.cameras.Camera;

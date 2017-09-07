@@ -49,6 +49,7 @@ typedef IAMethods = {
 	public var textureHalfFloatRender:Bool;
 	public var textureLOD:Bool;
 	public var drawBuffersExtension:Bool;// WEBGL_draw_buffers;
+	public var depthTextureExtension:Bool;
 	public var colorBufferFloat:Bool;
 	
 	// BHx
