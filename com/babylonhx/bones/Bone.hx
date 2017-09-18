@@ -389,7 +389,7 @@ import com.babylonhx.animations.AnimationRange;
 	 * @param scaleChildren Set this to true if children of the bone should be scaled.
 	 */
 	public function setScale(x:Float, y:Float, z:Float, scaleChildren:Bool = false) {
-		if (this.animations[0] != null && !this.animations[0].isStopped()) {
+		if (this.animations[0] != null && !this.animations[0].hasRunningRuntimeAnimations) {
             if (!scaleChildren) {
                 this._negateScaleChildren.x = 1 / x;
                 this._negateScaleChildren.y = 1 / y;

@@ -33,8 +33,10 @@ import com.babylonhx.math.Tmp;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
-import lime.graphics.opengl.GLQuery;
+import com.babylonhx.math.Tools.BabylonMinMax;
+import com.babylonhx.math.Tools as MathTools;
 
+import lime.graphics.opengl.GLQuery;
 import lime.utils.Int32Array;
 import lime.utils.Float32Array;
 import lime.utils.UInt16Array;
@@ -1260,6 +1262,33 @@ import lime.utils.UInt16Array;
 		this._currentRenderId = cast Math.POSITIVE_INFINITY;
 		this._isDirty = true;
 		return this;
+	}
+	
+	/**
+     * Return the minimum and maximum world vectors of the entire hierarchy under current mesh
+     */
+	public function getHierarchyBoundingVectors():BabylonMinMax {
+		this.computeWorldMatrix();
+		var min = this.getBoundingInfo().boundingBox.minimumWorld;
+		var max = this.getBoundingInfo().boundingBox.maximumWorld;
+		
+		var descendants = this.getDescendants(false, function(node:Node) { return untyped node.subMeshes; });
+		
+		for (descendant in descendants) {
+			var childMesh:AbstractMesh = cast descendant;
+			
+			childMesh.computeWorldMatrix();
+			var minBox = childMesh.getBoundingInfo().boundingBox.minimumWorld;
+			var maxBox = childMesh.getBoundingInfo().boundingBox.maximumWorld;
+			
+			MathTools.CheckExtends(minBox, min, max);
+			MathTools.CheckExtends(maxBox, min, max);
+		}
+		
+		return {
+			minimum: min,
+			maximum: max
+		}
 	}
 
 	/**

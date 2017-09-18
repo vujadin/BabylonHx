@@ -63,6 +63,8 @@ import lime.utils.Float32Array;
 	public var customShader:Dynamic = null;
 	public var preventAutoStart:Bool = false;
 	
+	private var _epsilon:Float;
+	
 	public var __smartArrayFlags:Array<Int> = [];	// BHX
 
 	/**
@@ -127,14 +129,37 @@ import lime.utils.Float32Array;
 	private var _actualFrame:Int = 0;
 	public var _scaledUpdateSpeed:Float;
 	
+	// sheet animation
+	public var startSpriteCellID:Int = 0;
+	public var endSpriteCellID:Int = 0;
+	public var spriteCellLoop:Bool = true;
+	public var spriteCellChangeSpeed:Float = 0;
+
+	public var spriteCellWidth:Int = 0;
+	public var spriteCellHeight:Int = 0;
+	private var _vertexBufferSize:Int = 11;
+
+	private var _isAnimationSheetEnabled:Bool = false;
+	public var isAnimationSheetEnabled(get, never):Bool;
+	inline private function get_isAnimationSheetEnabled():Bool {
+		return this._isAnimationSheetEnabled;
+	}
+	// end of sheet animation
+	
 	private var _engine:Engine;
 	
 
-	public function new(name:String, capacity:Int, ?scene:Scene, ?customEffect:Effect) {
+	public function new(name:String, capacity:Int, ?scene:Scene, ?customEffect:Effect, isAnimationSheetEnabled:Bool = false, epsilon:Float = 0.01) {
 		this.name = name;
 		this.id = name;
 		this._capacity = capacity;
 		
+		this._epsilon = epsilon;
+		this._isAnimationSheetEnabled = isAnimationSheetEnabled;
+		if (this._isAnimationSheetEnabled) {
+			this._vertexBufferSize = 12;
+		}
+			
 		this._scene = scene != null ? scene : Engine.LastCreatedScene;
 		this._engine = this._scene.getEngine();
 		
@@ -154,6 +179,11 @@ import lime.utils.Float32Array;
 		var positions = this._vertexBuffer.createVertexBuffer(VertexBuffer.PositionKind, 0, 3);
 		var colors = this._vertexBuffer.createVertexBuffer(VertexBuffer.ColorKind, 3, 4);
 		var options = this._vertexBuffer.createVertexBuffer("options", 7, 4);
+		
+		if (this._isAnimationSheetEnabled) {
+			var cellIndexBuffer = this._vertexBuffer.createVertexBuffer("cellIndex", 11, 1);
+			this._vertexBuffers["cellIndex"] = cellIndexBuffer;
+		}
 		
 		this._vertexBuffers[VertexBuffer.PositionKind] = positions;
 		this._vertexBuffers[VertexBuffer.ColorKind] = colors;
@@ -202,6 +232,10 @@ import lime.utils.Float32Array;
 					
 					this.gravity.scaleToRef(this._scaledUpdateSpeed, this._scaledGravity);
 					particle.direction.addInPlace(this._scaledGravity);
+					
+					if (this._isAnimationSheetEnabled) {
+						particle.updateCellIndex(this._scaledUpdateSpeed);
+					}
 				}
 				
 				index++;
@@ -257,6 +291,8 @@ import lime.utils.Float32Array;
 	public function stop():Void {
 		this._stopped = true;
 	}
+	
+	// animation sheet
 
 	inline public function _appendParticleVertex(index:Int, particle:Particle, offsetX:Float, offsetY:Float) {
 		var offset = index * 11;
@@ -271,6 +307,36 @@ import lime.utils.Float32Array;
 		this._vertexData[offset + 8] = particle.size;
 		this._vertexData[offset + 9] = offsetX;
 		this._vertexData[offset + 10] = offsetY;
+	}
+	
+	public function _appendParticleVertexWithAnimation(index:Int, particle:Particle, offsetX:Float, offsetY:Float) {
+		if (offsetX == 0) {
+			offsetX = this._epsilon;
+		}
+		else if (offsetX == 1) {
+			offsetX = 1 - this._epsilon;
+		}
+		
+		if (offsetY == 0) {
+			offsetY = this._epsilon;
+		}
+		else if (offsetY == 1) {
+			offsetY = 1 - this._epsilon;
+		}
+		
+		var offset = index * this._vertexBufferSize;
+		this._vertexData[offset] = particle.position.x;
+		this._vertexData[offset + 1] = particle.position.y;
+		this._vertexData[offset + 2] = particle.position.z;
+		this._vertexData[offset + 3] = particle.color.r;
+		this._vertexData[offset + 4] = particle.color.g;
+		this._vertexData[offset + 5] = particle.color.b;
+		this._vertexData[offset + 6] = particle.color.a;
+		this._vertexData[offset + 7] = particle.angle;
+		this._vertexData[offset + 8] = particle.size;
+		this._vertexData[offset + 9] = offsetX;
+		this._vertexData[offset + 10] = offsetY;
+		this._vertexData[offset + 11] = particle.cellIndex;
 	}
 
 	static var worldMatrix:Matrix = Matrix.Zero();
@@ -298,15 +364,19 @@ import lime.utils.Float32Array;
 				particle.age = 0;
 			} 
 			else {
-				particle = new Particle();
+				particle = new Particle(this);
 			}
 			this.particles.push(particle);
 			
 			var emitPower = randomNumber(this.minEmitPower, this.maxEmitPower);
+			
 			this.startDirectionFunction(emitPower, worldMatrix, particle.direction, particle);
+			
 			particle.lifeTime = randomNumber(this.minLifeTime, this.maxLifeTime);
+			
 			particle.size = randomNumber(this.minSize, this.maxSize);
 			particle.angularSpeed = randomNumber(this.minAngularSpeed, this.maxAngularSpeed);
+			
 			this.startPositionFunction(worldMatrix, particle.position, particle);
 			
 			var step = randomNumber(0, 1.0);
@@ -329,15 +399,31 @@ import lime.utils.Float32Array;
 			defines.push("#define CLIPPLANE");
 		}
 		
+		if (this._isAnimationSheetEnabled) {
+			defines.push("#define ANIMATESHEET");
+		}
+		
 		// Effect
 		var join = defines.join("\n");
 		if (this._cachedDefines != join) {
 			this._cachedDefines = join;
 			
+			var attributesNamesOrOptions:Array<String> = [];
+			var effectCreationOption:Array<String> = [];
+			
+			if (this._isAnimationSheetEnabled) {
+				attributesNamesOrOptions = [VertexBuffer.PositionKind, VertexBuffer.ColorKind, "options", "cellIndex"];
+				effectCreationOption = ["invView", "view", "projection", "particlesInfos", "vClipPlane", "textureMask"];
+			}
+			else {
+				attributesNamesOrOptions = [VertexBuffer.PositionKind, VertexBuffer.ColorKind, "options"];
+				effectCreationOption = ["invView", "view", "projection", "vClipPlane", "textureMask"];
+			}
+			
 			this._effect = this._scene.getEngine().createEffect(
 				"particles",
-				[VertexBuffer.PositionKind, VertexBuffer.ColorKind, "options"],
-				["invView", "view", "projection", "vClipPlane", "textureMask"],
+				attributesNamesOrOptions,
+				effectCreationOption,
 				["diffuseSampler"], join);
 		}
 		
@@ -408,18 +494,39 @@ import lime.utils.Float32Array;
 			}
 		}
 		
+		// Animation sheet
+		if (this._isAnimationSheetEnabled) {
+			this.appendParticleVertexes = this.appenedParticleVertexesWithSheet;
+		}
+		else {
+			this.appendParticleVertexes = this.appenedParticleVertexesNoSheet;
+		}
+		
 		// Update VBO
 		var offset:Int = 0;
 		for (index in 0...this.particles.length) {
 			var particle = this.particles[index];
-			
-			this._appendParticleVertex(offset++, particle, 0, 0);
-			this._appendParticleVertex(offset++, particle, 1, 0);
-			this._appendParticleVertex(offset++, particle, 1, 1);
-			this._appendParticleVertex(offset++, particle, 0, 1);
+			this.appendParticleVertexes(offset, particle);
+			offset += 4;
 		}
 		
 		this._vertexBuffer.update(this._vertexData);
+	}
+	
+	public var appendParticleVertexes:Int->Particle->Void = null;
+
+	private function appenedParticleVertexesWithSheet(offset:Int, particle:Particle) {
+		this._appendParticleVertexWithAnimation(offset++, particle, 0, 0);
+		this._appendParticleVertexWithAnimation(offset++, particle, 1, 0);
+		this._appendParticleVertexWithAnimation(offset++, particle, 1, 1);
+		this._appendParticleVertexWithAnimation(offset++, particle, 0, 1);
+	}
+
+	private function appenedParticleVertexesNoSheet(offset:Int, particle:Particle) {
+		this._appendParticleVertex(offset++, particle, 0, 0);
+		this._appendParticleVertex(offset++, particle, 1, 0);
+		this._appendParticleVertex(offset++, particle, 1, 1);
+		this._appendParticleVertex(offset++, particle, 0, 1);
 	}
 	
 	public function rebuild() {
@@ -442,6 +549,12 @@ import lime.utils.Float32Array;
 		this._effect.setTexture("diffuseSampler", this.particleTexture);
 		this._effect.setMatrix("view", viewMatrix);
 		this._effect.setMatrix("projection", this._scene.getProjectionMatrix());
+		
+		if (this._isAnimationSheetEnabled) {
+			var baseSize = this.particleTexture.getBaseSize();
+			this._effect.setFloat3("particlesInfos", this.spriteCellWidth / baseSize.width, this.spriteCellHeight / baseSize.height, baseSize.width / this.spriteCellWidth);
+		}
+		
 		this._effect.setFloat4("textureMask", this.textureMask.r, this.textureMask.g, this.textureMask.b, this.textureMask.a);
 		
 		if (this._scene.clipPlane != null) {

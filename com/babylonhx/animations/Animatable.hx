@@ -9,7 +9,7 @@ package com.babylonhx.animations;
 	
 	private var _localDelayOffset:Float = -1;
 	private var _pausedDelay:Float = -1;
-	private var _animations:Array<Animation> = [];
+	private var _runtimeAnimations:Array<RuntimeAnimation> = [];
 	private var _paused:Bool = false;
 	private var _scene:Scene;
 	
@@ -41,36 +41,47 @@ package com.babylonhx.animations;
 	}
 	
 	// Methods
-	inline public function getAnimations():Array<Animation> {
-		return this._animations;
+	inline public function getAnimations():Array<RuntimeAnimation> {
+		return this._runtimeAnimations;
 	}
 
 	public function appendAnimations(target:Dynamic, animations:Array<Animation>) {
 		for (index in 0...animations.length) {
 			var animation = animations[index];
 			
-			animation._target = target;
-			this._animations.push(animation);    
+			this._runtimeAnimations.push(new RuntimeAnimation(target, animation));    
 		}            
 	}
 
-	public function getAnimationByTargetProperty(property:String) {
-		var animations = this._animations;
+	public function getAnimationByTargetProperty(property:String):Animation {
+		var runtimeAnimations = this._runtimeAnimations;
 		
-		for (index in 0...animations.length) {
-			if (animations[index].targetProperty == property) {
-				return animations[index];
+		for (index in 0...runtimeAnimations.length) {
+			if (runtimeAnimations[index].animation.targetProperty == property) {
+				return runtimeAnimations[index].animation;
 			}
 		}
 		
 		return null;
 	}
 	
-	public function reset() {
-		var animations = this._animations;
+	public function getRuntimeAnimationByTargetProperty(property:String):RuntimeAnimation {
+        var runtimeAnimations = this._runtimeAnimations;
 		
-		for (index in 0...animations.length) {
-			animations[index].reset();
+        for (index in 0...runtimeAnimations.length) {
+            if (runtimeAnimations[index].animation.targetProperty == property) {
+                return runtimeAnimations[index];
+            }
+        }
+		
+		return null;
+    }
+	
+	public function reset() {
+		var runtimeAnimations = this._runtimeAnimations;
+		
+		for (index in 0...runtimeAnimations.length) {
+			runtimeAnimations[index].reset();
 		}
 		
 		this._localDelayOffset = -1;
@@ -78,35 +89,35 @@ package com.babylonhx.animations;
 	}
 	
 	public function enableBlending(blendingSpeed:Float) {
-		var animations = this._animations;
+		var runtimeAnimations = this._runtimeAnimations;
 		
-		for (index in 0...animations.length) {
-			animations[index].enableBlending = true;
-			animations[index].blendingSpeed = blendingSpeed;
+		for (index in 0...runtimeAnimations.length) {
+			runtimeAnimations[index].animation.enableBlending = true;
+			runtimeAnimations[index].animation.blendingSpeed = blendingSpeed;
 		}
 	}
 
 	public function disableBlending() {
-		var animations = this._animations;
+		var runtimeAnimations = this._runtimeAnimations;
 		
-		for (index in 0...animations.length) {
-			animations[index].enableBlending = false;
+		for (index in 0...runtimeAnimations.length) {
+			runtimeAnimations[index].animation.enableBlending = false;
 		}
 	}
 	
 	public function goToFrame(frame:Int) {
-		var animations = this._animations;
+		var runtimeAnimations = this._runtimeAnimations;
 		
-		if (animations[0] != null) {
-            var fps = animations[0].framePerSecond;
-            var currentFrame = animations[0].currentFrame;
+		if (runtimeAnimations[0] != null) {
+            var fps = runtimeAnimations[0].animation.framePerSecond;
+            var currentFrame = runtimeAnimations[0].currentFrame;
             var adjustTime = frame - currentFrame;
             var delay = adjustTime * 1000 / fps;
             this._localDelayOffset -= delay;
         }
 		
-		for (index in 0...animations.length) {
-			animations[index].goToFrame(frame);
+		for (index in 0...runtimeAnimations.length) {
+			runtimeAnimations[index].goToFrame(frame);
 		}
 	}
 
@@ -123,21 +134,21 @@ package com.babylonhx.animations;
 			var idx = this._scene._activeAnimatables.indexOf(this);
 			
 			if (idx > -1) {
-				var animations = this._animations;
+				var runtimeAnimations = this._runtimeAnimations;
 				
-				var index = animations.length - 1;
+				var index = runtimeAnimations.length - 1;
 				while (index >= 0) {
-					if (Std.is(animationName, String) && animations[index].name != animationName) {
+					if (Std.is(animationName, String) && runtimeAnimations[index].animation.name != animationName) {
 						continue;
 					}
 					
-					animations[index].reset();
-					animations.splice(index, 1);
+					runtimeAnimations[index].reset();
+					runtimeAnimations.splice(index, 1);
 					
 					index--;
 				}
 				
-				if (animations.length == 0) {
+				if (runtimeAnimations.length == 0) {
 					this._scene._activeAnimatables.splice(idx, 1);
 					
 					if (this.onAnimationEnd != null) {
@@ -151,10 +162,10 @@ package com.babylonhx.animations;
 			
 			if (index > -1) {
 				this._scene._activeAnimatables.splice(index, 1);
-				var animations = this._animations;
+				var runtimeAnimations = this._runtimeAnimations;
 				
-				for (index in 0...animations.length) {
-					animations[index].reset();
+				for (index in 0...runtimeAnimations.length) {
+					runtimeAnimations[index].reset();
 				}
 				
 				if (this.onAnimationEnd != null) {
@@ -184,10 +195,10 @@ package com.babylonhx.animations;
 		
 		// Animating
 		var running = false;
-		var animations = this._animations;
+		var runtimeAnimations = this._runtimeAnimations;
 		
-		for (index in 0...animations.length) {
-			var animation = animations[index];
+		for (index in 0...runtimeAnimations.length) {
+			var animation = runtimeAnimations[index];
 			var isRunning = animation.animate(delay - this._localDelayOffset, this.fromFrame, this.toFrame, this.loopAnimation, this.speedRatio);
 			running = running || isRunning;
 		}
@@ -198,6 +209,11 @@ package com.babylonhx.animations;
 			// Remove from active animatables
 			var index = this._scene._activeAnimatables.indexOf(this);
 			this._scene._activeAnimatables.splice(index, 1);
+			
+			// Dispose all runtime animations
+            for (index in 0...runtimeAnimations.length) {
+                runtimeAnimations[index].dispose();
+            }
 		}
 		
 		if (!running && this.onAnimationEnd != null) {

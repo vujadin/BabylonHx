@@ -703,9 +703,8 @@ import openfl.display.OpenGLView;
         }
 		
 		var msg:String = "BabylonHx - Cross-Platform 3D Engine | " + Date.now().getFullYear() + " | www.babylonhx.com";
-		msg +=  " | GL version: " + this._glVersion + " | GL vendor: " + this._glVendor + " | GL renderer: " + this._glVendor; 
+		msg +=  " | GL version: " + gl.getParameter(gl.VERSION) + " | GL vendor: " + this._glVendor + " | GL renderer: " + this._glVendor; 
 		trace(msg);
-		trace(gl.getParameter(gl.VERSION));
 	}
 	
 	private function _rebuildInternalTextures() {

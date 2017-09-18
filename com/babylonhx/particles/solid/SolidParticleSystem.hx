@@ -136,7 +136,6 @@ class SolidParticleSystem implements IDisposable {
 	private var _cosPitch:Float = 0.0;
 	private var _sinYaw:Float = 0.0;
 	private var _cosYaw:Float = 0.0;
-	private var _w:Float = 0.0;
 	private var _mustUnrotateFixedNormals:Bool = false;
 	private var _minimum:Vector3 = Tmp.vector3[0];
     private var _maximum:Vector3 = Tmp.vector3[1];
@@ -776,10 +775,9 @@ class SolidParticleSystem implements IDisposable {
 					this._vertex.y *= this._particle.scaling.y;
 					this._vertex.z *= this._particle.scaling.z;
 					
-					this._w = (this._vertex.x * this._rotMatrix.m[3]) + (this._vertex.y * this._rotMatrix.m[7]) + (this._vertex.z * this._rotMatrix.m[11]) + this._rotMatrix.m[15];
-					this._rotated.x = ((this._vertex.x * this._rotMatrix.m[0]) + (this._vertex.y * this._rotMatrix.m[4]) + (this._vertex.z * this._rotMatrix.m[8]) + this._rotMatrix.m[12]) / this._w;
-					this._rotated.y = ((this._vertex.x * this._rotMatrix.m[1]) + (this._vertex.y * this._rotMatrix.m[5]) + (this._vertex.z * this._rotMatrix.m[9]) + this._rotMatrix.m[13]) / this._w;
-					this._rotated.z = ((this._vertex.x * this._rotMatrix.m[2]) + (this._vertex.y * this._rotMatrix.m[6]) + (this._vertex.z * this._rotMatrix.m[10]) + this._rotMatrix.m[14]) / this._w;
+					this._rotated.x = this._vertex.x * this._rotMatrix.m[0] + this._vertex.y * this._rotMatrix.m[4] + this._vertex.z * this._rotMatrix.m[8];
+                    this._rotated.y = this._vertex.x * this._rotMatrix.m[1] + this._vertex.y * this._rotMatrix.m[5] + this._vertex.z * this._rotMatrix.m[9];
+                    this._rotated.z = this._vertex.x * this._rotMatrix.m[2] + this._vertex.y * this._rotMatrix.m[6] + this._vertex.z * this._rotMatrix.m[10];
 					
 					this._positions32[idx] = this._particle.position.x + this._cam_axisX.x * this._rotated.x + this._cam_axisY.x * this._rotated.y + this._cam_axisZ.x * this._rotated.z;
 					this._positions32[idx + 1] = this._particle.position.y + this._cam_axisX.y * this._rotated.x + this._cam_axisY.y * this._rotated.y + this._cam_axisZ.y * this._rotated.z;
@@ -812,9 +810,9 @@ class SolidParticleSystem implements IDisposable {
 						this._normal.y = this._fixedNormal32[idx + 1];
 						this._normal.z = this._fixedNormal32[idx + 2];
 						
-						this._rotated.x = ((this._normal.x * this._rotMatrix.m[0]) + (this._normal.y * this._rotMatrix.m[4]) + (this._normal.z * this._rotMatrix.m[8]) + this._rotMatrix.m[12]);
-						this._rotated.y = ((this._normal.x * this._rotMatrix.m[1]) + (this._normal.y * this._rotMatrix.m[5]) + (this._normal.z * this._rotMatrix.m[9]) + this._rotMatrix.m[13]);
-						this._rotated.z = ((this._normal.x * this._rotMatrix.m[2]) + (this._normal.y * this._rotMatrix.m[6]) + (this._normal.z * this._rotMatrix.m[10]) + this._rotMatrix.m[14]);
+						this._rotated.x = this._normal.x * this._rotMatrix.m[0] + this._normal.y * this._rotMatrix.m[4] + this._normal.z * this._rotMatrix.m[8];
+                        this._rotated.y = this._normal.x * this._rotMatrix.m[1] + this._normal.y * this._rotMatrix.m[5] + this._normal.z * this._rotMatrix.m[9];
+                        this._rotated.z = this._normal.x * this._rotMatrix.m[2] + this._normal.y * this._rotMatrix.m[6] + this._normal.z * this._rotMatrix.m[10];
 						
 						this._normals32[idx] = this._cam_axisX.x * this._rotated.x + this._cam_axisY.x * this._rotated.y + this._cam_axisZ.x * this._rotated.z;
 						this._normals32[idx + 1] = this._cam_axisX.y * this._rotated.x + this._cam_axisY.y * this._rotated.y + this._cam_axisZ.y * this._rotated.z;
@@ -871,10 +869,9 @@ class SolidParticleSystem implements IDisposable {
 						this._vertex.x = this._particle._modelBoundingInfo.boundingBox.vectors[b].x * this._particle.scaling.x;
 						this._vertex.y = this._particle._modelBoundingInfo.boundingBox.vectors[b].y * this._particle.scaling.y;
 						this._vertex.z = this._particle._modelBoundingInfo.boundingBox.vectors[b].z * this._particle.scaling.z;
-						this._w = (this._vertex.x * this._rotMatrix.m[3]) + (this._vertex.y * this._rotMatrix.m[7]) + (this._vertex.z * this._rotMatrix.m[11]) + this._rotMatrix.m[15];
-						this._rotated.x = ((this._vertex.x * this._rotMatrix.m[0]) + (this._vertex.y * this._rotMatrix.m[4]) + (this._vertex.z * this._rotMatrix.m[8]) + this._rotMatrix.m[12]) / this._w;
-						this._rotated.y = ((this._vertex.x * this._rotMatrix.m[1]) + (this._vertex.y * this._rotMatrix.m[5]) + (this._vertex.z * this._rotMatrix.m[9]) + this._rotMatrix.m[13]) / this._w;
-						this._rotated.z = ((this._vertex.x * this._rotMatrix.m[2]) + (this._vertex.y * this._rotMatrix.m[6]) + (this._vertex.z * this._rotMatrix.m[10]) + this._rotMatrix.m[14]) / this._w;
+						this._rotated.x = this._vertex.x * this._rotMatrix.m[0] + this._vertex.y * this._rotMatrix.m[4] + this._vertex.z * this._rotMatrix.m[8];
+                        this._rotated.y = this._vertex.x * this._rotMatrix.m[1] + this._vertex.y * this._rotMatrix.m[5] + this._vertex.z * this._rotMatrix.m[9];
+                        this._rotated.z = this._vertex.x * this._rotMatrix.m[2] + this._vertex.y * this._rotMatrix.m[6] + this._vertex.z * this._rotMatrix.m[10];
 						bBox.vectors[b].x = this._particle.position.x + this._cam_axisX.x * this._rotated.x + this._cam_axisY.x * this._rotated.y + this._cam_axisZ.x * this._rotated.z;
 						bBox.vectors[b].y = this._particle.position.y + this._cam_axisX.y * this._rotated.x + this._cam_axisY.y * this._rotated.y + this._cam_axisZ.y * this._rotated.z;
 						bBox.vectors[b].z = this._particle.position.z + this._cam_axisX.z * this._rotated.x + this._cam_axisY.z * this._rotated.y + this._cam_axisZ.z * this._rotated.z;
@@ -942,10 +939,10 @@ class SolidParticleSystem implements IDisposable {
 		this._cosPitch = Math.cos(this._halfpitch);
 		this._sinYaw = Math.sin(this._halfyaw);
 		this._cosYaw = Math.cos(this._halfyaw);
-		this._quaternion.x = (this._cosYaw * this._sinPitch * this._cosRoll) + (this._sinYaw * this._cosPitch * this._sinRoll);
-		this._quaternion.y = (this._sinYaw * this._cosPitch * this._cosRoll) - (this._cosYaw * this._sinPitch * this._sinRoll);
-		this._quaternion.z = (this._cosYaw * this._cosPitch * this._sinRoll) - (this._sinYaw * this._sinPitch * this._cosRoll);
-		this._quaternion.w = (this._cosYaw * this._cosPitch * this._cosRoll) + (this._sinYaw * this._sinPitch * this._sinRoll);
+		this._quaternion.x = this._cosYaw * this._sinPitch * this._cosRoll + this._sinYaw * this._cosPitch * this._sinRoll;
+        this._quaternion.y = this._sinYaw * this._cosPitch * this._cosRoll - this._cosYaw * this._sinPitch * this._sinRoll;
+        this._quaternion.z = this._cosYaw * this._cosPitch * this._sinRoll - this._sinYaw * this._sinPitch * this._cosRoll;
+        this._quaternion.w = this._cosYaw * this._cosPitch * this._cosRoll + this._sinYaw * this._sinPitch * this._sinRoll;
 	}
 	
 	private function _quaternionToRotationMatrix() {

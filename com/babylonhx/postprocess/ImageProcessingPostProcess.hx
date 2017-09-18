@@ -378,7 +378,7 @@ class ImageProcessingPostProcess extends PostProcess {
 
 	private function _updateParameters() {
 		this._defines.FROMLINEARSPACE = this._fromLinearSpace;
-		this.imageProcessingConfiguration.prepareDefines(this._defines);
+		this.imageProcessingConfiguration.prepareDefines(this._defines, true);
 		
 		var defines = "";
 		if (this._defines.IMAGEPROCESSING) {

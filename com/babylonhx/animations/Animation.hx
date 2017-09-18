@@ -42,21 +42,16 @@ import com.babylonhx.Node;
 	public static var AllowMatricesInterpolation:Bool = false;
 	
 	private var _keys:Array<BabylonFrame>;
-	private var _offsetsCache:Array<Dynamic> = [];// { };
-	private var _highLimitsCache:Array<Dynamic> = []; // { };
-	private var _stopped:Bool = false;
-	public var _target:Dynamic;
-	private var _blendingFactor:Float = 0;
 	private var _easingFunction:IEasingFunction;
+	
+	public var _runtimeAnimations:Array<RuntimeAnimation> = [];
 	
 	// The set of event that will be linked to this animation
 	private var _events:Array<AnimationEvent> = [];
 
 	public var targetPropertyPath:Array<String>;
-	public var currentFrame:Int;
 	
 	public var blendingSpeed:Float = 0.01;
-	private var _originalBlendValue:Dynamic;
 
 	private var _ranges:Map<String, AnimationRange> = new Map();
 	
@@ -143,17 +138,17 @@ import com.babylonhx.Node;
 	}
 	
 	/**
-		 * Transition property of the Camera to the target Value.
-		 * @param property The property to transition
-		 * @param targetValue The target Value of the property
-         * @param host The object where the property to animate belongs
-         * @param scene Scene used to run the animation
-         * @param frameRate Framerate (in frame/s) to use
-		 * @param transition The transition type we want to use
-		 * @param duration The duration of the animation, in milliseconds
-		 * @param onAnimationEnd Call back trigger at the end of the animation.
-		 */
-		public static function TransitionTo(property:String, targetValue:Dynamic, host:Dynamic, scene:Scene, frameRate:Int, transition:Animation, duration:Float, onAnimationEnd:Void->Void = null):Animatable {
+	 * Transition property of the Camera to the target Value.
+	 * @param property The property to transition
+	 * @param targetValue The target Value of the property
+	 * @param host The object where the property to animate belongs
+	 * @param scene Scene used to run the animation
+	 * @param frameRate Framerate (in frame/s) to use
+	 * @param transition The transition type we want to use
+	 * @param duration The duration of the animation, in milliseconds
+	 * @param onAnimationEnd Call back trigger at the end of the animation.
+	 */
+	public static function TransitionTo(property:String, targetValue:Dynamic, host:Dynamic, scene:Scene, frameRate:Int, transition:Animation, duration:Float, onAnimationEnd:Void->Void = null):Animatable {
 		if (duration <= 0) {
 			Reflect.setProperty(host, property, targetValue);
 			if (onAnimationEnd != null) {
@@ -182,6 +177,25 @@ import com.babylonhx.Node;
 		var animation:Animatable = scene.beginAnimation(host, 0, endFrame, false);
 		animation.onAnimationEnd = onAnimationEnd;
 		return animation;
+	}
+	
+	/**
+	 * Return the array of runtime animations currently using this animation
+	 */
+	public var runtimeAnimations(get, never):Array<RuntimeAnimation>;
+	inline private function get_runtimeAnimations():Array<RuntimeAnimation> {
+		return this._runtimeAnimations;
+	}
+
+	public var hasRunningRuntimeAnimations(get, never):Bool;
+	private function get_hasRunningRuntimeAnimations():Bool {
+		for (runtimeAnimation in this._runtimeAnimations) {
+			if (!runtimeAnimation.isStopped()) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
 	
 
@@ -243,6 +257,10 @@ import com.babylonhx.Node;
 		}
 	}
 	
+	inline public function getEvents():Array<AnimationEvent> {
+		return this._events;
+	}
+	
 	public function createRange(name:String, from:Float, to:Float) {
 		// check name not already in use; could happen for bones after serialized
         if (!this._ranges.exists(name)){
@@ -271,18 +289,6 @@ import com.babylonhx.Node;
 
 	public function getRange(name:String):AnimationRange {		
 		return this._ranges[name];
-	}
-	
-	public function reset() {
-		this._offsetsCache = [];
-		this._highLimitsCache = [];
-		this.currentFrame = 0;
-		this._blendingFactor = 0;
-		this._originalBlendValue = null;
-	}
-	
-	inline public function isStopped():Bool {
-		return this._stopped;
 	}
 
 	inline public function getKeys():Array<BabylonFrame> {
@@ -375,8 +381,6 @@ import com.babylonhx.Node;
 
 	public function setKeys(values:Array<BabylonFrame>) {
 		this._keys = values.slice(0);
-		this._offsetsCache = [];
-		this._highLimitsCache = [];
 	}
 	
 	private function _getKeyValue(value:Dynamic):Dynamic {
@@ -385,396 +389,6 @@ import com.babylonhx.Node;
 		}
 		
 		return value;
-	}
-
-	private function _interpolate(currentFrame:Int, repeatCount:Int, loopMode:Int, ?offsetValue:Dynamic, ?highLimitValue:Dynamic):Dynamic {
-		if (loopMode == Animation.ANIMATIONLOOPMODE_CONSTANT && repeatCount > 0 && highLimitValue != null) {
-			return highLimitValue.clone != null ? highLimitValue.clone() : highLimitValue;
-		}
-		
-		this.currentFrame = currentFrame;
-		
-		// Try to get a hash to find the right key
-		var startKeyIndex = Std.int(Math.max(0, Math.min(this._keys.length - 1, Math.floor(this._keys.length * (currentFrame - this._keys[0].frame) / (this._keys[this._keys.length - 1].frame - this._keys[0].frame)) - 1)));
-		
-		if (this._keys[startKeyIndex].frame >= currentFrame) {
-			while (startKeyIndex - 1 >= 0 && this._keys[startKeyIndex].frame >= currentFrame) {
-				startKeyIndex--;
-			}
-		}
-		
-		for (key in startKeyIndex...this._keys.length) {
-			var endKey = this._keys[key + 1];
-			
-			if (endKey != null && endKey.frame >= currentFrame) {
-				var startKey = this._keys[key];
-				var startValue:Dynamic = this._keys[key].value;
-				var endValue:Dynamic = this._keys[key + 1].value;
-				
-				var useTangent:Bool = startKey.outTangent != null && endKey.inTangent != null;
-				var frameDelta:Float = endKey.frame - startKey.frame;
-				
-				// gradient : percent of currentFrame between the frame inf and the frame sup
-				var gradient:Float = (currentFrame - this._keys[key].frame) / (this._keys[key + 1].frame - this._keys[key].frame);
-				
-				// check for easingFunction and correction of gradient
-                if (this._easingFunction != null) {
-                    gradient = this._easingFunction.ease(gradient);
-                }
-				
-				switch (this.dataType) {
-					// Float
-					case Animation.ANIMATIONTYPE_FLOAT:
-						var floatValue = useTangent ? this.floatInterpolateFunctionWithTangents(startValue, startKey.outTangent * frameDelta, endValue, endKey.inTangent * frameDelta, gradient) : this.floatInterpolateFunction(startValue, endValue, gradient);
-						switch (loopMode) {
-							case Animation.ANIMATIONLOOPMODE_CYCLE, Animation.ANIMATIONLOOPMODE_CONSTANT:
-								return floatValue;
-							case Animation.ANIMATIONLOOPMODE_RELATIVE:
-								return offsetValue * repeatCount + floatValue;
-						}
-						
-					// Quaternion
-					case Animation.ANIMATIONTYPE_QUATERNION:
-						var quatValue = useTangent ? this.quaternionInterpolateFunctionWithTangents(startValue, startKey.outTangent.scale(frameDelta), endValue, endKey.inTangent.scale(frameDelta), gradient) : this.quaternionInterpolateFunction(startValue, endValue, gradient);
-						switch (loopMode) {
-							case Animation.ANIMATIONLOOPMODE_CYCLE, Animation.ANIMATIONLOOPMODE_CONSTANT:
-								return quatValue;								
-							case Animation.ANIMATIONLOOPMODE_RELATIVE:
-								return quatValue.add(offsetValue.scale(repeatCount));								
-						}
-						
-						return quatValue;
-					// Vector3
-					case Animation.ANIMATIONTYPE_VECTOR3:
-						var vec3Value = useTangent ? this.vector3InterpolateFunctionWithTangents(startValue, startKey.outTangent.scale(frameDelta), endValue, endKey.inTangent.scale(frameDelta), gradient) : this.vector3InterpolateFunction(startValue, endValue, gradient);
-						switch (loopMode) {
-							case Animation.ANIMATIONLOOPMODE_CYCLE, Animation.ANIMATIONLOOPMODE_CONSTANT:
-								vec3Value;
-							case Animation.ANIMATIONLOOPMODE_RELATIVE:
-								return vec3Value.add(offsetValue.scale(repeatCount));
-						}
-					// Vector2
-					case Animation.ANIMATIONTYPE_VECTOR2:
-						var vec2Value = useTangent ? this.vector2InterpolateFunctionWithTangents(startValue, startKey.outTangent.scale(frameDelta), endValue, endKey.inTangent.scale(frameDelta), gradient) : this.vector2InterpolateFunction(startValue, endValue, gradient);
-						switch (loopMode) {
-							case Animation.ANIMATIONLOOPMODE_CYCLE, Animation.ANIMATIONLOOPMODE_CONSTANT:
-								return vec2Value;
-							case Animation.ANIMATIONLOOPMODE_RELATIVE:
-								return vec2Value.add(offsetValue.scale(repeatCount));
-						}
-					// Size	
-					case Animation.ANIMATIONTYPE_SIZE:
-                        switch (loopMode) {
-                            case Animation.ANIMATIONLOOPMODE_CYCLE, Animation.ANIMATIONLOOPMODE_CONSTANT:
-                                return this.sizeInterpolateFunction(startValue, endValue, gradient);
-								
-                            case Animation.ANIMATIONLOOPMODE_RELATIVE:
-                                return this.sizeInterpolateFunction(startValue, endValue, gradient).add(offsetValue.scale(repeatCount));
-                        }
-						
-					// Color3
-					case Animation.ANIMATIONTYPE_COLOR3:
-						switch (loopMode) {
-							case Animation.ANIMATIONLOOPMODE_CYCLE, Animation.ANIMATIONLOOPMODE_CONSTANT:
-								return this.color3InterpolateFunction(cast startValue, cast endValue, gradient);
-							case Animation.ANIMATIONLOOPMODE_RELATIVE:
-								return this.color3InterpolateFunction(cast startValue, cast endValue, gradient).add(offsetValue.scale(repeatCount));
-						}
-					// Matrix
-					case Animation.ANIMATIONTYPE_MATRIX:
-						switch (loopMode) {
-							case Animation.ANIMATIONLOOPMODE_CYCLE, Animation.ANIMATIONLOOPMODE_CONSTANT:
-								if (Animation.AllowMatricesInterpolation) {
-									return this.matrixInterpolateFunction(startValue, endValue, gradient);
-								}
-							case Animation.ANIMATIONLOOPMODE_RELATIVE:
-								return startValue;
-								
-							default:
-								//
-						}
-					default:
-						//
-				}
-			}
-		}
-		
-		return this._getKeyValue(this._keys[this._keys.length - 1].value);
-	}
-	
-	public function setValue(currentValue:Dynamic, blend:Bool = false) {
-		// Set value
-		var path:Dynamic;
-		var destination:Dynamic;
-		
-		if (this.targetPropertyPath.length > 1) {
-			var property = Reflect.getProperty(this._target, this.targetPropertyPath[0]);
-			/*switch(this.targetPropertyPath[0]) {
-				case "scaling":
-					property = untyped this._target.scaling;
-					
-				case "position":
-					property = untyped this._target.position;
-					
-				case "rotation":
-					property = untyped this._target.rotation;
-					
-				default: 
-					property = Reflect.getProperty(this._target, this.targetPropertyPath[0]);
-			}*/			
-			
-			for (index in 1...this.targetPropertyPath.length - 1) {
-				property = Reflect.getProperty(property, this.targetPropertyPath[index]);
-			}
-			
-			path = this.targetPropertyPath[this.targetPropertyPath.length - 1];
-			destination = property;
-			
-			/*switch(this.targetPropertyPath[this.targetPropertyPath.length - 1]) {					
-				case "x":
-					untyped property.x = currentValue;
-					
-				case "y":
-					untyped property.y = currentValue;
-					
-				case "z":
-					untyped property.z = currentValue;
-					
-				default:
-					Reflect.setProperty(property, this.targetPropertyPath[this.targetPropertyPath.length - 1], currentValue);
-			}*/	
-		} 
-		else {
-			/*switch(this.targetPropertyPath[0]) {
-				case "_matrix":
-					untyped this._target._matrix = currentValue;
-					
-				case "rotation":
-					untyped this._target.rotation = currentValue;
-					
-				case "position":
-					untyped this._target.position = currentValue;
-					
-				case "scaling":
-					untyped this._target.scaling = currentValue;
-				 
-				default:
-					Reflect.setProperty(this._target, this.targetPropertyPath[0], currentValue);
-			}*/
-			
-			path = this.targetPropertyPath[0];
-			destination = this._target;
-		}
-		
-		// Blending
-		if (this.enableBlending && this._blendingFactor <= 1.0) {
-			if (this._originalBlendValue == null) {				
-				if (path == "_matrix") {
-					this._originalBlendValue = destination._matrix.clone();
-				} 
-				else {
-					this._originalBlendValue = Reflect.getProperty(destination, path);
-				}
-			}
-			
-			if (path == "_matrix") { 				
-				untyped destination._matrix = Matrix.Lerp(this._originalBlendValue, currentValue, this._blendingFactor);
-			} 
-			else { // Direct value
-				Reflect.setField(destination, path, this._originalBlendValue * (1.0 - this._blendingFactor) + this._blendingFactor * currentValue);
-			}
-			
-			this._blendingFactor += this.blendingSpeed;
-		} 
-		else {
-			switch (destination.getClassName()) {
-				case "Bone":
-					if (path == "_matrix") {
-						cast (destination, Bone)._matrix = currentValue;
-					}
-					else {
-						Reflect.setField(destination, path, currentValue);
-					}
-					
-				default:
-					Reflect.setField(destination, path, currentValue);					
-			}
-		}
-		
-		if (this._target.markAsDirty != null) {
-			this._target.markAsDirty(this.targetProperty);
-		}
-	}
-
-	public function goToFrame(frame:Int) {
-		if (frame < this._keys[0].frame) {
-			frame = this._keys[0].frame;
-		} 
-		else if (frame > this._keys[this._keys.length - 1].frame) {
-			frame = this._keys[this._keys.length - 1].frame;
-		}
-		
-		var currentValue = this._interpolate(frame, 0, this.loopMode);
-		
-		this.setValue(currentValue);
-	}
-
-	public function animate(delay:Float, from:Int, to:Int, loop:Bool, speedRatio:Float, blend:Bool = false):Bool {
-		if (this.targetPropertyPath == null || this.targetPropertyPath.length < 1) {
-			this._stopped = true;
-			return false;
-		}
-		
-		var returnValue = true;
-		
-		// Adding a start key at frame 0 if missing
-		if (this._keys[0].frame != 0) {
-			var newKey = {
-				frame:0,
-				value:this._keys[0].value
-			};
-			
-			this._keys.unshift(newKey);
-		}
-		
-		// Check limits
-		if (from < this._keys[0].frame || from > this._keys[this._keys.length - 1].frame) {
-			from = this._keys[0].frame;
-		}
-		if (to < this._keys[0].frame || to > this._keys[this._keys.length - 1].frame) {
-			to = this._keys[this._keys.length - 1].frame;
-		}
-		
-		//to and from cannot be the same key
-        if (from == to) {
-            from++;
-        }
-		
-		// Compute ratio
-		var range = to - from;
-		var offsetValue:Dynamic = null;
-		// ratio represents the frame delta between from and to
-		var ratio = delay * (this.framePerSecond * speedRatio) / 1000.0;
-		var highLimitValue:Dynamic = null;
-		
-		if (ratio > range && !loop) { // If we are out of range and not looping get back to caller
-			returnValue = false;
-			highLimitValue = this._getKeyValue(this._keys[this._keys.length - 1].value);
-		} 
-		else {
-			// Get max value if required
-			highLimitValue = 0;
-			if (this.loopMode != Animation.ANIMATIONLOOPMODE_CYCLE) {
-				var keyOffset = to + from;
-				if (this._offsetsCache.length > keyOffset) {
-					var fromValue = this._interpolate(from, 0, Animation.ANIMATIONLOOPMODE_CYCLE);
-					var toValue = this._interpolate(to, 0, Animation.ANIMATIONLOOPMODE_CYCLE);
-					switch (this.dataType) {
-						// Float
-						case Animation.ANIMATIONTYPE_FLOAT:
-							this._offsetsCache[keyOffset] = toValue - fromValue;
-							
-						// Quaternion
-						case Animation.ANIMATIONTYPE_QUATERNION:
-							this._offsetsCache[keyOffset] = cast(toValue, Quaternion).subtract(cast(fromValue, Quaternion));
-							
-						// Vector3
-						case Animation.ANIMATIONTYPE_VECTOR3:
-							this._offsetsCache[keyOffset] = cast(toValue, Vector3).subtract(cast(fromValue, Vector3));
-							
-						// Vector2
-						case Animation.ANIMATIONTYPE_VECTOR2:
-							this._offsetsCache[keyOffset] = cast(toValue, Vector2).subtract(cast(fromValue, Vector2));
-							
-						// Size
-                        case Animation.ANIMATIONTYPE_SIZE:
-                            this._offsetsCache[keyOffset] = cast(toValue, Size).subtract(cast(fromValue, Size));
-							
-						// Color3
-						case Animation.ANIMATIONTYPE_COLOR3:
-							this._offsetsCache[keyOffset] = cast(toValue, Color3).subtract(cast(fromValue, Color3));
-							
-						default:
-							//
-					}
-					
-					this._highLimitsCache[keyOffset] = toValue;
-				}
-				
-				highLimitValue = this._highLimitsCache[keyOffset];
-				offsetValue = this._offsetsCache[keyOffset];
-			}
-		}
-		
-		if (offsetValue == null) {
-			switch (this.dataType) {
-				// Float
-				case Animation.ANIMATIONTYPE_FLOAT:
-					offsetValue = 0;
-					
-				// Quaternion
-				case Animation.ANIMATIONTYPE_QUATERNION:
-					offsetValue = new Quaternion(0, 0, 0, 0);
-					
-				// Vector3
-				case Animation.ANIMATIONTYPE_VECTOR3:
-					offsetValue = Vector3.Zero();
-					
-				// Vector2
-				case Animation.ANIMATIONTYPE_VECTOR2:
-					offsetValue = Vector2.Zero();
-					
-				// Size
-                case Animation.ANIMATIONTYPE_SIZE:
-                    offsetValue = Size.Zero();
-					
-				// Color3
-				case Animation.ANIMATIONTYPE_COLOR3:
-					offsetValue = Color3.Black();
-			}
-		}
-		
-		// Compute value
-		var repeatCount = Std.int(ratio / range);
-		var currentFrame = cast (returnValue ? from + ratio % range : to);
-		var currentValue = this._interpolate(currentFrame, repeatCount, this.loopMode, offsetValue, highLimitValue);
-		
-		// Set value
-		this.setValue(currentValue);
-		
-		// Check events
-		var index:Int = 0;
-		while (index < this._events.length) {
-			// Make sure current frame has passed event frame and that event frame is within the current range
-            // Also, handle both forward and reverse animations
-            if (
-                (range > 0 && currentFrame >= this._events[index].frame && this._events[index].frame >= from) ||
-                (range < 0 && currentFrame <= this._events[index].frame && this._events[index].frame <= from)
-            ) {
-				var event = this._events[index];
-				if (!event.isDone) {
-					// If event should be done only once, remove it.
-					if (event.onlyOnce) {
-						this._events.splice(index, 1);
-						index--;
-					}
-					event.isDone = true;
-					event.action();
-				} // Don't do anything if the event has already be done.
-			} 
-			else if (this._events[index].isDone && !this._events[index].onlyOnce) {
-				// reset event, the animation is looping
-				this._events[index].isDone = false;
-			}
-			
-			++index;
-		}
-		
-		if (!returnValue) {
-			this._stopped = true;
-		}
-		
-		return returnValue;
 	}
 	
 	public function serialize():Dynamic {

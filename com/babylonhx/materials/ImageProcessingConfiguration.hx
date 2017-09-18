@@ -361,7 +361,18 @@ class ImageProcessingConfiguration {
 	 * Prepare the list of defines associated to the shader.
 	 * @param defines the list of defines to complete
 	 */
-	public function prepareDefines(defines:IImageProcessingConfigurationDefines) {
+	public function prepareDefines(defines:IImageProcessingConfigurationDefines, forPostProcess:Bool = false) {
+		if (forPostProcess != this.applyByPostProcess) {
+            defines.VIGNETTE = false;
+            defines.TONEMAPPING = false;
+            defines.CONTRAST = false;
+            defines.EXPOSURE = false;
+            defines.COLORCURVES = false;
+            defines.COLORGRADING = false;  
+            defines.IMAGEPROCESSING = false;              
+            defines.IMAGEPROCESSINGPOSTPROCESS = this.applyByPostProcess;
+            return;
+        }
 		defines.VIGNETTE = this.vignetteEnabled;
 		defines.VIGNETTEBLENDMODEMULTIPLY = (this.vignetteBlendMode == ImageProcessingConfiguration.VIGNETTEMODE_MULTIPLY);
 		defines.VIGNETTEBLENDMODEOPAQUE = !defines.VIGNETTEBLENDMODEMULTIPLY;
