@@ -17,25 +17,25 @@ class MosaicPostProcess extends PostProcess {
 	private var screenSize:Vector2 = new Vector2(100, 100);
 	
 	public var t:Float = 0.06;
-	public var pixelSize:Float = 5.0;
+	public var pixelSize:Float = 8.0;
 	public var edges:Float = 0.02;
-	public var depth:Float = 8.0;
-	public var shift:Float = 5.0;
+	public var depth:Float = 128.0;
+	public var shift:Float = 1.0;
 	
 	
 	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
-		if (!ShadersStore.Shaders.exists("mosaic.fragment")) {			
-			ShadersStore.Shaders.set("mosaic.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("mosaicPixelShader")) {			
+			ShadersStore.Shaders.set("mosaicPixelShader", fragmentShader);
 		}
 		
 		super(name, "mosaic", ["width", "height", "t", "pixel", "edges", "depth", "shift"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onSizeChanged = function(_, _) {
+		this.onSizeChangedObservable.add(function(_, _) {
 			this.screenSize.x = camera.getScene().getEngine().getRenderWidth();
 			this.screenSize.y = camera.getScene().getEngine().getRenderHeight();
-		};
+		});
 		
-		this.onApply = function(effect:Effect, _) {			
+		this.onApplyObservable.add(function(effect:Effect, _) {		
 			effect.setFloat("width", this.screenSize.x);
 			effect.setFloat("height", this.screenSize.y);
 			effect.setFloat("t", this.t);
@@ -43,9 +43,7 @@ class MosaicPostProcess extends PostProcess {
 			effect.setFloat("edges", this.edges);
 			effect.setFloat("depth", this.depth);
 			effect.setFloat("shift", this.shift);
-		};
-		
-		this.onSizeChanged(this._effect, null);
+		});
 	}
 	
 }

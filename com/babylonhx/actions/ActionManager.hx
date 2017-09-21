@@ -214,6 +214,25 @@ import com.babylonhx.tools.Tools;
 		
 		return action;
 	}
+	
+	/**
+	 * Unregisters an action to this action manager
+	 * @param {BABYLON.Action} action - the action to be unregistered
+	 * @return {Boolean}
+	 */
+	public function unregisterAction(action:Action):Bool {
+		var index = this.actions.indexOf(action);
+		if (index != -1) {
+			this.actions.splice(index, 1);
+			ActionManager.Triggers[action.trigger] -= 1;
+			if (ActionManager.Triggers[action.trigger] == 0) {
+				ActionManager.Triggers[action.trigger] = null;
+			}
+			action._actionManager = null;
+			return true;
+		}
+		return false;
+	}
 
 	/**
 	 * Process a specific trigger

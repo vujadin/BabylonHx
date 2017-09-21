@@ -21,24 +21,24 @@ import com.babylonhx.materials.ShadersStore;
 	
 
 	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
-		if (!ShadersStore.Shaders.exists("natural.fragment")) {			
-			ShadersStore.Shaders.set("natural.fragment", fragmentShader);
-			ShadersStore.Shaders.set("natural.vertex", vertexShader);
+		if (!ShadersStore.Shaders.exists("naturalPixelShader")) {			
+			ShadersStore.Shaders.set("naturalPixelShader", fragmentShader);
+			ShadersStore.Shaders.set("naturalVertexShader", vertexShader);
 		}
 		
 		super(name, "natural", ["u_texelDelta"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onSizeChanged = function(_, _) {
+		this.onSizeChangedObservable.add(function(_, _) {
 			this.texelDelta.x = 1 / camera.getScene().getEngine().getRenderWidth();
 			this.texelDelta.y = 1 / camera.getScene().getEngine().getRenderHeight();
-		};
+		});
 		
-		this.onApply = function(effect:Effect, _) {
+		this.onApplyObservable.add(function(effect:Effect, _) {
 			effect.setVector2("u_texelDelta", this.texelDelta);
-		};
+		});
 	}
 	
-	override public function updateEffect(defines:String = "") {
+	override public function updateEffect(defines:String = null, uniforms:Array<String> = null, samplers:Array<String> = null, ?indexParameters:Dynamic, ?onCompiled:Effect->Void, ?onError:Effect->String->Void) {
 		this._effect = this._engine.createEffect({ vertex: "natural", fragment: "natural" },
 			["position"],
 			this._parameters,

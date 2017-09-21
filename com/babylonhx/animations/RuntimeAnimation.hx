@@ -276,6 +276,7 @@ class RuntimeAnimation {
 				case "Bone":
 					if (path == "_matrix") {
 						cast (destination, Bone)._matrix = currentValue;
+						@:privateAccess cast (destination, Bone)._localMatrix = currentValue;
 					}
 					else {
 						Reflect.setField(destination, path, currentValue);
@@ -334,9 +335,14 @@ class RuntimeAnimation {
 			to = keys[keys.length - 1].frame;
 		}
 		
-		//to and from cannot be the same key
+		// to and from cannot be the same key
         if (from == to) {
-            from++;
+            if (from > keys[0].frame) {
+                from--;
+            } 
+			else if (to < keys[keys.length - 1].frame) {
+                to++;
+            }
         }
 		
 		// Compute ratio

@@ -22,25 +22,23 @@ import com.babylonhx.materials.ShadersStore;
 	
 
 	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
-		if (!ShadersStore.Shaders.exists("vignette.fragment")) {			
-			ShadersStore.Shaders.set("vignette.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("vignettePixelShader")) {			
+			ShadersStore.Shaders.set("vignettePixelShader", fragmentShader);
 		}
 		
 		super(name, "vignette", ["resolution", "outerRadius", "innerRadius", "intensity"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onSizeChanged = function(_, _) {
+		this.onSizeChangedObservable.add(function(_, _) {
 			this.resolution.x = camera.getScene().getEngine().getRenderWidth();
 			this.resolution.y = camera.getScene().getEngine().getRenderHeight();
-		};
+		});
 		
-		this.onApply = function(effect:Effect, _) {
+		this.onApplyObservable.add(function(effect:Effect, _) {
 			effect.setVector2("resolution", this.resolution);
 			effect.setFloat("outerRadius", this.outerRadius);
 			effect.setFloat("innerRadius", this.innerRadius);
 			effect.setFloat("intensity", this.intensity);
-		};
-		
-		this.onSizeChanged(this._effect, null);
+		});
 	}
 	
 }

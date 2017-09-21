@@ -17,15 +17,15 @@ import com.babylonhx.materials.ShadersStore;
 	
 
 	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
-		if (!ShadersStore.Shaders.exists("bleachBypass.fragment")) {			
-			ShadersStore.Shaders.set("bleachBypass.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("bleachBypassPixelShader")) {			
+			ShadersStore.Shaders.set("bleachBypassPixelShader", fragmentShader);
 		}
 		
 		super(name, "bleachBypass", ["opacity"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onApply = function(effect:Effect, _) {
+		this.onApplyObservable.add(function(effect:Effect, _) {
 			effect.setFloat("opacity", this.opacity);
-		};
+		});
 	}
 	
 }

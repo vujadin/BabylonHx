@@ -13,7 +13,6 @@ class ShadowOnlyMaterialDefines extends MaterialDefines {
 	public var NUM_BONE_INFLUENCERS:Int = 0;
 	public var BonesPerMesh:Int = 0;
 	public var INSTANCES:Bool = false;
-	public var USERIGHTHANDEDSYSTEM:Bool = false;
 	
 
 	public function new() {
@@ -29,7 +28,6 @@ class ShadowOnlyMaterialDefines extends MaterialDefines {
 			if (untyped this.NUM_BONE_INFLUENCERS != other.NUM_BONE_INFLUENCERS) return false; 
 			if (untyped this.BonesPerMesh != other.BonesPerMesh) return false;
 			if (untyped this.INSTANCES != other.INSTANCES) return false;
-			if (untyped this.USERIGHTHANDEDSYSTEM != other.USERIGHTHANDEDSYSTEM) return false; 
 			
 			return true;
 		}
@@ -47,7 +45,6 @@ class ShadowOnlyMaterialDefines extends MaterialDefines {
 		untyped other.NUM_BONE_INFLUENCERS = this.NUM_BONE_INFLUENCERS;
 		untyped other.BonesPerMesh = this.BonesPerMesh;
 		untyped other.INSTANCES = this.INSTANCES;
-		untyped other.USERIGHTHANDEDSYSTEM = this.USERIGHTHANDEDSYSTEM;
 	}
 	
 	override public function reset() {
@@ -60,7 +57,6 @@ class ShadowOnlyMaterialDefines extends MaterialDefines {
 		this.NUM_BONE_INFLUENCERS = 0;
 		this.BonesPerMesh = 0;
 		this.INSTANCES = false;
-		this.USERIGHTHANDEDSYSTEM = false;
 	}
 	
 	override public function toString():String {
@@ -80,9 +76,6 @@ class ShadowOnlyMaterialDefines extends MaterialDefines {
 		}
 		if (this.INSTANCES) {
 			result += "#define INSTANCES \n";
-		}
-		if (this.USERIGHTHANDEDSYSTEM) {
-			result += "#define USERIGHTHANDEDSYSTEM \n";
 		}
 		
 		result += "#define BonesPerMesh " + this.BonesPerMesh + "\n";

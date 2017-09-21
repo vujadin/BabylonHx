@@ -23,7 +23,6 @@ class CellMaterialDefines extends MaterialDefines {
 	public var NDOTL:Bool = true;
 	public var CUSTOMUSERLIGHTING:Bool = true;
 	public var CELLBASIC:Bool = true;
-	public var USERIGHTHANDEDSYSTEM:Bool = false;
 
 	
 	public function new() {
@@ -49,7 +48,6 @@ class CellMaterialDefines extends MaterialDefines {
 			if (untyped this.NDOTL != other.NDOTL) return false;
 			if (untyped this.CUSTOMUSERLIGHTING != other.CUSTOMUSERLIGHTING) return false;
 			if (untyped this.CELLBASIC != other.CELLBASIC) return false;
-			if (untyped this.USERIGHTHANDEDSYSTEM != other.USERIGHTHANDEDSYSTEM) return false;
 			
 			return true;
 		}
@@ -77,7 +75,6 @@ class CellMaterialDefines extends MaterialDefines {
 		untyped other.NDOTL = this.NDOTL;
 		untyped other.CUSTOMUSERLIGHTING = this.CUSTOMUSERLIGHTING;
 		untyped other.CELLBASIC = this.CELLBASIC;
-		untyped other.USERIGHTHANDEDSYSTEM = this.USERIGHTHANDEDSYSTEM;
 	}
 	
 	override public function reset() {
@@ -100,7 +97,6 @@ class CellMaterialDefines extends MaterialDefines {
 		this.NDOTL = false;
 		this.CUSTOMUSERLIGHTING = false;
 		this.CELLBASIC = false;
-		this.USERIGHTHANDEDSYSTEM = false;
 	}
 	
 	override public function toString():String {
@@ -150,9 +146,6 @@ class CellMaterialDefines extends MaterialDefines {
 		}
 		if (this.CELLBASIC) {
 			result += "#define CELLBASIC \n";
-		}
-		if (this.USERIGHTHANDEDSYSTEM) {
-			result += "#define USERIGHTHANDEDSYSTEM \n";
 		}
 		
 		result += "#define BonesPerMesh " + this.BonesPerMesh + "\n";

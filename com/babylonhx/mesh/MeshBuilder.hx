@@ -962,13 +962,19 @@ class MeshBuilder {
 	  */
 	public static function CreateTube(name:String, options:Dynamic, scene:Scene):Mesh {
 		var path:Array<Vector3> = options.path;
-		var radius:Float = options.radius != null ? options.radius : 1;
+		var instance:Mesh = options.instance;
+        var radius:Float = 1.0;
+        if (instance != null) {
+            radius = instance.radius;
+        }
+        if (options.radius != null) {
+            radius = options.radius;
+        }
 		var tessellation:Int = options.tessellation != null ? options.tessellation : 64;
 		var radiusFunction:Int->Float->Float = options.radiusFunction;
 		var cap:Int = options.cap != null ? options.cap : Mesh.NO_CAP;
 		var updatable:Bool = options.updatable;
 		var sideOrientation:Int = updateSideOrientation(options.sideOrientation, scene);
-		var tubeInstance:Mesh = options.instance;
 		
 		// tube geometry
 		var tubePathArray = function (path:Array<Vector3>, path3D:Path3D, circlePaths:Array<Array<Vector3>>, radius:Float, tessellation:Int, ?radiusFunction:Int->Float->Float, cap:Int, arc:Float = 1) {
@@ -1014,14 +1020,18 @@ class MeshBuilder {
                 case Mesh.NO_CAP:
                    
                 case Mesh.CAP_START:
-                    circlePaths.unshift(capPath(tessellation + 1, 0));
+                    circlePaths[0] = capPath(tessellation, 0);
+                    circlePaths[1] = circlePaths[2].slice(0);
                     
                 case Mesh.CAP_END:
-                    circlePaths.push(capPath(tessellation + 1, path.length - 1));
+                    circlePaths[index] = circlePaths[index - 1].slice(0);
+                    circlePaths[index + 1] = capPath(tessellation, path.length - 1);
                     
                 case Mesh.CAP_ALL:
-                    circlePaths.unshift(capPath(tessellation + 1, 0));
-                    circlePaths.push(capPath(tessellation + 1, path.length - 1));
+                    circlePaths[0] = capPath(tessellation, 0);
+                    circlePaths[1] = circlePaths[2].slice(0);
+                    circlePaths[index] = circlePaths[index - 1].slice(0);
+                    circlePaths[index + 1] = capPath(tessellation, path.length - 1);
                     
                 default:
                     //                   
@@ -1030,24 +1040,34 @@ class MeshBuilder {
 			return circlePaths;
 		};
 		
-		if (tubeInstance != null) { // tube update
-			var path3D = tubeInstance.path3D.update(path);
-			var pathArray = tubePathArray(path, path3D, tubeInstance.pathArray, radius, tubeInstance.tessellation, radiusFunction, tubeInstance.cap);
-			tubeInstance = MeshBuilder.CreateRibbon(null, { pathArray: pathArray, instance: tubeInstance }, scene);
+		var path3D:Path3D = null;
+		var pathArray:Array<Array<Vector3>> = null;
+		if (instance != null) { // tube update
+			var arc = options.arc != null ? options.arc : instance.arc;
+			path3D = instance.path3D.update(path);
+			pathArray = tubePathArray(path, path3D, instance.pathArray, radius, instance.tessellation, radiusFunction, instance.cap);
+			instance = MeshBuilder.CreateRibbon(null, { pathArray: pathArray, instance: instance }, scene);
 			
-			return tubeInstance;
+			instance.path3D = path3D;
+            instance.pathArray = pathArray;
+            instance.arc = arc;
+            instance.radius = radius;
+			
+            return instance;
 		}
 		
 		// tube creation
-		var path3D:Path3D = new Path3D(path);
-		var newPathArray:Array<Array<Vector3>> = [];
+		path3D = new Path3D(path);
+		pathArray = [];
 		cap = (cap < 0 || cap > 3) ? 0 : cap;
-        var pathArray = tubePathArray(path, path3D, newPathArray, radius, tessellation, radiusFunction, cap);
+        var pathArray = tubePathArray(path, path3D, pathArray, radius, tessellation, radiusFunction, cap);
 		var tube = MeshBuilder.CreateRibbon(name, { pathArray: pathArray, closeArray: false, closePath: true, offset: 0, updatable: updatable, sideOrientation: sideOrientation }, scene);
 		tube.pathArray = pathArray;
 		tube.path3D = path3D;
 		tube.tessellation = tessellation;
 		tube.cap = cap;
+		tube.radius = radius;
+		tube.arc = options.arc;
 		
 		return tube;
 	}

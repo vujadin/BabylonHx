@@ -23,11 +23,11 @@ import haxe.crypto.Base64;
 import haxe.Json;
 import haxe.Timer;
 
-#if openfl
-typedef Assets = openfl.Assets;
-#elseif lime
+//#if openfl
+//typedef Assets = openfl.Assets;
+//#elseif lime
 typedef Assets = lime.Assets;
-#end
+//#end
 
 
 /**
@@ -499,30 +499,29 @@ typedef Assets = lime.Assets;
 			#end
 				switch(type) {						
 					case "img":
-						#if openfl
-						var img = Assets.getBitmapData(path);
-						#if openfl_legacy
-						var image = new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height);
-						#else
-						var image = new Image(img.image.data, img.width, img.height);
-						#end
-
-						if (callbackFn != null) {
-							callbackFn(image);
-						}
-						#elseif lime
+						//#if openfl
+						//var img = Assets.getBitmapData(path);
+						//#if openfl_legacy
+						//var image = new Image(new UInt8Array(openfl.display.BitmapData.getRGBAPixels(img)), img.width, img.height);
+						//#else
+						//var image = new Image(img.image.data, img.width, img.height);
+						//#end
+						//if (callbackFn != null) {
+							//callbackFn(image);
+						//}
+						//#elseif lime
 						var img = Assets.getImage(path);
 						var image = new Image(img.data, img.width, img.height);
 						if (callbackFn != null) {
 							callbackFn(image);
 						}						
-						#elseif nme
-						var img = Assets.getBitmapData(path);
-						var image = new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height);
-						if (callbackFn != null) {
-							callbackFn(image);
-						}
-						#end
+						//#elseif nme
+						//var img = Assets.getBitmapData(path);
+						//var image = new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height);
+						//if (callbackFn != null) {
+							//callbackFn(image);
+						//}
+						//#end
 						
 					case "ctm":
 						#if lime
@@ -664,7 +663,7 @@ typedef Assets = lime.Assets;
 			onload(image);
 			return;
 		}
-		#if (openfl && !nme)
+		/*#if (openfl && !nme)
 		if (Assets.exists(url)) {
 			var img = Assets.getBitmapData(url); 
 			
@@ -681,7 +680,7 @@ typedef Assets = lime.Assets;
 			trace("Image '" + url + "' doesn't exist!");
 			onload(Image.createCheckerboard());
 		}
-		#elseif lime
+		#elseif lime*/
 		if (Assets.exists(url)) {
 			/*#if (js || html5)
 			var future = Assets.loadImage(url);
@@ -699,13 +698,11 @@ typedef Assets = lime.Assets;
 			trace("Image '" + url + "' doesn't exist!");
 			onload(Image.createCheckerboard());
 		}		
-		#elseif nme		
+		/*#elseif nme		
 		var img = Assets.getBitmapData(url); 
 		onload(new Image(new UInt8Array(nme.display.BitmapData.getRGBAPixels(img)), img.width, img.height));		
-		#end
-	}
-	#elseif kha
-	
+		#end*/
+	}	
 	#end
 	
 	
@@ -817,7 +814,7 @@ typedef Assets = lime.Assets;
 	
 	#elseif (lime || openfl || nme)
 	public static function LoadImages(root:String, urls:Array<String>, onload:Map<String, Image>->Void, ?onerror:Dynamic->Void, ?db:Dynamic) { 
-		#if (openfl && !nme)
+		/*#if (openfl && !nme)
 		var imgs:Map<String, Image> = new Map();
 		for (i in 0...urls.length) {
 			var url = root != "" ? root + urls[i] : urls[i];
@@ -834,7 +831,7 @@ typedef Assets = lime.Assets;
 				onload(imgs);
 			}
 		}
-		#elseif lime
+		#elseif lime*/
 		var imgs:Map<String, Image> = new Map();
 		for (i in 0...urls.length) {
 			var url = root != "" ? root + urls[i] : urls[i];
@@ -851,7 +848,7 @@ typedef Assets = lime.Assets;
 				onload(imgs);
 			}
 		}
-		#end
+		//#end
 	}	
 	#end
 	

@@ -153,6 +153,8 @@ import lime.utils.Int32Array;
 	public var path3D:Path3D;
 	public var pathArray:Array<Array<Vector3>>;
 	public var tessellation:Int;
+	public var arc:Float;
+	public var radius:Float;
 	
 	// for ribbon	
 	@:allow(com.babylonhx.mesh.MeshBuilder.CreateRibbon) 

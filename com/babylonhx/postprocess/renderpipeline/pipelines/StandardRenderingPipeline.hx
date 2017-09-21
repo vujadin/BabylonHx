@@ -242,7 +242,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 	}
 	private function set_volumetricLightStepsCount(count:Float):Float {
 		if (this.volumetricLightPostProcess != null) {
-			this.volumetricLightPostProcess.updateEffect("#define VLS\n#define NB_STEPS " + Tools.Round(count, 1));
+			this.volumetricLightPostProcess.updateEffect("#define VLS\n#define NB_STEPS " + MathTools.Round(count, 1));
 		}
 		this._volumetricLightStepsCount = count;
 		return count;
@@ -255,7 +255,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 	}
 	private function set_motionBlurSamples(samples:Float):Float {
 		if (this.motionBlurPostProcess != null) {
-			this.motionBlurPostProcess.updateEffect("#define MOTION_BLUR\n#define MAX_MOTION_SAMPLES " + Tools.Round(samples, 1));
+			this.motionBlurPostProcess.updateEffect("#define MOTION_BLUR\n#define MAX_MOTION_SAMPLES " + MathTools.Round(samples, 1));
 		}
 		this._motionBlurSamples = samples;
 		return samples;
@@ -478,7 +478,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 			null,
 			Texture.BILINEAR_SAMPLINGMODE,
 			scene.getEngine(),
-			false, "#define VLS\n#define NB_STEPS " + Tools.Round(this._volumetricLightStepsCount, 1));
+			false, "#define VLS\n#define NB_STEPS " + MathTools.Round(this._volumetricLightStepsCount, 1));
 			
 		var depthValues = Vector2.Zero();
 		
@@ -731,7 +731,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 		this.motionBlurPostProcess = new PostProcess("HDRMotionBlur", "standard",
 			["inverseViewProjection", "prevViewProjection", "screenSize", "motionScale", "motionStrength"],
 			["depthSampler"],
-			ratio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false, "#define MOTION_BLUR\n#define MAX_MOTION_SAMPLES " + Tools.Round(this.motionBlurSamples, 1), Engine.TEXTURETYPE_UNSIGNED_INT);
+			ratio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false, "#define MOTION_BLUR\n#define MAX_MOTION_SAMPLES " + MathTools.Round(this.motionBlurSamples, 1), Engine.TEXTURETYPE_UNSIGNED_INT);
 			
 		var motionScale:Float = 0;
 		var prevViewProjection = Matrix.Identity();

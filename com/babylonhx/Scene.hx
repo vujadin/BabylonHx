@@ -713,6 +713,8 @@ import com.babylonhx.audio.*;
 	
 	private var _viewUpdateFlag:Int = -1;
 	private var _projectionUpdateFlag:Int = -1;
+	private var _alternateViewUpdateFlag:Int = -1;
+	private var _alternateProjectionUpdateFlag:Int = -1;
 
 	public var _toBeDisposed:SmartArray<ISmartArrayCompatible> = new SmartArray<ISmartArrayCompatible>(256);
 	private var _pendingData:Array<Dynamic> = [];//ANY
@@ -731,6 +733,7 @@ import com.babylonhx.audio.*;
 
 	private var _transformMatrix:Matrix = Matrix.Zero();
 	private var _sceneUbo:UniformBuffer;
+	private var _alternateSceneUbo:UniformBuffer;
 	
 	private var _pickWithRayInverseMatrix:Matrix;
 
@@ -739,6 +742,16 @@ import com.babylonhx.audio.*;
 
 	private var _viewMatrix:Matrix;
 	private var _projectionMatrix:Matrix;
+	private var _alternateViewMatrix:Matrix;
+	private var _alternateProjectionMatrix:Matrix;
+	private var _alternateTransformMatrix:Matrix;
+	private var _useAlternateCameraConfiguration:Bool = false;
+	private var _alternateRendering:Bool = false;
+	
+	public var _isAlternateRenderingEnabled(get, never):Bool;
+	inline private function get__isAlternateRenderingEnabled():Bool {
+		return this._alternateRendering;
+	}
 	
 	private var _frustumPlanes:Array<Plane>;
 	public var frustumPlanes(get, never):Array<Plane>;
@@ -1123,6 +1136,12 @@ import com.babylonhx.audio.*;
 		this._sceneUbo = new UniformBuffer(this._engine, null, true);
 		this._sceneUbo.addUniform("viewProjection", 16);
 		this._sceneUbo.addUniform("view", 16);
+	}
+	
+	private function _createAlternateUbo() {
+		this._alternateSceneUbo = new UniformBuffer(this._engine, null, true);
+		this._alternateSceneUbo.addUniform("viewProjection", 16);
+		this._alternateSceneUbo.addUniform("view", 16);
 	}
 
 	// Pointers handling
@@ -1787,23 +1806,27 @@ import com.babylonhx.audio.*;
         this._animationTimeLast = now;
 		for (index in 0...this._activeAnimatables.length) {
 			// VK TODO: inspect this, last item in array is null sometimes
-			if(this._activeAnimatables[index] != null) {
+			if (this._activeAnimatables[index] != null) {
 				this._activeAnimatables[index]._animate(this._animationTime);
 			}
 		}
 	}
 
 	// Matrix
+	inline public function _switchToAlternateCameraConfiguration(active:Bool) {
+		this._useAlternateCameraConfiguration = active;
+	}
+	
 	inline public function getViewMatrix():Matrix {
-		return this._viewMatrix;
+		return this._useAlternateCameraConfiguration ? this._alternateViewMatrix : this._viewMatrix;
 	}
 
 	inline public function getProjectionMatrix():Matrix {
-		return this._projectionMatrix;
+		return this._useAlternateCameraConfiguration ? this._alternateProjectionMatrix : this._projectionMatrix;
 	}
 
 	inline public function getTransformMatrix():Matrix {
-		return this._transformMatrix;
+		return this._useAlternateCameraConfiguration ? this._alternateTransformMatrix : this._transformMatrix;
 	}
 
 	public function setTransformMatrix(view:Matrix, projection:Matrix) {
@@ -1833,8 +1856,35 @@ import com.babylonhx.audio.*;
 		}
 	}
 	
+	public function _setAlternateTransformMatrix(view:Matrix, projection:Matrix) {
+		if (this._alternateViewUpdateFlag == view.updateFlag && this._alternateProjectionUpdateFlag == projection.updateFlag) {
+			return;
+		}
+		
+		this._alternateViewUpdateFlag = view.updateFlag;
+		this._alternateProjectionUpdateFlag = projection.updateFlag;
+		this._alternateViewMatrix = view;
+		this._alternateProjectionMatrix = projection;
+		
+		if (this._alternateTransformMatrix == null) {
+			this._alternateTransformMatrix = Matrix.Zero();
+		}
+		
+		this._alternateViewMatrix.multiplyToRef(this._alternateProjectionMatrix, this._alternateTransformMatrix);
+		
+		if (this._alternateSceneUbo == null) {
+			this._createAlternateUbo();
+		}
+		
+		if (this._alternateSceneUbo.useUbo) {
+			this._alternateSceneUbo.updateMatrix("viewProjection", this._alternateTransformMatrix);
+			this._alternateSceneUbo.updateMatrix("view", this._alternateViewMatrix);
+			this._alternateSceneUbo.update();
+		}
+	}
+	
 	public function getSceneUniformBuffer():UniformBuffer {
-		return this._sceneUbo;
+		return this._useAlternateCameraConfiguration ? this._alternateSceneUbo : this._sceneUbo;
 	}
 
 	// Methods
@@ -2776,12 +2826,7 @@ import com.babylonhx.audio.*;
 		}
 		
 		if (needsRestoreFrameBuffer) {
-			if (this.offscreenRenderTarget != null) {
-				engine.bindFramebuffer(this.offscreenRenderTarget._texture);
-			}
-			else {
-				engine.restoreDefaultFramebuffer(); // Restore back buffer
-			}
+			engine.restoreDefaultFramebuffer(); // Restore back buffer
 		}
 		
 		this._renderTargetsDuration.endMonitoring(false);
@@ -2809,14 +2854,14 @@ import com.babylonhx.audio.*;
 		
 		// Activate HighlightLayer stencil
 		if (renderhighlights) {
-			this._engine.setStencilBuffer(true);
+			engine.setStencilBuffer(true);
 		}
 		
 		this._renderingManager.render(null, null, true, true);
 		
 		// Restore HighlightLayer stencil
 		if (renderhighlights) {
-			this._engine.setStencilBuffer(stencilState);
+			engine.setStencilBuffer(stencilState);
 		}
 		
 		//Tools.EndPerformanceCounter("Main render");

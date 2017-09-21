@@ -8,6 +8,7 @@ import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Color4;
+import com.babylonhx.tools.Observable;
 
 /**
  * ...
@@ -23,6 +24,8 @@ import com.babylonhx.math.Color4;
 	private var _child:Action;
 	private var _condition:Condition;
 	private var _triggerParameter:Dynamic;
+	
+	public var onBeforeExecuteObservable:Observable<Action> = new Observable<Action>();
 	
 	public var triggerOptions:Dynamic;
 	
@@ -72,6 +75,7 @@ import com.babylonhx.math.Color4;
 			}
 		}
 		
+		this.onBeforeExecuteObservable.notifyObservers(this);
 		this._nextActiveAction.execute(evt);
 		
 		this.skipToNextActiveAction();

@@ -30,7 +30,6 @@ class WaterMaterialDefines extends MaterialDefines {
 	public var FRESNELSEPARATE:Bool = false;
 	public var BUMPSUPERIMPOSE:Bool = false;
 	public var BUMPAFFECTSREFLECTION:Bool = false;
-	public var USERIGHTHANDEDSYSTEM:Bool = false;
 	
 	
 	public function new() {
@@ -59,7 +58,6 @@ class WaterMaterialDefines extends MaterialDefines {
 			if (untyped this.FRESNELSEPARATE != other.FRESNELSEPARATE) return false;
 			if (untyped this.BUMPSUPERIMPOSE != other.BUMPSUPERIMPOSE) return false;
 			if (untyped this.BUMPAFFECTSREFLECTION != other.BUMPAFFECTSREFLECTION) return false;			
-			if (untyped this.USERIGHTHANDEDSYSTEM != other.USERIGHTHANDEDSYSTEM) return false;
 			
 			return true;
 		}
@@ -90,7 +88,6 @@ class WaterMaterialDefines extends MaterialDefines {
         untyped other.FRESNELSEPARATE = this.FRESNELSEPARATE;
         untyped other.BUMPSUPERIMPOSE = this.BUMPSUPERIMPOSE;
         untyped other.BUMPAFFECTSREFLECTION = this.BUMPAFFECTSREFLECTION;
-        untyped other.USERIGHTHANDEDSYSTEM = this.USERIGHTHANDEDSYSTEM;
 	}
 	
 	override public function reset() {
@@ -116,7 +113,6 @@ class WaterMaterialDefines extends MaterialDefines {
         this.FRESNELSEPARATE = false;
         this.BUMPSUPERIMPOSE = false;
         this.BUMPAFFECTSREFLECTION = false;
-        this.USERIGHTHANDEDSYSTEM = false;
 	}
 	
 	override public function toString():String {
@@ -175,9 +171,6 @@ class WaterMaterialDefines extends MaterialDefines {
 		}
 		if (this.BUMPAFFECTSREFLECTION) {
 			result += "#define BUMPAFFECTSREFLECTION \n";
-		}
-		if (this.USERIGHTHANDEDSYSTEM) {
-			result += "#define USERIGHTHANDEDSYSTEM \n";
 		}
 		
 		result += "#define BonesPerMesh " + this.BonesPerMesh + "\n";

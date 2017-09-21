@@ -20,24 +20,22 @@ import com.babylonhx.materials.ShadersStore;
 	
 
 	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
-		if (!ShadersStore.Shaders.exists("knitted.fragment")) {			
-			ShadersStore.Shaders.set("knitted.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("knittedPixelShader")) {			
+			ShadersStore.Shaders.set("knittedPixelShader", fragmentShader);
 		}
 		
 		super(name, "knitted", ["screenSize", "tileSize", "threads"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onSizeChanged = function(_, _) {
+		this.onSizeChangedObservable.add(function(_, _) {
 			this.screenSize.x = camera.getScene().getEngine().getRenderWidth();
 			this.screenSize.y = camera.getScene().getEngine().getRenderHeight();
-		};
+		});
 		
-		this.onApply = function(effect:Effect, _) {
+		this.onApplyObservable.add(function(effect:Effect, _) {
 			effect.setVector2("screenSize", this.screenSize);
 			effect.setVector2("tileSize", this.tileSize);
 			effect.setFloat("threads", this.threads);
-		};
-		
-		this.onSizeChanged(this._effect, null);
+		});
 	}
 	
 }

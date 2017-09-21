@@ -99,7 +99,6 @@ class MaterialHelper {
 			untyped defines.LOGARITHMICDEPTH = useLogarithmicDepth;
 			untyped defines.POINTSIZE = (pointsCloud || scene.forcePointsCloud);
 			untyped defines.FOG = (scene.fogEnabled && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE && fogEnabled);
-			untyped defines.USERIGHTHANDEDSYSTEM = scene.useRightHandedSystem;
 		}
 	}
 

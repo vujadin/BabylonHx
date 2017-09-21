@@ -77,7 +77,6 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 	public var MORPHTARGETS_NORMAL:Bool = false;
 	public var MORPHTARGETS_TANGENT:Bool = false;
 	public var NUM_MORPH_INFLUENCERS:Int = 0;
-	public var USERIGHTHANDEDSYSTEM:Bool = false;
 
 	public var IMAGEPROCESSING:Bool = false;
 	public var VIGNETTE:Bool = false;
@@ -200,7 +199,6 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 			if (untyped this.MORPHTARGETS_NORMAL != other.MORPHTARGETS_NORMAL) return false;
 			if (untyped this.MORPHTARGETS_TANGENT != other.MORPHTARGETS_TANGENT) return false;
 			if (untyped this.NUM_MORPH_INFLUENCERS != other.NUM_MORPH_INFLUENCERS) return false;
-			if (untyped this.USERIGHTHANDEDSYSTEM != other.USERIGHTHANDEDSYSTEM) return false;
 			
 			if (untyped this.IMAGEPROCESSING != other.IMAGEPROCESSING) return false;
 			if (untyped this.VIGNETTE != other.VIGNETTE) return false;
@@ -282,7 +280,6 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 		untyped other.MORPHTARGETS = this.MORPHTARGETS;
 		untyped other.MORPHTARGETS_NORMAL = this.MORPHTARGETS_NORMAL;
 		untyped other.MORPHTARGETS_TANGENT = this.MORPHTARGETS_TANGENT;
-		untyped other.USERIGHTHANDEDSYSTEM = this.USERIGHTHANDEDSYSTEM;
 		
 		untyped other.IMAGEPROCESSING = this.IMAGEPROCESSING;
 		untyped other.VIGNETTE = this.VIGNETTE;
@@ -363,7 +360,6 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 		this.MORPHTARGETS = false;
 		this.MORPHTARGETS_NORMAL = false;
 		this.MORPHTARGETS_TANGENT = false;
-		this.USERIGHTHANDEDSYSTEM = false;
 		
 		this.IMAGEPROCESSING = false;
 		this.VIGNETTE = false;
@@ -565,9 +561,6 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 		}
 		if (this.MORPHTARGETS_TANGENT) {
 			result += "#define MORPHTARGETS_TANGENT \n";
-		}
-		if (this.USERIGHTHANDEDSYSTEM) {
-			result += "#define USERIGHTHANDEDSYSTEM \n";
 		}
 		if (this.IMAGEPROCESSING) {
 			result += "#define IMAGEPROCESSING \n";

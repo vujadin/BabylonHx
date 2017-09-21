@@ -11,7 +11,6 @@ class SkyMaterialDefines extends MaterialDefines {
 	public var FOG:Bool = false;
 	public var VERTEXCOLOR:Bool = false;
 	public var VERTEXALPHA:Bool = false;
-	public var USERIGHTHANDEDSYSTEM:Bool = false;
 
 
 	public function new() {
@@ -25,7 +24,6 @@ class SkyMaterialDefines extends MaterialDefines {
 			if (untyped this.FOG != other.FOG) return false;
 			if (untyped this.VERTEXCOLOR != other.VERTEXCOLOR) return false; 
 			if (untyped this.VERTEXALPHA != other.VERTEXALPHA) return false; 
-			if (untyped this.USERIGHTHANDEDSYSTEM != other.USERIGHTHANDEDSYSTEM) return false; 
 			
 			return true;
 		}
@@ -41,7 +39,6 @@ class SkyMaterialDefines extends MaterialDefines {
 		untyped other.FOG = this.FOG;
 		untyped other.VERTEXCOLOR = this.VERTEXCOLOR;
 		untyped other.VERTEXALPHA = this.VERTEXALPHA;
-		untyped other.USERIGHTHANDEDSYSTEM = this.USERIGHTHANDEDSYSTEM;
 	}
 	
 	override public function reset() {
@@ -52,7 +49,6 @@ class SkyMaterialDefines extends MaterialDefines {
 		this.FOG = false;
 		this.VERTEXCOLOR = false;
 		this.VERTEXALPHA = false;
-		this.USERIGHTHANDEDSYSTEM = false;
 	}
 	
 	override public function toString():String {
@@ -72,9 +68,6 @@ class SkyMaterialDefines extends MaterialDefines {
 		}
 		if (this.VERTEXALPHA) {
 			result += "#define VERTEXALPHA \n";
-		}
-		if (this.USERIGHTHANDEDSYSTEM) {
-			result += "#define USERIGHTHANDEDSYSTEM \n";
 		}
 		
 		return result;

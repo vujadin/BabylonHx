@@ -20,7 +20,6 @@ class LavaMaterialDefines extends MaterialDefines {
 	public var NUM_BONE_INFLUENCERS:Int = 0;
 	public var BonesPerMesh:Int = 0;
 	public var INSTANCES:Bool = false;
-	public var USERIGHTHANDEDSYSTEM:Bool = false;
 	
 	
 	public function new() {
@@ -43,7 +42,6 @@ class LavaMaterialDefines extends MaterialDefines {
 			if (untyped this.BonesPerMesh != other.BonesPerMesh) return false;
 			if (untyped this.NUM_BONE_INFLUENCERS != other.NUM_BONE_INFLUENCERS) return false;
 			if (untyped this.INSTANCES != other.INSTANCES) return false;
-			if (untyped this.USERIGHTHANDEDSYSTEM != other.USERIGHTHANDEDSYSTEM) return false;
 			
 			return true;
 		}
@@ -68,7 +66,6 @@ class LavaMaterialDefines extends MaterialDefines {
 		untyped other.BonesPerMesh = this.BonesPerMesh;
 		untyped other.NUM_BONE_INFLUENCERS = this.NUM_BONE_INFLUENCERS;
 		untyped other.INSTANCES = this.INSTANCES;
-		untyped other.USERIGHTHANDEDSYSTEM = this.USERIGHTHANDEDSYSTEM;
 	}
 	
 	override public function reset() {
@@ -88,7 +85,6 @@ class LavaMaterialDefines extends MaterialDefines {
 		this.BonesPerMesh = 0;
 		this.NUM_BONE_INFLUENCERS = 0;
 		this.INSTANCES = false;
-		this.USERIGHTHANDEDSYSTEM = false;
 	}
 	
 	override public function toString():String {
@@ -129,9 +125,6 @@ class LavaMaterialDefines extends MaterialDefines {
 		}
 		if (this.INSTANCES) {
 			result += "#define INSTANCES \n";
-		}
-		if (this.USERIGHTHANDEDSYSTEM) {
-			result += "#define USERIGHTHANDEDSYSTEM \n";
 		}
 		
 		result += "#define BonesPerMesh " + this.BonesPerMesh + "\n";

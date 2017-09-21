@@ -23,20 +23,20 @@ import com.babylonhx.materials.ShadersStore;
 	
 	
 	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
-		if (!ShadersStore.Shaders.exists("crossHatching.fragment")) {			
-			ShadersStore.Shaders.set("crossHatching.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("crossHatchingPixelShader")) {			
+			ShadersStore.Shaders.set("crossHatchingPixelShader", fragmentShader);
 		}
 		
 		super(name, "crossHatching", ["vx_offset", "hatch_y_offset", "lum_threshold_1", "lum_threshold_2", "lum_threshold_3", "lum_threshold_4"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onApply = function(effect:Effect, _) {
+		this.onApplyObservable.add(function(effect:Effect, _) {
 			effect.setFloat("vx_offset", this.vx_offset);
 			effect.setFloat("hatch_y_offset", this.hatch_y_offset);
 			effect.setFloat("lum_threshold_1", this.lum_threshold_1);
 			effect.setFloat("lum_threshold_2", this.lum_threshold_2);
 			effect.setFloat("lum_threshold_3", this.lum_threshold_3);
 			effect.setFloat("lum_threshold_4", this.lum_threshold_4);
-		};
+		});
 	}
 	
 }

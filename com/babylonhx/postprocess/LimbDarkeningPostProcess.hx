@@ -22,23 +22,23 @@ import com.babylonhx.math.Color3;
 	
 
 	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
-		if (!ShadersStore.Shaders.exists("limbDarkening.fragment")) {			
-			ShadersStore.Shaders.set("limbDarkening.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("limbDarkeningPixelShader")) {			
+			ShadersStore.Shaders.set("limbDarkeningPixelShader", fragmentShader);
 		}
 		
 		super(name, "limbDarkening", ["fAspect", "startColor", "endColor", "radialScale", "brightness"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onSizeChanged = function(_, _) {
+		this.onSizeChangedObservable.add(function(_, _) {
 			this.aspect = camera.getScene().getEngine().getRenderWidth() / camera.getScene().getEngine().getRenderHeight();
-		};
+		});
 		
-		this.onApply = function(effect:Effect, _) {
+		this.onApplyObservable.add(function(effect:Effect, _) {	
 			effect.setFloat("fAspect", this.aspect);
 			effect.setFloat("radialScale", this.radialScale);
 			effect.setFloat("brightness", this.brightness);
 			effect.setColor3("startColor", this.startColor);
 			effect.setColor3("endColor", this.endColor);
-		};
+		});
 	}
 	
 }

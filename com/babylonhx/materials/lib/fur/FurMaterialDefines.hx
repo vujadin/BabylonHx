@@ -22,7 +22,6 @@ class FurMaterialDefines extends MaterialDefines {
 	public var BonesPerMesh:Int = 0;
 	public var INSTANCES:Bool = false;
 	public var HIGHLEVEL:Bool = false;
-	public var USERIGHTHANDEDSYSTEM:Bool = false;
 	
 	
 	public function new() {
@@ -47,7 +46,6 @@ class FurMaterialDefines extends MaterialDefines {
 			if (untyped this.NUM_BONE_INFLUENCERS != other.NUM_BONE_INFLUENCERS) return false;
 			if (untyped this.INSTANCES != other.INSTANCES) return false;
 			if (untyped this.HIGHLEVEL != other.HIGHLEVEL) return false;
-			if (untyped this.USERIGHTHANDEDSYSTEM != other.USERIGHTHANDEDSYSTEM) return false;
 			
 			return true;
 		}
@@ -74,7 +72,6 @@ class FurMaterialDefines extends MaterialDefines {
 		untyped other.NUM_BONE_INFLUENCERS = this.NUM_BONE_INFLUENCERS;
 		untyped other.INSTANCES = this.INSTANCES;
 		untyped other.HIGHLEVEL = this.HIGHLEVEL;
-		untyped other.USERIGHTHANDEDSYSTEM = this.USERIGHTHANDEDSYSTEM;
 	}
 	
 	override public function reset() {
@@ -96,7 +93,6 @@ class FurMaterialDefines extends MaterialDefines {
 		this.NUM_BONE_INFLUENCERS = 0;
 		this.INSTANCES = false;
 		this.HIGHLEVEL = false;
-		this.USERIGHTHANDEDSYSTEM = false;
 	}
 	
 	override public function toString():String {
@@ -143,9 +139,6 @@ class FurMaterialDefines extends MaterialDefines {
 		}
 		if (this.HIGHLEVEL) {
 			result += "#define HIGHLEVEL \n";
-		}
-		if (this.USERIGHTHANDEDSYSTEM) {
-			result += "#define USERIGHTHANDEDSYSTEM \n";
 		}
 		
 		result += "#define BonesPerMesh " + this.BonesPerMesh + "\n";

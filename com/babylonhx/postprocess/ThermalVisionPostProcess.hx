@@ -14,8 +14,8 @@ import com.babylonhx.materials.ShadersStore;
 	
 
 	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
-		if (!ShadersStore.Shaders.exists("thermalVision.fragment")) {			
-			ShadersStore.Shaders.set("thermalVision.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("thermalVisionPixelShader")) {			
+			ShadersStore.Shaders.set("thermalVisionPixelShader", fragmentShader);
 		}
 		
 		super(name, "thermalVision", null, null, ratio, camera, samplingMode, engine, reusable);

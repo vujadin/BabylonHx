@@ -5,6 +5,7 @@ import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Quaternion;
+import com.babylonhx.tools.Observable;
 
 /**
  * ...
@@ -16,6 +17,8 @@ import com.babylonhx.math.Quaternion;
 	private var _target:Dynamic;
 	private var _property:String;
 	
+	public var onInterpolationDoneObservable:Observable<InterpolateValueAction> = new Observable<InterpolateValueAction>();
+	
 	public var propertyPath:String;
 	public var value:Dynamic;
 	public var duration:Int;
@@ -24,7 +27,7 @@ import com.babylonhx.math.Quaternion;
 
 	public function new(triggerOptions:Dynamic, target:Dynamic, propertyPath:String, value:Dynamic, duration:Int = 1000, ?condition:Condition, stopOtherAnimations:Bool = false) {
 		super(triggerOptions, condition);
-
+		
 		this._target = target;
 		this.propertyPath = propertyPath;
 		this.value = value;
@@ -79,7 +82,14 @@ import com.babylonhx.math.Quaternion;
 			scene.stopAnimation(this._target);
 		}
 		
-		scene.beginDirectAnimation(this._target, [animation], 0, 100);
+		var wrapper = function() {
+            this.onInterpolationDoneObservable.notifyObservers(this);
+            if (this.onInterpolationDone != null) {
+                this.onInterpolationDone();
+            }
+        };
+		
+		scene.beginDirectAnimation(this._effectiveTarget, [animation], 0, 100, false, 1, wrapper);
 	}
 	
 }

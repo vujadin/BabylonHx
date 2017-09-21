@@ -33,7 +33,7 @@ class NotebookDrawingsPostProcess extends PostProcess {
 		
 		_createNoiseTexture();
 		
-		this.onApply = function(effect:Effect, _) {
+		this.onApplyObservable.add(function(effect:Effect, _) {
 			this.elapsedTime += camera.getScene().getAnimationRatio() * 0.03;
 			texSamplerRes.x = camera.getScene().getEngine().width;
 			texSamplerRes.y = camera.getScene().getEngine().height;
@@ -41,7 +41,7 @@ class NotebookDrawingsPostProcess extends PostProcess {
 			effect.setTexture("noiseTex", this._noiseTex);
 			effect.setVector2("texSamplerRes", texSamplerRes);
 			effect.setVector2("noiseTexRes", noiseTexRes);
-		};
+		});
 	}
 	
 	// creates a black and white random noise texture, 512x512

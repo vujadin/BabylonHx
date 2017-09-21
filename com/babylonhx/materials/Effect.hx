@@ -368,6 +368,7 @@ using StringTools;
 		// #extension GL_OES_standard_derivatives : enable
 		// #extension GL_EXT_shader_texture_lod : enable
 		// #extension GL_EXT_frag_depth : enable
+		// #extension GL_EXT_draw_buffers : require
 		var regex:EReg = ~/#extension.+(GL_OES_standard_derivatives|GL_EXT_shader_texture_lod|GL_EXT_frag_depth|GL_EXT_draw_buffers).+(enable|require)/g;
 		var result = regex.replace(preparedSourceCode, "");
 		
@@ -380,13 +381,13 @@ using StringTools;
 		result = regex.replace(result, " in");
 		
 		if (isFragment) {
-			regex = ~/texture2DLodEXT\(/g;
+			regex = ~/texture2DLodEXT\s*\(/g;
 			result = regex.replace(result, "textureLod(");
-			regex = ~/textureCubeLodEXT\(/g;
+			regex = ~/textureCubeLodEXT\s*\(/g;
 			result = regex.replace(result, "textureLod(");
-			regex = ~/texture2D\(/g;
+			regex = ~/texture2D\s*\(/g;
 			result = regex.replace(result, "texture(");
-			regex = ~/textureCube\(/g;
+			regex = ~/textureCube\s*\(/g;
 			result = regex.replace(result, "texture(");
 			regex = ~/gl_FragDepthEXT/g;
 			result = regex.replace(result, "gl_FragDepth");
@@ -394,7 +395,7 @@ using StringTools;
 			result = regex.replace(result, "glFragColor");
 			regex = ~/gl_FragData/g;
 			result = regex.replace(result, "glFragData");
-			regex = ~/void\s+?main\(/g;
+			regex = ~/void\s+?main\s*\(/g;
 			result = regex.replace(result, (hasDrawBuffersExtension ? "" : "out vec4 glFragColor;\n") + "void main(");
 		}
 		
@@ -530,7 +531,9 @@ using StringTools;
 		
         try {			
             var engine = this._engine;
-			
+			if (this.name.fragment == "vignette" || this.name.fragment == "dreamVision") {
+				trace(this._fragmentSourceCode);
+			}
             this._program = engine.createShaderProgram(this._vertexSourceCode, this._fragmentSourceCode, defines);
 			
 			if (engine.webGLVersion > 1) {
@@ -599,7 +602,8 @@ using StringTools;
                 trace("Defines: " + defines);
 				#if js
                 trace("Error: " + e);
-				trace(_vertexSourceCode);
+				trace("Error #: " + GL.getError());
+				trace(_fragmentSourceCode);
 				#else
 				trace("Error #: " + GL.getError());
 				trace("Error: " + e);

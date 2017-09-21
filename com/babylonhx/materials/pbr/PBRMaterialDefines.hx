@@ -253,7 +253,6 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		this.USEPHYSICALLIGHTFALLOFF = false;
 		this.TWOSIDEDLIGHTING = false;
 		this.SHADOWFLOAT = false;
-		this.USERIGHTHANDEDSYSTEM = false;
 		this.CLIPPLANE = false;
 		this.POINTSIZE = false;
 		this.FOG = false;
@@ -415,7 +414,6 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 			if (untyped this.USEPHYSICALLIGHTFALLOFF != other.USEPHYSICALLIGHTFALLOFF) return false;
 			if (untyped this.TWOSIDEDLIGHTING != other.TWOSIDEDLIGHTING) return false;
 			if (untyped this.SHADOWFLOAT != other.SHADOWFLOAT) return false;
-			if (untyped this.USERIGHTHANDEDSYSTEM != other.USERIGHTHANDEDSYSTEM) return false;
 			if (untyped this.CLIPPLANE != other.CLIPPLANE) return false;
 			if (untyped this.POINTSIZE != other.POINTSIZE) return false;
 			if (untyped this.FOG != other.FOG) return false;
@@ -546,7 +544,6 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		untyped other.USEPHYSICALLIGHTFALLOFF = this.USEPHYSICALLIGHTFALLOFF;
 		untyped other.TWOSIDEDLIGHTING = this.TWOSIDEDLIGHTING;
 		untyped other.SHADOWFLOAT = this.SHADOWFLOAT;
-		untyped other.USERIGHTHANDEDSYSTEM = this.USERIGHTHANDEDSYSTEM;
 		untyped other.CLIPPLANE = this.CLIPPLANE;
 		untyped other.POINTSIZE = this.POINTSIZE;
 		untyped other.FOG = this.FOG;
@@ -839,9 +836,6 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		}
 		if (this.SHADOWFLOAT) {
 			result += "#define SHADOWFLOAT \n";
-		}
-		if (this.USERIGHTHANDEDSYSTEM) {
-			result += "#define USERIGHTHANDEDSYSTEM \n";
 		}
 		if (this.CLIPPLANE) {
 			result += "#define CLIPPLANE \n";

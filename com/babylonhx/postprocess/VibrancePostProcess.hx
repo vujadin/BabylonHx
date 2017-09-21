@@ -21,11 +21,11 @@ import com.babylonhx.materials.ShadersStore;
 	// https://github.com/evanw/glfx.js/blob/master/src/filters/adjust/vibrance.js
 	public static var fragmentShader:String = "#ifdef GL_ES\nprecision highp float;\n#endif\n varying vec2 vUV; uniform sampler2D textureSampler; uniform float amount; void main() { vec4 color = texture2D(textureSampler, vUV); float average = (color.r + color.g + color.b) / 3.0; float mx = max(color.r, max(color.g, color.b)); float amt = (mx - average) * (-amount * 3.0); color.rgb = mix(color.rgb, vec3(mx), amt); gl_FragColor = color; }";
 	
-	public var amount:Float = 0.5;
+	public var amount:Float = 0.2;
 	
 
 	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
-		if (!ShadersStore.Shaders.exists("vibrance.fragment")) {			
+		if (!ShadersStore.Shaders.exists("vibrancePixelShader")) {			
 			ShadersStore.Shaders.set("vibrance.fragment", fragmentShader);
 		}
 		
