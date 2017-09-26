@@ -226,7 +226,7 @@ import com.babylonhx.tools.Tools;
 			this.actions.splice(index, 1);
 			ActionManager.Triggers[action.trigger] -= 1;
 			if (ActionManager.Triggers[action.trigger] == 0) {
-				ActionManager.Triggers[action.trigger] = null;
+				ActionManager.Triggers.remove(action.trigger);
 			}
 			action._actionManager = null;
 			return true;

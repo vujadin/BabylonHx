@@ -1,4 +1,4 @@
-package com.babylonhx.mesh.proctree;
+package com.babylonhx.extensions.proctree;
 
 /**
  * ...

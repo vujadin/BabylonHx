@@ -104,9 +104,9 @@ class Image {
 	public static function createPerlinNoise(r:Dynamic, g:Dynamic, b:Dynamic, a:Int, size:Int = 8):Image {
 		var img = new Image(new UInt8Array(size * size * 4), size, size);
 		
-		var perlinNoise = new Perlin();
+		var perlinNoise = new Perlin(0.5);
 		
-		var t = Tools.randomInt(0, 100);
+		var t = Tools.RandomInt(0, 100);
 		
 		var count = Std.int(size / 2);
 		for (x in 0...count) {

@@ -20,13 +20,13 @@ class NotebookDrawingsPostProcess extends PostProcess {
 	public var elapsedTime:Float = 0;
 	private var _noiseTex:DynamicTexture;
 	
-	private var noiseTexRes:Vector2 = new Vector2(512, 512);
+	private var noiseTexRes:Vector2 = new Vector2(256, 256);
 	private var texSamplerRes:Vector2 = new Vector2(0, 0);
 
 	
 	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
-		if (!ShadersStore.Shaders.exists("notebookDrawings.fragment")) {			
-			ShadersStore.Shaders.set("notebookDrawings.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("notebookDrawingsPixelShader")) {			
+			ShadersStore.Shaders.set("notebookDrawingsPixelShader", fragmentShader);
 		}
 		
 		super(name, "notebookDrawings", ["elapsedTime", "texSamplerRes", "noiseTexRes"], ["noiseTex"], ratio, camera, samplingMode, engine, reusable);
@@ -34,7 +34,7 @@ class NotebookDrawingsPostProcess extends PostProcess {
 		_createNoiseTexture();
 		
 		this.onApplyObservable.add(function(effect:Effect, _) {
-			this.elapsedTime += camera.getScene().getAnimationRatio() * 0.03;
+			this.elapsedTime += camera.getScene().getAnimationRatio() * 0.0003;
 			texSamplerRes.x = camera.getScene().getEngine().width;
 			texSamplerRes.y = camera.getScene().getEngine().height;
 			effect.setFloat("elapsedTime", this.elapsedTime);			
@@ -46,7 +46,7 @@ class NotebookDrawingsPostProcess extends PostProcess {
 	
 	// creates a black and white random noise texture, 512x512
 	private function _createNoiseTexture() {
-		var size:Int = 512;
+		var size:Int = 256;
 		
 		this._noiseTex = new DynamicTexture("NDNoiseTexture", { width: size, height: size }, this._scene, false, Texture.BILINEAR_SAMPLINGMODE);
 		this._noiseTex.wrapU = Texture.WRAP_ADDRESSMODE;

@@ -126,10 +126,30 @@ import haxe.Timer;
 	public var alphaMode:Int = Engine.ALPHA_COMBINE;
 	
 	@serialize()
-	public var needDepthPrePass:Bool = false;
+	private var _needDepthPrePass:Bool = false;
+	public var needDepthPrePass(get, set):Bool;
+    private function set_needDepthPrePass(value:Bool):Bool {
+        if (this._needDepthPrePass == value) {
+            return value;
+        }
+        this._needDepthPrePass = value;
+        if (this._needDepthPrePass) {
+            this.checkReadyOnEveryCall = true;
+        }
+		return value;
+    }
+    inline private function get_needDepthPrePass():Bool {
+        return this._needDepthPrePass;
+    }   
 	
 	@serialize()
 	public var disableDepthWrite:Bool = false;
+	
+	@serialize()
+    public var forceDepthWrite:Bool = false;
+	
+	@serialize()
+    public var separateCullingPass:Bool = false;
 	
 	@serialize("fogEnabled")
 	private var _fogEnabled:Bool = true;

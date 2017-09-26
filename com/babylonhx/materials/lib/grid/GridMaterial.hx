@@ -1,6 +1,7 @@
 package com.babylonhx.materials.lib.grid;
 
 import com.babylonhx.math.Color3;
+import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.mesh.Mesh;
@@ -45,6 +46,12 @@ class GridMaterial extends PushMaterial {
 	 */
 	@serialize()
 	public var gridRatio:Float = 1.0;
+	
+	/**
+     * Allows setting an offset for the grid lines.
+     */
+    @serializeAsColor3()
+    public var gridOffset:Vector3 = Vector3.Zero();
 	
 	/**
 	 * The frequency of thicker lines.
@@ -143,7 +150,7 @@ class GridMaterial extends PushMaterial {
 			var join:String = defines.toString();
 			subMesh.setEffect(scene.getEngine().createEffect("grid",
 				attribs,
-				["projection", "worldView", "mainColor", "lineColor", "gridControl", "vFogInfos", "vFogColor", "world", "view"],
+				["projection", "worldView", "mainColor", "lineColor", "gridControl", "gridOffset", "vFogInfos", "vFogColor", "world", "view"],
 				[],
 				join,
 				null,
@@ -182,6 +189,8 @@ class GridMaterial extends PushMaterial {
 		if (this._mustRebind(scene, effect)) {
 			this._activeEffect.setColor3("mainColor", this.mainColor);
 			this._activeEffect.setColor3("lineColor", this.lineColor);
+			
+			this._activeEffect.setVector3("gridOffset", this.gridOffset);
 			
 			this._gridControl.x = this.gridRatio;
 			this._gridControl.y = Math.round(this.majorUnitFrequency);

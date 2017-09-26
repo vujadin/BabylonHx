@@ -975,6 +975,10 @@ class MeshBuilder {
 		var cap:Int = options.cap != null ? options.cap : Mesh.NO_CAP;
 		var updatable:Bool = options.updatable;
 		var sideOrientation:Int = updateSideOrientation(options.sideOrientation, scene);
+		if (options.arc == null) {
+			options.arc = 1.0;
+		}
+		options.arc = (options.arc <= 0.0 || options.arc > 1.0) ? 1.0 : options.arc;
 		
 		// tube geometry
 		var tubePathArray = function (path:Array<Vector3>, path3D:Path3D, circlePaths:Array<Array<Vector3>>, radius:Float, tessellation:Int, ?radiusFunction:Int->Float->Float, cap:Int, arc:Float = 1) {
@@ -982,7 +986,7 @@ class MeshBuilder {
 			var normals = path3D.getNormals();
 			var distances = path3D.getDistances();
 			var pi2 = Math.PI * 2;
-			var step = pi2 / tessellation;
+			var step = pi2 / tessellation * arc;
 			var returnRadius:Int->Float->Float = function(i:Int, distance:Float):Float { return radius; };
 			var radiusFunctionFinal:Int->Float->Float = radiusFunction != null ? radiusFunction : returnRadius;
 			
@@ -991,7 +995,7 @@ class MeshBuilder {
 			var normal:Vector3 = Vector3.Zero();
 			var rotated:Vector3 = Vector3.Zero();
 			var rotationMatrix:Matrix = Tmp.matrix[0];
-			var index:Int = (cap == Mesh.NO_CAP || cap == Mesh.CAP_END) ? 2 : 0;
+			var index:Int = (cap == Mesh.NO_CAP || cap == Mesh.CAP_END) ? 0 : 2;
 			for (i in 0...path.length) {
 				rad = radiusFunctionFinal(i, distances[i]); // current radius
 				circlePath = [];              				// current circle array
@@ -1060,7 +1064,7 @@ class MeshBuilder {
 		path3D = new Path3D(path);
 		pathArray = [];
 		cap = (cap < 0 || cap > 3) ? 0 : cap;
-        var pathArray = tubePathArray(path, path3D, pathArray, radius, tessellation, radiusFunction, cap);
+        var pathArray = tubePathArray(path, path3D, pathArray, radius, tessellation, radiusFunction, cap, options.arc);
 		var tube = MeshBuilder.CreateRibbon(name, { pathArray: pathArray, closeArray: false, closePath: true, offset: 0, updatable: updatable, sideOrientation: sideOrientation }, scene);
 		tube.pathArray = pathArray;
 		tube.path3D = path3D;

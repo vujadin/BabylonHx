@@ -1,4 +1,4 @@
-package com.babylonhx.mesh.dynamicterrain;
+package com.babylonhx.extensions.dynamicterrain;
 
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.math.Vector2;
@@ -8,6 +8,7 @@ import com.babylonhx.math.Color4;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.utils.Image;
 import com.babylonhx.tools.Tools;
+import com.babylonhx.culling.BoundingInfo;
 
 import lime.utils.Int32Array;
 import lime.utils.Float32Array;
@@ -45,7 +46,7 @@ class DynamicTerrain {
 	private var _deltaX:Float = 0.0;                    // camera / terrain x position delta
 	private var _deltaZ:Float = 0.0;                    // camera-/ terrain z position delta
 	private var _signX:Int = 0;                     	// x delta sign
-	private var _signZ:INt = 0;                     	// z delta sign
+	private var _signZ:Int = 0;                     	// z delta sign
 	private var _deltaSubX:Int = 0;                 	// map x subdivision delta 
 	private var _deltaSubZ:Int = 0;                 	// map z subdivision delta 
 	private var _mapShiftX:Float = 0.0;                 // x shift in world space
@@ -60,15 +61,7 @@ class DynamicTerrain {
 	private var _datamap:Bool = false;                  // boolean : true if an data map is passed as parameter
 	private var _uvmap:Bool = false;                    // boolean : true if an UV map is passed as parameter
 	private var _colormap:Bool = false;                 // boolean : true if an color map is passed as parameter
-	private var _vertex:Dynamic = {                     // current vertex object passed to the user custom function
-		position: Vector3.Zero(),                       // vertex position in the terrain space (Vector3)
-		uvs: Vector2.Zero(),                            // vertex uv
-		color: new Color4(1.0, 1.0, 1.0, 1.0),          // vertex color (Color4)
-		lodX: 1,                                        // vertex LOD value on X axis
-		lodZ: 1,                                        // vertex LOD value on Z axis
-		worldPosition: Vector3.Zero(),                  // vertex World position
-		mapIndex: 0                                     // current map index
-	};
+	private var _vertex:DTVertex = new DTVertex();      // current vertex object passed to the user custom function
 	private var _averageSubSizeX:Float = 0.0;           // map cell average x size
 	private var _averageSubSizeZ:Float = 0.0;           // map cell average z size
 	private var _terrainSizeX:Float = 0.0;              // terrain x size
@@ -147,8 +140,8 @@ class DynamicTerrain {
 		var v:Float = 0.0;                                          // current v of UV
 		var lg:Int = this._terrainIdx + 1;                          // augmented length for the UV to finish before
 		var terrainData:Array<Array<Vector3>> = [];
-		var terrainColor:Array<Float> = [];
-		var terrainUV:Array<Float> = [];
+		var terrainColor:Array<Color4> = [];
+		var terrainUV:Array<Vector2> = [];
 		for (j in 0...this._terrainSub + 1) {
 			terrainPath = [];
 			for (i in 0...this._terrainSub + 1) {
@@ -217,7 +210,7 @@ class DynamicTerrain {
 		this._terrain.position.z = this._terrainCamera.globalPosition.z - this._terrainHalfSizeZ;
 		// initialize deltaSub to make
 		var deltaNbSubX = (this._terrain.position.x - this._mapData[0]) / this._averageSubSizeX;
-		var deltaNbSubZ = (this._terrain.position.z - this._mapData[2]) / this._averageSubSizeZ
+		var deltaNbSubZ = (this._terrain.position.z - this._mapData[2]) / this._averageSubSizeZ;
 		this._deltaSubX = (deltaNbSubX > 0) ? Math.floor(deltaNbSubX) : Math.ceil(deltaNbSubX);
 		this._deltaSubZ = (deltaNbSubZ > 0) ? Math.floor(deltaNbSubZ) : Math.ceil(deltaNbSubZ);
 		this._scene.registerBeforeRender(function(_, _) {
@@ -250,14 +243,14 @@ class DynamicTerrain {
 		
 		if (Math.abs(this._deltaX) > this._mapShiftX) {
 			this._signX = (this._deltaX > 0.0) ? -1 : 1;
-			this._mapFlgtNb = Math.abs(this._deltaX / this._mapShiftX);
+			this._mapFlgtNb = cast Math.abs(this._deltaX / this._mapShiftX);
 			this._terrain.position.x += this._mapShiftX * this._signX * this._mapFlgtNb;
 			this._deltaSubX += (this._subToleranceX * this._signX * this._LODValue * this._mapFlgtNb);
 			this._needsUpdate = true;
 		}
 		if (Math.abs(this._deltaZ) > this._mapShiftZ) {
 			this._signZ = (this._deltaZ > 0.0) ? -1 : 1;
-			this._mapFlgtNb = Math.abs(this._deltaZ / this._mapShiftZ);
+			this._mapFlgtNb = cast Math.abs(this._deltaZ / this._mapShiftZ);
 			this._terrain.position.z += this._mapShiftZ * this._signZ * this._mapFlgtNb;
 			this._deltaSubZ += (this._subToleranceZ * this._signZ * this._LODValue * this._mapFlgtNb);
 			this._needsUpdate = true;
@@ -492,8 +485,8 @@ class DynamicTerrain {
 	 * @param {normal: Vector3} (optional)
 	 * If the optional object {normal: Vector3} is passed, then its property "normal" is updated with the normal vector value at the coordinates (x, z).  
 	 */
-	inline public function getHeightFromMap(x:Float, z:Float, ?options: {normal: Vector3} ): number {
-		return DynamicTerrain._GetHeightFromMap(x, z, this._mapData, this._mapSubX, this._mapSubZ, this._mapSizeX, this._mapSizeZ, options);
+	inline public function getHeightFromMap(x:Float, z:Float, ?normal:Vector3):Float {
+		return DynamicTerrain._GetHeightFromMap(x, z, this._mapData, this._mapSubX, this._mapSubZ, this._mapSizeX, this._mapSizeZ, normal);
 	}
 
 	/**
@@ -505,14 +498,14 @@ class DynamicTerrain {
 	 * @param {normal: Vector3} (optional)
 	 * If the optional object {normal: Vector3} is passed, then its property "normal" is updated with the normal vector value at the coordinates (x, z).  
 	 */
-	public static GetHeightFromMap(x: number, z: number, mapData: number[]| Float32Array, mapSubX: number, mapSubZ: number, options? : {normal: Vector3}) : number {
+	public static function GetHeightFromMap(x:Float, z:Float, mapData:Float32Array, mapSubX:Int, mapSubZ:Int, ?normal:Vector3):Float {
 		var mapSizeX = Math.abs(mapData[(mapSubX - 1) * 3] - mapData[0]);
 		var mapSizeZ = Math.abs(mapData[(mapSubZ - 1) * mapSubX * 3 + 2] - mapData[2]);
-		return DynamicTerrain._GetHeightFromMap(x, z, mapData, mapSubX, mapSubZ, mapSizeX, mapSizeZ, options);
+		return DynamicTerrain._GetHeightFromMap(x, z, mapData, mapSubX, mapSubZ, mapSizeX, mapSizeZ, normal);
 	}
 
 	// Computes the height and optionnally the normal at the coordinates (x ,z) from the passed map
-	private static _GetHeightFromMap(x:Float, z:Float, mapData:Float32Array, mapSubX:Float, mapSubZ:Float, mapSizeX:Float, mapSizeZ:Float, ?normal:Vector3):Float {
+	private static function _GetHeightFromMap(x:Float, z:Float, mapData:Float32Array, mapSubX:Float, mapSubZ:Float, mapSizeX:Float, mapSizeZ:Float, ?normal:Vector3):Float {
 		var x0 = mapData[0];
 		var z0 = mapData[2];
 		
@@ -525,10 +518,10 @@ class DynamicTerrain {
 		var col2 = (col1 + 1) % mapSubX;
 		var row2 = (row1 + 1) % mapSubZ;
 		// starting indexes of the positions of 4 vertices defining a quad on the map
-		var idx1 = 3 * (row1 * mapSubX + col1);
-		var idx2 = 3 * (row1 * mapSubX + col2);
-		var idx3 = 3 * ((row2) * mapSubX + col1);
-		var idx4 = 3 * ((row2) * mapSubX + col2);
+		var idx1 = Std.int(3 * (row1 * mapSubX + col1));
+		var idx2 = Std.int(3 * (row1 * mapSubX + col2));
+		var idx3 = Std.int(3 * ((row2) * mapSubX + col1));
+		var idx4 = Std.int(3 * ((row2) * mapSubX + col2));
 		
 		DynamicTerrain._v1.copyFromFloats(mapData[idx1], mapData[idx1 + 1], mapData[idx1 + 2]);
 		DynamicTerrain._v2.copyFromFloats(mapData[idx2], mapData[idx2 + 1], mapData[idx2 + 2]);
@@ -577,14 +570,18 @@ class DynamicTerrain {
 	 * Static : Computes all the normals from the terrain data map  and stores them in the passed Float32Array reference.  
 	 * This passed array must have the same size than the mapData array.
 	 */
-	public static function ComputeNormalsFromMapToRef(mapData:Float32Array, mapSubX:Float, mapSubZ:Float, normals:Float32Array) {
+	public static function ComputeNormalsFromMapToRef(mapData:Float32Array, mapSubX:Int, mapSubZ:Int, normals:Float32Array) {
 		var mapIndices = [];
 		var tmp1 = Vector3.Zero();
 		var tmp2 = Vector3.Zero();
-		var l = mapSubX * (mapSubZ - 1);
+		var l = Std.int(mapSubX * (mapSubZ - 1));
 		for (i in 0...l) {
-			mapIndices.push(i + 1, i + mapSubX, i);
-			mapIndices.push(i + mapSubX, i + 1, i + mapSubX + 1);
+			mapIndices.push(i + 1);
+			mapIndices.push(i + mapSubX);
+			mapIndices.push(i);
+			mapIndices.push(i + mapSubX);
+			mapIndices.push(i + 1);
+			mapIndices.push(i + mapSubX + 1);
 		}
 		VertexData.ComputeNormals(mapData, mapIndices, normals);
 		// seam process		
@@ -596,15 +593,14 @@ class DynamicTerrain {
 			colEnd = colStart + lastIdx;
 			DynamicTerrain.GetHeightFromMap(mapData[colStart], mapData[colStart + 2], mapData, mapSubX, mapSubZ, tmp1);
 			DynamicTerrain.GetHeightFromMap(mapData[colEnd], mapData[colEnd + 2], mapData, mapSubX, mapSubZ, tmp2);
-			tmp1.normal.addInPlace(tmp2.normal).scaleInPlace(0.5);
-			normals[colStart] = tmp1.normal.x;
-			normals[colStart + 1] = tmp1.normal.y;
-			normals[colStart + 2] = tmp1.normal.z;
-			normals[colEnd] = tmp1.normal.x;
-			normals[colEnd + 1] = tmp1.normal.y;
-			normals[colEnd + 2] = tmp1.normal.z;
-		}
-		
+			tmp1.addInPlace(tmp2).scaleInPlace(0.5);
+			normals[colStart] = tmp1.x;
+			normals[colStart + 1] = tmp1.y;
+			normals[colStart + 2] = tmp1.z;
+			normals[colEnd] = tmp1.x;
+			normals[colEnd + 1] = tmp1.y;
+			normals[colEnd + 2] = tmp1.z;
+		}		
 	}
 	
 	 /**
@@ -676,6 +672,8 @@ class DynamicTerrain {
 		
 		var onload = function(img:Image) {
 			var buffer = img.data;
+			var bufferWidth = img.width;
+			var bufferHeight = img.height;
 			var x = 0.0;
 			var y = 0.0;
 			var z = 0.0;
@@ -683,9 +681,9 @@ class DynamicTerrain {
 				for (col in 0...subX) {
 					x = col * width / subX - width * 0.5;
 					z = row * height / subZ - height * 0.5;
-					var heightmapX = ((x + width * 0.5) / width * (bufferWidth - 1)) | 0;
-					var heightmapY = (bufferHeight - 1) - ((z + height * 0.5) / height * (bufferHeight - 1)) | 0;
-					var pos = (heightmapX + heightmapY * bufferWidth) * 4;
+					var heightmapX = Std.int((x + width * 0.5) / width * (bufferWidth - 1));
+					var heightmapY = Std.int(bufferHeight - 1) - ((z + height * 0.5) / height * (bufferHeight - 1));
+					var pos = Std.int((heightmapX + heightmapY * bufferWidth) * 4);
 					var gradient = (buffer[pos] * filter.r + buffer[pos + 1] * filter.g + buffer[pos + 2] * filter.b) / 255.0;
 					y = minHeight + (maxHeight - minHeight) * gradient;
 					var idx = (row * subX + col) * 3;
@@ -701,7 +699,7 @@ class DynamicTerrain {
 			}
 		}
 		
-		Tools.LoadImage(heightmapURL, onload)
+		Tools.LoadImage(heightmapURL, onload);
 	}
 	
 	/**
@@ -785,94 +783,109 @@ class DynamicTerrain {
 	 * Number of cells flought over by the cam on the Z axis before the terrain is updated.
 	 * Integer greater or equal to 1. Default 1.
 	 */
-	public get subToleranceZ(): number {
+	public var subToleranceZ(get, set):Int;
+	inline private function get_subToleranceZ():Int {
 		return this._subToleranceZ;
 	}
-	public set subToleranceZ(val: number) {
+	inline private function set_subToleranceZ(val:Int):Int {
 		this._subToleranceZ = (val > 0) ? val : 1;
+		return val;
 	}
 	/**
 	 * Initial LOD factor value.
 	 * Integer greater or equal to 1. Default 1.
 	 */
-	public get initialLOD(): number {
+	public var initialLOD(get, set):Int;
+	inline private function get_initialLOD():Int {
 		return this._initialLOD;
 	}
-	public set initialLOD(val: number) {
+	inline private function set_initialLOD(val:Int):Int {
 		this._initialLOD = (val > 0) ? val : 1;
+		return val;
 	}
 	/**
 	* Current LOD factor value : the lower factor in the terrain.  
 	* The LOD value is the sum of the initialLOD and the current cameraLODCorrection.  
 	* Integer greater or equal to 1. Default 1.  
 	*/
-	public get LODValue(): number {
+	public var LODValue(get, never):Int;
+	inline private function get_LODValue():Int {
 		return this._LODValue;
 	}
 	/**
 	 * Camera LOD correction : the factor to add to the initial LOD according to the camera position, movement, etc.
 	 * Positive integer (default 0)  
 	 */
-	public get cameraLODCorrection(): number {
+	public var cameraLODCorrection(get, set):Int;
+	inline private function get_cameraLODCorrection():Int {
 		return this._cameraLODCorrection;
 	}
-	public set cameraLODCorrection(val: number) {
+	inline private function set_cameraLODCorrection(val:Int):Int {
 		this._cameraLODCorrection = (val >= 0) ? val : 0;
+		return val;
 	}
 	/**
 	 * Average map and terrain subdivision size on X axis.  
 	 * Returns a float.
 	 */
-	public get averageSubSizeX(): number {
+	public var averageSubSizeX(get, never):Float;
+	inline private function get_averageSubSizeX():Float {
 		return this._averageSubSizeX;
 	}
 	/**
 	 * Average map and terrain subdivision size on Z axis.  
 	 * Returns a float.
 	 */
-	public get averageSubSizeZ(): number {
+	public var averageSubSizeZ(get, never):Float;
+	inline private function get_averageSubSizeZ():Float {
 		return this._averageSubSizeZ;
 	}
 	/**
 	 * Current terrain size on the X axis.  
 	 * Returns a float.
 	 */
-	 public get terrainSizeX(): number {
-		 return this._terrainSizeX;
-	 }
+	public var terrainSizeX(get, never):Float;
+	inline private function get_terrainSizeX():Float {
+		return this._terrainSizeX;
+	}
 	/**
 	 * Current terrain half size on the X axis.  
 	 * Returns a float.
 	 */
-	 public get terrainHalfSizeX(): number {
-		 return this._terrainHalfSizeX;
-	 }
+	public var terrainHalfSizeX(get, never):Float;
+	inline private function get_terrainHalfSizeX():Float {
+		return this._terrainHalfSizeX;
+	}
 	/**
 	 * Current terrain size on the Z axis.  
 	 * Returns a float.
 	 */
-	 public get terrainSizeZ(): number {
-		 return this._terrainSizeZ;
-	 }
+	public var terrainSizeZ(get, never):Float;
+	inline private function get_terrainSizeZ():Float {
+		return this._terrainSizeZ;
+	}
 	/**
 	 * Current terrain half size on the Z axis.  
 	 * Returns a float.
 	 */
-	 public get terrainHalfSizeZ(): number {
-		 return this._terrainHalfSizeZ;
-	 }
+	public var terrainHalfSizeZ(get, never):Float;
+	inline private function get_terrainHalfSizeZ():Float {
+		return this._terrainHalfSizeZ;
+	}
 	/**
 	 * Current position of terrain center in its local space.  
 	 * Returns a Vector3. 
 	 */
-	public get centerLocal(): Vector3 {
+	public var centerLocal(get, never):Vector3;
+	inline private function get_centerLocal():Vector3 {
 		return this._centerLocal;
 	}
 	/**
 	 * Current position of terrain center in the World space.  
 	 * Returns a Vector3. 
 	 */
-	public get centerWorld(): Vector3 {
+	public var centerWorld(get, never):Vector3;
+	inline private function get_centerWorld():Vector3 {
 		return this._centerWorld;
 	}
 	/**
@@ -880,24 +893,27 @@ class DynamicTerrain {
 	 * Returns an array of integers or an empty array. 
 	 * This array is always sorted in the descending order once set.   
 	 */
-	public get LODLimits(): number[] {
+	public var LODLimits(get, set):Array<Int>;
+	inline private function get_LODLimits():Array<Int> {
 		return this._LODLimits;
 	}
-	public set LODLimits(ar: number[]) {
-		ar.sort((a,b) => {
+	inline private function set_LODLimits(ar:Array<Int>):Array<Int> {
+		ar.sort(function(a:Int, b:Int):Int {
 			return b - a;
 		});
 		this._LODLimits = ar;
+		return ar;
 	}
 	/**
 	 * The data of the map.
 	 * A flat array (Float32Array recommeded) of successive 3D float coordinates (x, y, z).  
 	 * This property can be set only if a mapData array was passed at construction time.  
 	 */
-	public get mapData(): Float32Array|number[] {
+	public var mapData(get, set):Float32Array;
+	inline private function get_mapData():Float32Array {
 		return this._mapData;
 	}
-	public set mapData(val: Float32Array|number[]) {
+	private function set_mapData(val:Float32Array):Float32Array {
 		this._mapData = val;
 		this._datamap = true;
 		this._mapSizeX = Math.abs(this._mapData[(this._mapSubX - 1) * 3] - this._mapData[0]);
@@ -908,100 +924,119 @@ class DynamicTerrain {
 			this.computeNormalsFromMap();
 		}
 		this.update(true);
+		return val;
 	}
 	/**
 	 * The number of points on the map width. 
 	 * Positive Integer.  
 	 */
-	public get mapSubX(): number {
+	public var mapSubX(get, set):Int;
+	inline private function get_mapSubX():Int {
 		return this._mapSubX;
 	}
-	public set mapSubX(val: number) {
+	inline private function set_mapSubX(val:Int):Int {
 		this._mapSubX = val;
+		return val;
 	}
 	/**
 	 * The number of points on the map height . 
 	 * Positive Integer.  
 	 */
-	public get mapSubZ(): number {
+	public var mapSubZ(get, set):Int;
+	inline private function get_mapSubZ():Int {
 		return this._mapSubZ;
 	}
-	public set mapSubZ(val: number) {
+	inline private function set_mapSubZ(val:Int):Int {
 		this._mapSubZ = val;
+		return val;
 	}
 	/**
 	 * The map of colors.
 	 * A flat array of successive floats between 0 and 1 as r,g,b values.  
 	 * This property can be set only if a mapColors array was passed at construction time.  
 	 */
-	public get mapColors(): Float32Array|number[] {
+	public var mapColors(get, set):Float32Array;
+	inline private function get_mapColors():Float32Array {
 		return this._mapColors;
 	}
-	public set mapColors(val: Float32Array|number[]) {
+	inline private function set_mapColors(val:Float32Array):Float32Array {
 		this._colormap = true;
 		this._mapColors = val;
+		return val;
 	}
 	/**
 	 * The map of UVs.
 	 * A flat array of successive floats between 0 and 1 as (u, v) values. 
 	 * This property can be set only if a mapUVs array was passed at construction time.   
 	 */
-	public get mapUVs(): Float32Array|number[] {
+	public var mapUVs(get, set):Float32Array;
+	inline private function get_mapUVs():Float32Array {
 		return this._mapUVs;
 	}
-	public set mapUVs(val: Float32Array|number[]) {
+	inline private function set_mapUVs(val:Float32Array):Float32Array {
 		this._uvmap = true;
 		this._mapUVs = val;
+		return val;
 	}
 	/**
 	 * The map of normals.
 	 * A flat array of successive floats as normal vector coordinates (x, y, z) on each map point.  
 	 */
-	public get mapNormals(): Float32Array|number[] {
+	public var mapNormals(get, set):Float32Array;
+	inline private function get_mapNormals():Float32Array {
 		return this._mapNormals;
 	}
-	public set mapNormals(val: Float32Array|number[]) {
+	inline private function set_mapNormals(val:Float32Array):Float32Array {
 		this._mapNormals = val;
+		return val;
 	}
 	/**
 	 * Boolean : must the normals be recomputed on each terrain update (default : false).  
 	 * By default, all the map normals are pre-computed on terrain creation.
 	 */
-	public get computeNormals():Bool {
+	public var computeNormals(get, set):Bool;
+	inline private function get_computeNormals():Bool {
 		return this._computeNormals;
 	}
-	public set computeNormals(val:Bool) {
+	inline private function set_computeNormals(val:Bool):Bool {
 		this._computeNormals = val;
+		return val;
 	}
 	/**
 	 * Boolean : will the custom function updateVertex() be called on each terrain update ?
 	 * Default false
 	 */
-	public get useCustomVertexFunction():Bool {
+	public var useCustomVertexFunction(get, set):Bool;
+	inline private function get_useCustomVertexFunction():Bool {
 		return this._useCustomVertexFunction;
 	}
-	public set useCustomVertexFunction(val:Bool) {
+	inline private function set_useCustomVertexFunction(val:Bool):Bool {
 		this._useCustomVertexFunction = val;
+		return val;
 	}
 	/**
 	 * Boolean : is the terrain always directly selected for rendering ?
 	 */
-	public get isAlwaysVisible():Bool {
+	public var isAlwaysVisible(get, set):Bool;
+	inline private function get_isAlwaysVisible():Bool {
 		return this._isAlwaysVisible;
 	}
-	public set isAlwaysVisible(val) {
+	inline private function set_isAlwaysVisible(val:Bool):Bool {
 		this.mesh.alwaysSelectAsActiveMesh = val;
 		this._isAlwaysVisible = val;
+		return val;
 	}
 	/**
 	 * Boolean : when assigning a new data map to the existing, shall the normals be automatically precomputed once ?  
 	 * Default false.  
 	 */
-	public get precomputeNormalsFromMap():Bool {
+	public var precomputeNormalsFromMap(get, set):Bool;
+	inline private function get_precomputeNormalsFromMap():Bool {
 		return this._precomputeNormalsFromMap;
 	}
-	public set precomputeNormalsFromMap(val) {
+	inline private function set_precomputeNormalsFromMap(val:Bool):Bool {
 		this._precomputeNormalsFromMap = val;
+		return val;
 	}
 	// ===============================================================
 	// User custom functions.
@@ -1015,7 +1050,7 @@ class DynamicTerrain {
 	 * - j : the vertex index on the terrain x axis
 	 * This function is called only if the property useCustomVertexFunction is set to true.  
 	 */
-	public updateVertex(vertex, i, j) {
+	public function updateVertex(vertex:DTVertex, i:Int, j:Int) {
 		return;
 	}
 
@@ -1024,7 +1059,7 @@ class DynamicTerrain {
 	 * This should return a positive integer or zero.  
 	 * Returns zero by default.  
 	 */
-	 public updateCameraLOD(terrainCamera: Camera): number {
+	public function updateCameraLOD(terrainCamera:Camera):Int {
 		// LOD value increases with camera altitude
 		var camLOD = 0;
 		return camLOD;
@@ -1034,7 +1069,7 @@ class DynamicTerrain {
 	 * The value of reference is passed.  
 	 * Does nothing by default.  
 	 */
-	public beforeUpdate(refreshEveryFrame:Bool) {
+	public function beforeUpdate(refreshEveryFrame:Bool) {
 		return;
 	}
 	/**
@@ -1042,8 +1077,23 @@ class DynamicTerrain {
 	 * The value of refreshEveryFrame is passed.  
 	 * Does nothing by default.  
 	 */
-	public afterUpdate(refreshEveryFrame:Bool) {
+	public function afterUpdate(refreshEveryFrame:Bool) {
 		return;
 	}
 
+}
+
+class DTVertex {
+	
+	public var position:Vector3 =  Vector3.Zero();                       // vertex position in the terrain space (Vector3)
+	public var uvs:Vector2 = Vector2.Zero();                             // vertex uv
+	public var color:Color4 = new Color4(1.0, 1.0, 1.0, 1.0);            // vertex color (Color4)
+	public var lodX:Int = 1;	                                         // vertex LOD value on X axis
+	public var lodZ:Int = 1;	                                         // vertex LOD value on Z axis
+	public var worldPosition:Vector3 = Vector3.Zero();                   // vertex World position
+	public var mapIndex:Int = 0;										 // current map index
+	
+	
+	public function new() { }
+	
 }

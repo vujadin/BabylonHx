@@ -257,11 +257,17 @@ import lime.utils.Int32Array;
 		return -epsilon <= num && num <= epsilon;
 	}
 	
-	inline public static function randomInt(from:Int, to:Int):Int {
+	inline public static function RandomInt(from:Int, to:Int):Int {
+		if (from == to) {
+			return from;
+		}
 		return from + Math.floor(((to - from + 1) * Math.random()));
 	}
 	
-	inline public static function randomFloat(from:Float, to:Float):Float {
+	inline public static function RandomFloat(from:Float, to:Float):Float {
+		if (from == to) {
+			return from;
+		}
 		return from + ((to - from + 1) * Math.random());
 	}
 	

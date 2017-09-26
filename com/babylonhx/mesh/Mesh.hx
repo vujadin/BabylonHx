@@ -127,6 +127,8 @@ import lime.utils.Int32Array;
 	private var _instancesData:Float32Array;
 	private var _overridenInstanceCount:Int;
 	
+	private var _effectiveMaterial:Material;
+	
 	public var _shouldGenerateFlatShading:Bool = false;
 	private var _preActivateId:Int;
 	private var _sideOrientation:Int = Mesh.DEFAULTSIDE;
@@ -1129,24 +1131,24 @@ import lime.utils.Int32Array;
 		var hardwareInstancedRendering = (engine.getCaps().instancedArrays) && (batch.visibleInstances[subMesh._id] != null) && (batch.visibleInstances.length > subMesh._id && batch.visibleInstances[subMesh._id] != null);
 		
 		// Material
-		var effectiveMaterial:Material = subMesh.getMaterial();
+		this._effectiveMaterial = subMesh.getMaterial();
 		
-		if (effectiveMaterial == null) {
+		if (this._effectiveMaterial == null) {
 			return;
 		}
 		
-		if (effectiveMaterial.storeEffectOnSubMeshes) {
-			if (!effectiveMaterial.isReadyForSubMesh(this, subMesh, hardwareInstancedRendering)) {
+		if (this._effectiveMaterial.storeEffectOnSubMeshes) {
+			if (!this._effectiveMaterial.isReadyForSubMesh(this, subMesh, hardwareInstancedRendering)) {
 				return;
 			}
 		} 
-		else if (!effectiveMaterial.isReady(this, hardwareInstancedRendering)) {
+		else if (!this._effectiveMaterial.isReady(this, hardwareInstancedRendering)) {
 			return;
 		}
 		
 		// Alpha mode
 		if (enableAlphaMode) {
-			engine.setAlphaMode(effectiveMaterial.alphaMode);
+			engine.setAlphaMode(this._effectiveMaterial.alphaMode);
 		}
 		
 		// Outline - step 1
@@ -1158,17 +1160,21 @@ import lime.utils.Int32Array;
 		}
 		
 		var effect:Effect;
-		if (effectiveMaterial.storeEffectOnSubMeshes) {
+		if (this._effectiveMaterial.storeEffectOnSubMeshes) {
 			effect = subMesh.effect;
 		} 
 		else {
-			effect = effectiveMaterial.getEffect();
+			effect = this._effectiveMaterial.getEffect();
 		}
 		
-		effectiveMaterial._preBind(effect);
+		this._effectiveMaterial._preBind(effect);
+		
+		if (this._effectiveMaterial.forceDepthWrite) {
+            engine.setDepthWrite(true);
+        }
 		
 		// Bind
-		var fillMode = scene.forcePointsCloud ? Material.PointFillMode : (scene.forceWireframe ? Material.WireFrameFillMode : effectiveMaterial.fillMode);
+		var fillMode = scene.forcePointsCloud ? Material.PointFillMode : (scene.forceWireframe ? Material.WireFrameFillMode : this._effectiveMaterial.fillMode);
 		
 		if (!hardwareInstancedRendering) { // Binding will be done later because we need to add more info to the VB
             this._bind(subMesh, effect, fillMode);
@@ -1176,18 +1182,25 @@ import lime.utils.Int32Array;
 		
 		var world = this.getWorldMatrix();
 		
-		if (effectiveMaterial.storeEffectOnSubMeshes) {
-			effectiveMaterial.bindForSubMesh(world, this, subMesh);
+		if (this._effectiveMaterial.storeEffectOnSubMeshes) {
+			this._effectiveMaterial.bindForSubMesh(world, this, subMesh);
 		} 
 		else {
-			effectiveMaterial.bind(world, this);
+			this._effectiveMaterial.bind(world, this);
 		}
 		
+		if (!this._effectiveMaterial.backFaceCulling && this._effectiveMaterial.separateCullingPass) {
+            var reverse = this.sideOrientation == Material.ClockWiseSideOrientation;
+            engine.setState(true, this._effectiveMaterial.zOffset, false, !reverse);
+            this._processRendering(subMesh, effect, fillMode, batch, hardwareInstancedRendering, this._onBeforeDraw, this._effectiveMaterial);
+            engine.setState(true, this._effectiveMaterial.zOffset, false, reverse);
+        }
+		
 		// Draw
-		this._processRendering(subMesh, effect, fillMode, batch, hardwareInstancedRendering, this._onBeforeDraw, effectiveMaterial);
+		this._processRendering(subMesh, effect, fillMode, batch, hardwareInstancedRendering, this._onBeforeDraw, this._effectiveMaterial);
 		
 		// Unbind
-		effectiveMaterial.unbind();
+		this._effectiveMaterial.unbind();
 		
 		// Outline - step 2
 		if (this.renderOutline && savedDepthWrite) {

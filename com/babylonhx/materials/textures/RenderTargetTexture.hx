@@ -300,6 +300,8 @@ import com.babylonhx.postprocess.PostProcessManager;
 		else {
 			this._texture = this.getScene().getEngine().createRenderTargetTexture(size, this._renderTargetOptions);
 		}
+		
+		this._size = size;
 	}
 
 	public function render(useCameraPostProcess:Bool = false) {

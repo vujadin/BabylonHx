@@ -280,6 +280,24 @@ import lime.utils.Float32Array;
         return s;
     }
 	
+	/**
+	 * Get angle between two vectors.
+	 * @param vector0 {BABYLON.Vector3}
+	 * @param vector1 {BABYLON.Vector3}
+	 * @param normal  {BABYLON.Vector3}  direction of the normal.
+	 * @return {number} the angle between vector0 and vector1.
+	 */
+	public static function GetAngleBetweenVectors(vector0:Vector3, vector1:Vector3, normal:Vector3):Float {
+		var v0:Vector3 = vector0.clone().normalize();
+		var v1:Vector3 = vector1.clone().normalize();
+		var dot:Float = Vector3.Dot(v0, v1);
+		var n = Vector3.Cross(v0, v1);
+		if (Vector3.Dot(n, normal) > 0) {
+			return Math.acos(dot);
+		}
+		return -Math.acos(dot);
+	}
+	
 	inline public static function FromArray(array:Array<Float>, offset:Int = 0):Vector3 {
 		return new Vector3(array[offset], array[offset + 1], array[offset + 2]);
 	}

@@ -224,6 +224,10 @@ import com.babylonhx.tools.Tools;
 		return new Color4(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
 	}
 	
+	public static function FromColor3(color3:Color3, alpha:Float = 1.0):Color4 {
+		return new Color4(color3.r, color3.g, color3.b, alpha);
+	}
+	
 	public static function CheckColors4(colors:Array<Float>, count:Int):Array<Float> {
 		// Check if color3 was used
 		if (colors.length == count * 3) {
