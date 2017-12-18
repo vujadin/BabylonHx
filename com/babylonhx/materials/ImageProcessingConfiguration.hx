@@ -81,7 +81,7 @@ class ImageProcessingConfiguration {
 	}
 
 	@serialize()
-	private var _colorGradingWithGreenDepth:Bool = false;
+	private var _colorGradingWithGreenDepth:Bool = true;
 	
 	public var colorGradingWithGreenDepth(get, set):Bool;
 	/**
@@ -104,7 +104,7 @@ class ImageProcessingConfiguration {
 	}
 
 	@serialize()
-	private var _colorGradingBGR:Bool = false;
+	private var _colorGradingBGR:Bool = true;
 	
 	public var colorGradingBGR(get, set):Bool;
 	/**
@@ -300,6 +300,28 @@ class ImageProcessingConfiguration {
 		this._updateParameters();
 		return value;
 	}
+	
+	@serialize()
+	private var _isEnabled:Bool = true;
+	public var isEnabled(get, set):Bool;
+	/**
+	 * Gets wether the image processing is enabled or not.
+	 */
+	inline private function get_isEnabled():Bool {
+		return this._isEnabled;
+	}
+	/**
+	 * Sets wether the image processing is enabled or not.
+	 */
+	private function set_isEnabled(value:Bool):Bool {
+		if (this._isEnabled == value) {
+			return value;
+		}
+		
+		this._isEnabled = value;
+		this._updateParameters();
+		return value;
+	}   
 
 	/**
 	* An event triggered when the configuration changes and requires Shader to Update some parameters.
@@ -362,15 +384,16 @@ class ImageProcessingConfiguration {
 	 * @param defines the list of defines to complete
 	 */
 	public function prepareDefines(defines:IImageProcessingConfigurationDefines, forPostProcess:Bool = false) {
-		if (forPostProcess != this.applyByPostProcess) {
+		if (forPostProcess != this.applyByPostProcess || !this._isEnabled) {
             defines.VIGNETTE = false;
             defines.TONEMAPPING = false;
             defines.CONTRAST = false;
             defines.EXPOSURE = false;
             defines.COLORCURVES = false;
-            defines.COLORGRADING = false;  
+            defines.COLORGRADING = false;
+			defines.COLORGRADING3D = false;
             defines.IMAGEPROCESSING = false;              
-            defines.IMAGEPROCESSINGPOSTPROCESS = this.applyByPostProcess;
+            defines.IMAGEPROCESSINGPOSTPROCESS = this.applyByPostProcess && this._isEnabled;
             return;
         }
 		defines.VIGNETTE = this.vignetteEnabled;
@@ -381,6 +404,13 @@ class ImageProcessingConfiguration {
 		defines.EXPOSURE = (this.exposure != 1.0);
 		defines.COLORCURVES = (this.colorCurvesEnabled && this.colorCurves != null);
 		defines.COLORGRADING = (this.colorGradingEnabled && this.colorGradingTexture != null);
+		if (defines.COLORGRADING) {
+            var texture:BaseTexture = this.colorGradingTexture;
+            defines.COLORGRADING3D = (texture.getScene().getEngine().webGLVersion > 1) ? true : false;                 
+        } 
+		else {
+            defines.COLORGRADING3D = false;
+        }
 		defines.SAMPLER3DGREENDEPTH = this.colorGradingWithGreenDepth;
 		defines.SAMPLER3DBGRMAP = this.colorGradingBGR;
 		defines.IMAGEPROCESSINGPOSTPROCESS = this.applyByPostProcess;
@@ -401,7 +431,7 @@ class ImageProcessingConfiguration {
 	 */
 	public function bind(effect:Effect, aspectRatio:Float = 1) {
 		// Color Curves
-		if (this._colorCurvesEnabled) {
+		if (this._colorCurvesEnabled && this.colorCurves != null) {
 			ColorCurves.Bind(this.colorCurves, effect);
 		}
 		

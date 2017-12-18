@@ -1,6 +1,7 @@
 package com.babylonhx.postprocess;
 
 import com.babylonhx.cameras.Camera;
+import com.babylonhx.engine.Engine;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.ShadersStore;
 
@@ -26,14 +27,14 @@ import com.babylonhx.materials.ShadersStore;
 
 	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
 		if (!ShadersStore.Shaders.exists("vibrancePixelShader")) {			
-			ShadersStore.Shaders.set("vibrance.fragment", fragmentShader);
+			ShadersStore.Shaders.set("vibrancePixelShader", fragmentShader);
 		}
 		
 		super(name, "vibrance", ["amount"], null, ratio, camera, samplingMode, engine, reusable);
 		
-		this.onApply = function(effect:Effect, _) {
+		this.onApplyObservable.add(function(effect:Effect, _) {
 			effect.setFloat("amount", this.amount);
-		};
+		});
 	}
 	
 }

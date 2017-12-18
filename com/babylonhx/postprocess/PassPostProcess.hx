@@ -1,5 +1,6 @@
 package com.babylonhx.postprocess;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.cameras.Camera;
 
 /**

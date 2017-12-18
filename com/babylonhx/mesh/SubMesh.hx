@@ -1,5 +1,6 @@
 package com.babylonhx.mesh;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.materials.Material;
 import com.babylonhx.materials.MultiMaterial;
 import com.babylonhx.materials.MaterialDefines;
@@ -13,6 +14,7 @@ import com.babylonhx.collisions.IntersectionInfo;
 import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.culling.ICullable;
 import com.babylonhx.math.Tools as MathTools;
+import lime.utils.UInt32Array;
 
 import lime.utils.Int32Array;
 
@@ -73,7 +75,7 @@ import lime.utils.Int32Array;
 	}
 	
 	public var IsGlobal(get, never):Bool;
-	private function get_IsGlobal():Bool {
+	inline private function get_IsGlobal():Bool {
 		return (this.verticesStart == 0 && this.verticesCount == this._mesh.getTotalVertices());
 	}
 
@@ -132,7 +134,7 @@ import lime.utils.Int32Array;
 	public function refreshBoundingInfo() {
 		this._lastColliderWorldVertices = null;
 		
-		if (this.IsGlobal) {
+		if (this.IsGlobal || this._renderingMesh == null || this._renderingMesh.geometry == null) {
 			return;
 		}
 		
@@ -155,7 +157,7 @@ import lime.utils.Int32Array;
 			extend = { minimum: this._renderingMesh.getBoundingInfo().minimum.clone(), maximum: this._renderingMesh.getBoundingInfo().maximum.clone() };
 		}
 		else {
-			extend = MathTools.ExtractMinAndMaxIndexed(data, indices, this.indexStart, this.indexCount);
+			extend = MathTools.ExtractMinAndMaxIndexed(data, indices, this.indexStart, this.indexCount, this._renderingMesh.geometry.boundingBias);
 		}
 		
 		this._boundingInfo = new BoundingInfo(extend.minimum, extend.maximum);
@@ -202,9 +204,9 @@ import lime.utils.Int32Array;
 	 * Returns a new Index Buffer.  
 	 * Type returned : WebGLBuffer.  
 	 */
-	inline public function getLinesIndexBuffer(indices:Int32Array, engine:Engine):WebGLBuffer {
+	inline public function getLinesIndexBuffer(indices:UInt32Array, engine:Engine):WebGLBuffer {
 		if (this._linesIndexBuffer == null) {
-			var linesIndices:Int32Array = new Int32Array(this.indexCount);
+			var linesIndices:Array<Int> = [];
 			
 			var index:Int = this.indexStart;
 			var i:Int = 0;
@@ -218,7 +220,7 @@ import lime.utils.Int32Array;
 				index += 3;
 			}
 			
-			this._linesIndexBuffer = engine.createIndexBuffer(linesIndices);
+			this._linesIndexBuffer = engine.createIndexBuffer(new UInt32Array(linesIndices));
 			this.linesIndexCount = linesIndices.length;
 		}
 		
@@ -236,7 +238,7 @@ import lime.utils.Int32Array;
 	/**
 	 * Returns an object IntersectionInfo.  
 	 */
-	public function intersects(ray:Ray, positions:Array<Vector3>, indices:Int32Array, fastCheck:Bool = false):IntersectionInfo {
+	public function intersects(ray:Ray, positions:Array<Vector3>, indices:UInt32Array, fastCheck:Bool = false):IntersectionInfo {
 		var intersectInfo:IntersectionInfo = null;
 		
 		// fix for picking instances: https://github.com/vujadin/BabylonHx/issues/122

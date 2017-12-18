@@ -1,7 +1,7 @@
 package com.babylonhx.mesh;
 
 import com.babylonhx.Node;
-import com.babylonhx.Engine;
+import com.babylonhx.engine.Engine;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.animations.Animatable;
 import com.babylonhx.animations.Animation;
@@ -18,6 +18,7 @@ import com.babylonhx.math.Tools.BabylonMinMax;
 import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector2;
+import com.babylonhx.math.Tmp;
 import com.babylonhx.math.Tools as MathTools;
 import com.babylonhx.mesh.MeshBuilder.BoxOptions;
 import com.babylonhx.mesh.MeshBuilder.CapsuleOptions;
@@ -64,6 +65,7 @@ import com.babylonhx.utils.Image;
 import haxe.Json;
 import haxe.ds.Vector;
 
+import lime.utils.UInt32Array;
 import lime.utils.Float32Array;
 import lime.utils.UInt8Array;
 import lime.utils.ArrayBuffer;
@@ -131,10 +133,14 @@ import lime.utils.Int32Array;
 	
 	public var _shouldGenerateFlatShading:Bool = false;
 	private var _preActivateId:Int;
-	private var _sideOrientation:Int = Mesh.DEFAULTSIDE;
+	
+	// Use by builder only to know what orientation were the mesh build in.
+    public var _originalBuilderSideOrientation:Int = Mesh.DEFAULTSIDE;
+	
+	public var overrideMaterialSideOrientation:Int = -1;
+	
 	private var _areNormalsFrozen:Bool = false; // Will be used by ribbons mainly
 	
-	public var sideOrientation(get, set):Int;
 	public var areNormalsFrozen(get, never):Bool;
 	
 	private var _sourcePositions:Float32Array; 	// Will be used to save original positions when using software skinning
@@ -173,6 +179,19 @@ import lime.utils.Int32Array;
 		return this._source;
 	}
 	
+	public var isUnIndexed(get, set):Bool;
+	inline private function get_isUnIndexed():Bool {
+        return this._unIndexed;
+    }
+    inline private function set_isUnIndexed(value:Bool):Bool {
+        if (this._unIndexed != value) {
+			this._unIndexed = value;
+			this._markSubMeshesAsAttributesDirty();
+		}
+		return value;
+	}
+
+	
 
 	/**
 	  * @constructor
@@ -184,8 +203,10 @@ import lime.utils.Int32Array;
 	  *                  When false, achieved by calling a clone(), also passing False.
 	  *                  This will make creation of children, recursive.
 	  */
-	public function new(name:String, scene:Scene, parent:Node = null, ?source:Mesh, doNotCloneChildren:Bool = false, clonePhysicsImpostor:Bool = true) {
+	public function new(name:String, scene:Scene = null, parent:Node = null, ?source:Mesh, doNotCloneChildren:Bool = false, clonePhysicsImpostor:Bool = true) {
 		super(name, scene);
+		
+		scene = this.getScene();
 		
 		if (source != null) {
 			// Source mesh
@@ -198,6 +219,13 @@ import lime.utils.Int32Array;
 			
 			// copy
 			_deepCopy(source, this);
+			
+			// Tags
+			if (Tags.HasTags(source)) {
+				Tags.AddTagsTo(this, Tags.GetTags(source, true));
+			}
+			
+			this.metadata = source.metadata;
 			
 			// Parent
 			this.parent = source.parent;
@@ -212,12 +240,12 @@ import lime.utils.Int32Array;
 			
 			if (!doNotCloneChildren) {
 				// Children
-				for (index in 0...scene.meshes.length) {
-					var mesh = scene.meshes[index];
+				var directDescendants = source.getDescendants(true);
+				for (index in 0...directDescendants.length) {
+					var child = directDescendants[index];
 					
-					if (mesh.parent == source) {
-						// doNotCloneChildren is always going to be False
-						var newChild = mesh.clone(name + "." + mesh.name, this, doNotCloneChildren); 
+					if (Reflect.hasField(child, "clone")) {
+						untyped child.clone(name + "." + child.name, this); 
 					}
 				}
 			}
@@ -293,7 +321,6 @@ import lime.utils.Int32Array;
 		dest.edgesWidth = source.edgesWidth;
 		dest.edgesColor = source.edgesColor.clone();
 		dest.delayLoadState = source.delayLoadState;
-		dest.sideOrientation = source.sideOrientation;
 		dest.checkCollisions = source.checkCollisions;
 		
 		dest.__smartArrayFlags = source.__smartArrayFlags.copy();
@@ -520,6 +547,19 @@ import lime.utils.Int32Array;
 		
 		return this._geometry.isVerticesDataPresent(kind);
 	}
+	
+	/**
+     * Returns a boolean defining if the vertex data for the requested `kind` is updatable.
+	 */
+	public function isVertexBufferUpdatable(kind:String):Bool {
+        if (this._geometry == null) {
+            if (this._delayInfo != null) {
+                return this._delayInfo.indexOf(kind) != -1;
+            }
+            return false;
+        }
+        return this._geometry.isVertexBufferUpdatable(kind);
+    }
 
 	/**
 	  * Returns a string : the list of existing `kinds` of Vertex Data for this mesh.
@@ -557,9 +597,9 @@ import lime.utils.Int32Array;
 	 * is shared among some other meshes, the returned array is a copy of the internal one.
      * Returns an empty array if the mesh has no geometry.
      */
-	override public function getIndices(copyWhenShared:Bool = false):Int32Array {
+	override public function getIndices(copyWhenShared:Bool = false):UInt32Array {
 		if (this._geometry == null) {
-			return null;
+			return new UInt32Array();
 		}
 		
 		return this._geometry.getIndices(copyWhenShared);
@@ -577,16 +617,10 @@ import lime.utils.Int32Array;
 		return super.isReady();
 	}
 	
-	inline private function get_sideOrientation():Int {
-		return this._sideOrientation;
-	}
-	
-	inline private function set_sideOrientation(value:Int):Int {
-		this._sideOrientation = value;
-		
-		return value;
-	}
-	
+	/**
+	 * Boolean : true if the normals aren't to be recomputed on next mesh `positions` array update.
+	 * This property is pertinent only for updatable parametric shapes.
+	 */
 	inline private function get_areNormalsFrozen():Bool {
 		return this._areNormalsFrozen;
 	}
@@ -649,16 +683,16 @@ import lime.utils.Int32Array;
 	}
 
 	/**
-     * This method recomputes and sets a new `BoundingInfo` to the mesh unless it is locked.
-     * This means the mesh underlying bounding box and sphere are recomputed.
-     */
-	inline public function refreshBoundingInfo() {
-		if (this._boundingInfo.isLocked) {
-			return;
+	 * This method recomputes and sets a new BoundingInfo to the mesh unless it is locked.
+	 * This means the mesh underlying bounding box and sphere are recomputed.
+	 * Returns the Mesh.
+	 */
+	public function refreshBoundingInfo():Mesh {
+		if (this._boundingInfo != null && this._boundingInfo.isLocked) {
+			return this;
 		}
 		
 		var data = this.getVerticesData(VertexBuffer.PositionKind);
-		
 		if (data != null) {
 			var extend = MathTools.ExtractMinAndMax(data, 0, this.getTotalVertices());
 			this._boundingInfo = new BoundingInfo(extend.minimum, extend.maximum);
@@ -671,6 +705,63 @@ import lime.utils.Int32Array;
 		}
 		
 		this._updateBoundingInfo();
+		return this;
+	}
+
+	private function _getPositionData(applySkeleton:Bool):Float32Array {
+		var data = this.getVerticesData(VertexBuffer.PositionKind);
+		
+		if (data != null && applySkeleton && this.skeleton != null) {
+			data = data.subarray(0, data.length);
+			
+			var matricesIndicesData = this.getVerticesData(VertexBuffer.MatricesIndicesKind);
+			var matricesWeightsData = this.getVerticesData(VertexBuffer.MatricesWeightsKind);
+			if (matricesWeightsData != null && matricesIndicesData != null) {
+				var needExtras = this.numBoneInfluencers > 4;
+				var matricesIndicesExtraData = needExtras ? this.getVerticesData(VertexBuffer.MatricesIndicesExtraKind) : null;
+				var matricesWeightsExtraData = needExtras ? this.getVerticesData(VertexBuffer.MatricesWeightsExtraKind) : null;
+				
+				var skeletonMatrices = this.skeleton.getTransformMatrices(this);
+				
+				var tempVector:Vector3 = Tmp.vector3[0];
+				var finalMatrix:Matrix = Tmp.matrix[0];
+				var tempMatrix:Matrix = Tmp.matrix[1];
+				
+				var matWeightIdx:Int = 0;
+				var index:Int = 0;
+				while (index < data.length) {
+					finalMatrix.reset();
+					
+					var weight:Float = 0;
+					for (inf in 0...4) {
+						weight = matricesWeightsData[matWeightIdx + inf];
+						if (weight <= 0) {
+							break;
+						}
+						Matrix.FromFloat32ArrayToRefScaled(skeletonMatrices, Std.int(matricesIndicesData[matWeightIdx + inf] * 16), weight, tempMatrix);
+						finalMatrix.addToSelf(tempMatrix);
+					}
+					if (needExtras) {
+						for (inf in 0...4) {
+							weight = matricesWeightsExtraData[matWeightIdx + inf];
+							if (weight <= 0) {
+								break;
+							}
+							Matrix.FromFloat32ArrayToRefScaled(skeletonMatrices, Std.int(matricesIndicesExtraData[matWeightIdx + inf] * 16), weight, tempMatrix);
+							finalMatrix.addToSelf(tempMatrix);
+						}
+					}
+					
+					Vector3.TransformCoordinatesFromFloatsToRef(data[index], data[index + 1], data[index + 2], finalMatrix, tempVector);
+					tempVector.toFloat32Array(data, index);
+					
+					index += 3;
+					matWeightIdx += 4;
+				}
+			}
+		}
+		
+		return data;
 	}
 
 	public function _createGlobalSubMesh(force:Bool):SubMesh {
@@ -681,7 +772,13 @@ import lime.utils.Int32Array;
 		
 		// Check if we need to recreate the submeshes
 		if (this.subMeshes != null && this.subMeshes.length > 0) {
-			var totalIndices = this.getIndices().length;
+			var ib = this.getIndices();
+			
+			if (ib == null) {
+				return null;
+			}
+			
+			var totalIndices = ib.length;
 			var needToRecreate = false;
 			
 			if (force) {
@@ -702,7 +799,7 @@ import lime.utils.Int32Array;
 			}
 			
 			if (!needToRecreate) {
-				return null;
+				return this.subMeshes[0];
 			}
 		}
 		
@@ -769,9 +866,7 @@ import lime.utils.Int32Array;
 	
 	public function setVerticesBuffer(buffer:VertexBuffer) {
 		if (this._geometry == null) {
-			var scene = this.getScene();
-			
-			new Geometry(Tools.uuid(), scene).applyToMesh(this);
+			this._geometry = Geometry.CreateGeometryForMesh(this);
 		}
 		
 		this._geometry.setVerticesBuffer(buffer);
@@ -803,16 +898,28 @@ import lime.utils.Int32Array;
 	// updates the mesh positions according to the positionFunction returned values.
 	// The positionFunction argument must be a javascript function accepting the mesh "positions" array as parameter.
 	// This dedicated positionFunction computes new mesh positions according to the given mesh type.
-	public function updateMeshPositions(positionFunction:Float32Array->Void, computeNormals:Bool = true) {
+	public function updateMeshPositions(positionFunction:Float32Array->Void, computeNormals:Bool = true):Mesh {
 		var positions = this.getVerticesData(VertexBuffer.PositionKind);
+		
+		if (positions == null) {
+			return this;
+		}
+		
 		positionFunction(positions);
 		this.updateVerticesData(VertexBuffer.PositionKind, positions, false, false);
 		if (computeNormals) {
 			var indices = this.getIndices();
 			var normals = this.getVerticesData(VertexBuffer.NormalKind);
+			
+			if (normals == null) {
+				return this;
+			}
+			
 			VertexData.ComputeNormals(positions, indices, normals);
 			this.updateVerticesData(VertexBuffer.NormalKind, normals, false, false);
 		}
+		
+		return this;
 	}
 	
 	/**
@@ -852,19 +959,33 @@ import lime.utils.Int32Array;
 		geometry.applyToMesh(this);
 	}
 
-	override public function setIndices(indices:Int32Array, totalVertices:Int = -1) {
+	override public function setIndices(indices:UInt32Array, totalVertices:Int = -1, updatable:Bool = false) {
 		if (this._geometry == null) {
 			var vertexData = new VertexData();
 			vertexData.indices = indices;
 			
 			var scene = this.getScene();
 			
-			new Geometry(Tools.uuid(), scene, vertexData, false, this);
+			new Geometry(Tools.uuid(), scene, vertexData, updatable, this);
 		} 
 		else {
-			this._geometry.setIndices(indices, totalVertices);
+			this._geometry.setIndices(indices, totalVertices, updatable);
 		}
 	}
+	
+	/**
+     * Update the current index buffer
+     * Expects a typed array (Int32Array)
+     * Returns the Mesh. 
+     */
+    override public function updateIndices(indices:UInt32Array, offset:Int = 0):AbstractMesh {
+        if (this._geometry == null) {
+            return this;
+        }
+		
+        this._geometry.updateIndices(indices, offset);
+        return this;
+    }
 	
 	/**
 	 * Invert the geometry to move from a right handed system to a left handed one.  
@@ -878,6 +999,10 @@ import lime.utils.Int32Array;
 	}
 
 	public function _bind(subMesh:SubMesh, effect:Effect, fillMode:Int) {
+		if (this._geometry == null) {
+			return;
+		}
+		
 		var engine:Engine = this.getScene().getEngine();
 		
 		// Wireframe
@@ -906,35 +1031,45 @@ import lime.utils.Int32Array;
 		this._geometry._bind(effect, indexBufferToBind);
 	}
 
-	public function _draw(subMesh:SubMesh, fillMode:Int, instancesCount:Int = 0) {	
+	public function _draw(subMesh:SubMesh, fillMode:Int, instancesCount:Int = 0, alternate:Bool = false) {	
 		if (this._geometry == null || this._geometry.getVertexBuffers() == null || this._geometry.getIndexBuffer() == null) {
 			return;
 		}
 		
 		this.onBeforeDrawObservable.notifyObservers(this);
 		
-		var engine:Engine = this.getScene().getEngine();
+		var scene:Scene = this.getScene();
+		var engine:Engine = scene.getEngine();
 		
 		// Draw order
-		switch (fillMode) {
-			case Material.PointFillMode:
-				engine.drawPointClouds(subMesh.verticesStart, subMesh.verticesCount, instancesCount);
-				
-			case Material.WireFrameFillMode:
-				if (this._unIndexed) {
-					engine.drawUnIndexed(false, subMesh.verticesStart, subMesh.verticesCount, instancesCount);
-				}
-				else {
-					engine.draw(false, 0, subMesh.linesIndexCount, instancesCount);	
-				}
-				
-			default:
-				if (this._unIndexed) {
-					engine.drawUnIndexed(true, subMesh.verticesStart, subMesh.verticesCount, instancesCount);
-				}
-				else {
-					engine.draw(true, subMesh.indexStart, subMesh.indexCount, instancesCount);
-				}
+		if (this._unIndexed || fillMode == Material.PointFillMode) {
+            // or triangles as points
+            engine.drawArraysType(fillMode, subMesh.verticesStart, subMesh.verticesCount, instancesCount);
+        } 
+		else if (fillMode == Material.WireFrameFillMode) {
+            // Triangles as wireframe
+            engine.drawElementsType(fillMode, 0, subMesh.linesIndexCount, instancesCount);
+        } 
+		else {
+            engine.drawElementsType(fillMode, subMesh.indexStart, subMesh.indexCount, instancesCount);
+        }
+		
+		if (scene._isAlternateRenderingEnabled && !alternate) {
+			var effect = subMesh.effect != null ? subMesh.effect : this._effectiveMaterial.getEffect();
+			if (effect == null || scene.activeCamera == null) {
+				return;
+			}
+			scene._switchToAlternateCameraConfiguration(true);
+			this._effectiveMaterial.bindView(effect);
+			this._effectiveMaterial.bindViewProjection(effect);
+			
+			engine.setViewport(scene.activeCamera._alternateCamera.viewport);
+			this._draw(subMesh, fillMode, instancesCount, true);
+			engine.setViewport(scene.activeCamera.viewport);
+			
+			scene._switchToAlternateCameraConfiguration(false);
+			this._effectiveMaterial.bindView(effect);
+			this._effectiveMaterial.bindViewProjection(effect);
 		}
 	}
 
@@ -1011,6 +1146,11 @@ import lime.utils.Int32Array;
 
 	public function _renderWithInstances(subMesh:SubMesh, fillMode:Int, batch:_InstancesBatch, effect:Effect, engine:Engine) {
 		var visibleInstances = batch.visibleInstances[subMesh._id];
+		
+		if (visibleInstances == null) {
+			return;
+		}
+		
 		var matricesCount = visibleInstances.length + 1;
 		var bufferSize = Std.int(matricesCount * 16 * 4);
 		
@@ -1084,8 +1224,10 @@ import lime.utils.Int32Array;
 				this._draw(subMesh, fillMode, this._overridenInstanceCount);
 			}
 			
-			if (batch.visibleInstances[subMesh._id] != null) {
-				for (instanceIndex in 0...batch.visibleInstances[subMesh._id].length) {
+			var visibleInstancesForSubMesh = batch.visibleInstances[subMesh._id];
+			
+			if (visibleInstancesForSubMesh != null) {
+				for (instanceIndex in 0...visibleInstancesForSubMesh.length) {
 					var instance = batch.visibleInstances[subMesh._id][instanceIndex];
 					
 					// World
@@ -1131,11 +1273,13 @@ import lime.utils.Int32Array;
 		var hardwareInstancedRendering = (engine.getCaps().instancedArrays) && (batch.visibleInstances[subMesh._id] != null) && (batch.visibleInstances.length > subMesh._id && batch.visibleInstances[subMesh._id] != null);
 		
 		// Material
-		this._effectiveMaterial = subMesh.getMaterial();
+		var material = subMesh.getMaterial();
 		
-		if (this._effectiveMaterial == null) {
+		if (material == null) {
 			return;
 		}
+		
+		this._effectiveMaterial = material;
 		
 		if (this._effectiveMaterial.storeEffectOnSubMeshes) {
 			if (!this._effectiveMaterial.isReadyForSubMesh(this, subMesh, hardwareInstancedRendering)) {
@@ -1167,7 +1311,11 @@ import lime.utils.Int32Array;
 			effect = this._effectiveMaterial.getEffect();
 		}
 		
-		this._effectiveMaterial._preBind(effect);
+		if (effect == null) {
+			return;
+		}
+		
+		var reverse = this._effectiveMaterial._preBind(effect, this.overrideMaterialSideOrientation);
 		
 		if (this._effectiveMaterial.forceDepthWrite) {
             engine.setDepthWrite(true);
@@ -1190,7 +1338,6 @@ import lime.utils.Int32Array;
 		}
 		
 		if (!this._effectiveMaterial.backFaceCulling && this._effectiveMaterial.separateCullingPass) {
-            var reverse = this.sideOrientation == Material.ClockWiseSideOrientation;
             engine.setState(true, this._effectiveMaterial.zOffset, false, !reverse);
             this._processRendering(subMesh, effect, fillMode, batch, hardwareInstancedRendering, this._onBeforeDraw, this._effectiveMaterial);
             engine.setState(true, this._effectiveMaterial.zOffset, false, reverse);
@@ -1222,7 +1369,7 @@ import lime.utils.Int32Array;
 	}
 	
 	inline private function _onBeforeDraw(isInstance:Bool, world:Matrix, effectiveMaterial:Material) {
-        if (isInstance) {
+        if (isInstance && effectiveMaterial != null) {
 			if (effectiveMaterial != null) {
 				effectiveMaterial.bindOnlyWorldMatrix(world);
 			}            
@@ -1455,13 +1602,13 @@ import lime.utils.Int32Array;
      * The parameter `clonePhysicsImpostor` (default `true`)  allows/denies the cloning in the same time 
 	 * of the original mesh `body` used by the physics engine, if any.
      */
-	override public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false, clonePhysicsImpostor:Bool = true):Mesh {
+	override public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false):Mesh {
 		return new Mesh(name, this.getScene(), newParent, this, doNotCloneChildren);
 	}
 
 	/**
      * Disposes the mesh.
-     * This also frees the memory allocated under the hood to all the buffers used by WebGL.
+     * By default, all the mesh children are also disposed unless the parameter `doNotRecurse` is set to `true`.
      */
 	override public function dispose(doNotRecurse:Bool = false) {
 		this.morphTargetManager = null;
@@ -1722,7 +1869,7 @@ import lime.utils.Int32Array;
 		// Save previous submeshes
 		var previousSubmeshes:Array<SubMesh> = this.subMeshes.slice(0);
 		
-		var indices:Int32Array = this.getIndices();
+		var indices:UInt32Array = this.getIndices();
 		var totalIndices:Int = this.getTotalIndices();
 		
 		// Generating unique vertices per face
@@ -1777,21 +1924,23 @@ import lime.utils.Int32Array;
 	public function flipFaces(flipNormals:Bool = false):Mesh {
 		var vertex_data = VertexData.ExtractFromMesh(this);
 		
-		if (flipNormals && this.isVerticesDataPresent(VertexBuffer.NormalKind)) {
+		if (flipNormals && this.isVerticesDataPresent(VertexBuffer.NormalKind) && vertex_data.normals != null) {
 			for (i in 0...vertex_data.normals.length) {
 				vertex_data.normals[i] *= -1;
 			}
 		}
 		
-		var temp:Int = 0;
-		var i:Int = 0;
-		while (i < vertex_data.indices.length) {
-			// reassign indices
-			temp = vertex_data.indices[i + 1];
-			vertex_data.indices[i + 1] = vertex_data.indices[i + 2];
-			vertex_data.indices[i + 2] = temp;
-			
-			i += 3;
+		if (vertex_data.indices != null) {
+			var temp:Int = 0;
+			var i:Int = 0;
+			while (i < vertex_data.indices.length) {
+				// reassign indices
+				temp = vertex_data.indices[i + 1];
+				vertex_data.indices[i + 1] = vertex_data.indices[i + 2];
+				vertex_data.indices[i + 2] = temp;
+				
+				i += 3;
+			}
 		}
 		
 		vertex_data.applyToMesh(this);
@@ -1850,6 +1999,11 @@ import lime.utils.Int32Array;
 	public function optimizeIndices(?successCallback:Mesh->Void):Mesh {
 		var indices = this.getIndices();
 		var positions = this.getVerticesData(VertexBuffer.PositionKind);
+		
+		if (positions == null || indices == null) {
+			return this;
+		}
+		
 		var vectorPositions:Array<Vector3> = [];
 		var pos:Int = 0;
 		while(pos < positions.length) {
@@ -1884,7 +2038,9 @@ import lime.utils.Int32Array;
 		return this;
 	}
 	
-	public function serialize(serializationObject:Dynamic) {
+	override public function serialize(?serializationObject:Dynamic):Dynamic {
+		serializationObject = super.serialize(serializationObject);
+		
 		serializationObject.name = this.name;
 		serializationObject.id = this.id;
 		serializationObject.type = this.getClassName();
@@ -1924,6 +2080,7 @@ import lime.utils.Int32Array;
 		}
 		
 		// Geometry
+		serializationObject.isUnIndexed = this.isUnIndexed;
 		var geometry = this._geometry;
 		if (geometry != null) {
 			var geometryId = geometry.id;
@@ -2024,6 +2181,8 @@ import lime.utils.Int32Array;
 		if (this.actionManager != null) {
 			serializationObject.actions = this.actionManager.serialize(this.name);
 		}
+		
+		return serializationObject;
 	}
 	
 	public function _syncGeometryWithMorphTargetManager() {
@@ -2033,22 +2192,33 @@ import lime.utils.Int32Array;
 		
 		this._markSubMeshesAsAttributesDirty();
 		
-		if (this._morphTargetManager != null && this._morphTargetManager.vertexCount > 0) {
+		var morphTargetManager = this._morphTargetManager;
+        if (morphTargetManager != null && morphTargetManager.vertexCount > 0) {
 			if (this._morphTargetManager.vertexCount != this.getTotalVertices()) {
 				Tools.Error("Mesh is incompatible with morph targets. Targets and mesh must all have the same vertices count.");
 				this.morphTargetManager = null;
 				return;
 			}
 			
-			for (index in 0...this.morphTargetManager.numInfluencers) {
-				var morphTarget = this.morphTargetManager.getActiveTarget(index);
-				this.geometry.setVerticesData(VertexBuffer.PositionKind + index, morphTarget.getPositions(), false, 3);
+			for (index in 0...morphTargetManager.numInfluencers) {
+				var morphTarget = morphTargetManager.getActiveTarget(index);
 				
-				if (morphTarget.hasNormals) {
-					this.geometry.setVerticesData(VertexBuffer.NormalKind + index, morphTarget.getNormals(), false, 3);
+				var positions = morphTarget.getPositions(); 
+				if (positions == null) {
+					Tools.Error("Invalid morph target. Target must have positions.");
+					return;
 				}
-				if (morphTarget.hasTangents) {
-					this.geometry.setVerticesData(VertexBuffer.TangentKind + index, morphTarget.getTangents(), false, 3);
+				
+				this.geometry.setVerticesData(VertexBuffer.PositionKind + index, positions, false, 3);
+				
+				var normals = morphTarget.getNormals();
+				if (normals != null) {
+					this.geometry.setVerticesData(VertexBuffer.NormalKind + index, normals, false, 3);
+				}
+				
+				var tangents = morphTarget.getTangents();
+				if (tangents != null) {
+					this.geometry.setVerticesData(VertexBuffer.TangentKind + index, tangents, false, 3);
 				}
 			}
 		} 
@@ -2341,13 +2511,16 @@ import lime.utils.Int32Array;
 	 * @returns original positions used for CPU skinning.  Useful for integrating Morphing with skeletons in same mesh.
 	 */
 	public function setPositionsForCPUSkinning():Float32Array {
-		var source:Float32Array = null;
 		if (this._sourcePositions == null) {
-			source = this.getVerticesData(VertexBuffer.PositionKind);
+			var source = this.getVerticesData(VertexBuffer.PositionKind);
 			
-			this._sourcePositions = source;
+			if (source == null) {
+				return this._sourcePositions;
+			}
 			
-			if (!this.getVertexBuffer(VertexBuffer.PositionKind).isUpdatable()) {
+			this._sourcePositions = source.subarray(0, source.length);
+			
+			if (!this.isVertexBufferUpdatable(VertexBuffer.PositionKind)) {
 				this.setVerticesData(VertexBuffer.PositionKind, source, true);
 			}
 		}
@@ -2359,13 +2532,16 @@ import lime.utils.Int32Array;
 	 * @returns original normals used for CPU skinning.  Useful for integrating Morphing with skeletons in same mesh.
 	 */
 	public function setNormalsForCPUSkinning():Float32Array {
-		var source:Float32Array = null;
 		if (this._sourceNormals == null) {
-			source = this.getVerticesData(VertexBuffer.NormalKind);
+			var source = this.getVerticesData(VertexBuffer.NormalKind);
+			
+			if (source == null) {
+                return this._sourceNormals;
+            }
 			
 			this._sourceNormals = source;
 			
-			if (!this.getVertexBuffer(VertexBuffer.NormalKind).isUpdatable()) {
+			if (!this.isVertexBufferUpdatable(VertexBuffer.NormalKind)) {
 				this.setVerticesData(VertexBuffer.NormalKind, source, true);
 			}
 		}
@@ -2402,28 +2578,35 @@ import lime.utils.Int32Array;
 		}
 		
 		if (this._sourcePositions == null) {
-			var source = this.getVerticesData(VertexBuffer.PositionKind);
-			this._sourcePositions = source;
-			
-			if (!this.getVertexBuffer(VertexBuffer.PositionKind).isUpdatable()) {
-				this.setVerticesData(VertexBuffer.PositionKind, source, true);
-			}
+			var submeshes = this.subMeshes.copy();
+			this.setPositionsForCPUSkinning();
+			this.subMeshes = submeshes;
 		}
 		
 		if (this._sourceNormals == null) {
-			var source = this.getVerticesData(VertexBuffer.NormalKind);
-			this._sourceNormals = source;
-			
-			if (!this.getVertexBuffer(VertexBuffer.NormalKind).isUpdatable()) {
-				this.setVerticesData(VertexBuffer.NormalKind, source, true);
-			}
+			this.setNormalsForCPUSkinning();
 		}
 		
+		// positionsData checks for not being Float32Array will only pass at most once
 		var positionsData = this.getVerticesData(VertexBuffer.PositionKind);
+		
+		if (positionsData == null) {
+            return this;
+        }
+		
+		// normalsData checks for not being Float32Array will only pass at most once
 		var normalsData = this.getVerticesData(VertexBuffer.NormalKind);
+		
+		if (normalsData == null) {
+            return this;
+        }
 		
 		var matricesIndicesData = this.getVerticesData(VertexBuffer.MatricesIndicesKind);
 		var matricesWeightsData = this.getVerticesData(VertexBuffer.MatricesWeightsKind);
+		
+		if (matricesWeightsData == null || matricesIndicesData == null) {
+            return this;
+        }
 		
 		var needExtras:Bool = this.numBoneInfluencers > 4;
         var matricesIndicesExtraData = needExtras ? this.getVerticesData(VertexBuffer.MatricesIndicesExtraKind) : null;
@@ -2448,7 +2631,6 @@ import lime.utils.Int32Array;
 					break;   
 				}
             }
-            matWeightIdx += 4;
 			
 			if (needExtras) {
                 for (inf in 0...4) {
@@ -2456,7 +2638,8 @@ import lime.utils.Int32Array;
                     if (weight > 0) {
                         Matrix.FromFloat32ArrayToRefScaled(new Float32Array(skeletonMatrices), cast (matricesIndicesExtraData[matWeightIdx + inf] * 16), weight, tempMatrix);
                         finalMatrix.addToSelf(tempMatrix);
-                    } else {
+                    } 
+					else {
 						break;           
 					}
                 }
@@ -2471,6 +2654,7 @@ import lime.utils.Int32Array;
 			finalMatrix.reset();
 			
 			index += 3;
+			matWeightIdx += 4;
 		}
 		
 		this.updateVerticesData(VertexBuffer.PositionKind, positionsData);
@@ -2491,14 +2675,23 @@ import lime.utils.Int32Array;
 		var maxVector:Vector3 = null;
 		
 		for (mesh in meshes) {
-			var boundingBox = mesh.getBoundingInfo().boundingBox;
-			if (minVector == null) {
+			var boundingInfo = mesh.getBoundingInfo();
+			
+			var boundingBox = boundingInfo.boundingBox;
+			if (minVector == null || maxVector == null) {
 				minVector = boundingBox.minimumWorld;
 				maxVector = boundingBox.maximumWorld;
-			}
+			} 
 			else {
 				minVector.MinimizeInPlace(boundingBox.minimumWorld);
 				maxVector.MaximizeInPlace(boundingBox.maximumWorld);
+			}
+		}
+		
+		if (minVector == null || maxVector == null) {
+			return {
+				minimum: Vector3.Zero(),
+				maximum: Vector3.Zero()
 			}
 		}
 		
@@ -2521,7 +2714,7 @@ import lime.utils.Int32Array;
 	 * @param {boolean} allow32BitsIndices - When the sum of the vertices > 64k, this must be set to true.
 	 * @param {Mesh} meshSubclass - When set, vertices inserted into this Mesh.  Meshes can then be merged into a Mesh sub-class.
 	 */
-	public static function MergeMeshes(meshes:Array<Mesh>, disposeSource:Bool = true, allow32BitsIndices:Bool = false, ?meshSubclass:Mesh):Mesh {
+	public static function MergeMeshes(meshes:Array<Mesh>, disposeSource:Bool = true, allow32BitsIndices:Bool = false, ?meshSubclass:Mesh, subdivideWithSubMeshes:Bool = false):Mesh {
 		if (!allow32BitsIndices) {
 			var totalVertices = 0;
 			
@@ -2541,7 +2734,7 @@ import lime.utils.Int32Array;
 		// Merge
 		var vertexData:VertexData = null;
 		var otherVertexData:VertexData = null;
-		
+		var indiceArray:Array<Int> = [];
 		var source:Mesh = null;
 		for (index in 0...meshes.length) {
 			if (meshes[index] != null) {
@@ -2555,6 +2748,10 @@ import lime.utils.Int32Array;
 				else {
 					vertexData = otherVertexData;
 					source = meshes[index];
+				}
+				
+				if (subdivideWithSubMeshes) {
+					indiceArray.push(meshes[index].getTotalIndices());
 				}
 			}
 		}
@@ -2574,6 +2771,21 @@ import lime.utils.Int32Array;
 				if (meshes[index] != null) {
 					meshes[index].dispose();
 				}
+			}
+		}
+		
+		// Subdivide
+		if (subdivideWithSubMeshes) {
+			//-- Suppresions du submesh global
+			meshSubclass.releaseSubMeshes();
+			var index:Int = 0;
+			var offset:Int = 0;
+			
+			//-- aplique la subdivision en fonction du tableau d'indices
+			while (index < indiceArray.length) {
+				SubMesh.CreateFromIndices(0, offset, indiceArray[index], meshSubclass);
+				offset += indiceArray[index];
+				index++;
 			}
 		}
 		
@@ -2685,7 +2897,7 @@ import lime.utils.Int32Array;
 		}
 		
 		// Parent
-		if (parsedMesh.parentId != null) {
+		if (parsedMesh.parentId != null && parsedMesh.parentId != "") {
 			mesh._waitingParentId = parsedMesh.parentId;
 		}
 		
@@ -2708,6 +2920,9 @@ import lime.utils.Int32Array;
 		}
 		
 		// Geometry
+		if (parsedMesh.isUnIndexed != null) {
+			mesh.isUnIndexed = parsedMesh.isUnIndexed;
+		}
 		if (parsedMesh.hasVertexAlpha != null) {
 			mesh.hasVertexAlpha = parsedMesh.hasVertexAlpha;
 		}
@@ -2769,7 +2984,7 @@ import lime.utils.Int32Array;
 		}
 		
 		// Material
-		if (parsedMesh.materialId != null) {
+		if (parsedMesh.materialId != null && parsedMesh.materialId != "") {
 			mesh.setMaterialByID(parsedMesh.materialId);
 		} 
 		else {
@@ -2804,7 +3019,7 @@ import lime.utils.Int32Array;
 		}
 		
 		// Layer Mask
-		if (parsedMesh.layerMask && (!Math.isNaN(parsedMesh.layerMask))) {
+		if (parsedMesh.layerMask != null && (!Math.isNaN(parsedMesh.layerMask))) {
 			mesh.layerMask = Std.parseInt(parsedMesh.layerMask);
 		} 
 		else {

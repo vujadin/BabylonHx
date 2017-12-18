@@ -12,8 +12,8 @@ import com.babylonhx.math.PositionNormalVertex;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.utils.Image;
 import com.babylonhx.Scene;
-import lime.utils.Int32Array;
 
+import lime.utils.UInt32Array;
 import lime.utils.Float32Array;
 
 /**
@@ -199,12 +199,12 @@ typedef LatheOptions = {
  
 class MeshBuilder {
 	
-	private static function updateSideOrientation(orientation:Null<Int>, scene:Scene):Int {
+	private static function updateSideOrientation(orientation:Null<Int>):Int {
 		if (orientation == Mesh.DOUBLESIDE) {
 			return Mesh.DOUBLESIDE;
 		}
 		
-		if (orientation == -1) {
+		if (orientation == -1 || orientation == null) {
 			return Mesh.FRONTSIDE;
 		}
 		
@@ -226,9 +226,9 @@ class MeshBuilder {
 		var box = new Mesh(name, scene);
 		var vertexData = VertexData.CreateBox(options);
 		
-		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		options.sideOrientation = updateSideOrientation(options.sideOrientation);
 		
-		box.sideOrientation = options.sideOrientation;
+		box._originalBuilderSideOrientation = options.sideOrientation;
 		
 		vertexData.applyToMesh(box, options.updatable);
 		
@@ -250,9 +250,9 @@ class MeshBuilder {
 	public static function CreateSphere(name:String, options:SphereOptions, scene:Scene):Mesh {		
 		var sphere = new Mesh(name, scene);
 		
-		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		options.sideOrientation = updateSideOrientation(options.sideOrientation);
 		
-		sphere.sideOrientation = options.sideOrientation;
+		sphere._originalBuilderSideOrientation = options.sideOrientation;
 		
 		var vertexData = VertexData.CreateSphere(options);
 		
@@ -274,9 +274,9 @@ class MeshBuilder {
 	public static function CreateIcoSphere(name:String, options:IcoSphereOptions, scene:Scene):Mesh {
 		var sphere = new Mesh(name, scene);
 		
-		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		options.sideOrientation = updateSideOrientation(options.sideOrientation);
 		
-		sphere.sideOrientation = options.sideOrientation;
+		sphere._originalBuilderSideOrientation = options.sideOrientation;
 		
 		if (options.updatable == null) {
 			options.updatable = false;
@@ -303,9 +303,9 @@ class MeshBuilder {
 	public static function CreateDisc(name:String, options:Dynamic, scene:Scene):Mesh {
         var disc = new Mesh(name, scene);
 		
-		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		options.sideOrientation = updateSideOrientation(options.sideOrientation);
 		
-		disc.sideOrientation = options.sideOrientation;
+		disc._originalBuilderSideOrientation = options.sideOrientation;
 		
         var vertexData = VertexData.CreateDisc(options);
 		
@@ -335,7 +335,7 @@ class MeshBuilder {
 		var closePath:Bool = options.closePath;
 		var offset:Int = options.offset;
 		var updatable:Bool = options.updatable;
-		var sideOrientation:Int = updateSideOrientation(options.sideOrientation, scene);
+		var sideOrientation:Int = updateSideOrientation(options.sideOrientation);
 		var ribbonInstance:Mesh = options.instance;			
 		
 		if (ribbonInstance != null) {   // existing ribbon instance update
@@ -344,7 +344,7 @@ class MeshBuilder {
 			var positionFunction = function (positions:Float32Array) {
 				var minlg = pathArray[0].length;
 				var i:Int = 0;
-				var ns = (ribbonInstance.sideOrientation == Mesh.DOUBLESIDE) ? 2 : 1;
+				var ns = (ribbonInstance._originalBuilderSideOrientation == Mesh.DOUBLESIDE) ? 2 : 1;
 				for (si in 1...ns + 1) {
 					for (p in 0...pathArray.length) {
 						var path = pathArray[p];
@@ -403,7 +403,7 @@ class MeshBuilder {
 		}
 		else {  // new ribbon creation
 			var ribbon = new Mesh(name, scene);
-			ribbon.sideOrientation = sideOrientation;
+			ribbon._originalBuilderSideOrientation = sideOrientation;
 			
 			var vertexData = VertexData.CreateRibbon({ pathArray: pathArray, closeArray: closeArray, closePath: closePath, offset: offset, sideOrientation: sideOrientation });
 			
@@ -414,7 +414,7 @@ class MeshBuilder {
 			ribbon._closeArray = closeArray;
 			
 			vertexData.applyToMesh(ribbon, updatable);
-				
+			
 			return ribbon;
 		}
 	}	
@@ -445,9 +445,9 @@ class MeshBuilder {
 	public static function CreateCylinder(name:String, options:CylinderOptions, scene:Scene):Mesh {		
 		var cylinder = new Mesh(name, scene);
 		
-		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		options.sideOrientation = updateSideOrientation(options.sideOrientation);
 		
-		cylinder.sideOrientation = options.sideOrientation;
+		cylinder._originalBuilderSideOrientation = options.sideOrientation;
 		
 		var vertexData = VertexData.CreateCylinder(options);
 		
@@ -463,9 +463,9 @@ class MeshBuilder {
 			options = { };
 		}
 		
-		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		options.sideOrientation = updateSideOrientation(options.sideOrientation);
 		
-		capsule.sideOrientation = options.sideOrientation;
+		capsule._originalBuilderSideOrientation = options.sideOrientation;
 		
 		var vertexData = VertexData.CreateCapsule(options);
 		
@@ -491,9 +491,9 @@ class MeshBuilder {
 			options = { };
 		}
 		
-		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		options.sideOrientation = updateSideOrientation(options.sideOrientation);
 		
-		torus.sideOrientation = options.sideOrientation;
+		torus._originalBuilderSideOrientation = options.sideOrientation;
 		
 		var vertexData = VertexData.CreateTorus(options);
 		
@@ -516,9 +516,9 @@ class MeshBuilder {
 	public static function CreateTorusKnot(name:String, options:Dynamic, scene:Scene):Mesh {
 		var torusKnot = new Mesh(name, scene);
 		
-		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		options.sideOrientation = updateSideOrientation(options.sideOrientation);
 		
-		torusKnot.sideOrientation = options.sideOrientation;
+		torusKnot._originalBuilderSideOrientation = options.sideOrientation;
 		
 		var vertexData = VertexData.CreateTorusKnot(options);
 		
@@ -528,43 +528,61 @@ class MeshBuilder {
 	}
 	
 	/**
-	  * Creates a line system mesh.  
-	  * A line system is a pool of many lines gathered in a single mesh.  
-	  * tuto : http://doc.babylonjs.com/tutorials/Mesh_CreateXXX_Methods_With_Options_Parameter#linesystem  
-	  * A line system mesh is considered as a parametric shape since it has no predefined original shape. Its shape is determined by the passed array of lines as an input parameter.  
-	  * Like every other parametric shape, it is dynamically updatable by passing an existing instance of LineSystem to this static function.  
-	  * The parameter `lines` is an array of lines, each line being an array of successive Vector3.   
-	  * The optional parameter `instance` is an instance of an existing LineSystem object to be updated with the passed `lines` parameter. The way to update it is the same than for 
-	  * updating a simple Line mesh, you just need to update every line in the `lines` array : http://doc.babylonjs.com/tutorials/How_to_dynamically_morph_a_mesh#lines-and-dashedlines   
-	  * When updating an instance, remember that only line point positions can change, not the number of points, neither the number of lines.      
-	  * The mesh can be set to updatable with the boolean parameter `updatable` (default false) if its internal geometry is supposed to change once created.  
-	  */
+	 * Creates a line system mesh.  
+	 * A line system is a pool of many lines gathered in a single mesh.  
+	 * tuto : http://doc.babylonjs.com/tutorials/Mesh_CreateXXX_Methods_With_Options_Parameter#linesystem  
+	 * A line system mesh is considered as a parametric shape since it has no predefined original shape. Its shape is determined by the passed array of lines as an input parameter.  
+	 * Like every other parametric shape, it is dynamically updatable by passing an existing instance of LineSystem to this static function.  
+	 * The parameter `lines` is an array of lines, each line being an array of successive Vector3.   
+	 * The optional parameter `instance` is an instance of an existing LineSystem object to be updated with the passed `lines` parameter. The way to update it is the same than for 
+	 * The optional parameter `colors` is an array of line colors, each line colors being an array of successive Color4, one per line point.  
+	 * The optional parameter `useVertexAlpha' is to be set to `false` (default `true`) when you don't need the alpha blending (faster).  
+	 * updating a simple Line mesh, you just need to update every line in the `lines` array : http://doc.babylonjs.com/tutorials/How_to_dynamically_morph_a_mesh#lines-and-dashedlines   
+	 * When updating an instance, remember that only line point positions can change, not the number of points, neither the number of lines.      
+	 * The mesh can be set to updatable with the boolean parameter `updatable` (default false) if its internal geometry is supposed to change once created.  
+	 */
 	// options: { lines: Array<Array<Vector3>>, updatable:Bool, ?instance:LinesMesh }
 	public static function CreateLineSystem(name:String, options:Dynamic, scene:Scene):LinesMesh {
 		var instance:LinesMesh = options.instance;
 		var lines:Array<Array<Vector3>> = options.lines;
+		var colors:Array<Array<Color4>> = options.colors;
 		
 		if (instance != null) { // lines update
-			var positionFunction = function(positions:Float32Array) {
-				var i = 0;
-				for (l in 0...lines.length) {
-					var points = lines[l];
-					for (p in 0...points.length) {
-						positions[i] = points[p].x;
-						positions[i + 1] = points[p].y;
-						positions[i + 2] = points[p].z;
-						i += 3;
+			var positions = instance.getVerticesData(VertexBuffer.PositionKind);
+			var vertexColor:Float32Array = null;
+			var lineColors:Array<Color4> = [];
+			if (colors != null) {
+				vertexColor = instance.getVerticesData(VertexBuffer.ColorKind);
+			}
+			var i:Int = 0;
+			var c:Int = 0;
+			for (l in 0...lines.length) {
+				var points = lines[l];
+				for (p in 0...points.length) {
+					positions[i] = points[p].x;
+					positions[i + 1] = points[p].y;
+					positions[i + 2] = points[p].z;
+					if (colors != null && vertexColor != null) {
+						lineColors = colors[l];
+						vertexColor[c] = lineColors[p].r;
+						vertexColor[c + 1] = lineColors[p].g;
+						vertexColor[c + 2] = lineColors[p].b;
+						vertexColor[c + 3] = lineColors[p].a;
+						c += 4;
 					}
+					i += 3;
 				}
-			};
-			
-			instance.updateMeshPositions(positionFunction, false);
-			
+			}
+			instance.updateVerticesData(VertexBuffer.PositionKind, positions, false, false);
+			if (colors != null && vertexColor.length > 0) {
+				instance.updateVerticesData(VertexBuffer.ColorKind, vertexColor, false, false);
+			}
 			return instance;
 		}
 		
 		// line system creation
-		var lineSystem = new LinesMesh(name, scene);
+		var useVertexColor = (colors != null) ? true : false;
+		var lineSystem = new LinesMesh(name, scene, null, null, false, useVertexColor, options.useVertexAlpha);
 		var vertexData = VertexData.CreateLineSystem(options);
 		vertexData.applyToMesh(lineSystem, options.updatable);
 		
@@ -577,12 +595,15 @@ class MeshBuilder {
 	  * A line mesh is considered as a parametric shape since it has no predefined original shape. Its shape is determined by the passed array of points as an input parameter.  
 	  * Like every other parametric shape, it is dynamically updatable by passing an existing instance of LineMesh to this static function.  
 	  * The parameter `points` is an array successive Vector3.   
-	  * The optional parameter `instance` is an instance of an existing LineMesh object to be updated with the passed `points` parameter : http://doc.babylonjs.com/tutorials/How_to_dynamically_morph_a_mesh#lines-and-dashedlines    
+	  * The optional parameter `instance` is an instance of an existing LineMesh object to be updated with the passed `points` parameter : http://doc.babylonjs.com/tutorials/How_to_dynamically_morph_a_mesh#lines-and-dashedlines
+	  * The optional parameter `colors` is an array of successive Color4, one per line point.  
+      * The optional parameter `useVertexAlpha' is to be set to `false` (default `true`) when you don't need alpha blending (faster). 
 	  * When updating an instance, remember that only point positions can change, not the number of points.      
 	  * The mesh can be set to updatable with the boolean parameter `updatable` (default false) if its internal geometry is supposed to change once created.  
 	  */
 	public static function CreateLines(name:String, options:Dynamic, scene:Scene):LinesMesh {
-		var lines = MeshBuilder.CreateLineSystem(name, { lines: [options.points], updatable: options.updatable, instance: options.instance }, scene);
+		var colors = (options.colors != null) ? [options.colors] : null;
+		var lines = MeshBuilder.CreateLineSystem(name, { lines: [options.points], updatable: options.updatable, instance: options.instance, colors: colors, useVertexAlpha: options.useVertexAlpha }, scene);
 		
 		return lines;
 	}
@@ -690,7 +711,7 @@ class MeshBuilder {
 		var rotation:Float = options.rotation != null ? options.rotation : 0;
 		var cap:Int = options.cap != null ? options.cap : Mesh.NO_CAP;
 		var updatable:Bool = options.updatable;
-		var sideOrientation:Int = updateSideOrientation(options.sideOrientation, scene);
+		var sideOrientation:Int = updateSideOrientation(options.sideOrientation);
 		var extrudedInstance:Mesh = options.extrudedInstance;
 		
 		return MeshBuilder._ExtrudeShapeGeneric(name, shape, path, scale, rotation, null, null, false, false, cap, false, scene, updatable, sideOrientation, extrudedInstance);
@@ -739,7 +760,7 @@ class MeshBuilder {
 		var ribbonClosePath:Bool = options.ribbonClosePath != null ? options.ribbonClosePath : false;
 		var cap:Int = options.cap != null ? options.cap : Mesh.NO_CAP;
 		var updatable:Bool = options.updatable;
-		var sideOrientation:Int = updateSideOrientation(options.sideOrientation, scene);
+		var sideOrientation:Int = updateSideOrientation(options.sideOrientation);
 		var extrudedInstance:Mesh = options.extrudedInstance;
 		
 		return MeshBuilder._ExtrudeShapeGeneric(name, shape, path, null, null, scaleFunction, rotationFunction, ribbonCloseArray, ribbonClosePath, cap, true, scene, updatable, sideOrientation, extrudedInstance);
@@ -771,7 +792,7 @@ class MeshBuilder {
 		var radius:Float = options.radius != null ? options.radius : 1;
 		var tessellation:Int = options.tessellation != null ? options.tessellation : 64;
 		var updatable:Bool = options.updatable;
-		var sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		var sideOrientation = updateSideOrientation(options.sideOrientation);
 		var cap:Int = options.cap != null ? options.cap : Mesh.NO_CAP;
 		var pi2:Float = Math.PI * 2;
 		var paths:Array<Array<Vector3>> = [];
@@ -819,9 +840,9 @@ class MeshBuilder {
 	public static function CreatePlane(name:String, options:Dynamic, scene:Scene):Mesh {
 		var plane = new Mesh(name, scene);		
 		
-		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		options.sideOrientation = updateSideOrientation(options.sideOrientation);
 		
-		plane.sideOrientation = options.sideOrientation;
+		plane._originalBuilderSideOrientation = options.sideOrientation;
 		
 		var vertexData = VertexData.CreatePlane(options);
 		
@@ -974,7 +995,7 @@ class MeshBuilder {
 		var radiusFunction:Int->Float->Float = options.radiusFunction;
 		var cap:Int = options.cap != null ? options.cap : Mesh.NO_CAP;
 		var updatable:Bool = options.updatable;
-		var sideOrientation:Int = updateSideOrientation(options.sideOrientation, scene);
+		var sideOrientation:Int = updateSideOrientation(options.sideOrientation);
 		if (options.arc == null) {
 			options.arc = 1.0;
 		}
@@ -1096,9 +1117,9 @@ class MeshBuilder {
 	public static function CreatePolyhedron(name:String, options:Dynamic, scene:Scene):Mesh {
 		var polyhedron = new Mesh(name, scene);		
 		
-		options.sideOrientation = updateSideOrientation(options.sideOrientation, scene);
+		options.sideOrientation = updateSideOrientation(options.sideOrientation);
 		
-		polyhedron.sideOrientation = options.sideOrientation;
+		polyhedron._originalBuilderSideOrientation = options.sideOrientation;
 		
 		var vertexData = VertexData.CreatePolyhedron(options);
 		
@@ -1120,14 +1141,14 @@ class MeshBuilder {
 	static var CreateDecal_cameraWorldTarget:Vector3 = new Vector3(0, 0, 0);
 	static var decalWorldMatrix:Matrix = new Matrix();
 	static var inverseDecalWorldMatrix:Matrix = new Matrix();
-	static var CreateDecal_indices:Int32Array = null;
+	static var CreateDecal_indices:UInt32Array = null;
 	static var CreateDecal_positions:Float32Array = null;
 	static var CreateDecal_normals:Float32Array = null;
 	static var CreateDecal_meshWorldMatrix:Matrix = new Matrix();
 	static var CreateDecal_transformMatrix:Matrix = new Matrix();
-	static var CreateDecal_vertexData:VertexData = new VertexData();
+	static var CreateDecal_vertexData:VertexData;
     public static function CreateDecal(name:String, sourceMesh:AbstractMesh, options:Dynamic) {
-		/*var position:Vector3 = options.position != null ? options.position : Vector3.Zero();
+		var position:Vector3 = options.position != null ? options.position : Vector3.Zero();
 		var normal:Vector3 = options.normal;// != null ? options.normal : Vector3.Up();
 		var size:Vector3 = options.size != null ? options.size : new Vector3(1, 1, 1);
 		var angle:Float = options.angle;
@@ -1153,12 +1174,6 @@ class MeshBuilder {
         inverseDecalWorldMatrix = Matrix.Invert(decalWorldMatrix);
         CreateDecal_meshWorldMatrix = sourceMesh.getWorldMatrix();
         CreateDecal_transformMatrix = CreateDecal_meshWorldMatrix.multiply(inverseDecalWorldMatrix);
-		
-		// VK TODO: check
-        CreateDecal_vertexData.indices = new Int32Array();// [];
-        CreateDecal_vertexData.positions = new Float32Array();// [];
-        CreateDecal_vertexData.normals = new Float32Array();// [];
-        CreateDecal_vertexData.uvs = new Float32Array();// [];
 		
         var currentCreateDecal_vertexDataIndex:Int = 0;
 		
@@ -1248,7 +1263,8 @@ class MeshBuilder {
                             result.push(nV3.clone());
                             result.push(nV4);
                             //break;
-                        } else {
+                        } 
+						else {
 							if (v3Out) {
 								nV1 = vertices[index];
 								nV2 = vertices[index + 1];
@@ -1301,9 +1317,14 @@ class MeshBuilder {
             return result;
         };
 		
+		var _indices:Array<Int> = [];
+		var _positions:Array<Float> = [];
+		var _normals:Array<Float> = [];
+		var _uvs:Array<Float> = [];
+		
 		var faceVertices:Array<PositionNormalVertex> = [];
-		var index = 0;
-		while(index < CreateDecal_indices.length) {
+		var index:Int = 0;
+		while (index < CreateDecal_indices.length) {
             faceVertices = [];
 			
             faceVertices.push(extractDecalVector3(index));
@@ -1322,24 +1343,30 @@ class MeshBuilder {
 				index += 3;
                 continue;
             }
-              
+            
             // Add UVs and get back to world
 			var localRotationMatrix = Matrix.RotationYawPitchRoll(yaw, pitch, angle);
 			var vertex:PositionNormalVertex = null;
             for (vIndex in 0...faceVertices.length) {
                 vertex = faceVertices[vIndex];
 				
-                CreateDecal_vertexData.indices[vIndex] = (currentCreateDecal_vertexDataIndex);
-                vertex.position.toArray(CreateDecal_vertexData.positions, currentCreateDecal_vertexDataIndex * 3);
-                vertex.normal.toArray(CreateDecal_vertexData.normals, currentCreateDecal_vertexDataIndex * 3);
-                CreateDecal_vertexData.uvs[vIndex] = (0.5 + vertex.position.x / size.x);
-                CreateDecal_vertexData.uvs[vIndex] = (0.5 + vertex.position.y / size.y);
+                _indices.push(currentCreateDecal_vertexDataIndex);
+                vertex.position.toArray(_positions, currentCreateDecal_vertexDataIndex * 3);
+                vertex.normal.toArray(_normals, currentCreateDecal_vertexDataIndex * 3);
+                _uvs.push(0.5 + vertex.position.x / size.x);
+                _uvs.push(0.5 + vertex.position.y / size.y);
 				
                 currentCreateDecal_vertexDataIndex++;
             }
 			
 			index += 3;
         }
+		
+		CreateDecal_vertexData = new VertexData();
+		CreateDecal_vertexData.indices = new UInt32Array(_indices);
+		CreateDecal_vertexData.positions = new Float32Array(_positions);
+		CreateDecal_vertexData.normals = new Float32Array(_normals);
+		CreateDecal_vertexData.uvs = new Float32Array(_uvs);
 		
         // Return mesh
         var decal = new Mesh(name, sourceMesh.getScene());
@@ -1348,7 +1375,7 @@ class MeshBuilder {
 		decal.position = position.clone();
 		decal.rotation = new Vector3(pitch, yaw, angle);
 		
-        return decal;*/
+        return decal;
     }
 	
 	

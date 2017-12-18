@@ -1,5 +1,6 @@
 package com.babylonhx.collisions;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.Geometry;

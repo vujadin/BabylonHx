@@ -1,5 +1,6 @@
 package com.babylonhx.loading;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.particles.ParticleSystem;
 import com.babylonhx.bones.Skeleton;
@@ -105,7 +106,7 @@ import com.babylonhx.loading.plugins.BabylonFileLoader;
 				var particleSystems:Array<ParticleSystem> = [];
 				var skeletons:Array<Skeleton> = [];
 				
-				try {
+				//try {
 					if (!plugin.importMesh(meshesNames, scene, data, rootUrl, meshes, particleSystems, skeletons)) {
 						if (onerror != null) {
 							onerror(scene, 'unable to load the scene');
@@ -113,14 +114,14 @@ import com.babylonhx.loading.plugins.BabylonFileLoader;
 						
 						return;
 					}
-				} catch (e:Dynamic) {
-					trace(e);
-					if (onerror != null) {
-						onerror(scene, e);
-					}
-					
-					return;
-				}
+				//} catch (e:Dynamic) {
+					//trace(e);
+					//if (onerror != null) {
+						//onerror(scene, e);
+					//}
+					//
+					//return;
+				//}
 				
 				if (onsuccess != null) {
 					scene.importedMeshesFiles.push(rootUrl + sceneFilename);

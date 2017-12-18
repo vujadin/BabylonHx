@@ -23,7 +23,7 @@ class TonemapPostProcess extends PostProcess {
 
 	
 	public function new(name:String, operator:TonemappingOperator, exposureAdjustment:Float, camera:Camera, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, ?engine:Engine, textureFormat:Int = Engine.TEXTURETYPE_UNSIGNED_INT) {
-		super(name, "tonemap", ["_ExposureAdjustment"], null, 1.0, camera, samplingMode, engine, true, defines, textureFormat);
+		super(name, "tonemap", ["_ExposureAdjustment"], null, 1.0, camera, samplingMode, engine, true, null, textureFormat);
 		
 		this._operator = operator;
 		this.exposureAdjustment = exposureAdjustment;

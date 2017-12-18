@@ -36,7 +36,7 @@ import com.babylonhx.math.Vector3;
 	}
 
 	// Methods
-	inline public function update(world:Matrix) {
+	public function update(world:Matrix) {   // VK: do not inline !!!
 		if (this._isLocked) {
 			return;
 		}

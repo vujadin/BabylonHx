@@ -1,5 +1,6 @@
 package com.babylonhx.postprocess;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.math.Color3;
 import com.babylonhx.materials.textures.Texture;
@@ -20,28 +21,31 @@ class WatercolorPostProcess extends PostProcess {
 	public var elapsedTime:Float = 0;
 	private var noiseTex:DynamicTexture;
 	
-	private var noiseTexRes:Vector2 = new Vector2(512, 512);
 	private var texSamplerRes:Vector2 = new Vector2(0, 0);
 
 	
 	public function new(name:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
-		if (!ShadersStore.Shaders.exists("watercolor.fragment")) {			
-			ShadersStore.Shaders.set("watercolor.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("watercolorPixelShader")) {			
+			ShadersStore.Shaders.set("watercolorPixelShader", fragmentShader);
 		}
 		
 		super(name, "watercolor", ["elapsedTime", "texSamplerRes", "noiseTexRes"], ["noiseTex"], ratio, camera, samplingMode, engine, reusable);
 		
 		_createNoiseTexture();
 		
-		this.onApply = function(effect:Effect, _) {
-			this.elapsedTime += camera.getScene().getAnimationRatio() * 0.03;
+		this.onSizeChangedObservable.add(function(_, _) {
 			texSamplerRes.x = camera.getScene().getEngine().width;
 			texSamplerRes.y = camera.getScene().getEngine().height;
+		});
+		
+		this.onApplyObservable.add(function(effect:Effect, _) {
+			this.elapsedTime += camera.getScene().getAnimationRatio() * 0.03;
+			
 			effect.setFloat("elapsedTime", this.elapsedTime);			
 			effect.setTexture("noiseTex", this.noiseTex);
 			effect.setVector2("texSamplerRes", texSamplerRes);
-			effect.setVector2("noiseTexRes", noiseTexRes);
-		};
+			effect.setVector2("noiseTexRes", texSamplerRes);
+		});
 	}
 	
 	// creates a black and white random noise texture, 512x512

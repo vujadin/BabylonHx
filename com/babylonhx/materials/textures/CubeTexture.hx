@@ -1,5 +1,6 @@
 package com.babylonhx.materials.textures;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.animations.Animation;
@@ -99,15 +100,21 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 			return;
 		}
 		
+		var scene = this.getScene();
+		
+        if (scene == null) {
+            return;
+        }
+		
 		this.delayLoadState = Engine.DELAYLOADSTATE_LOADED;
 		this._texture = this._getFromCache(this.url, this._noMipmap);
 		
 		if (this._texture == null) {
 			if (this._prefiltered) {
-				this._texture = this.getScene().getEngine().createPrefilteredCubeTexture(this.url, this.getScene(), this.lodGenerationScale, this.lodGenerationOffset, null, null, this._format);
+				this._texture = scene.getEngine().createPrefilteredCubeTexture(this.url, scene, this.lodGenerationScale, this.lodGenerationOffset, null, null, this._format);
 			}
 			else {
-				this._texture = this.getScene().getEngine().createCubeTexture(this.url, this.getScene(), this._files, this._noMipmap, null, null, this._format);
+				this._texture = scene.getEngine().createCubeTexture(this.url, scene, this._files, this._noMipmap, null, null, this._format);
 			}
 		}
 	}
@@ -139,6 +146,12 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	
 	override public function clone():CubeTexture {
 		//return SerializationHelper.Clone(function() {
+			var scene = this.getScene();
+			
+			if (scene == null) {
+				return this;
+			}
+			
 			return new CubeTexture(this.url, this.getScene(), this._extensions, this._noMipmap, this._files);
 		//}, this);
 	}

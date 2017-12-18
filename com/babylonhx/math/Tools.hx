@@ -1,5 +1,8 @@
 package com.babylonhx.math;
 
+import com.babylonhx.engine.Engine;
+
+import lime.utils.UInt32Array;
 import lime.utils.Float32Array;
 import lime.utils.Int32Array;
 
@@ -21,7 +24,7 @@ import lime.utils.Int32Array;
 	static public inline var LN2:Float = 0.6931471805599453;
 	static public var TWOPI:Float = Math.PI * 2;
 	
-	public static function ExtractMinAndMaxIndexed(positions:Float32Array, indices:Int32Array, indexStart:Int, indexCount:Int, bias:Vector2 = null):BabylonMinMax {
+	public static function ExtractMinAndMaxIndexed(positions:Float32Array, indices:UInt32Array, indexStart:Int, indexCount:Int, bias:Vector2 = null):BabylonMinMax {
 		var minimum = new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY);
 		var maximum = new Vector3(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY);
 		
@@ -134,13 +137,34 @@ import lime.utils.Int32Array;
 		return Math.round(number) / Math.pow(10, precision);
 	}
 	
+	public static function FloatToStringPrecision(n:Float, prec:Int) {
+		var ret:String = "";
+		n = Math.round(n * Math.pow(10, prec));
+		var str = '' + n;
+		var len = str.length;
+		if(len <= prec){
+			while(len < prec){
+				str = '0' + str;
+				len++;
+			}
+			ret = '0.' + str;
+		}
+		else {
+			ret = str.substr(0, str.length - prec) + '.' + str.substr(str.length - prec);
+		}
+		if (ret.charAt(2) == "-") {
+			ret = StringTools.replace(ret, "0.-", "-0.");
+		}
+		return ret;
+    }
+	
 	// Returns -1 when value is a negative number and
 	// +1 when value is a positive number. 
 	inline public static function Sign(value:Dynamic):Int {
 		if (value == 0) {
 			return 0;
 		}
-			
+		
 		return value > 0 ? 1 : -1;
 	}
 	

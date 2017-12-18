@@ -1,5 +1,7 @@
 package com.babylonhx.materials.textures;
 
+import com.babylonhx.engine.Engine;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -12,8 +14,7 @@ class MultiRenderTarget extends RenderTargetTexture {
 
 	public var isSupported(get, never):Bool;
 	private function get_isSupported():Bool {
-		var engine = this.getScene().getEngine();
-		return engine.webGLVersion > 1 || engine.getCaps().drawBuffersExtension;
+		return this._engine.webGLVersion > 1 || this._engine.getCaps().drawBuffersExtension;
 	}
 
 	private var _multiRenderTargetOptions:IMultiRenderTargetOptions;
@@ -54,6 +55,8 @@ class MultiRenderTarget extends RenderTargetTexture {
 		var doNotChangeAspectRatio = options.doNotChangeAspectRatio == null ? true : options.doNotChangeAspectRatio;
 		
 		super(name, size, scene, generateMipMaps, doNotChangeAspectRatio);
+		
+		this._engine = scene.getEngine();
 		
 		if (!this.isSupported) {
 			this.dispose();
@@ -111,7 +114,7 @@ class MultiRenderTarget extends RenderTargetTexture {
 	}
 
 	private function _createInternalTextures() {
-		this._internalTextures = this.getScene().getEngine().createMultipleRenderTarget(this._size ,this._multiRenderTargetOptions);
+		this._internalTextures = this._engine.createMultipleRenderTarget(this._size ,this._multiRenderTargetOptions);
 	}
 	
 	private function _createTextures() {
@@ -132,14 +135,14 @@ class MultiRenderTarget extends RenderTargetTexture {
 		}
 		
 		for (i in 0...this._internalTextures.length) {
-			this._samples = this.getScene().getEngine().updateRenderTargetTextureSampleCount(this._internalTextures[i], value);
+			this._samples = this._engine.updateRenderTargetTextureSampleCount(this._internalTextures[i], value);
 		}
 		return value;
 	}
 
 	override public function resize(size:Dynamic) {
 		this.releaseInternalTextures();
-		this._internalTextures = this.getScene().getEngine().createMultipleRenderTarget(size, this._multiRenderTargetOptions);
+		this._internalTextures = this._engine.createMultipleRenderTarget(size, this._multiRenderTargetOptions);
 		this._createInternalTextures();
 	}
 

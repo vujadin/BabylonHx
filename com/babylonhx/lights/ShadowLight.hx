@@ -87,7 +87,7 @@ class ShadowLight extends Light implements IShadowLight {
 	 * Return the depth scale used for the shadow map.
 	 */
 	public function getDepthScale():Float {
-		return 30.0;
+		return 50.0;
 	}
 
 	/**

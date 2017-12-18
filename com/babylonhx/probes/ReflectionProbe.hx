@@ -1,5 +1,6 @@
 package com.babylonhx.probes;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.Scene;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
@@ -72,7 +73,9 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 			scene.updateTransformMatrix(true);
 		});
 		
-		this._projectionMatrix = Matrix.PerspectiveFovLH(Math.PI / 2, 1, scene.activeCamera.minZ, scene.activeCamera.maxZ);
+		if (scene.activeCamera != null) {
+			this._projectionMatrix = Matrix.PerspectiveFovLH(Math.PI / 2, 1, scene.activeCamera.minZ, scene.activeCamera.maxZ);
+		}
 	}
 	
 	public var samples(get, set):Int;

@@ -35,7 +35,7 @@ import com.babylonhx.animations.AnimationRange;
 	private var _worldTransform:Matrix = new Matrix();
 	private var _absoluteTransform:Matrix = new Matrix();
 	private var _invertedAbsoluteTransform:Matrix = new Matrix();
-	private var _parent:Bone;
+	private var _parent:Bone = null;
 	
 	private var _scaleMatrix:Matrix = Matrix.Identity();
 	private var _scaleVector:Vector3 = Vector3.One();
@@ -231,11 +231,11 @@ import com.babylonhx.animations.AnimationRange;
 		var sourceKeys = source.animations[0].getKeys();
 		
 		// rescaling prep
-		var sourceBoneLength = source.length;
-		var sourceParent = source.getParent();
-		var parent = this.getParent();
-		var parentScalingReqd = rescaleAsRequired && sourceParent != null && sourceBoneLength > 0 && this.length > 0 && sourceBoneLength != this.length;
-		var parentRatio = parentScalingReqd ? parent.length / sourceParent.length : null;
+		var sourceBoneLength:Int = source.length;
+		var sourceParent:Bone = source.getParent();
+		var parent:Bone = this.getParent();
+		var parentScalingReqd:Bool = rescaleAsRequired && sourceParent != null && sourceBoneLength > 0 && this.length > 0 && sourceBoneLength != this.length;
+		var parentRatio:Float = parentScalingReqd && parent != null && sourceParent != null ? parent.length / sourceParent.length : 1;
 		
 		var dimensionsScalingReqd = rescaleAsRequired && parent == null && skelDimensionsRatio != null && (skelDimensionsRatio.x != 1 || skelDimensionsRatio.y != 1 || skelDimensionsRatio.z != 1);           
 		
@@ -257,7 +257,7 @@ import com.babylonhx.animations.AnimationRange;
 						origTranslation = mat.getTranslation();
 						mat.setTranslation(origTranslation.scaleInPlace(parentRatio));					
 					} // scale based on skeleton dimension ratio when root bone, and value is passed
-					else if (dimensionsScalingReqd) {
+					else if (dimensionsScalingReqd && skelDimensionsRatio != null) {
 						origTranslation = mat.getTranslation();
 						mat.setTranslation(origTranslation.multiplyInPlace(skelDimensionsRatio)); 
 					} // use original when root bone, and no data for skelDimensionsRatio
@@ -303,13 +303,15 @@ import com.babylonhx.animations.AnimationRange;
 			var tmat = Bone._tmpMats[0];
 			var tvec = Bone._tmpVecs[0];
 			
-			if (mesh != null) {
-				tmat.copyFrom(this._parent.getAbsoluteTransform());
-				tmat.multiplyToRef(wm, tmat);
-			}
-			else {
-				tmat.copyFrom(this._parent.getAbsoluteTransform());
-			}
+			if (this._parent != null) {
+                if (mesh != null && wm != null) {
+                    tmat.copyFrom(this._parent.getAbsoluteTransform());
+                    tmat.multiplyToRef(wm, tmat);
+                } 
+				else {
+                    tmat.copyFrom(this._parent.getAbsoluteTransform());
+                }
+            }
 			
 			tmat.m[12] = 0;
 			tmat.m[13] = 0;
@@ -353,13 +355,15 @@ import com.babylonhx.animations.AnimationRange;
 			var tmat = Bone._tmpMats[0];
 			var vec = Bone._tmpVecs[0];
 			
-			if (mesh != null) {
-				tmat.copyFrom(this._parent.getAbsoluteTransform());
-				tmat.multiplyToRef(wm, tmat);
-			}
-			else {
-				tmat.copyFrom(this._parent.getAbsoluteTransform());
-			}
+			if (this._parent != null) {
+                if (mesh != null && wm != null) {
+                    tmat.copyFrom(this._parent.getAbsoluteTransform());
+                    tmat.multiplyToRef(wm, tmat);
+                } 
+				else {
+                    tmat.copyFrom(this._parent.getAbsoluteTransform());
+                }
+            }
 			
 			tmat.invert();
 			Vector3.TransformCoordinatesToRef(position, tmat, vec);
@@ -710,7 +714,7 @@ import com.babylonhx.animations.AnimationRange;
 			
 			var tmat = Bone._tmpMats[0];
 			
-			if (mesh != null) {
+			if (mesh != null && wm != null) {
 				tmat.copyFrom(this.getAbsoluteTransform());
 				tmat.multiplyToRef(wm, tmat);
 			}
@@ -829,7 +833,7 @@ import com.babylonhx.animations.AnimationRange;
 		
 		mat.copyFrom(this.getAbsoluteTransform());
 		
-		if (mesh != null) {
+		if (mesh != null && wm != null) {
 			mat.multiplyToRef(wm, mat);
 		}
 		
@@ -984,7 +988,7 @@ import com.babylonhx.animations.AnimationRange;
 		
 		var tmat = Bone._tmpMats[0];
 		
-		if (mesh != null) {
+		if (mesh != null && wm != null) {
 			tmat.copyFrom(this.getAbsoluteTransform());
 			tmat.multiplyToRef(wm, tmat);
 		} 
@@ -1029,7 +1033,7 @@ import com.babylonhx.animations.AnimationRange;
 		
 		tmat.copyFrom(this.getAbsoluteTransform());
 		
-		if (mesh != null) {
+		if (mesh != null && wm != null) {
 			tmat.multiplyToRef(wm, tmat);
 		}
 		

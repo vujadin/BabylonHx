@@ -696,7 +696,7 @@ typedef Assets = lime.Assets;
 		} 
 		else {
 			trace("Image '" + url + "' doesn't exist!");
-			onload(Image.createCheckerboard());
+			onload(Image.CreateCheckerboard());
 		}		
 		/*#elseif nme		
 		var img = Assets.getBitmapData(url); 

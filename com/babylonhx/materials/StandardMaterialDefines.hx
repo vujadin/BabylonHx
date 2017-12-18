@@ -77,6 +77,8 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 	public var MORPHTARGETS_NORMAL:Bool = false;
 	public var MORPHTARGETS_TANGENT:Bool = false;
 	public var NUM_MORPH_INFLUENCERS:Int = 0;
+	public var NONUNIFORMSCALING:Bool = false;
+	public var PREMULTIPLYALPHA:Bool = false;
 
 	public var IMAGEPROCESSING:Bool = false;
 	public var VIGNETTE:Bool = false;
@@ -86,12 +88,13 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 	public var CONTRAST:Bool = false;
 	public var COLORCURVES:Bool = false;
 	public var COLORGRADING:Bool = false;
+	public var COLORGRADING3D:Bool = false;
 	public var SAMPLER3DGREENDEPTH:Bool = false;
 	public var SAMPLER3DBGRMAP:Bool = false;
 	public var IMAGEPROCESSINGPOSTPROCESS:Bool = false;
 	public var EXPOSURE:Bool = false;
 	
-	public var FROMLINEARSPACE:Bool = false;	// BHX: not used
+	public var FROMLINEARSPACE:Bool = false;	// BHX: not used - needed because of IImageProcessingConfigurationDefines
 	
 	
 	public function new() {
@@ -199,6 +202,8 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 			if (untyped this.MORPHTARGETS_NORMAL != other.MORPHTARGETS_NORMAL) return false;
 			if (untyped this.MORPHTARGETS_TANGENT != other.MORPHTARGETS_TANGENT) return false;
 			if (untyped this.NUM_MORPH_INFLUENCERS != other.NUM_MORPH_INFLUENCERS) return false;
+			if (untyped this.NONUNIFORMSCALING != other.NONUNIFORMSCALING) return false;
+			if (untyped this.PREMULTIPLYALPHA != other.PREMULTIPLYALPHA) return false;
 			
 			if (untyped this.IMAGEPROCESSING != other.IMAGEPROCESSING) return false;
 			if (untyped this.VIGNETTE != other.VIGNETTE) return false;
@@ -208,6 +213,7 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 			if (untyped this.CONTRAST != other.CONTRAST) return false; 
 			if (untyped this.COLORCURVES != other.COLORCURVES) return false; 
 			if (untyped this.COLORGRADING != other.COLORGRADING) return false;
+			if (untyped this.COLORGRADING3D != other.COLORGRADING3D) return false;
 			if (untyped this.SAMPLER3DGREENDEPTH != other.SAMPLER3DGREENDEPTH) return false;
 			if (untyped this.SAMPLER3DBGRMAP != other.SAMPLER3DBGRMAP) return false;
 			if (untyped this.IMAGEPROCESSINGPOSTPROCESS != other.IMAGEPROCESSINGPOSTPROCESS) return false;
@@ -289,6 +295,7 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 		untyped other.CONTRAST = this.CONTRAST;
 		untyped other.COLORCURVES = this.COLORCURVES;
 		untyped other.COLORGRADING = this.COLORGRADING;
+		untyped other.COLORGRADING3D = this.COLORGRADING3D;
 		untyped other.SAMPLER3DGREENDEPTH = this.SAMPLER3DGREENDEPTH;
 		untyped other.SAMPLER3DBGRMAP = this.SAMPLER3DBGRMAP;
 		untyped other.IMAGEPROCESSINGPOSTPROCESS = this.IMAGEPROCESSINGPOSTPROCESS;
@@ -297,6 +304,8 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 		untyped other.BonesPerMesh = this.BonesPerMesh;
 		untyped other.NUM_BONE_INFLUENCERS = this.NUM_BONE_INFLUENCERS;
 		untyped other.NUM_MORPH_INFLUENCERS = this.NUM_MORPH_INFLUENCERS;
+		untyped other.NONUNIFORMSCALING = this.NONUNIFORMSCALING;
+		untyped other.PREMULTIPLYALPHA = this.PREMULTIPLYALPHA;
 	}
 	
 	override public function reset() {
@@ -369,6 +378,7 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 		this.CONTRAST = false;
 		this.COLORCURVES = false;
 		this.COLORGRADING = false;
+		this.COLORGRADING3D = false;
 		this.SAMPLER3DGREENDEPTH = false;
 		this.SAMPLER3DBGRMAP = false;
 		this.IMAGEPROCESSINGPOSTPROCESS = false;
@@ -377,6 +387,8 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 		this.BonesPerMesh = 0;
 		this.NUM_BONE_INFLUENCERS = 0;
 		this.NUM_MORPH_INFLUENCERS = 0;
+		this.NONUNIFORMSCALING = false;
+		this.PREMULTIPLYALPHA = false;
 	}
 
 	override public function toString():String {
@@ -586,6 +598,9 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 		if (this.COLORGRADING) {
 			result += "#define COLORGRADING \n";
 		}
+		if (this.COLORGRADING3D) {
+			result += "#define COLORGRADING3D \n";
+		}
 		if (this.SAMPLER3DGREENDEPTH) {
 			result += "#define SAMPLER3DGREENDEPTH \n";
 		}
@@ -597,6 +612,12 @@ class StandardMaterialDefines extends MaterialDefines implements IImageProcessin
 		}
 		if (this.EXPOSURE) {
 			result += "#define EXPOSURE \n";
+		}
+		if (this.NONUNIFORMSCALING) {
+			result += "#define NONUNIFORMSCALING \n";
+		}
+		if (this.PREMULTIPLYALPHA) {
+			result += "#define PREMULTIPLYALPHA \n";
 		}
 		
 		result += "#define DIFFUSEDIRECTUV " + this.DIFFUSEDIRECTUV + "\n";

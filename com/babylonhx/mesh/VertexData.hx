@@ -6,10 +6,11 @@ import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Color4;
 import com.babylonhx.mesh.MeshBuilder;
+import com.babylonhx.particles.solid.DepthSortedParticle;
 
 import lime.utils.UInt8Array;
 import lime.utils.Float32Array;
-import lime.utils.Int32Array;
+import lime.utils.UInt32Array;
 
 /**
  * ...
@@ -32,7 +33,7 @@ import lime.utils.Int32Array;
 	public var matricesWeights:Float32Array;
 	public var matricesIndicesExtra:Float32Array;
     public var matricesWeightsExtra:Float32Array;
-	public var indices:Int32Array;
+	public var indices:UInt32Array;
 	
 	// for ribbon
 	public var _idx:Array<Int>;
@@ -186,7 +187,7 @@ import lime.utils.Int32Array;
         }
 		
 		if (this.indices != null) {
-			meshOrGeometry.setIndices(this.indices);
+			meshOrGeometry.setIndices(this.indices, -1, updatable);
 		}
 	}
 
@@ -253,7 +254,7 @@ import lime.utils.Int32Array;
 	}
 
 	static var transformed:Vector3 = Vector3.Zero();
-	inline public function transform(matrix:Matrix):VertexData {		
+	public function transform(matrix:Matrix):VertexData {		
 		if (this.positions != null) {
 			var position = Vector3.Zero();
 			
@@ -307,7 +308,7 @@ import lime.utils.Int32Array;
 		return this;
 	}
 
-	public function merge(other:VertexData) {
+	public function merge(other:VertexData, tangentLength:Int = 0):VertexData {
 		if (other.indices != null) {
 			var tmpIndices:Array<Int> = [];
 			
@@ -315,134 +316,57 @@ import lime.utils.Int32Array;
 			for (index in 0...other.indices.length) {
 				tmpIndices.push(other.indices[index] + offset);
 			}
-			this.indices = new Int32Array(tmpIndices);
+			this.indices = new UInt32Array(tmpIndices);
 		}
 		
-		if (other.positions != null) {
-			var tmpPositions:Array<Float> = [];
-			
-			for (index in 0...other.positions.length) {
-				tmpPositions.push(other.positions[index]);
-			}
-			this.positions = new Float32Array(tmpPositions);
-		}
+		this.positions = this._mergeElement(this.positions, other.positions);
 		
-		if (other.normals != null) {
-			var tmpNormals:Array<Float> = [];
-			
-			for (index in 0...other.normals.length) {
-				tmpNormals.push(other.normals[index]);
-			}
-			this.normals = new Float32Array(tmpNormals);
-		}
-		
-		if (other.tangents != null) {
-			var tmpTangents:Array<Float> = [];
-			
-			for (index in 0...other.normals.length) {
-				tmpTangents.push(other.tangents[index]);
-			}
-			this.tangents = new Float32Array(tmpTangents);
-		}
-		
-		if (other.uvs != null) {
-			var tmpUVs:Array<Float> = [];
-			
-			for (index in 0...other.uvs.length) {
-				tmpUVs.push(other.uvs[index]);
-			}
-			this.uvs = new Float32Array(tmpUVs);
-		}
-		
-		if (other.uvs2 != null) {
-			var tmpUVs2:Array<Float> = [];
-			
-			for (index in 0...other.uvs2.length) {
-				tmpUVs2.push(other.uvs2[index]);
-			}
-			this.uvs2 = new Float32Array(tmpUVs2);
-		}
-		
-		if (other.uvs3 != null) {
-			var tmpUVs3:Array<Float> = [];
-			
-			for (index in 0...other.uvs3.length) {
-				tmpUVs3.push(other.uvs3[index]);
-			}
-			this.uvs3 = new Float32Array(tmpUVs3);
-		}
-		
-		if (other.uvs4 != null) {
-			var tmpUVs4:Array<Float> = [];
-			
-			for (index in 0...other.uvs4.length) {
-				tmpUVs4.push(other.uvs4[index]);
-			}
-			this.uvs4 = new Float32Array(tmpUVs4);
-		}
-		
-		if (other.uvs5 != null) {
-			var tmpUVs5:Array<Float> = [];
-			
-			for (index in 0...other.uvs5.length) {
-				tmpUVs5.push(other.uvs5[index]);
-			}
-			this.uvs5 = new Float32Array(tmpUVs5);
-		}
-		
-		if (other.uvs6 != null) {
-			var tmpUVs6:Array<Float> = [];
-			
-			for (index in 0...other.uvs6.length) {
-				tmpUVs6.push(other.uvs6[index]);
-			}
-			this.uvs6 = new Float32Array(tmpUVs6);
-		}
-		
-		if (other.matricesIndices != null) {
-			var tmpMatricesIndices:Array<Float> = [];
-			
-			for (index in 0...other.matricesIndices.length) {
-				tmpMatricesIndices.push(other.matricesIndices[index]);
-			}
-			this.matricesIndices = new Float32Array(tmpMatricesIndices);
-		}
-		
-		if (other.matricesWeights != null) {
-			var tmpMatricesWeights:Array<Float> = [];
-			
-			for (index in 0...other.matricesWeights.length) {
-				tmpMatricesWeights.push(other.matricesWeights[index]);
-			}
-			this.matricesWeights = new Float32Array(tmpMatricesWeights);
-		}
-		
-		if (other.matricesIndicesExtra != null) {
-            var tmpMatricesIndicesExtra:Array<Float> = [];
-            
-            for (index in 0...other.matricesIndicesExtra.length) {
-                tmpMatricesIndicesExtra.push(other.matricesIndicesExtra[index]);
-            }
-			this.matricesIndicesExtra = new Float32Array(tmpMatricesIndicesExtra);
+        if (this.positions == null) {
+            return this;
         }
 		
-        if (other.matricesWeightsExtra != null) {
-            var tmpMatricesWeightsExtra:Array<Float> = [];
-            
-            for (index in 0...other.matricesWeightsExtra.length) {
-                tmpMatricesWeightsExtra.push(other.matricesWeightsExtra[index]);
-            }
-			this.matricesWeightsExtra = new Float32Array(tmpMatricesWeightsExtra);
-        }
+		var count = this.positions.length / 3;
 		
-		if (other.colors != null) {
-			var tmpColors:Array<Float> = [];
-			
-			for (index in 0...other.colors.length) {
-				tmpColors.push(other.colors[index]);
-			}
-			this.colors = new Float32Array(tmpColors);
+        this.normals = this._mergeElement(this.normals, other.normals, Std.int(count * 3));
+        this.tangents = this._mergeElement(this.tangents, other.tangents, Std.int(count * (tangentLength != 0 ? tangentLength : 4)));
+        this.uvs = this._mergeElement(this.uvs, other.uvs, Std.int(count * 2));
+        this.uvs2 = this._mergeElement(this.uvs2, other.uvs2, Std.int(count * 2));
+        this.uvs3 = this._mergeElement(this.uvs3, other.uvs3, Std.int(count * 2));
+        this.uvs4 = this._mergeElement(this.uvs4, other.uvs4, Std.int(count * 2));
+        this.uvs5 = this._mergeElement(this.uvs5, other.uvs5, Std.int(count * 2));
+        this.uvs6 = this._mergeElement(this.uvs6, other.uvs6, Std.int(count * 2));
+        this.colors = this._mergeElement(this.colors, other.colors, Std.int(count * 4));
+        this.matricesIndices = this._mergeElement(this.matricesIndices, other.matricesIndices, Std.int(count * 4));
+        this.matricesWeights = this._mergeElement(this.matricesWeights, other.matricesWeights, Std.int(count * 4));
+        this.matricesIndicesExtra = this._mergeElement(this.matricesIndicesExtra, other.matricesIndicesExtra, Std.int(count * 4));
+        this.matricesWeightsExtra = this._mergeElement(this.matricesWeightsExtra, other.matricesWeightsExtra, Std.int(count * 4));
+		
+		return this;
+	}
+	
+	private function _mergeElement(source:Float32Array, other:Float32Array, length:Int = 0):Float32Array {
+		if (other == null && source == null) {
+			return null;
 		}
+		
+		if (other == null) {
+			return this._mergeElement(source, new Float32Array(source.length), length);
+		}
+		
+		if (source == null) {
+			if (length == other.length) {
+				return other;
+			}
+			
+			return this._mergeElement(new Float32Array(length - other.length), other, length);
+		}
+		
+		var len:Int = other.length + source.length;
+		
+		var ret32 = new Float32Array(len);
+		ret32.set(source);
+		ret32.set(other, source.length);
+		return ret32;
 	}
 	
 	public function serialize():Dynamic {
@@ -601,7 +525,7 @@ import lime.utils.Int32Array;
 		var us:Array<Array<Float>> = [];        		// us[path_id] = [uDist1, uDist2, uDist3 ... ] distances between points on path path_id
 		var vs:Array<Array<Float>> = [];        		// vs[i] = [vDist1, vDist2, vDist3, ... ] distances between points i of consecutives paths from pathArray
 		var uTotalDistance:Array<Float> = []; 			// uTotalDistance[p] : total distance of path p
-		var vTotalDistance:Array<Float> = []; 			//  vTotalDistance[i] : total distance between points i of first and last path from pathArray
+		var vTotalDistance:Array<Float> = []; 			// vTotalDistance[i] : total distance between points i of first and last path from pathArray
 		var minlg:Int = 0;          	        		// minimal length among all paths from pathArray
 		var vectlg:Float = 0;
 		var dist:Float = 0;
@@ -670,8 +594,8 @@ import lime.utils.Int32Array;
 		// vertical distances (v)
 		var path1:Array<Vector3> = [];
 		var path2:Array<Vector3> = [];
-		var vertex1:Vector3;
-		var vertex2:Vector3;
+		var vertex1:Vector3 = null;
+		var vertex2:Vector3 = null;
 		for (i in 0...minlg + closePathCorr) {
 			vTotalDistance[i] = 0;
 			vs[i] = [0];
@@ -691,7 +615,7 @@ import lime.utils.Int32Array;
 				vs[i].push(dist);
 				vTotalDistance[i] = dist;
 			}
-			if (closeArray) {
+			if (closeArray && vertex2 != null && vertex1 != null) {
 				path1 = pathArray[p];
 				path2 = pathArray[0];
 				if (i == minlg) {   // closePath
@@ -774,7 +698,7 @@ import lime.utils.Int32Array;
 		}
 		
 		var _positions = new Float32Array(positions);
-		var _indices = new Int32Array(indices);
+		var _indices = new UInt32Array(indices);
 		var _normals = new Float32Array(normals);
 		var _uvs = new Float32Array(uvs);
 		
@@ -915,7 +839,7 @@ import lime.utils.Int32Array;
 		}
 		
 		var _positions = new Float32Array(positions);
-		var _indices = new Int32Array(indices);
+		var _indices = new UInt32Array(indices);
 		var _normals = new Float32Array(normals);
 		var _uvs = new Float32Array(uvs);
 		
@@ -1003,7 +927,7 @@ import lime.utils.Int32Array;
 		}
 		
 		var _positions = new Float32Array(positions);
-		var _indices = new Int32Array(indices);
+		var _indices = new UInt32Array(indices);
 		var _normals = new Float32Array(normals);
 		var _uvs = new Float32Array(uvs);
 		
@@ -1323,7 +1247,7 @@ import lime.utils.Int32Array;
 		}
 		
 		var _positions = new Float32Array(positions);
-		var _indices = new Int32Array(indices);
+		var _indices = new UInt32Array(indices);
 		var _normals = new Float32Array(normals);
 		var _uvs = new Float32Array(uvs);
 		
@@ -1499,7 +1423,7 @@ import lime.utils.Int32Array;
 		uvs = buildUVs(segmentsW, segmentsH);
 		
         var _positions = new Float32Array(positions);
-		var _indices = new Int32Array(indices);
+		var _indices = new UInt32Array(indices);
 		var _normals = new Float32Array(normals);
 		var _uvs = new Float32Array(uvs);
 		
@@ -1574,7 +1498,7 @@ import lime.utils.Int32Array;
 		}
 		
 		var _positions = new Float32Array(positions);
-		var _indices = new Int32Array(indices);
+		var _indices = new UInt32Array(indices);
 		var _normals = new Float32Array(normals);
 		var _uvs = new Float32Array(uvs);
 		
@@ -1597,6 +1521,8 @@ import lime.utils.Int32Array;
 		var indices:Array<Int> = [];
 		var positions:Array<Float> = [];
 		var lines:Array<Array<Vector3>> = options.lines;
+		var colors:Array<Array<Color4>> = options.colors;
+        var vertexColors:Array<Float> = [];
 		var idx:Int = 0;
 		
 		for (l in 0...lines.length) {
@@ -1605,6 +1531,14 @@ import lime.utils.Int32Array;
 				positions.push(points[index].x);
 				positions.push(points[index].y);
 				positions.push(points[index].z);
+				
+				if (colors != null) {
+                    var color = colors[l];
+                    vertexColors.push(color[index].r);
+					vertexColors.push(color[index].g);
+					vertexColors.push(color[index].b);
+					vertexColors.push(color[index].a);
+                }
 				
 				if (index > 0) {
 					indices.push(idx - 1);
@@ -1615,8 +1549,11 @@ import lime.utils.Int32Array;
 		}
 		
 		var vertexData = new VertexData();
-		vertexData.indices = new Int32Array(indices);
+		vertexData.indices = new UInt32Array(indices);
 		vertexData.positions = new Float32Array(positions);
+		if (vertexColors.length > 0) {
+            vertexData.colors = new Float32Array(vertexColors);
+        }
 		
 		return vertexData;
 	}
@@ -1640,7 +1577,7 @@ import lime.utils.Int32Array;
 		// Result
 		var vertexData = new VertexData();
 		
-		vertexData.indices = new Int32Array(indices);
+		vertexData.indices = new UInt32Array(indices);
 		vertexData.positions = new Float32Array(positions);
 		
 		return vertexData;
@@ -1688,7 +1625,7 @@ import lime.utils.Int32Array;
 		
 		// Result
 		var vertexData = new VertexData();
-		vertexData.indices = new Int32Array(indices);
+		vertexData.indices = new UInt32Array(indices);
 		vertexData.positions = new Float32Array(positions);		
 		
 		return vertexData;
@@ -1736,7 +1673,7 @@ import lime.utils.Int32Array;
 		// Result
 		var vertexData = new VertexData();
 		
-		vertexData.indices = new Int32Array(indices);
+		vertexData.indices = new UInt32Array(indices);
 		vertexData.positions = new Float32Array(positions);
 		vertexData.normals = new Float32Array(normals);
 		vertexData.uvs = new Float32Array(uvs);
@@ -1824,7 +1761,7 @@ import lime.utils.Int32Array;
 		// Result
 		var vertexData = new VertexData();
 		
-		vertexData.indices = new Int32Array(indices);
+		vertexData.indices = new UInt32Array(indices);
 		vertexData.positions = new Float32Array(positions);
 		vertexData.normals = new Float32Array(normals);
 		vertexData.uvs = new Float32Array(uvs);
@@ -1901,7 +1838,7 @@ import lime.utils.Int32Array;
 		// Result
 		var vertexData = new VertexData();
 		
-		vertexData.indices = new Int32Array(indices);
+		vertexData.indices = new UInt32Array(indices);
 		vertexData.positions = new Float32Array(positions);
 		vertexData.normals = new Float32Array(normals);
 		vertexData.uvs = new Float32Array(uvs);
@@ -1970,7 +1907,7 @@ import lime.utils.Int32Array;
 		indices.push(3);
 		
 		var _positions = new Float32Array(positions);
-		var _indices = new Int32Array(indices);
+		var _indices = new UInt32Array(indices);
 		var _normals = new Float32Array(normals);
 		var _uvs = new Float32Array(uvs);
 		
@@ -2041,7 +1978,7 @@ import lime.utils.Int32Array;
 		VertexData.ComputeNormals(positions, indices, normals);
 		
 		var _positions = new Float32Array(positions);
-		var _indices = new Int32Array(indices);
+		var _indices = new UInt32Array(indices);
 		var _normals = new Float32Array(normals);
 		var _uvs = new Float32Array(uvs);
 		
@@ -2333,7 +2270,7 @@ import lime.utils.Int32Array;
 		}
 		
 		var _positions = new Float32Array(positions);
-		var _indices = new Int32Array(indices);
+		var _indices = new UInt32Array(indices);
 		var _normals = new Float32Array(normals);
 		var _uvs = new Float32Array(uvs);
 		
@@ -2472,7 +2409,7 @@ import lime.utils.Int32Array;
 		VertexData.ComputeNormals(positions, indices, normals);
 		
 		var _positions = new Float32Array(positions);
-		var _indices = new Int32Array(indices);
+		var _indices = new UInt32Array(indices);
 		var _normals = new Float32Array(normals);
 		var _uvs = new Float32Array(uvs);
 		
@@ -2571,7 +2508,7 @@ import lime.utils.Int32Array;
 		VertexData.ComputeNormals(positions, indices, normals);
 		
 		var _positions = new Float32Array(positions);
-		var _indices = new Int32Array(indices);
+		var _indices = new UInt32Array(indices);
 		var _normals = new Float32Array(normals);
 		var _uvs = new Float32Array(uvs);
 		
@@ -2594,6 +2531,18 @@ import lime.utils.Int32Array;
 	 * @param {any} - positions (number[] or Float32Array)
 	 * @param {any} - indices   (number[] or Uint16Array)
 	 * @param {any} - normals   (number[] or Float32Array)
+	 * options (optional) :
+	 * facetPositions : optional array of facet positions (vector3)
+	 * facetNormals : optional array of facet normals (vector3)
+	 * facetPartitioning : optional partitioning array. facetPositions is required for facetPartitioning computation
+	 * subDiv : optional partitioning data about subdivsions on  each axis (int), required for facetPartitioning computation
+	 * ratio : optional partitioning ratio / bounding box, required for facetPartitioning computation
+	 * bbSize : optional bounding box size data, required for facetPartitioning computation
+	 * bInfo : optional bounding info, required for facetPartitioning computation
+	 * useRightHandedSystem: optional boolean to for right handed system computation
+	 * depthSort : optional boolean to enable the facet depth sort computation
+	 * distanceTo : optional Vector3 to compute the facet depth from this location
+	 * depthSortedFacets : optional array of depthSortedFacets to store the facet distances from the reference location
 	 */
 	public static function ComputeNormals(positions:Dynamic, indices:Dynamic, normals:Dynamic, ?options:Dynamic) {
 		// temporary scalar variables
@@ -2620,14 +2569,34 @@ import lime.utils.Int32Array;
 		var computeFacetNormals = false;
 		var computeFacetPositions = false;
 		var computeFacetPartitioning = false;
+		var computeDepthSort = false;
 		var faceNormalSign = 1;
+		var ratio = 0.0;
+		var distanceTo:Vector3 = null;
+		var depthSortedFacets:Array<DepthSortedParticle> = null;
 		if (options != null) {
 			computeFacetNormals = (options.facetNormals == true) ? true : false;
 			computeFacetPositions = (options.facetPositions == true) ? true : false;
 			computeFacetPartitioning = (options.facetPartitioning == true) ? true : false;
 			faceNormalSign = (options.useRightHandedSystem == true) ? -1 : 1;
+			ratio = options.ratio != null ? options.ratio : 0;
+			computeDepthSort = (options.depthSort == true) ? true : false;
+			distanceTo = cast options.distanceTo;
+			if (computeDepthSort) {
+				if (distanceTo == null) {
+					distanceTo = Vector3.Zero();
+				} 
+				depthSortedFacets = options.depthSortedFacets;
+			}
 		}
 		
+		// facetPartitioning reinit if needed
+		var xSubRatio:Float = 0;
+		var ySubRatio:Float = 0;
+		var zSubRatio:Float = 0;
+		var subSq:Float = 0;
+		
+		// BHX
 		var ox = 0;                 // X partitioning index for facet position
 		var oy = 0;                 // Y partinioning index for facet position
 		var oz = 0;                 // Z partinioning index for facet position
@@ -2643,21 +2612,15 @@ import lime.utils.Int32Array;
 		var block_idx_o = 0;        // facet barycenter block index
 		var block_idx_v1 = 0;       // v1 vertex block index
 		var block_idx_v2 = 0;       // v2 vertex block index
-		var block_idx_v3 = 0;       // v3 vertex block index
-		
+		var block_idx_v3 = 0;       // v3 vertex block index  
 		var bbSizeMax:Float = 0;
-		var xSubRatio:Float = 0;
-		var ySubRatio:Float = 0;
-		var zSubRatio:Float = 0;
-		var subSq:Float = 0;
 		
-		// facetPartitioning reinit if needed
-		if (computeFacetPartitioning) {			
+		if (computeFacetPartitioning && options != null && options.bbSize != null) {
 			bbSizeMax = (options.bbSize.x > options.bbSize.y) ? options.bbSize.x : options.bbSize.y;
 			bbSizeMax = (bbSizeMax > options.bbSize.z) ? bbSizeMax : options.bbSize.z;
-			xSubRatio = options.subDiv.X * options.ratio / options.bbSize.x;
-			ySubRatio = options.subDiv.Y * options.ratio / options.bbSize.y;
-			zSubRatio = options.subDiv.Z * options.ratio / options.bbSize.z;
+			xSubRatio = options.subDiv.X * ratio / options.bbSize.x;
+			ySubRatio = options.subDiv.Y * ratio / options.bbSize.y;
+			zSubRatio = options.subDiv.Z * ratio / options.bbSize.z;
 			subSq = options.subDiv.max * options.subDiv.max;
 			options.facetPartitioning.length = 0;
 		}
@@ -2700,34 +2663,34 @@ import lime.utils.Int32Array;
 			faceNormaly /= length;
 			faceNormalz /= length;
 			
-			if (computeFacetNormals) {
+			if (computeFacetNormals && options != null) {
 				options.facetNormals[index].x = faceNormalx;
 				options.facetNormals[index].y = faceNormaly;
 				options.facetNormals[index].z = faceNormalz;
 			}
 			
-			if (computeFacetPositions) {
+			if (computeFacetPositions && options != null) {
 				// compute and the facet barycenter coordinates in the array facetPositions 
 				options.facetPositions[index].x = (positions[v1x] + positions[v2x] + positions[v3x]) / 3.0;
 				options.facetPositions[index].y = (positions[v1y] + positions[v2y] + positions[v3y]) / 3.0;
 				options.facetPositions[index].z = (positions[v1z] + positions[v2z] + positions[v3z]) / 3.0;
 			}
 			
-			if (computeFacetPartitioning) {
+			if (computeFacetPartitioning && options != null) {
 				// store the facet indexes in arrays in the main facetPartitioning array :
 				// compute each facet vertex (+ facet barycenter) index in the partiniong array
-				ox = Math.floor((options.facetPositions[index].x - options.bInfo.minimum.x * options.ratio) * xSubRatio);
-				oy = Math.floor((options.facetPositions[index].y - options.bInfo.minimum.y * options.ratio) * ySubRatio);
-				oz = Math.floor((options.facetPositions[index].z - options.bInfo.minimum.z * options.ratio) * zSubRatio);
-				b1x = Math.floor((positions[v1x] - options.bInfo.minimum.x * options.ratio) * xSubRatio);
-				b1y = Math.floor((positions[v1y] - options.bInfo.minimum.y * options.ratio) * ySubRatio);
-				b1z = Math.floor((positions[v1z] - options.bInfo.minimum.z * options.ratio) * zSubRatio);
-				b2x = Math.floor((positions[v2x] - options.bInfo.minimum.x * options.ratio) * xSubRatio);
-				b2y = Math.floor((positions[v2y] - options.bInfo.minimum.y * options.ratio) * ySubRatio);
-				b2z = Math.floor((positions[v2z] - options.bInfo.minimum.z * options.ratio) * zSubRatio);
-				b3x = Math.floor((positions[v3x] - options.bInfo.minimum.x * options.ratio) * xSubRatio);
-				b3y = Math.floor((positions[v3y] - options.bInfo.minimum.y * options.ratio) * ySubRatio);
-				b3z = Math.floor((positions[v3z] - options.bInfo.minimum.z * options.ratio) * zSubRatio);
+				ox = Math.floor((options.facetPositions[index].x - options.bInfo.minimum.x * ratio) * xSubRatio);
+				oy = Math.floor((options.facetPositions[index].y - options.bInfo.minimum.y * ratio) * ySubRatio);
+				oz = Math.floor((options.facetPositions[index].z - options.bInfo.minimum.z * ratio) * zSubRatio);
+				b1x = Math.floor((positions[v1x] - options.bInfo.minimum.x * ratio) * xSubRatio);
+				b1y = Math.floor((positions[v1y] - options.bInfo.minimum.y * ratio) * ySubRatio);
+				b1z = Math.floor((positions[v1z] - options.bInfo.minimum.z * ratio) * zSubRatio);
+				b2x = Math.floor((positions[v2x] - options.bInfo.minimum.x * ratio) * xSubRatio);
+				b2y = Math.floor((positions[v2y] - options.bInfo.minimum.y * ratio) * ySubRatio);
+				b2z = Math.floor((positions[v2z] - options.bInfo.minimum.z * ratio) * zSubRatio);
+				b3x = Math.floor((positions[v3x] - options.bInfo.minimum.x * ratio) * xSubRatio);
+				b3y = Math.floor((positions[v3y] - options.bInfo.minimum.y * ratio) * ySubRatio);
+				b3z = Math.floor((positions[v3z] - options.bInfo.minimum.z * ratio) * zSubRatio);
 				
 				block_idx_v1 = Std.int(b1x + options.subDiv.max * b1y + subSq * b1z);
 				block_idx_v2 = Std.int(b2x + options.subDiv.max * b2y + subSq * b2z);
@@ -2738,7 +2701,7 @@ import lime.utils.Int32Array;
 				options.facetPartitioning[block_idx_v1] = options.facetPartitioning[block_idx_v1] ? options.facetPartitioning[block_idx_v1] : [];
 				options.facetPartitioning[block_idx_v2] = options.facetPartitioning[block_idx_v2] ? options.facetPartitioning[block_idx_v2] : [];
 				options.facetPartitioning[block_idx_v3] = options.facetPartitioning[block_idx_v3] ? options.facetPartitioning[block_idx_v3] : [];
-				
+
 				// push each facet index in each block containing the vertex
 				options.facetPartitioning[block_idx_v1].push(index);
 				if (block_idx_v2 != block_idx_v1) {
@@ -2752,6 +2715,12 @@ import lime.utils.Int32Array;
 				}
 			}
 			
+			if (computeDepthSort && options != null && options.facetPositions != null) {
+				var dsf = depthSortedFacets[index];
+				dsf.ind = index * 3;
+				dsf.sqDistance = Vector3.DistanceSquared(options.facetPositions[index], distanceTo);
+			}
+			
 			// compute the normals anyway
 			normals[v1x] += faceNormalx;                         // accumulate all the normals per face
 			normals[v1y] += faceNormaly;
@@ -2763,6 +2732,7 @@ import lime.utils.Int32Array;
 			normals[v3y] += faceNormaly;
 			normals[v3z] += faceNormalz;
 		}
+		
 		// last normalization of each normal
 		for (index in 0...Std.int(normals.length / 3)) {
 			faceNormalx = normals[index * 3];
@@ -2781,7 +2751,7 @@ import lime.utils.Int32Array;
 		}
 	}
 	
-	public static function _ComputeSides(sideOrientation:Int = Mesh.DEFAULTSIDE, positions:Float32Array, indices:Int32Array, normals:Float32Array, uvs:Float32Array, ?frontUVs:Vector4, ?backUVs:Vector4) {
+	public static function _ComputeSides(sideOrientation:Int = Mesh.DEFAULTSIDE, positions:Float32Array, indices:UInt32Array, normals:Float32Array, uvs:Float32Array, ?frontUVs:Vector4, ?backUVs:Vector4) {
 		var li:Int = indices.length;
 		var ln:Int = normals.length;
 		

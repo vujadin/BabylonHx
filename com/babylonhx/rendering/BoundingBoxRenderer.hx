@@ -1,5 +1,6 @@
 package com.babylonhx.rendering;
 
+import com.babylonhx.materials.Material;
 import com.babylonhx.materials.ShaderMaterial;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Matrix;
@@ -9,8 +10,8 @@ import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.VertexData;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.culling.BoundingBox;
-import lime.utils.Int32Array;
 
+import lime.utils.UInt32Array;
 import lime.utils.Float32Array;
 
 /**
@@ -42,7 +43,7 @@ import lime.utils.Float32Array;
 		
 		this._colorShader = new ShaderMaterial("colorShader", this._scene, "color", {
 			attributes: [VertexBuffer.PositionKind],
-			uniforms: ["worldViewProjection", "color"]
+			uniforms: ["world", "viewProjection", "color"]
 		});
 		
 		var engine = this._scene.getEngine();
@@ -53,11 +54,14 @@ import lime.utils.Float32Array;
 	
 	private function _createIndexBuffer() {
         var engine = this._scene.getEngine();
-        this._indexBuffer = engine.createIndexBuffer(new Int32Array([0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 7, 1, 6, 2, 5, 3, 4]));
+        this._indexBuffer = engine.createIndexBuffer(new UInt32Array([0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 7, 1, 6, 2, 5, 3, 4]));
     }
   
     public function _rebuild() {
-        this._vertexBuffers[VertexBuffer.PositionKind]._rebuild();
+        var vb = this._vertexBuffers[VertexBuffer.PositionKind];
+		if (vb != null) {
+			vb._rebuild();
+		}
         this._createIndexBuffer();
     }
 
@@ -89,7 +93,7 @@ import lime.utils.Float32Array;
 			var worldMatrix = Matrix.Scaling(diff.x, diff.y, diff.z)
 				.multiply(Matrix.Translation(median.x, median.y, median.z))
 				.multiply(boundingBox.getWorldMatrix());
-				
+			
 			// VBOs
 			engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._colorShader.getEffect());
 			
@@ -101,7 +105,7 @@ import lime.utils.Float32Array;
 				this._colorShader.bind(worldMatrix);
 				
 				// Draw order
-				engine.draw(false, 0, 24);
+				engine.drawElementsType(Material.LineListDrawMode, 0, 24);
 			}
 			
 			// Front
@@ -111,7 +115,7 @@ import lime.utils.Float32Array;
 			this._colorShader.bind(worldMatrix);
 			
 			// Draw order
-			engine.draw(false, 0, 24);
+			engine.drawElementsType(Material.TriangleFillMode, 0, 24);
 		}
 		
 		this._colorShader.unbind();
@@ -122,7 +126,7 @@ import lime.utils.Float32Array;
 	public function renderOcclusionBoundingBox(mesh:AbstractMesh) {
 		this._prepareRessources();
 		
-		if (!this._colorShader.isReady()) {
+		if (!this._colorShader.isReady() || mesh._boundingInfo == null) {
 			return;
 		}
 		
@@ -147,7 +151,7 @@ import lime.utils.Float32Array;
 		this._scene.resetCachedMaterial();
 		this._colorShader.bind(worldMatrix);
 		
-		engine.draw(false, 0, 24);
+		engine.drawElementsType(Material.TriangleFillMode, 0, 24);
 		
 		this._colorShader.unbind();
 		engine.setDepthFunctionToLessOrEqual();
@@ -160,6 +164,8 @@ import lime.utils.Float32Array;
 			return;
 		}
 		
+		this.renderList.dispose();
+		
 		this._colorShader.dispose();
 		
 		var buffer = this._vertexBuffers[VertexBuffer.PositionKind];
@@ -167,7 +173,7 @@ import lime.utils.Float32Array;
 			buffer.dispose();
 			this._vertexBuffers[VertexBuffer.PositionKind] = null;
 		}
-			
+		
 		this._scene.getEngine()._releaseBuffer(this._indexBuffer);
 	}
 	

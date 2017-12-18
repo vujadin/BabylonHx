@@ -1,7 +1,7 @@
 package com.babylonhx.postprocess;
 
 import com.babylonhx.cameras.Camera;
-import com.babylonhx.Engine;
+import com.babylonhx.engine.Engine;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.Material;
 import com.babylonhx.materials.StandardMaterial;
@@ -13,6 +13,7 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Viewport;
+import com.babylonhx.mesh.TransformNode;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.SubMesh;
@@ -149,7 +150,7 @@ import com.babylonhx.tools.EventState;
 		var mesh:Mesh = cast subMesh.getMesh();
 		
 		// Render this.mesh as default
-        if (mesh == this.mesh) {
+        if (mesh == this.mesh && mesh.material != null) {
             return mesh.material.isReady(mesh);
         }
 		
@@ -180,7 +181,7 @@ import com.babylonhx.tools.EventState;
 			attribs.push(VertexBuffer.MatricesIndicesKind);
 			attribs.push(VertexBuffer.MatricesWeightsKind);
 			defines.push("#define NUM_BONE_INFLUENCERS " + mesh.numBoneInfluencers);
-			defines.push("#define BonesPerMesh " + (mesh.skeleton.bones.length + 1));
+			defines.push("#define BonesPerMesh " + (mesh.skeleton != null ? (mesh.skeleton.bones.length + 1) : 0));
 		}
 		else {
 			defines.push("#define NUM_BONE_INFLUENCERS 0"); 
@@ -264,7 +265,14 @@ import com.babylonhx.tools.EventState;
 		this._volumetricLightScatteringRTT.wrapV = Texture.CLAMP_ADDRESSMODE;
 		this._volumetricLightScatteringRTT.renderList = null;
 		this._volumetricLightScatteringRTT.renderParticles = false;
-		scene.customRenderTargets.push(this._volumetricLightScatteringRTT);
+		
+		var camera = this.getCamera();
+        if (camera != null) {
+            camera.customRenderTargets.push(this._volumetricLightScatteringRTT);
+        } 
+		else {
+            scene.customRenderTargets.push(this._volumetricLightScatteringRTT);
+        }
 		
 		// Custom render function for submeshes
 		var renderSubMesh = function(subMesh:SubMesh) {
@@ -273,11 +281,17 @@ import com.babylonhx.tools.EventState;
 				return;
 			}
 			
+			var material = subMesh.getMaterial();
+			
+            if (material == null) {
+                return;
+            }
+			
 			var scene = mesh.getScene();
 			var engine = scene.getEngine();
 			
 			// Culling
-			engine.setState(subMesh.getMaterial().backFaceCulling);
+			engine.setState(material.backFaceCulling);
 			
 			// Managing instances
 			var batch = mesh._getInstancesRenderList(subMesh._id);
@@ -295,7 +309,7 @@ import com.babylonhx.tools.EventState;
 						effect = subMesh.effect;
 					} 
 					else {
-						effect = subMesh.getMaterial().getEffect();
+						effect = material.getEffect();
 					}
                 }
 				
@@ -304,11 +318,9 @@ import com.babylonhx.tools.EventState;
 				
 				// Alpha test
 				if (mesh == this.mesh) {
-                    subMesh.getMaterial().bind(mesh.getWorldMatrix(), mesh);
+                    material.bind(mesh.getWorldMatrix(), mesh);
                 }
-                else {
-                    var material:Material = subMesh.getMaterial();
-					
+                else {					
 					this._volumetricLightScatteringPass.setMatrix("viewProjection", scene.getTransformMatrix());
 					
 					// Alpha test
@@ -371,8 +383,12 @@ import com.babylonhx.tools.EventState;
 				// Sort sub meshes
 				for (index in 0...transparentSubMeshes.length) {
 					var submesh:SubMesh = cast transparentSubMeshes.data[index];
-					submesh._alphaIndex = submesh.getMesh().alphaIndex;
-					submesh._distanceToCamera = submesh.getBoundingInfo().boundingSphere.centerWorld.subtract(scene.activeCamera.position).length();
+					var boundingInfo = submesh.getBoundingInfo();
+					
+                    if (boundingInfo != null && scene.activeCamera != null) {
+                        submesh._alphaIndex = submesh.getMesh().alphaIndex;
+                        submesh._distanceToCamera = boundingInfo.boundingSphere.centerWorld.subtract(scene.activeCamera.position).length();
+                    }
 				}
 				
 				var sortedArray = transparentSubMeshes.data.slice(0, transparentSubMeshes.length);
@@ -440,7 +456,7 @@ import com.babylonhx.tools.EventState;
 	*/
 	public static function CreateDefaultMesh(name:String, scene:Scene):Mesh {
 		var mesh = Mesh.CreatePlane(name, 1, scene);
-		mesh.billboardMode = AbstractMesh.BILLBOARDMODE_ALL;
+		mesh.billboardMode = TransformNode.BILLBOARDMODE_ALL;
 		
 		var material = new StandardMaterial(name + "Material", scene);
 		material.emissiveColor = new Color3(1, 1, 1);

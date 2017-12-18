@@ -104,6 +104,10 @@ class AutoRotationBehavior implements Behavior<ArcRotateCamera> {
 	public function new() {
 		
 	}
+	
+	public function init() {
+		// Do notihng
+	}
 
 	public function attach(camera:ArcRotateCamera) {
 		this._attachedCamera = camera;

@@ -33,8 +33,14 @@ class RefractionTexture extends RenderTargetTexture {
 	}
 	
 	override public function clone():RefractionTexture {
+		var scene = this.getScene();
+		
+		if (scene == null) {
+			return this;
+		}
+		
 		var textureSize = this.getSize();
-		var newTexture = new RefractionTexture(this.name, textureSize.width, this.getScene(), this._generateMipMaps);
+		var newTexture = new RefractionTexture(this.name, textureSize.width, scene, this._generateMipMaps);
 		
 		// Base texture
 		newTexture.hasAlpha = this.hasAlpha;
@@ -42,7 +48,9 @@ class RefractionTexture extends RenderTargetTexture {
 		
 		// Refraction Texture
 		newTexture.refractionPlane = this.refractionPlane.clone();
-		newTexture.renderList = this.renderList.slice(0);
+		if (this.renderList != null) {
+			newTexture.renderList = this.renderList.slice(0);
+		}
 		newTexture.depth = this.depth;
 		
 		return newTexture;

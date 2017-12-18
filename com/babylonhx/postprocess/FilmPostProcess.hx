@@ -1,6 +1,7 @@
 package com.babylonhx.postprocess;
 
 import com.babylonhx.cameras.Camera;
+import com.babylonhx.engine.Engine;
 import com.babylonhx.math.Color3;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.materials.textures.DynamicTexture;

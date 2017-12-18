@@ -10,7 +10,7 @@ import com.babylonhx.culling.BoundingSphere;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.animations.IAnimatable;
 
-import lime.utils.Int32Array;
+import lime.utils.UInt32Array;
 import lime.utils.Float32Array;
 
 
@@ -105,7 +105,7 @@ import lime.utils.Float32Array;
 		}
 	}
 	
-	override public function setIndices(indices:Int32Array, totalVertices:Int = -1) {
+	override public function setIndices(indices:UInt32Array, totalVertices:Int = -1, updatable:Bool = false) {
 		if (this.sourceMesh != null) {
 		   this.sourceMesh.setIndices(indices, totalVertices);
 		}
@@ -115,7 +115,7 @@ import lime.utils.Float32Array;
 		return this._sourceMesh.isVerticesDataPresent(kind);
 	}
 
-	override public function getIndices(copyWhenShared:Bool = false):Int32Array {
+	override public function getIndices(copyWhenShared:Bool = false):UInt32Array {
 		return this._sourceMesh.getIndices(copyWhenShared);
 	}
 
@@ -126,7 +126,9 @@ import lime.utils.Float32Array;
 	inline public function refreshBoundingInfo() {
 		var meshBB = this._sourceMesh.getBoundingInfo();
 		
-		this._boundingInfo = new BoundingInfo(meshBB.minimum.clone(), meshBB.maximum.clone());
+		if (meshBB != null) {
+			this._boundingInfo = new BoundingInfo(meshBB.minimum.clone(), meshBB.maximum.clone());
+		}
 		
 		this._updateBoundingInfo();
 	}
@@ -147,7 +149,17 @@ import lime.utils.Float32Array;
 	 * Returns the current associated LOD AbstractMesh.  
 	 */
 	override public function getLOD(camera:Camera, ?boundingSphere:BoundingSphere):AbstractMesh {
-		this._currentLOD = cast this.sourceMesh.getLOD(this.getScene().activeCamera, this.getBoundingInfo().boundingSphere);
+		if (camera == null) {
+            return this;
+        }
+		
+        var boundingInfo = this.getBoundingInfo();
+		
+        if (boundingInfo == null) {
+            return this;
+        }
+		
+        this._currentLOD = cast this.sourceMesh.getLOD(camera, boundingInfo.boundingSphere);
 		
 		if (this._currentLOD == this.sourceMesh) {
             return this;
@@ -170,7 +182,7 @@ import lime.utils.Float32Array;
 	}
 
 	// Clone
-	override public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false, clonePhysicsImpostor:Bool = true):Mesh {
+	override public function clone(name:String, newParent:Node = null, doNotCloneChildren:Bool = false):Mesh {
 		var result = this._sourceMesh.createInstance(name);
 		
 		// TODO: Deep copy

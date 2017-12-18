@@ -2,9 +2,11 @@ package com.babylonhx.postprocess.renderpipeline.pipelines;
 
 import com.babylonhx.animations.Animation;
 import com.babylonhx.animations.IAnimatable;
+import com.babylonhx.engine.Engine;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector2;
+import com.babylonhx.cameras.Camera;
 import com.babylonhx.tools.serialization.SerializationHelper;
 
 /**
@@ -147,7 +149,7 @@ class DefaultRenderingPipeline extends PostProcessRenderPipeline implements IDis
 	 * @param {BABYLON.Camera[]} cameras - The array of cameras that the rendering pipeline will be attached to
 	 * @param {boolean} automaticBuild - if false, you will have to manually call prepare() to update the pipeline
 	 */
-	public function new(name:String, hdr:Bool, scene:Scene, ?cameras:Dynamic, automaticBuild:Bool = true) {
+	public function new(name:String, hdr:Bool, scene:Scene, ?cameras:Map<String, Camera>, automaticBuild:Bool = true) {
 		super(scene.getEngine(), name);
 		this._cameras = cameras != null ? cameras : new Map();
 		
@@ -213,7 +215,7 @@ class DefaultRenderingPipeline extends PostProcessRenderPipeline implements IDis
 			this.blurX.alwaysForcePOT = true;
 			this.blurX.autoClear = false;
 			this.blurX.onActivateObservable.add(function(_, _) {
-				var dw = this.blurX.width / engine.getRenderingCanvas().width;
+				var dw = this.blurX.width / engine.getRenderWidth();
 				this.blurX.kernel = this.bloomKernel * dw;
 			});
 			
@@ -222,7 +224,7 @@ class DefaultRenderingPipeline extends PostProcessRenderPipeline implements IDis
 			this.blurY.alwaysForcePOT = true;
 			this.blurY.autoClear = false;
 			this.blurY.onActivateObservable.add(function(_, _) {
-				var dh = this.blurY.height / engine.getRenderingCanvas().height;
+				var dh = this.blurY.height / engine.getRenderHeight();
 				this.blurY.kernel = this.bloomKernel * dh;
 			});
 			

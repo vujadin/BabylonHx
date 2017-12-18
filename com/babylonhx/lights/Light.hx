@@ -132,9 +132,17 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	 * exceeding the number allowed by the materials.
 	 */
 	@serialize()
-	private var _renderPriority:Int;
-	@expandToProperty("_reorderLightsInScene")
-	public var renderPriority:Int = 0;
+	private var _renderPriority:Int = 0;
+	//@expandToProperty("_reorderLightsInScene")
+	public var renderPriority(get, set):Int;
+	inline private function get_renderPriority():Int {
+		return _renderPriority;
+	}
+	inline private function set_renderPriority(value:Int):Int {
+		_renderPriority = value;
+		_reorderLightsInScene();
+		return value;
+	}
 
 	/**
 	 * Defines wether or not the shadows are enabled for this light. This can help turning off/on shadow without detaching
@@ -143,27 +151,10 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	@serialize()
 	public var shadowEnabled:Bool = true;
 
-	private var _includedOnlyMeshes:Array<AbstractMesh>;
-	public var includedOnlyMeshes(get, set):Array<AbstractMesh>;
-	private function get_includedOnlyMeshes():Array<AbstractMesh> {
-		return this._includedOnlyMeshes;
-	}
-	private function set_includedOnlyMeshes(value:Array<AbstractMesh>):Array<AbstractMesh> {
-		this._includedOnlyMeshes = value;
-		this._hookArrayForIncludedOnly(value);
-		return value;
-	}
-
-	private var _excludedMeshes:Array<AbstractMesh>;
-	public var excludedMeshes(get, set):Array<AbstractMesh>;
-	private function get_excludedMeshes():Array<AbstractMesh> {
-		return this._excludedMeshes;
-	}
-	private function set_excludedMeshes(value:Array<AbstractMesh>):Array<AbstractMesh> {
-		this._excludedMeshes = value;
-		this._hookArrayForExcluded(value);
-		return value;
-	}
+	// BHX specific !!!!
+	public var includedOnlyMeshes:IncludedOnlyMeshesArray;
+	// BHX specific !!!!
+	public var excludedMeshes:ExcludedMeshesArray;
 
 	@serialize("excludeWithLayerMask")
 	private var _excludeWithLayerMask:Int = 0;
@@ -224,8 +215,8 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		this._uniformBuffer = new UniformBuffer(this.getScene().getEngine());
 		this._buildUniformLayout();
 		
-		this.includedOnlyMeshes = new Array<AbstractMesh>();
-		this.excludedMeshes = new Array<AbstractMesh>();
+		this.includedOnlyMeshes = new IncludedOnlyMeshesArray(this); //new Array<AbstractMesh>();
+		this.excludedMeshes = new ExcludedMeshesArray(this);
 		
 		this._resyncMeshes();
 	}
@@ -420,14 +411,14 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		// Inclusion / exclusions
 		if (this.excludedMeshes.length > 0) {
 			serializationObject.excludedMeshesIds = [];
-			for (mesh in this.excludedMeshes) {
+			for (mesh in this.excludedMeshes.items) {
 				serializationObject.excludedMeshesIds.push(mesh.id);
 			}
 		}
 		
 		if (this.includedOnlyMeshes.length > 0) {
 			serializationObject.includedOnlyMeshesIds = [];
-			for (mesh in this.includedOnlyMeshes) {
+			for (mesh in this.includedOnlyMeshes.items) {
 				serializationObject.includedOnlyMeshesIds.push(mesh.id);
 			}
 		}
@@ -497,58 +488,6 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		}
 		
 		return light;
-	}
-
-	private function _hookArrayForExcluded(array:Array<AbstractMesh>) {
-		// VK TODO:
-		/*var oldPush = array.push;
-		array.push = (...items: AbstractMesh[]) => {
-			var result = oldPush.apply(array, items);
-
-			for (var item of items) {
-				item._resyncLighSource(this);
-			}
-
-			return result;
-		}
-
-		var oldSplice = array.splice;
-		array.splice = (index: number, deleteCount?: number) => {
-			var deleted = oldSplice.apply(array, [index, deleteCount]);
-
-			for (var item of deleted) {
-				item._resyncLighSource(this);
-			}
-
-			return deleted;
-		}*/
-		
-		for (item in array) {
-			item._resyncLighSource(this);
-		}
-	}
-
-	private function _hookArrayForIncludedOnly(array:Array<AbstractMesh>) {
-		// VK TODO:
-		/*var oldPush = array.push;
-		array.push = (...items: AbstractMesh[]) => {
-			var result = oldPush.apply(array, items);
-
-			this._resyncMeshes();
-
-			return result;
-		}
-
-		var oldSplice = array.splice;
-		array.splice = (index: number, deleteCount?: number) => {
-			var deleted = oldSplice.apply(array, [index, deleteCount]);
-
-			this._resyncMeshes();
-
-			return deleted;
-		}*/
-		
-		this._resyncMeshes();
 	}
 
 	private function _resyncMeshes() {

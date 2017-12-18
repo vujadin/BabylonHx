@@ -1,5 +1,6 @@
 package com.babylonhx.postprocess;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.materials.Effect;
@@ -62,7 +63,7 @@ import com.babylonhx.math.Tools;
 	}
 
 	
-	public function new(name:String, direction:Vector2, kernel:Float, options:Dynamic, camera:Camera, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, ?engine:Engine, reusable:Bool = false, textureType:Int = Engine.TEXTURETYPE_UNSIGNED_INT) {
+	public function new(name:String, direction:Vector2, kernel:Float, options:Dynamic, camera:Camera = null, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, ?engine:Engine, reusable:Bool = false, textureType:Int = Engine.TEXTURETYPE_UNSIGNED_INT) {
 		this.direction = direction;
 		super(name, "kernelBlur", ["delta", "direction"], null, options, camera, samplingMode, engine, reusable, null, textureType, "kernelBlur", {varyingCount: 0, depCount: 0}, true);
 		this.onApplyObservable.add(function(effect:Effect, _) {
@@ -214,7 +215,7 @@ import com.babylonhx.math.Tools;
 	 */
 	public function _glslFloat(x:Float, decimalFigures:Int = 8):String {
 		var ereg:EReg = ~/0+$/;
-		return ereg.replace(Tools.Round(x, decimalFigures) + '', '');
+		return ereg.replace(Tools.FloatToStringPrecision(x, decimalFigures) + '', '');
 	} 
 
 }

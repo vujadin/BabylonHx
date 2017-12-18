@@ -17,11 +17,12 @@ import lime.utils.Float32Array;
 	private static var _yAxis:Vector3 = Vector3.Zero();
 	private static var _zAxis:Vector3 = Vector3.Zero();
 	private static var _updateFlagSeed:Int = 0;
+	private static var _identityReadOnly:Matrix = Matrix.Identity();
 
 	private var _isIdentity:Bool = false;
     private var _isIdentityDirty:Bool = true;
 	public var updateFlag:Int = 0;
-	public var m:Float32Array;
+	public var m:Float32Array = new Float32Array(16);
 
 	
 	inline public function _markAsUpdated() {
@@ -32,7 +33,6 @@ import lime.utils.Float32Array;
 	
 	inline public function new() {
 		this._markAsUpdated();
-		m = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 	}
 
 	// Properties
@@ -44,7 +44,7 @@ import lime.utils.Float32Array;
 			this._isIdentityDirty = false;
 			if (this.m[0] != 1.0 || this.m[5] != 1.0 || this.m[15] != 1.0) {
 				this._isIdentity = false;
-			}
+			} 
 			else if (this.m[1] != 0.0 || this.m[2] != 0.0 || this.m[3] != 0.0 ||
 				this.m[4] != 0.0 || this.m[6] != 0.0 || this.m[7] != 0.0 ||
 				this.m[8] != 0.0 || this.m[9] != 0.0 || this.m[11] != 0.0 ||
@@ -515,6 +515,7 @@ import lime.utils.Float32Array;
 		for (index in 0...16) {
 			result.m[index] = array[index + offset];
 		}
+		result._markAsUpdated();
 	}
 	
 	/**
@@ -524,6 +525,7 @@ import lime.utils.Float32Array;
         for (index in 0...16) {
             result.m[index] = array[index + offset] * scale;
         }
+		result._markAsUpdated();
     }
 
 	/**
@@ -604,6 +606,15 @@ import lime.utils.Float32Array;
 		
 		this._markAsUpdated();
 		return this;
+	}
+	
+	/**
+	 * Static identity matrix to be used as readonly matrix
+	 * Must not be updated.
+	 */
+	public static var IdentityReadOnly(get, never):Matrix;
+	inline private static function get_IdentityReadOnly():Matrix {
+		return Matrix._identityReadOnly;
 	}
 	
 	/**

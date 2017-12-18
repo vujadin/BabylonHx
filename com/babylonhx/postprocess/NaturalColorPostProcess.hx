@@ -1,5 +1,6 @@
 package com.babylonhx.postprocess;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.materials.Effect;

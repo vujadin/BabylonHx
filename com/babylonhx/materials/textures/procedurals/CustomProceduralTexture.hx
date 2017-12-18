@@ -77,8 +77,9 @@ import haxe.Json;
 	}
 
 	override public function render(useCameraPostProcess:Bool = false) {
-		if (this._animate) {
-			this._time += this.getScene().getAnimationRatio() * 0.03;
+		var scene = this.getScene();
+		if (this._animate && scene != null) {
+			this._time += scene.getAnimationRatio() * 0.03;
 			this.updateShaderUniforms();
 		}
 		

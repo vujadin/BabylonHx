@@ -1,7 +1,9 @@
 package com.babylonhx.particles;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.materials.Effect;
+import com.babylonhx.materials.Material;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Matrix;
@@ -16,8 +18,8 @@ import com.babylonhx.animations.Animation;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
-import lime.utils.Int32Array;
 
+import lime.utils.UInt32Array;
 import lime.utils.Float32Array;
 
 
@@ -159,7 +161,7 @@ import lime.utils.Float32Array;
 		if (this._isAnimationSheetEnabled) {
 			this._vertexBufferSize = 12;
 		}
-			
+		
 		this._scene = scene != null ? scene : Engine.LastCreatedScene;
 		this._engine = this._scene.getEngine();
 		
@@ -170,11 +172,11 @@ import lime.utils.Float32Array;
 		this._createIndexBuffer();
 		
 		// 11 floats per particle (x, y, z, r, g, b, a, angle, size, offsetX, offsetY) + 1 filler
-        this._vertexData = new Float32Array(Std.int(capacity * 11 * 4)); 
+        this._vertexData = new Float32Array(Std.int(capacity * this._vertexBufferSize * 4)); 
 		for (i in 0...Std.int(capacity * 11 * 4)) {
 			this._vertexData[i] = 0;
 		}
-		this._vertexBuffer = new Buffer(this._engine, this._vertexData, true, 11);
+		this._vertexBuffer = new Buffer(this._engine, this._vertexData, true, this._vertexBufferSize);
 		
 		var positions = this._vertexBuffer.createVertexBuffer(VertexBuffer.PositionKind, 0, 3);
 		var colors = this._vertexBuffer.createVertexBuffer(VertexBuffer.ColorKind, 3, 4);
@@ -258,7 +260,7 @@ import lime.utils.Float32Array;
 			index += 4;
 		}
 		
-		this._indexBuffer = this._engine.createIndexBuffer(new Int32Array(indices));
+		this._indexBuffer = this._engine.createIndexBuffer(new UInt32Array(indices));
 	}
 	
 	inline public function recycleParticle(particle:Particle) {
@@ -510,7 +512,9 @@ import lime.utils.Float32Array;
 			offset += 4;
 		}
 		
-		this._vertexBuffer.update(this._vertexData);
+		if (this._vertexBuffer != null) {
+            this._vertexBuffer.update(this._vertexData);
+        }
 	}
 	
 	public var appendParticleVertexes:Int->Particle->Void = null;
@@ -531,8 +535,9 @@ import lime.utils.Float32Array;
 	
 	public function rebuild() {
         this._createIndexBuffer();
-		
-        this._vertexBuffer._rebuild();
+		if (this._vertexBuffer != null) {
+			this._vertexBuffer._rebuild();
+		}
     }
 
 	public function render():Int {		
@@ -580,7 +585,7 @@ import lime.utils.Float32Array;
 			this._engine.setDepthWrite(true);
 		}
 		
-		this._engine.draw(true, 0, this.particles.length * 6);
+		this._engine.drawElementsType(Material.TriangleFillMode, 0, this.particles.length * 6);
 		this._engine.setAlphaMode(Engine.ALPHA_DISABLE);
 		
 		return this.particles.length;
@@ -676,34 +681,52 @@ import lime.utils.Float32Array;
 		
 		// Particle system
 		serializationObject.minAngularSpeed = this.minAngularSpeed;
-		serializationObject.maxAngularSpeed = this.maxAngularSpeed;
-		serializationObject.minSize = this.minSize;
-		serializationObject.maxSize = this.maxSize;
-		serializationObject.minEmitPower = this.minEmitPower;
-		serializationObject.maxEmitPower = this.maxEmitPower;
-		serializationObject.minLifeTime = this.minLifeTime;
-		serializationObject.maxLifeTime = this.maxLifeTime;
-		serializationObject.emitRate = this.emitRate;
-		serializationObject.minEmitBox = this.minEmitBox.asArray();
-		serializationObject.maxEmitBox = this.maxEmitBox.asArray();
-		serializationObject.gravity = this.gravity.asArray();
-		serializationObject.direction1 = this.direction1.asArray();
-		serializationObject.direction2 = this.direction2.asArray();
-		serializationObject.color1 = this.color1.asArray();
-		serializationObject.color2 = this.color2.asArray();
-		serializationObject.colorDead = this.colorDead.asArray();
-		serializationObject.updateSpeed = this.updateSpeed;
-		serializationObject.targetStopDuration = this.targetStopDuration;
-		serializationObject.textureMask = this.textureMask.asArray();
-		serializationObject.blendMode = this.blendMode;
+        serializationObject.maxAngularSpeed = this.maxAngularSpeed;
+        serializationObject.minSize = this.minSize;
+        serializationObject.maxSize = this.maxSize;
+        serializationObject.minEmitPower = this.minEmitPower;
+        serializationObject.maxEmitPower = this.maxEmitPower;
+        serializationObject.minLifeTime = this.minLifeTime;
+        serializationObject.maxLifeTime = this.maxLifeTime;
+        serializationObject.emitRate = this.emitRate;
+        serializationObject.minEmitBox = this.minEmitBox.asArray();
+        serializationObject.maxEmitBox = this.maxEmitBox.asArray();
+        serializationObject.gravity = this.gravity.asArray();
+        serializationObject.direction1 = this.direction1.asArray();
+        serializationObject.direction2 = this.direction2.asArray();
+        serializationObject.color1 = this.color1.asArray();
+        serializationObject.color2 = this.color2.asArray();
+        serializationObject.colorDead = this.colorDead.asArray();
+        serializationObject.updateSpeed = this.updateSpeed;
+        serializationObject.targetStopDuration = this.targetStopDuration;
+        serializationObject.textureMask = this.textureMask.asArray();
+        serializationObject.blendMode = this.blendMode;
+        serializationObject.customShader = this.customShader;
+        serializationObject.preventAutoStart = this.preventAutoStart;
+		
+        serializationObject.startSpriteCellID = this.startSpriteCellID;
+        serializationObject.endSpriteCellID = this.endSpriteCellID;
+        serializationObject.spriteCellLoop = this.spriteCellLoop;
+        serializationObject.spriteCellChangeSpeed = this.spriteCellChangeSpeed;
+        serializationObject.spriteCellWidth = this.spriteCellWidth;
+        serializationObject.spriteCellHeight = this.spriteCellHeight;
+		
+        serializationObject.isAnimationSheetEnabled = this._isAnimationSheetEnabled;
 		
 		return serializationObject;
 	}
 
 	public static function Parse(parsedParticleSystem:Dynamic, scene:Scene, rootUrl:String):ParticleSystem {
 		var name = parsedParticleSystem.name;
-		
-		var particleSystem = new ParticleSystem(name, parsedParticleSystem.capacity, scene);
+		var custom:Effect = null;
+        var program:Dynamic = null;
+        if (parsedParticleSystem.customShader != null) {
+            program = parsedParticleSystem.customShader;
+            var defines:String = (program.shaderOptions.defines.length > 0) ? program.shaderOptions.defines.join("\n") : "";
+            custom = scene.getEngine().createEffectForParticles(program.shaderPath.fragmentElement, program.shaderOptions.uniforms, program.shaderOptions.samplers, defines);
+        }
+		var particleSystem = new ParticleSystem(name, parsedParticleSystem.capacity, scene, custom, parsedParticleSystem.isAnimationSheetEnabled);
+		particleSystem.customShader = program;
 		
 		// Texture
 		if (parsedParticleSystem.textureName != null) {
@@ -749,6 +772,13 @@ import lime.utils.Float32Array;
 		particleSystem.targetStopDuration = parsedParticleSystem.targetStopDuration;
 		particleSystem.textureMask = Color4.FromArray(parsedParticleSystem.textureMask);
 		particleSystem.blendMode = parsedParticleSystem.blendMode;
+		
+		particleSystem.startSpriteCellID = parsedParticleSystem.startSpriteCellID;
+        particleSystem.endSpriteCellID = parsedParticleSystem.endSpriteCellID;
+        particleSystem.spriteCellLoop = parsedParticleSystem.spriteCellLoop;
+        particleSystem.spriteCellChangeSpeed = parsedParticleSystem.spriteCellChangeSpeed;
+        particleSystem.spriteCellWidth = parsedParticleSystem.spriteCellWidth;
+        particleSystem.spriteCellHeight = parsedParticleSystem.spriteCellHeight;
 		
 		if (parsedParticleSystem.preventAutoStart == null || parsedParticleSystem.preventAutoStart == true) {
             particleSystem.start();

@@ -1,6 +1,5 @@
 package com.babylonhx.events;
 
-import com.babylonhx.events.PointerInfo.PointerEvent;
 import com.babylonhx.math.Vector2;
 
 /**

@@ -7,6 +7,7 @@ import com.babylonhx.actions.ValueCondition;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.bones.Bone;
 import com.babylonhx.bones.Skeleton;
+import lime.utils.UInt32Array;
 //import com.babylonhx.cameras.AnaglyphArcRotateCamera;
 import com.babylonhx.cameras.AnaglyphFreeCamera;
 import com.babylonhx.cameras.ArcRotateCamera;
@@ -31,7 +32,7 @@ import com.babylonhx.materials.textures.CubeTexture;
 import com.babylonhx.materials.textures.MirrorTexture;
 import com.babylonhx.materials.textures.RenderTargetTexture;
 import com.babylonhx.materials.textures.Texture;
-import com.babylonhx.math.Plane;
+//import com.babylonhx.math.Plane;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector3;
@@ -45,6 +46,7 @@ import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.VertexData;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.primitives.Box;
+import com.babylonhx.mesh.primitives.Plane;
 import com.babylonhx.mesh.primitives.Cylinder;
 import com.babylonhx.mesh.primitives.Ground;
 import com.babylonhx.mesh.primitives.Sphere;
@@ -53,6 +55,7 @@ import com.babylonhx.mesh.primitives.TorusKnot;
 import com.babylonhx.particles.ParticleSystem;
 import com.babylonhx.physics.PhysicsBodyCreationOptions;
 import com.babylonhx.tools.Tags;
+import com.babylonhx.tools.Tools;
 import com.babylonhx.physics.IPhysicsEnginePlugin;
 //import com.babylonhx.physics.plugins.OimoPlugin;
 //import com.babylonhx.physics.plugins.CannonPlugin;
@@ -86,9 +89,8 @@ import lime.utils.Int32Array;
 	}
 	private static var _plugin:ISceneLoaderPlugin = {
 		extensions: ".babylon",
-        importMesh: function(meshesNames:Dynamic, scene:Scene, data:Dynamic, rootUrl:String, meshes:Array<AbstractMesh>, particleSystems:Array<ParticleSystem>, skeletons:Array<Skeleton>):Bool {				
+        /*importMesh: function(meshesNames:Dynamic, scene:Scene, data:Dynamic, rootUrl:String, meshes:Array<AbstractMesh>, particleSystems:Array<ParticleSystem>, skeletons:Array<Skeleton>):Bool {				
 			var parsedData:Dynamic = Json.parse(data);			
-				
             var loadedSkeletonsIds:Array<Int> = [];
             var loadedMaterialsIds:Array<String> = [];
             var hierarchyIds:Array<Int> = [];
@@ -244,6 +246,199 @@ import lime.utils.Int32Array;
             }
 			
             return true;
+        },*/
+		importMesh: function(meshesNames:Dynamic, scene:Scene, data:Dynamic, rootUrl:String, meshes:Array<AbstractMesh>, particleSystems:Array<ParticleSystem>, skeletons:Array<Skeleton>):Bool {
+            // Entire method running in try block, so ALWAYS logs as far as it got, only actually writes details
+            // when SceneLoader.debugLogging = true (default), or exception encountered.
+            // Everything stored in var log instead of writing separate lines to support only writing in exception,
+            // and avoid problems with multiple concurrent .babylon loads.
+            var log = "importMesh has failed JSON parse";
+            try {
+                var parsedData = Json.parse(data);
+                log = "";
+                //var fullDetails = SceneLoader.loggingLevel == SceneLoader.DETAILED_LOGGING;
+                if (meshesNames == null) {
+                    meshesNames = null;
+                } 
+				else if (!Std.is(meshesNames, Array)) {
+                    meshesNames = [meshesNames];
+                }
+				
+                var hierarchyIds = new Array<Int>();
+                if (parsedData.meshes != null) {
+                    var loadedSkeletonsIds:Array<Int> = [];
+                    var loadedMaterialsIds:Array<String> = [];
+					
+					var pdm:Array<Dynamic> = cast parsedData.meshes;
+                    var cache:Int = pdm.length;
+                    for (index in 0...cache) {
+                        var parsedMesh = pdm[index];
+						
+                        if (meshesNames == null || isDescendantOf(parsedMesh, meshesNames, hierarchyIds)) {
+                            if (meshesNames != null) {
+                                // Remove found mesh name from list.
+                                meshesNames.splice(meshesNames.indexOf(parsedMesh.name), 1);
+                            }
+							
+                            //Geometry?
+                            if (parsedMesh.geometryId != null) {
+                                //does the file contain geometries?
+                                if (parsedData.geometries != null) {
+                                    //find the correct geometry and add it to the scene
+                                    var found:Bool = false;
+                                    for(geometryType in ["boxes", "spheres", "cylinders", "toruses", "grounds", "planes", "torusKnots", "vertexData"]) {
+                                        if (found || Reflect.getProperty(parsedData.geometries, geometryType) == null || !(Std.is(Reflect.getProperty(parsedData.geometries, geometryType), Array))) {
+                                            return false;
+                                        } 
+										else {
+                                            var geomData:Array<Dynamic> = cast Reflect.getProperty(parsedData.geometries, geometryType);
+											for (parsedGeometryData in geomData) {
+                                                if (parsedGeometryData.id == parsedMesh.geometryId) {
+                                                    switch (geometryType) {
+                                                        case "boxes":
+                                                            Box.Parse(parsedGeometryData, scene);
+                                                            
+                                                        case "spheres":
+                                                            Sphere.Parse(parsedGeometryData, scene);
+                                                            
+                                                        case "cylinders":
+                                                            Cylinder.Parse(parsedGeometryData, scene);
+                                                            
+                                                        case "toruses":
+                                                            Torus.Parse(parsedGeometryData, scene);
+                                                            
+                                                        case "grounds":
+                                                            Ground.Parse(parsedGeometryData, scene);
+                                                            
+                                                        case "planes":
+                                                            Plane.Parse(parsedGeometryData, scene);
+                                                            
+                                                        case "torusKnots":
+                                                            TorusKnot.Parse(parsedGeometryData, scene);
+                                                            
+                                                        case "vertexData":
+                                                            Geometry.Parse(parsedGeometryData, scene, rootUrl);
+                                                            
+                                                    }
+                                                    found = true;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (found == false) {
+                                        Tools.Warn("Geometry not found for mesh " + parsedMesh.id);
+                                    }
+                                }
+                            }
+							
+                            // Material ?
+                            if (parsedMesh.materialId != null && parsedMesh.materialId != "") {
+                                var materialFound = (loadedMaterialsIds.indexOf(parsedMesh.materialId) != -1);
+                                
+								if (materialFound == false && parsedData.multiMaterials != null && parsedData.multiMaterials.length > 0) {
+									var pdmm:Array<Dynamic> = cast parsedData.multiMaterials;
+									for (multimatIndex in 0...pdmm.length) {
+                                        var parsedMultiMaterial = pdmm[multimatIndex];
+                                        if (parsedMultiMaterial.id == parsedMesh.materialId) {
+                                           var pdmmm:Array<Dynamic> = cast parsedMultiMaterial.materials;
+											for (matIndex in 0...pdmmm.length) {
+												var subMatId = pdmmm[matIndex];
+                                                loadedMaterialsIds.push(subMatId);
+                                                var mat = parseMaterialById(subMatId, parsedData, scene, rootUrl);
+                                                //log += "\n\tMaterial " + mat.toString(fullDetails);
+                                            }
+                                            loadedMaterialsIds.push(parsedMultiMaterial.id);
+                                            var mmat = Material.ParseMultiMaterial(parsedMultiMaterial, scene);
+                                            materialFound = true;
+                                            //log += "\n\tMulti-Material " + mmat.toString(fullDetails);
+                                            break;
+                                        }
+                                    }
+                                }
+								
+                                if (materialFound == false) {
+                                    loadedMaterialsIds.push(parsedMesh.materialId);
+                                    var mat = parseMaterialById(parsedMesh.materialId, parsedData, scene, rootUrl);
+                                    if (mat == null) {
+                                        Tools.Warn("Material not found for mesh " + parsedMesh.id);
+                                    } 
+									else {
+                                        //log += "\n\tMaterial " + mat.toString(fullDetails);
+                                    }
+                                }
+                            }
+							
+                            // Skeleton ?
+                            if (parsedMesh.skeletonId > -1 && parsedData.skeletons != null) {
+                                var skeletonAlreadyLoaded = (loadedSkeletonsIds.indexOf(parsedMesh.skeletonId) > -1);
+                                if (skeletonAlreadyLoaded == false) {
+                                    var pds:Array<Dynamic> = cast parsedData.skeletons;
+									for (skeletonIndex in 0...pds.length) {
+                                        var parsedSkeleton = pds[skeletonIndex];
+                                        if (parsedSkeleton.id == parsedMesh.skeletonId) {
+                                            var skeleton = Skeleton.Parse(parsedSkeleton, scene);
+                                            skeletons.push(skeleton);
+                                            loadedSkeletonsIds.push(parsedSkeleton.id);
+                                            //log += "\n\tSkeleton " + skeleton.toString(fullDetails);
+                                        }
+                                    }
+                                }
+                            }
+							
+                            var mesh = Mesh.Parse(parsedMesh, scene, rootUrl);
+                            meshes.push(mesh);
+                            //log += "\n\tMesh " + mesh.toString(fullDetails);
+                        }
+                    }
+					
+                    // Connecting parents
+                    var currentMesh:AbstractMesh = null;
+                    for (index in 0...scene.meshes.length) {
+                        currentMesh = scene.meshes[index];
+                        if (currentMesh._waitingParentId != null) {
+                            currentMesh.parent = scene.getLastEntryByID(currentMesh._waitingParentId);
+                            currentMesh._waitingParentId = null;
+                        }
+                    }
+					
+                    // freeze and compute world matrix application
+                    for (index in 0...scene.meshes.length) {
+                        currentMesh = scene.meshes[index];
+                        if (currentMesh._waitingFreezeWorldMatrix) {
+                            currentMesh.freezeWorldMatrix();
+                            currentMesh._waitingFreezeWorldMatrix = false;
+                        } 
+						else {
+                            currentMesh.computeWorldMatrix(true);
+                        }
+                    }
+                }
+				
+                // Particles
+                if (parsedData.particleSystems != null) {
+                    var pdp:Array<Dynamic> = cast parsedData.particleSystems;
+					for (index in 0...pdp.length) {
+						var parsedParticleSystem = pdp[index];
+                        if (hierarchyIds.indexOf(parsedParticleSystem.emitterId) != -1) {
+                            particleSystems.push(ParticleSystem.Parse(parsedParticleSystem, scene, rootUrl));
+                        }
+                    }
+                }
+				
+                return true;
+				
+            } catch (err:Dynamic) {
+                //let msg = logOperation("importMesh", parsedData ? parsedData.producer : "Unknown") + log;
+                //if (onError) {
+                //    onError(msg, err);
+                //} else {
+                //    Tools.Log(msg);
+                //    throw err;
+                //}
+				Tools.Error('importMesh error!');
+            }
+			
+            return false;
         },
 		load: function(scene:Scene, data:Dynamic, rootUrl:String):Bool {
 			// Entire method running in try block, so ALWAYS logs as far as it got, only actually writes details
@@ -599,7 +794,7 @@ import lime.utils.Int32Array;
             var parsedMaterial = parsedData.materials[index];
 			
             if (parsedMaterial.id == id) {
-                return StandardMaterial.Parse(parsedMaterial, scene, rootUrl);
+                return Material.Parse(parsedMaterial, scene, rootUrl);
             }
         }
 		
@@ -753,7 +948,7 @@ import lime.utils.Int32Array;
                 mesh.setVerticesData(VertexBuffer.MatricesWeightsKind, new Float32Array(parsedGeometry.matricesWeights), false);
             }
 			
-            mesh.setIndices(new Int32Array(parsedGeometry.indices));
+            mesh.setIndices(new UInt32Array(parsedGeometry.indices));
 			
             // SubMeshes
             if (parsedGeometry.subMeshes != null) {

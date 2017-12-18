@@ -140,7 +140,7 @@ class SkeletonViewer {
 		}
 		
 		if (this._debugMesh == null) {
-			this._debugMesh = MeshBuilder.CreateLineSystem(null, { lines: this._debugLines, updatable: true }, this._scene);
+			this._debugMesh = MeshBuilder.CreateLineSystem(null, { lines: this._debugLines, updatable: true, instance: null }, this._scene);
 			this._debugMesh.renderingGroupId = this.renderingGroupId;
 			this._debugMesh.color = this.color;
 		} 

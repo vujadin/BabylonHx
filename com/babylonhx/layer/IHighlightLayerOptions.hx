@@ -47,6 +47,11 @@ typedef IHighlightLayerOptions = {
 	/**
      * The camera attached to the layer.
      */
-    ?camera:Null<Camera>
+    ?camera:Null<Camera>,
+	
+	/**
+     * Threshold for cutting glow.
+     */
+    ?threshold:Null<Int>
   
 }

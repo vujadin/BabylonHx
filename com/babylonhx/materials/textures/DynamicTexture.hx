@@ -1,6 +1,7 @@
 package com.babylonhx.materials.textures;
 
 import com.babylonhx.utils.Image;
+import com.babylonhx.engine.Engine;
 
 import lime.utils.UInt8Array;
 
@@ -13,6 +14,7 @@ import lime.utils.UInt8Array;
 	
 	private var _generateMipMaps:Bool;
 	public var _canvas:Image;
+	private var _engine:Engine;
 	
 	public var canRescale(get, never):Bool;
 	
@@ -29,7 +31,7 @@ import lime.utils.UInt8Array;
 		super(null, scene, !generateMipMaps, false, samplingMode, null, null, null, false, format);
 		
 		this.name = name;
-		
+		this._engine = this.getScene().getEngine();
 		this.wrapU = Texture.CLAMP_ADDRESSMODE;
 		this.wrapV = Texture.CLAMP_ADDRESSMODE;
 		
@@ -37,15 +39,15 @@ import lime.utils.UInt8Array;
 		
 		if (options.data != null) {
 			this._canvas = new Image(options.data, options.width, options.height);
-			this._texture = scene.getEngine().createDynamicTexture(options.width, options.height, generateMipMaps, samplingMode);
+			this._texture = this._engine.createDynamicTexture(options.width, options.height, generateMipMaps, samplingMode);
 		}
 		else if (options.width != null) {
 			this._canvas = new Image(null, options.width, options.height);
-			this._texture = scene.getEngine().createDynamicTexture(options.width, options.height, generateMipMaps, samplingMode);
+			this._texture = this._engine.createDynamicTexture(options.width, options.height, generateMipMaps, samplingMode);
 		} 
 		else {
 			this._canvas = new Image(null, options, options);
-			this._texture = scene.getEngine().createDynamicTexture(options, options, generateMipMaps, samplingMode);
+			this._texture = this._engine.createDynamicTexture(options, options, generateMipMaps, samplingMode);
 		}
 		
 		var textureSize = this.getSize();
@@ -61,7 +63,7 @@ import lime.utils.UInt8Array;
 		
 		this.releaseInternalTexture();
 		
-		this._texture = this.getScene().getEngine().createDynamicTexture(textureSize.width, textureSize.height, this._generateMipMaps, this._samplingMode);
+		this._texture = this._engine.createDynamicTexture(textureSize.width, textureSize.height, this._generateMipMaps, this._samplingMode);
 	}
 
 	override public function scale(ratio:Float) {
@@ -97,7 +99,7 @@ import lime.utils.UInt8Array;
 	}
 
 	public function update(invertY:Bool = false) {
-		this.getScene().getEngine().updateDynamicTexture(this._texture, this._canvas, invertY, false, this._format);
+		this._engine.updateDynamicTexture(this._texture, this._canvas, invertY, false, this._format);
 	}
 
 	/*public drawText(text: string, x: number, y: number, font: string, color: string, clearColor: string, invertY?: boolean, update = true) {
@@ -122,8 +124,14 @@ import lime.utils.UInt8Array;
 	}*/
 
 	override public function clone():DynamicTexture {
+		var scene = this.getScene();
+		
+		if (scene == null) {
+			return this;
+		}
+		
 		var textureSize = this.getSize();
-		var newTexture = new DynamicTexture(this.name, textureSize.width, this.getScene(), this._generateMipMaps);
+		var newTexture = new DynamicTexture(this.name, textureSize.width, scene, this._generateMipMaps);
 		
 		// Base texture
 		newTexture.hasAlpha = this.hasAlpha;

@@ -368,15 +368,24 @@ import com.babylonhx.debug.RayHelper;
 		return -1;
 	}
 
+	public function update(x:Float, y:Float, viewportWidth:Float, viewportHeight:Float, world:Matrix, view:Matrix, projection:Matrix):Ray {
+		Vector3.UnprojectFloatsToRef(x, y, 0, viewportWidth, viewportHeight, world, view, projection, this.origin);
+		Vector3.UnprojectFloatsToRef(x, y, 1, viewportWidth, viewportHeight, world, view, projection, Tmp.vector3[0]);
+		
+		Tmp.vector3[0].subtractToRef(this.origin, this.direction);
+		this.direction.normalize();
+		return this;
+	}
+
 	// Statics
+	public static function Zero():Ray {
+		return new Ray(Vector3.Zero(), Vector3.Zero());
+	}
+
 	public static function CreateNew(x:Float, y:Float, viewportWidth:Float, viewportHeight:Float, world:Matrix, view:Matrix, projection:Matrix):Ray {
-		var start = Vector3.Unproject(new Vector3(x, y, 0), viewportWidth, viewportHeight, world, view, projection);
-		var end = Vector3.Unproject(new Vector3(x, y, 1), viewportWidth, viewportHeight, world, view, projection);
+		var result = Ray.Zero();
 		
-		var direction = end.subtract(start);
-		direction.normalize();
-		
-		return new Ray(start, direction);
+		return result.update(x, y, viewportWidth, viewportHeight, world, view, projection);
 	}
 	
 	/**

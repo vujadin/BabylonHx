@@ -1,5 +1,6 @@
 package com.babylonhx.mesh;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.loading.SceneLoader;
 import com.babylonhx.math.Tools.BabylonMinMax;
@@ -15,7 +16,7 @@ import haxe.Json;
 
 import lime.utils.ArrayBufferView;
 import lime.utils.Float32Array;
-import lime.utils.Int32Array;
+import lime.utils.UInt32Array;
 import lime.graphics.opengl.GLVertexArrayObject;
 
 
@@ -37,13 +38,14 @@ import lime.graphics.opengl.GLVertexArrayObject;
 	private var _engine:Engine;
 	private var _meshes:Array<Mesh>;
 	private var _totalVertices:Int = 0;
-	private var _indices:Int32Array;
+	private var _indices:UInt32Array;
 	private var _vertexBuffers:Map<String, VertexBuffer>;
 	private var _isDisposed:Bool = false;
 	private var _extend:BabylonMinMax;
 	private var _boundingBias:Vector2;
 	public var _delayInfo:Array<String> = []; //ANY
 	private var _indexBuffer:WebGLBuffer;
+	private var _indexBufferIsUpdatable:Bool = false;
 	public var _boundingInfo:BoundingInfo;
 	public var _delayLoadingFunction:Dynamic->Geometry->Void;
 	public var _softwareSkinningRenderId:Int = 0;
@@ -75,6 +77,14 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		return value;
 	}
 	
+	public static function CreateGeometryForMesh(mesh:Mesh):Geometry {
+		var geometry = new Geometry(Tools.uuid(), mesh.getScene());
+		
+		geometry.applyToMesh(mesh);
+		
+		return geometry;
+	}
+	
 
 	public function new(id:String, scene:Scene, ?vertexData:VertexData, updatable:Bool = false, ?mesh:Mesh) {
 		this.id = id;
@@ -83,7 +93,7 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		this._scene = scene;		
 		//Init vertex buffer cache
 		this._vertexBuffers = new Map();
-		//this._indices = []; // VK TODO: check
+		this._indices = new UInt32Array(0);
 		this._updatable = updatable;
 		
 		// vertexData
@@ -266,18 +276,27 @@ import lime.graphics.opengl.GLVertexArrayObject;
 	}
 	
 	public function _bind(effect:Effect, indexToBind:WebGLBuffer = null) {
+		if (effect == null) {
+			return;
+		}
+		
 		if (indexToBind == null) {
 			indexToBind = this._indexBuffer;
 		}
+		var vbs = this.getVertexBuffers();
+		
+		if (vbs == null) {
+			return;
+		}
 		
 		if (indexToBind != this._indexBuffer || this._vertexArrayObjects == null) {
-			this._engine.bindBuffers(this.getVertexBuffers(), indexToBind, effect);
+			this._engine.bindBuffers(vbs, indexToBind, effect);
 			return;
 		}
 		
 		// Using VAO
 		if (this._vertexArrayObjects[effect.key] == null) {
-			this._vertexArrayObjects[effect.key] = this._engine.recordVertexArrayObject(this.getVertexBuffers(), indexToBind, effect);
+			this._vertexArrayObjects[effect.key] = this._engine.recordVertexArrayObject(vbs, indexToBind, effect);
 		}
 		
 		this._engine.bindVertexArrayObject(this._vertexArrayObjects[effect.key], indexToBind);
@@ -310,6 +329,19 @@ import lime.graphics.opengl.GLVertexArrayObject;
 			
 			return copy;
 		}
+	}
+	
+	/**
+	 * Returns a boolean defining if the vertex data for the requested `kind` is updatable.
+	 */        
+	public function isVertexBufferUpdatable(kind:String):Bool {
+		var vb = this._vertexBuffers[kind];
+		
+		if (vb == null) {
+			return false;
+		}
+		
+		return vb.isUpdatable();
 	}
 
 	public function getVertexBuffer(kind:String):VertexBuffer {
@@ -355,8 +387,21 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		
 		return result;
 	}
+	
+	public function updateIndices(indices:UInt32Array, offset:Int = 0) {
+        if (this._indexBuffer == null) {
+            return;
+        }
+		
+        if (!this._indexBufferIsUpdatable) {
+            this.setIndices(indices, -1, true);
+        } 
+		else {
+            this._engine.updateDynamicIndexBuffer(this._indexBuffer, indices, offset);
+        }
+    }
 
-	public function setIndices(indices:Int32Array, totalVertices:Int = -1) {
+	public function setIndices(indices:UInt32Array, totalVertices:Int = -1, updatable:Bool = false) {
 		if (this._indexBuffer != null) {
 			this._engine._releaseBuffer(this._indexBuffer);
 		}
@@ -365,7 +410,7 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		
 		this._indices = indices;
 		if (this._meshes.length != 0 && this._indices != null) {
-			this._indexBuffer = this._engine.createIndexBuffer(this._indices);
+			this._indexBuffer = this._engine.createIndexBuffer(this._indices, updatable);
 		}
 		
 		if (totalVertices != -1) {
@@ -390,7 +435,7 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		return this._indices.length;
 	}
 
-	public function getIndices(copyWhenShared:Bool = false):Int32Array {
+	public function getIndices(copyWhenShared:Bool = false):UInt32Array {
 		if (!this.isReady()) {
 			return null;
 		}
@@ -402,7 +447,7 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		}
 		else {
 			var len = orig.length;
-			var copy:Int32Array = new Int32Array(len);
+			var copy:UInt32Array = new UInt32Array(len);
 			for (i in 0...len) {
 				copy[i] = orig[i];
 			}
@@ -685,7 +730,7 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		var indices = this.getIndices();
 		
 		var vertexData:VertexData = new VertexData();
-		vertexData.indices = new Int32Array(indices.length);		
+		vertexData.indices = new UInt32Array(indices.length);		
 		for (index in 0...indices.length) {
 			vertexData.indices[index] = (indices[index]);
 		}
@@ -905,7 +950,7 @@ import lime.graphics.opengl.GLVertexArrayObject;
 			}
 			
 			if (binaryInfo.matricesIndicesAttrDesc != null && binaryInfo.matricesIndicesAttrDesc.count > 0) {
-				var matricesIndicesData = new Int32Array(parsedGeometry, binaryInfo.matricesIndicesAttrDesc.offset, binaryInfo.matricesIndicesAttrDesc.count);
+				var matricesIndicesData = new UInt32Array(parsedGeometry, binaryInfo.matricesIndicesAttrDesc.offset, binaryInfo.matricesIndicesAttrDesc.count);
 				mesh.setVerticesData(VertexBuffer.MatricesIndicesKind, matricesIndicesData, false);
 			}
 			
@@ -915,7 +960,7 @@ import lime.graphics.opengl.GLVertexArrayObject;
 			}
 			
 			if (binaryInfo.indicesAttrDesc != null && binaryInfo.indicesAttrDesc.count > 0) {
-				var indicesData = new Int32Array(parsedGeometry, binaryInfo.indicesAttrDesc.offset, binaryInfo.indicesAttrDesc.count);
+				var indicesData = new UInt32Array(parsedGeometry, binaryInfo.indicesAttrDesc.offset, binaryInfo.indicesAttrDesc.count);
 				mesh.setIndices(indicesData);
 			}
 			
@@ -1009,16 +1054,15 @@ import lime.graphics.opengl.GLVertexArrayObject;
 			}
 			
 			if (parsedGeometry.matricesWeights != null) {
-				Geometry._CleanMatricesWeights(parsedGeometry.matricesWeights, parsedGeometry.numBoneInfluencers);
-				mesh.setVerticesData(VertexBuffer.MatricesWeightsKind, new Float32Array(parsedGeometry.matricesWeights), parsedGeometry.matricesWeights._updatable);
+				Geometry._CleanMatricesWeights(parsedGeometry, mesh);
+                mesh.setVerticesData(VertexBuffer.MatricesWeightsKind, parsedGeometry.matricesWeights, parsedGeometry.matricesWeights._updatable);
 			}
 			
-			if (parsedGeometry.matricesWeightsExtra != null) {
-				Geometry._CleanMatricesWeights(parsedGeometry.matricesWeightsExtra, parsedGeometry.numBoneInfluencers);
-				mesh.setVerticesData(VertexBuffer.MatricesWeightsExtraKind, new Float32Array(parsedGeometry.matricesWeightsExtra), parsedGeometry.matricesWeights._updatable);
-			}
+			if (parsedGeometry.matricesWeightsExtra != null) {       
+                mesh.setVerticesData(VertexBuffer.MatricesWeightsExtraKind, parsedGeometry.matricesWeightsExtra, parsedGeometry.matricesWeights._updatable);
+            }
 			
-			mesh.setIndices(new Int32Array(parsedGeometry.indices));
+			mesh.setIndices(new UInt32Array(parsedGeometry.indices));
 		}
 		
 		// SubMeshes
@@ -1046,28 +1090,76 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		}
 	}
 	
-	private static function _CleanMatricesWeights(matricesWeights:Array<Float>, influencers:Int) {
+	private static function _CleanMatricesWeights(parsedGeometry:Dynamic, mesh:Mesh) {
+		var epsilon:Float = 1e-3;
 		if (!SceneLoader.CleanBoneMatrixWeights) {
-            return;
-        }
+			return;
+		}
+		var noInfluenceBoneIndex = 0.0;
+		if (parsedGeometry.skeletonId > -1) {
+			var skeleton = mesh.getScene().getLastSkeletonByID(parsedGeometry.skeletonId);
+			noInfluenceBoneIndex = skeleton.bones.length;
+		} 
+		else {
+			return;
+		}
+		var matricesIndices = mesh.getVerticesData(VertexBuffer.MatricesIndicesKind);
+		var matricesIndicesExtra = mesh.getVerticesData(VertexBuffer.MatricesIndicesExtraKind);
+		var matricesWeights:Array<Float> = cast parsedGeometry.matricesWeights;
+		var matricesWeightsExtra:Array<Float> = cast parsedGeometry.matricesWeightsExtra;
+		var influencers:Int = cast parsedGeometry.numBoneInfluencer;
 		var size:Int = matricesWeights.length;
+		
 		var i:Int = 0;
 		while (i < size) {
 			var weight = 0.0;
-			var biggerIndex:Int = i;
-            var biggerWeight:Float = 0;
-			for (j in 0...influencers - 1) {
-				weight += matricesWeights[i + j];
-				
-				if (matricesWeights[i + j] > biggerWeight) {
-                    biggerWeight = matricesWeights[i + j];
-                    biggerIndex = i + j;
-                }
+			var firstZeroWeight = -1;
+			for (j in 0...4) {
+				var w = matricesWeights[i + j];
+				weight += w;
+				if (w < epsilon && firstZeroWeight < 0) {
+					firstZeroWeight = j;
+				}
 			}
-			
-			matricesWeights[biggerIndex] += Math.max(0, 1.0 - weight);
-			
-			i += influencers;
+			if (matricesWeightsExtra != null) {
+				for (j in 0...4) {
+					var w = matricesWeightsExtra[i + j];
+					weight += w;
+					if (w < epsilon && firstZeroWeight < 0) {
+						firstZeroWeight = j + 4;
+					}
+				}
+			}
+			if (firstZeroWeight < 0  || firstZeroWeight > (influencers - 1)) {
+				firstZeroWeight = influencers - 1;
+			}
+			if (weight > epsilon) {
+				var mweight = 1.0 / weight;
+				for (j in 0...4) {
+					matricesWeights[i + j] *= mweight;
+				}
+				if (matricesWeightsExtra != null) {
+					for (j in 0...4) {
+						matricesWeightsExtra[i + j] *= mweight;
+					}    
+				}
+			} 
+			else {
+				if (firstZeroWeight >= 4) {
+					matricesWeightsExtra[i + firstZeroWeight - 4] = 1.0 - weight;
+					matricesIndicesExtra[i + firstZeroWeight - 4] = noInfluenceBoneIndex;
+				} 
+				else {
+					matricesWeights[i + firstZeroWeight] = 1.0 - weight;
+					matricesIndices[i + firstZeroWeight] = noInfluenceBoneIndex;
+				}
+			}
+			i += 4;
+		}
+		
+		mesh.setVerticesData(VertexBuffer.MatricesIndicesKind, matricesIndices);
+		if (parsedGeometry.matricesWeightsExtra != null) {       
+			mesh.setVerticesData(VertexBuffer.MatricesIndicesExtraKind, matricesIndicesExtra);
 		}
 	}
 	

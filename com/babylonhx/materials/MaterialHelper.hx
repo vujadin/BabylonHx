@@ -1,5 +1,6 @@
 package com.babylonhx.materials;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.VertexBuffer;
@@ -41,6 +42,15 @@ class MaterialHelper {
 				
 			case "LIGHTMAP":
 				untyped defines.LIGHTMAP = true;
+				
+			case "ALBEDO":
+				untyped defines.ALBEDO = true;
+				
+			case "REFLECTIVITY":
+				untyped defines.REFLECTIVITY = true;
+				
+			case "MICROSURFACEMAP":
+				untyped defines.MICROSURFACEMAP = true;
 		}
 	}
 	
@@ -66,7 +76,24 @@ class MaterialHelper {
 				
 			case "LIGHTMAP":
 				untyped defines.LIGHTMAPDIRECTUV = value;
+				
+			case "ALBEDO":
+				untyped defines.ALBEDODIRECTUV = value;
+				
+			case "REFLECTIVITY":
+				untyped defines.REFLECTIVITYDIRECTUV = value;
+				
+			case "MICROSURFACEMAP":
+				untyped defines.MICROSURFACEMAPDIRECTUV = value;
 		}
+	}
+	
+	public static function BindEyePosition(effect:Effect, scene:Scene) {
+		if (scene._forcedViewPosition != null) {
+			effect.setVector3("vEyePosition", scene._forcedViewPosition);            
+			return;
+		}
+		effect.setVector3("vEyePosition", scene._mirroredCameraPosition != null ? scene._mirroredCameraPosition : scene.activeCamera.globalPosition);      
 	}
 	
 	public static function PrepareDefinesForMergedUV(texture:BaseTexture, defines:MaterialDefines, key:String) {
@@ -99,6 +126,7 @@ class MaterialHelper {
 			untyped defines.LOGARITHMICDEPTH = useLogarithmicDepth;
 			untyped defines.POINTSIZE = (pointsCloud || scene.forcePointsCloud);
 			untyped defines.FOG = (scene.fogEnabled && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE && fogEnabled);
+			untyped defines.NONUNIFORMSCALING = mesh.nonUniformScaling;
 		}
 	}
 
@@ -172,10 +200,12 @@ class MaterialHelper {
 		if (useMorphTargets) {
 			if (Reflect.hasField(mesh, "morphTargetManager")) {
 				var manager:MorphTargetManager = untyped mesh.morphTargetManager;
-				untyped defines.MORPHTARGETS_TANGENT = manager.supportsTangents && defines.TANGENT;
-				untyped defines.MORPHTARGETS_NORMAL = manager.supportsNormals && defines.NORMAL;
-				untyped defines.MORPHTARGETS = (manager.numInfluencers > 0);
-				untyped defines.NUM_MORPH_INFLUENCERS = manager.numInfluencers;
+				if (manager != null) {
+					untyped defines.MORPHTARGETS_TANGENT = manager.supportsTangents && defines.TANGENT;
+					untyped defines.MORPHTARGETS_NORMAL = manager.supportsNormals && defines.NORMAL;
+					untyped defines.MORPHTARGETS = (manager.numInfluencers > 0);
+					untyped defines.NUM_MORPH_INFLUENCERS = manager.numInfluencers;
+				}
 			} 
 			else {
 				untyped defines.MORPHTARGETS_TANGENT = false;
@@ -237,7 +267,7 @@ class MaterialHelper {
 				defines.shadows[lightIndex] = false;
 				defines.shadowpcf[lightIndex] = false;
 				defines.shadowesm[lightIndex] = false;
-				defines.shadowqube[lightIndex] = false;
+				defines.shadowcube[lightIndex] = false;
 				
 				if (mesh != null && mesh.receiveShadows && scene.shadowsEnabled && light.shadowEnabled) {
 					var shadowGenerator = light.getShadowGenerator();
@@ -264,7 +294,9 @@ class MaterialHelper {
 			}
 		}
 		
-		untyped defines.SPECULARTERM = specularEnabled;
+		if (specularSupported) {
+			untyped defines.SPECULARTERM = specularEnabled;
+		}
 		untyped defines.SHADOWS = shadowEnabled;
 		
 		// Resetting all other lights if any
@@ -282,7 +314,7 @@ class MaterialHelper {
 		
 		var caps = scene.getEngine().getCaps();
 		
-		/*if (defines.defines[untyped defines.SHADOWFLOAT] == null) {
+		/*if (untyped defines.SHADOWFLOAT == null) {
 			needRebuild = true;
 		}*/
 		
@@ -301,8 +333,8 @@ class MaterialHelper {
 	public static function PrepareUniformsAndSamplersList(uniformsListOrOptions:Dynamic, ?samplersList:Array<String>, ?defines:MaterialDefines, maxSimultaneousLights:Int = 4) {
 		var uniformsList:Array<String> = null;
 		var uniformBuffersList:Array<String> = null;
-		var samplersList:Array<String> = null;
-		var defines:MaterialDefines = null;
+		/*var samplersList:Array<String> = null;
+		var defines:MaterialDefines = null;*/
 		
 		if (uniformsListOrOptions.uniformsNames != null) {
 			var options:EffectCreationOptions = cast uniformsListOrOptions;
@@ -314,6 +346,9 @@ class MaterialHelper {
 		} 
 		else {
 			uniformsList = cast uniformsListOrOptions;
+			if (samplersList == null) {
+				samplersList = [];
+			}
 		}
 		
 		for (lightIndex in 0...maxSimultaneousLights) {
@@ -342,11 +377,8 @@ class MaterialHelper {
 		}
 	}
 
-	public static function HandleFallbacksForShadows(defines:MaterialDefines, fallbacks:EffectFallbacks, maxSimultaneousLights:Int = 4) {
-		if (untyped defines.SHADOWS == false) {
-			return;
-		}
-		
+	public static function HandleFallbacksForShadows(defines:MaterialDefines, fallbacks:EffectFallbacks, maxSimultaneousLights:Int = 4, rank:Int = 0):Int {
+		var lightFallbackRank:Int = 0;
 		for (lightIndex in 0...maxSimultaneousLights) {
 			if (defines.lights.length >= lightIndex || !defines.lights[lightIndex]) {
 			//if (defines.lights[lightIndex] == null || !defines.lights[lightIndex]) {
@@ -354,31 +386,35 @@ class MaterialHelper {
 			}
 			
 			if (lightIndex > 0) {
-				fallbacks.addFallback(lightIndex, "LIGHT" + lightIndex);
+				lightFallbackRank = rank + lightIndex;
+				fallbacks.addFallback(lightFallbackRank, "LIGHT" + lightIndex);
 			}
 			
-			if (defines.shadows[lightIndex]) {
-				fallbacks.addFallback(0, "SHADOW" + lightIndex);
-			}
-			
-			if (defines.shadowpcf[lightIndex]) {
-				fallbacks.addFallback(0, "SHADOWPCF" + lightIndex);
-			}
-			
-			if (defines.shadowesm[lightIndex]) {
-				fallbacks.addFallback(0, "SHADOWESM" + lightIndex);
+			if (! untyped defines.SHADOWS) {
+				if (defines.shadows[lightIndex]) {
+					fallbacks.addFallback(rank, "SHADOW" + lightIndex);
+				}
+				
+				if (defines.shadowpcf[lightIndex]) {
+					fallbacks.addFallback(rank, "SHADOWPCF" + lightIndex);
+				}
+				
+				if (defines.shadowesm[lightIndex]) {
+					fallbacks.addFallback(rank, "SHADOWESM" + lightIndex);
+				}
 			}
 		}
+		return lightFallbackRank++;
 	}
 	
 	public static function PrepareAttributesForMorphTargets(attribs:Array<String>, mesh:AbstractMesh, defines:MaterialDefines) {
 		var influencers:Int = untyped defines.NUM_MORPH_INFLUENCERS;
 
-		if (influencers > 0) {
+		if (influencers > 0 && Engine.LastCreatedEngine != null) {
 			var maxAttributesCount = Engine.LastCreatedEngine.getCaps().maxVertexAttribs;
 			var manager = cast (mesh, Mesh).morphTargetManager;
-			var normal = manager.supportsNormals && untyped defines.NORMAL;
-			var tangent = manager.supportsTangents && untyped defines.TANGENT;
+			var normal = manager != null && manager.supportsNormals && untyped defines.NORMAL;
+			var tangent = manager != null && manager.supportsTangents && untyped defines.TANGENT;
 			for (index in 0...influencers) {
 				attribs.push(VertexBuffer.PositionKind + index);
 				
@@ -468,22 +504,23 @@ class MaterialHelper {
 		}
 	}
 	
-	public static function BindBonesParameters(mesh:AbstractMesh, effect:Effect) {
-		if (mesh != null && mesh.useBones && mesh.computeBonesUsingShaders) {
+	public static function BindBonesParameters(mesh:AbstractMesh, ?effect:Effect) {
+		if (mesh != null && mesh.useBones && mesh.computeBonesUsingShaders && mesh.skeleton != null) {
 			var matrices = mesh.skeleton.getTransformMatrices(mesh);
 			
-            if (matrices != null) {
+            if (matrices != null && effect != null) {
                 effect.setMatrices("mBones", matrices);
             }
 		}
 	}
 	
 	public static function BindMorphTargetParameters(abstractMesh:AbstractMesh, effect:Effect) {
-		if (abstractMesh == null || cast(abstractMesh, Mesh).morphTargetManager == null) {
-			return;
-		}
+		var manager = cast (abstractMesh, Mesh).morphTargetManager;
+        if (abstractMesh == null || manager == null) {
+            return;
+        }
 		
-		effect.setFloatArray("morphTargetInfluences", cast(abstractMesh, Mesh).morphTargetManager.influences);
+		effect.setFloatArray("morphTargetInfluences", manager.influences);
 	}
 	
 	public static function BindLogDepth(logarithmicDepth:Bool, effect:Effect, scene:Scene) {

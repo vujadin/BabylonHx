@@ -1,6 +1,6 @@
 package com.babylonhx.materials;
 
-import com.babylonhx.Engine;
+import com.babylonhx.engine.Engine;
 import com.babylonhx.lights.shadows.ShadowGenerator;
 import com.babylonhx.lights.IShadowLight;
 import com.babylonhx.materials.textures.BaseTexture;
@@ -643,8 +643,8 @@ typedef SMD = StandardMaterialDefines
 	 * Child classes can use it to update shaders
 	 */
 	override public function isReadyForSubMesh(mesh:AbstractMesh, subMesh:BaseSubMesh, useInstances:Bool = false):Bool {            
-		if (this.isFrozen) {
-			if (this._wasPreviouslyReady && subMesh.effect != null) {
+		if (subMesh.effect != null && this.isFrozen) {
+			if (this._wasPreviouslyReady) {
 				return true;
 			}
 		}
@@ -845,6 +845,8 @@ typedef SMD = StandardMaterialDefines
 			defines.LINKEMISSIVEWITHDIFFUSE = this._linkEmissiveWithDiffuse;   
 			
 			defines.SPECULAROVERALPHA = this._useSpecularOverAlpha;
+			
+			defines.PREMULTIPLYALPHA = (this.alphaMode == Engine.ALPHA_PREMULTIPLIED || this.alphaMode == Engine.ALPHA_PREMULTIPLIED_PORTERDUFF);
 		}
 		
 		if (defines._areImageProcessingDirty) {
@@ -1034,7 +1036,7 @@ typedef SMD = StandardMaterialDefines
 			this.buildUniformLayout();
 		}
 		
-		if (!subMesh.effect.isReady()) {
+		if (subMesh.effect == null && !subMesh.effect.isReady()) {
 			return false;
 		}
 		
@@ -1107,6 +1109,9 @@ typedef SMD = StandardMaterialDefines
 		}
 		
 		var effect = subMesh.effect;
+		if (effect == null) {
+			return;
+		}
 		this._activeEffect = effect;
 		
 		// Matrices        
@@ -1279,7 +1284,7 @@ typedef SMD = StandardMaterialDefines
 			// Colors
 			scene.ambientColor.multiplyToRef(this.ambientColor, this._globalAmbientColor);
 			
-			effect.setVector3("vEyePosition", scene._mirroredCameraPosition != null ? scene._mirroredCameraPosition : scene.activeCamera.globalPosition);
+			MaterialHelper.BindEyePosition(effect, scene);
 			effect.setColor3("vAmbientColor", this._globalAmbientColor);
 		}
 		
@@ -1306,7 +1311,9 @@ typedef SMD = StandardMaterialDefines
 			MaterialHelper.BindLogDepth(defines.LOGARITHMICDEPTH, effect, scene);
 			
 			// image processing
-			this._imageProcessingConfiguration.bind(this._activeEffect);
+			if (!this._imageProcessingConfiguration.applyByPostProcess) {
+				this._imageProcessingConfiguration.bind(this._activeEffect);
+			}
 		}
 		
 		this._uniformBuffer.update();

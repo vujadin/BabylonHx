@@ -199,7 +199,7 @@ class FireMaterial extends PushMaterial {
 				}, engine), defines);
 		}
 		
-		if (!subMesh.effect.isReady()) {
+		if (subMesh.effect == null || !subMesh.effect.isReady()) {
 			return false;
 		}
 		
@@ -218,6 +218,9 @@ class FireMaterial extends PushMaterial {
 		}
 		
 		var effect = subMesh.effect;
+		if (effect == null) {
+			return;
+		}
 		this._activeEffect = effect;
 		
 		// Matrices

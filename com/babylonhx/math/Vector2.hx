@@ -13,7 +13,7 @@ import lime.utils.Float32Array;
 	public var y:Float;
 	
 	
-	inline public function new(x:Float, y:Float) {
+	inline public function new(x:Float = 0, y:Float = 0) {
 		this.x = x;
 		this.y = y;
 	}

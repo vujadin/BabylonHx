@@ -1,5 +1,6 @@
 package com.babylonhx.materials.textures;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.math.Matrix;
@@ -86,6 +87,7 @@ import lime.utils.UInt8Array;
 	@serialize()
 	public var wAng:Float = 0;
 
+	// BHX: must be property as get/set are overriden in child classes. Do not inline!
 	@serialize()
 	private var _wrapU:Int = Texture.WRAP_ADDRESSMODE;
 	public var wrapU(get, set):Int;
@@ -107,10 +109,23 @@ import lime.utils.UInt8Array;
 	}
 
 	@serialize()
+	private var _wrapR:Int = Texture.WRAP_ADDRESSMODE;
+	public var wrapR(get, set):Int;
+	private function get_wrapR():Int {
+		return this._wrapR;
+	}
+	private function set_wrapR(value:Int):Int {
+		return this._wrapR = value;
+	}
+
+	@serialize()
 	public var anisotropicFilteringLevel:Int = BaseTexture.DEFAULT_ANISOTROPIC_FILTERING_LEVEL;
 
 	@serialize()
 	public var isCube:Bool = false;
+	
+	@serialize()
+	public var is3D:Bool = false;
 	
 	@serialize()
 	public var gammaSpace:Bool = true;
@@ -186,8 +201,10 @@ import lime.utils.UInt8Array;
 	
 
 	public function new(scene:Scene) {
-		this._scene = scene;
-		this._scene.textures.push(this);
+		this._scene = scene != null ? scene : Engine.LastCreatedScene;
+		if (this._scene != null) {
+			this._scene.textures.push(this);
+		}
 		this._uid = null;
 	}
 
@@ -196,11 +213,11 @@ import lime.utils.UInt8Array;
 	}
 
 	public function getTextureMatrix():Matrix {
-		return null;
+		return Matrix.IdentityReadOnly;
 	}
 
 	public function getReflectionTextureMatrix():Matrix {
-		return null;
+		return Matrix.IdentityReadOnly;
 	}
 
 	public function getInternalTexture():InternalTexture {
@@ -225,11 +242,11 @@ import lime.utils.UInt8Array;
 	}
 
 	public function getSize():Dynamic  {
-		if (this._texture.width != -1 && this._texture.width != 0) {
+		if (this._texture != null && this._texture.width != -1 && this._texture.width != 0) {
 			return { width: this._texture.width, height: this._texture.height };
 		}
 		
-		if (this._texture._size != -1) {
+		if (this._texture != null && this._texture._size != -1) {
 			return { width: this._texture._size, height: this._texture._size };
 		}
 		
@@ -294,7 +311,13 @@ import lime.utils.UInt8Array;
 		}
 		
 		var size = this.getSize();
-		var engine = this.getScene().getEngine();
+		var scene = this.getScene();
+		
+		if (scene == null) {
+			return null;
+		}
+		
+		var engine = scene.getEngine();
 		
 		if (this._texture.isCube) {
 			return engine._readTexturePixels(this._texture, size.width, size.height, faceIndex);

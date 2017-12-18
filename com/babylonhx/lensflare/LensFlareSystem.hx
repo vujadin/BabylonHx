@@ -1,18 +1,21 @@
 package com.babylonhx.lensflare;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.culling.Ray;
+import com.babylonhx.materials.Material;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Viewport;
+import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.tools.Tools;
 
 import lime.utils.Float32Array;
-import lime.utils.Int32Array;
+import lime.utils.UInt32Array;
 
 /**
  * ...
@@ -25,7 +28,7 @@ import lime.utils.Int32Array;
 	public var lensFlares:Array<LensFlare> = new Array<LensFlare>();
 	public var borderLimit:Float = 300;
 	public var viewportBorder:Float = 0;
-	public var meshesSelectionPredicate:Mesh->Bool;
+	public var meshesSelectionPredicate:AbstractMesh->Bool;
 	public var layerMask:Int = 0x0FFFFFFF;
 	public var id:String;
 
@@ -46,8 +49,8 @@ import lime.utils.Int32Array;
 		this._emitter = emitter;
 		scene.lensFlareSystems.push(this);
 		
-		this.meshesSelectionPredicate = function(m:Mesh):Bool {
-			return m.material != null && m.isVisible && m.isEnabled() && m.isBlocker && ((m.layerMask & scene.activeCamera.layerMask) != 0);
+		this.meshesSelectionPredicate = function(m:AbstractMesh):Bool {
+			return scene.activeCamera != null && m.material != null && m.isVisible && m.isEnabled() && m.isBlocker && ((m.layerMask & scene.activeCamera.layerMask) != 0);
 		}
 		
 		var engine = this._scene.getEngine(); 
@@ -85,7 +88,7 @@ import lime.utils.Int32Array;
 		indices.push(0);
 		indices.push(2);
 		indices.push(3);
-		this._indexBuffer = engine.createIndexBuffer(new Int32Array(indices));
+		this._indexBuffer = engine.createIndexBuffer(new UInt32Array(indices));
 	}
 
 	public var isEnabled(get, null):Bool;
@@ -274,7 +277,7 @@ import lime.utils.Int32Array;
 			this._effect.setFloat4("color", flare.color.r * intensity, flare.color.g * intensity, flare.color.b * intensity, 1.0);
 			
 			// Draw order
-			engine.draw(true, 0, 6);
+			engine.drawElementsType(Material.TriangleFillMode, 0, 6);
 		}
 		
 		engine.setDepthBuffer(true);

@@ -1,5 +1,6 @@
 package com.babylonhx.layer;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Matrix;
@@ -26,7 +27,7 @@ import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.ISize;
 
 import lime.utils.Float32Array;
-import lime.utils.Int32Array;
+import lime.utils.UInt32Array;
 
 /**
  * ...
@@ -59,6 +60,7 @@ class HighlightLayer {
 	 */
 	public static var normalMeshStencilReference:Int = 0x01;
 
+	public var name:String;
 	private var _scene:Scene;
 	private var _engine:Engine;
 	private var _options:IHighlightLayerOptions;
@@ -69,7 +71,8 @@ class HighlightLayer {
 	private var _verticalBlurPostprocess:PostProcess;
 	private var _cachedDefines:String;
 	private var _glowMapGenerationEffect:Effect;
-	private var _glowMapMergeEffect:Effect;      
+	private var _glowMapMergeEffect:Effect;
+	private var _thresholdPostProcess:PostProcess;
 	private var _blurTexture:RenderTargetTexture;
 	@:allow(com.babylonhx.Scene)
 	private var _mainTexture:RenderTargetTexture;
@@ -95,11 +98,6 @@ class HighlightLayer {
      */
     public var isEnabled:Bool = true;
 	
-	public var camera(get, never):Camera;
-	private function get_camera():Camera {
-		return this._options.camera;
-	}
-	
 	/**
 	 * Specifies the horizontal size of the blur.
 	 */
@@ -120,6 +118,11 @@ class HighlightLayer {
 	}
 	private function get_blurVerticalSize():Float {
 		untyped return this._verticalBlurPostprocess.kernel;
+	}
+	
+	public var camera(get, never):Camera;
+	private function get_camera():Camera {
+		return this._options.camera;
 	}
 
 	/**
@@ -172,6 +175,7 @@ class HighlightLayer {
 	 * @param options Sets of none mandatory options to use with the layer (see IHighlightLayerOptions for more information)
 	 */
 	public function new(name:String, scene:Scene, ?options:Dynamic/*IHighlightLayerOptions*/) {
+		this.name = name;
 		this._scene = scene;
 		var engine = scene.getEngine();
 		this._engine = engine;
@@ -185,13 +189,12 @@ class HighlightLayer {
 		
 		// Adapt options
 		this._options = options != null ? options : {
-			//camera: null,
 			mainTextureRatio: 0.5,
-			//mainTextureFixedSize: 512,
 			blurTextureSizeRatio: 0.5,
 			blurHorizontalSize: 1.0,
 			blurVerticalSize: 1.0,
-			alphaBlendingMode: Engine.ALPHA_COMBINE
+			alphaBlendingMode: Engine.ALPHA_COMBINE,
+			camera: null
 		};
 		if (this._options.mainTextureRatio == null) {
 			this._options.mainTextureRatio = 0.5; 
@@ -208,9 +211,6 @@ class HighlightLayer {
 		if (this._options.alphaBlendingMode == null) {
 			this._options.alphaBlendingMode = Engine.ALPHA_COMBINE;
 		}
-		/*if (this._options.mainTextureFixedSize == null) {
-			this._options.mainTextureFixedSize = 512;
-		}*/
 		
 		// VBO
 		var vertices:Float32Array = new Float32Array([
@@ -250,11 +250,15 @@ class HighlightLayer {
 		indices.push(2);
 		indices.push(3);
 		
-		this._indexBuffer = engine.createIndexBuffer(new Int32Array(indices));
+		this._indexBuffer = engine.createIndexBuffer(new UInt32Array(indices));
 	}
 
 	public function _rebuild() {
-		this._vertexBuffers[VertexBuffer.PositionKind]._rebuild();
+		var vb = this._vertexBuffers[VertexBuffer.PositionKind];
+		
+		if (vb != null) {
+			vb._rebuild();
+		}
 		
 		this._createIndexBuffer();
 	}
@@ -335,25 +339,55 @@ class HighlightLayer {
 			});
 		}
 		
+		var postProcesses = [this._downSamplePostprocess, this._horizontalBlurPostprocess, this._verticalBlurPostprocess];
+		
+		if (this._options.threshold != null) {
+            var threshold = this._options.threshold;
+            this._thresholdPostProcess = new PostProcess("threshold", "highlightLayerThreshold", ["screenSize", "threshold"], null, 0.25, null, Texture.BILINEAR_SAMPLINGMODE, this._scene.getEngine());
+			this._thresholdPostProcess.onApplyObservable.add(function(effect:Effect, _) {
+                effect.setFloat("threshold", threshold);
+                effect.setFloat2("screenSize", blurTextureWidth, blurTextureHeight);
+            });
+            postProcesses.push(this._thresholdPostProcess);
+        }
+		
 		this._mainTexture.onAfterUnbindObservable.add(function(_, _) {
 			this.onBeforeBlurObservable.notifyObservers(this);
 			
-			this._scene.postProcessManager.directRender(
-				[this._downSamplePostprocess, this._horizontalBlurPostprocess, this._verticalBlurPostprocess], 
-				this._blurTexture.getInternalTexture(), true
-			);
+			var internalTexture = this._blurTexture.getInternalTexture();
+			
+			if (internalTexture != null) {			
+				this._scene.postProcessManager.directRender(
+					postProcesses, 
+					this._blurTexture.getInternalTexture(), true
+				);
+			}
 			
 			this.onAfterBlurObservable.notifyObservers(this);
 		});
 		
 		// Custom render function
 		var renderSubMesh = function(subMesh:SubMesh) {
+			if (this._meshes == null) {
+				return;
+			}
+			
+			var material = subMesh.getMaterial();
 			var mesh = subMesh.getRenderingMesh();
 			var scene = this._scene;
 			var engine = scene.getEngine();
 			
+			if (material == null) {
+				return;
+			}
+			
+			// Do not block in blend mode.
+            if (material.needAlphaBlendingForMesh(mesh)) {
+                return;
+            }
+			
 			// Culling
-			engine.setState(subMesh.getMaterial().backFaceCulling);
+			engine.setState(material.backFaceCulling);
 			
 			// Managing instances
 			var batch = mesh._getInstancesRenderList(subMesh._id);
@@ -362,14 +396,13 @@ class HighlightLayer {
 			}
 			
 			// Excluded Mesh
-            if (this._excludedMeshes[mesh.uniqueId] != null) {
+            if (this._excludedMeshes != null && this._excludedMeshes[mesh.uniqueId] != null) {
                 return;
             }
 			
 			var hardwareInstancedRendering = (engine.getCaps().instancedArrays) && (batch.visibleInstances[subMesh._id] != null) && (batch.visibleInstances[subMesh._id] != null);
 			
 			var highlightLayerMesh:IHighlightLayerMesh = this._meshes[mesh.uniqueId];
-			var material = subMesh.getMaterial();
 			var emissiveTexture:Texture = null;
 			if (highlightLayerMesh != null && highlightLayerMesh.glowEmissiveOnly && material != null) {
 				emissiveTexture = untyped material.emissiveTexture;
@@ -401,7 +434,10 @@ class HighlightLayer {
 					
 					if (alphaTexture != null) {
 						this._glowMapGenerationEffect.setTexture("diffuseSampler", alphaTexture);
-						this._glowMapGenerationEffect.setMatrix("diffuseMatrix", alphaTexture.getTextureMatrix());
+						var textureMatrix = alphaTexture.getTextureMatrix();
+						if (textureMatrix != null) {
+							this._glowMapGenerationEffect.setMatrix("diffuseMatrix", alphaTexture.getTextureMatrix());
+						}
 					}
 				}
 				
@@ -412,7 +448,7 @@ class HighlightLayer {
 				}
 				
 				// Bones
-				if (mesh.useBones && mesh.computeBonesUsingShaders) {
+				if (mesh.useBones && mesh.computeBonesUsingShaders && mesh.skeleton != null) {
 					this._glowMapGenerationEffect.setMatrices("mBones", mesh.skeleton.getTransformMatrices(mesh));
 				}
 				
@@ -465,7 +501,13 @@ class HighlightLayer {
 	 * @return true if ready otherwise, false
 	 */
 	private function isReady(subMesh:SubMesh, useInstances:Bool, emissiveTexture:Texture):Bool {
-		if (!subMesh.getMaterial().isReady(subMesh.getMesh(), useInstances)) {
+		var material = subMesh.getMaterial();
+		
+		if (material == null) {
+			return false;
+		}
+		
+		if (!material.isReady(subMesh.getMesh(), useInstances)) {
 			return false;
 		}
 		
@@ -474,7 +516,6 @@ class HighlightLayer {
 		var attribs:Array<String> = [VertexBuffer.PositionKind];
 		
 		var mesh = subMesh.getMesh();
-		var material = subMesh.getMaterial();
 		var uv1 = false;
 		var uv2 = false;
 		
@@ -527,7 +568,7 @@ class HighlightLayer {
 				attribs.push(VertexBuffer.MatricesWeightsExtraKind);
 			}
 			defines.push("#define NUM_BONE_INFLUENCERS " + mesh.numBoneInfluencers);
-			defines.push("#define BonesPerMesh " + (mesh.skeleton.bones.length + 1));
+			defines.push("#define BonesPerMesh " + (mesh.skeleton != null ? (mesh.skeleton.bones.length + 1) : 0));
 		} 
 		else {
 			defines.push("#define NUM_BONE_INFLUENCERS 0");
@@ -603,12 +644,12 @@ class HighlightLayer {
 		if (this.outerGlow) {
 			currentEffect.setFloat("offset", 0);
 			engine.setStencilFunction(Engine.NOTEQUAL);
-			engine.draw(true, 0, 6);
+			engine.drawElementsType(Material.TriangleFillMode, 0, 6);
 		}
 		if (this.innerGlow) {
 			currentEffect.setFloat("offset", 1);
 			engine.setStencilFunction(Engine.EQUAL);
-			engine.draw(true, 0, 6);
+			engine.drawElementsType(Material.TriangleFillMode, 0, 6);
 		}
 		
 		// Restore Cache
@@ -659,10 +700,19 @@ class HighlightLayer {
 	  * @param mesh The mesh to highlight
 	  */
 	public function removeExcludedMesh(mesh:Mesh) {
+		if (this._excludedMeshes == null) {
+			return;
+		}
+		
 		var meshExcluded = this._excludedMeshes[mesh.uniqueId];
 		if (meshExcluded != null) {
-			mesh.onBeforeRenderObservable.remove(meshExcluded.beforeRender);
-			mesh.onAfterRenderObservable.remove(meshExcluded.afterRender);
+			if (meshExcluded.beforeRender != null) {
+				mesh.onBeforeRenderObservable.remove(meshExcluded.beforeRender);
+			}
+			
+			if (meshExcluded.afterRender != null) {
+				mesh.onAfterRenderObservable.remove(meshExcluded.afterRender);
+			}
 		}
 		
 		this._excludedMeshes[mesh.uniqueId] = null;
@@ -675,6 +725,10 @@ class HighlightLayer {
 	 * @param glowEmissiveOnly Extract the glow from the emissive texture
 	 */
 	public function addMesh(mesh:Mesh, color:Color3, glowEmissiveOnly:Bool = false) {
+		if (this._meshes == null) {
+			return;
+		}
+		
 		var meshHighlight = this._meshes[mesh.uniqueId];
 		if (meshHighlight != null) {
 			meshHighlight.color = color;
@@ -705,13 +759,22 @@ class HighlightLayer {
 	 * @param mesh The mesh to highlight
 	 */
 	public function removeMesh(mesh:Mesh) {
-		var meshHighlight = this._meshes[mesh.uniqueId];
-		if (meshHighlight != null) {
-			mesh.onBeforeRenderObservable.remove(meshHighlight.observerHighlight);
-			mesh.onAfterRenderObservable.remove(meshHighlight.observerDefault);
+		if (this._meshes == null) {
+			return;
 		}
 		
-		this._meshes[mesh.uniqueId] = null;
+		var meshHighlight = this._meshes[mesh.uniqueId];
+		if (meshHighlight != null) {
+			if (meshHighlight.observerHighlight != null) {
+				mesh.onBeforeRenderObservable.remove(meshHighlight.observerHighlight);
+			}
+			
+			if (meshHighlight.observerDefault != null) {
+				mesh.onAfterRenderObservable.remove(meshHighlight.observerDefault);
+			}
+			
+			this._meshes.remove(mesh.uniqueId);
+		}
 		
 		this._shouldRender = false;
 		for (key in this._meshes.keys()) {
@@ -764,6 +827,7 @@ class HighlightLayer {
 		this._downSamplePostprocess.dispose();
 		this._horizontalBlurPostprocess.dispose();
 		this._verticalBlurPostprocess.dispose();
+		this._thresholdPostProcess.dispose();
 	}
 
 	/**
@@ -784,24 +848,38 @@ class HighlightLayer {
 		// Clean textures and post processes
 		this.disposeTextureAndPostProcesses();
 		
-		// Clean mesh references 
-		for (id in this._meshes.keys()) {
-			var meshHighlight = this._meshes[id];
-			if (meshHighlight != null && meshHighlight.mesh != null) {
-				meshHighlight.mesh.onBeforeRenderObservable.remove(meshHighlight.observerHighlight);
-				meshHighlight.mesh.onAfterRenderObservable.remove(meshHighlight.observerDefault);
-			} 
-		}
-		this._meshes = null;
-		
-		for (id in this._excludedMeshes.keys()) {
-			var meshHighlight = this._excludedMeshes[id];
-			if (meshHighlight != null) {
-				meshHighlight.mesh.onBeforeRenderObservable.remove(meshHighlight.beforeRender);
-				meshHighlight.mesh.onAfterRenderObservable.remove(meshHighlight.afterRender);
+		if (this._meshes != null) {
+			// Clean mesh references 
+			for (id in this._meshes.keys()) {
+				var meshHighlight = this._meshes[id];
+				if (meshHighlight != null && meshHighlight.mesh != null) {
+					if (meshHighlight.observerHighlight != null) {
+						meshHighlight.mesh.onBeforeRenderObservable.remove(meshHighlight.observerHighlight);
+					}
+					
+					if (meshHighlight.observerDefault != null) {
+						meshHighlight.mesh.onAfterRenderObservable.remove(meshHighlight.observerDefault);
+					}
+				}
 			}
+			this._meshes = null;
 		}
-		this._excludedMeshes = null;
+		
+		if (this._excludedMeshes != null) {
+			for (id in this._excludedMeshes.keys()) {
+				var meshHighlight = this._excludedMeshes[id];
+				if (meshHighlight != null) {
+					if (meshHighlight.beforeRender != null) {
+						meshHighlight.mesh.onBeforeRenderObservable.remove(meshHighlight.beforeRender);
+					}
+					
+					if (meshHighlight.afterRender != null) {
+						meshHighlight.mesh.onAfterRenderObservable.remove(meshHighlight.afterRender);
+					}
+				}
+			}
+			this._excludedMeshes = null;
+		}
 		
 		// Remove from scene
 		var index = this._scene.highlightLayers.indexOf(this);
@@ -817,7 +895,7 @@ class HighlightLayer {
 		this.onBeforeBlurObservable.clear();
 		this.onBeforeComposeObservable.clear();
 		this.onAfterComposeObservable.clear();
-		this.onSizeChangedObservable.clear();
+		this.onSizeChangedObservable.clear();		
 	}
 	
 }

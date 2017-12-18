@@ -5,6 +5,7 @@ import com.babylonhx.math.SphericalHarmonics;
 import com.babylonhx.math.SphericalPolynomial;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Tools;
+import com.babylonhx.engine.Engine;
 import com.babylonhx.tools.hdr.CubeMapToSphericalPolynomialTools;
 import com.babylonhx.tools.hdr.PMREMGenerator;
 import com.babylonhx.tools.hdr.HDRTools;
@@ -30,11 +31,11 @@ import lime.utils.Int32Array;
 class HDRCubeTexture extends BaseTexture {
 	
 	private static var _facesMapping = [
-		"right",
 		"left",
-		"up",
 		"down",
 		"front",
+		"right",
+		"up",
 		"back"
 	];
 
@@ -53,11 +54,6 @@ class HDRCubeTexture extends BaseTexture {
 	 * The texture URL.
 	 */
 	public var url:String;
-
-	/**
-	 * The spherical polynomial data extracted from the texture.
-	 */
-	//public var sphericalPolynomial:SphericalPolynomial = null;
 	
 	/**
 	 * Specifies wether the texture has been generated through the PMREMGenerator tool.
@@ -113,23 +109,20 @@ class HDRCubeTexture extends BaseTexture {
 		this._onError = onError;
 		this.gammaSpace = false;
 		
+		var caps = scene.getEngine().getCaps();
+		
 		if (size > 0) {
 			this._isBABYLONPreprocessed = false;
 			this._noMipmap = noMipmap;
 			this._size = size;
 			this._useInGammaSpace = useInGammaSpace;
-			this._usePMREMGenerator = usePMREMGenerator && 
-				scene.getEngine().getCaps().textureLOD &&
-				scene.getEngine().getCaps().textureFloat &&
-				!this._useInGammaSpace;
+			this._usePMREMGenerator = usePMREMGenerator && caps.textureLOD && caps.textureFloat && !this._useInGammaSpace;
 		}
 		else {
 			this._isBABYLONPreprocessed = true;
 			this._noMipmap = false;
 			this._useInGammaSpace = false;
-			this._usePMREMGenerator = scene.getEngine().getCaps().textureLOD &&
-				this.getScene().getEngine().getCaps().textureFloat &&
-				!this._useInGammaSpace;
+			this._usePMREMGenerator = caps.textureLOD && caps.textureFloat && !this._useInGammaSpace;
 		}
 		this.isPMREM = this._usePMREMGenerator;
 		
@@ -151,9 +144,15 @@ class HDRCubeTexture extends BaseTexture {
 	private function loadBabylonTexture() {
 		var mipLevels:Int = 0;
 		var floatArrayView:Float32Array = null;
+		var scene = this.getScene();
 		
-		var mipmapGenerator = (!this._useInGammaSpace && this.getScene().getEngine().getCaps().textureFloat) ? function(data: Array<ArrayBufferView>):Array<Array<ArrayBufferView>> {
+		var mipmapGenerator = (!this._useInGammaSpace && scene != null && scene.getEngine().getCaps().textureFloat) ? function(data:Array<ArrayBufferView>):Array<Array<ArrayBufferView>> {
 			var mips:Array<Array<Float32Array>> = [];
+			
+			if (floatArrayView == null) {
+				return cast mips;
+			}
+			
 			var startIndex = 30;
 			for (level in 0...mipLevels) {
 				mips[level] = [];
@@ -167,12 +166,18 @@ class HDRCubeTexture extends BaseTexture {
 				}
 			}
 			
-			return #if js cast #end mips;
+			return cast mips;
 		} : null;
 		
-		var callback = function(buffer:UInt8Array):Array<ArrayBufferView> {
+		var callback = function(buffer:ArrayBuffer):Array<ArrayBufferView> {
+			var scene = this.getScene();
+			
+			if (scene == null) {
+				return null;
+			}
+			
 			// Create Native Array Views
-			var intArrayView:Int32Array = new Int32Array(buffer.buffer);
+			var intArrayView:Int32Array = new Int32Array(buffer);
 			floatArrayView = new Float32Array(buffer);
 			
 			// Fill header.
@@ -180,6 +185,9 @@ class HDRCubeTexture extends BaseTexture {
 			this._size = intArrayView[1]; // CubeMap max mip face size.
 			
 			// Update Texture Information.
+			if (this._texture == null) {
+				return null;
+			}
 			this._texture.updateSize(this._size, this._size);
 			
 			// Fill polynomial information.
@@ -218,8 +226,8 @@ class HDRCubeTexture extends BaseTexture {
 				}
 				
 				// If special cases.
-				if (mipmapGenerator == null) {					
-					if (!this.getScene().getEngine().getCaps().textureFloat) {
+				if (mipmapGenerator == null && dataFace != null) {					
+					if (!scene.getEngine().getCaps().textureFloat) {
 						// 3 channels of 1 bytes per pixel in bytes.
 						var byteBuffer = new ArrayBuffer(faceSize);
 						byteArray = new UInt8Array(byteBuffer);
@@ -267,12 +275,14 @@ class HDRCubeTexture extends BaseTexture {
 			return results;
 		}
 		
-		this._texture = this.getScene().getEngine().createRawCubeTextureFromUrl(this.url, this.getScene(), this._size, 
-			Engine.TEXTUREFORMAT_RGB, 
-			this.getScene().getEngine().getCaps().textureFloat ? Engine.TEXTURETYPE_FLOAT : Engine.TEXTURETYPE_UNSIGNED_INT, 
-			this._noMipmap, 
-			callback, 
-			mipmapGenerator, this._onLoad, this._onError);
+		if (scene != null) {
+			this._texture = scene.getEngine().createRawCubeTextureFromUrl(this.url, scene, this._size, 
+				Engine.TEXTUREFORMAT_RGB, 
+				scene.getEngine().getCaps().textureFloat ? Engine.TEXTURETYPE_FLOAT : Engine.TEXTURETYPE_UNSIGNED_INT, 
+				this._noMipmap, 
+				callback, 
+				mipmapGenerator, this._onLoad, this._onError);
+		}
 	}
 
 	/**
@@ -280,6 +290,12 @@ class HDRCubeTexture extends BaseTexture {
 	 */
 	private function loadHDRTexture() {
 		var callback = function(buffer:Dynamic):Array<ArrayBufferView> {
+			var scene = this.getScene();
+			
+			if (scene == null) {
+				return null;
+			}
+			
 			// Extract the raw linear data.
 			var data = HDRTools.GetCubeMapTextureData(buffer, this._size);
 			
@@ -294,8 +310,10 @@ class HDRCubeTexture extends BaseTexture {
 			// Push each faces.
 			for (j in 0...6) {
 				// Create uintarray fallback.
-				if (!this.getScene().getEngine().getCaps().textureFloat) {
+				var textureFloat = scene.getEngine().getCaps().textureFloat;
+				if ( #if js textureFloat == null || #end textureFloat == false) {
 					// 3 channels of 1 bytes per pixel in bytes.
+					trace(textureFloat);
 					var byteBuffer = new ArrayBuffer(this._size * this._size * 3);
 					byteArray = new UInt8Array(byteBuffer);
 				}
@@ -368,12 +386,16 @@ class HDRCubeTexture extends BaseTexture {
 			//};
 		//}
 		
-		this._texture = this.getScene().getEngine().createRawCubeTextureFromUrl(this.url, this.getScene(), this._size, 
-			Engine.TEXTUREFORMAT_RGB, 
-			this.getScene().getEngine().getCaps().textureFloat ? Engine.TEXTURETYPE_FLOAT : Engine.TEXTURETYPE_UNSIGNED_INT, 
-			this._noMipmap, 
-			callback, 
-			mipmapGenerator, this._onLoad, this._onError);
+		var scene = this.getScene();
+		
+		if (scene != null) {
+			this._texture = scene.getEngine().createRawCubeTextureFromUrl(this.url, scene, this._size, 
+				Engine.TEXTUREFORMAT_RGB, 
+				scene.getEngine().getCaps().textureFloat ? Engine.TEXTURETYPE_FLOAT : Engine.TEXTURETYPE_UNSIGNED_INT, 
+				this._noMipmap, 
+				callback, 
+				mipmapGenerator, this._onLoad, this._onError);
+		}
 	}
 
 	/**
@@ -389,8 +411,14 @@ class HDRCubeTexture extends BaseTexture {
 	}
 	
 	override public function clone():HDRCubeTexture {
+		var scene = this.getScene();
+		if (scene == null) {
+			return this;
+		}
+		
 		var size = this._isBABYLONPreprocessed ? null : this._size;
-		var newTexture = new HDRCubeTexture(this.url, this.getScene(), size, this._noMipmap, this._generateHarmonics, this._useInGammaSpace, this._usePMREMGenerator);
+		var newTexture = new HDRCubeTexture(this.url, scene, size, this._noMipmap, 
+			this._generateHarmonics, this._useInGammaSpace, this._usePMREMGenerator);
 		
 		// Base texture
 		newTexture.level = this.level;
@@ -428,7 +456,8 @@ class HDRCubeTexture extends BaseTexture {
 		var texture:HDRCubeTexture = null;
 		if (parsedTexture.name != null && (parsedTexture.isRenderTarget == null || parsedTexture.isRenderTarget == false)) {
 			var size = parsedTexture.isBABYLONPreprocessed ? null : parsedTexture.size;
-			texture = new HDRCubeTexture(rootUrl + parsedTexture.name, scene, size, parsedTexture.generateHarmonics, parsedTexture.useInGammaSpace, parsedTexture.usePMREMGenerator);
+			texture = new HDRCubeTexture(rootUrl + parsedTexture.name, scene, size, 
+				parsedTexture.generateHarmonics, parsedTexture.useInGammaSpace, parsedTexture.usePMREMGenerator);
 			texture.name = parsedTexture.name;
 			texture.hasAlpha = parsedTexture.hasAlpha;
 			texture.level = parsedTexture.level;
@@ -455,6 +484,9 @@ class HDRCubeTexture extends BaseTexture {
 		serializationObject.generateHarmonics = this._generateHarmonics;
 		serializationObject.usePMREMGenerator = this._usePMREMGenerator;
 		serializationObject.isBABYLONPreprocessed = this._isBABYLONPreprocessed;
+		serializationObject.customType = "BABYLON.HDRCubeTexture";
+		serializationObject.noMipmap = this._noMipmap;
+		serializationObject.isBlocking = this._isBlocking;
 		
 		return serializationObject;
 	}

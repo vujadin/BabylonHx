@@ -7,7 +7,7 @@ import com.babylonhx.mesh.VertexData;
 import com.babylonhx.Scene;
 
 import lime.utils.Float32Array;
-import lime.utils.Int32Array;
+import lime.utils.UInt32Array;
 
 /**
  * ...
@@ -72,7 +72,7 @@ class PreMesh {
 		}
 		
 		indices.reverse();
-		vertexData.indices = new Int32Array(indices);
+		vertexData.indices = new UInt32Array(indices);
 		
 		vertexData.applyToMesh(babylonMesh);
 		

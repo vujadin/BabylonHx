@@ -47,6 +47,8 @@ import com.babylonhx.culling.Ray;
 	public static inline var RIG_MODE_STEREOSCOPIC_OVERUNDER:Int = 13;
 	public static inline var RIG_MODE_VR:Int = 20;
 	public static inline var RIG_MODE_WEBVR:Int = 21;
+	
+	public static var UseAlternateWebVRRendering:Bool = false;
 
 	// Members
 	@serializeAsVector3()
@@ -84,9 +86,7 @@ import com.babylonhx.culling.Ray;
 	public var isIntermediate:Bool = false;
 	
 	public var viewport:Viewport = new Viewport(0, 0, 1, 1);
-	
-	public var subCameras:Array<Camera> = [];
-	
+		
 	@serialize()
 	public var layerMask:Int = 0xFFFFFFFF;
 	
@@ -105,8 +105,10 @@ import com.babylonhx.culling.Ray;
 	
 	public var _cameraRigParams:Dynamic;
 	private var _rigCameras:Array<Camera> = [];
-	private var _rigPostProcess:PostProcess;
+	private var _rigPostProcess:PostProcess = null;
 	private var _webvrViewMatrix:Matrix = Matrix.Identity();
+    public var _skipRendering:Bool = false;
+	public var _alternateCamera:Camera;
 	
 	public var customRenderTargets:Array<RenderTargetTexture> = [];
 	
@@ -130,7 +132,8 @@ import com.babylonhx.culling.Ray;
 	private var _frustumPlanes:Array<Plane> = [];
 	private var _refreshFrustumPlanes:Bool = true;
 	
-	// VK: do not delete these !!!
+	// BHX: do not delete these !!!
+	// BHX: these are rebinded in setCameraRigMode() method
 	public var _getViewMatrix:Void->Matrix;
 	public var getProjectionMatrix:Null<Bool>->Matrix;
 	
@@ -138,10 +141,10 @@ import com.babylonhx.culling.Ray;
 	public function new(name:String, position:Vector3, scene:Scene) {
 		super(name, scene);
 		
-		scene.addCamera(this);
+		this.getScene().addCamera(this);
 		
-		if (scene.activeCamera == null) {
-			scene.activeCamera = this;
+		if (this.getScene().activeCamera == null) {
+			this.getScene().activeCamera = this;
 		}
 		
 		this.getProjectionMatrix = getProjectionMatrix_default;
@@ -192,6 +195,23 @@ import com.babylonhx.culling.Ray;
 		return 'Camera';
 	}
 	
+	/**
+	 * @param {boolean} fullDetails - support for multiple levels of logging within scene loading
+	 */
+	public function toString(fullDetails:Bool = false):String {
+		var ret = "Name: " + this.name;
+		ret += ", type: " + this.getClassName();
+		if (this.animations != null) {
+			for (i in 0...this.animations.length) {
+				ret += ", animation[0]: " + this.animations[i].toString(fullDetails);
+			}
+		}
+		if (fullDetails) {
+			
+		}
+		return ret;
+	}
+	
 	public var globalPosition(get, never):Vector3;
 	private function get_globalPosition():Vector3 {
 		return this._globalPosition;
@@ -232,30 +252,8 @@ import com.babylonhx.culling.Ray;
 			super._updateCache();
 		}
 		
-		var engine = this.getEngine();
-		
 		this._cache.position.copyFrom(this.position);
 		this._cache.upVector.copyFrom(this.upVector);
-		
-		this._cache.mode = this.mode;
-		this._cache.minZ = this.minZ;
-		this._cache.maxZ = this.maxZ;
-		
-		this._cache.fov = this.fov;
-		this._cache.fovMode = this.fovMode;
-		this._cache.aspectRatio = engine.getAspectRatio(this);
-		
-		this._cache.orthoLeft = this.orthoLeft;
-		this._cache.orthoRight = this.orthoRight;
-		this._cache.orthoBottom = this.orthoBottom;
-		this._cache.orthoTop = this.orthoTop;
-		this._cache.renderWidth = engine.getRenderWidth();
-		this._cache.renderHeight = engine.getRenderHeight();
-	}
-
-	public function _updateFromScene() {
-		this.updateCache();
-		this.update();
 	}
 
 	// Synchronized	
@@ -267,7 +265,7 @@ import com.babylonhx.culling.Ray;
 		if (!super._isSynchronized()) {
 			return false;
 		}
-			
+		
 		return this._cache.position.equals(this.position)
 			&& this._cache.upVector.equals(this.upVector)
 			&& this.isSynchronizedWithParent();
@@ -311,10 +309,10 @@ import com.babylonhx.culling.Ray;
 	}
 
 	public function update() {
+		this._checkInputs();
 		if (this.cameraRigMode != Camera.RIG_MODE_NONE) {
 			this._updateRigCameras();
 		}
-		this._checkInputs();
 	}
 	
 	public function _checkInputs() {
@@ -375,33 +373,12 @@ import com.babylonhx.culling.Ray;
 		return this._postProcesses.indexOf(postProcess);
 	}
 
-	public function detachPostProcess(postProcess:PostProcess, atIndices:Dynamic = null):Array<Int> {
-		var result:Array<Int> = [];
-		var index:Int = 0;
-		
-		if (atIndices == null) {
-			var idx = this._postProcesses.indexOf(postProcess);
-			if (idx != -1){
-				this._postProcesses.splice(idx, 1);
-			}
-		} 
-		else {
-			atIndices = Std.is(atIndices, Array) ? atIndices : [atIndices];
-			// iterate descending, so can just splice as we go
-			var i:Int = cast atIndices.length - 1;
-			while (i >= 0) {
-				if (this._postProcesses[atIndices[i]] != postProcess) {
-					result.push(i);
-					continue;
-				}
-				index = atIndices[i];
-				this._postProcesses.splice(index, 1);
-				
-				--i;
-			}
+	public function detachPostProcess(postProcess:PostProcess, atIndices:Dynamic = null) {
+		var idx = this._postProcesses.indexOf(postProcess);
+		if (idx != -1) {
+			this._postProcesses.splice(idx, 1);
 		}
-		this._cascadePostProcessesToRigCams(); // also ensures framebuffer invalidated		
-		return result;
+		this._cascadePostProcessesToRigCams(); // also ensures framebuffer invalidated
 	}
 
 	override public function getWorldMatrix():Matrix {
@@ -425,6 +402,7 @@ import com.babylonhx.culling.Ray;
 			return this._computedViewMatrix;
 		}
 		
+		this.updateCache();
 		this._computedViewMatrix = this._getViewMatrix();
 		this._currentRenderId = this.getScene().getRenderId();
 		
@@ -473,11 +451,21 @@ import com.babylonhx.culling.Ray;
 			return this._projectionMatrix;
 		}
 		
+		// Cache
+		this._cache.mode = this.mode;
+		this._cache.minZ = this.minZ;
+		this._cache.maxZ = this.maxZ;
+		
+		// Matrix
 		this._refreshFrustumPlanes = true;
 		
 		var engine = this.getEngine();
 		var scene = this.getScene();
 		if (this.mode == Camera.PERSPECTIVE_CAMERA) {
+			this._cache.fov = this.fov;
+			this._cache.fovMode = this.fovMode;
+			this._cache.aspectRatio = engine.getAspectRatio(this);
+			
 			if (this.minZ <= 0) {
 				this.minZ = 0.1;
 			}
@@ -498,9 +486,7 @@ import com.babylonhx.culling.Ray;
 					this._projectionMatrix,
 					this.fovMode == Camera.FOVMODE_VERTICAL_FIXED);
 			}
-			
-			return this._projectionMatrix;
-		}
+		} 
 		else {
 			var halfWidth = engine.getRenderWidth() / 2.0;
 			var halfHeight = engine.getRenderHeight() / 2.0;
@@ -522,6 +508,13 @@ import com.babylonhx.culling.Ray;
 					this.maxZ,
 					this._projectionMatrix);
 			}
+			
+			this._cache.orthoLeft = this.orthoLeft;
+			this._cache.orthoRight = this.orthoRight;
+			this._cache.orthoBottom = this.orthoBottom;
+			this._cache.orthoTop = this.orthoTop;
+			this._cache.renderWidth = engine.getRenderWidth();
+			this._cache.renderHeight = engine.getRenderHeight();
 		}
 		
 		this.onProjectionMatrixChangedObservable.notifyObservers(this);
@@ -597,13 +590,27 @@ import com.babylonhx.culling.Ray;
 		// Remove from scene
 		this.getScene().removeCamera(this);
 		while (this._rigCameras.length > 0) {
-			this._rigCameras.pop().dispose();
+			var camera = this._rigCameras.pop();
+			if (camera != null) {
+				camera.dispose();
+			}
 		}
 		
 		// Postprocesses
-		var i = this._postProcesses.length;
-		while (--i >= 0) {
-			this._postProcesses[i].dispose(this);
+		if (this._rigPostProcess != null) {
+			this._rigPostProcess.dispose(this);
+			this._rigPostProcess = null;
+			this._postProcesses = [];
+		}
+		else if (this.cameraRigMode != Camera.RIG_MODE_NONE) {
+			this._rigPostProcess = null;
+			this._postProcesses = [];
+		} 
+		else {
+			var i = this._postProcesses.length;
+			while (--i >= 0) {
+				this._postProcesses[i].dispose(this);
+			}
 		}
 		
 		// Render targets
@@ -670,8 +677,12 @@ import com.babylonhx.culling.Ray;
 		
 		// create the rig cameras, unless none
 		if (this.cameraRigMode != Camera.RIG_MODE_NONE) {
-			this._rigCameras.push(this.createRigCamera(this.name + "_L", 0));
-			this._rigCameras.push(this.createRigCamera(this.name + "_R", 1));
+			var leftCamera = this.createRigCamera(this.name + "_L", 0);
+			var rightCamera = this.createRigCamera(this.name + "_R", 1);
+			if (leftCamera != null && rightCamera != null) {
+				this._rigCameras.push(leftCamera);
+				this._rigCameras.push(rightCamera);
+			}
 		}
 		
 		switch (this.cameraRigMode) {
@@ -734,6 +745,11 @@ import com.babylonhx.culling.Ray;
 					this._rigCameras[1].getProjectionMatrix = this._getWebVRProjectionMatrix;
 					this._rigCameras[1].parent = this;
 					this._rigCameras[1]._getViewMatrix = this._getWebVRViewMatrix;
+					
+					if (Camera.UseAlternateWebVRRendering) {
+						this._rigCameras[1]._skipRendering = true;
+						this._rigCameras[0]._alternateCamera = this._rigCameras[1];
+					}
 				}
 		}
 		
@@ -906,12 +922,17 @@ import com.babylonhx.culling.Ray;
 				return function() { return new StereoscopicUniversalCamera(name, Vector3.Zero(), interaxial_distance, isStereoscopicSideBySide, scene); };*/
 				
 			case "FreeCamera": // Forcing Universal here
-				return function() { return new UniversalCamera(name, Vector3.Zero(), scene); };
+				//return function() { return new UniversalCamera(name, Vector3.Zero(), scene); };
+				return function() { return new FreeCamera(name, Vector3.Zero(), scene); };
 				
 			default: // Universal Camera is the default value
 				return function() { return new UniversalCamera(name, Vector3.Zero(), scene); };
 		}
 	}
+	
+	override public function computeWorldMatrix(force:Bool = false):Matrix {
+        return this.getWorldMatrix();
+    }
 
 	public static function Parse(parsedCamera:Dynamic, scene:Scene):Camera {
 		var type = parsedCamera.type;

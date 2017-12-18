@@ -1,5 +1,6 @@
 package com.babylonhx.tools.hdr;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.math.Vector3;
 
 import lime.utils.Float32Array;
@@ -51,25 +52,25 @@ class PanoramaToCubeMapTools {
 		new Vector3(1.0, 1.0, 1.0),
 		new Vector3(-1.0, 1.0, 1.0)
 	];
-	private static var  FACE_RIGHT:Array<Vector3> = [
+	private static var FACE_LEFT:Array<Vector3> = [
 		new Vector3(1.0, -1.0, -1.0),
 		new Vector3(1.0, -1.0, 1.0),
 		new Vector3(1.0, 1.0, -1.0),
 		new Vector3(1.0, 1.0, 1.0)
 	];
-	private static var FACE_LEFT:Array<Vector3> = [
+	private static var FACE_RIGHT:Array<Vector3> = [
 		new Vector3(-1.0, -1.0, 1.0),
 		new Vector3(-1.0, -1.0, -1.0),
 		new Vector3(-1.0, 1.0, 1.0),
 		new Vector3(-1.0, 1.0, -1.0)
 	];
-	private static var FACE_DOWN:Array<Vector3> = [
+	private static var FACE_UP:Array<Vector3> = [
 		new Vector3(-1.0, 1.0, -1.0),
 		new Vector3(1.0, 1.0, -1.0),
 		new Vector3(-1.0, 1.0, 1.0),
 		new Vector3(1.0, 1.0, 1.0)
 	];
-	private static var FACE_UP:Array<Vector3> = [
+	private static var FACE_DOWN:Array<Vector3> = [
 		new Vector3(-1.0, -1.0, 1.0),
 		new Vector3(1.0, -1.0, 1.0),
 		new Vector3(-1.0, -1.0, -1.0),
@@ -90,12 +91,12 @@ class PanoramaToCubeMapTools {
 			throw "ConvertPanoramaToCubemap: input size is wrong";
 		}
 		
-		var textureFront = CreateCubemapTexture(size, FACE_FRONT, float32Array, inputWidth, inputHeight);
-		var textureBack = CreateCubemapTexture(size, FACE_BACK, float32Array, inputWidth, inputHeight);
-		var textureLeft = CreateCubemapTexture(size, FACE_LEFT, float32Array, inputWidth, inputHeight);
-		var textureRight = CreateCubemapTexture(size, FACE_RIGHT, float32Array, inputWidth, inputHeight);
-		var textureUp = CreateCubemapTexture(size, FACE_UP, float32Array, inputWidth, inputHeight);
-		var textureDown = CreateCubemapTexture(size, FACE_DOWN, float32Array, inputWidth, inputHeight);
+		var textureFront  = CreateCubemapTexture(size, FACE_FRONT, float32Array, inputWidth, inputHeight);
+		var textureBack   = CreateCubemapTexture(size, FACE_BACK, float32Array, inputWidth, inputHeight);
+		var textureLeft   = CreateCubemapTexture(size, FACE_LEFT, float32Array, inputWidth, inputHeight);
+		var textureRight  = CreateCubemapTexture(size, FACE_RIGHT, float32Array, inputWidth, inputHeight);
+		var textureUp     = CreateCubemapTexture(size, FACE_UP, float32Array, inputWidth, inputHeight);
+		var textureDown   = CreateCubemapTexture(size, FACE_DOWN, float32Array, inputWidth, inputHeight);
 		
 		return {
 			front: textureFront,

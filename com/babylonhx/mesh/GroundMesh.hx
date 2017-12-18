@@ -177,6 +177,11 @@ import com.babylonhx.math.Tmp;
 	// facet2 :  Vector4(a, b, c, d) = second facet 3D plane equation : ax + by + cz + d = 0
 	private function _computeHeightQuads():GroundMesh {
 		var positions = this.getVerticesData(VertexBuffer.PositionKind);
+		
+		if (positions == null) {
+			return this;
+		}
+		
 		var v1 = Tmp.vector3[0];
 		var v2 = Tmp.vector3[1];
 		var v3 = Tmp.vector3[2];
@@ -241,8 +246,9 @@ import com.babylonhx.math.Tmp;
 		return this;
 	}
 	
-	override public function serialize(serializationObject:Dynamic) {
-		super.serialize(serializationObject);
+	override public function serialize(?serializationObject:Dynamic):Dynamic {
+		serializationObject = super.serialize(serializationObject);
+		
 		serializationObject.subdivisionsX = this._subdivisionsX;
 		serializationObject.subdivisionsY = this._subdivisionsY;
 		
@@ -254,6 +260,8 @@ import com.babylonhx.math.Tmp;
 		
 		serializationObject.width = this._width;
 		serializationObject.height = this._height;
+		
+		return serializationObject;
 	}
 
 	public static function Parse(parsedMesh:Dynamic, scene:Scene):GroundMesh {

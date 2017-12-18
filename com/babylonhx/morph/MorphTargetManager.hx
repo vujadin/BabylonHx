@@ -1,5 +1,6 @@
 package com.babylonhx.morph;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.SmartArray;
@@ -31,8 +32,12 @@ class MorphTargetManager {
 		}
 		
 		this._scene = scene;
-		this._scene.morphTargetManagers.push(this);
-		this._uniqueId = scene.getUniqueId();
+		
+		if (this._scene != null) {
+			this._scene.morphTargetManagers.push(this);
+			
+			this._uniqueId = scene.getUniqueId();
+		}
 	}
 
 	public var uniqueId(get, never):Int;
@@ -78,14 +83,7 @@ class MorphTargetManager {
 		return this._targets[index];
 	}
    
-	public function addTarget(target:MorphTarget) {
-		if (this._vertexCount > 0) {
-			if (this._vertexCount != Std.int(target.getPositions().length / 3)) {
-				Tools.Error("Incompatible target. Targets must all have the same vertices count.");
-				return;
-			}
-		}
-		
+	public function addTarget(target:MorphTarget) {		
 		this._targets.push(target);
 		this._targetObservable.push(target.onInfluenceChanged.add(function(needUpdate:Bool, _) {
 			this._syncActiveTargets(needUpdate);
@@ -99,7 +97,6 @@ class MorphTargetManager {
 			this._targets.splice(index, 1);
 			
 			target.onInfluenceChanged.remove(this._targetObservable.splice(index, 1)[0]);
-			this._vertexCount = 0;
 			this._syncActiveTargets(true);
 		}
 	}
@@ -130,6 +127,7 @@ class MorphTargetManager {
 		this._activeTargets.reset();
 		this._supportsNormals = true;
 		this._supportsTangents = true;
+		this._vertexCount = 0;
 		for (target in this._targets) {
 			if (target.influence > 0) {
 				this._activeTargets.push(target);
@@ -138,8 +136,15 @@ class MorphTargetManager {
 				this._supportsNormals = this._supportsNormals && target.hasNormals;
 				this._supportsTangents = this._supportsTangents && target.hasTangents;
 				
+				var positions = target.getPositions();
+                if (positions == null) {
+                    Tools.Error("Invalid target. Target must positions.");
+                    return;
+                }
+				
+				var vertexCount = Std.int(positions.length / 3);
 				if (this._vertexCount == 0) {
-					this._vertexCount = Std.int(target.getPositions().length / 3);
+					this._vertexCount = vertexCount;
 				}
 			}
 		}
@@ -152,7 +157,7 @@ class MorphTargetManager {
             this._influences[index] = this._tempInfluences[index];
         }
 		
-		if (needUpdate) {
+		if (needUpdate && this._scene != null) {
 			// Flag meshes as dirty to resync with the active targets
 			for (mesh in this._scene.meshes) {
 				if (mesh.getClassName() == 'Mesh' && untyped mesh.morphTargetManager == this) {

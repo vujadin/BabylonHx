@@ -1,6 +1,8 @@
 package com.babylonhx.layer;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.materials.Effect;
+import com.babylonhx.materials.Material;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector2;
@@ -9,7 +11,9 @@ import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
-import lime.utils.Int32Array;
+
+import lime.utils.Float32Array;
+import lime.utils.UInt32Array;
 
 /**
  * ...
@@ -107,7 +111,7 @@ import lime.utils.Int32Array;
 		vertices.push(1);
 		vertices.push( -1);
 		
-		var vertexBuffer = new VertexBuffer(engine, vertices, VertexBuffer.PositionKind, false, false, 2);
+		var vertexBuffer = new VertexBuffer(engine, new Float32Array(vertices), VertexBuffer.PositionKind, false, false, 2);
 		this._vertexBuffers[VertexBuffer.PositionKind] = vertexBuffer;
 		
 		this._createIndexBuffer();
@@ -137,7 +141,7 @@ import lime.utils.Int32Array;
 		indices.push(2);
 		indices.push(3);
 		
-		this._indexBuffer = engine.createIndexBuffer(new Int32Array(indices));
+		this._indexBuffer = engine.createIndexBuffer(new UInt32Array(indices));
 	}
 	
 	public function _rebuild() {
@@ -179,11 +183,11 @@ import lime.utils.Int32Array;
 		// Draw order
 		if (this.alphaTest) {
 			engine.setAlphaMode(this.alphaBlendingMode);
-			engine.draw(true, 0, 6);
+			engine.drawElementsType(Material.TriangleFillMode, 0, 6);
 			engine.setAlphaMode(Engine.ALPHA_DISABLE);
 		}
 		else {
-			engine.draw(true, 0, 6);
+			engine.drawElementsType(Material.TriangleFillMode, 0, 6);
 		}
 		
 		this.onAfterRenderObservable.notifyObservers(this);

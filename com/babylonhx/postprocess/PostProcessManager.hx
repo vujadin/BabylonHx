@@ -1,11 +1,13 @@
 package com.babylonhx.postprocess;
 
+import com.babylonhx.engine.Engine;
+import com.babylonhx.materials.Material;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.materials.textures.InternalTexture;
 
 import lime.utils.Float32Array;
-import lime.utils.Int32Array;
+import lime.utils.UInt32Array;
 
 /**
  * ...
@@ -37,7 +39,7 @@ import lime.utils.Int32Array;
 	
 	private function _buildIndexBuffer() {
 		// Indices
-		var indices:Int32Array = new Int32Array([0, 1, 2, 0, 2, 3]);		
+		var indices:UInt32Array = new UInt32Array([0, 1, 2, 0, 2, 3]);		
 		this._indexBuffer = this._scene.getEngine().createIndexBuffer(indices);
 	}
 	
@@ -51,13 +53,18 @@ import lime.utils.Int32Array;
 
 	// Methods
 	public function _prepareFrame(?sourceTexture:InternalTexture, ?postProcesses:Array<PostProcess>):Bool {
-		var postProcesses = postProcesses != null ? postProcesses : this._scene.activeCamera._postProcesses;
-		
-		if (postProcesses.length == 0 || !this._scene.postProcessesEnabled) {
+		var camera = this._scene.activeCamera;
+		if (camera == null) {
 			return false;
 		}
 		
-		postProcesses[0].activate(this._scene.activeCamera, sourceTexture, postProcesses != null);		
+		var postProcesses = postProcesses != null ? postProcesses : camera._postProcesses;
+		
+		if (postProcesses == null || postProcesses.length == 0 || !this._scene.postProcessesEnabled) {
+			return false;
+		}
+		
+		postProcesses[0].activate(camera, sourceTexture, postProcesses != null);		
 		return true;
 	}
 	
@@ -88,7 +95,7 @@ import lime.utils.Int32Array;
 				engine.bindBuffers(this._vertexBuffers, this._indexBuffer, effect);
 				
 				// Draw order
-				engine.draw(true, 0, 6);
+				engine.drawElementsType(Material.TriangleFillMode, 0, 6);
 				
 				pp.onAfterRenderObservable.notifyObservers(effect);
 			}
@@ -138,7 +145,7 @@ import lime.utils.Int32Array;
 				engine.bindBuffers(this._vertexBuffers, this._indexBuffer, effect);
 				
 				// Draw order
-				engine.draw(true, 0, 6);
+				engine.drawElementsType(Material.TriangleFillMode, 0, 6);
 				
 				pp.onAfterRenderObservable.notifyObservers(effect);
 			}

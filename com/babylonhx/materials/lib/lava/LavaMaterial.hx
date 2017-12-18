@@ -238,7 +238,7 @@ class LavaMaterial extends PushMaterial {
 					indexParameters: { maxSimultaneousLights: this.maxSimultaneousLights }
 				}, engine), defines);
 		}
-		if (!subMesh.effect.isReady()) {
+		if (subMesh.effect == null || !subMesh.effect.isReady()) {
 			return false;
 		}
 		
@@ -257,6 +257,9 @@ class LavaMaterial extends PushMaterial {
 		}
 		
 		var effect = subMesh.effect;
+		if (effect == null) {
+			return false;
+		}
 		this._activeEffect = effect;
 		
 		// Matrices        

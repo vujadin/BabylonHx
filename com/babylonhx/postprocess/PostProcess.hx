@@ -1,5 +1,6 @@
 package com.babylonhx.postprocess;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.textures.InternalTexture;
@@ -78,7 +79,9 @@ typedef PostProcessOption = {
 		if (this._onActivateObserver != null) {
 			this.onActivateObservable.remove(this._onActivateObserver);
 		}
-		this._onActivateObserver = this.onActivateObservable.add(callback);
+		if (callback != null) {
+			this._onActivateObserver = this.onActivateObservable.add(callback);
+		}
 		
 		return callback;
 	}

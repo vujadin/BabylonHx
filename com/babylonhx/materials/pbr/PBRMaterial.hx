@@ -751,7 +751,7 @@ class PBRMaterial extends PBRBaseMaterial {
 
 	/**
 	 * A fresnel is applied to the alpha of the model to ensure grazing angles edges are not alpha tested.
-	 * And/Or occlude the blended part.
+	 * And/Or occlude the blended part. (alpha is converted to gamma to compute the fresnel)
 	 */
 	@serialize()
 	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
@@ -762,6 +762,22 @@ class PBRMaterial extends PBRBaseMaterial {
 	inline private function set_useAlphaFresnel(value:Bool):Bool {
 		_markAllSubMeshesAsTexturesDirty();
 		return _useAlphaFresnel = value;
+	}
+	
+	/**
+     * A fresnel is applied to the alpha of the model to ensure grazing angles edges are not alpha tested.
+     * And/Or occlude the blended part. (alpha stays linear to compute the fresnel)
+     */
+    @serialize()
+    //@expandToProperty("_markAllSubMeshesAsTexturesDirty")
+    public var useLinearAlphaFresnel(get, set):Bool;
+	inline private function get_useLinearAlphaFresnel():Bool {
+		return _useLinearAlphaFresnel;
+	}
+	inline private function set_useLinearAlphaFresnel(value:Bool):Bool {
+		this._useLinearAlphaFresnel = value;
+		_markAllSubMeshesAsTexturesDirty();
+		return value;
 	}
 
 	/**
@@ -775,8 +791,9 @@ class PBRMaterial extends PBRBaseMaterial {
 		return _environmentBRDFTexture;
 	}
 	inline private function set_environmentBRDFTexture(value:BaseTexture):BaseTexture {
+		this._environmentBRDFTexture = value;
 		_markAllSubMeshesAsTexturesDirty();
-		return _environmentBRDFTexture = value;
+		return value;
 	}
 
 	/**
@@ -790,8 +807,41 @@ class PBRMaterial extends PBRBaseMaterial {
 		return _forceNormalForward;
 	}
 	inline private function set_forceNormalForward(value:Bool):Bool {
+		this._forceNormalForward = value;
 		_markAllSubMeshesAsTexturesDirty();
-		return _forceNormalForward = value;
+		return value;
+	}
+	
+	/**
+     * This parameters will enable/disable Horizon occlusion to prevent normal maps to look shiny when the normal
+     * makes the reflect vector face the model (under horizon).
+     */
+    @serialize()
+    //@expandToProperty("_markAllSubMeshesAsTexturesDirty")
+	public var useHorizonOcclusion(get, set):Bool;
+	inline private function get_useHorizonOcclusion():Bool {
+		return _useHorizonOcclusion;
+	}
+	inline private function set_useHorizonOcclusion(value:Bool):Bool {
+		this._useHorizonOcclusion = value;
+		_markAllSubMeshesAsTexturesDirty();
+		return value;
+	}
+    
+    /**
+     * This parameters will enable/disable radiance occlusion by preventing the radiance to lit
+     * too much the area relying on ambient texture to define their ambient occlusion.
+     */
+    @serialize()
+    //@expandToProperty("_markAllSubMeshesAsTexturesDirty")
+    public var useRadianceOcclusion(get, set):Bool;
+	inline private function get_useRadianceOcclusion():Bool {
+		return _useRadianceOcclusion;
+	}
+	inline private function set_useRadianceOcclusion(value:Bool):Bool {
+		this._useRadianceOcclusion = value;
+		_markAllSubMeshesAsTexturesDirty();
+		return value;
 	}
 	
 	/**

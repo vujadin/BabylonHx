@@ -195,7 +195,7 @@ class GradientMaterial extends PushMaterial {
 					indexParameters: { maxSimultaneousLights: 4 }
 				}, engine), defines);
 		}
-		if (!subMesh.effect.isReady()) {
+		if (subMesh.effect == null || !subMesh.effect.isReady()) {
 			return false;
 		}
 		
@@ -214,6 +214,9 @@ class GradientMaterial extends PushMaterial {
 		}
 		
 		var effect = subMesh.effect;
+		if (effect == null) {
+			return;
+		}
 		this._activeEffect = effect;
 		
 		// Matrices        
@@ -221,11 +224,11 @@ class GradientMaterial extends PushMaterial {
 		this._activeEffect.setMatrix("viewProjection", scene.getTransformMatrix());
 		
 		// Bones
-		MaterialHelper.BindBonesParameters(mesh, this._effect);
+		MaterialHelper.BindBonesParameters(mesh, effect);
 		
 		if (this._mustRebind(scene, effect)) {
 			// Clip plane
-			MaterialHelper.BindClipPlane(this._effect, scene);
+			MaterialHelper.BindClipPlane(effect, scene);
 			
 			// Point size
 			if (this.pointsCloud) {

@@ -1,5 +1,7 @@
 package com.babylonhx.materials.textures;
 
+import com.babylonhx.engine.Engine;
+
 /**
  * ...
  * @author Krtolica Vujadin

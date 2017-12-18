@@ -4,6 +4,7 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Plane;
 import com.babylonhx.culling.Ray;
 import com.babylonhx.tools.SmartArray;
+import com.babylonhx.tools.SmartArrayNoDuplicate;
 import haxe.ds.Vector;
 
 
@@ -97,7 +98,7 @@ import haxe.ds.Vector;
 		}
 	}
 
-	public function select(frustumPlanes:Array<Plane>, selection:SmartArray<T>, allowDuplicate:Bool = false) {
+	public function select(frustumPlanes:Array<Plane>, selection:SmartArrayNoDuplicate<T>, allowDuplicate:Bool = false) {
 		if (BoundingBox.IsInFrustum(this._boundingVectors, frustumPlanes)) {
 			if (this.blocks != null) {
 				for (index in 0...this.blocks.length) {
@@ -117,7 +118,7 @@ import haxe.ds.Vector;
 		}
 	}
 
-	public function intersects(sphereCenter:Vector3, sphereRadius:Float, selection:SmartArray<T>, allowDuplicate:Bool = false) {
+	public function intersects(sphereCenter:Vector3, sphereRadius:Float, selection:SmartArrayNoDuplicate<T>, allowDuplicate:Bool = false) {
 		if (BoundingBox.IntersectsSphere(this._minPoint, this._maxPoint, sphereCenter, sphereRadius)) {
 			if (this.blocks != null) {
 				for (index in 0...this.blocks.length) {
@@ -137,7 +138,7 @@ import haxe.ds.Vector;
 		}
 	}
 
-	public function intersectsRay(ray:Ray, selection:SmartArray<T>) {
+	public function intersectsRay(ray:Ray, selection:SmartArrayNoDuplicate<T>) {
 		if (ray.intersectsBoxMinMax(this._minPoint, this._maxPoint)) {
 			if (this.blocks != null) {
 				for (index in 0...this.blocks.length) {

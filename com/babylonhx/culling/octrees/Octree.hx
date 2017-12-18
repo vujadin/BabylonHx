@@ -6,6 +6,7 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.tools.SmartArray;
+import com.babylonhx.tools.SmartArrayNoDuplicate;
 
 /**
 * ...
@@ -19,13 +20,13 @@ import com.babylonhx.tools.SmartArray;
 	public var maxDepth:Int;
 
 	private var _maxBlockCapacity:Int;
-	private var _selectionContent:SmartArray<T>;       
+	private var _selectionContent:SmartArrayNoDuplicate<T>;       
 	private var _creationFunc:T->OctreeBlock<T>->Void;
 	
 
 	public function new(creationFunc:T->OctreeBlock<T>->Void, maxBlockCapacity:Int = 64, maxDepth:Int = 2) {
 		this._maxBlockCapacity = maxBlockCapacity;
-		this._selectionContent = new SmartArray<T>(1024);
+		this._selectionContent = new SmartArrayNoDuplicate<T>(1024);
 		this._creationFunc = creationFunc;
 		this.maxDepth = maxDepth;
 	}
@@ -110,13 +111,15 @@ import com.babylonhx.tools.SmartArray;
 	}
 
 	public static function CreationFuncForMeshes(entry:AbstractMesh, block:OctreeBlock<AbstractMesh>) {
-		if (!entry.isBlocked && entry.getBoundingInfo().boundingBox.intersectsMinMax(block.minPoint, block.maxPoint)) {
+		var boundingInfo = entry.getBoundingInfo();
+		if (!entry.isBlocked && boundingInfo != null && boundingInfo.boundingBox.intersectsMinMax(block.minPoint, block.maxPoint)) {
 			block.entries.push(entry);
 		}
 	}
 
 	public static function CreationFuncForSubMeshes(entry:SubMesh, block:OctreeBlock<SubMesh>) {
-		if (entry.getBoundingInfo().boundingBox.intersectsMinMax(block.minPoint, block.maxPoint)) {
+		var boundingInfo = entry.getBoundingInfo();
+		if (boundingInfo != null && boundingInfo.boundingBox.intersectsMinMax(block.minPoint, block.maxPoint)) {
 			block.entries.push(entry);
 		}
 	}

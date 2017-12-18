@@ -1,5 +1,6 @@
 package com.babylonhx.lensflare;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color3;
 

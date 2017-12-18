@@ -1,5 +1,6 @@
 package com.babylonhx.postprocess;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.materials.ColorCurves;
 import com.babylonhx.materials.Effect;
@@ -26,11 +27,13 @@ class IPCD implements IImageProcessingConfigurationDefines {
 	public var CONTRAST:Bool = false;
 	public var COLORCURVES:Bool = false;
 	public var COLORGRADING:Bool = false;
+	public var COLORGRADING3D:Bool = false;
+	public var FROMLINEARSPACE:Bool = false;
 	public var SAMPLER3DGREENDEPTH:Bool = false;
 	public var SAMPLER3DBGRMAP:Bool = false;
 	public var IMAGEPROCESSINGPOSTPROCESS:Bool = false;
 	public var EXPOSURE:Bool = false;	
-	public var FROMLINEARSPACE:Bool = false;
+	
 	
 	public function new() { }
 	
@@ -81,8 +84,21 @@ class ImageProcessingPostProcess extends PostProcess {
 		
 		// Pick the scene configuration if needed.
 		if (configuration == null) {
+			var scene = null;
+            var engine = this.getEngine();
 			var camera = this.getCamera();
-			var scene = camera != null ? camera.getScene() : Engine.LastCreatedScene;
+			
+			if (camera != null) {
+                scene = camera.getScene();
+            }
+            else if (engine != null && engine.scenes != null) {
+                var scenes = engine.scenes;
+                scene = scenes[scenes.length - 1];
+            }
+            else {
+                scene = Engine.LastCreatedScene;
+            }
+			
 			this._imageProcessingConfiguration = scene.imageProcessingConfiguration;
 		}
 		else {
@@ -356,16 +372,22 @@ class ImageProcessingPostProcess extends PostProcess {
 	private var _defines:IPCD = new IPCD();
 	
 
-	public function new(name:String, options:Dynamic, ?camera:Camera, ?samplingMode:Int, ?engine:Engine, ?reusable:Bool, textureType:Int = Engine.TEXTURETYPE_UNSIGNED_INT) {
-		super(name, "imageProcessing", [], [], options, camera, samplingMode, engine, reusable,
-										null, textureType, "postprocess", null, true);
+	public function new(name:String, options:Dynamic, ?camera:Camera, ?samplingMode:Int, ?engine:Engine, ?reusable:Bool, textureType:Int = Engine.TEXTURETYPE_UNSIGNED_INT, ?imageProcessingConfiguration:ImageProcessingConfiguration) {
+		super(name, "imageProcessing", [], [], options, camera, samplingMode, engine, reusable,	null, textureType, "postprocess", null, true);
 		
+		// Setup the configuration as forced by the constructor. This would then not force the 
+		// scene materials output in linear space and let untouched the default forward pass.
+		if (imageProcessingConfiguration != null) {
+			imageProcessingConfiguration.applyByPostProcess = true;
+			this._attachImageProcessingConfiguration(imageProcessingConfiguration, true);
+			// This will cause the shader to be compiled
+			this.fromLinearSpace = false;
+		}
 		// Setup the default processing configuration to the scene.
-		this._attachImageProcessingConfiguration(null, true);
-		
-		this.imageProcessingConfiguration.applyByPostProcess = true;
-		
-		this._updateParameters();
+		else {
+			this._attachImageProcessingConfiguration(null, true);
+			this.imageProcessingConfiguration.applyByPostProcess = true;
+		}
 		
 		this.onApply = function(effect:Effect, _) {
 			this.imageProcessingConfiguration.bind(effect, this.aspectRatio);

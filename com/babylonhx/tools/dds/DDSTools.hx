@@ -1,5 +1,6 @@
 package com.babylonhx.tools.dds;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.math.Scalar;
 
 import lime.utils.ArrayBufferView;

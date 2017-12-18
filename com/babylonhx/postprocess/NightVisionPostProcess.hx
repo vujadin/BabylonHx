@@ -1,6 +1,7 @@
 package com.babylonhx.postprocess;
 
 import com.babylonhx.cameras.Camera;
+import com.babylonhx.engine.Engine;
 import com.babylonhx.math.Color3;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.materials.textures.DynamicTexture;
@@ -27,8 +28,8 @@ import com.babylonhx.materials.ShadersStore;
 	
 	
 	public function new(name:String, maskTextureUrl:String, ratio:Float, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
-		if (!ShadersStore.Shaders.exists("nightVision.fragment")) {			
-			ShadersStore.Shaders.set("nightVision.fragment", fragmentShader);
+		if (!ShadersStore.Shaders.exists("nightVisionPixelShader")) {			
+			ShadersStore.Shaders.set("nightVisionPixelShader", fragmentShader);
 		}
 		
 		super(name, "nightVision", ["elapsedTime", "luminanceThreshold", "colorAmplification", "vx_offset"], ["noiseTex", "maskTex"], ratio, camera, samplingMode, engine, reusable);
@@ -36,7 +37,7 @@ import com.babylonhx.materials.ShadersStore;
 		this._maskTex = new Texture(maskTextureUrl, camera.getScene());
 		_createNoiseTexture();
 		
-		this.onApply = function(effect:Effect, _) {
+		this.onApplyObservable.add(function(effect:Effect, _) {
 			this.elapsedTime += camera.getScene().getAnimationRatio() * 0.03;
 			effect.setFloat("elapsedTime", this.elapsedTime);
 			effect.setFloat("luminanceThreshold", this.luminanceThreshold);
@@ -45,7 +46,7 @@ import com.babylonhx.materials.ShadersStore;
 			
 			effect.setTexture("noiseTex", this._noiseTex);
 			effect.setTexture("maskTex", this._maskTex);
-		};
+		});
 	}
 	
 	// creates a black and white random noise texture, 512x512

@@ -1,5 +1,6 @@
 package com.babylonhx.postprocess.renderpipeline;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.tools.Tools;
@@ -102,9 +103,13 @@ import com.babylonhx.tools.EventState;
 	public function _attachCameras(cameras:Dynamic) {
 		var cameraKey:String = "";
 		
-		var _cam = Tools.MakeArray(cameras != null ? cameras : this._cameras);
+		var cams = Tools.MakeArray(cameras != null ? cameras : this._cameras);
 		
-		for (c in _cam) {
+		if (cams == null) {
+			return;
+		}
+		
+		for (c in cams) {
 			var camera:Camera = c;
 			var cameraName = camera.name;
 			
@@ -141,9 +146,13 @@ import com.babylonhx.tools.EventState;
 	//public _detachCameras(cameras:Camera);
 	//public _detachCameras(cameras:Camera[]);
 	public function _detachCameras(cameras:Dynamic) {
-		var _cam = Tools.MakeArray(cameras != null ? cameras : this._cameras);
+		var cams = Tools.MakeArray(cameras != null ? cameras : this._cameras);
 		
-		for (c in _cam) {
+		if (cams == null) {
+			return;
+		}
+		
+		for (c in cams) {
 			var camera:Camera = c;
 			var cameraName = camera.name;
 			
@@ -162,9 +171,9 @@ import com.babylonhx.tools.EventState;
 	//public _enable(cameras:Camera);
 	//public _enable(cameras:Camera[]);
 	public function _enable(cameras:Dynamic) {
-		var _cam = Tools.MakeArray(cameras != null ? cameras : this._cameras);
+		var cams = Tools.MakeArray(cameras != null ? cameras : this._cameras);
 		
-		for (c in _cam) {
+		for (c in cams) {
 			var camera:Camera = c;
 			var cameraName = camera.name;
 			
@@ -184,9 +193,9 @@ import com.babylonhx.tools.EventState;
 	//public _disable(cameras:Camera);
 	//public _disable(cameras:Camera[]);
 	public function _disable(cameras:Dynamic) {
-		var _cam = Tools.MakeArray(cameras != null ? cameras : this._cameras);
+		var cams = Tools.MakeArray(cameras != null ? cameras : this._cameras);
 		
-		for (c in _cam) {
+		for (c in cams) {
 			var camera:Camera = c;
 			var cameraName = c.name;
 			
@@ -203,6 +212,9 @@ import com.babylonhx.tools.EventState;
 			return this._postProcesses["0"];
 		}
 		else {
+			if (camera == null) {
+				return null;
+			}
 			return this._postProcesses[camera.name];
 		}
 	}

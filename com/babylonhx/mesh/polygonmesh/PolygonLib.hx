@@ -54,6 +54,8 @@ class PolygonLib {
 			n++;
 		}
 		
+		pts.reverse();
+		
 		return pts;
 	}
 

@@ -40,8 +40,9 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 		return _disableLighting;
 	}
 	inline private function set_disableLighting(value:Bool):Bool {
+		this._disableLighting = value;
 		_markAllSubMeshesAsLightsDirty();
-		return _disableLighting = value;
+		return value;
 	}
 
 	/**
@@ -54,8 +55,9 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 		return _reflectionTexture;
 	}
 	inline private function set_environmentTexture(value:BaseTexture):BaseTexture {
+		this._reflectionTexture = value;
 		_markAllSubMeshesAsTexturesDirty();
-		return _reflectionTexture = value;
+		return value;
 	}
 
 	/**
@@ -68,8 +70,9 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 		return _invertNormalMapX;
 	}
 	inline private function set_invertNormalMapX(value:Bool):Bool {
+		this._invertNormalMapX = value;
 		_markAllSubMeshesAsTexturesDirty();
-		return _invertNormalMapX = value;
+		return value;
 	}
 
 	/**
@@ -82,8 +85,9 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 		return _invertNormalMapY;
 	}
 	inline private function set_invertNormalMapY(value:Bool):Bool {
+		this._invertNormalMapY = value;
 		_markAllSubMeshesAsTexturesDirty();
-		return _invertNormalMapY = value;
+		return value;
 	}
 
 	/**
@@ -96,8 +100,9 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 		return _bumpTexture;
 	}
 	inline private function set_normalTexture(value:BaseTexture):BaseTexture {
+		this._bumpTexture = value;
 		_markAllSubMeshesAsTexturesDirty();
-		return _bumpTexture = value;
+		return value;
 	}
 
 	/**
@@ -110,8 +115,9 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 		return _emissiveColor;
 	}
 	inline private function set_emissiveColor(value:Color3):Color3 {
+		this._emissiveColor = value;
 		_markAllSubMeshesAsTexturesDirty();
-		return _emissiveColor = value;
+		return value;
 	}
 
 	/**
@@ -124,8 +130,9 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 		return _emissiveTexture;
 	}
 	inline private function set_emissiveTexture(value:BaseTexture):BaseTexture {
+		this._emissiveTexture = value;
 		_markAllSubMeshesAsTexturesDirty();
-		return _emissiveTexture = value;
+		return value;
 	}
 
 	/**
@@ -138,8 +145,9 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 		return _ambientTextureStrength;
 	}
 	inline private function set_occlusionStrength(value:Float):Float {
+		this._ambientTextureStrength = value;
 		_markAllSubMeshesAsTexturesDirty();
-		return _ambientTextureStrength = value;
+		return value;
 	}
 
 	/**
@@ -152,8 +160,9 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 		return _ambientTexture;
 	}
 	inline private function set_occlusionTexture(value:BaseTexture):BaseTexture {
+		this._ambientTexture = value;
 		_markAllSubMeshesAsTexturesDirty();
-		return _ambientTexture = value;
+		return value;
 	}
 
 	/**
@@ -166,34 +175,8 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 		return _alphaCutOff;
 	}
 	inline private function set_alphaCutOff(value:Float):Float {
+		this._alphaCutOff = value;
 		_markAllSubMeshesAsTexturesDirty();
-		return _alphaCutOff = value;
-	}
-
-	public var _transparencyMode:Int = PBRMaterial.PBRMATERIAL_OPAQUE;
-	/**
-	 * Gets the current transparency mode.
-	 */
-	@serialize()
-	public var transparencyMode(get, set):Int;
-	inline private function get_transparencyMode():Int {
-		return this._transparencyMode;
-	}
-	/**
-	 * Sets the transparency mode of the material.
-	 */
-	private function set_transparencyMode(value:Int):Int {
-		if (this._transparencyMode == value) {
-			return;
-		}
-		this._transparencyMode = value;
-		if (value == PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND) {
-			this._forceAlphaTest = true;
-		}
-		else {
-			this._forceAlphaTest = false;
-		}
-		this._markAllSubMeshesAsTexturesDirty();
 		return value;
 	}
 
@@ -217,38 +200,29 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 		this._markAllSubMeshesAsTexturesDirty();
 		return value;
 	}
-
-	/**
-	 * Specifies wether or not the alpha value of the albedo texture should be used.
-	 */
-	public function _shouldUseAlphaFromAlbedoTexture():Bool {
-		return this._albedoTexture != null && this._albedoTexture.hasAlpha && this._transparencyMode != PBRMaterial.PBRMATERIAL_OPAQUE;
+	
+	@serializeAsTexture()
+	//@expandToProperty("_markAllSubMeshesAsTexturesDirty", null)
+	public var lightmapTexture(get, set):BaseTexture;
+	inline private function get_lightmapTexture():BaseTexture {
+		return _lightmapTexture;
+	}
+	inline private function set_lightmapTexture(value:BaseTexture):BaseTexture {
+		this._lightmapTexture = value;
+		_markAllSubMeshesAsTexturesDirty();
+		return value;
 	}
 
-	/**
-	 * Specifies wether or not the meshes using this material should be rendered in alpha blend mode.
-	 */
-	public function needAlphaBlending():Bool {
-		if (this._linkRefractionWithTransparency) {
-			return false;
-		}
-		
-		return (this.alpha < 1.0) || 
-				(this._shouldUseAlphaFromAlbedoTexture() &&
-					(this._transparencyMode == PBRMaterial.PBRMATERIAL_ALPHABLEND ||
-						this._transparencyMode == PBRMaterial.PBRMATERIAL_ALPHATESTANDBLEND));
+	@serialize()
+	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
+	public var useLightmapAsShadowmap(get, set):Bool;
+	inline private function get_useLightmapAsShadowmap():Bool {
+		return _useLightmapAsShadowmap;
 	}
-
-	/**
-	 * Specifies wether or not the meshes using this material should be rendered in alpha test mode.
-	 */
-	public function needAlphaTesting():Bool {
-		if (this._linkRefractionWithTransparency) {
-			return false;
-		}
-		
-		return this._shouldUseAlphaFromAlbedoTexture() &&
-			 this._transparencyMode == PBRMaterial.PBRMATERIAL_ALPHATEST;
+	inline private function set_useLightmapAsShadowmap(value:Bool):Bool {
+		this._useLightmapAsShadowmap = value;
+		_markAllSubMeshesAsTexturesDirty();
+		return value;
 	}
 	
 	/**
@@ -273,7 +247,23 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 			activeTextures.push(this.occlusionTexture);
 		}
 		
+		if (this.lightmapTexture != null) {
+            activeTextures.push(this.lightmapTexture);
+        }
+		
 		return activeTextures;
+	}
+	
+	public function hasTexture(texture:BaseTexture):Bool {
+		if (super.hasTexture(texture)) {
+			return true;
+		}
+		
+		if (this.lightmapTexture == texture) {
+			return true;
+		}
+		
+		return false;
 	}
 
 	/**
@@ -285,6 +275,7 @@ class PBRBaseSimpleMaterial extends PBRBaseMaterial {
 	public function new(name:String, scene:Scene) {
 		super(name, scene);
 		
+		this._useAlphaFromAlbedoTexture = true;
 		this._useAmbientInGrayScale = true;
 	}
 	

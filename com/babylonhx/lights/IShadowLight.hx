@@ -26,8 +26,7 @@ import com.babylonhx.mesh.AbstractMesh;
 	function computeTransformedInformation():Bool;
 	function getScene():Scene;
 
-	var customProjectionMatrixBuilder:Matrix->Array<AbstractMesh>->Matrix->Void;
-	
+	var customProjectionMatrixBuilder:Matrix->Array<AbstractMesh>->Matrix->Void;	
 	function setShadowProjectionMatrix(matrix:Matrix, viewMatrix:Matrix, renderList:Array<AbstractMesh>):IShadowLight;
 	function getDepthScale():Float;
 
@@ -37,13 +36,22 @@ import com.babylonhx.mesh.AbstractMesh;
 
 	function getShadowDirection(?faceIndex:Int):Vector3;
 	
+	/**
+	 * Gets the minZ used for shadow according to both the scene and the light.
+	 * @param activeCamera 
+	 */
+	function getDepthMinZ(activeCamera:Camera):Float;
+	
+	/**
+	 * Gets the minZ used for shadow according to both the scene and the light.
+	 * @param activeCamera 
+	 */
+	function getDepthMaxZ(activeCamera:Camera):Float;
+	
 	// BHX
 	function _markMeshesAsLightDirty():Void;
 	var _shadowGenerator:IShadowGenerator;
 	var shadowEnabled:Bool;
 	var _uniformBuffer:UniformBuffer;
-	
-	function getDepthMinZ(activeCamera:Camera):Float;
-	function getDepthMaxZ(activeCamera:Camera):Float;
 	
 }

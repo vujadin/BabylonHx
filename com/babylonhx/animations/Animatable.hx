@@ -12,14 +12,28 @@ package com.babylonhx.animations;
 	private var _runtimeAnimations:Array<RuntimeAnimation> = [];
 	private var _paused:Bool = false;
 	private var _scene:Scene;
+	private var _speedRatio:Float = 1;
 	
 	public var animationStarted:Bool = false;
+	
+	public var speedRatio(get, set):Float;
+	inline function get_speedRatio():Float {
+		return this._speedRatio;
+	}
+	function set_speedRatio(value:Float):Float {
+		for (index in 0...this._runtimeAnimations.length) {
+			var animation = this._runtimeAnimations[index];
+			
+			animation._prepareForSpeedRatioChange(value);
+		}
+		this._speedRatio = value;
+		return value;
+	}
 
 	public var target:Dynamic;
 	public var fromFrame:Int;
 	public var toFrame:Int;
 	public var loopAnimation:Bool;
-	public var speedRatio:Float;
 	public var onAnimationEnd:Void->Void;
 	
 	
@@ -29,13 +43,13 @@ package com.babylonhx.animations;
 		this.fromFrame = fromFrame;
 		this.toFrame = toFrame;
 		this.loopAnimation = loopAnimation;
-		this.speedRatio = speedRatio;
 		this.onAnimationEnd = onAnimationEnd;
 		
 		if (animations != null) {
 			this.appendAnimations(target, animations);
 		}
 		
+		this._speedRatio = speedRatio;
 		this._scene = scene;
 		scene._activeAnimatables.push(this);
 	}
@@ -113,6 +127,9 @@ package com.babylonhx.animations;
             var currentFrame = runtimeAnimations[0].currentFrame;
             var adjustTime = frame - currentFrame;
             var delay = adjustTime * 1000 / fps;
+			if (this._localDelayOffset == -1) {
+				this._localDelayOffset = 0;
+			}
             this._localDelayOffset -= delay;
         }
 		
@@ -122,6 +139,9 @@ package com.babylonhx.animations;
 	}
 
 	inline public function pause() {
+		if (this._paused) {
+			return;
+		}
 		this._paused = true;
 	}
 

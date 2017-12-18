@@ -14,6 +14,7 @@ typedef EffectCreationOptions = {
 	onCompiled:Null<Effect->Void>,
 	onError:Null<Effect->String->Void>,
 	indexParameters:Null<Dynamic>,
-	maxSimultaneousLights:Null<Int>
+	maxSimultaneousLights:Null<Int>,
+	transformFeedbackVaryings:Null<Array<String>>
 	
 }

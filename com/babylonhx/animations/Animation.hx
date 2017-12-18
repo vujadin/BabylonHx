@@ -126,11 +126,19 @@ import com.babylonhx.Node;
 	public static function CreateAndStartAnimation(name:String, node:Node, targetProperty:String, framePerSecond:Int, totalFrame:Int, from:Dynamic, to:Dynamic, ?loopMode:Int, ?easingFunction:EasingFunction, ?onAnimationEnd:Void->Void):Animatable {
 		var animation = Animation._PrepareAnimation(name, targetProperty, framePerSecond, totalFrame, from, to, loopMode, easingFunction);
 		
+		if (animation == null) {
+			return null;
+		}
+		
 		return node.getScene().beginDirectAnimation(node, [animation], 0, totalFrame, (animation.loopMode == 1), 1.0, onAnimationEnd);
 	}
 	
 	public static function CreateMergeAndStartAnimation(name:String, node:Node, targetProperty:String, framePerSecond:Int, totalFrame:Int, from:Dynamic, to:Dynamic, ?loopMode:Int, ?easingFunction:EasingFunction, ?onAnimationEnd:Void->Void) {
 		var animation = Animation._PrepareAnimation(name, targetProperty, framePerSecond, totalFrame, from, to, loopMode, easingFunction);
+		
+		if (animation == null) {
+			return null;
+		}
 		
 		node.animations.push(animation);
 		
@@ -168,8 +176,8 @@ import com.babylonhx.Node;
 			value: targetValue
 		}]);
 		
-		if (!Reflect.hasField(host, "animations")) {
-			Reflect.setProperty(host, "animations", []);
+		if (host.animations == null) {
+			host.animations = [];
 		}
 		
 		untyped host.animations.push(transition);
@@ -183,12 +191,12 @@ import com.babylonhx.Node;
 	 * Return the array of runtime animations currently using this animation
 	 */
 	public var runtimeAnimations(get, never):Array<RuntimeAnimation>;
-	inline private function get_runtimeAnimations():Array<RuntimeAnimation> {
+	inline function get_runtimeAnimations():Array<RuntimeAnimation> {
 		return this._runtimeAnimations;
 	}
 
 	public var hasRunningRuntimeAnimations(get, never):Bool;
-	private function get_hasRunningRuntimeAnimations():Bool {
+	function get_hasRunningRuntimeAnimations():Bool {
 		for (runtimeAnimation in this._runtimeAnimations) {
 			if (!runtimeAnimation.isStopped()) {
 				return true;
@@ -269,22 +277,25 @@ import com.babylonhx.Node;
 	}
 
 	public function deleteRange(name:String, deleteFrames:Bool = true) {
-		if (this._ranges[name] != null){
-			if (deleteFrames) {
-				var from = this._ranges[name].from;
-				var to = this._ranges[name].to;
-				
-				// this loop MUST go high to low for multiple splices to work
-				var key = this._keys.length - 1;
-				while (key >= 0) {
-					if (this._keys[key].frame >= from  && this._keys[key].frame <= to) {
-					   this._keys.splice(key, 1); 
-					}
-					key--;
-				}
-			}
-			this._ranges.remove(name);
+		var range = this._ranges[name];
+		if (range == null) {
+			return;
 		}
+		
+		if (deleteFrames) {
+			var from = this._ranges[name].from;
+			var to = this._ranges[name].to;
+			
+			// this loop MUST go high to low for multiple splices to work
+			var key = this._keys.length - 1;
+			while (key >= 0) {
+				if (this._keys[key].frame >= from  && this._keys[key].frame <= to) {
+				   this._keys.splice(key, 1); 
+				}
+				key--;
+			}
+		}
+		this._ranges.remove(name);
 	}
 
 	public function getRange(name:String):AnimationRange {		
@@ -316,7 +327,7 @@ import com.babylonhx.Node;
 	}
 
 	inline public function floatInterpolateFunction(startValue:Float, endValue:Float, gradient:Float):Float {
-		return startValue + (endValue - startValue) * gradient;
+		return Scalar.Lerp(startValue, endValue, gradient);
 	}
 	
 	inline public function floatInterpolateFunctionWithTangents(startValue:Float, outTangent:Float, endValue:Float, inTangent:Float, gradient:Float):Float {
@@ -355,7 +366,7 @@ import com.babylonhx.Node;
 		return Color3.Lerp(startValue, endValue, gradient);
 	}
 	
-	inline public function matrixInterpolateFunction(startValue:Matrix, endValue:Matrix, gradient:Float):Matrix {
+	public function matrixInterpolateFunction(startValue:Matrix, endValue:Matrix, gradient:Float):Matrix {
 		return Matrix.Lerp(startValue, endValue, gradient);
 	}
 
@@ -372,7 +383,11 @@ import com.babylonhx.Node;
 		if (this._ranges != null) {
 			clone._ranges = new Map();
 			for (name in this._ranges.keys()) {
-				clone._ranges[name] = this._ranges[name].clone();
+				var range = this._ranges[name];
+				if (range == null) {
+					continue;
+				}
+				clone._ranges[name] = range.clone();
 			}
 		}
 		
@@ -381,14 +396,6 @@ import com.babylonhx.Node;
 
 	public function setKeys(values:Array<BabylonFrame>) {
 		this._keys = values.slice(0);
-	}
-	
-	private function _getKeyValue(value:Dynamic):Dynamic {
-		if (Reflect.isFunction(value)) {
-			return value();
-		}
-		
-		return value;
 	}
 	
 	public function serialize():Dynamic {
@@ -451,12 +458,33 @@ import com.babylonhx.Node;
         for (index in 0...parsedAnimation.keys.length) {
             var key = parsedAnimation.keys[index];
 			
+			var inTangent:Dynamic = null;
+			var outTangent:Dynamic = null;
+			
             switch (dataType) {
                 case Animation.ANIMATIONTYPE_FLOAT:
                     data = key.values[0];
+					if (key.values.length >= 1) {
+                        inTangent = key.values[1];
+                    }
+                    if (key.values.length >= 2) {
+                        outTangent = key.values[2];
+                    }
                     
                 case Animation.ANIMATIONTYPE_QUATERNION:
                     data = Quaternion.FromArray(key.values);
+					if (key.values.length >= 8) {
+                        var _inTangent = Quaternion.FromArray(key.values.slice(4, 8));
+                        if (!_inTangent.equals(Quaternion.Zero())) {
+                            inTangent = _inTangent;
+                        }
+                    }
+                    if (key.values.length >= 12) {
+                        var _outTangent = Quaternion.FromArray(key.values.slice(8, 12));
+                        if (!_outTangent.equals(Quaternion.Zero())) {
+                            outTangent = _outTangent;
+                        }
+                    }
                     
                 case Animation.ANIMATIONTYPE_MATRIX:
                     data = Matrix.FromArray(key.values);
@@ -472,10 +500,20 @@ import com.babylonhx.Node;
                     
             }
 			
-            keys.push({
-                frame: key.frame,
-                value: data
-            });
+            var keyData:BabylonFrame = {
+				frame: key.frame,
+				value: data,
+				inTangent: null,
+				outTangent: null
+			};
+			
+            if (inTangent != null) {
+                keyData.inTangent = inTangent;
+            }
+            if (outTangent != null) {
+                keyData.outTangent = outTangent;
+            }
+            keys.push(keyData);
         }
 		
         animation.setKeys(keys);

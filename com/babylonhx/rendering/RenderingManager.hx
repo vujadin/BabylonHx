@@ -95,7 +95,7 @@ import com.babylonhx.tools.Tools;
 			var renderingGroupMask:Int = 0;
 			
 			// Fire PRECLEAR stage
-			if (observable != null) {
+			if (observable != null && info != null) {
 				renderingGroupMask = Std.int(Math.pow(2, index));
 				info.renderStage = RenderingGroupInfo.STAGE_PRECLEAR;
 				info.renderingGroupId = index;
@@ -110,7 +110,7 @@ import com.babylonhx.tools.Tools;
 				}
 			}
 			
-			if (observable != null) {
+			if (observable != null && info != null) {
 				// Fire PREOPAQUE stage
 				info.renderStage = RenderingGroupInfo.STAGE_PREOPAQUE;
 				observable.notifyObservers(info, renderingGroupMask);
@@ -124,7 +124,7 @@ import com.babylonhx.tools.Tools;
 			}
 			
 			// Fire POSTTRANSPARENT stage
-			if (observable != null) {
+			if (observable != null && info != null) {
 				info.renderStage = RenderingGroupInfo.STAGE_POSTTRANSPARENT;
 				observable.notifyObservers(info, renderingGroupMask);
 			}

@@ -1,5 +1,6 @@
 package com.babylonhx.rendering;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.Material;
 import com.babylonhx.materials.textures.Texture;
@@ -103,7 +104,7 @@ class GeometryBufferRenderer {
 				attribs.push(VertexBuffer.MatricesWeightsExtraKind);
 			}
 			defines.push("#define NUM_BONE_INFLUENCERS " + mesh.numBoneInfluencers);
-			defines.push("#define BonesPerMesh " + (mesh.skeleton.bones.length + 1));
+			defines.push("#define BonesPerMesh " + (mesh.skeleton != null ? mesh.skeleton.bones.length + 1 : 0));
 		} 
 		else {
 			defines.push("#define NUM_BONE_INFLUENCERS 0");
@@ -167,9 +168,14 @@ class GeometryBufferRenderer {
 			var mesh = subMesh.getRenderingMesh();
 			var scene = this._scene;
 			var engine = scene.getEngine();
+			var material = subMesh.getMaterial();
+			
+			if (material == null) {
+				return;
+			}
 			
 			// Culling
-			engine.setState(subMesh.getMaterial().backFaceCulling);
+			engine.setState(material.backFaceCulling, 0, false, scene.useRightHandedSystem);
 			
 			// Managing instances
 			var batch = mesh._getInstancesRenderList(subMesh._id);
@@ -191,12 +197,15 @@ class GeometryBufferRenderer {
 				// Alpha test
 				if (material != null && material.needAlphaTesting()) {
 					var alphaTexture = material.getAlphaTestTexture();
-					this._effect.setTexture("diffuseSampler", alphaTexture);
-					this._effect.setMatrix("diffuseMatrix", alphaTexture.getTextureMatrix());
+					
+					if (alphaTexture != null) {
+						this._effect.setTexture("diffuseSampler", alphaTexture);
+						this._effect.setMatrix("diffuseMatrix", alphaTexture.getTextureMatrix());
+					}
 				}
 				
 				// Bones
-				if (mesh.useBones && mesh.computeBonesUsingShaders) {
+				if (mesh.useBones && mesh.computeBonesUsingShaders && mesh.skeleton != null) {
 					this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices(mesh));
 				}
 				

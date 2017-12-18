@@ -44,21 +44,32 @@ package com.babylonhx.tools;
 		return !Tools.IsEmpty(obj._tags);
 	}
 
-	public static function GetTags(obj:Dynamic):Dynamic {
+	public static function GetTags(obj:Dynamic, asString:Bool = true):Dynamic {
 		if (obj._tags == null) {
 			return null;
 		}
-		return obj._tags;
+		if (asString) {
+			var tagsArray:Array<String> = [];
+			for (tag in Reflect.fields(obj._tags)) {
+				if (Reflect.field(obj._tags, tag) == true) {
+					tagsArray.push(tag);
+				}
+			}
+			return tagsArray.join(" ");
+		} 
+		else {
+			return obj._tags;
+		}
 	}
 
 	// the tags 'true' and 'false' are reserved and cannot be used as tags
 	// a tag cannot start with '||', '&&', and '!'
 	// it cannot contain whitespaces
 	public static function AddTagsTo(obj:Dynamic, tagsString:String = "") {
-		if (tagsString == "") {
+		if (!Std.is(tagsString, String) || tagsString == "") {
 			return;
 		}
-
+		
 		var tags = tagsString.split(" ");
 		for (t in tags) {
 			Tags._AddTagTo(obj, t);

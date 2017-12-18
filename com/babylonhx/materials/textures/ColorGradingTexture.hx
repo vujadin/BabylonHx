@@ -1,5 +1,6 @@
 package com.babylonhx.materials.textures;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.Scene;
@@ -44,6 +45,8 @@ class ColorGradingTexture extends BaseTexture {
 	 */
 	private static var _noneEmptyLineRegex = ~/\S+/;
 	
+	private var _engine:Engine;
+	
 	
 	/**
 	 * Instantiates a ColorGradingTexture from the following parameters.
@@ -54,11 +57,13 @@ class ColorGradingTexture extends BaseTexture {
 	public function new(url:String, scene:Scene) {
 		super(scene);
 		
+		this._engine = scene.getEngine();
 		this._textureMatrix = Matrix.Identity();
 		this.name = url;
 		this.url = url;
 		this.hasAlpha = false;
 		this.isCube = false;
+		this.is3D = this._engine.webGLVersion > 1;
 		this.wrapU = Texture.CLAMP_ADDRESSMODE;
 		this.wrapV = Texture.CLAMP_ADDRESSMODE;
 		this.anisotropicFilteringLevel = 1;
@@ -89,7 +94,7 @@ class ColorGradingTexture extends BaseTexture {
 	private function load3dlTexture():InternalTexture {
 		var mipLevels:Int = 0;
 		var floatArrayView:Float32Array = null;
-		var texture = this.getScene().getEngine().createRawTexture(null, 1, 1, Engine.TEXTUREFORMAT_RGBA, false, false, Texture.BILINEAR_SAMPLINGMODE);
+		var texture = this._engine.createRawTexture(null, 1, 1, Engine.TEXTUREFORMAT_RGBA, false, false, Texture.BILINEAR_SAMPLINGMODE);
 		this._texture = texture;
 		
 		var callback = function(text:String) {
@@ -136,9 +141,11 @@ class ColorGradingTexture extends BaseTexture {
 					
 					var pixelStorageIndex = (pixelIndexW + pixelIndexSlice * size + pixelIndexH * size * size) * 4;
 					
-					tempData[pixelStorageIndex + 0] = r;
-					tempData[pixelStorageIndex + 1] = g;
-					tempData[pixelStorageIndex + 2] = b;
+					if (tempData != null) {
+						tempData[pixelStorageIndex + 0] = r;
+						tempData[pixelStorageIndex + 1] = g;
+						tempData[pixelStorageIndex + 2] = b;
+					}
 					
 					pixelIndexSlice++;
 					if (pixelIndexSlice % size == 0) {
@@ -152,18 +159,26 @@ class ColorGradingTexture extends BaseTexture {
 				}
 			}
 			
-			for (i in 0...tempData.length) {
-				if (i > 0 && (i + 1) % 4 == 0) {
-					data[i] = 255;
-				}
-				else {
-					var value = tempData[i];
-					data[i] = Std.int(value / maxColor * 255);
+			if (tempData != null && data != null) {
+				for (i in 0...tempData.length) {
+					if (i > 0 && (i + 1) % 4 == 0) {
+						data[i] = 255;
+					}
+					else {
+						var value = tempData[i];
+						data[i] = Std.int(value / maxColor * 255);
+					}
 				}
 			}
 			
-			texture.updateSize(size * size, size);
-			this.getScene().getEngine().updateRawTexture(texture, data, Engine.TEXTUREFORMAT_RGBA, false);
+			if (texture.is3D) {
+				texture.updateSize(size, size, size);
+				this._engine.updateRawTexture3D(texture, data, Engine.TEXTUREFORMAT_RGBA, false);
+			}
+			else {
+				texture.updateSize(size * size, size);
+				this._engine.updateRawTexture(texture, data, Engine.TEXTUREFORMAT_RGBA, false);
+			}
 		}
 		
 		Tools.LoadFile(this.url, callback);		

@@ -1,6 +1,5 @@
 package com.babylonhx.materials.lib.fur;
 
-import com.babylonhx.Engine;
 import com.babylonhx.lights.shadows.ShadowGenerator;
 import com.babylonhx.lights.IShadowLight;
 import com.babylonhx.lights.Light;
@@ -320,7 +319,7 @@ class FurMaterial extends PushMaterial {
 					indexParameters: { maxSimultaneousLights: this.maxSimultaneousLights }
 				}, engine), defines);
 		}
-		if (!subMesh.effect.isReady()) {
+		if (subMesh.effect == null || !subMesh.effect.isReady()) {
 			return false;
 		}
 		
@@ -339,6 +338,9 @@ class FurMaterial extends PushMaterial {
 		}
 		
 		var effect = subMesh.effect;
+		if (effect == null) {
+			return;
+		}
 		this._activeEffect = effect;
 		
 		// Matrices        
@@ -442,7 +444,12 @@ class FurMaterial extends PushMaterial {
 		
 		if (this._meshes != null) {
 			for (i in 1...this._meshes.length) {
-				this._meshes[i].material.dispose(forceDisposeEffect);
+				var mat = this._meshes[i].material;
+				
+				if (mat != null) {
+					mat.dispose(forceDisposeEffect);
+				}
+				
 				this._meshes[i].dispose();
 			}
 		}

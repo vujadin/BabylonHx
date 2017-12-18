@@ -1,8 +1,13 @@
 package com.babylonhx;
 
+import com.babylonhx.engine.Engine;
+import com.babylonhx.events.PointerEvent;
 import com.babylonhx.events.PointerInfoPre;
 import com.babylonhx.events.PointerInfo;
 import com.babylonhx.events.PointerEventTypes;
+import com.babylonhx.events.KeyboardInfo;
+import com.babylonhx.events.KeyboardInfoPre;
+import com.babylonhx.events.KeyboardEventTypes;
 import com.babylonhx.actions.Action;
 import com.babylonhx.actions.ActionManager;
 import com.babylonhx.actions.ActionEvent;
@@ -26,7 +31,7 @@ import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.ImageProcessingConfiguration;
 import com.babylonhx.materials.Material;
 import com.babylonhx.materials.MultiMaterial;
-//import com.babylonhx.materials.PBRMaterial;
+import com.babylonhx.materials.pbr.PBRMaterial;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.materials.UniformBuffer;
 import com.babylonhx.materials.textures.BaseTexture;
@@ -34,6 +39,7 @@ import com.babylonhx.materials.textures.procedurals.ProceduralTexture;
 import com.babylonhx.materials.textures.RenderTargetTexture;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.cameras.Camera;
+import com.babylonhx.math.Tmp;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
 import com.babylonhx.math.Color3;
@@ -47,6 +53,7 @@ import com.babylonhx.mesh.Mesh;
 import com.babylonhx.culling.Ray;
 import com.babylonhx.collisions.ICollisionCoordinator;
 import com.babylonhx.collisions.CollisionCoordinatorLegacy;
+import com.babylonhx.mesh.TransformNode;
 import com.babylonhx.morph.MorphTargetManager;
 import com.babylonhx.mesh.simplification.SimplificationQueue;
 import com.babylonhx.mesh.SubMesh;
@@ -67,6 +74,7 @@ import com.babylonhx.rendering.RenderingManager;
 import com.babylonhx.sprites.SpriteManager;
 import com.babylonhx.sprites.Sprite;
 import com.babylonhx.tools.SmartArray;
+import com.babylonhx.tools.SmartArrayNoDuplicate;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
@@ -75,7 +83,7 @@ import com.babylonhx.tools.StringDictionary;
 import com.babylonhx.tools.PerfCounter;
 import haxe.Timer;
 
-//import com.babylonhx.d2.display.Stage;
+import com.babylonhx.d2.display.Stage;
 
 #if (purejs || js)
 import com.babylonhx.audio.*;
@@ -86,13 +94,16 @@ import com.babylonhx.audio.*;
  * @author Krtolica Vujadin
  */
 
-@:expose('BABYLON.Scene') class Scene implements IAnimatable {
+@:expose('BABYLON.Scene') 
+@:external class Scene implements IAnimatable {
 	
 	// Statics
 	public static var FOGMODE_NONE:Int = 0;
 	public static var FOGMODE_EXP:Int = 1;
 	public static var FOGMODE_EXP2:Int = 2;
 	public static var FOGMODE_LINEAR:Int = 3;
+	
+	private static var _uniqueIdCounter:Int = 0;
 
 	public static var MinDeltaTime:Float = 1.0;
 	public static var MaxDeltaTime:Float = 1000.0;
@@ -121,6 +132,9 @@ import com.babylonhx.audio.*;
 	 * this is easier to set here than in all the materials.
 	 */
 	private function set_environmentTexture(value:BaseTexture):BaseTexture {
+		if (this._environmentTexture == value) {
+			return value;
+		}
 		this._environmentTexture = value;
 		this.markAllMaterialsAsDirty(Material.TextureDirtyFlag);
 		return value;
@@ -158,14 +172,23 @@ import com.babylonhx.audio.*;
 	public var forceShowBoundingBoxes:Bool = false;
 	public var clipPlane:Plane;
 	public var animationsEnabled:Bool = true;
+	public var useConstantAnimationDeltaTime:Bool = false;
 	public var constantlyUpdateMeshUnderPointer:Bool = false;
 	
 	public var hoverCursor:String = "pointer";
+	public var defaultCursor:String = "";
+	/**
+     * This is used to call preventDefault() on pointer down
+     * in order to block unwanted artifacts like system double clicks
+     */
+    public var preventDefaultOnPointerDown:Bool = true;
 	
 	// Metadata
 	public var metadata:Dynamic = null;
 	
 	// Events
+	
+	private var _spritePredicate:Sprite->Bool;
 
 	/**
 	* An event triggered when the scene is disposed.
@@ -190,7 +213,7 @@ import com.babylonhx.audio.*;
 	* @type {BABYLON.Observable}
 	*/
 	public var onBeforeRenderObservable:Observable<Scene> = new Observable<Scene>();
-	
+	/** A function to be executed before rendering this scene */
 	public var beforeRender(never, set):Scene->Null<EventState>->Void;
 	private var _onBeforeRenderObserver:Observer<Scene>;
 	private function set_beforeRender(callback:Scene->Null<EventState>->Void):Scene->Null<EventState>->Void {
@@ -208,7 +231,7 @@ import com.babylonhx.audio.*;
 	* @type {BABYLON.Observable}
 	*/
 	public var onAfterRenderObservable:Observable<Scene> = new Observable<Scene>();
-
+	/** A function to be executed after rendering this scene */
 	public var afterRender(never, set):Scene->Null<EventState>->Void;
 	private var _onAfterRenderObserver:Observer<Scene>;
 	private function set_afterRender(callback:Scene->Null<EventState>->Void):Scene->Null<EventState>->Void {
@@ -220,6 +243,42 @@ import com.babylonhx.audio.*;
 		
 		return callback;
 	}
+	
+	/**
+	* An event triggered before animating the scene
+	* @type {BABYLON.Observable}
+	*/
+	public var onBeforeAnimationsObservable:Observable<Scene> = new Observable<Scene>();
+
+	/**
+	* An event triggered after animations processing
+	* @type {BABYLON.Observable}
+	*/
+	public var onAfterAnimationsObservable:Observable<Scene> = new Observable<Scene>();
+
+	/**
+	* An event triggered before draw calls are ready to be sent
+	* @type {BABYLON.Observable}
+	*/
+	public var onBeforeDrawPhaseObservable:Observable<Scene> = new Observable<Scene>();
+
+	/**
+	* An event triggered after draw calls have been sent
+	* @type {BABYLON.Observable}
+	*/
+	public var onAfterDrawPhaseObservable:Observable<Scene> = new Observable<Scene>();
+
+	/**
+	* An event triggered when physic simulation is about to be run
+	* @type {BABYLON.Observable}
+	*/
+	public var onBeforePhysicsObservable:Observable<Scene> = new Observable<Scene>();
+
+	/**
+	* An event triggered when physic simulation has been done
+	* @type {BABYLON.Observable}
+	*/
+	public var onAfterPhysicsObservable:Observable<Scene> = new Observable<Scene>();
 
 	/**
 	* An event triggered when the scene is ready
@@ -262,6 +321,52 @@ import com.babylonhx.audio.*;
 		
 		return callback;
 	}
+	
+	/**
+	* An event triggered when active meshes evaluation is about to start
+	* @type {BABYLON.Observable}
+	*/
+	public var onBeforeActiveMeshesEvaluationObservable:Observable<Scene> = new Observable<Scene>();
+
+	/**
+	* An event triggered when active meshes evaluation is done
+	* @type {BABYLON.Observable}
+	*/
+	public var onAfterActiveMeshesEvaluationObservable:Observable<Scene> = new Observable<Scene>();
+
+	/**
+	* An event triggered when particles rendering is about to start
+	* Note: This event can be trigger more than once per frame (because particles can be rendered by render target textures as well)
+	* @type {BABYLON.Observable}
+	*/
+	public var onBeforeParticlesRenderingObservable:Observable<Scene> = new Observable<Scene>();
+
+	/**
+	* An event triggered when particles rendering is done
+	* Note: This event can be trigger more than once per frame (because particles can be rendered by render target textures as well)
+	* @type {BABYLON.Observable}
+	*/
+	public var onAfterParticlesRenderingObservable:Observable<Scene> = new Observable<Scene>();
+
+	/**
+	* An event triggered when sprites rendering is about to start
+	* Note: This event can be trigger more than once per frame (because sprites can be rendered by render target textures as well)
+	* @type {BABYLON.Observable}
+	*/
+	public var onBeforeSpritesRenderingObservable:Observable<Scene> = new Observable<Scene>();
+
+	/**
+	* An event triggered when sprites rendering is done
+	* Note: This event can be trigger more than once per frame (because sprites can be rendered by render target textures as well)
+	* @type {BABYLON.Observable}
+	*/
+	public var onAfterSpritesRenderingObservable:Observable<Scene> = new Observable<Scene>();
+
+	/**
+	* An event triggered when SceneLoader.Append or SceneLoader.Load or SceneLoader.ImportMesh were successfully executed
+	* @type {BABYLON.Observable}
+	*/
+	public var onDataLoadedObservable:Observable<Scene> = new Observable<Scene>();
 
 	/**
 	* An event triggered when a camera is created
@@ -298,6 +403,18 @@ import com.babylonhx.audio.*;
 	* @type {BABYLON.Observable}
 	*/
 	public var onGeometryRemovedObservable:Observable<Geometry> = new Observable<Geometry>();
+	
+	/**
+	* An event triggered when a transform node is created
+	* @type {BABYLON.Observable}
+	*/
+	public var onNewTransformNodeAddedObservable:Observable<TransformNode> = new Observable<TransformNode>();
+
+	/**
+	* An event triggered when a transform node is removed
+	* @type {BABYLON.Observable}
+	*/
+	public var onTransformNodeRemovedObservable:Observable<TransformNode> = new Observable<TransformNode>();
 
 	/**
 	* An event triggered when a mesh is created
@@ -310,6 +427,20 @@ import com.babylonhx.audio.*;
 	* @type {BABYLON.Observable}
 	*/
 	public var onMeshRemovedObservable:Observable<AbstractMesh> = new Observable<AbstractMesh>();
+	
+	/**
+	* An event triggered when render targets are about to be rendered
+	* Can happen multiple times per frame.
+	* @type {BABYLON.Observable}
+	*/
+	public var OnBeforeRenderTargetsRenderObservable:Observable<Scene> = new Observable<Scene>();
+
+	/**
+	* An event triggered when render targets were rendered.
+	* Can happen multiple times per frame.
+	* @type {BABYLON.Observable}
+	*/
+	public var OnAfterRenderTargetsRenderObservable:Observable<Scene> = new Observable<Scene>();
 	
 	/**
      * An event triggered before calculating deterministic simulation step
@@ -338,14 +469,26 @@ import com.babylonhx.audio.*;
 	public var pointerDownPredicate:AbstractMesh->Bool;
 	public var pointerUpPredicate:AbstractMesh->Bool;
 	public var pointerMovePredicate:AbstractMesh->Bool;
-	private var _onPointerMove:Int->Int->Void;
-	private var _onPointerDown:Int->Int->Int->Void;
-	private var _onPointerUp:Int->Int->Int->Void;
+	private var _onPointerMove:PointerEvent->Void; // Int->Int->Void;
+	private var _onPointerDown:PointerEvent->Void; // Int->Int->Int->Void;
+	private var _onPointerUp:PointerEvent->Void; // Int->Int->Int->Void;
 	
-	public var onPointerMove:Int->Int->PickingInfo->Void;
-	public var onPointerDown:Int->Int->Int->PickingInfo->Void;
-	public var onPointerUp:Int->Int->Int->PickingInfo->Void;
-	public var onPointerPick:PickingInfo->Void;
+	public var onPointerMove:PointerEvent->PickingInfo->Void; //Int->Int->PickingInfo->Void;
+	public var onPointerDown:PointerEvent->PickingInfo->Void; //Int->Int->Int->PickingInfo->Void;
+	public var onPointerUp:PointerEvent->PickingInfo->Void;   //Int->Int->Int->PickingInfo->Void;
+	public var onPointerPick:PointerEvent->PickingInfo->Void;
+	
+	// Gamepads
+	// VK TODO:
+	/*private var _gamepadManager:GamepadManager;
+	public var gamepadManager(get, never):GamepadManager;
+	inline private function get_gamepadManager():GamepadManager {
+		if (this._gamepadManager == null) {
+			this._gamepadManager = new GamepadManager();
+		}
+		
+		return this._gamepadManager;
+	}*/
 	
 	/**
      * This observable event is triggered when any mouse event registered during Scene.attach() is called 
@@ -365,25 +508,30 @@ import com.babylonhx.audio.*;
 		return new Vector2(this._unTranslatedPointerX, this._unTranslatedPointerY);
 	}
 	
+	/** The distance in pixel that you have to move to prevent some events */
 	public static var DragMovementThreshold:Int = 10; 			// in pixels
+	/** Time in milliseconds to wait to raise long press events if button is still pressed */
 	public static var LongPressDelay:Int = 500; 				// in milliseconds
+	/** Time in milliseconds with two consecutive clicks will be considered as a double click */
 	public static var DoubleClickDelay:Int = 300; 				// in milliseconds
-	public static var ExclusiveDoubleClickMode:Bool = false; 	// If you need to check double click without raising a single click at first click, enable this flag
+	/** If you need to check double click without raising a single click at first click, enable this flag */
+	public static var ExclusiveDoubleClickMode:Bool = false;
 	
-	private var _initClickEvent:Observable<PointerInfoPre>->Observable<PointerInfo>->Dynamic->(ClickInfo->PointerInfo->Void)->Void;
+	private var _initClickEvent:Observable<PointerInfoPre>->Observable<PointerInfo>->Dynamic->(ClickInfo->PickingInfo->Void)->Void;
 	private var _initActionManager:ActionManager->ClickInfo->ActionManager;
-	private var _delayedSimpleClick:Int->ClickInfo->(ClickInfo->PointerInfo->Void)->Void;
+	private var _delayedSimpleClick:Int->ClickInfo->(ClickInfo->PickingInfo->Void)->Void;
 	private var _delayedSimpleClickTimeout:Float;
 	private var _previousDelayedSimpleClickTimeout:Float;
 	private var _meshPickProceed:Bool = false;
 
 	private var _previousButtonPressed:Int;
 	private var _previousHasSwiped:Bool = false;
-	private var _currentPickResult:Dynamic = null;
-	private var _previousPickResult:Dynamic = null;
-	private var _isButtonPressed:Bool = false;
+	private var _currentPickResult:PickingInfo = null;
+	private var _previousPickResult:PickingInfo = null;
+	private var _totalPointersPressed:Int = 0;
 	private var _doubleClickOccured:Bool = false;
 	
+	/** Define this parameter if you are using multiple cameras and you want to specify which one should be used for pointer position */
 	public var cameraToUseForPointers:Camera = null; 
 	private var _pointerX:Int;
 	private var _pointerY:Int;
@@ -403,6 +551,17 @@ import com.babylonhx.audio.*;
     public var _mirroredCameraPosition:Vector3 = null;
 
 	// Keyboard
+
+	/**
+	 * This observable event is triggered when any keyboard event si raised and registered during Scene.attachControl()
+	 * You have the possibility to skip the process and the call to onKeyboardObservable by setting KeyboardInfoPre.skipOnPointerObservable to true
+	 */
+	public var onPreKeyboardObservable:Observable<KeyboardInfoPre> = new Observable<KeyboardInfoPre>();
+	
+	/**
+	 * Observable event triggered each time an keyboard event is received from the hosting window
+	 */
+	public var onKeyboardObservable:Observable<KeyboardInfo> = new Observable<KeyboardInfo>();
 	private var _onKeyDown:Dynamic;		// Event->Void
 	private var _onKeyUp:Dynamic;		// Event->Void
 	
@@ -538,6 +697,13 @@ import com.babylonhx.audio.*;
 
 	// Meshes
 	/**
+	* All of the tranform nodes added to this scene.
+	* @see BABYLON.TransformNode
+	* @type {BABYLON.TransformNode[]}
+	*/
+	public var transformNodes:Array<TransformNode> = [];
+		
+	/**
 	* All of the (abstract) meshes added to this scene.
 	* @see BABYLON.AbstractMesh
 	* @type {BABYLON.AbstractMesh[]}
@@ -661,7 +827,7 @@ import com.babylonhx.audio.*;
 	public var actionManager:ActionManager;
 	
 	public var _actionManagers:Array<ActionManager> = [];
-	private var _meshesForIntersections:SmartArray<AbstractMesh> = new SmartArray<AbstractMesh>(256);
+	private var _meshesForIntersections:SmartArrayNoDuplicate<AbstractMesh> = new SmartArrayNoDuplicate<AbstractMesh>(256);
 
 	// Procedural textures
 	public var proceduralTexturesEnabled:Bool = true;
@@ -718,13 +884,14 @@ import com.babylonhx.audio.*;
 
 	public var _toBeDisposed:SmartArray<ISmartArrayCompatible> = new SmartArray<ISmartArrayCompatible>(256);
 	private var _pendingData:Array<Dynamic> = [];//ANY
+	private var _isDisposed:Bool = false;
 
 	private var _activeMeshes:SmartArray<AbstractMesh> = new SmartArray<AbstractMesh>(256);				
 	private var _processedMaterials:SmartArray<Material> = new SmartArray<Material>(256);		
-	private var _renderTargets:SmartArray<RenderTargetTexture> = new SmartArray<RenderTargetTexture>(256);			
+	private var _renderTargets:SmartArrayNoDuplicate<RenderTargetTexture> = new SmartArrayNoDuplicate<RenderTargetTexture>(256);			
 	public var _activeParticleSystems:SmartArray<IParticleSystem> = new SmartArray<IParticleSystem>(256);		
-	private var _activeSkeletons:SmartArray<Skeleton> = new SmartArray<Skeleton>(32);			
-	private var _softwareSkinnedMeshes:SmartArray<Mesh> = new SmartArray<Mesh>(32);	
+	private var _activeSkeletons:SmartArrayNoDuplicate<Skeleton> = new SmartArrayNoDuplicate<Skeleton>(32);			
+	private var _softwareSkinnedMeshes:SmartArrayNoDuplicate<Mesh> = new SmartArrayNoDuplicate<Mesh>(32);	
 
 	private var _renderingManager:RenderingManager;
 	private var _physicsEngine:PhysicsEngine;
@@ -747,6 +914,7 @@ import com.babylonhx.audio.*;
 	private var _alternateTransformMatrix:Matrix;
 	private var _useAlternateCameraConfiguration:Bool = false;
 	private var _alternateRendering:Bool = false;
+	public var _forcedViewPosition:Vector3 = null;
 	
 	public var _isAlternateRenderingEnabled(get, never):Bool;
 	inline private function get__isAlternateRenderingEnabled():Bool {
@@ -770,8 +938,6 @@ import com.babylonhx.audio.*;
 	
 	private var _depthRenderer:DepthRenderer;
 	private var _geometryBufferRenderer:GeometryBufferRenderer;
-	
-	private var _uniqueIdCounter:Int = 0;
 	
 	private var _pickedDownMesh:AbstractMesh;
 	private var _pickedUpMesh:AbstractMesh;
@@ -1067,9 +1233,9 @@ import com.babylonhx.audio.*;
 			#if mobile
 			
 			#else
-			_engine.mouseDown.push(stage2D._onMD);
-			_engine.mouseMove.push(stage2D._onMM);
-			_engine.mouseUp.push(stage2D._onMU);
+			//_engine.mouseDown.push(stage2D._onMD);
+			//_engine.mouseMove.push(stage2D._onMM);
+			//_engine.mouseUp.push(stage2D._onMU);
 			
 			_engine.keyDown.push(stage2D._onKD);
 			_engine.keyUp.push(stage2D._onKU);
@@ -1124,9 +1290,9 @@ import com.babylonhx.audio.*;
 		this._renderId++;
 	}
 
-	inline public function _updatePointerPosition(x:Int, y:Int) {		
-		this._pointerX = x;
-		this._pointerY = y;
+	inline public function _updatePointerPosition(evt:PointerEvent) {		
+		this._pointerX = cast evt.x;
+		this._pointerY = cast evt.y;
 		
 		this._unTranslatedPointerX = this._pointerX;
 		this._unTranslatedPointerY = this._pointerY;
@@ -1145,6 +1311,207 @@ import com.babylonhx.audio.*;
 	}
 
 	// Pointers handling
+	
+	/**
+	 * Use this method to simulate a pointer move on a mesh
+	 * The pickResult parameter can be obtained from a scene.pick or scene.pickWithRay
+	 */
+	public function simulatePointerMove(pickResult:PickingInfo):Scene {
+		var evt = new PointerEvent(0, 0, -1, PointerEventTypes.POINTERMOVE);
+		
+		return this._processPointerMove(pickResult, evt);
+	}
+
+	private function _processPointerMove(pickResult:PickingInfo, evt:PointerEvent):Scene {		
+		if (pickResult != null && pickResult.hit && pickResult.pickedMesh != null) {
+			this.setPointerOverSprite(null);
+			
+			this.setPointerOverMesh(pickResult.pickedMesh);
+			
+			// VK TODO:
+			/*if (this._pointerOverMesh.actionManager != null && this._pointerOverMesh.actionManager.hasPointerTriggers) {
+				if (this._pointerOverMesh.actionManager.hoverCursor) {
+					canvas.style.cursor = this._pointerOverMesh.actionManager.hoverCursor;
+				} 
+				else {
+					canvas.style.cursor = this.hoverCursor;
+				}
+			} 
+			else {
+				canvas.style.cursor = this.defaultCursor;
+			}*/
+		} 
+		else {
+			this.setPointerOverMesh(null);
+			// Sprites
+			pickResult = this.pickSprite(this._unTranslatedPointerX, this._unTranslatedPointerY, this._spritePredicate, false, this.cameraToUseForPointers);
+			
+			if (pickResult != null && pickResult.hit && pickResult.pickedSprite != null) {
+				this.setPointerOverSprite(pickResult.pickedSprite);
+				
+				// VK TODO:
+				/*if (this._pointerOverSprite.actionManager != null && this._pointerOverSprite.actionManager.hoverCursor != null) {
+					canvas.style.cursor = this._pointerOverSprite.actionManager.hoverCursor;
+				} 
+				else {
+					canvas.style.cursor = this.hoverCursor;
+				}*/
+			} 
+			else {
+				this.setPointerOverSprite(null);
+				// Restore pointer
+				
+				// VK TODO:
+				//canvas.style.cursor = this.defaultCursor;
+			}
+		}
+		
+		if (this.onPointerMove != null) {
+			this.onPointerMove(evt, pickResult);
+		}
+		
+		if (this.onPointerObservable.hasObservers()) {
+			var type = evt.type; // === "mousewheel" || evt.type === "DOMMouseScroll" ? PointerEventTypes.POINTERWHEEL : PointerEventTypes.POINTERMOVE;
+			var pi = new PointerInfo(type, evt, pickResult);
+			this.onPointerObservable.notifyObservers(pi, type);
+		}
+		
+		return this;            
+	}
+
+	/**
+	 * Use this method to simulate a pointer down on a mesh
+	 * The pickResult parameter can be obtained from a scene.pick or scene.pickWithRay
+	 */
+	public function simulatePointerDown(pickResult:PickingInfo):Scene {
+		var evt = new PointerEvent(0, 0, -1, PointerEventTypes.POINTERDOWN);
+
+		return this._processPointerDown(pickResult, evt);
+	}        
+
+	private function _processPointerDown(pickResult:PickingInfo, evt:PointerEvent):Scene {
+		if (pickResult != null && pickResult.hit && pickResult.pickedMesh != null) {
+			this._pickedDownMesh = pickResult.pickedMesh;
+			var actionManager = pickResult.pickedMesh.actionManager;
+			if (actionManager != null) {
+				if (actionManager.hasPickTriggers) {
+					actionManager.processTrigger(ActionManager.OnPickDownTrigger, ActionEvent.CreateNew(pickResult.pickedMesh, evt));
+					switch (evt.button) {
+						case 0:
+							actionManager.processTrigger(ActionManager.OnLeftPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh, evt));
+							
+						case 1:
+							actionManager.processTrigger(ActionManager.OnCenterPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh, evt));
+							
+						case 2:
+							actionManager.processTrigger(ActionManager.OnRightPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh, evt));
+							
+					}
+				}
+				
+				if (actionManager.hasSpecificTrigger(ActionManager.OnLongPressTrigger)) {
+					Tools.delay(function () {
+						var pickResult = this.pick(this._unTranslatedPointerX, this._unTranslatedPointerY, function(mesh:AbstractMesh):Bool { return mesh.isPickable && mesh.isVisible && mesh.isReady() && mesh.actionManager != null && mesh.actionManager.hasSpecificTrigger(ActionManager.OnLongPressTrigger) && mesh == this._pickedDownMesh; }, false, this.cameraToUseForPointers);
+							
+						if (pickResult != null && pickResult.hit && pickResult.pickedMesh != null) {
+							if (this._totalPointersPressed != 0 &&
+								((Tools.Now() - this._startingPointerTime) > Scene.LongPressDelay) &&
+								(Math.abs(this._startingPointerPosition.x - this._pointerX) < Scene.DragMovementThreshold &&
+									Math.abs(this._startingPointerPosition.y - this._pointerY) < Scene.DragMovementThreshold)) {
+								this._startingPointerTime = 0;
+								actionManager.processTrigger(ActionManager.OnLongPressTrigger, ActionEvent.CreateNew(pickResult.pickedMesh, evt));
+							}
+						}
+					}, Scene.LongPressDelay);
+				}
+			}
+		}
+		
+		if (this.onPointerDown != null) {
+			this.onPointerDown(evt, pickResult);
+		}
+		
+		if (this.onPointerObservable.hasObservers()) {
+			var type = PointerEventTypes.POINTERDOWN;
+			var pi = new PointerInfo(type, evt, pickResult);
+			this.onPointerObservable.notifyObservers(pi, type);
+		}
+		
+		return this;
+	}
+
+	/**
+	 * Use this method to simulate a pointer up on a mesh
+	 * The pickResult parameter can be obtained from a scene.pick or scene.pickWithRay
+	 */
+	public function simulatePointerUp(pickResult:PickingInfo):Scene {
+		var evt = new PointerEvent(0, 0, -1, PointerEventTypes.POINTERUP);
+		var clickInfo = new ClickInfo();
+		clickInfo.singleClick = true;
+		
+		return this._processPointerUp(pickResult, evt, clickInfo);
+	}    
+
+	private function _processPointerUp(pickResult:PickingInfo, evt:PointerEvent, clickInfo:ClickInfo):Scene {            
+		if (pickResult != null && pickResult.hit && pickResult.pickedMesh != null) {
+			this._pickedUpMesh = pickResult.pickedMesh;
+			if (this._pickedDownMesh == this._pickedUpMesh) {
+				if (this.onPointerPick != null) {
+					this.onPointerPick(evt, pickResult);
+				}
+				if (clickInfo.singleClick && !clickInfo.ignore && this.onPointerObservable.hasObservers()) {
+					var type = PointerEventTypes.POINTERPICK;
+					var pi = new PointerInfo(type, evt, pickResult);
+					this.onPointerObservable.notifyObservers(pi, type);
+				}
+			}
+			if (pickResult.pickedMesh.actionManager != null) {
+				if (clickInfo.ignore) {
+					pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnPickUpTrigger, ActionEvent.CreateNew(pickResult.pickedMesh, evt));
+				}
+				if (!clickInfo.hasSwiped && !clickInfo.ignore && clickInfo.singleClick) {
+					pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh, evt));
+				}
+				if (clickInfo.doubleClick && !clickInfo.ignore && pickResult.pickedMesh.actionManager.hasSpecificTrigger(ActionManager.OnDoublePickTrigger)) {
+					pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnDoublePickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh, evt));
+				}
+			}
+		}
+		if (this._pickedDownMesh != null &&
+			this._pickedDownMesh.actionManager != null &&
+			this._pickedDownMesh.actionManager.hasSpecificTrigger(ActionManager.OnPickOutTrigger) &&
+			this._pickedDownMesh != this._pickedUpMesh) {
+			this._pickedDownMesh.actionManager.processTrigger(ActionManager.OnPickOutTrigger, ActionEvent.CreateNew(this._pickedDownMesh, evt));
+		}
+		
+		if (this.onPointerUp != null) {
+			this.onPointerUp(evt, pickResult);
+		}
+		
+		if (this.onPointerObservable.hasObservers()) {
+			if (!clickInfo.ignore) {
+				if (!clickInfo.hasSwiped) {
+					if (clickInfo.singleClick && this.onPointerObservable.hasSpecificMask(PointerEventTypes.POINTERTAP)) {
+						var type = PointerEventTypes.POINTERTAP;
+						var pi = new PointerInfo(type, evt, pickResult);
+						this.onPointerObservable.notifyObservers(pi, type);
+					}
+					if (clickInfo.doubleClick && this.onPointerObservable.hasSpecificMask(PointerEventTypes.POINTERDOUBLETAP)) {
+						var type = PointerEventTypes.POINTERDOUBLETAP;
+						var pi = new PointerInfo(type, evt, pickResult);
+						this.onPointerObservable.notifyObservers(pi, type);
+					}
+				}
+			}
+			else {
+				var type = PointerEventTypes.POINTERUP;
+				var pi = new PointerInfo(type, evt, pickResult);
+				this.onPointerObservable.notifyObservers(pi, type);
+			}
+		}
+		
+		return this;
+	}
 
 	/**
 	* Attach events to the canvas (To handle actionManagers triggers and raise onPointerMove, onPointerDown and onPointerUp
@@ -1165,10 +1532,9 @@ import com.babylonhx.audio.*;
 			return act;
 		};
 		
-		this._delayedSimpleClick = function(btn:Int, clickInfo:ClickInfo, cb:ClickInfo->PointerInfo->Void) {
+		this._delayedSimpleClick = function(btn:Int, clickInfo:ClickInfo, cb:ClickInfo->PickingInfo->Void) {
 			// double click delay is over and that no double click has been raised since, or the 2 consecutive keys pressed are different
-			if ((Tools.Now() - this._previousStartingPointerTime > Scene.DoubleClickDelay && !this._doubleClickOccured) ||
-			btn != this._previousButtonPressed ) {
+			if ((Tools.Now() - this._previousStartingPointerTime > Scene.DoubleClickDelay && !this._doubleClickOccured) || btn != this._previousButtonPressed) {
 				this._doubleClickOccured = false;
 				clickInfo.singleClick = true;
 				clickInfo.ignore = false;
@@ -1176,7 +1542,7 @@ import com.babylonhx.audio.*;
 			}
 		};
 		
-		this._initClickEvent = function(obs1:Observable<PointerInfoPre>, obs2:Observable<PointerInfo>, evt:Dynamic, cb:ClickInfo->PointerInfo->Void) {
+		this._initClickEvent = function(obs1:Observable<PointerInfoPre>, obs2:Observable<PointerInfo>, evt:Dynamic, cb:ClickInfo->PickingInfo->Void) {
 				var clickInfo = new ClickInfo();
 				this._currentPickResult = null;
 				var act:ActionManager = null;
@@ -1291,17 +1657,17 @@ import com.babylonhx.audio.*;
 				cb(clickInfo, this._currentPickResult);
 		};	
 		
-		var spritePredicate = function(sprite:Sprite):Bool {			
+		this._spritePredicate = function(sprite:Sprite):Bool {			
 			return sprite.isPickable && sprite.actionManager != null && sprite.actionManager.hasPointerTriggers;
 		};
 		 
-		this._onPointerMove = function(x:Int, y:Int) {
-			this._updatePointerPosition(x, y);
+		this._onPointerMove = function(evt:PointerEvent) {
+			this._updatePointerPosition(evt);
 			
 			// PreObservable support
             if (this.onPrePointerObservable.hasObservers()) {
-                var type = PointerEventTypes.POINTERMOVE;
-                var pi = new PointerInfoPre(type, { x: x, y: y, button: null }, this._unTranslatedPointerX, this._unTranslatedPointerY);
+                var type = evt.type;
+                var pi = new PointerInfoPre(type, evt, this._unTranslatedPointerX, this._unTranslatedPointerY);
                 this.onPrePointerObservable.notifyObservers(pi, type);
                 if (pi.skipOnPointerObservable) {
                     return;
@@ -1345,7 +1711,7 @@ import com.babylonhx.audio.*;
 				this.setPointerOverMesh(null);
 				
 				// Sprites				
-				pickResult = this.pickSprite(this._unTranslatedPointerX, this._unTranslatedPointerY, spritePredicate, false, this.cameraToUseForPointers);
+				pickResult = this.pickSprite(this._unTranslatedPointerX, this._unTranslatedPointerY, this._spritePredicate, false, this.cameraToUseForPointers);
 				
 				if (pickResult.hit && pickResult.pickedSprite != null) {
 					//canvas.style.cursor = "pointer";
@@ -1359,23 +1725,27 @@ import com.babylonhx.audio.*;
 			}
 			
 			if (this.onPointerMove != null) {
-				this.onPointerMove(x, y, pickResult);
+				this.onPointerMove(evt, pickResult);
 			}
 			
 			if (this.onPointerObservable.hasObservers()) {
-				var type = PointerEventTypes.POINTERMOVE;
-				var pi = new PointerInfo(type, { x: x, y: y, button: null }, pickResult);
+				var type = evt.type;// PointerEventTypes.POINTERMOVE;
+				var pi = new PointerInfo(type, evt, pickResult);
 				this.onPointerObservable.notifyObservers(pi, type);
 			}
 		};
 		
-		this._onPointerDown = function(x:Int, y:Int, button:Int) {
-			this._updatePointerPosition(x, y);
+		this._onPointerDown = function(evt:PointerEvent) {
+            this._totalPointersPressed++;
+            this._pickedDownMesh = null;
+            this._meshPickProceed = false;
+			
+			this._updatePointerPosition(evt);
 			
 			// PreObservable support
             if (this.onPrePointerObservable.hasObservers()) {
-                var type = PointerEventTypes.POINTERDOWN;
-                var pi = new PointerInfoPre(type, { x: x, y: y, button: button }, this._unTranslatedPointerX, this._unTranslatedPointerY);
+                var type = evt.type;
+                var pi = new PointerInfoPre(type, evt, this._unTranslatedPointerX, this._unTranslatedPointerY);
                 this.onPrePointerObservable.notifyObservers(pi, type);
                 if (pi.skipOnPointerObservable) {
                     return;
@@ -1400,12 +1770,14 @@ import com.babylonhx.audio.*;
 			this._pickedDownMesh = null;			
 			var pickResult:PickingInfo = this.pick(this._unTranslatedPointerX, this._unTranslatedPointerY, this.pointerDownPredicate, false, this.cameraToUseForPointers);
 			
+			this._processPointerDown(pickResult, evt);
+			
 			if (pickResult.hit && pickResult.pickedMesh != null) {				
 				if (pickResult.pickedMesh.actionManager != null) {
 					this._pickedDownMesh = pickResult.pickedMesh;
 					
 					if (pickResult.pickedMesh.actionManager.hasPickTriggers) {
-						switch (button) {
+						switch (evt.button) {
 							case 0:
 								pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnLeftPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
 								
@@ -1416,7 +1788,7 @@ import com.babylonhx.audio.*;
 								pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnRightPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));
 								
 							default:	// mobile
-								pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnLeftPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));							
+								pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnLeftPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh));	
 						}
 						
 						if (pickResult.pickedMesh.actionManager != null) {
@@ -1424,7 +1796,7 @@ import com.babylonhx.audio.*;
 						}
 					}
 					
-					if (pickResult.pickedMesh.actionManager != null && pickResult.pickedMesh.actionManager.hasSpecificTrigger(ActionManager.OnLongPressTrigger)) {				
+					if (pickResult.pickedMesh.actionManager != null && pickResult.pickedMesh.actionManager.hasSpecificTrigger(ActionManager.OnLongPressTrigger)) {
 						Tools.delay(function () {
 							var pickResult = this.pick(this._unTranslatedPointerX, this._unTranslatedPointerY,
 								function(mesh:AbstractMesh):Bool { return mesh.isPickable && mesh.isVisible && mesh.isReady() && mesh.actionManager != null && mesh.actionManager.hasSpecificTrigger(ActionManager.OnLongPressTrigger); },
@@ -1444,24 +1816,24 @@ import com.babylonhx.audio.*;
 			}
 			
 			if (this.onPointerDown != null) {
-				this.onPointerDown(x, y, button, pickResult);
+				this.onPointerDown(evt, pickResult);
 			}
 			
 			if (this.onPointerObservable.hasObservers()) {
 				var type = PointerEventTypes.POINTERDOWN;
-				var pi = new PointerInfo(type, { x: x, y: y, button: button }, pickResult);
+				var pi = new PointerInfo(type, evt, pickResult);
 				this.onPointerObservable.notifyObservers(pi, type);
 			}
 			
 			// Sprites
 			this._pickedDownSprite = null;
 			if (this.spriteManagers.length > 0) {
-				pickResult = this.pickSprite(this._unTranslatedPointerX, this._unTranslatedPointerY, spritePredicate, false, this.cameraToUseForPointers);
+				pickResult = this.pickSprite(this._unTranslatedPointerX, this._unTranslatedPointerY, this._spritePredicate, false, this.cameraToUseForPointers);
 				
 				if (pickResult.hit && pickResult.pickedSprite != null) {
 					if (pickResult.pickedSprite.actionManager != null) {
 						this._pickedDownSprite = pickResult.pickedSprite;
-						switch (button) {
+						switch (evt.button) {
 							case 0:
 								pickResult.pickedSprite.actionManager.processTrigger(ActionManager.OnLeftPickTrigger, ActionEvent.CreateNewFromSprite(pickResult.pickedSprite, this));
 								
@@ -1484,13 +1856,13 @@ import com.babylonhx.audio.*;
 			}
 		};
 		
-		this._onPointerUp = function(x:Int, y:Int, button:Int) {
-			this._updatePointerPosition(x, y);
+		this._onPointerUp = function(evt:PointerEvent) {
+			this._updatePointerPosition(evt);
 			
 			// PreObservable support
             if (this.onPrePointerObservable.hasObservers()) {
-                var type = PointerEventTypes.POINTERUP;
-                var pi = new PointerInfoPre(type, { x: x, y: y, button: button }, this._unTranslatedPointerX, this._unTranslatedPointerY);
+                var type = evt.type;// PointerEventTypes.POINTERUP;
+                var pi = new PointerInfoPre(type, evt, this._unTranslatedPointerX, this._unTranslatedPointerY);
                 this.onPrePointerObservable.notifyObservers(pi, type);
                 if (pi.skipOnPointerObservable) {
                     return;
@@ -1513,19 +1885,19 @@ import com.babylonhx.audio.*;
 			if (pickResult.hit && pickResult.pickedMesh != null) {
 				if (this._pickedDownMesh != null && pickResult.pickedMesh == this._pickedDownMesh) {
 					if (this.onPointerPick != null) {
-						this.onPointerPick(pickResult);
+						this.onPointerPick(evt, pickResult);
 					}
 					if (this.onPointerObservable.hasObservers()) {
 						var type = PointerEventTypes.POINTERPICK;
-						var pi = new PointerInfo(type, { x: x, y: y, button: button }, pickResult);
+						var pi = new PointerInfo(type, evt, pickResult);
 						this.onPointerObservable.notifyObservers(pi, type);
 					}
 				}
 				if (pickResult.pickedMesh.actionManager != null) {
-					pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnPickUpTrigger, ActionEvent.CreateNew(pickResult.pickedMesh, button));
+					pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnPickUpTrigger, ActionEvent.CreateNew(pickResult.pickedMesh, evt.button));
 					if (pickResult.pickedMesh.actionManager != null) {
 						if (Math.abs(this._startingPointerPosition.x - this._pointerX) < Scene.DragMovementThreshold && Math.abs(this._startingPointerPosition.y - this._pointerY) < Scene.DragMovementThreshold) {
-							pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh, button));
+							pickResult.pickedMesh.actionManager.processTrigger(ActionManager.OnPickTrigger, ActionEvent.CreateNew(pickResult.pickedMesh, evt.button));
 						}
 					}
 				}
@@ -1535,12 +1907,12 @@ import com.babylonhx.audio.*;
 			}
 			
 			if (this.onPointerUp != null) {
-				this.onPointerUp(x, y, button, pickResult);
+				this.onPointerUp(evt, pickResult);
 			}
 			
 			if (this.onPointerObservable.hasObservers()) {
 				var type = PointerEventTypes.POINTERUP;
-				var pi = new PointerInfo(type, { x: x, y: y, button: button }, pickResult);
+				var pi = new PointerInfo(type, evt, pickResult);
 				this.onPointerObservable.notifyObservers(pi, type);
 			}
 			
@@ -1548,7 +1920,7 @@ import com.babylonhx.audio.*;
 			
 			// Sprites
 			if (this.spriteManagers.length > 0) {
-				pickResult = this.pickSprite(this._unTranslatedPointerX, this._unTranslatedPointerY, spritePredicate, false, this.cameraToUseForPointers);
+				pickResult = this.pickSprite(this._unTranslatedPointerX, this._unTranslatedPointerY, this._spritePredicate, false, this.cameraToUseForPointers);
 				
 				if (pickResult.hit && pickResult.pickedSprite != null) {
 					if (pickResult.pickedSprite.actionManager != null) {
@@ -1674,11 +2046,25 @@ import com.babylonhx.audio.*;
 	}
 
 	public function _removePendingData(data:Dynamic) {
-		this._pendingData.remove(data);
+		var wasLoading = this.isLoading;
+        var index = this._pendingData.indexOf(data);
+		  
+		if (index != -1) {
+			this._pendingData.splice(index, 1);
+		}
+		
+        if (wasLoading && !this.isLoading) {
+            this.onDataLoadedObservable.notifyObservers(this);
+        }
 	}
 
 	public function getWaitingItemsCount():Int {
 		return this._pendingData.length;
+	}
+	
+	public var isLoading(get, never):Bool;
+	inline private function get_isLoading():Bool {
+		return this._pendingData.length > 0;
 	}
 
 	/**
@@ -1801,7 +2187,7 @@ import com.babylonhx.audio.*;
 			this._animationTimeLast = now;
 		}
 		
-		var deltaTime:Float = (now - this._animationTimeLast) * this.animationTimeScale;
+		var deltaTime:Float = this.useConstantAnimationDeltaTime ? 16.0 : (now - this._animationTimeLast) * this.animationTimeScale;
         this._animationTime += deltaTime;
         this._animationTimeLast = now;
 		for (index in 0...this._activeAnimatables.length) {
@@ -1849,6 +2235,12 @@ import com.babylonhx.audio.*;
 			Frustum.GetPlanesToRef(this._transformMatrix, this._frustumPlanes);
 		}
 		
+		if (this.activeCamera != null && this.activeCamera._alternateCamera != null) {
+            var otherCamera = this.activeCamera._alternateCamera;
+            otherCamera.getViewMatrix().multiplyToRef(otherCamera.getProjectionMatrix(null), Tmp.matrix[0]);
+            Frustum.GetRightPlaneToRef(Tmp.matrix[0], this._frustumPlanes[3]); // Replace right plane by second camera right plane
+        }
+		
 		if (this._sceneUbo.useUbo) {
 			this._sceneUbo.updateMatrix("viewProjection", this._transformMatrix);
 			this._sceneUbo.updateMatrix("view", this._viewMatrix);
@@ -1890,13 +2282,12 @@ import com.babylonhx.audio.*;
 	// Methods
 	
 	public function getUniqueId():Int {
-		var result = this._uniqueIdCounter;
-		this._uniqueIdCounter++;
+		var result = Scene._uniqueIdCounter;
+		Scene._uniqueIdCounter++;
 		return result;
 	}
 	
 	public function addMesh(newMesh:AbstractMesh) {
-		newMesh.uniqueId = this._uniqueIdCounter++;
 		var position = this.meshes.push(newMesh);
 		
 		//notify the collision coordinator
@@ -1914,12 +2305,25 @@ import com.babylonhx.audio.*;
 			this.meshes.splice(index, 1);
 		}
 		
-		//notify the collision coordinator
-		if (this.collisionCoordinator != null) {
-			this.collisionCoordinator.onMeshRemoved(toRemove);
+		this.onMeshRemovedObservable.notifyObservers(toRemove);
+		
+		return index;
+	}
+	
+	public function addTransformNode(newTransformNode:TransformNode) {
+		this.transformNodes.push(newTransformNode);
+		
+		this.onNewTransformNodeAddedObservable.notifyObservers(newTransformNode);
+	}
+
+	public function removeTransformNode(toRemove:TransformNode):Int {
+		var index = this.transformNodes.indexOf(toRemove);
+		if (index != -1) {
+			// Remove from the scene if found
+			this.transformNodes.splice(index, 1);
 		}
 		
-		this.onMeshRemovedObservable.notifyObservers(toRemove);
+		this.onTransformNodeRemovedObservable.notifyObservers(toRemove);
 		
 		return index;
 	}
@@ -1987,7 +2391,6 @@ import com.babylonhx.audio.*;
 	}
 
 	public function addLight(newLight:Light) {
-		newLight.uniqueId = this._uniqueIdCounter++;
 		this.lights.push(newLight);
 		this.sortLightsByPriority();
 		
@@ -2001,7 +2404,6 @@ import com.babylonhx.audio.*;
 	}
 
 	public function addCamera(newCamera:Camera) {
-		newCamera.uniqueId = this._uniqueIdCounter++;
 		var position = this.cameras.push(newCamera);
 		this.onNewCameraAddedObservable.notifyObservers(newCamera);
 	}
@@ -2519,6 +2921,21 @@ import com.babylonhx.audio.*;
 	}
 	
 	/**
+	 * Return a the first highlight layer of the scene with a given name.
+	 * @param name The name of the highlight layer to look for.
+	 * @return The highlight layer if found otherwise null.
+	 */
+	public function getHighlightLayerByName(name:String):HighlightLayer {
+		for (index in 0...this.highlightLayers.length) {
+			if (this.highlightLayers[index].name == name) {
+				return this.highlightLayers[index];
+			}
+		}
+		
+		return null;
+	}
+	
+	/**
 	 * Return a unique id as a string which can serve as an identifier for the scene
 	 */
 	public var uid(get, never):String;
@@ -2558,6 +2975,9 @@ import com.babylonhx.audio.*;
 	 * @return the associated data, can be null if the factory returned null.
 	 */
 	inline public function getOrAddExternalDataWithFactory<T>(key:String, factory:String->T):T {
+		if (this._externalData == null) {
+			this._externalData = new StringDictionary<Dynamic>();
+		}
 		return this._externalData.getOrAddWithFactory(key, factory);
 	}
 
@@ -2599,6 +3019,25 @@ import com.babylonhx.audio.*;
 	public function _isInIntermediateRendering():Bool {
         return this._intermediateRendering;
     }
+	
+	private var _activeMeshesFrozen:Bool = false;
+
+	/**
+	 * Use this function to stop evaluating active meshes. The current list will be keep alive between frames
+	 */
+	public function freezeActiveMeshes():Scene {
+		this._evaluateActiveMeshes();
+		this._activeMeshesFrozen = true;
+		return this;
+	}
+	
+	/**
+	 * Use this function to restart evaluating active meshes on every frame
+	 */
+	public function unfreezeActiveMeshes() {
+		this._activeMeshesFrozen = false;
+		return this;
+	}
 
 	private function _evaluateActiveMeshes() {
 		this.activeCamera._activeMeshes.reset();
@@ -2702,7 +3141,9 @@ import com.babylonhx.audio.*;
 		}
 		
 		if (sourceMesh.showBoundingBox || this.forceShowBoundingBoxes) {
-			this.getBoundingBoxRenderer().renderList.push(sourceMesh.getBoundingInfo().boundingBox);
+			var boundingInfo = sourceMesh.getBoundingInfo();
+			
+			this.getBoundingBoxRenderer().renderList.push(boundingInfo.boundingBox);
 		}
         
 		if (mesh != null && mesh.subMeshes != null) {
@@ -2729,10 +3170,21 @@ import com.babylonhx.audio.*;
 	}
 
 	public function updateTransformMatrix(force:Bool = false) {
+		if (this.activeCamera == null) {
+			return;
+		}
 		this.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(force));
+	}
+	
+	public function updateAlternateTransformMatrix(alternateCamera:Camera) {
+		this._setAlternateTransformMatrix(alternateCamera.getViewMatrix(), alternateCamera.getProjectionMatrix(false));
 	}
 
 	private function _renderForCamera(camera:Camera) {
+		if (camera != null && camera._skipRendering) {
+			return;
+		}
+		
 		var engine = this._engine;
 		
 		this.activeCamera = camera;
@@ -2749,16 +3201,18 @@ import com.babylonhx.audio.*;
 		// Camera
 		this.resetCachedMaterial();
 		this._renderId++;
+		this.activeCamera.update();
 		this.updateTransformMatrix();
+		
+		if (camera._alternateCamera != null) {
+			this.updateAlternateTransformMatrix(camera._alternateCamera);
+			this._alternateRendering = true;
+		}
 		
 		this.onBeforeCameraRenderObservable.notifyObservers(this.activeCamera);
 		
 		// Meshes
-		//var beforeEvaluateActiveMeshesDate = Tools.Now();
-		//Tools.StartPerformanceCounter("Active meshes evaluation");
 		this._evaluateActiveMeshes();
-		//this._evaluateActiveMeshesDuration += Tools.Now() - beforeEvaluateActiveMeshesDate;
-		//Tools.EndPerformanceCounter("Active meshes evaluation");
 		
 		// Software skinning
         for (softwareSkinnedMeshIndex in 0...this._softwareSkinnedMeshes.length) {
@@ -2768,7 +3222,7 @@ import com.babylonhx.audio.*;
         }
 		
 		// Render targets
-		//this._renderTargetsDuration.beginMonitoring();
+		this.OnBeforeRenderTargetsRenderObservable.notifyObservers(this);
 		var needsRestoreFrameBuffer = false;
 		
 		var beforeRenderTargetDate = Tools.Now();
@@ -2784,7 +3238,7 @@ import com.babylonhx.audio.*;
 				var renderTarget:RenderTargetTexture = this._renderTargets.data[renderIndex];
 				if (renderTarget._shouldRender()) {
 					this._renderId++;
-					var hasSpecialRenderTargetCamera = renderTarget.activeCamera != null && renderTarget.activeCamera != this.activeCamera;
+					var hasSpecialRenderTargetCamera:Bool = renderTarget.activeCamera != null && renderTarget.activeCamera != this.activeCamera;
 					renderTarget.render(hasSpecialRenderTargetCamera);
 				}
 			}
@@ -2812,7 +3266,7 @@ import com.babylonhx.audio.*;
 					
 					renderhighlights = true;
 					
-					var renderTarget = highlightLayer._mainTexture;
+					var renderTarget:RenderTargetTexture = cast highlightLayer._mainTexture;
 					if (renderTarget._shouldRender()) {
 						this._renderId++;
 						renderTarget.render(false);
@@ -2829,12 +3283,10 @@ import com.babylonhx.audio.*;
 			engine.restoreDefaultFramebuffer(); // Restore back buffer
 		}
 		
-		this._renderTargetsDuration.endMonitoring(false);
+		this.OnAfterRenderTargetsRenderObservable.notifyObservers(this);
 		
 		// Prepare Frame
 		this.postProcessManager._prepareFrame();
-		
-		this._renderDuration.beginMonitoring();
 		
 		// Backgrounds
 		if (this.layers.length > 0) {
@@ -2849,22 +3301,20 @@ import com.babylonhx.audio.*;
 			engine.setDepthBuffer(true);
 		}
 		
-		// Render
-		//Tools.StartPerformanceCounter("Main render");
-		
-		// Activate HighlightLayer stencil
+		// Activate  HighlightLayer stencil
 		if (renderhighlights) {
-			engine.setStencilBuffer(true);
+			this._engine.setStencilBuffer(true);
 		}
 		
+		// Render
+		this.onBeforeDrawPhaseObservable.notifyObservers(this);
 		this._renderingManager.render(null, null, true, true);
+		this.onAfterDrawPhaseObservable.notifyObservers(this);
 		
 		// Restore HighlightLayer stencil
 		if (renderhighlights) {
 			engine.setStencilBuffer(stencilState);
 		}
-		
-		//Tools.EndPerformanceCounter("Main render");
 		
 		// Bounding boxes
 		if (this._boundingBoxRenderer != null) {
@@ -2906,16 +3356,13 @@ import com.babylonhx.audio.*;
 			engine.setDepthBuffer(true);
 		}
 		
-		this._renderDuration.endMonitoring(false);
-		
 		// Finalize frame
 		this.postProcessManager._finalizeFrame(camera.isIntermediate);
 		
-		// Update camera
-		this.activeCamera._updateFromScene();
-		
 		// Reset some special arrays
 		this._renderTargets.reset();
+		
+		this._alternateRendering = false;
 		
 		this.onAfterCameraRenderObservable.notifyObservers(this.activeCamera);
 		
@@ -2928,6 +3375,11 @@ import com.babylonhx.audio.*;
 			return;
 		}
 		
+		// Update camera
+		if (this.activeCamera != null) {
+			this.activeCamera.update();
+		}
+		
 		// rig cameras
         for (index in 0...camera.rigCameras.length) {
             this._renderForCamera(camera.rigCameras[index]);
@@ -2935,9 +3387,6 @@ import com.babylonhx.audio.*;
 		
 		this.activeCamera = camera;
 		this.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(false));
-		
-		// Update camera
-		this.activeCamera._updateFromScene();
 	}
 
 	private function _checkIntersections() {
@@ -2986,21 +3435,14 @@ import com.babylonhx.audio.*;
 			return;
 		}
 		
-		this._lastFrameDuration.beginMonitoring();
-		this._particlesDuration.fetchNewFrame();
-		this._spritesDuration.fetchNewFrame();
 		this._activeParticles.fetchNewFrame();
-		this._renderDuration.fetchNewFrame();
-		this._renderTargetsDuration.fetchNewFrame();
-		this._evaluateActiveMeshesDuration.fetchNewFrame();
 		this._totalVertices.fetchNewFrame();
 		this._activeIndices.fetchNewFrame();
 		this._activeBones.fetchNewFrame();
-		this.getEngine().drawCallsPerfCounter.fetchNewFrame();
 		this._meshesForIntersections.reset();
 		this.resetCachedMaterial();
 		
-		//Tools.StartPerformanceCounter("Scene rendering");
+		this.onBeforeAnimationsObservable.notifyObservers(this);
 		
 		// Actions
 		if (this.actionManager != null) {
@@ -3013,59 +3455,64 @@ import com.babylonhx.audio.*;
 		}		
 		
 		if (this._engine.isDeterministicLockStep()) {
-			var deltaTime = Math.max(Scene.MinDeltaTime, Math.min(this._engine.getDeltaTime(), Scene.MaxDeltaTime)) / 1000;
+			var deltaTime = Math.max(Scene.MinDeltaTime, Math.min(this._engine.getDeltaTime(), Scene.MaxDeltaTime)) + this._timeAccumulator;
 			
-			var defaultTimeStep = (60.0 / 1000.0);
+			var defaultFPS = (60.0 / 1000.0);
+			
+			var defaultFrameTime = 1000 / 60; // frame time in MS
 			if (this._physicsEngine != null) {
-				defaultTimeStep = this._physicsEngine.getTimeStep();
+				defaultFrameTime = this._physicsEngine.getTimeStep() / 1000; //timestep in physics engine is in seconds
 			}
+			var stepsTaken = 0;
 			
 			var maxSubSteps = this._engine.getLockstepMaxSteps();
 			
-			this._timeAccumulator += deltaTime;
-			
-			// compute the amount of fixed steps we should have taken since the last step
-			var internalSteps = Math.floor(this._timeAccumulator / defaultTimeStep);
+			var internalSteps = Math.floor(deltaTime / (1000 * defaultFPS));
 			internalSteps = Std.int(Math.min(internalSteps, maxSubSteps));
 			
-			for (i in 0...internalSteps) {
-				this._currentInternalStep = i;
+			do {
 				this.onBeforeStepObservable.notifyObservers(this);
 				
 				// Animations
-				this._animationRatio = defaultTimeStep * (60.0 / 1000.0);
+				this._animationRatio = defaultFrameTime * defaultFPS;
 				this._animate();
+				this.onAfterAnimationsObservable.notifyObservers(this);
 				
 				// Physics
 				if (this._physicsEngine != null) {
-					//Tools.StartPerformanceCounter("Physics");
-					//this._physicsEngine._step(defaultTimeStep);
-					//Tools.EndPerformanceCounter("Physics");
+					this.onBeforePhysicsObservable.notifyObservers(this);
+					// VK TODO:
+					//this._physicsEngine._step(defaultFPS);
+					this.onAfterPhysicsObservable.notifyObservers(this);
 				}
-				this._timeAccumulator -= defaultTimeStep;
 				
 				this.onAfterStepObservable.notifyObservers(this);
 				this._currentStepId++;
 				
-				if ((internalSteps > 1) && (this._currentInternalStep != internalSteps - 1)) {
-					// Q: can this be optimized by putting some code in the afterStep callback?
-					// I had to put this code here, otherwise mesh attached to bones of another mesh skeleton,
-					// would return incorrect positions for internal stepIds (non-rendered steps)
+				if ((internalSteps > 1) && (stepsTaken != internalSteps - 1)) {
 					this._evaluateActiveMeshes();
 				}
-			}
+				
+				stepsTaken++;
+				deltaTime -= defaultFrameTime;
+			} 
+			while (deltaTime > 0 && stepsTaken < maxSubSteps);
+			
+			this._timeAccumulator = deltaTime;
 		}
 		else {
 			// Animations
 			var deltaTime = Math.max(Scene.MinDeltaTime, Math.min(this._engine.getDeltaTime(), Scene.MaxDeltaTime));
 			this._animationRatio = deltaTime * (60.0 / 1000.0);
 			this._animate();
+			this.onAfterAnimationsObservable.notifyObservers(this);
 			
 			// Physics
 			if (this._physicsEngine != null) {
-				//Tools.StartPerformanceCounter("Physics");
+				this.onBeforePhysicsObservable.notifyObservers(this);
+				// VK TODO:
 				//this._physicsEngine._step(deltaTime / 1000.0);
-				//Tools.EndPerformanceCounter("Physics");
+				this.onAfterPhysicsObservable.notifyObservers(this);
 			}
 		}
 		
@@ -3073,7 +3520,7 @@ import com.babylonhx.audio.*;
 		this.onBeforeRenderObservable.notifyObservers(this);
 		
 		// Customs render targets
-		//var beforeRenderTargetDate = Tools.Now();
+		this.OnBeforeRenderTargetsRenderObservable.notifyObservers(this);
 		var engine = this.getEngine();
 		var currentActiveCamera = this.activeCamera;
 		if (this.renderTargetsEnabled) {
@@ -3109,8 +3556,8 @@ import com.babylonhx.audio.*;
 		if (this.customRenderTargets.length > 0) {
 			engine.restoreDefaultFramebuffer();
 		}
-			
-		//this._renderTargetsDuration += Tools.Now() - beforeRenderTargetDate;
+		
+		this.OnAfterRenderTargetsRenderObservable.notifyObservers(this);
 		this.activeCamera = currentActiveCamera;
 		
 		// Procedural textures
@@ -3134,9 +3581,10 @@ import com.babylonhx.audio.*;
 			for (lightIndex in 0...this.lights.length) {
 				var light = this.lights[lightIndex];
 				var shadowGenerator = light.getShadowGenerator();
+				
 				if (light.isEnabled() && light.shadowEnabled && shadowGenerator != null) {
 					var shadowMap = shadowGenerator.getShadowMap();
-					if (shadowMap.getScene().textures.indexOf(shadowMap) != -1) {
+					if (this.textures.indexOf(shadowMap) != -1) {
 						this._renderTargets.push(shadowMap);
 					}
 				}
@@ -3200,11 +3648,11 @@ import com.babylonhx.audio.*;
 		}
 		
 		//Tools.EndPerformanceCounter("Scene rendering");
-		this._lastFrameDuration.endMonitoring();
+		/*this._lastFrameDuration.endMonitoring();
 		this._totalMeshesCounter.addCount(this.meshes.length, true);
 		this._totalLightsCounter.addCount(this.lights.length, true);
 		this._totalMaterialsCounter.addCount(this.materials.length, true);
-		this._totalTexturesCounter.addCount(this.textures.length, true);
+		this._totalTexturesCounter.addCount(this.textures.length, true);*/
 		this._activeBones.addCount(0, true);
 		this._activeIndices.addCount(0, true);
 		this._activeParticles.addCount(0, true);
@@ -3308,6 +3756,23 @@ import com.babylonhx.audio.*;
 		this.onDisposeObservable.clear();
 		this.onBeforeRenderObservable.clear();
 		this.onAfterRenderObservable.clear();
+		this.OnBeforeRenderTargetsRenderObservable.clear();
+		this.OnAfterRenderTargetsRenderObservable.clear();
+		this.onAfterStepObservable.clear();
+		this.onBeforeStepObservable.clear();
+		this.onBeforeActiveMeshesEvaluationObservable.clear();
+		this.onAfterActiveMeshesEvaluationObservable.clear();
+		this.onBeforeParticlesRenderingObservable.clear();
+		this.onAfterParticlesRenderingObservable.clear();
+		this.onBeforeSpritesRenderingObservable.clear();
+		this.onAfterSpritesRenderingObservable.clear();
+		this.onBeforeDrawPhaseObservable.clear();
+		this.onAfterDrawPhaseObservable.clear();
+		this.onBeforePhysicsObservable.clear();
+		this.onAfterPhysicsObservable.clear();
+		this.onBeforeAnimationsObservable.clear();
+		this.onAfterAnimationsObservable.clear();
+		this.onDataLoadedObservable.clear();
 		
 		this.detachControl();
 		
@@ -3403,8 +3868,8 @@ import com.babylonhx.audio.*;
 			this._engine.scenes.splice(index, 1);
 		}
 		
-		this._engine.wipeCaches();
-		this._engine = null;
+		this._engine.wipeCaches(true);
+		this._isDisposed = true;
 		
 		this.defaultMaterial = null;
         this.multiMaterials = null;
@@ -3413,7 +3878,7 @@ import com.babylonhx.audio.*;
 	
 	public var isDisposed(get, never):Bool;
 	private function get_isDisposed():Bool {
-		return this._engine == null;
+		return this._isDisposed;
 	}
 
 	
@@ -3452,7 +3917,15 @@ import com.babylonhx.audio.*;
 	}
 
 	// Picking
-	public function createPickingRay(x:Float, y:Float, world:Matrix, camera:Camera, cameraViewSpace:Bool = false):Ray {
+	public function createPickingRay(x:Float, y:Float, world:Matrix, camera:Camera = null, cameraViewSpace:Bool = false):Ray {
+		var result = Ray.Zero();
+		
+		this.createPickingRayToRef(x, y, world, result, camera, cameraViewSpace);
+		
+		return result;
+	}
+		
+	public function createPickingRayToRef(x:Float, y:Float, world:Matrix, result:Ray, camera:Camera = null, cameraViewSpace:Bool = false):Scene {
 		var engine = this._engine;
 		
 		if (camera == null) {
@@ -3470,10 +3943,19 @@ import com.babylonhx.audio.*;
 		x = x / this._engine.getHardwareScalingLevel() - viewport.x;
 		y = y / this._engine.getHardwareScalingLevel() - (this._engine.getRenderHeight() - viewport.y - viewport.height);
 		
-		return Ray.CreateNew(x, y, viewport.width, viewport.height, world != null ? world : Matrix.Identity(), cameraViewSpace ? Matrix.Identity() : camera.getViewMatrix(), camera.getProjectionMatrix(false));
+		result.update(x, y, viewport.width, viewport.height, world != null ? world : Matrix.Identity(), cameraViewSpace ? Matrix.Identity() : camera.getViewMatrix(), camera.getProjectionMatrix(false));
+		return this;
 	}
 	
 	public function createPickingRayInCameraSpace(x:Float, y:Float, ?camera:Camera):Ray {
+		var result = Ray.Zero();
+		
+		this.createPickingRayInCameraSpaceToRef(x, y, result, camera);
+		
+		return result;
+	}
+	
+	public function createPickingRayInCameraSpaceToRef(x:Float, y:Float, result:Ray, ?camera:Camera):Scene {
 		var engine = this._engine;
 		
 		if (camera == null) {
@@ -3492,7 +3974,8 @@ import com.babylonhx.audio.*;
 		x = x / this._engine.getHardwareScalingLevel() - viewport.x;
 		y = y / this._engine.getHardwareScalingLevel() - (this._engine.getRenderHeight() - viewport.y - viewport.height);
 		
-		return Ray.CreateNew(x, y, viewport.width, viewport.height, identity, identity, camera.getProjectionMatrix(false));
+		result.update(x, y, viewport.width, viewport.height, identity, identity, camera.getProjectionMatrix(false));
+		return this;
 	}
 
 	private function _internalPick(rayFunction:Matrix->Ray, predicate:AbstractMesh->Bool, fastCheck:Bool = false):PickingInfo {
@@ -3595,57 +4078,90 @@ import com.babylonhx.audio.*;
 		
 		return pickingInfo;
 	}
+	
+	private var _tempPickingRay:Ray = Ray.Zero();
 
-	/// <summary>Launch a ray to try to pick a mesh in the scene</summary>
-	/// <param name="x">X position on screen</param>
-	/// <param name="y">Y position on screen</param>
-	/// <param name="predicate">Predicate function used to determine eligible meshes. Can be set to null. In this case, a mesh must be enabled, visible and with isPickable set to true</param>
-	/// <param name="fastCheck">Launch a fast check only using the bounding boxes. Can be set to null.</param>
-	/// <param name="camera">camera to use for computing the picking ray. Can be set to null. In this case, the scene.activeCamera will be used</param>
+	/** Launch a ray to try to pick a mesh in the scene
+	 * @param x position on screen
+	 * @param y position on screen
+	 * @param predicate Predicate function used to determine eligible meshes. Can be set to null. In this case, a mesh must be enabled, visible and with isPickable set to true
+	 * @param fastCheck Launch a fast check only using the bounding boxes. Can be set to null.
+	 * @param camera to use for computing the picking ray. Can be set to null. In this case, the scene.activeCamera will be used
+	 */
 	inline public function pick(x:Float, y:Float, ?predicate:AbstractMesh->Bool, fastCheck:Bool = false, ?camera:Camera):PickingInfo {
-		return this._internalPick(function(world:Matrix):Ray { return this.createPickingRay(x, y, world, camera); }, predicate, fastCheck);
+		return this._internalPick(function(world:Matrix):Ray {
+			this.createPickingRayToRef(x, y, world, this._tempPickingRay, camera);
+			return _tempPickingRay;
+		}, predicate, fastCheck);
 	}
 	
-	/// <summary>Launch a ray to try to pick a mesh in the scene</summary>
-	/// <param name="x">X position on screen</param>
-	/// <param name="y">Y position on screen</param>
-	/// <param name="predicate">Predicate function used to determine eligible sprites. Can be set to null. In this case, a sprite must have isPickable set to true</param>
-	/// <param name="fastCheck">Launch a fast check only using the bounding boxes. Can be set to null.</param>
-	/// <param name="camera">camera to use for computing the picking ray. Can be set to null. In this case, the scene.activeCamera will be used</param>
+	/** Launch a ray to try to pick a sprite in the scene
+	 * @param x position on screen
+	 * @param y position on screen
+	 * @param predicate Predicate function used to determine eligible sprites. Can be set to null. In this case, a sprite must have isPickable set to true
+	 * @param fastCheck Launch a fast check only using the bounding boxes. Can be set to null.
+	 * @param camera camera to use for computing the picking ray. Can be set to null. In this case, the scene.activeCamera will be used
+	 */
 	inline public function pickSprite(x:Float, y:Float, ?predicate:Sprite->Bool, fastCheck:Bool = false, ?camera:Camera):PickingInfo {
-		return this._internalPickSprites(this.createPickingRayInCameraSpace(x, y, camera), predicate, fastCheck, camera);
+		this.createPickingRayInCameraSpaceToRef(x, y, this._tempPickingRay, camera);
+		
+		return this._internalPickSprites(this._tempPickingRay, predicate, fastCheck, camera);
 	}
+	
+	private var _cachedRayForTransform:Ray;
 
-	public function pickWithRay(ray:Ray, predicate:Mesh->Bool, fastCheck:Bool = false):PickingInfo {
+	/** Use the given ray to pick a mesh in the scene
+	 * @param ray The ray to use to pick meshes
+	 * @param predicate Predicate function used to determine eligible sprites. Can be set to null. In this case, a sprite must have isPickable set to true
+	 * @param fastCheck Launch a fast check only using the bounding boxes. Can be set to null.
+	 */
+	public function pickWithRay(ray:Ray, predicate:AbstractMesh->Bool, fastCheck:Bool = false):PickingInfo {
 		return this._internalPick(function(world:Matrix):Ray {
 			if (this._pickWithRayInverseMatrix == null) {
 				this._pickWithRayInverseMatrix = Matrix.Identity();
 			}
 			world.invertToRef(this._pickWithRayInverseMatrix);
 			
-			return Ray.Transform(ray, this._pickWithRayInverseMatrix);
+			if (this._cachedRayForTransform == null) {
+                this._cachedRayForTransform = new Ray(Vector3.Zero(), Vector3.Zero());
+            }
+            
+            Ray.TransformToRef(ray, this._pickWithRayInverseMatrix, this._cachedRayForTransform);
+            return this._cachedRayForTransform;
 		}, cast predicate, fastCheck);
 	}
 	
-	/// <summary>Launch a ray to try to pick a mesh in the scene</summary>
-	/// <param name="x">X position on screen</param>
-	/// <param name="y">Y position on screen</param>
-	/// <param name="predicate">Predicate function used to determine eligible meshes. Can be set to null. In this case, a mesh must be enabled, visible and with isPickable set to true</param>
-	/// <param name="camera">camera to use for computing the picking ray. Can be set to null. In this case, the scene.activeCamera will be used</param>
+	/**
+	 * Launch a ray to try to pick a mesh in the scene
+	 * @param x X position on screen
+	 * @param y Y position on screen
+	 * @param predicate Predicate function used to determine eligible meshes. Can be set to null. In this case, a mesh must be enabled, visible and with isPickable set to true
+	 * @param camera camera to use for computing the picking ray. Can be set to null. In this case, the scene.activeCamera will be used
+	 */
 	public function multiPick(x:Float, y:Float, ?predicate:AbstractMesh->Bool, ?camera:Camera):Array<PickingInfo> {
-		return this._internalMultiPick(function(world:Matrix):Ray { return this.createPickingRay(x, y, world, camera); }, predicate);
+		return this._internalMultiPick(function(world:Matrix):Ray {
+			return this.createPickingRay(x, y, world, camera);
+		}, predicate);
 	}
 
-	/// <summary>Launch a ray to try to pick a mesh in the scene</summary>
-	/// <param name="ray">Ray to use</param>
-	/// <param name="predicate">Predicate function used to determine eligible meshes. Can be set to null. In this case, a mesh must be enabled, visible and with isPickable set to true</param>
+	/**
+     * Launch a ray to try to pick a mesh in the scene
+     * @param ray Ray to use
+     * @param predicate Predicate function used to determine eligible meshes. Can be set to null. In this case, a mesh must be enabled, visible and with isPickable set to true
+     */
 	public function multiPickWithRay(ray:Ray, predicate:AbstractMesh->Bool):Array<PickingInfo> {
 		return this._internalMultiPick(function(world:Matrix):Ray {
 			if (this._pickWithRayInverseMatrix == null) {
 				this._pickWithRayInverseMatrix = Matrix.Identity();
 			}
 			world.invertToRef(this._pickWithRayInverseMatrix);
-			return Ray.Transform(ray, this._pickWithRayInverseMatrix);
+			
+			if (this._cachedRayForTransform == null) {
+                this._cachedRayForTransform = new Ray(Vector3.Zero(), Vector3.Zero());
+            }
+            
+            Ray.TransformToRef(ray, this._pickWithRayInverseMatrix, this._cachedRayForTransform);
+            return this._cachedRayForTransform;
 		}, predicate);
 	}
 
@@ -3866,16 +4382,15 @@ import com.babylonhx.audio.*;
 		// Skybox
 		var hdrSkybox = Mesh.CreateBox("hdrSkyBox", scale, this);
 		if (pbr) {
-			// VK TODO:
-			/*var hdrSkyboxMaterial = new PBRMaterial("skyBox", this);
+			var hdrSkyboxMaterial = new PBRMaterial("skyBox", this);
 			hdrSkyboxMaterial.backFaceCulling = false;
 			hdrSkyboxMaterial.reflectionTexture = this.environmentTexture.clone();
-			hdrSkyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+			hdrSkyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
 			hdrSkyboxMaterial.microSurface = 1.0 - blur;
 			hdrSkyboxMaterial.disableLighting = true;
 			hdrSkyboxMaterial.twoSidedLighting = true;
 			hdrSkybox.infiniteDistance = true;
-			hdrSkybox.material = hdrSkyboxMaterial;*/
+			hdrSkybox.material = hdrSkyboxMaterial;
 		}
 		else {
 			var skyboxMaterial = new StandardMaterial("skyBox", this);
@@ -3939,25 +4454,24 @@ import com.babylonhx.audio.*;
 		opaqueSortCompareFn:SubMesh->SubMesh->Int = null,
 		alphaTestSortCompareFn:SubMesh->SubMesh->Int = null,
 		transparentSortCompareFn:SubMesh->SubMesh->Int = null) {
-		
 		this._renderingManager.setRenderingOrder(renderingGroupId,
-			opaqueSortCompareFn,
-			alphaTestSortCompareFn,
-			transparentSortCompareFn);
+                opaqueSortCompareFn,
+                alphaTestSortCompareFn,
+                transparentSortCompareFn);
 	}
-
+	
 	/**
 	 * Specifies whether or not the stencil and depth buffer are cleared between two rendering groups.
-	 * 
+	 *
 	 * @param renderingGroupId The rendering group id corresponding to its index
 	 * @param autoClearDepthStencil Automatically clears depth and stencil between groups if true.
 	 * @param depth Automatically clears depth between groups if true and autoClear is true.
 	 * @param stencil Automatically clears stencil between groups if true and autoClear is true.
 	 */
-	inline public function setRenderingAutoClearDepthStencil(renderingGroupId:Int, autoClearDepthStencil:Bool, depth:Bool, stencil:Bool) {            
+	public function setRenderingAutoClearDepthStencil(renderingGroupId:Int, autoClearDepthStencil:Bool, depth:Bool = true, stencil:Bool = true) {
 		this._renderingManager.setRenderingAutoClearDepthStencil(renderingGroupId, autoClearDepthStencil, depth, stencil);
 	}
-	
+
 	/**
 	 * Will flag all materials as dirty to trigger new shader compilation
 	 * @param predicate If not null, it will be used to specifiy if a material has to be marked as dirty

@@ -37,8 +37,8 @@ import com.babylonhx.math.Vector3;
 		return value;
 	}
 
-	//public var direction(get, set):Vector3;
-	//private function get_direction():Vector3 {
+	// BHX: already in ShadowLight
+	//override private function get_direction():Vector3 {
 		//return this._direction;
 	//}
 	/**
@@ -125,6 +125,11 @@ import com.babylonhx.math.Vector3;
 	 */
 	override public function _setDefaultShadowProjectionMatrix(matrix:Matrix, viewMatrix:Matrix, renderList:Array<AbstractMesh>) {
 		var activeCamera = this.getScene().activeCamera;
+		
+		if (activeCamera == null) {
+			return;
+		}
+		
 		Matrix.PerspectiveFovLHToRef(this.shadowAngle, 1.0, this.getDepthMinZ(activeCamera), this.getDepthMaxZ(activeCamera), matrix);
 	}
 

@@ -1,5 +1,6 @@
 package com.babylonhx.materials;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.math.Color3;
 
 /**

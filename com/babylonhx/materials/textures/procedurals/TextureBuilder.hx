@@ -74,7 +74,7 @@ class TextureBuilder {
 		}	
 		
 		var img = new Image(data, layerSizeX, layerSizeY);
-		var ret = Texture.fromImage(img, scene);
+		var ret = Texture.fromImage("", img, scene);
 		
 		return ret;
 	}

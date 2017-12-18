@@ -1,5 +1,6 @@
 package com.babylonhx.rendering;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.Material;
 import com.babylonhx.materials.textures.RenderTargetTexture;
@@ -54,10 +55,15 @@ import com.babylonhx.tools.EventState;
 		var renderSubMesh = function(subMesh:SubMesh) {
 			var mesh:Mesh = subMesh.getRenderingMesh();
 			var scene = this._scene;
-			//var engine = scene.getEngine();
+			var engine = scene.getEngine();
+			var material = subMesh.getMaterial();
 			
-			// Culling
-			engine.setState(subMesh.getMaterial().backFaceCulling);
+            if (material == null) {
+                return;
+            }
+		 
+			// Culling and reverse (right handed system)
+			engine.setState(material.backFaceCulling, 0, false, scene.useRightHandedSystem);
 			
 			// Managing instances
 			var batch:_InstancesBatch = mesh._getInstancesRenderList(subMesh._id);
@@ -71,21 +77,23 @@ import com.babylonhx.tools.EventState;
 			if (this.isReady(subMesh, hardwareInstancedRendering)) {
 				engine.enableEffect(this._effect);
 				mesh._bind(subMesh, this._effect, Material.TriangleFillMode);
-				var material = subMesh.getMaterial();
 				
 				this._effect.setMatrix("viewProjection", scene.getTransformMatrix());
 				
-				this._effect.setFloat("far", scene.activeCamera.maxZ);
+				this._effect.setFloat2("depthValues", scene.activeCamera.minZ, scene.activeCamera.minZ + scene.activeCamera.maxZ);
 				
 				// Alpha test
 				if (material != null && material.needAlphaTesting()) {
 					var alphaTexture = material.getAlphaTestTexture();
-					this._effect.setTexture("diffuseSampler", alphaTexture);
-					this._effect.setMatrix("diffuseMatrix", alphaTexture.getTextureMatrix());
+					
+					if (alphaTexture != null) {
+						this._effect.setTexture("diffuseSampler", alphaTexture);
+						this._effect.setMatrix("diffuseMatrix", alphaTexture.getTextureMatrix());
+					}
 				}
 				
 				// Bones				
-				if (mesh.useBones && mesh.computeBonesUsingShaders) {
+				if (mesh.useBones && mesh.computeBonesUsingShaders && mesh.skeleton != null) {
 					this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices(mesh));
 				}
 				
@@ -107,6 +115,7 @@ import com.babylonhx.tools.EventState;
 			for (index in 0...opaqueSubMeshes.length) {
 				renderSubMesh(opaqueSubMeshes.data[index]);
 			}
+			
 			for (index in 0...alphaTestSubMeshes.length) {
 				renderSubMesh(alphaTestSubMeshes.data[index]);
 			}
@@ -124,7 +133,6 @@ import com.babylonhx.tools.EventState;
 		var attribs = [VertexBuffer.PositionKind];
 		
 		var mesh = subMesh.getMesh();
-		var scene = mesh.getScene();
 		
 		// Alpha test
 		if (material != null && material.needAlphaTesting()) {
@@ -169,7 +177,7 @@ import com.babylonhx.tools.EventState;
 			this._cachedDefines = join;
 			this._effect = this._scene.getEngine().createEffect("depth",
 				attribs,
-				["world", "mBones", "viewProjection", "diffuseMatrix", "far"],
+				["world", "mBones", "viewProjection", "diffuseMatrix", "depthValues"],
 				["diffuseSampler"], join);
 		}
 		

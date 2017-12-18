@@ -1,5 +1,6 @@
 package com.babylonhx.postprocess.renderpipeline.pipelines;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.materials.Effect;
@@ -133,6 +134,9 @@ class SSAO2RenderingPipeline extends PostProcessRenderPipeline {
 	public static var IsSupported(get, never):Bool;
 	inline private static function get_IsSupported():Bool {
 		var engine = Engine.LastCreatedEngine;
+		if (engine == null) {
+			return false;
+		}
 		return engine.webGLVersion > 1;
 	}
 
@@ -177,9 +181,10 @@ class SSAO2RenderingPipeline extends PostProcessRenderPipeline {
 		};
 		
 		// Set up assets
+		var geometryBufferRenderer = scene.enableGeometryBufferRenderer();
 		this._createRandomTexture();
-		this._depthTexture = scene.enableGeometryBufferRenderer().getGBuffer().textures[0]; 
-		this._normalTexture = scene.enableGeometryBufferRenderer().getGBuffer().textures[1];
+		this._depthTexture = geometryBufferRenderer.getGBuffer().textures[0]; 
+		this._normalTexture = geometryBufferRenderer.getGBuffer().textures[1];
 		
 		this._originalColorPostProcess = new PassPostProcess("SSAOOriginalSceneColor", 1.0, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false);
 		this._createSSAOPostProcess(1.0);
@@ -239,6 +244,10 @@ class SSAO2RenderingPipeline extends PostProcessRenderPipeline {
 		
 		this._blurHPostProcess = new PostProcess("BlurH", "ssao2", ["outSize", "samplerOffsets", "near", "far", "radius"], ["depthSampler"], ssaoRatio, null, Texture.TRILINEAR_SAMPLINGMODE, this._scene.getEngine(), false, "#define BILATERAL_BLUR\n#define BILATERAL_BLUR_H\n#define SAMPLES 16\n#define EXPENSIVE " + (expensive ? "1" : "0") + "\n");
 		this._blurHPostProcess.onApply = function(effect:Effect, _) {
+			if (this._scene.activeCamera == null) {
+				return;
+			}
+			
 			effect.setFloat("outSize", this._ssaoCombinePostProcess.width);
 			effect.setFloat("near", this._scene.activeCamera.minZ);
 			effect.setFloat("far", this._scene.activeCamera.maxZ);
@@ -252,6 +261,10 @@ class SSAO2RenderingPipeline extends PostProcessRenderPipeline {
 		
 		this._blurVPostProcess = new PostProcess("BlurV", "ssao2", ["outSize", "samplerOffsets", "near", "far", "radius"], ["depthSampler"], blurRatio, null, Texture.TRILINEAR_SAMPLINGMODE, this._scene.getEngine(), false, "#define BILATERAL_BLUR\n#define BILATERAL_BLUR_V\n#define SAMPLES 16\n#define EXPENSIVE " + (expensive ? "1" : "0") + "\n");
 		this._blurVPostProcess.onApply = function(effect:Effect, _) {
+			if (this._scene.activeCamera == null) {
+				return;
+			}
+			
 			effect.setFloat("outSize", this._ssaoCombinePostProcess.height);
 			effect.setFloat("near", this._scene.activeCamera.minZ);
 			effect.setFloat("far", this._scene.activeCamera.maxZ);
@@ -317,6 +330,10 @@ class SSAO2RenderingPipeline extends PostProcessRenderPipeline {
 			if (this._firstUpdate) {
 				effect.setArray3("sampleSphere", this._sampleSphere);
 				effect.setFloat("randTextureTiles", 4.0);
+			}
+			
+			if (this._scene.activeCamera == null) {
+				return;
 			}
 			
 			effect.setFloat("samplesFactor", 1 / this.samples);

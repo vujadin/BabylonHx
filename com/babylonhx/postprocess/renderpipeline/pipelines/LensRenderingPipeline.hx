@@ -10,6 +10,12 @@ import com.babylonhx.math.Tools;
  * ...
  * @author Krtolica Vujadin
  */
+
+// BABYLON.JS Chromatic Aberration GLSL Shader
+// Author: Olivier Guyot
+// Separates very slightly R, G and B colors on the edges of the screen
+// Inspired by Francois Tarlier & Martins Upitis
+
 class LensRenderingPipeline extends PostProcessRenderPipeline {
 
 	// Lens effects can be of the following:
@@ -225,8 +231,8 @@ class LensRenderingPipeline extends PostProcessRenderPipeline {
 			
 		this._chromaticAberrationPostProcess.onApply = function(effect:Effect, _) {
 			effect.setFloat('chromatic_aberration', this._chromaticAberration);
-			effect.setFloat('screen_width', this._scene.getEngine().getRenderingCanvas().width);
-			effect.setFloat('screen_height', this._scene.getEngine().getRenderingCanvas().height);
+			effect.setFloat('screen_width', this._scene.getEngine().getRenderWidth());
+			effect.setFloat('screen_height', this._scene.getEngine().getRenderHeight());
 		};
 	}
 
@@ -243,8 +249,8 @@ class LensRenderingPipeline extends PostProcessRenderPipeline {
 			effect.setFloat('gain', this._highlightsGain);
 			effect.setFloat('threshold', this._highlightsThreshold);
 			effect.setTextureFromPostProcess("textureSampler", this._chromaticAberrationPostProcess);
-			effect.setFloat('screen_width', this._scene.getEngine().getRenderingCanvas().width);
-			effect.setFloat('screen_height', this._scene.getEngine().getRenderingCanvas().height);
+			effect.setFloat('screen_width', this._scene.getEngine().getRenderWidth());
+			effect.setFloat('screen_height', this._scene.getEngine().getRenderHeight());
 		};
 	}
 
@@ -268,8 +274,8 @@ class LensRenderingPipeline extends PostProcessRenderPipeline {
 			effect.setFloat('grain_amount', this._grainAmount);
 			effect.setBool('blur_noise', this._blurNoise);
 			
-			effect.setFloat('screen_width', this._scene.getEngine().getRenderingCanvas().width);
-			effect.setFloat('screen_height', this._scene.getEngine().getRenderingCanvas().height);
+			effect.setFloat('screen_width', this._scene.getEngine().getRenderWidth());
+			effect.setFloat('screen_height', this._scene.getEngine().getRenderHeight());
 			
 			effect.setFloat('distortion', this._distortion);
 			
@@ -282,8 +288,10 @@ class LensRenderingPipeline extends PostProcessRenderPipeline {
 			
 			effect.setBool('highlights', (this._highlightsGain != -1));
 			
-			effect.setFloat('near', this._scene.activeCamera.minZ);
-			effect.setFloat('far', this._scene.activeCamera.maxZ);
+			if (this._scene.activeCamera != null) {
+				effect.setFloat('near', this._scene.activeCamera.minZ);
+				effect.setFloat('far', this._scene.activeCamera.maxZ);
+			}
 		};
 	}
 
@@ -305,7 +313,7 @@ class LensRenderingPipeline extends PostProcessRenderPipeline {
 		var totalPixelsCount = size * size * 4;
 		var i:Int = 0;
 		while (i < totalPixelsCount) {		
-			value = Math.floor(Tools.randomFloat(0.42, 0.58) * 255);
+			value = Math.floor(Tools.RandomFloat(0.42, 0.58) * 255);
 			context[i] = value;
 			context[i + 1] = value;
 			context[i + 2] = value;

@@ -39,6 +39,10 @@ import com.babylonhx.math.Tools as MathTools;
 		var mesh = subMesh.getRenderingMesh();
 		var material = subMesh.getMaterial();
 		
+		if (material == null || scene.activeCamera == null) {
+			return;
+		}
+		
 		engine.enableEffect(this._effect);
 		
 		// Logarithmic depth
@@ -51,7 +55,7 @@ import com.babylonhx.math.Tools as MathTools;
 		this._effect.setMatrix("viewProjection", scene.getTransformMatrix());
 		
 		// Bones
-		if (mesh.useBones && mesh.computeBonesUsingShaders) {
+		if (mesh.useBones && mesh.computeBonesUsingShaders && mesh.skeleton != null) {
 			this._effect.setMatrices("mBones", mesh.skeleton.getTransformMatrices(mesh));
 		}
 		
@@ -111,7 +115,7 @@ import com.babylonhx.math.Tools as MathTools;
                 attribs.push(VertexBuffer.MatricesWeightsExtraKind);
             }
             defines.push("#define NUM_BONE_INFLUENCERS " + mesh.numBoneInfluencers);
-			defines.push("#define BonesPerMesh " + (mesh.skeleton.bones.length + 1));
+			defines.push("#define BonesPerMesh " + (mesh.skeleton != null ? mesh.skeleton.bones.length + 1 : 0));
 		} 
 		else {
 			defines.push("#define NUM_BONE_INFLUENCERS 0");

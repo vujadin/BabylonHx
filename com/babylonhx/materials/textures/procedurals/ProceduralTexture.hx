@@ -1,5 +1,6 @@
 package com.babylonhx.materials.textures.procedurals;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.textures.RenderTargetCreationOptions;
 import com.babylonhx.math.Color3;
@@ -10,8 +11,9 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.Scene;
+
 import lime.utils.Float32Array;
-import lime.utils.Int32Array;
+import lime.utils.UInt32Array;
 
 /**
  * ...
@@ -49,12 +51,15 @@ import lime.utils.Int32Array;
 	private var _fallbackTexture:Texture;
 
 	private var _fallbackTextureUsed:Bool = false;
+	private var _engine:Engine;
 	
 
 	public function new(name:String, size:Float, fragment:Dynamic, scene:Scene, ?fallbackTexture:Texture, generateMipMaps:Bool = true) {
 		super(null, scene, !generateMipMaps);
 		
 		scene._proceduralTextures.push(this);
+		
+		this._engine = scene.getEngine();
 		
 		this.name = name;
 		this.isRenderTarget = true;
@@ -65,34 +70,37 @@ import lime.utils.Int32Array;
 		
 		this._fallbackTexture = fallbackTexture;
 		
-		var engine = scene.getEngine();
-		
 		if (isCube) {
 			var rto = new RenderTargetCreationOptions();
 			rto.generateMipMaps = generateMipMaps;
-			this._texture = engine.createRenderTargetCubeTexture(size, rto);
+			this._texture = this._engine.createRenderTargetCubeTexture(size, rto);
 			this.setFloat("face", 0);
 		}
 		else {
-			this._texture = engine.createRenderTargetTexture(size, generateMipMaps);
+			this._texture = this._engine.createRenderTargetTexture(size, generateMipMaps);
 		}
 		
 		// VBO
 		var vertices:Array<Float> = [1, 1, -1, 1, -1, -1, 1, -1];
-		this._vertexBuffers[VertexBuffer.PositionKind] = new VertexBuffer(engine, new Float32Array(vertices), VertexBuffer.PositionKind, false, false, 2);
+		this._vertexBuffers[VertexBuffer.PositionKind] = new VertexBuffer(this._engine, new Float32Array(vertices), VertexBuffer.PositionKind, false, false, 2);
 		
 		this._createIndexBuffer();
 	}
 		
 	private function _createIndexBuffer() {
-        var engine = this.getScene().getEngine();
+        var engine = this._engine;
 		// Indices
 		var indices:Array<Int> = [0, 1, 2, 0, 2, 3];		
-		this._indexBuffer = engine.createIndexBuffer(new Int32Array(indices));
+		this._indexBuffer = engine.createIndexBuffer(new UInt32Array(indices));
 	}
 	
 	override public function _rebuild() {
-        this._vertexBuffers[VertexBuffer.PositionKind]._rebuild();
+		var vb = this._vertexBuffers[VertexBuffer.PositionKind];
+		
+		if (vb != null) {
+			vb._rebuild();
+		}
+		
         this._createIndexBuffer();
 		
         if (this.refreshRate == RenderTargetTexture.REFRESHRATE_RENDER_ONCE) {
@@ -104,12 +112,12 @@ import lime.utils.Int32Array;
 		if (this._effect == null) {
 			return;
 		}
-		var engine = this.getScene().getEngine();
-		engine._releaseEffect(this._effect);
+		
+		this._engine._releaseEffect(this._effect);
 	}
 
 	override public function isReady():Bool {
-		var engine = this.getScene().getEngine();
+		var engine = this._engine;
 		var shaders:Dynamic = null;
 		
 		if (this._fragment == null) {
@@ -136,7 +144,10 @@ import lime.utils.Int32Array;
 				
 				if (this._fallbackTexture != null) {
 					this._texture = this._fallbackTexture._texture;
-					this._texture.incrementReferences();
+					
+					if (this._texture != null) {
+						this._texture.incrementReferences();
+					}
 				}
 				
 				this._fallbackTextureUsed = true;
@@ -197,7 +208,7 @@ import lime.utils.Int32Array;
 		}
 		
 		this.releaseInternalTexture();
-		this._texture = this.getScene().getEngine().createRenderTargetTexture(size, generateMipMaps);
+		this._texture = this._engine.createRenderTargetTexture(size, generateMipMaps);
 	}
 
 	inline private function _checkUniform(uniformName:String) {
@@ -266,11 +277,14 @@ import lime.utils.Int32Array;
 
 	public function render(useCameraPostProcess:Bool = false) {
 		var scene:Scene = this.getScene();
-		var engine:Engine = scene.getEngine();
+		
+		if (scene == null) {
+			return;
+		}
 		
 		// Render
-		engine.enableEffect(this._effect);
-		engine.setState(false);
+		this._engine.enableEffect(this._effect);
+		this._engine.setState(false);
 		
 		// Texture
 		for (key in this._textures.keys()) {
@@ -313,41 +327,45 @@ import lime.utils.Int32Array;
 			this._effect.setMatrix(key, this._matrices[key]);
 		}
 		
+		if (this._texture == null) {
+			return;
+		}
+		
 		if (this.isCube) {
 			for (face in 0...6) {
-				engine.bindFramebuffer(this._texture, face, null, null, true);
+				this._engine.bindFramebuffer(this._texture, face, null, null, true);
 				
 				// VBOs
-				engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._effect);				
+				this._engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._effect);				
 				this._effect.setFloat("face", face);
 				
 				// Clear
-				engine.clear(scene.clearColor, true, true, true);
+				this._engine.clear(scene.clearColor, true, true, true);
 				
 				// Draw order
-				engine.draw(true, 0, 6);
+				this._engine.drawElementsType(Material.TriangleFillMode, 0, 6);
 				
 				// Mipmaps
 				if (face == 5) {
-					engine.generateMipMapsForCubemap(this._texture);
+					this._engine.generateMipMapsForCubemap(this._texture);
 				}
 			}
 		} 
 		else {
-			engine.bindFramebuffer(this._texture, 0, null, null, true);
+			this._engine.bindFramebuffer(this._texture, 0, null, null, true);
 			
 			// VBOs
-            engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._effect);
+            this._engine.bindBuffers(this._vertexBuffers, this._indexBuffer, this._effect);
 			
 			// Clear
-			engine.clear(scene.clearColor, true, true, true);
+			this._engine.clear(scene.clearColor, true, true, true);
 			
 			// Draw order
-			engine.draw(true, 0, 6);
+			this._engine.drawElementsType(Material.TriangleFillMode, 0, 6);
 		}
 		
 		// Unbind
-		engine.unBindFramebuffer(this._texture, this.isCube);
+		this._engine.unBindFramebuffer(this._texture, this.isCube);
 		
 		if (this.onGenerated != null) {
 			this.onGenerated();
@@ -369,10 +387,16 @@ import lime.utils.Int32Array;
 	}
 
 	override public function dispose() {
-		var index = this.getScene()._proceduralTextures.indexOf(this);
+		var scene = this.getScene();
+		
+		if (scene == null) {
+			return;
+		}
+		
+		var index = scene._proceduralTextures.indexOf(this);
 		
 		if (index >= 0) {
-			this.getScene()._proceduralTextures.splice(index, 1);
+			scene._proceduralTextures.splice(index, 1);
 		}
 		
 		var vertexBuffer = this._vertexBuffers[VertexBuffer.PositionKind];
@@ -381,7 +405,7 @@ import lime.utils.Int32Array;
 			this._vertexBuffers[VertexBuffer.PositionKind] = null;
 		}
 		
-		if (this._indexBuffer != null && this.getScene().getEngine()._releaseBuffer(this._indexBuffer)) {
+		if (this._indexBuffer != null && this._engine._releaseBuffer(this._indexBuffer)) {
 			this._indexBuffer = null;
 		}
 		

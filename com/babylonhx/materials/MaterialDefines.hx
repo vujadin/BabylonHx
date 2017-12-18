@@ -37,9 +37,8 @@ class MaterialDefines {
 	public var spotlights:Array<Bool> = [];
 	public var shadows:Array<Bool> = [];
 	public var shadowpcf:Array<Bool> = [];
-	public var shadowvsms:Array<Bool> = [];
 	public var shadowesm:Array<Bool> = [];
-	public var shadowqube:Array<Bool> = [];
+	public var shadowcube:Array<Bool> = [];
 	public var shadowcloseesm:Array<Bool> = [];
 	
 	public var LIGHTMAPEXCLUDED:Bool = false;
@@ -159,20 +158,26 @@ class MaterialDefines {
 			}
 		}
 		
-		for (i in 0...this.shadowvsms.length) {
-			if (this.shadowvsms[i] != other.shadowvsms[i]) {
+		for (i in 0...this.shadowesm.length) {
+			if (this.shadowesm[i] != other.shadowesm[i]) {
 				return false;
 			}
 		}
 		
-		for (i in 0...this.shadowvsms.length) {
-			if (this.shadowesm[i] != other.shadowesm[i]) {
+		for (i in 0...this.shadowcube.length) {
+			if (this.shadowcube[i] != other.shadowcube[i]) {
 				return false;
 			}
 		}
 		
 		for (i in 0...this.shadowpcf.length) {
 			if (this.shadowpcf[i] != other.shadowpcf[i]) {
+				return false;
+			}
+		}
+		
+		for (i in 0...this.shadowcloseesm.length) {
+			if (this.shadowcloseesm[i] != other.shadowcloseesm[i]) {
 				return false;
 			}
 		}
@@ -188,7 +193,8 @@ class MaterialDefines {
 		other.spotlights = this.spotlights.copy();
 		other.shadows = this.shadows.copy();
 		other.shadowesm = this.shadowesm.copy();
-		other.shadowvsms = this.shadowvsms.copy();
+		other.shadowcube = this.shadowcube.copy();
+		other.shadowcloseesm = this.shadowcloseesm.copy();
 		other.shadowpcf = this.shadowpcf.copy();
 	}
 
@@ -200,7 +206,8 @@ class MaterialDefines {
 		spotlights = [];
 		shadows = [];
 		shadowesm = [];
-		shadowvsms = [];
+		shadowcube = [];
+		shadowcloseesm = [];
 		shadowpcf = [];
 	}
 
@@ -243,15 +250,21 @@ class MaterialDefines {
 			}
 		}
 		
-		for (i in 0...this.shadowvsms.length) {
-			if (this.shadowvsms[i] == true) {
-				finalString += "#define SHADOWVSM" + i + "\n";
-			}
-		}
-		
 		for (i in 0...this.shadowesm.length) {
 			if (this.shadowesm[i] == true) {
 				finalString += "#define SHADOWESM" + i + "\n";
+			}
+		}
+		
+		for (i in 0...this.shadowcube.length) {
+			if (this.shadowcube[i] == true) {
+				finalString += "#define SHADOWCUBE" + i + "\n";
+			}
+		}
+		
+		for (i in 0...this.shadowcloseesm.length) {
+			if (this.shadowcloseesm[i] == true) {
+				finalString += "#define SHADOWCLOSEESM" + i + "\n";
 			}
 		}
 		

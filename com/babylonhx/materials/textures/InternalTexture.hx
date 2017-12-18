@@ -1,5 +1,6 @@
 package com.babylonhx.materials.textures;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.math.SphericalPolynomial;
@@ -26,9 +27,11 @@ class InternalTexture implements ISmartArrayCompatible {
 	public static inline var DATASOURCE_CUBE:Int = 7;
 	public static inline var DATASOURCE_CUBERAW:Int = 8;
 	public static inline var DATASOURCE_CUBEPREFILTERED:Int = 9;
+	public static inline var DATASOURCE_RAW3D:Int = 10;
 
 	public var isReady:Bool = false;
 	public var isCube:Bool = false;
+	public var is3D:Bool = false;
 	public var url:String;
 	public var samplingMode:Int;
 	public var generateMipMaps:Bool;
@@ -38,11 +41,15 @@ class InternalTexture implements ISmartArrayCompatible {
 	public var onLoadedObservable:Observable<InternalTexture> = new Observable<InternalTexture>();
 	public var width:Int = 1;
 	public var height:Int = 1;
+	public var depth:Int = 1;
 	public var baseWidth:Int = 1;
 	public var baseHeight:Int = 1;
+	public var baseDepth:Int = 1;
 	public var invertY:Bool = false;
 
 	// Private
+	public var _initialSlot:Int = -1;
+	public var _designatedSlot:Int = -1;
 	public var _dataSource:Int = InternalTexture.DATASOURCE_UNKNOWN;
 	public var _buffer:ArrayBuffer;
 	public var _bufferView:ArrayBufferView;
@@ -59,6 +66,7 @@ class InternalTexture implements ISmartArrayCompatible {
 	public var _cachedCoordinatesMode:Int = -1;
 	public var _cachedWrapU:Int = -1;
 	public var _cachedWrapV:Int = -1;
+	public var _cachedWrapR:Int = -1;
 	public var _cachedAnisotropicFilteringLevel:Int = -1;
 	public var _isDisabled:Bool;
 	public var _compression:String;
@@ -86,13 +94,9 @@ class InternalTexture implements ISmartArrayCompatible {
 	public var __smartArrayFlags:Array<Int> = [];
 	
 
-	public function new(engine:Engine, dataSource:Int, ?url:String) {
+	public function new(engine:Engine, dataSource:Int) {
 		this._engine = engine;
 		this._dataSource = dataSource;
-		
-		if (url != null) {
-			this.url = url;
-		}
 		
 		this._webGLTexture = engine._createTexture();
 	}
@@ -101,12 +105,16 @@ class InternalTexture implements ISmartArrayCompatible {
 		this._references++;
 	}
 
-	public function updateSize(width:Int, height:Int) {
+	public function updateSize(width:Int, height:Int, depth:Int = 1) {
 		this.width = width;
 		this.height = height;
-		this._size = Std.int(width * height);
+		this.depth = depth;
+		
 		this.baseWidth = width;
 		this.baseHeight = height;
+		this.baseDepth = depth;
+		
+		this._size = Std.int(width * height * depth);
 	}
 	
 	public function _rebuild() {
@@ -129,10 +137,16 @@ class InternalTexture implements ISmartArrayCompatible {
 				return;
 				
 			case InternalTexture.DATASOURCE_RAW:
-                proxy = this._engine.createRawTexture(this._bufferView, this.baseWidth, this.baseHeight, this.format, this.generateMipMaps, 
-                    this.invertY, this.samplingMode, this._compression); 
+                proxy = this._engine.createRawTexture(this._bufferView, this.baseWidth, this.baseHeight, this.format, this.generateMipMaps, this.invertY, this.samplingMode, this._compression); 
                 proxy._swapAndDie(this);
 				this.isReady = true;
+				return;
+				
+			case InternalTexture.DATASOURCE_RAW3D:
+                proxy = this._engine.createRawTexture3D(this._bufferView, this.baseWidth, this.baseHeight, this.baseDepth, this.format, this.generateMipMaps, this.invertY, this.samplingMode, this._compression);
+                proxy._swapAndDie(this);
+				
+                this.isReady = true;
 				return;
 				
 			case InternalTexture.DATASOURCE_DYNAMIC:
@@ -182,7 +196,9 @@ class InternalTexture implements ISmartArrayCompatible {
 				
 			case InternalTexture.DATASOURCE_CUBEPREFILTERED:
 				proxy = this._engine.createPrefilteredCubeTexture(this.url, null, this._lodGenerationScale, this._lodGenerationOffset, function(proxy:InternalTexture) {
-					proxy._swapAndDie(this);
+					if (proxy != null) {
+						proxy._swapAndDie(this);
+					}
 					
 					this.isReady = true;
 				}, null, this.format, this._extension);

@@ -1,5 +1,6 @@
 package com.babylonhx;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.animations.Animatable;
@@ -9,9 +10,11 @@ import com.babylonhx.math.Quaternion;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
+import com.babylonhx.mesh.TransformNode;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
+import com.babylonhx.tools.Tools;
 
 /**
  * ...
@@ -104,27 +107,10 @@ class NodeCache {
 	private var _scene:Scene;
 	public var _cache:NodeCache;
 	
-	public var parent(get, set):Node;
-	private var _parentNode:Node;
+	private var _parentNode:Node = null;
 	private var _children:Array<Node>;
 	
-	public var __serializableMembers:Dynamic;
-	
-	public var tags:Dynamic = { };
-	
-	
-	/**
-	 * @constructor
-	 * @param {string} name - the name and id to be given to this node
-	 * @param {BABYLON.Scene} the scene this node will be added to
-	 */
-	public function new(name:String, scene:Scene) {
-		this.name = name;
-		this.id = name;
-		this._scene = scene;
-		this._initCache();
-	}
-	
+	public var parent(get, set):Node;
 	private function set_parent(parent:Node):Node {
 		if (this._parentNode == parent) {
 			return parent;
@@ -148,6 +134,9 @@ class NodeCache {
 		
 		return parent;
 	}
+	inline private function get_parent():Node {
+		return this._parentNode;
+	}
 	
 	public function getClassName():String {
 		return "Node";
@@ -168,9 +157,23 @@ class NodeCache {
 		
 		return callback;
 	}
-
-	inline private function get_parent():Node {
-		return this._parentNode;
+	
+	public var __serializableMembers:Dynamic;
+	
+	public var tags:Dynamic = { };
+	
+	
+	/**
+	 * @constructor
+	 * @param {string} name - the name and id to be given to this node
+	 * @param {BABYLON.Scene} the scene this node will be added to
+	 */
+	public function new(name:String, scene:Scene = null) {
+		this.name = name;
+		this.id = name;
+		this._scene = scene != null ? scene : Engine.LastCreatedScene;
+		this.uniqueId = this._scene.getUniqueId();
+		this._initCache();
 	}
 	
 	inline public function getScene():Scene {
@@ -185,6 +188,7 @@ class NodeCache {
 	private var _behaviors:Array<Behavior<Node>> = [];
 	public var behaviors(get, never):Array<Behavior<Node>>;
 
+	var observer:Observer<Scene> = null;
 	public function addBehavior(behavior:Behavior<Node>):Node {
 		var index = this._behaviors.indexOf(behavior);
 		
@@ -192,7 +196,20 @@ class NodeCache {
 			return null;
 		}
 		
-		behavior.attach(this);
+		behavior.init();
+		if (this._scene.isLoading) {
+			// We defer the attach when the scene will be loaded
+			observer = this._scene.onDataLoadedObservable.add(function(_, _) {
+				behavior.attach(this);
+				Tools.delay(function() {
+					// Need to use a timeout to avoid removing an observer while iterating the list of observers
+					this._scene.onDataLoadedObservable.remove(observer);
+				}, 0);
+			});
+		} 
+		else {
+			behavior.attach(this);
+		}
 		this._behaviors.push(behavior);
 		
 		return this;
@@ -257,7 +274,9 @@ class NodeCache {
 	}
 	
 	inline public function _markSyncedWithParent() {
-        this._parentRenderId = this.parent._currentRenderId;
+		if (this.parent != null) {
+			this._parentRenderId = this.parent._currentRenderId;
+		}
     }
 
 	public function isSynchronizedWithParent():Bool {
@@ -396,13 +415,6 @@ class NodeCache {
 	}
 	
 	/**
-	 * Get all direct children of this node.
-	*/
-	public function getChildren(?predicate:Node->Bool):Array<Node> {
-		return this.getDescendants(true, predicate);
-	}
-	
-	/**
 	 * Get all child-meshes of this node.
 	 */
 	public function getChildMeshes(directDecendantsOnly:Bool = false, ?predicate:Node->Bool):Array<AbstractMesh> {
@@ -414,6 +426,25 @@ class NodeCache {
 		
 		return results;
 	}
+	
+	/**
+	 * Get all child-transformNodes of this node.
+	 */
+	public function getChildTransformNodes(directDescendantsOnly:Bool = false, ?predicate:Node->Bool):Array<TransformNode> {
+		var results:Array<TransformNode> = [];
+		
+		this._getDescendants(cast results, directDescendantsOnly, function(node:Node) {
+			return ((predicate == null || predicate(node)) && Std.is(node, TransformNode));
+		});
+		return results;
+	}
+	
+	/**
+	 * Get all direct children of this node.
+	*/
+	public function getChildren(?predicate:Node->Bool):Array<Node> {
+		return this.getDescendants(true, predicate);
+	}	
 
 	public function _setReady(state:Bool) {
 		if (state == this._isReady) {
@@ -482,6 +513,10 @@ class NodeCache {
 	public function serializeAnimationRanges() {
 		var serializationRanges:Array<Dynamic> = [];
 		for (name in this._ranges.keys()) {
+			var localRange = this._ranges[name];
+			if (localRange == null) {
+				continue;
+			}
 			var range:Dynamic = { };
 			range.name = name;
 			range.from = this._ranges[name].from;
@@ -492,6 +527,12 @@ class NodeCache {
 		return serializationRanges;
 	}
 	
+	// override it in derived class
+    public function computeWorldMatrix(force:Bool = false):Matrix {
+        return Matrix.Identity();
+    }
+	
+	// BHX: doNotRecurse !!
 	public function dispose(doNotRecurse:Bool = false) {
 		this.parent = null;
 		

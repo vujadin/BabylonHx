@@ -98,6 +98,11 @@ class BouncingBehavior implements Behavior<ArcRotateCamera> {
 	private var _attachedCamera:ArcRotateCamera;
 	private var _onAfterCheckInputsObserver:Observer<Camera>;
 	private var _onMeshTargetChangedObserver:Observer<AbstractMesh>;
+	
+	public function init() {
+		// Do nothing
+	}
+	
 	public function attach(camera:ArcRotateCamera) {
 		this._attachedCamera = camera;
 		this._onAfterCheckInputsObserver = camera.onAfterCheckInputsObservable.add(function(_, _) {

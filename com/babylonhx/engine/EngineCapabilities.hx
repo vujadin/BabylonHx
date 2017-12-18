@@ -1,4 +1,4 @@
-package com.babylonhx;
+package com.babylonhx.engine;
 
 import lime.graphics.opengl.ext.WEBGL_compressed_texture_s3tc;
 import lime.graphics.opengl.ext.EXT_texture_filter_anisotropic;

@@ -23,11 +23,11 @@ import haxe.ds.Vector;
 
 @:expose('BABYLON.Skeleton') class Skeleton implements ISmartArrayCompatible {
 	
-	public var id:String;
-	public var name:String;
-	public var bones:Array<Bone>;
-	public var dimensionsAtRest:Vector3;
+	public var id:String;	// BHX
+	public var name:String;	// BHX
 	
+	public var bones:Array<Bone>;
+	public var dimensionsAtRest:Vector3;	
 	public var needInitialSkinMatrix:Bool = false;
 
 	private var _scene:Scene;
@@ -60,14 +60,14 @@ import haxe.ds.Vector;
 		
 		this._scene = scene;
 		
-		scene.skeletons.push(this);
+		//scene.skeletons.push(this);
 		
         //make sure it will recalculate the matrix next time prepare is called.
         this._isDirty = true;
 	}
 	
 	// Members
-	inline public function getTransformMatrices(mesh:AbstractMesh):Float32Array {
+	public function getTransformMatrices(mesh:AbstractMesh):Float32Array {
 		if (this.needInitialSkinMatrix && mesh._bonesTransformMatrices != null) {
 			return mesh._bonesTransformMatrices;
 		}
@@ -201,7 +201,9 @@ import haxe.ds.Vector;
 		
 		// do not call createAnimationRange(), since it also is done to bones, which was already done
 		var range = source.getAnimationRange(name);
-		this._ranges[name] = new AnimationRange(name, range.from + frameOffset, range.to + frameOffset);
+		if (range != null) {
+			this._ranges[name] = new AnimationRange(name, range.from + frameOffset, range.to + frameOffset);
+		}
 		
 		return ret;
 	}
@@ -380,6 +382,16 @@ import haxe.ds.Vector;
 		}
 	}
 	
+	public function dispose(_:Bool = false) {
+		this._meshesWithPoseMatrix = [];
+		
+        // Animations
+        this.getScene().stopAnimation(this);
+		
+        // Remove from scene
+        this.getScene().removeSkeleton(this);
+    }
+	
 	public function computeAbsoluteTransforms(forceUpdate:Bool = false) {
 		var renderId = this._scene.getRenderId();
 		
@@ -429,16 +441,6 @@ import haxe.ds.Vector;
 		
 		bones.push(bone);
 	}
-	
-	public function dispose(_:Bool = false) {
-		this._meshesWithPoseMatrix = [];
-		
-        // Animations
-        this.getScene().stopAnimation(this);
-		
-        // Remove from scene
-        this.getScene().removeSkeleton(this);
-    }
 	
 	public function serialize():Dynamic {
 		var serializationObject:Dynamic = { };
@@ -505,8 +507,8 @@ import haxe.ds.Vector;
 				var rest:Matrix = parsedBone.rest != null ? Matrix.FromArray(parsedBone.rest) : null;
 				var bone = new Bone(parsedBone.name, skeleton, parentBone, Matrix.FromArray(parsedBone.matrix), rest);
 				
-				if (parsedBone != null && parsedBone.length != 0) {
-					bone.length = parsedBone.length;
+				if (parsedBone != null && !Math.isNaN(parsedBone.length)) {
+					bone.length = Std.int(parsedBone.length);
 				}
 				
 				if (parsedBone.animation != null) {

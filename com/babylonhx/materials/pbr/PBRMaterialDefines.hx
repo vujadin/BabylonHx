@@ -33,6 +33,7 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 	public var SPECULAROVERALPHA:Bool = false;
 	public var RADIANCEOVERALPHA:Bool = false;
 	public var ALPHAFRESNEL:Bool = false;
+	public var LINEARALPHAFRESNEL:Bool = false;
 	public var PREMULTIPLYALPHA:Bool = false;
 
 	public var EMISSIVE:Bool = false;
@@ -82,10 +83,12 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 	public var REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED:Bool = false;
 	public var INVERTCUBICMAP:Bool = false;
 	public var USESPHERICALFROMREFLECTIONMAP:Bool = false;
-	public var USESPHERICALINFRAGMENT:Bool = false;
+	public var USESPHERICALINVERTEX:Bool = false;
 	public var REFLECTIONMAP_OPPOSITEZ:Bool = false;
 	public var LODINREFLECTIONALPHA:Bool = false;
 	public var GAMMAREFLECTION:Bool = false;
+	public var RADIANCEOCCLUSION:Bool = false;
+    public var HORIZONOCCLUSION:Bool = false;
 
 	public var REFRACTION:Bool = false;
 	public var REFRACTIONMAP_3D:Bool = false;
@@ -98,6 +101,8 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 	
 	public var NUM_BONE_INFLUENCERS:Int = 0;
 	public var BonesPerMesh:Int = 0;
+	
+	public var NONUNIFORMSCALING:Bool = false;
 
 	public var MORPHTARGETS:Bool = false;
 	public var MORPHTARGETS_NORMAL:Bool = false;
@@ -112,6 +117,7 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 	public var CONTRAST:Bool = false;
 	public var COLORCURVES:Bool = false;
 	public var COLORGRADING:Bool = false;
+	public var COLORGRADING3D:Bool = false;
 	public var SAMPLER3DGREENDEPTH:Bool = false;
 	public var SAMPLER3DBGRMAP:Bool = false;
 	public var IMAGEPROCESSINGPOSTPROCESS:Bool = false;
@@ -166,6 +172,7 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		this.SPECULAROVERALPHA = false;
 		this.RADIANCEOVERALPHA = false;
 		this.ALPHAFRESNEL = false;
+		this.LINEARALPHAFRESNEL = false;
 		this.PREMULTIPLYALPHA = false;
 		
 		this.EMISSIVE = false;
@@ -215,10 +222,12 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		this.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED = false;
 		this.INVERTCUBICMAP = false;
 		this.USESPHERICALFROMREFLECTIONMAP = false;
-		this.USESPHERICALINFRAGMENT = false;
+		this.USESPHERICALINVERTEX = false;
 		this.REFLECTIONMAP_OPPOSITEZ = false;
 		this.LODINREFLECTIONALPHA = false;
 		this.GAMMAREFLECTION = false;
+		this.RADIANCEOCCLUSION = false;
+		this.HORIZONOCCLUSION = false;
 		
 		this.REFRACTION = false;
 		this.REFRACTIONMAP_3D = false;
@@ -231,6 +240,8 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		
 		this.NUM_BONE_INFLUENCERS = 0;
 		this.BonesPerMesh = 0;
+		
+		this.NONUNIFORMSCALING = false;
 		
 		this.MORPHTARGETS = false;
 		this.MORPHTARGETS_NORMAL = false;
@@ -245,6 +256,7 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		this.CONTRAST = false;
 		this.COLORCURVES = false;
 		this.COLORGRADING = false;
+		this.COLORGRADING3D = false;
 		this.SAMPLER3DGREENDEPTH = false;
 		this.SAMPLER3DBGRMAP = false;
 		this.IMAGEPROCESSINGPOSTPROCESS = false;
@@ -329,6 +341,7 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 			if (untyped this.SPECULAROVERALPHA != other.SPECULAROVERALPHA) return false;
 			if (untyped this.RADIANCEOVERALPHA != other.RADIANCEOVERALPHA) return false;
 			if (untyped this.ALPHAFRESNEL != other.ALPHAFRESNEL) return false;
+			if (untyped this.LINEARALPHAFRESNEL != other.LINEARALPHAFRESNEL) return false;
 			if (untyped this.PREMULTIPLYALPHA != other.PREMULTIPLYALPHA) return false;
 			
 			if (untyped this.EMISSIVE != other.EMISSIVE) return false;
@@ -376,10 +389,12 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 			if (untyped this.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED != other.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED) return false;
 			if (untyped this.INVERTCUBICMAP != other.INVERTCUBICMAP) return false;
 			if (untyped this.USESPHERICALFROMREFLECTIONMAP != other.USESPHERICALFROMREFLECTIONMAP) return false;
-			if (untyped this.USESPHERICALINFRAGMENT != other.USESPHERICALINFRAGMENT) return false;
+			if (untyped this.USESPHERICALINVERTEX != other.USESPHERICALINVERTEX) return false;
 			if (untyped this.REFLECTIONMAP_OPPOSITEZ != other.REFLECTIONMAP_OPPOSITEZ) return false;
 			if (untyped this.LODINREFLECTIONALPHA != other.LODINREFLECTIONALPHA) return false;
 			if (untyped this.GAMMAREFLECTION != other.GAMMAREFLECTION) return false;
+			if (untyped this.RADIANCEOCCLUSION != other.RADIANCEOCCLUSION) return false;
+			if (untyped this.HORIZONOCCLUSION != other.HORIZONOCCLUSION) return false;
 			
 			if (untyped this.REFRACTION != other.REFRACTION) return false;
 			if (untyped this.REFRACTIONMAP_3D != other.REFRACTIONMAP_3D) return false;
@@ -392,6 +407,8 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 			
 			if (untyped this.NUM_BONE_INFLUENCERS != other.NUM_BONE_INFLUENCERS) return false;
 			if (untyped this.BonesPerMesh != other.BonesPerMesh) return false;
+			
+			if (untyped this.NONUNIFORMSCALING != other.NONUNIFORMSCALING) return false;
 			
 			if (untyped this.MORPHTARGETS != other.MORPHTARGETS) return false;
 			if (untyped this.MORPHTARGETS_NORMAL != other.MORPHTARGETS_NORMAL) return false;
@@ -406,6 +423,7 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 			if (untyped this.CONTRAST != other.CONTRAST) return false;
 			if (untyped this.COLORCURVES != other.COLORCURVES) return false;
 			if (untyped this.COLORGRADING != other.COLORGRADING) return false;
+			if (untyped this.COLORGRADING3D != other.COLORGRADING3D) return false;
 			if (untyped this.SAMPLER3DGREENDEPTH != other.SAMPLER3DGREENDEPTH) return false;
 			if (untyped this.SAMPLER3DBGRMAP != other.SAMPLER3DBGRMAP) return false;
 			if (untyped this.IMAGEPROCESSINGPOSTPROCESS != other.IMAGEPROCESSINGPOSTPROCESS) return false;
@@ -459,6 +477,7 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		untyped other.SPECULAROVERALPHA = this.SPECULAROVERALPHA;
 		untyped other.RADIANCEOVERALPHA = this.RADIANCEOVERALPHA;
 		untyped other.ALPHAFRESNEL = this.ALPHAFRESNEL;
+		untyped other.LINEARALPHAFRESNEL = this.LINEARALPHAFRESNEL;
 		untyped other.PREMULTIPLYALPHA = this.PREMULTIPLYALPHA;
 		
 		untyped other.EMISSIVE = this.EMISSIVE;
@@ -506,10 +525,12 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		untyped other.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED = this.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED;
 		untyped other.INVERTCUBICMAP = this.INVERTCUBICMAP;
 		untyped other.USESPHERICALFROMREFLECTIONMAP = this.USESPHERICALFROMREFLECTIONMAP;
-		untyped other.USESPHERICALINFRAGMENT = this.USESPHERICALINFRAGMENT;
+		untyped other.USESPHERICALINVERTEX = this.USESPHERICALINVERTEX;
 		untyped other.REFLECTIONMAP_OPPOSITEZ = this.REFLECTIONMAP_OPPOSITEZ;
 		untyped other.LODINREFLECTIONALPHA = this.LODINREFLECTIONALPHA;
 		untyped other.GAMMAREFLECTION = this.GAMMAREFLECTION;
+		untyped other.RADIANCEOCCLUSION = this.RADIANCEOCCLUSION;
+		untyped other.HORIZONOCCLUSION = this.HORIZONOCCLUSION;
 		
 		untyped other.REFRACTION = this.REFRACTION;
 		untyped other.REFRACTIONMAP_3D = this.REFRACTIONMAP_3D;
@@ -522,6 +543,8 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		
 		untyped other.NUM_BONE_INFLUENCERS = this.NUM_BONE_INFLUENCERS;
 		untyped other.BonesPerMesh = this.BonesPerMesh;
+		
+		untyped other.NONUNIFORMSCALING = this.NONUNIFORMSCALING;
 		
 		untyped other.MORPHTARGETS = this.MORPHTARGETS;
 		untyped other.MORPHTARGETS_NORMAL = this.MORPHTARGETS_NORMAL;
@@ -536,6 +559,7 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		untyped other.CONTRAST = this.CONTRAST;
 		untyped other.COLORCURVES = this.COLORCURVES;
 		untyped other.COLORGRADING = this.COLORGRADING;
+		untyped other.COLORGRADING3D = this.COLORGRADING3D;
 		untyped other.SAMPLER3DGREENDEPTH = this.SAMPLER3DGREENDEPTH;
 		untyped other.SAMPLER3DBGRMAP = this.SAMPLER3DBGRMAP;
 		untyped other.IMAGEPROCESSINGPOSTPROCESS = this.IMAGEPROCESSINGPOSTPROCESS;
@@ -623,6 +647,9 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		}
 		if (this.ALPHAFRESNEL) {
 			result += "#define ALPHAFRESNEL \n";
+		}
+		if (this.LINEARALPHAFRESNEL) {
+			result += "#define LINEARALPHAFRESNEL \n";
 		}
 		if (this.PREMULTIPLYALPHA) {
 			result += "#define PREMULTIPLYALPHA \n";
@@ -741,8 +768,8 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		if (this.USESPHERICALFROMREFLECTIONMAP) {
 			result += "#define USESPHERICALFROMREFLECTIONMAP \n";
 		}
-		if (this.USESPHERICALINFRAGMENT) {
-			result += "#define USESPHERICALINFRAGMENT \n";
+		if (this.USESPHERICALINVERTEX) {
+			result += "#define USESPHERICALINVERTEX \n";
 		}
 		if (this.REFLECTIONMAP_OPPOSITEZ) {
 			result += "#define REFLECTIONMAP_OPPOSITEZ \n";
@@ -752,6 +779,12 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		}
 		if (this.GAMMAREFLECTION) {
 			result += "#define GAMMAREFLECTION \n";
+		}
+		if (this.RADIANCEOCCLUSION) {
+			result += "#define RADIANCEOCCLUSION \n";
+		}
+		if (this.HORIZONOCCLUSION) {
+			result += "#define HORIZONOCCLUSION \n";
 		}
 		
 		if (this.REFRACTION) {
@@ -779,6 +812,10 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		
 		result += "#define NUM_BONE_INFLUENCERS " + this.NUM_BONE_INFLUENCERS + " \n";
 		result += "#define BonesPerMesh " + this.BonesPerMesh + " \n";
+		
+		if (this.NONUNIFORMSCALING) {
+			result += "#define NONUNIFORMSCALING \n";
+		}
 		
 		if (this.MORPHTARGETS) {
 			result += "#define MORPHTARGETS \n";
@@ -814,6 +851,9 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		}
 		if (this.COLORGRADING) {
 			result += "#define COLORGRADING \n";
+		}
+		if (this.COLORGRADING3D) {
+			result += "#define COLORGRADING3D \n";
 		}
 		if (this.SAMPLER3DGREENDEPTH) {
 			result += "#define SAMPLER3DGREENDEPTH \n";

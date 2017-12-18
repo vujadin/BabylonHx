@@ -1,5 +1,6 @@
 package com.babylonhx.cameras;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.collisions.Collider;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
@@ -285,7 +286,6 @@ import com.babylonhx.utils.Keycodes;
 			
 			this._newPosition.subtractToRef(this._oldPosition, this._diffPosition);
 			
-			var oldPosition = this.position.clone();
 			if (this._diffPosition.length() > Engine.CollisionsEpsilon) {
 				this.position.addInPlace(this._diffPosition);
 				if (this.onCollide != null && collidedMesh != null) {
@@ -340,6 +340,15 @@ import com.babylonhx.utils.Keycodes;
 		else {
 			this.position.addInPlace(this.cameraDirection);
 		}
+	}
+	
+	override public function dispose(doNotRecurse:Bool = false) {
+		//this.inputs.clear();
+		super.dispose();
+	}
+	
+	override public function getClassName():String {
+		return "FreeCamera";
 	}
 
 }

@@ -17,14 +17,17 @@ package com.babylonhx.tools;
  */
 class Observable<T> {	
 	
-	private var _observers:Array<Observer<T>>;
+	private var _observers:Array<Observer<T>> = [];
 	
 	private var _eventState:EventState;
 	
+	private var _onObserverAdded:Observer<T>->Void;
 	
-	public function new() {
-		_observers = [];
+	
+	public function new(?onObserverAdded:Observer<T>->Void) {
 		this._eventState = new EventState(0);
+		
+		this._onObserverAdded = onObserverAdded;
 	}
 
 	/**
@@ -34,12 +37,12 @@ class Observable<T> {
 	 * If false (default behavior) the callback will be inserted at the last position, executed after all the others 
 	 * already present.
 	 */
-	public function add(callback:T->Null<EventState>->Void, mask:Int = -1, insertFirst:Bool = false):Observer<T> {
+	public function add(callback:T->Null<EventState>->Void, mask:Int = -1, insertFirst:Bool = false, scope:Dynamic = null):Observer<T> {
 		if (callback == null) {
 			return null;
 		}
 		
-		var observer = new Observer(callback, mask);
+		var observer = new Observer(callback, mask, scope);
 		
 		if (insertFirst) {
             this._observers.unshift(observer);
@@ -47,6 +50,10 @@ class Observable<T> {
 		else {
             this._observers.push(observer);
         }
+		
+		if (this._onObserverAdded != null) {
+			this._onObserverAdded(observer);
+		}
 		
 		return observer;
 	}
@@ -84,7 +91,9 @@ class Observable<T> {
 
 	/**
 	 * Notify all Observers by calling their respective callback with the given data
+	 * Will return true if all observers were executed, false if an observer set skipNextObservers to true, then prevent the subsequent ones to execute
 	 * @param eventData
+	 * @param mask
 	 */
 	public function notifyObservers(eventData:T, mask:Int = -1) {
 		var state:EventState = this._eventState;
@@ -103,6 +112,19 @@ class Observable<T> {
 	}
 	
 	/**
+	 * Notify a specific observer
+	 * @param eventData
+	 * @param mask
+	 */
+	public function notifyObserver(observer:Observer<T>, eventData:T, mask:Int = -1) {
+		var state = this._eventState;
+		state.mask = mask;
+		state.skipNextObservers = false;
+		
+		observer.callback(eventData, state);
+	} 
+	
+	/**
 	 * return true is the Observable has at least one Observer registered
 	 */
 	public function hasObservers():Bool {
@@ -114,6 +136,7 @@ class Observable<T> {
 	*/
 	public function clear() {
 		this._observers = [];
+		this._onObserverAdded = null;
 	}
 	
 	/**

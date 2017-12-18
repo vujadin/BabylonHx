@@ -1,5 +1,6 @@
 package com.babylonhx.postprocess.renderpipeline.pipelines;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Tools in MathTools;
 import com.babylonhx.math.Scalar;
@@ -124,6 +125,8 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 	private var _hdrCurrentLuminance:Float = 1.0;
 
 	private var _floatTextureType:Int;
+	
+	@serialize()
 	private var _ratio:Float;
 
 	// Getters and setters
@@ -382,11 +385,14 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 		this.downSampleX4PostProcess = new PostProcess("HDRDownSampleX4", "standard", ["dsOffsets"], [], ratio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false, "#define DOWN_SAMPLE_X4", Engine.TEXTURETYPE_UNSIGNED_INT);
 		
 		this.downSampleX4PostProcess.onApply = function(effect:Effect, _) {
-			var id = 0;
+			var id = 0;			
+			var width = this.downSampleX4PostProcess.width;
+            var height = this.downSampleX4PostProcess.height;
+			
 			for (i in -2...2) {
 				for (j in -2...2) {
-					downSampleX4Offsets[id] = (i + 0.5) * (1.0 / this.downSampleX4PostProcess.width);
-					downSampleX4Offsets[id + 1] = (j + 0.5) * (1.0 / this.downSampleX4PostProcess.height);
+					downSampleX4Offsets[id] = (i + 0.5) * (1.0 / width);
+					downSampleX4Offsets[id + 1] = (j + 0.5) * (1.0 / height);
 					id += 2;
 				}
 			}
@@ -432,12 +438,12 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 		var blurY = new BlurPostProcess("HDRBlurV" + "_" + indice, new Vector2(0, 1), Reflect.getProperty(this, blurWidthKey), ratio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false, Engine.TEXTURETYPE_UNSIGNED_INT);
 		
 		blurX.onActivateObservable.add(function(_, _) {
-			var dw = blurX.width / engine.getRenderingCanvas().width;
+			var dw = blurX.width / engine.getRenderWidth();
 			blurX.kernel = Reflect.getProperty(this, blurWidthKey) * dw;
 		});
 		
 		blurY.onActivateObservable.add(function(_, _) {
-			var dw = blurY.height / engine.getRenderingCanvas().height;
+			var dw = blurY.height / engine.getRenderHeight();
 			blurY.kernel = this.horizontalBlur ? 64 * dw : Reflect.getProperty(this, blurWidthKey) * dw;
 		});
 		
@@ -483,7 +489,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 		var depthValues = Vector2.Zero();
 		
 		this.volumetricLightPostProcess.onApply = function(effect:Effect, _) {
-			if (this.sourceLight != null && this.sourceLight.getShadowGenerator() != null) {
+			if (this.sourceLight != null && this.sourceLight.getShadowGenerator() != null && this._scene.activeCamera != null) {
 				var generator = this.sourceLight.getShadowGenerator();
 				
 				effect.setTexture("shadowMapSampler", generator.getShadowMap());
@@ -492,7 +498,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 				effect.setColor3("sunColor", this.sourceLight.diffuse);
 				effect.setVector3("sunDirection", untyped this.sourceLight.getShadowDirection());
 				
-				effect.setVector3("cameraPosition", scene.activeCamera.globalPosition);
+				effect.setVector3("cameraPosition", this._scene.activeCamera.globalPosition);
 				effect.setMatrix("shadowViewProjection", generator.getTransformMatrix());
 				
 				effect.setFloat("scatteringCoefficient", this.volumetricLightCoefficient);
@@ -569,6 +575,9 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 			var downSampleOffsets:Array<Float> = [];
 			
 			pp.onApply = function(effect:Effect, _) {
+				if (lastLuminance == null) {
+					return;
+				}
 				var id = 0;
 				for (x in -1...2) {
 					for (y in -1...2) {
@@ -687,6 +696,10 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 		);
 		
 		this.lensFlareComposePostProcess.onApply = function(effect:Effect, _) {
+			if (this._scene.activeCamera == null) {
+				return;
+			}
+			
 			effect.setTextureFromPostProcess("otherSampler", this._currentDepthOfFieldSource);
 			effect.setTexture("lensDirtSampler", this.lensFlareDirtTexture);
 			effect.setTexture("lensStarSampler", this.lensStarTexture);

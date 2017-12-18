@@ -4,6 +4,7 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Tools;
+import com.babylonhx.math.Tmp;
 import com.babylonhx.math.Quaternion;
 
 /**
@@ -37,15 +38,13 @@ import com.babylonhx.math.Quaternion;
 	private var _rigCamTransformMatrix:Matrix;
 	
 	public var _referencePoint:Vector3 = new Vector3(0, 0, 1);
-	private var _defaultUpVector:Vector3 = new Vector3(0, 1, 0);
+	private var _currentUpVector:Vector3 = new Vector3(0, 1, 0);
 	public var _transformedReferencePoint:Vector3 = Vector3.Zero();
 	public var _lookAtTemp:Matrix = Matrix.Zero();
 	public var _tempMatrix:Matrix = Matrix.Zero();
 
 	public var _reset:Void->Void;
 
-	public var _waitingLockedTargetId:String;
-	
 
 	public function new(name:String, position:Vector3, scene:Scene) {
 		super(name, position, scene);
@@ -54,8 +53,7 @@ import com.babylonhx.math.Quaternion;
 	inline public function getFrontPosition(distance:Float):Vector3 {
 		var direction = this.getTarget().subtract(this.position);
 		direction.normalize();
-		direction.scaleInPlace(distance);
-		
+		direction.scaleInPlace(distance);		
 		return this.globalPosition.add(direction);
 	}
 
@@ -161,17 +159,16 @@ import com.babylonhx.math.Quaternion;
 	}
 
 	// Target
-	static var zUpVector:Vector3 = new Vector3(0, 1.0, 0);
-	static var vDir:Vector3 = Vector3.Zero();
+	// BHX: extra 2 params because of child classes overriding...
 	public function setTarget(target:Vector3, toBoundingCenter:Bool = false, allowSamePosition:Bool = false) {
 		this.upVector.normalize();
 		
-		Matrix.LookAtLHToRef(this.position, target, this._defaultUpVector, this._camMatrix);
+		Matrix.LookAtLHToRef(this.position, target, this.upVector, this._camMatrix);
 		this._camMatrix.invert();
 		
 		this.rotation.x = Math.atan(this._camMatrix.m[6] / this._camMatrix.m[10]);
 		
-		vDir = target.subtract(this.position);
+		var vDir = target.subtract(this.position);
 		
 		if (vDir.x >= 0.0) {
 			this.rotation.y = (-Math.atan(vDir.z / vDir.x) + Math.PI / 2.0);
@@ -182,7 +179,7 @@ import com.babylonhx.math.Quaternion;
 		
 		this.rotation.z = 0;
 		
-		/*if (Math.isNaN(this.rotation.x)) {
+		if (Math.isNaN(this.rotation.x)) {
 			this.rotation.x = 0;
 		}
 		
@@ -192,7 +189,7 @@ import com.babylonhx.math.Quaternion;
 		
 		if (Math.isNaN(this.rotation.z)) {
 			this.rotation.z = 0;
-		}*/
+		}
 		
 		if (this.rotationQuaternion != null) {
 			Quaternion.RotationYawPitchRollToRef(this.rotation.y, this.rotation.x, this.rotation.z, this.rotationQuaternion);
@@ -208,6 +205,12 @@ import com.babylonhx.math.Quaternion;
 	}
 
 	public function _updatePosition() {
+		if (this.parent != null) {
+			this.parent.getWorldMatrix().invertToRef(Tmp.matrix[0]);
+			Vector3.TransformNormalToRef(this.cameraDirection, Tmp.matrix[0], Tmp.vector3[0]);
+			this.position.addInPlace(Tmp.vector3[0]);
+			return;
+		}
 		this.position.addInPlace(this.cameraDirection);
 	}
 	
@@ -225,8 +228,17 @@ import com.babylonhx.math.Quaternion;
 			this.rotation.x += this.cameraRotation.x;
 			this.rotation.y += this.cameraRotation.y;
 			
+			//rotate, if quaternion is set and rotation was used
+			if (this.rotationQuaternion != null) {
+				var len = this.rotation.lengthSquared();
+				if (len != 0) {
+					Quaternion.RotationYawPitchRollToRef(this.rotation.y, this.rotation.x, this.rotation.z, this.rotationQuaternion);
+				}
+			}
+			
 			if (!this.noRotationConstraint) {
 				var limit = (Math.PI / 2) * 0.95;
+				
 				if (this.rotation.x > limit) {
 					this.rotation.x = limit;
 				}
@@ -269,51 +281,36 @@ import com.babylonhx.math.Quaternion;
 	override private function _updateCameraRotationMatrix() {
 		if (this.rotationQuaternion != null) {
 			this.rotationQuaternion.toRotationMatrix(this._cameraRotationMatrix);
-			//update the up vector!
-			Vector3.TransformNormalToRef(this._defaultUpVector, this._cameraRotationMatrix, this.upVector);
 		} 
 		else {
 			Matrix.RotationYawPitchRollToRef(this.rotation.y, this.rotation.x, this.rotation.z, this._cameraRotationMatrix);
-			//if (this.upVector.x !== 0 || this.upVector.y !== 1.0 || this.upVector.z !== 0) {
-			//    Matrix.LookAtLHToRef(Vector3.Zero(), this._referencePoint, this.upVector, this._lookAtTemp);
-			//    this._lookAtTemp.multiplyToRef(this._cameraRotationMatrix, this._tempMatrix);
-			//    this._lookAtTemp.invert();
-			//    this._tempMatrix.multiplyToRef(this._lookAtTemp, this._cameraRotationMatrix);
-			//}
 		}
+		
+		//update the up vector!
+		Vector3.TransformNormalToRef(this.upVector, this._cameraRotationMatrix, this._currentUpVector);
 	}
 	
+	// BHX: BJS overrides _getViewMatrix()
 	override public function _getViewMatrix_default():Matrix {
-		if (this.lockedTarget == null) {
-			// Compute
-			this._updateCameraRotationMatrix();
-			
-			Vector3.TransformCoordinatesToRef(this._referencePoint, this._cameraRotationMatrix, this._transformedReferencePoint);
-			
-			// Computing target and final matrix
-			this.position.addToRef(this._transformedReferencePoint, this._currentTarget);
-		} 
-		else {
-			this._currentTarget.copyFrom(this._getLockedTargetPosition());
+		if (this.lockedTarget != null) {
+			this.setTarget(this._getLockedTargetPosition());
 		}
 		
-		Matrix.LookAtLHToRef(this.position, this._currentTarget, this.upVector, this._viewMatrix);
-		
-		return this._viewMatrix;
-	}
-	
-	public function _getVRViewMatrix():Matrix {
+		// Compute
 		this._updateCameraRotationMatrix();
 		
 		Vector3.TransformCoordinatesToRef(this._referencePoint, this._cameraRotationMatrix, this._transformedReferencePoint);
-		Vector3.TransformNormalToRef(this.upVector, this._cameraRotationMatrix, this._cameraRigParams.vrActualUp);
 		
 		// Computing target and final matrix
 		this.position.addToRef(this._transformedReferencePoint, this._currentTarget);
 		
-		Matrix.LookAtLHToRef(this.position, this._currentTarget, this._cameraRigParams.vrActualUp, this._cameraRigParams.vrWorkMatrix);
-
-		cast(this._cameraRigParams.vrWorkMatrix, Matrix).multiplyToRef(this._cameraRigParams.vrPreViewMatrix, this._viewMatrix);
+		if (this.getScene().useRightHandedSystem) {
+			Matrix.LookAtRHToRef(this.position, this._currentTarget, this._currentUpVector, this._viewMatrix);
+		} 
+		else {
+			Matrix.LookAtLHToRef(this.position, this._currentTarget, this._currentUpVector, this._viewMatrix);
+		}
+		
 		return this._viewMatrix;
 	}
 	
@@ -324,14 +321,12 @@ import com.babylonhx.math.Quaternion;
 	override public function createRigCamera(name:String, cameraIndex:Int):Camera {
 		if (this.cameraRigMode != Camera.RIG_MODE_NONE) {
 			var rigCamera = new TargetCamera(name, this.position.clone(), this.getScene());
-			if (this.cameraRigMode == Camera.RIG_MODE_VR) {
+			if (this.cameraRigMode == Camera.RIG_MODE_VR || this.cameraRigMode == Camera.RIG_MODE_WEBVR) {
 				if (this.rotationQuaternion == null) {
 					this.rotationQuaternion = new Quaternion();
 				}
-					
+				
 				rigCamera._cameraRigParams = { };
-				rigCamera._cameraRigParams.vrActualUp = new Vector3(0, 0, 0);
-				rigCamera._getViewMatrix = rigCamera._getVRViewMatrix;
 				rigCamera.rotationQuaternion = new Quaternion();
 			}
 			
@@ -364,9 +359,14 @@ import com.babylonhx.math.Quaternion;
 				camRight.setTarget(this.getTarget());
 				
 			case Camera.RIG_MODE_VR:
-				camLeft.rotationQuaternion.copyFrom(this.rotationQuaternion);
-				camRight.rotationQuaternion.copyFrom(this.rotationQuaternion);
-				
+				if (camLeft.rotationQuaternion != null) {
+					camLeft.rotationQuaternion.copyFrom(this.rotationQuaternion);
+					camRight.rotationQuaternion.copyFrom(this.rotationQuaternion);
+				} 
+				else {
+					camLeft.rotation.copyFrom(this.rotation);
+					camRight.rotation.copyFrom(this.rotation);
+				}
 				camLeft.position.copyFrom(this.position);
 				camRight.position.copyFrom(this.position);
 		}
@@ -386,19 +386,8 @@ import com.babylonhx.math.Quaternion;
 		Vector3.TransformCoordinatesToRef(this.position, this._rigCamTransformMatrix, result);
 	}
 	
-	override public function serialize():Dynamic {
-		var serializationObject = super.serialize();
-		serializationObject.speed = this.speed;
-		
-		if (this.rotation != null) {
-			serializationObject.rotation = this.rotation.asArray();
-		}
-		
-		if (this.lockedTarget != null && this.lockedTarget.id != null) {
-			serializationObject.lockedTargetId = this.lockedTarget.id;
-		}
-		
-		return serializationObject;
+	override public function getClassName():String {
+		return "TargetCamera";
 	}
 	
 }

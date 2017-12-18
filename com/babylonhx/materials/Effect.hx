@@ -1,6 +1,6 @@
 package com.babylonhx.materials;
 
-import com.babylonhx.Engine;
+import com.babylonhx.engine.Engine;
 import com.babylonhx.materials.textures.InternalTexture;
 import com.babylonhx.materials.textures.WebGLTexture;
 import com.babylonhx.tools.Tools;
@@ -59,8 +59,11 @@ using StringTools;
 	private var _fallbacks:EffectFallbacks;
 	private var _vertexSourceCode:String;
     private var _fragmentSourceCode:String;
+	private var _vertexSourceCodeOverride:String;
+    private var _fragmentSourceCodeOverride:String;
+	private var _transformFeedbackVaryings:Array<String> = null;
 	
-	@:allow(com.babylonhx.Engine) 
+	@:allow(com.babylonhx.engine.Engine) 
 	private var _program:GLProgram;
 	
 	private var _valueCache:Map<String, Array<Float>> = new Map();	
@@ -87,6 +90,7 @@ using StringTools;
 			this.onCompiled = options.onCompiled;
 			this._fallbacks = options.fallbacks;
 			this._indexParameters = options.indexParameters; 
+			this._transformFeedbackVaryings = options.transformFeedbackVaryings;
 			
 			if (options.uniformBuffersNames != null) {
 				for (i in 0...options.uniformBuffersNames.length) {
@@ -204,11 +208,11 @@ using StringTools;
 		return this._attributes.length;
 	}
 
-	inline public function getUniformIndex(uniformName:String):Int {
+	public function getUniformIndex(uniformName:String):Int {
 		return this._uniformsNames.indexOf(uniformName);
 	}
 
-	inline public function getUniform(uniformName:String):GLUniformLocation {
+	public function getUniform(uniformName:String):GLUniformLocation {
 		return this._uniforms[this._uniformsNames.indexOf(uniformName)];
 	}
 
@@ -523,6 +527,30 @@ using StringTools;
 		return source;
 	}
 	
+	public function _rebuildProgram(vertexSourceCode:String, fragmentSourceCode:String, onCompiled:GLProgram->Void, ?onError:String->Void) {
+		this._isReady = false;
+		
+		this._vertexSourceCodeOverride = vertexSourceCode;
+		this._fragmentSourceCodeOverride = fragmentSourceCode;
+		this.onError = function (_, error:Dynamic) {
+			if (onError != null) {
+				onError(error);
+			}
+		};
+		this.onCompiled = function(_) {
+			var scenes = this.getEngine().scenes;
+			for (i in 0...scenes.length) {
+				scenes[i].markAllMaterialsAsDirty(Material.TextureDirtyFlag);
+			}
+			
+			if (onCompiled != null) {
+				onCompiled(this._program);
+			}
+		};
+		this._fallbacks = null;
+		this._prepareEffect();
+	}
+	
 	private function _prepareEffect() {
 		var attributesNames = this._attributesNames;
 		var defines = this.defines;
@@ -531,12 +559,15 @@ using StringTools;
 		
         try {			
             var engine = this._engine;
-			if (this.name.fragment == "vignette" || this.name.fragment == "dreamVision") {
-				trace(this._fragmentSourceCode);
-			}
-            this._program = engine.createShaderProgram(this._vertexSourceCode, this._fragmentSourceCode, defines);
 			
-			if (engine.webGLVersion > 1) {
+			if (this._vertexSourceCodeOverride != null && this._fragmentSourceCodeOverride != null) {
+				this._program = engine.createRawShaderProgram(this._vertexSourceCodeOverride, this._fragmentSourceCodeOverride, this._transformFeedbackVaryings);
+			}
+			else {
+				this._program = engine.createShaderProgram(this._vertexSourceCode, this._fragmentSourceCode, defines, this._transformFeedbackVaryings);
+			}
+			
+			if (engine.supportsUniformBuffers) {
 				for (name in this._uniformBuffersNames.keys()) {
 					this.bindUniformBlock(name, this._uniformBuffersNames[name]);
 				}
@@ -746,11 +777,12 @@ using StringTools;
 	}
 	
 	public function bindUniformBuffer(buffer:WebGLBuffer, name:String) {
-		if (Effect._baseCache[this._uniformBuffersNames[name]] == buffer) {
+		var bufferName = this._uniformBuffersNames[name];
+        if (Effect._baseCache[bufferName] == buffer) {
 			return;
 		}
-		Effect._baseCache[this._uniformBuffersNames[name]] = buffer;
-		this._engine.bindUniformBufferBase(buffer, this._uniformBuffersNames[name]);
+		Effect._baseCache[bufferName] = buffer;
+        this._engine.bindUniformBufferBase(buffer, bufferName);
 	}
 
 	public function bindUniformBlock(blockName:String, index:Int) {
@@ -874,7 +906,7 @@ using StringTools;
         return this;
     }
 
-	inline public function setFloat(uniformName:String, value:Float):Effect {
+	public function setFloat(uniformName:String, value:Float):Effect {
 		var val = this._valueCache[uniformName];
 		if (val != null && val[0] == value) {
 			return this;

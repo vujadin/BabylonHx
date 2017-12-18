@@ -1,5 +1,6 @@
 package com.babylonhx.rendering;
 
+import com.babylonhx.materials.Material;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.materials.ShaderMaterial;
 import com.babylonhx.math.Color3;
@@ -9,8 +10,8 @@ import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.cameras.Camera;
-import lime.utils.Int32Array;
 
+import lime.utils.UInt32Array;
 import lime.utils.Float32Array;
 
 
@@ -94,7 +95,7 @@ class EdgesRenderer implements ISmartArrayCompatible {
 		
 		var scene = this._source.getScene();
 		var engine = scene.getEngine();
-		this._ib = engine.createIndexBuffer(new Int32Array(this._linesIndices));
+		this._ib = engine.createIndexBuffer(new UInt32Array(this._linesIndices));
 	}
 
 	public function dispose() {
@@ -213,6 +214,10 @@ class EdgesRenderer implements ISmartArrayCompatible {
 		var positions = this._source.getVerticesData(VertexBuffer.PositionKind);
 		var indices = this._source.getIndices();
 		
+		if (indices == null || positions == null) {
+			return;
+		}
+		
 		// First let's find adjacencies
 		var adjacencies = new Array<FaceAdjacencies>();
 		var faceNormals = new Array<Vector3>();
@@ -328,17 +333,18 @@ class EdgesRenderer implements ISmartArrayCompatible {
 		this._buffers[VertexBuffer.PositionKind] = new VertexBuffer(engine, new Float32Array(this._linesPositions), VertexBuffer.PositionKind, false);
 		this._buffers[VertexBuffer.NormalKind] = new VertexBuffer(engine, new Float32Array(this._linesNormals), VertexBuffer.NormalKind, false, false, 4);
 		
-		this._ib = engine.createIndexBuffer(new Int32Array(this._linesIndices));
+		this._ib = engine.createIndexBuffer(new UInt32Array(this._linesIndices));
 		
 		this._indicesCount = this._linesIndices.length;
 	}
 
 	public function render() {
-		if (!this._lineShader.isReady()) {
+		var scene = this._source.getScene();
+		
+        if (!this._lineShader.isReady() || scene.activeCamera == null) {
 			return;
 		}
 		
-		var scene = this._source.getScene();
 		var engine = scene.getEngine();
 		this._lineShader._preBind();
 		
@@ -359,7 +365,7 @@ class EdgesRenderer implements ISmartArrayCompatible {
 		this._lineShader.bind(this._source.getWorldMatrix());
 		
 		// Draw order
-		engine.draw(true, 0, this._indicesCount);
+		engine.drawElementsType(Material.TriangleFillMode, 0, this._indicesCount);
 		this._lineShader.unbind();
 		engine.setDepthWrite(true);
 	}

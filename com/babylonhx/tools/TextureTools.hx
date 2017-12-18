@@ -6,6 +6,8 @@ import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.materials.textures.RenderTargetTexture;
 import com.babylonhx.postprocess.PassPostProcess;
 import com.babylonhx.utils.Image;
+import com.babylonhx.engine.Engine;
+
 import haxe.crypto.Base64;
 import lime.utils.UInt8Array;
 

@@ -16,6 +16,7 @@ import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Quaternion;
+import com.babylonhx.math.Tools as MathTools;
 
 /**
  * ...
@@ -185,6 +186,10 @@ class FramingBehavior implements Behavior<ArcRotateCamera> {
 	private var _isPointerDown:Bool = false;
 	private var _lastFrameTime:Float = Math.NEGATIVE_INFINITY;
 	private var _lastInteractionTime:Float = Math.NEGATIVE_INFINITY;
+	
+	public function init() {
+		// Do nothing
+	}
 
 	public function attach(camera:ArcRotateCamera) {
 		this._attachedCamera = camera;
@@ -253,6 +258,42 @@ class FramingBehavior implements Behavior<ArcRotateCamera> {
 		
 		var boundingBox = mesh.getBoundingInfo().boundingBox;
 		this.zoomOnBoundingInfo(boundingBox.minimumWorld, boundingBox.maximumWorld, focusOnOriginXZ, onAnimationEnd);
+	}
+	
+	/**
+	 * Targets the given mesh with its children and updates zoom level accordingly.
+	 * @param mesh  The mesh to target.
+	 * @param radius Optional. If a cached radius position already exists, overrides default.
+	 * @param framingPositionY Position on mesh to center camera focus where 0 corresponds bottom of its bounding box and 1, the top
+	 * @param focusOnOriginXZ Determines if the camera should focus on 0 in the X and Z axis instead of the mesh
+	 * @param onAnimationEnd Callback triggered at the end of the framing animation
+	 */
+	public function zoomOnMeshHierarchy(mesh:AbstractMesh, focusOnOriginXZ:Bool = false, onAnimationEnd:Void->Void = null) {
+		mesh.computeWorldMatrix(true);
+		
+		var boundingBox = mesh.getHierarchyBoundingVectors(true);
+		this.zoomOnBoundingInfo(boundingBox.minimum, boundingBox.maximum, focusOnOriginXZ, onAnimationEnd);
+	}
+
+	/**
+	 * Targets the given meshes with their children and updates zoom level accordingly.
+	 * @param meshes  The mesh to target.
+	 * @param radius Optional. If a cached radius position already exists, overrides default.
+	 * @param framingPositionY Position on mesh to center camera focus where 0 corresponds bottom of its bounding box and 1, the top
+	 * @param focusOnOriginXZ Determines if the camera should focus on 0 in the X and Z axis instead of the mesh
+	 * @param onAnimationEnd Callback triggered at the end of the framing animation
+	 */
+	public function zoomOnMeshesHierarchy(meshes:Array<AbstractMesh>, focusOnOriginXZ:Bool = false, onAnimationEnd:Void->Void = null) {
+		var min = new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY);
+		var max = new Vector3(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY);
+		
+		for (i in 0...meshes.length) {
+			var boundingInfo = meshes[i].getHierarchyBoundingVectors(true);
+			MathTools.CheckExtends(boundingInfo.minimum, min, max);
+			MathTools.CheckExtends(boundingInfo.maximum, min, max);
+		}
+		
+		this.zoomOnBoundingInfo(min, max, focusOnOriginXZ, onAnimationEnd);
 	}
 	
 	/**

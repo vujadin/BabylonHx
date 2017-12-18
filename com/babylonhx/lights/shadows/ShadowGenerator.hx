@@ -1,6 +1,6 @@
 package com.babylonhx.lights.shadows;
 
-import com.babylonhx.Engine;
+import com.babylonhx.engine.Engine;
 import com.babylonhx.lights.IShadowLight;
 import com.babylonhx.materials.Effect;
 import com.babylonhx.materials.Material;
@@ -15,6 +15,7 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.VertexBuffer;
+import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.postprocess.PassPostProcess;
 import com.babylonhx.postprocess.PostProcess;
 import com.babylonhx.postprocess.BlurPostProcess;
@@ -257,6 +258,56 @@ import haxe.Timer;
 	}
 	
 	/**
+	 * Helper function to add a mesh and its descendants to the list of shadow casters
+	 * @param mesh Mesh to add
+	 * @param includeDescendants boolean indicating if the descendants should be added. Default to true
+	 */
+	public function addShadowCaster(mesh:AbstractMesh, includeDescendants:Bool = true):ShadowGenerator {
+		if (this._shadowMap == null) {
+			return this;
+		}
+		
+		if (this._shadowMap.renderList == null) {
+			this._shadowMap.renderList = [];
+		}
+		
+		this._shadowMap.renderList.push(mesh);
+		
+		if (includeDescendants) {
+			for (m in mesh.getChildMeshes()) {
+				this._shadowMap.renderList.push(m);
+			}
+		}
+		
+		return this;
+	}
+
+	/**
+	 * Helper function to remove a mesh and its descendants from the list of shadow casters
+	 * @param mesh Mesh to remove
+	 * @param includeDescendants boolean indicating if the descendants should be removed. Default to true
+	 */
+	public function removeShadowCaster(mesh:AbstractMesh, includeDescendants:Bool = true):ShadowGenerator {
+		if (this._shadowMap == null || this._shadowMap.renderList == null) {
+			return this;
+		}
+		
+		var index = this._shadowMap.renderList.indexOf(mesh);
+		
+		if (index != -1) {
+			this._shadowMap.renderList.splice(index, 1);
+		}
+		
+		if (includeDescendants) {
+			for (child in mesh.getChildren()) {
+				this.removeShadowCaster(cast child);
+			}
+		}
+		
+		return this;
+	}
+	
+	/**
 	 * Controls the extent to which the shadows fade out at the edge of the frustum
      * Used only by directionals and spots
 	*/
@@ -356,6 +407,7 @@ import haxe.Timer;
 		this._shadowMap.anisotropicFilteringLevel = 1;
 		this._shadowMap.updateSamplingMode(Texture.BILINEAR_SAMPLINGMODE);
 		this._shadowMap.renderParticles = false;
+		this._shadowMap.ignoreCameraViewport = true;
 		
 		// Record Face Index before render.
 		this._shadowMap.onBeforeRenderObservable.add(function(faceIndex:Int, _) {
@@ -375,7 +427,11 @@ import haxe.Timer;
 				this._initializeBlurRTTAndPostProcesses();
 			}
 			
-			this._scene.postProcessManager.directRender(this._blurPostProcesses, this.getShadowMapForRendering().getInternalTexture());
+			var shadowMap = this.getShadowMapForRendering();
+			
+			if (shadowMap != null) {
+				this._scene.postProcessManager.directRender(this._blurPostProcesses, shadowMap.getInternalTexture(), true);
+			}
 		});
 		
 		// Clear according to the chosen filter.
@@ -458,9 +514,14 @@ import haxe.Timer;
 		var mesh = subMesh.getRenderingMesh();
 		var scene = this._scene;
 		var engine = scene.getEngine();
+		var material = subMesh.getMaterial();
+		
+		if (material == null) {
+			return;
+		}
 		
 		// Culling
-		engine.setState(subMesh.getMaterial().backFaceCulling);
+		engine.setState(material.backFaceCulling);
 		
 		// Managing instances
 		var batch = mesh._getInstancesRenderList(subMesh._id);
@@ -472,7 +533,6 @@ import haxe.Timer;
 		if (this.isReady(subMesh, hardwareInstancedRendering)) {
 			engine.enableEffect(this._effect);
 			mesh._bind(subMesh, this._effect, Material.TriangleFillMode);
-			var material = subMesh.getMaterial();
 			
 			this._effect.setFloat2("biasAndScale", this.bias, this.depthScale);
 			
@@ -509,11 +569,17 @@ import haxe.Timer;
 		} 
 		else {
 			// Need to reset refresh rate of the shadowMap
-			this._shadowMap.resetRefreshCounter();
+			if (this._shadowMap != null) {
+				this._shadowMap.resetRefreshCounter();
+			}
 		}
 	}
 
 	private function _applyFilterValues() {
+		if (this._shadowMap == null) {
+			return;
+		}
+		
 		if (this.filter == ShadowGenerator.FILTER_NONE) {
 			this._shadowMap.updateSamplingMode(Texture.NEAREST_SAMPLINGMODE);
 		} 
@@ -527,25 +593,43 @@ import haxe.Timer;
 	 */
 	var checkReady:Void->Void;
 	public function forceCompilation(onCompiled:ShadowGenerator->Void, useInstances:Bool = false) {
-		var scene = this._scene;
-		var engine = scene.getEngine();
-		var subMeshes:Array<SubMesh> = [];
-		var currentIndex:Int = 0;
+		var shadowMap = this.getShadowMap();
+		if (shadowMap == null) {
+			if (onCompiled != null) {
+				onCompiled(this);
+			}
+			return;
+		}
 		
-		for (mesh in this.getShadowMap().renderList) {
+		var renderList = shadowMap.renderList;
+		if (renderList == null) {
+			if (onCompiled != null) {
+				onCompiled(this);
+			}
+			return;
+		}
+		
+		var subMeshes:Array<SubMesh> = [];
+		for (mesh in renderList) {
 			for (m in mesh.subMeshes) {
 				subMeshes.push(m);
 			}
 		}
+		if (subMeshes.length == 0) {
+			if (onCompiled != null) {
+				onCompiled(this);
+			}
+			return;
+		}
+		
+		var currentIndex:Int = 0;
 		
 		checkReady = function() {
 			if (this._scene == null || this._scene.getEngine() == null) {
-                return;
-            }
+				return;
+			}
 			
-			var subMesh = subMeshes[currentIndex];
-			
-			if (this.isReady(subMesh, useInstances)) {
+			while (this.isReady(subMeshes[currentIndex], useInstances)) {
 				currentIndex++;
 				if (currentIndex >= subMeshes.length) {
 					if (onCompiled != null) {
@@ -554,12 +638,10 @@ import haxe.Timer;
 					return;
 				}
 			}
-			Timer.delay(checkReady, 16);
+			Tools.delay(checkReady, 16);
 		};
 		
-		if (subMeshes.length > 0) {
-			checkReady();
-		}
+		checkReady();
 	}
 
 	/**
@@ -660,7 +742,7 @@ import haxe.Timer;
 		}
 		
 		if (light.needCube()) {
-			defines.shadowqube[lightIndex] = true;
+			defines.shadowcube[lightIndex] = true;
 		}
 		
 		//trace(defines);
@@ -675,6 +757,17 @@ import haxe.Timer;
 		var scene = this._scene;
 		
 		if (!scene.shadowsEnabled || !light.shadowEnabled) {
+			return;
+		}
+		
+		var camera = scene.activeCamera;
+		if (camera == null) {
+			return;
+		}
+		
+		var shadowMap = this.getShadowMap();
+		
+		if (shadowMap == null) {
 			return;
 		}
 		
@@ -716,7 +809,15 @@ import haxe.Timer;
 			
 			Matrix.LookAtLHToRef(lightPosition, lightPosition.add(this._lightDirection), Vector3.Up(), this._viewMatrix);
 			
-			this._light.setShadowProjectionMatrix(this._projectionMatrix, this._viewMatrix, this.getShadowMap().renderList);
+			var shadowMap = this.getShadowMap();
+			
+			if (shadowMap != null) {
+				var renderList = shadowMap.renderList;
+				
+				if (renderList != null) {
+					this._light.setShadowProjectionMatrix(this._projectionMatrix, this._viewMatrix, renderList);
+				}
+			}
 			
 			this._viewMatrix.multiplyToRef(this._projectionMatrix, this._transformMatrix);
 		}
@@ -725,6 +826,11 @@ import haxe.Timer;
 	}
 
 	public function recreateShadowMap() {
+		var shadowMap = this._shadowMap;
+		if (shadowMap == null) {
+			return;
+		}
+		
 		// Track render list.
 		var renderList = this._shadowMap.renderList;
 		// Clean up existing data.
@@ -784,8 +890,10 @@ import haxe.Timer;
 	public function dispose() {
 		this._disposeRTTandPostProcesses();
 		
-		this._light._shadowGenerator = null;
-		this._light._markMeshesAsLightDirty();
+		if (this._light != null) {
+			this._light._shadowGenerator = null;
+			this._light._markMeshesAsLightDirty();
+		}
 	}
 	
 	/**
@@ -794,6 +902,10 @@ import haxe.Timer;
 	public function serialize():Dynamic {
 		var serializationObject:Dynamic = { };
 		var shadowMap = this.getShadowMap();
+		
+		if (shadowMap == null) {
+			return serializationObject;
+		}
 		
 		serializationObject.lightId = this._light.id;
 		serializationObject.mapSize = shadowMap.getRenderSize();
@@ -848,7 +960,7 @@ import haxe.Timer;
 		else if (parsedShadowGenerator.useCloseExponentialShadowMap == true) {
 			shadowGenerator.useCloseExponentialShadowMap = true;
 		}
-		else if (parsedShadowGenerator.useBlurExponentialShadowMap == true) {
+		else if (parsedShadowGenerator.useBlurCloseExponentialShadowMap == true) {
 			shadowGenerator.useBlurCloseExponentialShadowMap = true;
 		}		
 		// Backward compat

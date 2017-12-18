@@ -254,8 +254,12 @@ class WaterMaterial extends PushMaterial {
 
 	// Methods
 	public inline function addToRenderList(node:Node) {
-		this._refractionRTT.renderList.push(cast node);
-		this._reflectionRTT.renderList.push(cast node);
+		if (this._refractionRTT.renderList != null) {
+			this._refractionRTT.renderList.push(cast node);
+		}
+		if (this._reflectionRTT.renderList != null) {
+			this._reflectionRTT.renderList.push(cast node);
+		}
 	}
 
 	public function enableRenderTargets(enable:Bool) {
@@ -437,7 +441,7 @@ class WaterMaterial extends PushMaterial {
 					indexParameters: { maxSimultaneousLights: this._maxSimultaneousLights }
 				}, engine), defines);
 		}
-		if (!subMesh.effect.isReady()) {
+		if (subMesh.effect == null || !subMesh.effect.isReady()) {
 			return false;
 		}
 		
@@ -456,6 +460,9 @@ class WaterMaterial extends PushMaterial {
 		}
 		
 		var effect = subMesh.effect;
+		if (effect == null) {
+			return;
+		}
 		this._activeEffect = effect;
 		
 		// Matrices        

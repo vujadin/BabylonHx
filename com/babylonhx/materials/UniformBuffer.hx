@@ -1,5 +1,6 @@
 package com.babylonhx.materials;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.math.Matrix;

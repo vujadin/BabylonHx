@@ -1,5 +1,7 @@
 package com.babylonhx.mesh;
 
+import com.babylonhx.engine.Engine;
+
 import lime.utils.Float32Array;
 
 /**

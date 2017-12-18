@@ -13,6 +13,7 @@ import com.babylonhx.mesh.Mesh;
 import com.babylonhx.math.Tools;
 import com.babylonhx.utils.Keycodes;
 import com.babylonhx.tools.Observable;
+import com.babylonhx.events.PointerEvent;
 
 
 /**
@@ -62,11 +63,11 @@ import com.babylonhx.tools.Observable;
 	private var _attachedElement:Dynamic;
 
 	private var _onContextMenu:Dynamic;
-	private var _onPointerDown:Dynamic;
-	private var _onPointerUp:Dynamic;
-	private var _onPointerMove:Dynamic;
+	private var _onPointerDown:PointerEvent->Void;
+	private var _onPointerUp:PointerEvent->Void;
+	private var _onPointerMove:PointerEvent->Void;
 	private var _wheel:Dynamic;
-	private var _onMouseMove:Dynamic;
+	private var _onMouseMove:PointerEvent->Void;
 	private var _onKeyDown:Int->Void = function(keycode:Int) { };
 	private var _onKeyUp:Int->Void = function(keycode:Int) { };
 	private var _onLostFocus:Void->Void;
@@ -315,7 +316,7 @@ import com.babylonhx.tools.Observable;
 				//when changing orientation while pinching camera, one pointer stay pressed forever if we don't release all pointers  
 				//will be ok to put back pointers.remove(evt.pointerId); when iPhone bug corrected
 				pointers.empty();
-								   
+				
 				if (!noPreventDefault) {
 					evt.preventDefault();
 				}
@@ -410,18 +411,18 @@ import com.babylonhx.tools.Observable;
 			
 		#else
 			
-			this._onPointerDown = function(x:Float, y:Float, button:Int) {
+			this._onPointerDown = function(evt:PointerEvent) {
 				previousPosition = {
-					x: x,
-					y: y
+					x: evt.x,
+					y: evt.y
 				};
 			};
 			
-			this._onPointerUp = function(x:Float, y:Float, button:Int) {
+			this._onPointerUp = function(evt:PointerEvent) {
 				previousPosition = null;
 			};	
 			
-			this._onMouseMove = function(x:Int, y:Int) {
+			this._onMouseMove = function(evt:PointerEvent) {
 				if (previousPosition == null && !engine.isPointerLock) {
                     return;
                 }
@@ -430,16 +431,16 @@ import com.babylonhx.tools.Observable;
                 var offsetY:Float = 0;
 				
                 if (!engine.isPointerLock) {
-                    offsetX = x - previousPosition.x;
-                    offsetY = y - previousPosition.y;
+                    offsetX = evt.x - previousPosition.x;
+                    offsetY = evt.y - previousPosition.y;
                 }
 				
 				this.inertialAlphaOffset -= offsetX / this.angularSensibilityX;
 				this.inertialBetaOffset -= offsetY / this.angularSensibilityY;	
 				
 				previousPosition = {
-					x: x, 
-					y: y
+					x: evt.x, 
+					y: evt.y
                 };
 			};
 			

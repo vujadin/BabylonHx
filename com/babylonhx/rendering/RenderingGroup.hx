@@ -1,5 +1,7 @@
 package com.babylonhx.rendering;
 
+import com.babylonhx.cameras.Camera;
+import com.babylonhx.engine.Engine;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.AbstractMesh;
@@ -16,8 +18,6 @@ import com.babylonhx.particles.IParticleSystem;
 
 @:expose('BABYLON.RenderingGroup') class RenderingGroup {
 	
-	public var index:Int;
-	
 	private var _scene:Scene;
 	private var _opaqueSubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>(256);
 	private var _transparentSubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>(256);
@@ -25,7 +25,6 @@ import com.babylonhx.particles.IParticleSystem;
 	private var _depthOnlySubMeshes:SmartArray<SubMesh> = new SmartArray<SubMesh>(256);
 	private var _particleSystems:SmartArray<IParticleSystem> = new SmartArray<IParticleSystem>(256);
 	private var _spriteManagers:SmartArray<SpriteManager> = new SmartArray<SpriteManager>(256);
-	private var _activeVertices:Int = 0;
 	
 	private var _opaqueSortCompareFn:SubMesh->SubMesh->Int;
     private var _alphaTestSortCompareFn:SubMesh->SubMesh->Int;
@@ -104,7 +103,6 @@ import com.babylonhx.particles.IParticleSystem;
 		alphaTestSortCompareFn:SubMesh->SubMesh->Int = null,
 		transparentSortCompareFn:SubMesh->SubMesh->Int = null) {
 		this._scene = scene;
-		this.index = index;
 		
 		this.opaqueSortCompareFn = opaqueSortCompareFn;
 		this.alphaTestSortCompareFn = alphaTestSortCompareFn;
@@ -184,7 +182,7 @@ import com.babylonhx.particles.IParticleSystem;
 	 * @param subMeshes The submeshes to render
 	 */
 	inline private function renderOpaqueSorted(subMeshes:SmartArray<SubMesh>) {
-		RenderingGroup.renderSorted(subMeshes, this._opaqueSortCompareFn, this._scene.activeCamera.globalPosition, false);
+		RenderingGroup.renderSorted(subMeshes, this._opaqueSortCompareFn, this._scene.activeCamera, false);
 	}
 
 	/**
@@ -192,7 +190,7 @@ import com.babylonhx.particles.IParticleSystem;
 	 * @param subMeshes The submeshes to render
 	 */
 	inline private function renderAlphaTestSorted(subMeshes:SmartArray<SubMesh>) {
-		RenderingGroup.renderSorted(subMeshes, this._alphaTestSortCompareFn, this._scene.activeCamera.globalPosition, false);
+		RenderingGroup.renderSorted(subMeshes, this._alphaTestSortCompareFn, this._scene.activeCamera, false);
 	}
 
 	/**
@@ -200,7 +198,7 @@ import com.babylonhx.particles.IParticleSystem;
 	 * @param subMeshes The submeshes to render
 	 */
 	inline private function renderTransparentSorted(subMeshes:SmartArray<SubMesh>) {
-		RenderingGroup.renderSorted(subMeshes, this._transparentSortCompareFn, this._scene.activeCamera.globalPosition, true);
+		RenderingGroup.renderSorted(subMeshes, this._transparentSortCompareFn, this._scene.activeCamera, true);
 	}
 
 	/**
@@ -210,8 +208,9 @@ import com.babylonhx.particles.IParticleSystem;
 	 * @param cameraPosition The camera position use to preprocess the submeshes to help sorting
 	 * @param transparent Specifies to activate blending if true
 	 */
-	private static function renderSorted(subMeshes:SmartArray<SubMesh>, sortCompareFn:SubMesh->SubMesh->Int, cameraPosition:Vector3, transparent:Bool) {
+	private static function renderSorted(subMeshes:SmartArray<SubMesh>, sortCompareFn:SubMesh->SubMesh->Int, camera:Camera, transparent:Bool) {
 		var subMesh:SubMesh = null;
+		var cameraPosition = camera != null ? camera.globalPosition : Vector3.Zero();
 		for (subIndex in 0...subMeshes.length) {
 			subMesh = subMeshes.data[subIndex];
 			subMesh._alphaIndex = subMesh.getMesh().alphaIndex;
@@ -219,7 +218,10 @@ import com.babylonhx.particles.IParticleSystem;
 		}
 		
 		var sortedArray = subMeshes.data.slice(0, subMeshes.length);
-		sortedArray.sort(sortCompareFn);
+		
+		if (sortCompareFn != null) {
+			sortedArray.sort(sortCompareFn);
+		}
 		
 		for (subIndex in 0...sortedArray.length) {
 			subMesh = sortedArray[subIndex];
@@ -227,7 +229,7 @@ import com.babylonhx.particles.IParticleSystem;
 			if (transparent) {
                 var material = subMesh.getMaterial();
 				
-                if (material.needDepthPrePass) {
+                if (material != null && material.needDepthPrePass) {
                     var engine = material.getScene().getEngine();
                     engine.setColorWrite(false);
                     engine.setAlphaTesting(true);
@@ -337,8 +339,6 @@ import com.babylonhx.particles.IParticleSystem;
 		this._edgesRenderers.dispose();
 	}
 
-	//static var material:Material;
-	//static var mesh:AbstractMesh;
 	/**
 	 * Inserts the submesh in its correct queue depending on its material.
 	 * @param subMesh The submesh to dispatch
@@ -347,7 +347,11 @@ import com.babylonhx.particles.IParticleSystem;
 		var material = subMesh.getMaterial();
 		var mesh = subMesh.getMesh();
 		
-		if (material.needAlphaBlending() || mesh.visibility < 1.0 || mesh.hasVertexAlpha) { // Transparent
+		if (material == null) {
+			return;
+		}
+		
+		if (material.needAlphaBlendingForMesh(mesh)) { // Transparent
 			this._transparentSubMeshes.push(subMesh);
 		} 
 		else if (material.needAlphaTesting()) { // Alpha test
@@ -385,11 +389,11 @@ import com.babylonhx.particles.IParticleSystem;
 		
 		// Particles
 		var activeCamera = this._scene.activeCamera;
-		//this._scene._particlesDuration.beginMonitoring();
+		this._scene.onBeforeParticlesRenderingObservable.notifyObservers(this._scene);
 		for (particleIndex in 0...this._scene._activeParticleSystems.length) {
 			var particleSystem = this._scene._activeParticleSystems.data[particleIndex];
 			
-			if ((activeCamera.layerMask & particleSystem.layerMask) == 0) {
+			if (activeCamera != null && (activeCamera.layerMask & particleSystem.layerMask) == 0) {
 				continue;
 			}
 			
@@ -400,7 +404,7 @@ import com.babylonhx.particles.IParticleSystem;
 			}
 		}
 		
-		//this._scene._particlesDuration.endMonitoring(false);
+		this._scene.onAfterParticlesRenderingObservable.notifyObservers(this._scene);
 	}
 
 	private function _renderSprites() {
@@ -410,16 +414,16 @@ import com.babylonhx.particles.IParticleSystem;
 		
 		// Sprites       
 		var activeCamera = this._scene.activeCamera;
-		//this._scene._spritesDuration.beginMonitoring();
+		this._scene.onBeforeSpritesRenderingObservable.notifyObservers(this._scene);
 		for (id in 0...this._spriteManagers.length) {
 			var spriteManager = this._scene.spriteManagers[id];
 			
-			if (((activeCamera.layerMask & spriteManager.layerMask) != 0)) {
+			if (activeCamera != null && ((activeCamera.layerMask & spriteManager.layerMask) != 0)) {
 				spriteManager.render();
 			}
 		}
 		
-		//this._scene._spritesDuration.endMonitoring(false);
+		this._scene.onAfterSpritesRenderingObservable.notifyObservers(this._scene);
 	}
 	
 }

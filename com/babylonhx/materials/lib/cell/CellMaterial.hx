@@ -225,7 +225,7 @@ class CellMaterial extends PushMaterial {
 					indexParameters: { maxSimultaneousLights: this.maxSimultaneousLights - 1 }
 				}, engine), defines);
 		}
-		if (!subMesh.effect.isReady()) {
+		if (subMesh.effect == null || !subMesh.effect.isReady()) {
 			return false;
 		}
 		
@@ -244,6 +244,9 @@ class CellMaterial extends PushMaterial {
 		}
 		
 		var effect = subMesh.effect;
+		if (effect == null) {
+			return;
+		}
 		this._activeEffect = effect;
 		
 		// Matrices        

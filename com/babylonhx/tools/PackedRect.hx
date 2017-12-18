@@ -162,7 +162,7 @@ class PackedRect {
 	private function attemptDefrag() {
 		if (!this.isUsed && this.isRecursiveFree) {
 			this.clearNode();
-
+			
 			if (this._parent) {
 				this._parent.attemptDefrag();
 			}

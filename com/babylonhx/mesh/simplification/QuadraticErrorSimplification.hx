@@ -6,9 +6,11 @@ import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Color4;
 import com.babylonhx.tools.AsyncLoop;
 import com.babylonhx.tools.Tools;
+
 import haxe.Timer;
+
 import lime.utils.Float32Array;
-import lime.utils.Int32Array;
+import lime.utils.UInt32Array;
 
 /**
  * ...
@@ -210,8 +212,7 @@ import lime.utils.Int32Array;
 		});
 	}
 
-	private function initWithMesh(submeshIndex:Int, callbackFn:Dynamic, optimizeMesh:Bool = false) {
-		
+	private function initWithMesh(submeshIndex:Int, callbackFn:Dynamic, optimizeMesh:Bool = false) {		
 		this.vertices = [];
 		this.triangles = [];
 		
@@ -234,6 +235,10 @@ import lime.utils.Int32Array;
 		var vertexReferences:Array<Int> = [];
 		
 		var vertexInit = function(i:Int) {
+			if (positionData == null) {
+				return;
+			}
+			
 			var offset = i + submesh.verticesStart;
 			var position = Vector3.FromFloat32Array(positionData, offset * 3);
 			
@@ -252,6 +257,10 @@ import lime.utils.Int32Array;
 		AsyncLoop.SyncAsyncForLoop(totalVertices, Std.int(this.syncIterations / 4), vertexInit, function() {
 			
 			var indicesInit = function(i:Int) {
+				if (indices == null) {
+					return;
+				}
+				
 				var offset = (submesh.indexStart / 3) + i;
 				var pos = Std.int(offset * 3);
 				var i0 = indices[pos + 0];
@@ -350,7 +359,10 @@ import lime.utils.Int32Array;
 			var vertex = this.vertices[i];
 			vertex.id = vertexCount;
 			if (vertex.triangleCount > 0) {
-				for(originalOffset in vertex.originalOffsets) {
+				for (originalOffset in vertex.originalOffsets) {
+					if (normalData == null) {
+						return;
+					}
 					newPositionData.push(vertex.position.x);
 					newPositionData.push(vertex.position.y);
 					newPositionData.push(vertex.position.z);
@@ -400,7 +412,7 @@ import lime.utils.Int32Array;
 		}
 		
 		//overwriting the old vertex buffers and indices.
-		this._reconstructedMesh.setIndices(new Int32Array(newIndicesArray));
+		this._reconstructedMesh.setIndices(new UInt32Array(newIndicesArray));
 		this._reconstructedMesh.setVerticesData(VertexBuffer.PositionKind, new Float32Array(newPositionData));
 		this._reconstructedMesh.setVerticesData(VertexBuffer.NormalKind, new Float32Array(newNormalData));
 		if (newUVsData.length > 0) {

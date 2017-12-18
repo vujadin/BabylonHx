@@ -5,7 +5,7 @@ import com.babylonhx.mesh.VertexData;
 import com.babylonhx.tools.Tools;
 
 import lime.utils.Float32Array;
-import lime.utils.Int32Array;
+import lime.utils.UInt32Array;
 
 import haxe.io.Bytes;
 import haxe.io.BytesInput;
@@ -108,7 +108,7 @@ class CTMFileLoader {
 			vertexData.positions = new Float32Array(vertices);
 			vertexData.normals = new Float32Array(normals);
 			vertexData.uvs = new Float32Array(uvs);
-			vertexData.indices = new Int32Array(indicesFinal);
+			vertexData.indices = new UInt32Array(indicesFinal);
 			
 			var mesh = new Mesh("ctm", scene);
 			vertexData.applyToMesh(mesh);

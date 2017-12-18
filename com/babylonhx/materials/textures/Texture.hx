@@ -1,5 +1,6 @@
 package com.babylonhx.materials.textures;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Plane;
@@ -286,15 +287,26 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		this._cachedTextureMatrix.m[4] = this._t2.x; this._cachedTextureMatrix.m[5] = this._t2.y; this._cachedTextureMatrix.m[6] = this._t2.z;
 		this._cachedTextureMatrix.m[8] = this._t0.x; this._cachedTextureMatrix.m[9] = this._t0.y; this._cachedTextureMatrix.m[10] = this._t0.z;
 		
-		this.getScene().markAllMaterialsAsDirty(Material.TextureDirtyFlag, function(mat:Material) {
-            return mat.hasTexture(this);
-        });
+		var scene = this.getScene();
+		
+		if (scene == null) {
+			return this._cachedTextureMatrix;
+		}
+		
+		scene.markAllMaterialsAsDirty(Material.TextureDirtyFlag, function(mat:Material) {
+			return mat.hasTexture(this);
+		});
 		
 		return this._cachedTextureMatrix;
 	}
 
 	override public function getReflectionTextureMatrix():Matrix {
 		var scene = this.getScene();
+		
+		if (scene == null) {
+			return this._cachedTextureMatrix;
+		}
+		
 		if (
 			this.uOffset == this._cachedUOffset &&
 			this.vOffset == this._cachedVOffset &&

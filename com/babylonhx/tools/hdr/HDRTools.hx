@@ -13,12 +13,6 @@ import lime.utils.UInt8Array;
  * ...
  * @author Krtolica Vujadin
  */
-
-typedef HDRInfo = {	
-	var height:Int;
-	var width:Int;
-	var dataPosition:Int;  
-};
  
 class HDRTools {
 	
@@ -55,7 +49,8 @@ class HDRTools {
 		
 		for (i in startIndex...uint8array.length - startIndex) {
 			character = String.fromCharCode(uint8array[i]);
-			if (character == "\n" && uint8array[i] != 44) {
+			
+			if (character == "\n"/* && uint8array[i] != 44*/) {
 				break;
 			}
 			
@@ -117,6 +112,7 @@ class HDRTools {
 		var strings = matched.split(" ");
 		width = Std.parseInt(strings[3]);
 		height = Std.parseInt(strings[1]);
+		
 		if (width < 8 || width > 0x7fff) {
 			throw "HDR Bad header format, unsupported size"; 
 		}
@@ -132,6 +128,17 @@ class HDRTools {
 		return hdrinfo;
 	}
 
+	/**
+	 * Returns the cubemap information (each faces texture data) extracted from an RGBE texture.
+	 * This RGBE texture needs to store the information as a panorama.
+	 *  
+	 * More information on this format are available here:
+	 * https://en.wikipedia.org/wiki/RGBE_image_format
+	 * 
+	 * @param buffer The binary file stored in an array buffer.
+	 * @param size The expected size of the extracted cubemap.
+	 * @return The Cube Map information.
+	 */
 	public static function GetCubeMapTextureData(buffer:Bytes, size:Int):CubeMapInfo {
 		var uint8array:UInt8Array = UInt8Array.fromBytes(buffer);
 		var hdrInfo = HDRTools.RGBE_ReadHeader(uint8array);
@@ -146,97 +153,18 @@ class HDRTools {
 		// Keep for multi format supports.
 		return HDRTools.RGBE_ReadPixels_RLE(uint8array, hdrInfo);
 	}
-
-	/*private static function RGBE_ReadPixels_RLE(uint8array: #if (js || purejs || web || html5) Dynamic #else UInt8Array #end , hdrInfo:HDRInfo):Float32Array {
-		var num_scanlines = hdrInfo.height;
-		var scanline_width = hdrInfo.width;
-		
-		var a:Int = 0;
-		var b:Int = 0;
-		var c:Int = 0;
-		var d:Int = 0;
-		var count:Int = 0;
-		var dataIndex = hdrInfo.dataPosition;
-		var index:Int = 0;
-		var endIndex:Int = 0;
-		
-		var scanLineArrayBuffer = new ArrayBuffer(scanline_width * 4); // four channel R G B E
-		var scanLineArray = new UInt8Array(scanLineArrayBuffer);
-		
-		// 3 channels of 4 bytes per pixel in float.
-		var resultBuffer = new ArrayBuffer(hdrInfo.width * hdrInfo.height * 4 * 3); 
-		var resultArray = new Float32Array(resultBuffer);
-		
-		// read in each successive scanline
-		while(num_scanlines > 0) {
-			a = uint8array[dataIndex++];
-			b = uint8array[dataIndex++];
-			c = uint8array[dataIndex++];
-			d = uint8array[dataIndex++];
-			
-			if (a != 2 || b != 2 || (c & 0x80) != 0) {
-			    // this file is not run length encoded
-				throw "HDR Bad header format, not RLE"; 
-			}
-			
-			if (((c << 8) | d) != scanline_width) {
-				throw "HDR Bad header format, wrong scan line width"; 
-			}
-			
-			index = 0;
-			
-			// read each of the four channels for the scanline into the buffer
-			for(i in 0...4) {
-				endIndex = (i + 1) * scanline_width;
-				
-				while(index < endIndex) {
-					a = uint8array[dataIndex++];
-					b = uint8array[dataIndex++];
-					
-					if (a > 128) {
-						// a run of the same value
-						count = a - 128;
-						if ((count == 0) || (count > endIndex - index)) {
-							throw "HDR Bad Format, bad scanline data (run)";
-						}
-						
-						while(count-- > 0) {
-							scanLineArray[index++] = b;
-						}
-					}
-					else {
-						// a non-run
-						count = a;
-						if ((count == 0) || (count > endIndex - index)) {
-							throw "HDR Bad Format, bad scanline data (non-run)";
-						}
-						
-						scanLineArray[index++] = b;
-						if (--count > 0) {
-							for (j in 0...count) {
-								scanLineArray[index++] = uint8array[dataIndex++];
-							}
-						}
-					}
-				}
-			}
-			
-			// now convert data from buffer into floats
-			for(i in 0...scanline_width) {
-				a = scanLineArray[i];
-				b = scanLineArray[i + scanline_width];
-				c = scanLineArray[i + 2 * scanline_width];
-				d = scanLineArray[i + 3 * scanline_width];
-				
-				HDRTools.Rgbe2float(resultArray, a, b, c, d, (hdrInfo.height - num_scanlines) * scanline_width * 3 + i * 3);
-			}
-			
-			num_scanlines--;
-		}
-		
-		return resultArray;
-	}*/
 	
+	/**
+	 * Returns the pixels data extracted from an RGBE texture. 
+	 * This pixels will be stored left to right up to down in the R G B order in one array.
+	 *  
+	 * More information on this format are available here:
+	 * https://en.wikipedia.org/wiki/RGBE_image_format
+	 * 
+	 * @param uint8array The binary file stored in an array buffer.
+	 * @param hdrInfo The header information of the file.
+	 * @return The pixels data in RGB right to left up to down order.
+	 */
 	private static function RGBE_ReadPixels_RLE(uint8array:UInt8Array, hdrInfo:HDRInfo):Float32Array {
 		var num_scanlines = hdrInfo.height;
 		var scanline_width = hdrInfo.width;

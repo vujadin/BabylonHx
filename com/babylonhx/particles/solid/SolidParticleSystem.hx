@@ -1,5 +1,6 @@
 package com.babylonhx.particles.solid;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.IDisposable;
 import com.babylonhx.math.Tmp;
 import com.babylonhx.Scene;
@@ -14,8 +15,8 @@ import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.VertexData;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.MeshBuilder;
-import com.babylonhx.particles.solid.SolidParticleSystem.SolidParticleOptions;
 
+import lime.utils.UInt32Array;
 import lime.utils.Int32Array;
 import lime.utils.Float32Array;
 
@@ -81,6 +82,11 @@ class SolidParticleSystem implements IDisposable {
 	* Please read : http://doc.babylonjs.com/tutorials/Solid_Particle_System#pickable-particles
 	*/
 	public var pickedParticles:Array<PickedParticle> = [];
+	/**
+	* This array is populated when `enableDepthSort` is set to true.  
+	* Each element of this array is an instance of the class DepthSortedParticle.  
+	*/
+	public var depthSortedParticles:Array<DepthSortedParticle>;
 	
 	// private members
 	private var _scene:Scene;
@@ -99,6 +105,7 @@ class SolidParticleSystem implements IDisposable {
 	private var _pickable:Bool = false;
 	private var _isVisibilityBoxLocked:Bool = false;
 	private var _alwaysVisible:Bool = false;
+	private var _depthSort:Bool = false;
 	private var _shapeCounter:Int = 0;
 	private var _copy:SolidParticle = new SolidParticle(null, null, null, null, null);
 	private var _shape:Array<Vector3>;
@@ -109,6 +116,7 @@ class SolidParticleSystem implements IDisposable {
 	private var _computeParticleRotation:Bool = true;
 	private var _computeParticleVertex:Bool = false;
 	private var _computeBoundingBox:Bool = false;
+	private var _depthSortParticles:Bool = true;
 	private var _cam_axisZ:Vector3 = Vector3.Zero();
 	private var _cam_axisY:Vector3 = Vector3.Zero();
 	private var _cam_axisX:Vector3 = Vector3.Zero();
@@ -118,6 +126,7 @@ class SolidParticleSystem implements IDisposable {
 	private var _camera:Camera;
 	private var _particle:SolidParticle;
 	private var _camDir:Vector3 = Vector3.Zero();
+	private var _camInvertedPosition:Vector3 = Vector3.Zero();
 	private var _rotMatrix:Matrix = new Matrix();
 	private var _invertMatrix:Matrix = new Matrix();
 	private var _rotated:Vector3 = Vector3.Zero();
@@ -139,11 +148,14 @@ class SolidParticleSystem implements IDisposable {
 	private var _mustUnrotateFixedNormals:Bool = false;
 	private var _minimum:Vector3 = Tmp.vector3[0];
     private var _maximum:Vector3 = Tmp.vector3[1];
-	private var _scale:Vector3 = Tmp.vector3[2];
-	private var _translation:Vector3 = Tmp.vector3[3];
 	private var _minBbox:Vector3 = Tmp.vector3[4];
     private var _maxBbox:Vector3 = Tmp.vector3[5];
 	private var _particlesIntersect:Bool = false;
+    private var _depthSortFunction:DepthSortedParticle->DepthSortedParticle->Int = function(p1:DepthSortedParticle, p2:DepthSortedParticle):Int {
+		return Std.int(p2.sqDistance - p1.sqDistance);
+	};
+	private var _depthSortedIndices:UInt32Array;
+    private var _needs32Bits:Bool = true;// false;
 	public var _bSphereOnly:Bool = false;
 	public var _bSphereRadiusFactor:Float = 1.0;
 	
@@ -172,12 +184,17 @@ class SolidParticleSystem implements IDisposable {
 		this._scene = scene != null ? scene : Engine.LastCreatedScene;
 		this._camera = this._scene.activeCamera;		
 		this._pickable = options != null && options.isPickable != null ? options.isPickable : false;
-		this._updatable = options != null && options.updatable != null ? options.updatable : true;
+		this._depthSort = options != null && options.enableDepthSort != null ? options.enableDepthSort : false;
 		this._particlesIntersect = (options != null && options.particleIntersection != null) ? options.particleIntersection : false;
 		this._bSphereOnly= (options != null && options.boundingSphereOnly != null) ? options.boundingSphereOnly : false;
 		this._bSphereRadiusFactor = (options != null && options.bSphereRadiusFactor != null) ? options.bSphereRadiusFactor : 1.0;
+		
+		this._updatable = options != null && options.updatable != null ? options.updatable : true;
 		if (this._pickable) {
 			this.pickedParticles = [];
+		}
+		if (this._depthSort) {
+			this.depthSortedParticles = [];
 		}
 	}
 	
@@ -204,8 +221,15 @@ class SolidParticleSystem implements IDisposable {
 			this._unrotateFixedNormals();
 		}
 		var vertexData:VertexData = new VertexData();
+		if (this._depthSort) {
+			this._depthSortedIndices = new UInt32Array(this._indices); //(this._needs32Bits) ? new UInt32Array(this._indices) : new Uint16Array(this._indices);
+			vertexData.indices = this._depthSortedIndices;
+		}
+		else {
+			vertexData.indices = new UInt32Array(this._indices);
+		}
+		//vertexData.indices = new Int32Array(this._indices);
 		vertexData.set(this._positions32, VertexBuffer.PositionKind);
-		vertexData.indices = new Int32Array(this._indices);
 		vertexData.set(this._normals32, VertexBuffer.NormalKind);
 		if (this._uvs32 != null) {
 			vertexData.set(this._uvs32, VertexBuffer.UVKind);
@@ -321,12 +345,13 @@ class SolidParticleSystem implements IDisposable {
             if (this._particlesIntersect) {
                 bInfo = new BoundingInfo(barycenter, barycenter);
             }
-			var modelShape = new ModelShape(this._shapeCounter, shape, shapeUV, null, null);
+			var modelShape = new ModelShape(this._shapeCounter, shape, Std.int(size * 3), shapeUV, null, null);
 			
 			// add the particle in the SPS
 			var currentPos = this._positions.length;
+			var currentInd = this._indices.length;
 			this._meshBuilder(this._index, shape, this._positions, facetInd, this._indices, facetUV, this._uvs, facetCol, this._colors, untyped meshNor, this._normals, idx, 0, null);
-			this._addParticle(idx, currentPos, modelShape, this._shapeCounter, 0, bInfo);
+			this._addParticle(idx, currentPos, currentInd, modelShape, this._shapeCounter, 0, bInfo);
 			// initialize the particle position
 			this.particles[this.nbParticles].position.addInPlace(barycenter);
 			
@@ -397,6 +422,7 @@ class SolidParticleSystem implements IDisposable {
 		this._resetCopy();
 		if (options != null && options.positionFunction != null) {        // call to custom positionFunction
 			options.positionFunction(this._copy, p, idxInShape);
+			this._mustUnrotateFixedNormals = true;
 		}
 		
 		if (this._copy.rotationQuaternion != null) {
@@ -469,7 +495,11 @@ class SolidParticleSystem implements IDisposable {
 		}
 		
 		for (i in 0...meshInd.length) {
-			indices[indices.length] = cast (p + meshInd[i]);
+			var current_ind = cast (p + meshInd[i]);
+            indices[indices.length] = current_ind;
+            /*if (current_ind > 65535) {
+                this._needs32Bits = true;
+            }*/
 		}
 		
 		if (this._pickable) {
@@ -477,6 +507,10 @@ class SolidParticleSystem implements IDisposable {
 			for (i in 0...nbfaces) {
 				this.pickedParticles.push({ idx: idx, faceId: i });
 			}
+		}
+		
+		if (this._depthSort) {
+			this.depthSortedParticles.push(new DepthSortedParticle());
 		}
 		
 		return this._copy;
@@ -507,8 +541,8 @@ class SolidParticleSystem implements IDisposable {
 	}
 
 	// adds a new particle object in the particles array
-	private function _addParticle(idx:Int, idxpos:Int, model:ModelShape, shapeId:Int, idxInShape:Int, ?bInfo:BoundingInfo):SolidParticle {
-		var sp = new SolidParticle(idx, idxpos, model, shapeId, idxInShape, this, bInfo);
+	private function _addParticle(idx:Int, idxpos:Int, idxind:Int, model:ModelShape, shapeId:Int, idxInShape:Int, ?bInfo:BoundingInfo):SolidParticle {
+		var sp = new SolidParticle(idx, idxpos, idxind, model, shapeId, idxInShape, this, bInfo);
 		this.particles.push(sp);
 		return sp;
 	}
@@ -538,7 +572,7 @@ class SolidParticleSystem implements IDisposable {
 		var posfunc = options != null ? options.positionFunction : null;
 		var vtxfunc = options != null ? options.vertexFunction : null;
 		
-		var modelShape = new ModelShape(this._shapeCounter, shape, shapeUV, posfunc, vtxfunc);
+		var modelShape = new ModelShape(this._shapeCounter, shape, meshInd.length, shapeUV, posfunc, vtxfunc);
 		
 		// particles
 		var sp:SolidParticle = null;
@@ -546,9 +580,10 @@ class SolidParticleSystem implements IDisposable {
 		var idx:Int = this.nbParticles;
 		for (i in 0...nb) {
 			var currentPos = this._positions.length;
+			var currentInd = this._indices.length;
 			currentCopy = this._meshBuilder(this._index, shape, this._positions, meshInd, this._indices, untyped meshUV, this._uvs, untyped meshCol, this._colors, untyped meshNor, this._normals, idx, i, options);
 			if (this._updatable) {
-				sp = this._addParticle(idx, currentPos, modelShape, this._shapeCounter, i, bbInfo);
+				sp = this._addParticle(idx, currentPos, currentInd, modelShape, this._shapeCounter, i, bbInfo);
 				sp.position.copyFrom(currentCopy.position);
 				sp.rotation.copyFrom(currentCopy.rotation);
 				if (currentCopy.rotationQuaternion != null) {
@@ -566,7 +601,7 @@ class SolidParticleSystem implements IDisposable {
 		this.nbParticles += nb;
 		this._shapeCounter++;
 		
-		return this._shapeCounter;
+		return this._shapeCounter - 1;
 	}
 	
 	// rebuilds a particle back to its just built status : if needed, recomputes the custom positions and vertices
@@ -663,23 +698,29 @@ class SolidParticleSystem implements IDisposable {
 		this._cam_axisZ.y = 0;
 		this._cam_axisZ.z = 1;
 		
+		// cases when the World Matrix is to be computed first
+        if (this.billboard || this._depthSort) {
+            this.mesh.computeWorldMatrix(true);
+            this.mesh._worldMatrix.invertToRef(this._invertMatrix);
+        }
 		// if the particles will always face the camera
 		if (this.billboard) {    
 			// compute camera position and un-rotate it by the current mesh rotation
-			if (this.mesh._worldMatrix.decompose(this._scale, this._quaternion, this._translation)) {
-                this._quaternionToRotationMatrix();
-				this._rotMatrix.invertToRef(this._invertMatrix);
-				this._camera.getDirectionToRef(this._axisZ, this._camDir);
-				Vector3.TransformNormalToRef(this._camDir, this._invertMatrix, this._cam_axisZ);                  
-				this._cam_axisZ.normalize();
-				// same for camera up vector extracted from the cam view matrix
-				var view = this._camera.getViewMatrix(true);
-				Vector3.TransformNormalFromFloatsToRef(view.m[1], view.m[5], view.m[9], this._invertMatrix, this._cam_axisY);
-				Vector3.CrossToRef(this._cam_axisY, this._cam_axisZ, this._cam_axisX);
-				this._cam_axisY.normalize();
-				this._cam_axisX.normalize();
-            }
+			this._camera.getDirectionToRef(this._axisZ, this._camDir);
+            Vector3.TransformNormalToRef(this._camDir, this._invertMatrix, this._cam_axisZ);                  
+            this._cam_axisZ.normalize();
+            // same for camera up vector extracted from the cam view matrix
+            var view = this._camera.getViewMatrix(true);
+            Vector3.TransformNormalFromFloatsToRef(view.m[1], view.m[5], view.m[9], this._invertMatrix, this._cam_axisY);
+            Vector3.CrossToRef(this._cam_axisY, this._cam_axisZ, this._cam_axisX);
+            this._cam_axisY.normalize();
+            this._cam_axisX.normalize();
 		}
+		
+		// if depthSort, compute the camera global position in the mesh local system
+        if (this._depthSort) {
+            Vector3.TransformCoordinatesToRef(this._camera.globalPosition, this._invertMatrix, this._camInvertedPosition); // then un-rotate the camera
+        }
 		
 		Matrix.IdentityToRef(this._rotMatrix);
 		var idx = 0;
@@ -754,6 +795,14 @@ class SolidParticleSystem implements IDisposable {
 						this._quaternionRotationYPR();
 					}
 					this._quaternionToRotationMatrix();
+				}
+				
+				// camera-particle distance for depth sorting
+				if (this._depthSort && this._depthSortParticles) {
+					var dsp = this.depthSortedParticles[p];
+					dsp.ind = this._particle._ind;
+					dsp.indicesLength = this._particle._model._indicesLength;
+					dsp.sqDistance = Vector3.DistanceSquared(this._particle.position, this._camInvertedPosition);
 				}
 				
 				// particle vertex loop
@@ -920,6 +969,22 @@ class SolidParticleSystem implements IDisposable {
 					this.mesh.updateVerticesData(VertexBuffer.NormalKind, this._normals32, false, false);
 				}
 			}
+			if (this._depthSort && this._depthSortParticles) {
+				this.depthSortedParticles.sort(this._depthSortFunction);
+				var dspl:Int = this.depthSortedParticles.length;
+				var lind:Int = 0;
+				var sind:Int = 0;
+				var sid:Int = 0;
+				for (sorted in 0...dspl) {
+					lind = this.depthSortedParticles[sorted].indicesLength;
+					sind = this.depthSortedParticles[sorted].ind;
+					for (i in 0...lind) {
+						this._depthSortedIndices[sid] = this._indices[sind + i];
+						sid++;
+					}
+				}
+				this.mesh.updateIndices(this._depthSortedIndices);
+			}
 		}
 		if (this._computeBoundingBox) {
 			this.mesh._boundingInfo = new BoundingInfo(this._minimum, this._maximum);
@@ -1030,7 +1095,12 @@ class SolidParticleSystem implements IDisposable {
 	*/
 	private function set_isVisibilityBoxLocked(val:Bool):Bool {
 		this._isVisibilityBoxLocked = val;
-		this.mesh.getBoundingInfo().isLocked = val;
+		
+		var boundingInfo = this.mesh.getBoundingInfo();
+		
+        if (boundingInfo != null) {
+            boundingInfo.isLocked = val;
+        }
 		
 		return val;
 	}
@@ -1106,6 +1176,18 @@ class SolidParticleSystem implements IDisposable {
 		return this._computeBoundingBox;
 	}
    
+	/**
+	* Tells to `setParticles()` to sort or not the distance between each particle and the camera.  
+	* Skipped when `enableDepthSort` is set to `false` (default) at construction time.
+	* Default : `true`  
+	*/
+	public var depthSortParticles(get, set):Bool;
+	inline private function set_depthSortParticles(val:Bool):Bool {
+		return this._depthSortParticles = val;
+	}
+	inline private function get_depthSortParticles():Bool {
+		return this._depthSortParticles;
+	}
 
 	// =======================================================================
 	// Particle behavior logic

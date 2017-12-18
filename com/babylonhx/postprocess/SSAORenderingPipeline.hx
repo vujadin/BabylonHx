@@ -168,7 +168,7 @@ import com.babylonhx.tools.EventState;
 		}
 	}
 	
-	public function _rebuild() {
+	override public function _rebuild() {
         this._firstUpdate = true;
         super._rebuild();            
     }

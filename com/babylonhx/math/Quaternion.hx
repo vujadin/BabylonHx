@@ -279,6 +279,16 @@ package com.babylonhx.math;
 		}
 	}
 	
+	/**
+	 * Returns a new Quaternion set to (0.0, 0.0, 0.0).  
+	 */
+	public static function Zero():Quaternion {
+		return new Quaternion(0.0, 0.0, 0.0, 0.0);
+	}
+		
+	/**
+	 * Returns a new Quaternion as the inverted current Quaternion.  
+	 */
 	inline public static function Inverse(q:Quaternion):Quaternion {
 		return new Quaternion(-q.x, -q.y, -q.z, q.w);
 	}
@@ -287,10 +297,20 @@ package com.babylonhx.math;
 		return new Quaternion(0, 0, 0, 1);
 	}
 	
+	public static inline function IsIdentity(quaternion:Quaternion):Bool {
+		return quaternion != null && quaternion.x == 0 && quaternion.y == 0 && quaternion.z == 0 && quaternion.w == 1;
+	}
+	
+	/**
+	 * Returns a new Quaternion set from the passed axis (Vector3) and angle in radians (float). 
+	 */
 	inline public static function RotationAxis(axis:Vector3, angle:Float):Quaternion {
 		return Quaternion.RotationAxisToRef(axis, angle, new Quaternion());
 	}
 
+	/**
+	 * Sets the passed quaternion "result" from the passed axis (Vector3) and angle in radians (float). 
+	 */
 	inline public static function RotationAxisToRef(axis:Vector3, angle:Float, result:Quaternion):Quaternion {
 		var sin = Math.sin(angle / 2);
 		
@@ -332,6 +352,50 @@ package com.babylonhx.math;
 		result.y = (sinYaw * cosPitch * cosRoll) - (cosYaw * sinPitch * sinRoll);
 		result.z = (cosYaw * cosPitch * sinRoll) - (sinYaw * sinPitch * cosRoll);
 		result.w = (cosYaw * cosPitch * cosRoll) + (sinYaw * sinPitch * sinRoll);
+	}
+	
+	 /**
+	 * Returns a new Quaternion from the passed float Euler angles expressed in z-x-z orientation
+	 */
+	public static function RotationAlphaBetaGamma(alpha:Float, beta:Float, gamma:Float):Quaternion {
+		var result = new Quaternion();
+		Quaternion.RotationAlphaBetaGammaToRef(alpha, beta, gamma, result);
+		return result;
+	}
+	/**
+	 * Sets the passed quaternion "result" from the passed float Euler angles expressed in z-x-z orientation
+	 */
+	public static function RotationAlphaBetaGammaToRef(alpha:Float, beta:Float, gamma:Float, result:Quaternion) {
+		// Produces a quaternion from Euler angles in the z-x-z orientation
+		var halfGammaPlusAlpha = (gamma + alpha) * 0.5;
+		var halfGammaMinusAlpha = (gamma - alpha) * 0.5;
+		var halfBeta = beta * 0.5;
+		
+		result.x = Math.cos(halfGammaMinusAlpha) * Math.sin(halfBeta);
+		result.y = Math.sin(halfGammaMinusAlpha) * Math.sin(halfBeta);
+		result.z = Math.sin(halfGammaPlusAlpha) * Math.cos(halfBeta);
+		result.w = Math.cos(halfGammaPlusAlpha) * Math.cos(halfBeta);
+	}
+
+	/**
+	 * Returns a new Quaternion as the quaternion rotation value to reach the target (axis1, axis2, axis3) orientation as a rotated XYZ system.   
+	 * cf to Vector3.RotationFromAxis() documentation.  
+	 * Note : axis1, axis2 and axis3 are normalized during this operation.   
+	 */
+	public static function RotationQuaternionFromAxis(axis1:Vector3, axis2:Vector3, axis3:Vector3, ref:Quaternion):Quaternion {
+		var quat = new Quaternion(0.0, 0.0, 0.0, 0.0);
+		Quaternion.RotationQuaternionFromAxisToRef(axis1, axis2, axis3, quat);
+		return quat;
+	}
+	/**
+	 * Sets the passed quaternion "ref" with the quaternion rotation value to reach the target (axis1, axis2, axis3) orientation as a rotated XYZ system.   
+	 * cf to Vector3.RotationFromAxis() documentation.  
+	 * Note : axis1, axis2 and axis3 are normalized during this operation.   
+	 */
+	public static function RotationQuaternionFromAxisToRef(axis1:Vector3, axis2:Vector3, axis3:Vector3, ref:Quaternion) {
+		var rotMat = Tmp.matrix[0];
+		Matrix.FromXYZAxesToRef(axis1.normalize(), axis2.normalize(), axis3.normalize(), rotMat);
+		Quaternion.FromRotationMatrixToRef(rotMat, ref);
 	}
 
 	public static function Slerp(left:Quaternion, right:Quaternion, amount:Float):Quaternion {

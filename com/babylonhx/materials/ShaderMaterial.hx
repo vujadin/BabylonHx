@@ -1,6 +1,6 @@
 package com.babylonhx.materials;
 
-import com.babylonhx.Engine;
+import com.babylonhx.engine.Engine;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector2;
@@ -89,7 +89,7 @@ import lime.utils.Float32Array;
 		return this._options.needAlphaTesting;
 	}
 
-	inline private function _checkUniform(uniformName:String) {
+	private function _checkUniform(uniformName:String) {
 		if (this._options.uniforms.indexOf(uniformName) == -1) {
 			this._options.uniforms.push(uniformName);
 		}
@@ -99,6 +99,9 @@ import lime.utils.Float32Array;
 		if (this._options.samplers.indexOf(name) == -1) {
 			this._options.samplers.push(name);
 		}
+		
+		//this._checkUniform(name);
+		
 		this._textures[name] = texture;
 		
 		return this;
@@ -109,14 +112,14 @@ import lime.utils.Float32Array;
 			this._options.samplers.push(name);
 		}
 		
-		this._checkUniform(name);
+		//this._checkUniform(name);
 		
 		this.setTextureArray(name, textures);
 		
 		return this;
 	}
 
-	inline public function setFloat(name:String, value:Float):ShaderMaterial {
+	public function setFloat(name:String, value:Float):ShaderMaterial {
 		this._checkUniform(name);
 		this._floats[name] = value;
 		
@@ -249,7 +252,7 @@ import lime.utils.Float32Array;
 		}
 		
 		// Bones
-		if (mesh != null && mesh.useBones && mesh.computeBonesUsingShaders) {
+		if (mesh != null && mesh.useBones && mesh.computeBonesUsingShaders && mesh.skeleton != null) {
 			attribs.push(VertexBuffer.MatricesIndicesKind);
 			attribs.push(VertexBuffer.MatricesWeightsKind);
 			if (mesh.numBoneInfluencers > 4) {
@@ -310,6 +313,10 @@ import lime.utils.Float32Array;
 	override public function bindOnlyWorldMatrix(world:Matrix) {
 		var scene = this.getScene();
 		
+		if (this._effect == null) {
+			return;
+		}
+		
 		if (this._options.uniforms.indexOf("world") != -1) {
 			this._effect.setMatrix("world", world);
 		}
@@ -328,7 +335,7 @@ import lime.utils.Float32Array;
 		// Std values
 		this.bindOnlyWorldMatrix(world);
 		
-		if (this.getScene().getCachedMaterial() != this) {
+		if (this._effect != null && this.getScene().getCachedMaterial() != this) {
 			if (this._options.uniforms.indexOf("view") != -1) {
 				this._effect.setMatrix("view", this.getScene().getViewMatrix());
 			}

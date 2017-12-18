@@ -22,6 +22,13 @@ import com.babylonhx.tools.Tools;
 		this.a = a;
 	}
 	
+	inline public function set(r:Float = 0, g:Float = 0, b:Float = 0, a:Float = 1.0) {
+		this.r = r;
+		this.g = g;
+		this.b = b;
+		this.a = a;
+	}
+	
 	inline public function getClassName():String {
         return "Color4";
     }

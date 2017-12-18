@@ -27,6 +27,7 @@ class SolidParticle implements IHasBoundingInfo {
 	public var alive:Bool = true;                    		// alive
 	public var isVisible:Bool = true;                		// visibility
 	public var _pos:Int;                    				// index of this particle in the global "positions" array
+	public var _ind:Int = 0;                        		// index of this particle in the global "indices" array
 	public var _model:ModelShape;							// model shape reference
 	public var shapeId:Int;                 				// model shape id
 	public var idxInShape:Int;              				// index of the particle in its shape id
@@ -41,14 +42,18 @@ class SolidParticle implements IHasBoundingInfo {
 	 * Don't create particles manually, use instead the Solid Particle System internal tools like _addParticle()
 	 * `particleIndex` (integer) is the particle index in the Solid Particle System pool. It's also the particle identifier.  
 	 * `positionIndex` (integer) is the starting index of the particle vertices in the SPS "positions" array.
-	 *  `model` (ModelShape) is a reference to the model shape on what the particle is designed.  
+	 * `indiceIndex` (integer) is the starting index of the particle indices in the SPS "indices" array.
+	 * `model` (ModelShape) is a reference to the model shape on what the particle is designed.  
 	 * `shapeId` (integer) is the model shape identifier in the SPS.
 	 * `idxInShape` (integer) is the index of the particle in the current model (ex: the 10th box of addShape(box, 30))
 	 * `modelBoundingInfo` is the reference to the model BoundingInfo used for intersection computations.
 	 */
-	public function new(?particleIndex:Int, ?positionIndex:Int, ?model:ModelShape, ?shapeId:Int, ?idxInShape:Int, ?sps:SolidParticleSystem, ?modelBoundingInfo:BoundingInfo) {
+	public function new(?particleIndex:Int, ?positionIndex:Int, ?indiceIndex:Int, ?model:ModelShape, ?shapeId:Int, ?idxInShape:Int, ?sps:SolidParticleSystem, ?modelBoundingInfo:BoundingInfo) {
 		this.idx = particleIndex;
 		this._pos = positionIndex;
+		if (indiceIndex != null) {
+			this._ind = indiceIndex;
+		}
 		this._model = model;
 		this.shapeId = shapeId;
 		this.idxInShape = idxInShape;

@@ -1,5 +1,7 @@
 package com.babylonhx.mesh;
 
+import com.babylonhx.engine.Engine;
+
 import lime.utils.Float32Array;
 
 
@@ -58,6 +60,8 @@ import lime.utils.Float32Array;
 				case VertexBuffer.MatricesWeightsKind, VertexBuffer.MatricesWeightsExtraKind:
 					stride = 4;
 					
+				default:
+					stride = 4;					
 			}
 		}
 		

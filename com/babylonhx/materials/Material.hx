@@ -1,5 +1,6 @@
 package com.babylonhx.materials;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.materials.textures.RenderTargetTexture;
@@ -26,9 +27,18 @@ import haxe.Timer;
 
 @:expose('BABYLON.Material') class Material implements ISmartArrayCompatible {
 	
+	// Triangle views
 	public static inline var TriangleFillMode:Int = 0;
 	public static inline var WireFrameFillMode:Int = 1;
 	public static inline var PointFillMode:Int = 2;
+	
+	// Draw modes
+    public static inline var PointListDrawMode:Int = 3;
+    public static inline var LineListDrawMode:Int = 4;
+    public static inline var LineLoopDrawMode:Int = 5;
+    public static inline var LineStripDrawMode:Int = 6;
+    public static inline var TriangleStripDrawMode:Int = 7;
+    public static inline var TriangleFanDrawMode:Int = 8;
 	
 	public static inline var ClockWiseSideOrientation:Int = 0;
 	public static inline var CounterClockWiseSideOrientation:Int = 1;
@@ -297,6 +307,10 @@ import haxe.Timer;
 	public function needAlphaBlending():Bool {
 		return (this.alpha < 1.0);
 	}
+	
+	public function needAlphaBlendingForMesh(mesh:AbstractMesh):Bool {
+		return this.needAlphaBlending() || (mesh.visibility < 1.0) || mesh.hasVertexAlpha;
+	}
 
 	public function needAlphaTesting():Bool {
 		return false;
@@ -310,13 +324,16 @@ import haxe.Timer;
 		this._wasPreviouslyReady = false;
 	}
 
-	public function _preBind(?effect:Effect):Void {
+	public function _preBind(?effect:Effect, ?overrideOrientation:Int):Bool {
 		var engine = this._scene.getEngine();
 		
-		var reverse = this.sideOrientation == Material.ClockWiseSideOrientation;
+		var orientation = (overrideOrientation == null || overrideOrientation == -1) ? this.sideOrientation : overrideOrientation;
+        var reverse = orientation == Material.ClockWiseSideOrientation;
 		
 		engine.enableEffect(effect != null ? effect : this._effect);
 		engine.setState(this.backFaceCulling, this.zOffset, false, reverse);
+		
+		return reverse;
 	}
 
 	public function bind(world:Matrix, ?mesh:Mesh) { }
@@ -356,7 +373,9 @@ import haxe.Timer;
             this._scene._cachedVisibility = 1;
         }
 		
-		this.onBindObservable.notifyObservers(mesh);
+		if (mesh != null) {
+			this.onBindObservable.notifyObservers(mesh);
+		}
 		
 		if (this.disableDepthWrite) {
 			var engine = this._scene.getEngine();
@@ -405,6 +424,20 @@ import haxe.Timer;
 	 */
 	var checkReady:Void->Void = null;
 	public function forceCompilation(mesh:AbstractMesh, onCompiled:Material->Void, ?options:Dynamic) {
+		var localOptions:Dynamic = {
+			alphaTest: null,
+			clipPlane: false
+		};
+		
+		if (options != null) {
+			if (options.alphaTest != null) {
+				localOptions.alphaTest = options.alphaTest;
+			}
+			if (options.clipPlane != null) {
+				localOptions.clipPlane = options.clipPlane;
+			}
+		}
+		
 		var subMesh = new BaseSubMesh();
 		var scene = this.getScene();
 		var engine = getScene().getEngine();
@@ -421,9 +454,9 @@ import haxe.Timer;
 			var alphaTestState = engine.getAlphaTesting();
 			var clipPlaneState = scene.clipPlane;
 			
-			engine.setAlphaTesting(options != null ? options.alphaTest : this.needAlphaTesting());
+			engine.setAlphaTesting(localOptions.alphaTest != null ? localOptions.alphaTest : (!this.needAlphaBlendingForMesh(mesh) && this.needAlphaTesting()));
 			
-			if (options.clipPlane != null && options.clipPlane == true) {
+			if (localOptions.clipPlane) {
 				scene.clipPlane = new Plane(0, 0, 0, 1);
 			}
 			
@@ -450,7 +483,7 @@ import haxe.Timer;
 			
 			engine.setAlphaTesting(alphaTestState);
 			
-			if (options.clipPlane != null && options.clipPlane == true) {
+			if (localOptions.clipPlane) {
 				scene.clipPlane = clipPlaneState;
 			}
 		};
@@ -549,6 +582,9 @@ import haxe.Timer;
 					if (this.storeEffectOnSubMeshes) {
 						for (subMesh in mesh.subMeshes) {
 							geometry._releaseVertexArrayObject(subMesh._materialEffect);
+							if (forceDisposeEffect && subMesh._materialEffect != null) {
+								this._scene.getEngine()._releaseEffect(subMesh._materialEffect); 
+							}
 						}
 					} 
 					else {
@@ -560,16 +596,12 @@ import haxe.Timer;
 		
 		this._uniformBuffer.dispose();
 		
-		// Shader are kept in cache for further use but we can get rid of this by using forceDisposeEffect
+		// Shaders are kept in cache for further use but we can get rid of this by using forceDisposeEffect
 		if (forceDisposeEffect && this._effect != null) {
-			if (this.storeEffectOnSubMeshes) {
-				for (subMesh in mesh.subMeshes) {
-					this._scene.getEngine()._releaseEffect(subMesh._materialEffect); 
-				}
-			} 
-			else {
-				this._scene.getEngine()._releaseEffect(this._effect);                    
+			if (!this.storeEffectOnSubMeshes) {
+				this._scene.getEngine()._releaseEffect(this._effect); 
 			}
+			
 			this._effect = null;
 		}
 		

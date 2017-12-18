@@ -7,7 +7,7 @@ import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.Scene;
 
 import lime.utils.Float32Array;
-import lime.utils.Int32Array;
+import lime.utils.UInt32Array;
 
 /**
  * ...
@@ -120,10 +120,15 @@ import lime.utils.Int32Array;
 			}                            
 		}
 		
-		result.setVerticesData(VertexBuffer.PositionKind, new Float32Array(positions), updatable);
-		result.setVerticesData(VertexBuffer.NormalKind, new Float32Array(normals), updatable);
-		result.setVerticesData(VertexBuffer.UVKind, new Float32Array(uvs), updatable);
-		result.setIndices(new Int32Array(indices));
+		var _positions = new Float32Array(positions);
+		var _indices = new UInt32Array(indices);
+		var _normals = new Float32Array(normals);
+		var _uvs = new Float32Array(uvs);
+		
+		result.setVerticesData(VertexBuffer.PositionKind, _positions, updatable);
+		result.setVerticesData(VertexBuffer.NormalKind, _normals, updatable);
+		result.setVerticesData(VertexBuffer.UVKind, _uvs, updatable);
+		result.setIndices(_indices);
 		
 		return result;
 	}

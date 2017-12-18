@@ -41,9 +41,7 @@ class CameraInputsManager {
 			this.checkInputs = this._addCheckInputs(input.checkInputs);
 		}
 		
-		/*if (this.attachedElement) {
-			input.attachControl(this.attachedElement);
-		}*/
+		input.attachControl();
 	}
 
 	public function remove(inputToRemove:ICameraInput) {
@@ -82,34 +80,6 @@ class CameraInputsManager {
 		input.attachControl();
 	}
 
-	/*public attachElement(element: HTMLElement, noPreventDefault?: boolean) {
-		if (this.attachedElement) {
-			return;
-		}
-
-		noPreventDefault = Camera.ForceAttachControlToAlwaysPreventDefault ? false : noPreventDefault;
-		this.attachedElement = element;
-		this.noPreventDefault = noPreventDefault;
-
-		for (var cam in this.attached) {
-			var input = this.attached[cam];
-			this.attached[cam].attachControl(element, noPreventDefault);
-		}
-	}
-
-	public detachElement(element: HTMLElement) {
-		if (this.attachedElement !== element) {
-			return;
-		}
-
-		for (var cam in this.attached) {
-			var input = this.attached[cam];
-			this.attached[cam].detachControl(element);
-		}
-
-		this.attachedElement = null;
-	}*/
-
 	public function rebuildInputCheck() {
 		this.checkInputs = function() { };
 		
@@ -122,11 +92,7 @@ class CameraInputsManager {
 	}
 
 	public function clear() {
-		/*if (this.attachedElement) {
-			this.detachElement(this.attachedElement);
-		}*/
 		this.attached = new Map();
-		//this.attachedElement = null;
 		this.checkInputs = function() { };
 	}
 

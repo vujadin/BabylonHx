@@ -1,6 +1,8 @@
 package com.babylonhx.sprites;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.materials.Effect;
+import com.babylonhx.materials.Material;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.Buffer;
@@ -15,7 +17,7 @@ import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
 
-import lime.utils.Int32Array;
+import lime.utils.UInt32Array;
 import lime.utils.Float32Array;
 
 
@@ -114,7 +116,7 @@ import lime.utils.Float32Array;
 			index += 4;
 		}
 		
-		this._indexBuffer = scene.getEngine().createIndexBuffer(new Int32Array(indices));
+		this._indexBuffer = scene.getEngine().createIndexBuffer(new UInt32Array(indices));
 		
 		// VBO
 		// 16 floats per sprite (x, y, z, angle, sizeX, sizeY, offsetX, offsetY, invertU, invertV, cellIndexX, cellIndexY, color r, color g, color b, color a)
@@ -296,12 +298,12 @@ import lime.utils.Float32Array;
 		engine.setDepthFunctionToLessOrEqual();
 		effect.setBool("alphaTest", true);
 		engine.setColorWrite(false);
-		engine.draw(true, 0, max * 6);
+		engine.drawElementsType(Material.TriangleFillMode, 0, max * 6);
 		engine.setColorWrite(true);
 		effect.setBool("alphaTest", false);
 		
 		engine.setAlphaMode(Engine.ALPHA_COMBINE);
-		engine.draw(true, 0, max * 6);
+		engine.drawElementsType(Material.TriangleFillMode, 0, max * 6);
 		engine.setAlphaMode(Engine.ALPHA_DISABLE);
 	}
 

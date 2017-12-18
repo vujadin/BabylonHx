@@ -144,7 +144,7 @@ class SkyMaterial extends PushMaterial {
 				join, fallbacks, this.onCompiled, this.onError), defines);
 		}
 		
-		if (!subMesh.effect.isReady()) {
+		if (subMesh.effect == null || !subMesh.effect.isReady()) {
 			return false;
 		}
 		
@@ -163,6 +163,9 @@ class SkyMaterial extends PushMaterial {
 		}
 		
 		var effect = subMesh.effect;
+		if (effect == null) {
+			return;
+		}
 		this._activeEffect = effect;
 		
 		// Matrices        

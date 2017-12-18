@@ -1,5 +1,6 @@
 package com.babylonhx.tools.hdr;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Color3;
@@ -15,11 +16,11 @@ import lime.utils.Float32Array;
  */
 class CubeMapToSphericalPolynomialTools {
 	
-	private static var FileFaces:Array<FileFaceOrientation> = [
+	private static var FileFaces:Array<FileFaceOrientation> = [		
 		new FileFaceOrientation("right", new Vector3(1, 0, 0), new Vector3(0, 0, -1), new Vector3(0, -1, 0)), // +X east
-		new FileFaceOrientation("left", new Vector3(-1, 0, 0), new Vector3(0, 0, 1), new Vector3(0, -1, 0)), // -X west
-		new FileFaceOrientation("up", new Vector3(0, 1, 0), new Vector3(1, 0, 0), new Vector3(0, 0, 1)), // +Y north
-		new FileFaceOrientation("down", new Vector3(0, -1, 0), new Vector3(1, 0, 0), new Vector3(0, 0, -1)), // -Y south
+        new FileFaceOrientation("left", new Vector3(-1, 0, 0), new Vector3(0, 0, 1), new Vector3(0, -1, 0)), // -X west
+        new FileFaceOrientation("up", new Vector3(0, 1, 0), new Vector3(1, 0, 0), new Vector3(0, 0, 1)), // +Y north
+        new FileFaceOrientation("down", new Vector3(0, -1, 0), new Vector3(1, 0, 0), new Vector3(0, 0, -1)), // -Y south
 		new FileFaceOrientation("front", new Vector3(0, 0, 1), new Vector3(1, 0, 0), new Vector3(0, -1, 0)), // +Z top
 		new FileFaceOrientation("back", new Vector3(0, 0, -1), new Vector3(-1, 0, 0), new Vector3(0, -1, 0))// -Z bottom
 	];

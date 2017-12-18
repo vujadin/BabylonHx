@@ -48,6 +48,7 @@ class PathCursor {
 		return this;
 	}
 
+	// used by animation engine
 	private function ensureLimits():PathCursor {
 		while (this.value > 1) {
 			this.value -= 1;
@@ -55,14 +56,6 @@ class PathCursor {
 		while (this.value < 0) {
 			this.value += 1;
 		}
-		
-		return this;
-	}
-
-	// used by animation engine
-	private function markAsDirty(propertyName:String):PathCursor {
-		this.ensureLimits();
-		this.raiseOnChange();
 		
 		return this;
 	}

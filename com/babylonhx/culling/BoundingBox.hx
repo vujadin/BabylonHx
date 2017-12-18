@@ -83,8 +83,7 @@ import haxe.ds.Vector;
 	}
 	
 	inline public function setWorldMatrix(matrix:Matrix):BoundingBox {
-        this._worldMatrix.copyFrom(matrix);
-		
+        this._worldMatrix.copyFrom(matrix);		
         return this;
     }
 

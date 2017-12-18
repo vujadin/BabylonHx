@@ -1,5 +1,6 @@
 package com.babylonhx.collisions;
 
+import com.babylonhx.engine.Engine;
 import lime.utils.Float32Array;
 import lime.utils.Int32Array;
 
@@ -71,11 +72,11 @@ enum WorkerTaskType {
 	COLLIDE;
 }
 
-typedef WorkerReply = {
+/*typedef WorkerReply = {
 	error: WorkerReplyType,
 	taskType: WorkerTaskType,
 	?payload: Dynamic,
-}
+}*/
 
 typedef CollisionReplyPayload = {
 	newPosition: Array<Float>,

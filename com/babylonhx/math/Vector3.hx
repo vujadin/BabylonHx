@@ -184,6 +184,10 @@ import lime.utils.Float32Array;
 		return new Vector3(this.x * otherVector.x, this.y * otherVector.y, this.z * otherVector.z);
 	}
 
+	/**
+	 * Multiplies the current Vector3 by the passed one and stores the result in the passed vector "result".  
+	 * Returns the current Vector3.  
+	 */
 	inline public function multiplyToRef(otherVector:Vector3, result:Vector3):Vector3 {
 		result.x = this.x * otherVector.x;
 		result.y = this.y * otherVector.y;
@@ -192,14 +196,24 @@ import lime.utils.Float32Array;
 		return this;
 	}
 
+	/**
+	 * Returns a new Vector3 set witth the result of the mulliplication of the current Vector3 coordinates by the passed floats.  
+	 */
 	inline public function multiplyByFloats(x:Float, y:Float, z:Float):Vector3 {
 		return new Vector3(this.x * x, this.y * y, this.z * z);
 	}
 
+	/**
+	 * Returns a new Vector3 set witth the result of the division of the current Vector3 coordinates by the passed ones.  
+	 */
 	inline public function divide(otherVector:Vector3):Vector3 {
 		return new Vector3(this.x / otherVector.x, this.y / otherVector.y, this.z / otherVector.z);
 	}
 
+	/**
+	 * Divides the current Vector3 coordinates by the passed ones and stores the result in the passed vector "result".  
+	 * Returns the current Vector3.  
+	 */
 	inline public function divideToRef(otherVector:Vector3, result:Vector3):Vector3 {
 		result.x = this.x / otherVector.x;
 		result.y = this.y / otherVector.y;
@@ -208,6 +222,10 @@ import lime.utils.Float32Array;
 		return this;
 	}
 
+	/**
+	 * Updates the current Vector3 with the minimal coordinate values between its and the passed vector ones.  
+	 * Returns the updated Vector3.  
+	 */
 	inline public function MinimizeInPlace(other:Vector3):Vector3 {
 		if (other.x < this.x) this.x = other.x;
 		if (other.y < this.y) this.y = other.y;
@@ -216,12 +234,39 @@ import lime.utils.Float32Array;
 		return this;
 	}
 
+	/**
+	 * Updates the current Vector3 with the maximal coordinate values between its and the passed vector ones.  
+	 * Returns the updated Vector3.  
+	 */
 	inline public function MaximizeInPlace(other:Vector3):Vector3 {
 		if (other.x > this.x) this.x = other.x;
 		if (other.y > this.y) this.y = other.y;
 		if (other.z > this.z) this.z = other.z;
 		
 		return this;
+	}
+	
+	/**
+	 * Return true is the vector is non uniform meaning x, y or z are not all the same.
+	 */
+	public var isNonUniform(get, never):Bool;
+	private function get_isNonUniform():Bool {
+		var absX = Math.abs(this.x);
+		var absY = Math.abs(this.y);
+		if (absX != absY) {
+			return true;
+		}
+		
+		var absZ = Math.abs(this.z);
+		if (absX != absZ) {
+			return true;
+		}
+		
+		if (absY != absZ) {
+			return true;
+		}
+		
+		return false;
 	}
 
 	// Properties
@@ -234,6 +279,11 @@ import lime.utils.Float32Array;
 	}
 
 	// Methods
+	/**
+     * Normalize the current Vector3.  
+     * Returns the updated Vector3.  
+     * /!\ In place operation.
+     */
 	public function normalize():Vector3 {
 		var len = this.length();
 		
@@ -249,11 +299,45 @@ import lime.utils.Float32Array;
 		
 		return this;
 	}
+	
+	/**
+     * Normalize the current Vector3 to a new vector.
+     * @returns the new Vector3.
+     */
+    public function normalizeToNew():Vector3 {
+        var normalized = new Vector3(0, 0, 0);
+        this.normalizeToRef(normalized);
+        return normalized;
+    } 
+ 
+	/**
+     * Normalize the current Vector3 to the reference.
+     * @param the reference to update.
+     * @returns the updated Vector3.
+     */
+    public function normalizeToRef(reference:Vector3):Vector3 {
+        var len = this.length();
+        if (len == 0 || len == 1.0) {
+            reference.set(this.x, this.y, this.z);
+            return reference;
+        }
+		
+        var scale = 1.0 / len;
+        this.scaleToRef(scale, reference);
+        return reference;
+    }
 
+	/**
+	 * Returns a new Vector3 copied from the current Vector3.  
+	 */
 	inline public function clone():Vector3 {
 		return new Vector3(this.x, this.y, this.z);
 	}
 
+	/**
+	 * Copies the passed vector coordinates to the current Vector3 ones.   
+	 * Returns the updated Vector3.  
+	 */
 	inline public function copyFrom(source:Vector3):Vector3 {
 		this.x = source.x;
 		this.y = source.y;
@@ -262,6 +346,10 @@ import lime.utils.Float32Array;
 		return this;
 	}
 
+	/**
+	 * Copies the passed floats to the current Vector3 coordinates.  
+	 * Returns the updated Vector3.  
+	 */
 	inline public function copyFromFloats(x:Float, y:Float, z:Float):Vector3 {
 		this.x = x;
 		this.y = y;
@@ -538,19 +626,32 @@ import lime.utils.Float32Array;
 	}
 
 	public static function Unproject(source:Vector3, viewportWidth:Float, viewportHeight:Float, world:Matrix, view:Matrix, projection:Matrix):Vector3 {
-		var matrix = Tmp.matrix[1];
+		var result = Vector3.Zero();
+		
+		Vector3.UnprojectToRef(source, viewportWidth, viewportHeight, world, view, projection, result);
+		
+		return result;
+	}
+
+	public static inline function UnprojectToRef(source:Vector3, viewportWidth:Float, viewportHeight:Float, world:Matrix, view:Matrix, projection:Matrix, result:Vector3) {
+		Vector3.UnprojectFloatsToRef(source.x, source.y, source.z, viewportWidth, viewportHeight, world, view, projection, result);
+	}
+
+	public static function UnprojectFloatsToRef(sourceX:Float, sourceY:Float, sourceZ:Float, viewportWidth:Float, viewportHeight:Float, world:Matrix, view:Matrix, projection:Matrix, result:Vector3) {
+		var matrix = Tmp.matrix[0];
 		world.multiplyToRef(view, matrix);
 		matrix.multiplyToRef(projection, matrix);
 		matrix.invert();
-		var screenSource = new Vector3(source.x / viewportWidth * 2 - 1, -(source.y / viewportHeight * 2 - 1), source.z);
-		var vector = Vector3.TransformCoordinates(screenSource, matrix);
+		var screenSource = Tmp.vector3[0];
+		screenSource.x = sourceX / viewportWidth * 2 - 1;
+		screenSource.y = -(sourceY/ viewportHeight * 2 - 1);
+		screenSource.z = 2 * sourceZ - 1.0;
+		Vector3.TransformCoordinatesToRef(screenSource, matrix, result);
 		var num = screenSource.x * matrix.m[3] + screenSource.y * matrix.m[7] + screenSource.z * matrix.m[11] + matrix.m[15];
 		
 		if (Scalar.WithinEpsilon(num, 1.0)) {
-			vector = vector.scale(1.0 / num);
+			result.scaleInPlace(1.0 / num);
 		}
-		
-		return vector;
 	}
 
 	inline public static function Minimize(left:Vector3, right:Vector3):Vector3 {

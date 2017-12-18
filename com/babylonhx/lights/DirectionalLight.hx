@@ -99,6 +99,10 @@ import com.babylonhx.cameras.Camera;
 	public function _setDefaultFixedFrustumShadowProjectionMatrix(matrix:Matrix, viewMatrix:Matrix) {
 		var activeCamera = this.getScene().activeCamera;
 		
+		if (activeCamera == null) {
+			return;
+		}
+		
 		Matrix.OrthoLHToRef(this.shadowFrustumSize, this.shadowFrustumSize,
 			this.shadowMinZ != Math.NEGATIVE_INFINITY ? this.shadowMinZ : activeCamera.minZ, this.shadowMaxZ != Math.POSITIVE_INFINITY ? this.shadowMaxZ : activeCamera.maxZ, matrix);
 	}
@@ -109,6 +113,10 @@ import com.babylonhx.cameras.Camera;
 	 */
 	public function _setDefaultAutoExtendShadowProjectionMatrix(matrix:Matrix, viewMatrix:Matrix, renderList:Array<AbstractMesh>) {
 		var activeCamera = this.getScene().activeCamera;
+		
+		if (activeCamera == null) {
+			return;
+		}
 		
 		// Check extends
 		if (this.autoUpdateExtends || this._orthoLeft == Math.POSITIVE_INFINITY) {
@@ -127,11 +135,6 @@ import com.babylonhx.cameras.Camera;
 				}
 				
 				var boundingInfo = mesh.getBoundingInfo();
-				
-				if (boundingInfo == null) {
-					continue;
-				}
-				
 				var boundingBox = boundingInfo.boundingBox;
 				
 				for (index in 0...boundingBox.vectorsWorld.length) {

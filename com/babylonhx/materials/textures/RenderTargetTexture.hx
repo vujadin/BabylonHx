@@ -1,12 +1,13 @@
 package com.babylonhx.materials.textures;
 
-import com.babylonhx.Engine;
+import com.babylonhx.engine.Engine;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Color4;
+import com.babylonhx.math.Tools as MathTools;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
@@ -39,14 +40,21 @@ import com.babylonhx.postprocess.PostProcessManager;
 	public var renderSprites:Bool = false;
 	public var activeCamera:Camera;
 	public var customRenderFunction:Dynamic;//SmartArray<SubMesh>->SmartArray<SubMesh>->SmartArray<SubMesh>->Void->Void->Void;
-	public var useCameraPostProcesses:Bool = false;
-	
+	public var useCameraPostProcesses:Bool = false;	
 	public var ignoreCameraViewport:Bool = false;
 	
 	private var _postProcessManager:PostProcessManager;
     private var _postProcesses:Array<PostProcess>;
 	
+	private var _resizeObserver:Observer<Engine>;
+	
 	// Events
+	
+	/**
+	* An event triggered when the texture is unbind.
+	* @type {BABYLON.Observable}
+	*/
+	public var onBeforeBindObservable:Observable<RenderTargetTexture> = new Observable<RenderTargetTexture>();
 
 	/**
 	* An event triggered when the texture is unbind.
@@ -115,8 +123,10 @@ import com.babylonhx.postprocess.PostProcessManager;
 	public var refreshRate(get, set):Int;
 	public var canRescale(get, never):Bool;
 
-	public var clearColor:Color4;
+	public var clearColor:Color4 = null;
 	private var _size:Dynamic = { width: 0, height: 0 };
+	private var _initialSizeParameter:Dynamic;
+	private var _sizeRatio:Float = 0;
 	public var _generateMipMaps:Bool;
 	private var _renderingManager:RenderingManager;
 	public var _waitingRenderList:Array<String>;
@@ -131,26 +141,37 @@ import com.babylonhx.postprocess.PostProcessManager;
 		return this._renderTargetOptions;
 	}
 
+	private var _engine:Engine;
+	
+	private function _onRatioRescale() {
+		if (this._sizeRatio != 0) {
+			this.resize(this._initialSizeParameter);
+		}
+	}
+	
 	
 	public function new(name:String, size:Dynamic, scene:Scene, ?generateMipMaps:Bool, doNotChangeAspectRatio:Bool = true, type:Int = Engine.TEXTURETYPE_UNSIGNED_INT, isCube:Bool = false, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, generateDepthBuffer:Bool = true, generateStencilBuffer:Bool = false, isMulti:Bool = false) {
 		super(null, scene, !generateMipMaps);
 		scene = this.getScene();
 		
-		this.clearColor = new Color4(scene.clearColor.r, scene.clearColor.g, scene.clearColor.b);
+		if (scene == null) {
+			return;
+		}
 		
 		// BHX
 		this.coordinatesMode = Texture.PROJECTION_MODE;
 		
+		this._engine = scene.getEngine();
 		this.name = name;
 		this.isRenderTarget = true;
-		if (Std.is(size, Int)) {
-			this._size.width = size;
-			this._size.height = size;
-		}
-		else if (size.width != null) {
-			this._size.width = size.width;
-			this._size.height = size.height;
-		}
+		this._initialSizeParameter = size;
+		
+		this._processSizeParameter(size);
+		
+		this._resizeObserver = this.getScene().getEngine().onResizeObservable.add(function(_, _) {
+			
+		}); 
+		
 		this._generateMipMaps = generateMipMaps;
 		this._doNotChangeAspectRatio = doNotChangeAspectRatio;
 		
@@ -175,12 +196,28 @@ import com.babylonhx.postprocess.PostProcessManager;
         }
 		
 		if (isCube) {
-			this._texture = scene.getEngine().createRenderTargetCubeTexture(this._size, this._renderTargetOptions);
+			this._texture = this._engine.createRenderTargetCubeTexture(this._size, this._renderTargetOptions);
 			this.coordinatesMode = Texture.INVCUBIC_MODE;
             this._textureMatrix = Matrix.Identity();
 		}
 		else {
-			this._texture = scene.getEngine().createRenderTargetTexture(this._size, this._renderTargetOptions);
+			this._texture = this._engine.createRenderTargetTexture(this._size, this._renderTargetOptions);
+		}
+	}
+	
+	private function _processSizeParameter(size:Dynamic) {
+		if (Std.is(size, Int)) {
+			this._size.width = size;
+			this._size.height = size;
+		}
+		else if (size.width != null) {
+			this._size.width = size.width;
+			this._size.height = size.height;
+		}
+		else if (size.ratio != null) {
+			this._sizeRatio = size.ratio;
+			this._size.width = this._bestReflectionRenderTargetDimension(this._engine.getRenderWidth(), this._sizeRatio);
+			this._size.height = this._bestReflectionRenderTargetDimension(this._engine.getRenderHeight(), this._sizeRatio);
 		}
 	}
 	
@@ -193,7 +230,13 @@ import com.babylonhx.postprocess.PostProcessManager;
 			return value;
 		}
 		
-		this._samples = this.getScene().getEngine().updateRenderTargetTextureSampleCount(this._texture, value);
+		var scene = this.getScene();
+		
+		if (scene == null) {
+			return value;
+		}
+		
+		this._samples = this._engine.updateRenderTargetTextureSampleCount(this._texture, value);
 		return value;
 	}
 
@@ -214,7 +257,13 @@ import com.babylonhx.postprocess.PostProcessManager;
 	
 	public function addPostProcess(postProcess:PostProcess) {
 		if (this._postProcessManager == null) {
-			this._postProcessManager = new PostProcessManager(this.getScene());
+			var scene = this.getScene();
+			
+			if (scene == null) {
+				return;
+			}
+			
+			this._postProcessManager = new PostProcessManager(scene);
 			this._postProcesses = new Array<PostProcess>();
 		}
 		
@@ -267,12 +316,29 @@ import com.babylonhx.postprocess.PostProcessManager;
 		}
 		
 		this._currentRefreshId++;
-		
 		return false;
 	}
 	
-	public function getRenderSize():Dynamic {
-		return this._size;
+	public function getRenderSize():Int {
+		return getRenderWidth();
+	}
+	
+	public function getRenderWidth():Int {
+		if (Std.is(this._size, Int)) {
+			return this._size;
+		}
+		else {
+			return this._size.width;
+		}
+	}
+
+	public function getRenderHeight():Int {
+		if (Std.is(this._size, Int)) {
+			return this._size;
+		}
+		else {
+			return this._size.height;
+		}
 	}
 
 	private function get_canRescale():Bool {
@@ -280,7 +346,7 @@ import com.babylonhx.postprocess.PostProcessManager;
 	}
 
 	override public function scale(ratio:Float) {
-		var newSize = { width: Std.int(this._size.width * ratio), height: Std.int(this._size.height * ratio) };
+		var newSize = this.getRenderSize() * ratio;
 		this.resize(newSize);
 	}
 	
@@ -294,18 +360,29 @@ import com.babylonhx.postprocess.PostProcessManager;
 
 	public function resize(size:Dynamic) {
 		this.releaseInternalTexture();
-		if (this.isCube) {
-			this._texture = this.getScene().getEngine().createRenderTargetCubeTexture(size, this._renderTargetOptions);
-		} 
-		else {
-			this._texture = this.getScene().getEngine().createRenderTargetTexture(size, this._renderTargetOptions);
+		var scene = this.getScene();
+		
+		if (scene == null) {
+			return;
 		}
 		
-		this._size = size;
+		this._processSizeParameter(size);
+		
+		if (this.isCube) {
+			this._texture = this.getScene().getEngine().createRenderTargetCubeTexture(this.getRenderSize(), this._renderTargetOptions);
+		} 
+		else {
+			this._texture = this.getScene().getEngine().createRenderTargetTexture(this._size, this._renderTargetOptions);
+		}
 	}
 
 	public function render(useCameraPostProcess:Bool = false) {
 		var scene = this.getScene();
+		
+		if (scene == null) {
+			return;
+		}
+		
 		var engine = scene.getEngine();
 		
 		if (this.useCameraPostProcesses) {
@@ -316,7 +393,10 @@ import com.babylonhx.postprocess.PostProcessManager;
 			this.renderList = [];
 			for (index in 0...this._waitingRenderList.length) {
 				var id = this._waitingRenderList[index];
-				this.renderList.push(scene.getMeshByID(id));
+				var mesh = scene.getMeshByID(id);
+				if (mesh != null) {
+					this.renderList.push(mesh);
+				}
 			}
 			
 			this._waitingRenderList = null;
@@ -324,9 +404,20 @@ import com.babylonhx.postprocess.PostProcessManager;
 		
 		// Is predicate defined?
 		if (this.renderListPredicate != null) {
-			this.renderList.splice(0, 1); // Clear previous renderList
+			if (this.renderList != null) {
+				this.renderList.splice(0, 1); // Clear previous renderList
+			}
+			else {
+				this.renderList = [];
+			}
 			
-			var sceneMeshes = this.getScene().meshes;
+			var scene = this.getScene();
+            
+			if (scene == null) {
+				return;
+			}
+			
+			var sceneMeshes = scene.meshes;
 			
 			for (index in 0...sceneMeshes.length) {
 				var mesh = sceneMeshes[index];
@@ -336,16 +427,14 @@ import com.babylonhx.postprocess.PostProcessManager;
 			}
 		}
 		
-		if (this.renderList != null && this.renderList.length == 0) {
-			return;
-		}
+		this.onBeforeBindObservable.notifyObservers(this);
 		
 		// Set custom projection.
 		// Needs to be before binding to prevent changing the aspect ratio.
 		var camera:Camera = null;
 		if (this.activeCamera != null) {
 			camera = this.activeCamera;
-			engine.setViewport(this.activeCamera.viewport, this._size.width, this._size.height);
+			engine.setViewport(this.activeCamera.viewport, this.getRenderWidth(), this.getRenderHeight());
 			
 			if (this.activeCamera != scene.activeCamera) {
 				scene.setTransformMatrix(this.activeCamera.getViewMatrix(), this.activeCamera.getProjectionMatrix(true));
@@ -353,7 +442,9 @@ import com.babylonhx.postprocess.PostProcessManager;
 		}
 		else {
 			camera = scene.activeCamera;
-			engine.setViewport(scene.activeCamera.viewport, this._size.width, this._size.height);
+			if (camera != null) {
+				engine.setViewport(scene.activeCamera.viewport, this.getRenderWidth(), this.getRenderHeight());
+			}
 		}
 		
 		// Prepare renderingManager
@@ -375,8 +466,11 @@ import com.babylonhx.postprocess.PostProcessManager;
 				mesh._preActivateForIntermediateRendering(sceneRenderId);
 				
 				var isMasked:Bool = false;
-				if (this.renderList == null) {
+				if (this.renderList == null && camera != null) {
 					isMasked = ((mesh.layerMask & camera.layerMask) == 0);
+				}
+				else {
+					isMasked = false;
 				}
 				
 				if (mesh.isEnabled() && mesh.isVisible && mesh.subMeshes != null && !isMasked) {
@@ -417,24 +511,46 @@ import com.babylonhx.postprocess.PostProcessManager;
 		
 		this.onAfterUnbindObservable.notifyObservers(this);
 		
-		if (this.activeCamera != null && this.activeCamera != scene.activeCamera) {
-			scene.setTransformMatrix(scene.activeCamera.getViewMatrix(), scene.activeCamera.getProjectionMatrix(true));
+		if (scene.activeCamera != null) {
+			if (this.activeCamera != null && this.activeCamera != scene.activeCamera) {
+				scene.setTransformMatrix(scene.activeCamera.getViewMatrix(), scene.activeCamera.getProjectionMatrix(true));
+			}
+			engine.setViewport(scene.activeCamera.viewport);
 		}
-		engine.setViewport(scene.activeCamera.viewport);
 		
 		scene.resetCachedMaterial();
+	}
+	
+	private function _bestReflectionRenderTargetDimension(renderDimension:Int, scale:Float):Int {
+		var minimum = 128;
+		var x = renderDimension * scale;
+		var curved = MathTools.NearestPOT(Std.int(x + (minimum * minimum / (minimum + x))));
+		
+		// Ensure we don't exceed the render dimension (while staying POT)
+		return Std.int(Math.min(MathTools.NearestPOT(renderDimension), curved));
 	}
 
 	private function renderToTarget(faceIndex:Int, currentRenderList:Array<AbstractMesh>, currentRenderListLength:Int, useCameraPostProcess:Bool, dumpForDebug:Bool = false) {
 		var scene = this.getScene();
+		
+		if (scene == null) {
+			return;
+		}
+		
 		var engine = scene.getEngine();
+		
+		if (this._texture == null) {
+			return;
+		}
 		
 		// Bind
 		if (this._postProcessManager != null) {
 			this._postProcessManager._prepareFrame(this._texture, this._postProcesses);
 		}
 		else if (!useCameraPostProcess || !scene.postProcessManager._prepareFrame(this._texture)) {
-			engine.bindFramebuffer(this._texture, this.isCube ? faceIndex : 0, null, null, this.ignoreCameraViewport);
+			if (this._texture != null) {
+				engine.bindFramebuffer(this._texture, this.isCube ? faceIndex : 0, null, null, this.ignoreCameraViewport);
+			}
 		}
 		
 		this.onBeforeRenderObservable.notifyObservers(faceIndex);
@@ -444,7 +560,7 @@ import com.babylonhx.postprocess.PostProcessManager;
 			this.onClearObservable.notifyObservers(engine);
 		} 
 		else {
-			engine.clear(this.clearColor, true, true, true);
+			engine.clear(this.clearColor != null ? this.clearColor : scene.clearColor, true, true, true);
 		}
 		
 		if (!this._doNotChangeAspectRatio) {

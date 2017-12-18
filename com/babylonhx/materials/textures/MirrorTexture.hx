@@ -1,10 +1,12 @@
 package com.babylonhx.materials.textures;
 
+import com.babylonhx.engine.Engine;
 import com.babylonhx.math.Plane;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.tools.EventState;
+import com.babylonhx.tools.Observer;
 import com.babylonhx.postprocess.BlurPostProcess;
 
 /**
@@ -22,10 +24,11 @@ import com.babylonhx.postprocess.BlurPostProcess;
 	
 	private var _blurX:BlurPostProcess;
 	private var _blurY:BlurPostProcess;
+	private var _adaptiveBlurKernel:Float = 0;
 	private var _blurKernelX:Float = 0;
 	private var _blurKernelY:Float = 0;
 	private var _blurRatio:Float = 0.6;
-
+	
 	public var blurRatio(get, set):Float;
 	private function set_blurRatio(value:Float):Float {
 		if (this._blurRatio == value) {
@@ -38,6 +41,13 @@ import com.babylonhx.postprocess.BlurPostProcess;
 	}
 	inline private function get_blurRatio():Float {
 		return this._blurRatio;
+	}
+	
+	public var adaptiveBlurKernel(never, set):Float;
+	inline private function set_adaptiveBlurKernel(value:Float):Float {
+		this._adaptiveBlurKernel = value;
+		this._autoComputeBlurKernel();
+		return value;
 	}
 
 	public var blurKernel(never, set):Float;
@@ -75,8 +85,30 @@ import com.babylonhx.postprocess.BlurPostProcess;
 		return this._blurKernelY;
 	}
 	
+	private function _autoComputeBlurKernel() {
+		var engine = this.getScene().getEngine();
+		
+		var dw = this.getRenderWidth() / engine.getRenderWidth();
+		var dh = this.getRenderHeight() / engine.getRenderHeight();
+		this.blurKernelX = this._adaptiveBlurKernel * dw;
+		this.blurKernelY = this._adaptiveBlurKernel * dh;
+	}
+	
+	override private function _onRatioRescale() {
+		if (this._sizeRatio > 0) {
+			this.resize(this._initialSizeParameter);
+			if (this._adaptiveBlurKernel != 0) {
+				this._preparePostProcesses();
+			}
+		}
+		
+		if (this._adaptiveBlurKernel != 0) {
+			this._autoComputeBlurKernel();
+		}
+	}
+	
 
-	public function new(name:String, size:Int, scene:Scene, generateMipMaps:Bool = false, type:Int = Engine.TEXTURETYPE_UNSIGNED_INT, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, generateDepthBuffer:Bool = true) {
+	public function new(name:String, size:Dynamic, scene:Scene, generateMipMaps:Bool = false, type:Int = Engine.TEXTURETYPE_UNSIGNED_INT, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, generateDepthBuffer:Bool = true) {
 		super(name, size, scene, generateMipMaps, true, type, false, samplingMode, generateDepthBuffer);
 		
 		this.ignoreCameraViewport = true;
@@ -116,7 +148,7 @@ import com.babylonhx.postprocess.BlurPostProcess;
 			this._blurX = new BlurPostProcess("horizontal blur", new Vector2(1.0, 0), this._blurKernelX, this._blurRatio, null, Texture.BILINEAR_SAMPLINGMODE, engine, false, textureType);
 			this._blurX.autoClear = false;
 			
-			if (this._blurRatio == 1 && this.samples < 2) {
+			if (this._blurRatio == 1 && this.samples < 2 && this._texture != null) {
 				this._blurX.outputTexture = this._texture;
 			} 
 			else {
@@ -130,14 +162,32 @@ import com.babylonhx.postprocess.BlurPostProcess;
 			this.addPostProcess(this._blurX);
 			this.addPostProcess(this._blurY);   
 		}
+		else { 
+			if (this._blurY != null) {
+				this.removePostProcess(this._blurY);
+				this._blurY.dispose();
+				this._blurY = null;
+			}
+			if (this._blurX != null) {
+				this.removePostProcess(this._blurX);
+				this._blurX.dispose();
+				this._blurX = null;
+			}
+		}
 	}
 
 	override public function clone():MirrorTexture {
+		var scene = this.getScene();
+		
+		if (scene == null) {
+			return this;
+		}
+		
 		var textureSize = this.getSize();
 		var newTexture = new MirrorTexture(
             this.name,
             textureSize.width,
-            this.getScene(),
+            scene,
             this._renderTargetOptions.generateMipMaps,
             this._renderTargetOptions.type,
             this._renderTargetOptions.samplingMode,
@@ -150,7 +200,9 @@ import com.babylonhx.postprocess.BlurPostProcess;
 		
 		// Mirror Texture
 		newTexture.mirrorPlane = this.mirrorPlane.clone();
-		newTexture.renderList = this.renderList.slice(0);
+		if (this.renderList != null) {
+			newTexture.renderList = this.renderList.slice(0);
+		}
 		
 		return newTexture;
 	}

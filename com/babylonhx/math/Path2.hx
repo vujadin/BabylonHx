@@ -10,7 +10,8 @@ import com.babylonhx.math.Vector2;
 	
 	private var _points:Array<Vector2> = [];
 	private var _length:Float = 0;
-	private var closed:Bool = false;
+	
+	public var closed:Bool = false;
 	
 
 	public function new(x:Float, y:Float) {
@@ -18,7 +19,7 @@ import com.babylonhx.math.Vector2;
 	}
 	
 	public function addLineTo(x:Float, y:Float):Path2 {
-		if (closed) {
+		if (this.closed) {
 			trace("cannot add lines to closed paths");
 			return this;
 		}
@@ -30,7 +31,7 @@ import com.babylonhx.math.Vector2;
 	}
 
 	public function addArcTo(midX:Float, midY:Float, endX:Float, endY:Float, numberOfSegments:Int = 36):Path2 {
-		if (closed) {
+		if (this.closed) {
 			trace("cannot add arcs to closed paths");
 			return this;
 		}
@@ -98,10 +99,7 @@ import com.babylonhx.math.Vector2;
 				var dir = bToA.normalize();
 				var localOffset = lengthPosition - previousOffset;
 				
-				return new Vector2(
-					a.x + (dir.x * localOffset),
-					a.y + (dir.y * localOffset)
-					);
+				return new Vector2(a.x + (dir.x * localOffset), a.y + (dir.y * localOffset));
 			}
 			previousOffset = nextOffset;
 		}

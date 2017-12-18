@@ -17,7 +17,9 @@ import lime.graphics.Renderer;
 import lime.ui.Touch;
 import lime.ui.Window;
 
-import com.babylonhx.Engine;
+import com.babylonhx.engine.Engine;
+import com.babylonhx.events.PointerEvent;
+import com.babylonhx.events.PointerEventTypes;
 import com.babylonhx.Scene;
 
 
@@ -32,7 +34,7 @@ class MainLime extends Application {
 	
 	var scene:Scene;
 	var engine:Engine;
-	var stage:Stage;
+	var pointerEvent:PointerEvent;
 	
 	#if cpp
 	//var hxt = new HxTelemetry();
@@ -53,17 +55,16 @@ class MainLime extends Application {
 				engine.width = window.width;
 				engine.height = window.height;
 				
-				/*for (c in Reflect.fields(engine.getCaps())) {
-					trace(c + " : " + Reflect.field(engine.getCaps(), c));
-				}*/
-				
 			default:
 				//
 		}
+		
+		pointerEvent = new PointerEvent();
 	}
 	
-	override public function onPreloadComplete() {	
-		new samples.BScene(scene);
+	override public function onPreloadComplete() {
+		//new samples.TestWireframe(scene);
+		//new samples.BScene(scene);
 		//new samples.DRPDemo(scene);
 		//new samples.BasicScene(scene);
 		//new samples.BasicElements(scene);
@@ -95,9 +96,11 @@ class MainLime extends Application {
 		//new samples.PolygonMesh1(scene);
 		//new samples.PolygonMesh2(scene);
 		//new samples.PolygonMesh3(scene);
+		//new samples.ProceduralShapesTest(scene);
 		//new samples.CustomRenderTarget(scene);
 		//new samples.Lines(scene);
 		//new samples.Lines2(scene);
+		//new samples.Lines3(scene);
 		//new samples.Bones(scene);		
 		//new samples.Shadows(scene);
 		//new samples.Shadows2(scene);
@@ -110,6 +113,7 @@ class MainLime extends Application {
 		//new samples.Instances(scene);
 		//new samples.Instances2(scene);
 		//new samples.Fresnel(scene);		
+		//new samples.Fresnel2(scene);
 		//new samples.VolumetricLights(scene);
 		//new samples.CellShading(scene);
 		//new samples.Particles(scene);
@@ -117,6 +121,12 @@ class MainLime extends Application {
 		//new samples.Particles3(scene);					// OK
 		//new samples.Particles4(scene);
 		//new samples.Particles5(scene);					// OK
+		//new samples.Particles6(scene);
+		//new samples.Particles7(scene);
+		//new samples.Particles8(scene);
+		//new samples.Particles9(scene);
+		//new samples.Particles10(scene);
+		//new samples.AnimatedParticles(scene);
 		//new samples.Snow(scene);
 		//new samples.Extrusion(scene);
 		//new samples.Sprites(scene);
@@ -146,6 +156,8 @@ class MainLime extends Application {
 		//new samples.SolidParticles4(scene);
 		//new samples.SolidParticles5(scene);
 		//new samples.SolidParticles6(scene);
+		//new samples.SolidParticles7(scene);
+		//new samples.PointLightShadows(scene);
 		//new samples.PointLightShadow(scene);
 		//new samples.Labyrinth(scene);
 		//new samples.ForestOfPythagoras(scene);		
@@ -157,12 +169,15 @@ class MainLime extends Application {
 		//new samples.PBRMaterialTest3(scene);
 		//new samples.PBRMaterialTest4(scene);
 		//new samples.PBRMaterialTest5(scene);
+		//new samples.PBRMaterialTest6(scene);
+		//new samples.PBRMaterialTest7(scene);
+		//new samples.PBRMaterialTest8(scene);
+		//new samples.PBRMaterialTest9(scene);
 		//new samples.PBRMetalicWorkflow(scene);
 		//new samples.TorusThing(scene);
 		//new samples.StarfieldMaterialTest(scene);
 		//new samples.FeaturedDemo1(scene);
 		//new samples.GlosinessAndRoughness(scene);
-		//new samples.FurMat(scene);
 		//new samples.HaxedNES(scene);
 		//new samples.RefractionMaterial(scene);
 		//new samples.SponzaDynamicShadows(scene);
@@ -189,8 +204,12 @@ class MainLime extends Application {
 		//new samples.SimpleMaterialTest(scene);
 		//new samples.FireMat(scene);
 		//new samples.WaterMat(scene);
+		//new samples.WaterMat2(scene);
 		//new samples.LavaMat(scene);
 		//new samples.NormalMat(scene);
+		new samples.FurMat(scene);
+		//new samples.GradientMaterialTest(scene);
+		//new samples.CellMat(scene);
 		//new samples.ShadowTest(scene);
 		//new samples.MultiLights(scene);
 		//new samples.MultiLights2(scene);
@@ -206,6 +225,40 @@ class MainLime extends Application {
 		//new samples.ShaderMaterialTest(scene);
 		//new samples.TestInstancesCount(scene);
 		//new samples.HighlightLayerInstances(scene);
+		//new samples.ShadowOnlyMaterialTest(scene);
+		//new samples.Facets(scene);
+		//new samples.SelfShadowing(scene);
+		//new samples.DynamicTerrainTest(scene);
+		//new samples.SimpleOakTreeTest(scene);
+		//new samples.PineTree(scene);
+		//new samples.MultipleViewports(scene);
+		//new samples.BackgroundMaterialTest(scene);
+		//new samples.NonUniformScalingTest(scene);
+		//new samples.PremultiplyAlphaTest(scene);
+		//new samples.StandardRenderingPipelineTest(scene);
+		//new samples.MeshFacetDepthSortTest(scene);
+		//new samples.SuperEllipsoid(scene);
+		//new samples.MoleculeViewer(scene);
+		//new samples.PPFilm(scene);
+		//new samples.PPDreamVision(scene);
+		//new samples.PPInk(scene);
+		//new samples.PPKnitted(scene);
+		//new samples.PPLimbDarkening(scene);
+		//new samples.PPMosaic(scene);
+		//new samples.PPNaturalColor(scene);
+		//new samples.PPNotebookDrawings(scene);
+		//new samples.PPScanline(scene);
+		//new samples.PPThermalVision(scene);
+		//new samples.PPVignette(scene);
+		//new samples.PPBleachBypass(scene);
+		//new samples.PPCrossHatching(scene);
+		//new samples.PPCrossStitching(scene);
+		//new samples.PPNightVision(scene);
+		//new samples.PPVibrance(scene);
+		//new samples.PPWatercolor(scene);
+		//new samples.PPOldVideo(scene);
+		
+		//new samples.CrossHatchingMaterial(scene);
 		
 		//new samples.TestRot(scene);
 		
@@ -246,8 +299,13 @@ class MainLime extends Application {
 	}
 	
 	override function onMouseDown(window:Window, x:Float, y:Float, button:Int) {
-		for(f in engine.mouseDown) {
-			f(x, y, button);
+		for (f in engine.mouseDown) {
+			pointerEvent.x = x;
+			pointerEvent.y = y;
+			pointerEvent.button = button;
+			pointerEvent.type = PointerEventTypes.POINTERDOWN;
+			pointerEvent.pointerType = "mouse";
+			f(pointerEvent);
 		}
 		
 	}
@@ -255,38 +313,64 @@ class MainLime extends Application {
 	#if !neko
 	override function onMouseUp(window:Window, x:Float, y:Float, button:Int) {
 		for(f in engine.mouseUp) {
-			f(x, y, button);
+			pointerEvent.x = x;
+			pointerEvent.y = y;
+			pointerEvent.button = button;
+			pointerEvent.type = PointerEventTypes.POINTERUP;
+			pointerEvent.pointerType = "mouse";
+			f(pointerEvent);
 		}
 	}
 	#end
 	
 	override function onMouseMove(window:Window, x:Float, y:Float) {
 		for(f in engine.mouseMove) {
-			f(x, y);
+			pointerEvent.x = x;
+			pointerEvent.y = y;
+			pointerEvent.type = PointerEventTypes.POINTERMOVE;
+			pointerEvent.pointerType = "mouse";
+			f(pointerEvent);
 		}
 	}
 	
 	override function onMouseWheel(window:Window, deltaX:Float, deltaY:Float) {
 		for (f in engine.mouseWheel) {
+			pointerEvent.type = PointerEventTypes.POINTERWHEEL;
+			pointerEvent.pointerType = "mouse";
 			f(deltaY);
 		}
 	}
 	
 	override function onTouchStart(touch:Touch) {
 		for (f in engine.touchDown) {
-			f(touch.x, touch.y, touch.id);
+			pointerEvent.x = touch.x;
+			pointerEvent.y = touch.y;
+			pointerEvent.button = touch.id;
+			pointerEvent.type = PointerEventTypes.POINTERDOWN;
+			pointerEvent.pointerType = "touch";
+			f(pointerEvent);
 		}
 	}
 	
 	override function onTouchEnd(touch:Touch) {
 		for (f in engine.touchUp) {
-			f(touch.x, touch.y, touch.id);
+			pointerEvent.x = touch.x;
+			pointerEvent.y = touch.y;
+			pointerEvent.button = touch.id;
+			pointerEvent.type = PointerEventTypes.POINTERUP;
+			pointerEvent.pointerType = "touch";
+			f(pointerEvent);
 		}
 	}
 	
 	override function onTouchMove(touch:Touch) {
 		for (f in engine.touchMove) {
-			f(touch.x, touch.y, touch.id);
+			pointerEvent.x = touch.x;
+			pointerEvent.y = touch.y;
+			pointerEvent.button = touch.id;
+			pointerEvent.type = PointerEventTypes.POINTERMOVE;
+			pointerEvent.pointerType = "touch";
+			f(pointerEvent);
 		}
 	}
 
@@ -308,6 +392,9 @@ class MainLime extends Application {
 		if (engine != null) {
 			engine.width = width;
 			engine.height = height;
+			for (f in engine.onResize) {
+				f();
+			}
 			engine.resize();
 		}
 	}
@@ -320,4 +407,3 @@ class MainLime extends Application {
 	}
 	
 }
-

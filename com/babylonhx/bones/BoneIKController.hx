@@ -12,6 +12,10 @@ import com.babylonhx.mesh.AbstractMesh;
  * @author Krtolica Vujadin
  */
 class BoneIKController {
+	
+	private static var _tmpVecs:Array<Vector3> = [Vector3.Zero(), Vector3.Zero(), Vector3.Zero(), Vector3.Zero(), Vector3.Zero(), Vector3.Zero()];
+	private static var _tmpQuat:Quaternion = Quaternion.Identity();
+	private static var _tmpMats:Array<Matrix> = [Matrix.Identity(), Matrix.Identity()];
 
 	public var targetMesh:AbstractMesh;
 	public var poleTargetMesh:AbstractMesh;
@@ -34,20 +38,12 @@ class BoneIKController {
 	private var _maxAngle:Float = Math.PI;
 	private var _maxReach:Float;
 
-	private var _tmpVec1:Vector3 = Vector3.Zero();
-	private var _tmpVec2:Vector3 = Vector3.Zero();
-	private var _tmpVec3:Vector3 = Vector3.Zero();
-	private var _tmpVec4:Vector3 = Vector3.Zero();
-	private var _tmpVec5:Vector3 = Vector3.Zero();
-
-	private var _tmpMat1:Matrix = Matrix.Identity();
-	private var _tmpMat2:Matrix = Matrix.Identity();
-	private var _tmpQuat1:Quaternion = Quaternion.Identity();
-
 	private var _rightHandedSystem:Bool = false;
 	
 	private var _bendAxis:Vector3 = Vector3.Right();
 	private var _slerping:Bool = false;
+	
+	private var _adjustRoll:Float = 0;
 
 	public var maxAngle(get, set):Float;
 	private function get_maxAngle():Float {
@@ -65,13 +61,24 @@ class BoneIKController {
 		this._bone2 = bone;
 		this._bone1 = bone.getParent();
 		
+		if (this._bone1 == null) {
+			return;
+		}
+		
 		this.mesh = mesh;
+		
+		var bonePos = bone.getPosition();
 		
 		if (bone.getAbsoluteTransform().determinant() > 0) {
 			this._rightHandedSystem = true;
 			this._bendAxis.x = 0;
             this._bendAxis.y = 0;
             this._bendAxis.z = 1;
+			
+			if (bonePos.x > bonePos.y && bonePos.x > bonePos.z) {
+				this._adjustRoll = Math.PI * .5;
+				this._bendAxis.z = 1;
+			}
 		}
 		
 		if (this._bone1.length != 0) {
@@ -153,11 +160,16 @@ class BoneIKController {
 
 	public function update() {
 		var bone1 = this._bone1;
+		
+		if (bone1 == null) {
+			return;
+		}
+		
 		var target = this.targetPosition;
 		var poleTarget = this.poleTargetPosition;
 		
-		var mat1 = this._tmpMat1;
-        var mat2 = this._tmpMat2;
+		var mat1 = BoneIKController._tmpMats[0];
+		var mat2 = BoneIKController._tmpMats[1];
 		
         if (this.targetMesh != null) {
             target.copyFrom(this.targetMesh.getAbsolutePosition());
@@ -170,11 +182,13 @@ class BoneIKController {
             Vector3.TransformCoordinatesToRef(this.poleTargetLocalOffset, this.poleTargetMesh.getWorldMatrix(), poleTarget);
         }
 		
-		var bonePos = this._tmpVec1;
-		var zaxis = this._tmpVec2;
-		var xaxis = this._tmpVec3;
-		var yaxis = this._tmpVec4;
-		var upAxis = this._tmpVec5;
+		var bonePos = BoneIKController._tmpVecs[0];
+		var zaxis = BoneIKController._tmpVecs[1];
+		var xaxis = BoneIKController._tmpVecs[2];
+		var yaxis = BoneIKController._tmpVecs[3];
+		var upAxis = BoneIKController._tmpVecs[4];
+		
+		var _tmpQuat = BoneIKController._tmpQuat;
 		
 		bone1.getAbsolutePositionToRef(this.mesh, bonePos);
 		
@@ -251,21 +265,23 @@ class BoneIKController {
             mat1.multiplyToRef(mat2, mat1);
 		}
 		
-		if (this.slerpAmount < 1) {
-			if (!this._slerping) {
-				Quaternion.FromRotationMatrixToRef(this._bone1Mat, this._bone1Quat);
+		if (this._bone1 != null) {
+			if (this.slerpAmount < 1) {
+				if (!this._slerping) {
+					Quaternion.FromRotationMatrixToRef(this._bone1Mat, this._bone1Quat);
+				}
+				
+				Quaternion.FromRotationMatrixToRef(mat1, this._tmpQuat1);
+				Quaternion.SlerpToRef(this._bone1Quat, this._tmpQuat1, this.slerpAmount, this._bone1Quat);
+				angC = this._bone2Ang * (1.0 - this.slerpAmount) + angC * this.slerpAmount;
+				this._bone1.setRotationQuaternion(this._bone1Quat, Space.WORLD, this.mesh);
+				this._slerping = true;
+			} 
+			else {
+				this._bone1.setRotationMatrix(mat1, Space.WORLD, this.mesh);
+				this._bone1Mat.copyFrom(mat1);
+				this._slerping = false;
 			}
-			
-			Quaternion.FromRotationMatrixToRef(mat1, this._tmpQuat1);
-			Quaternion.SlerpToRef(this._bone1Quat, this._tmpQuat1, this.slerpAmount, this._bone1Quat);
-			angC = this._bone2Ang * (1.0 - this.slerpAmount) + angC * this.slerpAmount;
-			this._bone1.setRotationQuaternion(this._bone1Quat, Space.WORLD, this.mesh);
-			this._slerping = true;
-		} 
-		else {
-			this._bone1.setRotationMatrix(mat1, Space.WORLD, this.mesh);
-			this._bone1Mat.copyFrom(mat1);
-			this._slerping = false;
 		}
 		
 		this._bone2.setAxisAngle(this._bendAxis, angC, Space.LOCAL);

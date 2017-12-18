@@ -13,15 +13,6 @@ import com.babylonhx.collisions.PickingInfo;
  * and is of type MouseWheelEvent when type equals PointerWheel. The different event 
  * types can be found in the PointerEventTypes class.
  */
-
-typedef PointerEvent = {
-	x:Int,
-	y:Int,
-	button:Null<Int>,
-	/*pointerId:Null<Int>,
-	pointerType:Null<Int>*/
-}
-
 class PointerInfo extends PointerInfoBase {
 	
 	public var pickInfo:PickingInfo;
