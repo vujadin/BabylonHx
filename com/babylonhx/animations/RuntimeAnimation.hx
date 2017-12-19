@@ -385,23 +385,23 @@ class RuntimeAnimation {
 							
 						// Quaternion
 						case Animation.ANIMATIONTYPE_QUATERNION:
-							this._offsetsCache[keyOffset] = untyped toValue.subtract(fromValue);
+							this._offsetsCache[keyOffset] = cast (toValue, Quaternion).subtract(cast fromValue);
 							
 						// Vector3
 						case Animation.ANIMATIONTYPE_VECTOR3:
-							this._offsetsCache[keyOffset] = untyped toValue.subtract(fromValue);
+							this._offsetsCache[keyOffset] = cast (toValue, Vector3).subtract(cast fromValue);
 							
 						// Vector2
 						case Animation.ANIMATIONTYPE_VECTOR2:
-							this._offsetsCache[keyOffset] = untyped toValue.subtract(fromValue);
+							this._offsetsCache[keyOffset] = cast (toValue, Vector2).subtract(cast fromValue);
 							
 						// Size
 						case Animation.ANIMATIONTYPE_SIZE:
-							this._offsetsCache[keyOffset] = untyped toValue.subtract(fromValue);
+							this._offsetsCache[keyOffset] = cast (toValue, Size).subtract(cast fromValue);
 							
 						// Color3
 						case Animation.ANIMATIONTYPE_COLOR3:
-							this._offsetsCache[keyOffset] = untyped toValue.subtract(fromValue);
+							this._offsetsCache[keyOffset] = cast (toValue, Color3).subtract(cast fromValue);
 							
 						default:
 					}

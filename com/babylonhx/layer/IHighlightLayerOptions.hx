@@ -52,6 +52,6 @@ typedef IHighlightLayerOptions = {
 	/**
      * Threshold for cutting glow.
      */
-    ?threshold:Null<Int>
+    ?threshold:Null<Float>
   
 }

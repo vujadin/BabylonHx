@@ -18,10 +18,10 @@ typedef IHighlightLayerExcludedMesh = {
 	/**
 	 * The mesh render callback use to prevent stencil use
 	 */
-	var beforeRender:Observer<Mesh>;
+	var beforeRender:Observer<Mesh> = null;
 	/**
 	 * The mesh render callback use to restore previous stencil use
 	 */
-	var afterRender:Observer<Mesh>;
+	var afterRender:Observer<Mesh> = null;
 }
 	

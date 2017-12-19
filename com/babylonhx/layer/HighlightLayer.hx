@@ -342,7 +342,7 @@ class HighlightLayer {
 		var postProcesses = [this._downSamplePostprocess, this._horizontalBlurPostprocess, this._verticalBlurPostprocess];
 		
 		if (this._options.threshold != null) {
-            var threshold = this._options.threshold;
+            var threshold:Float = this._options.threshold;
             this._thresholdPostProcess = new PostProcess("threshold", "highlightLayerThreshold", ["screenSize", "threshold"], null, 0.25, null, Texture.BILINEAR_SAMPLINGMODE, this._scene.getEngine());
 			this._thresholdPostProcess.onApplyObservable.add(function(effect:Effect, _) {
                 effect.setFloat("threshold", threshold);

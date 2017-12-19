@@ -115,7 +115,7 @@ import lime.utils.Float32Array;
 			this._colorShader.bind(worldMatrix);
 			
 			// Draw order
-			engine.drawElementsType(Material.TriangleFillMode, 0, 24);
+			engine.drawElementsType(Material.LineListDrawMode, 0, 24);
 		}
 		
 		this._colorShader.unbind();
