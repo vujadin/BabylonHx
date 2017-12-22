@@ -21,6 +21,8 @@ typedef IAMethods = {
 	
 	public var maxTexturesImageUnits:Int;
 	public var maxVertexTextureImageUnits:Int;
+	public var maxCombinedTexturesImageUnits:Int;
+    /** The maximum texture size */
 	public var maxTextureSize:Int;
 	public var maxCubemapTextureSize:Int;
 	public var maxRenderTextureSize:Null<Int>;

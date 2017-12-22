@@ -1315,7 +1315,15 @@ import lime.utils.Int32Array;
 			return;
 		}
 		
-		var reverse = this._effectiveMaterial._preBind(effect, this.overrideMaterialSideOrientation);
+		var sideOrientation = this.overrideMaterialSideOrientation;
+        if (sideOrientation == -1) {
+            sideOrientation = this._effectiveMaterial.sideOrientation;
+            if (this._getWorldMatrixDeterminant() < 0) {
+                sideOrientation = (sideOrientation == Material.ClockWiseSideOrientation ? Material.CounterClockWiseSideOrientation : Material.ClockWiseSideOrientation);
+            }
+        }
+		
+        var reverse = this._effectiveMaterial._preBind(effect, sideOrientation);
 		
 		if (this._effectiveMaterial.forceDepthWrite) {
             engine.setDepthWrite(true);

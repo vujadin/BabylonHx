@@ -98,8 +98,14 @@ package com.babylonhx.animations;
 			runtimeAnimations[index].reset();
 		}
 		
+		// Reset to original value
+        for (index in 0...runtimeAnimations.length) {
+            var animation = runtimeAnimations[index];
+            animation.animate(0, this.fromFrame, this.toFrame, false, this._speedRatio);
+        }
+		
 		this._localDelayOffset = -1;
-		this._pausedDelay = -1;
+        this._pausedDelay = -1;
 	}
 	
 	public function enableBlending(blendingSpeed:Float) {

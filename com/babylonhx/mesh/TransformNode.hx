@@ -52,6 +52,7 @@ class TransformNode extends Node {
 	public var _poseMatrix:Matrix = null;
 	private var _localWorld:Matrix = Matrix.Zero();
 	public var _worldMatrix:Matrix = Matrix.Zero();
+	public var _worldMatrixDeterminant:Float = 0;
 	private var _absolutePosition:Vector3 = Vector3.Zero();
 	private var _pivotMatrix:Matrix = Matrix.Identity();
 	private var _pivotMatrixInverse:Matrix;
@@ -128,6 +129,16 @@ class TransformNode extends Node {
 		}
 		return this._worldMatrix;
 	}
+	
+	/**
+     * Returns the latest update of the World matrix determinant.
+     */
+    public function _getWorldMatrixDeterminant():Float {
+        if (this._currentRenderId != this.getScene().getRenderId()) {
+            this._worldMatrixDeterminant = this.computeWorldMatrix().determinant();
+        }
+        return this._worldMatrixDeterminant;
+    }
 
 	/**
 	 * Returns directly the latest state of the mesh World matrix. 

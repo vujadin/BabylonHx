@@ -878,6 +878,17 @@ typedef DepthSortedFacet = {
 		return super.getWorldMatrix();
 	}
 	
+	/**
+     * Returns the latest update of the World matrix determinant.
+     */
+    override public function _getWorldMatrixDeterminant():Float {
+        if (this._masterMesh != null) {
+            return this._masterMesh._getWorldMatrixDeterminant();
+        }
+		
+        return super._getWorldMatrixDeterminant();
+    }
+	
 	// ================================== Point of View Movement =================================
 	/**
 	 * Perform relative position change from the point of view of behind the front of the mesh.
@@ -969,12 +980,13 @@ typedef DepthSortedFacet = {
 			for (descendant in descendants) {
 				var childMesh:AbstractMesh = cast descendant;
 				
+				childMesh.computeWorldMatrix(true);
+				
 				//make sure we have the needed params to get mix and max
                 if (childMesh.getBoundingInfo == null || childMesh.getTotalVertices() == 0) {
                     continue;
                 }
 				
-				childMesh.computeWorldMatrix(true);
 				var childBoundingInfo = childMesh.getBoundingInfo();
 				
 				var boundingBox = childBoundingInfo.boundingBox;

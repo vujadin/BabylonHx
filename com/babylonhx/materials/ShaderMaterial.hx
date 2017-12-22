@@ -40,6 +40,7 @@ import lime.utils.Float32Array;
 	private var _textures:Map<String, Texture> = new Map();
 	private var _textureArrays:Map<String, Array<Texture>> = new Map();
 	private var _floats:Map<String, Float> = new Map();
+	private var _ints:Map<String, Int> = new Map();
 	private var _floatsArrays:Map<String, Array<Float>> = new Map();
 	private var _colors3:Map<String, Color3> = new Map();
 	private var _colors3Arrays:Map<String, Array<Float>> = new Map();
@@ -122,6 +123,13 @@ import lime.utils.Float32Array;
 	public function setFloat(name:String, value:Float):ShaderMaterial {
 		this._checkUniform(name);
 		this._floats[name] = value;
+		
+		return this;
+	}
+	
+	inline public function setInt(name:String, value:Int):ShaderMaterial {
+		this._checkUniform(name);
+		this._ints[name] = value;
 		
 		return this;
 	}
@@ -361,12 +369,17 @@ import lime.utils.Float32Array;
 				this._effect.setTextureArray(name, cast this._textureArrays[name]);
 			}
 			
+			// Int
+			for (name in this._ints.keys()) {
+                this._effect.setInt(name, this._ints[name]);
+            }
+			
 			// Float    
 			for (name in this._floats.keys()) {
 				this._effect.setFloat(name, this._floats[name]);
 			}
 			
-			// Float s   
+			// Floats   
 			for (name in this._floatsArrays.keys()) {
 				this._effect.setArray(name, this._floatsArrays[name]);
 			}

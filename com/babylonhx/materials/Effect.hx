@@ -551,6 +551,10 @@ using StringTools;
 		this._prepareEffect();
 	}
 	
+	inline public function getSpecificUniformLocations(names:Array<String>):Array<GLUniformLocation> {
+        return this._engine.getUniforms(this._program, names);
+    }
+	
 	private function _prepareEffect() {
 		var attributesNames = this._attributesNames;
 		var defines = this.defines;
@@ -788,6 +792,19 @@ using StringTools;
 	public function bindUniformBlock(blockName:String, index:Int) {
 		this._engine.bindUniformBlock(this._program, blockName, index);
 	}
+	
+	public function setInt(uniformName:String, value:Int):Effect {
+        var cache = this._valueCache[uniformName];
+        if (cache != null && cache[0] == value) {
+            return this;
+		}
+		
+        this._valueCache.set(uniformName, [value]);
+		
+        this._engine.setInt(this.getUniform(uniformName), value);
+		
+        return this;
+    }
 	
 	inline public function setIntArray(uniformName:String, array:Int32Array):Effect {
 		this._valueCache[uniformName] = null;

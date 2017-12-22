@@ -16,6 +16,8 @@ import lime.graphics.opengl.WebGL2Context;
 	private var _isCullFaceDirty:Bool = false;
 	private var _isCullDirty:Bool = false;
 	private var _isZOffsetDirty:Bool = false;
+	
+	private var _isFrontFaceDirty:Bool = false;
 
 	private var _depthTest:Bool;
 	private var _depthMask:Bool;
@@ -23,11 +25,13 @@ import lime.graphics.opengl.WebGL2Context;
 	private var _cull:Null<Bool>;
 	private var _cullFace:Null<Int>;
 	private var _zOffset:Float = 0.0;
+	
+	private var _frontFace:Null<Int>;
 
 
 	public var isDirty(get, never):Bool;
 	private function get_isDirty():Bool {
-		return this._isDepthFuncDirty || this._isDepthTestDirty || this._isDepthMaskDirty || this._isCullFaceDirty || this._isCullDirty || this._isZOffsetDirty;
+		return this._isDepthFuncDirty || this._isDepthTestDirty || this._isDepthMaskDirty || this._isCullFaceDirty || this._isCullDirty || this._isZOffsetDirty || this._isFrontFaceDirty;
 	}
 	
 	public var zOffset(get, set):Float;
@@ -115,6 +119,21 @@ import lime.graphics.opengl.WebGL2Context;
 		return value;
 	}
 	
+	public var frontFace(get, set):Null<Int>;
+	inline function get_frontFace():Null<Int> {
+        return this._frontFace;
+    }
+    inline function set_frontFace(value:Null<Int>):Null<Int> {
+        if (this._frontFace == value) {
+            return value;
+        }
+		
+        this._frontFace = value;
+        this._isFrontFaceDirty = true;
+		return value;
+    }
+	
+	
 	public function new() {
 		this.reset();
 	}
@@ -126,6 +145,7 @@ import lime.graphics.opengl.WebGL2Context;
 		this._cullFace = null;
 		this._cull = null;
 		this._zOffset = 0.0;
+		this._frontFace = null;
 		
 		this._isDepthTestDirty = true;
 		this._isDepthMaskDirty = true;
@@ -133,6 +153,7 @@ import lime.graphics.opengl.WebGL2Context;
 		this._isCullFaceDirty = false;
 		this._isCullDirty = false;
 		this._isZOffsetDirty = false;
+		this._isFrontFaceDirty = false;
 	}
 
 	public function apply(gl:WebGL2Context) {
@@ -192,7 +213,13 @@ import lime.graphics.opengl.WebGL2Context;
 			}
 			
 			this._isZOffsetDirty = false;
-		}	
+		}
+		
+		// Front face
+        if (this._isFrontFaceDirty) {
+            gl.frontFace(this.frontFace);
+            this._isFrontFaceDirty = false;
+        }
 	}
 	
 }

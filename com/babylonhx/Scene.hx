@@ -1,5 +1,6 @@
 package com.babylonhx;
 
+import com.babylonhx.animations.AnimationGroup;
 import com.babylonhx.engine.Engine;
 import com.babylonhx.events.PointerEvent;
 import com.babylonhx.events.PointerInfoPre;
@@ -709,6 +710,13 @@ import com.babylonhx.audio.*;
 	* @type {BABYLON.AbstractMesh[]}
 	*/
 	public var meshes:Array<AbstractMesh> = [];
+	
+	/**
+	* All of the animation groups added to this scene.
+	* @see BABYLON.AnimationGroup
+	* @type {BABYLON.AnimationGroup[]}
+	*/
+	public var animationGroups:Array<AnimationGroup> = [];
 
 	// Geometries
 	private var _geometries:Array<Geometry> = [];
@@ -2155,8 +2163,8 @@ import com.babylonhx.audio.*;
 		return null;
 	}
 	
-	public var Animatables(get, never):Array<Animatable>;
-	private function get_Animatables():Array<Animatable> {
+	public var animatables(get, never):Array<Animatable>;
+	private function get_animatables():Array<Animatable> {
 		return this._activeAnimatables;
 	}
 
@@ -2450,6 +2458,21 @@ import com.babylonhx.audio.*;
 		if (camera != null) {
 			this.activeCamera = camera;
 			return camera;
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * get an animation group using its name
+	 * @param {string} the material's name
+	 * @return {BABYLON.AnimationGroup|null} the animation group or null if none found.
+	 */
+	public function getAnimationGroupByName(name:String):AnimationGroup {
+		for (index in 0...this.animationGroups.length) {
+			if (this.animationGroups[index].name == name) {
+				return this.animationGroups[index];
+			}
 		}
 		
 		return null;
@@ -3781,6 +3804,12 @@ import com.babylonhx.audio.*;
 			this.disposeSounds();
 		}*/
 		
+		// Release animation groups
+		while (this.animationGroups.length > 0) {
+			this.animationGroups[0].dispose();
+			this.animationGroups.shift();
+		}
+		
 		// Release lights
 		while (this.lights.length > 0) {
 			this.lights[0].dispose();
@@ -4359,7 +4388,7 @@ import com.babylonhx.audio.*;
 				camera = freeCamera;
 			}
 			camera.minZ = radius * 0.01;
-			camera.maxZ = radius * 100;
+			camera.maxZ = radius * 1000;
 			camera.speed = radius * 0.2;
 			this.activeCamera = camera;
 			
