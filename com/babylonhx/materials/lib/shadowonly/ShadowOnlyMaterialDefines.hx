@@ -14,6 +14,16 @@ class ShadowOnlyMaterialDefines extends MaterialDefines {
 	public var BonesPerMesh:Int = 0;
 	public var INSTANCES:Bool = false;
 	
+	// BHX: not used but needed by MaterialHelper
+	public var ALPHATEST:Bool = false;
+	public var DEPTHPREPASS:Bool = false;
+	public var LOGARITHMICDEPTH:Bool = false;
+	public var NONUNIFORMSCALING:Bool = false;
+	public var SHADOWS:Bool = false;
+	public var SHADOWFLOAT:Bool = false;
+	public var UV1:Bool = false;
+	public var UV2:Bool = false;
+	
 
 	public function new() {
 		super();

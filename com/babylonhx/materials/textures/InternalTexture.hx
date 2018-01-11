@@ -63,6 +63,7 @@ class InternalTexture implements ISmartArrayCompatible {
 	public var _depthStencilBuffer:GLRenderbuffer;
 	public var _MSAAFramebuffer:GLFramebuffer;
 	public var _MSAARenderBuffer:GLRenderbuffer;
+	public var _attachments:Array<Int> = null;
 	public var _cachedCoordinatesMode:Int = -1;
 	public var _cachedWrapU:Int = -1;
 	public var _cachedWrapV:Int = -1;

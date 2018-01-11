@@ -104,6 +104,7 @@ class PBRMetallicRoughnessMaterial extends PBRBaseSimpleMaterial {
 		this._useRoughnessFromMetallicTextureAlpha = false;
 		this._useRoughnessFromMetallicTextureGreen = true;
 		this._useMetallnessFromMetallicTextureBlue = true;
+		this._forceMetallicWorkflow = true;
 	}
 
 	/**

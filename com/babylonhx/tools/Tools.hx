@@ -484,13 +484,19 @@ typedef Assets = lime.Assets;
 				trace("File '" + path + "' doesn't exist!");
 			}
 			#else*/
-			var callBackFunction = callbackFn != null ?
+			trace(Assets.list());
+			if (Assets.exists(path)) {
+				var callBackFunction = callbackFn != null ?
 					function(result:Dynamic) {
 						callbackFn(result);
 					} : function(_) { };
 					
 				var data = Assets.getText(path);
-				callBackFunction(data);			
+				callBackFunction(data);
+			}
+			else {
+				trace('File ${path} doesn\'t exist!');
+			}
 			//#end
 		} 
 		else {

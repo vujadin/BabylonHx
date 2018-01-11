@@ -1,6 +1,7 @@
 package com.babylonhx.bones;
 
 import com.babylonhx.animations.IAnimatable;
+import com.babylonhx.animations.IAnimationKey;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Quaternion;
 import com.babylonhx.math.Vector3;
@@ -242,7 +243,7 @@ import com.babylonhx.animations.AnimationRange;
 		var destKeys = this.animations[0].getKeys();
 		
 		// loop vars declaration
-		var orig:BabylonFrame = null;
+		var orig:IAnimationKey = null;
 		var origTranslation:Vector3;
 		var mat:Matrix = null;
 		

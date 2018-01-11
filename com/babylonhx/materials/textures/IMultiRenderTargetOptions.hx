@@ -12,6 +12,8 @@ package com.babylonhx.materials.textures;
     public var generateStencilBuffer:Bool;
     public var generateDepthTexture:Bool;
     public var textureCount:Int;
+	public var doNotChangeAspectRatio:Bool;
+	public var defaultType:Int;
 	
 	
 	public function new() { }

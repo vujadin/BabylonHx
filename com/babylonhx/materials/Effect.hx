@@ -782,7 +782,7 @@ using StringTools;
 	
 	public function bindUniformBuffer(buffer:WebGLBuffer, name:String) {
 		var bufferName = this._uniformBuffersNames[name];
-        if (Effect._baseCache[bufferName] == buffer) {
+        if (bufferName != null && Effect._baseCache[bufferName] == buffer) {
 			return;
 		}
 		Effect._baseCache[bufferName] = buffer;

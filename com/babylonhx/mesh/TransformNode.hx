@@ -135,7 +135,7 @@ class TransformNode extends Node {
      */
     public function _getWorldMatrixDeterminant():Float {
         if (this._currentRenderId != this.getScene().getRenderId()) {
-            this._worldMatrixDeterminant = this.computeWorldMatrix().determinant();
+            this.computeWorldMatrix();
         }
         return this._worldMatrixDeterminant;
     }
@@ -874,6 +874,9 @@ class TransformNode extends Node {
 			this._poseMatrix = Matrix.Invert(this._worldMatrix);
 		}
 		
+		// Cache the determinant
+        this._worldMatrixDeterminant = this._worldMatrix.determinant();
+		
 		return this._worldMatrix;
 	}   
 
@@ -1035,8 +1038,6 @@ class TransformNode extends Node {
 		
 		// Remove from scene
 		this.getScene().removeTransformNode(this);
-		
-		this._cache = null;
 		
 		if (!doNotRecurse) {
 			// Children

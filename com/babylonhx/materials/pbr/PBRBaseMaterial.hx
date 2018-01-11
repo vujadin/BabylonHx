@@ -323,6 +323,11 @@ class PBRBaseMaterial extends PushMaterial {
 	 * (Temporary internal fix to remove before 3.1)
 	 */
 	private var _forceNormalForward:Bool = false;
+	
+	/**
+	 * Force metallic workflow.
+     */
+	private var _forceMetallicWorkflow:Bool = false;
 
 	/**
 	 * Default configuration related to image processing available in the PBR Material.
@@ -767,7 +772,7 @@ class PBRBaseMaterial extends PushMaterial {
 			
 			defines.RADIANCEOVERALPHA = this._useRadianceOverAlpha;
 			
-			if ((this._metallic != Math.NEGATIVE_INFINITY) || (this._roughness != Math.NEGATIVE_INFINITY)) {
+			if (this._forceMetallicWorkflow || (this._metallic != Math.NEGATIVE_INFINITY) || (this._roughness != Math.NEGATIVE_INFINITY)) {
 				defines.METALLICWORKFLOW = true;
 			}
 			else {

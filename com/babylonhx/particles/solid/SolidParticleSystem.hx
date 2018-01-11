@@ -95,6 +95,7 @@ class SolidParticleSystem implements IDisposable {
 	private var _normals:Array<Float> = [];
 	private var _colors:Array<Float> = [];
 	private var _uvs:Array<Float> = [];
+	private var _indices32:UInt32Array;          // used as depth sorted array if depth sort enabled, else used as typed indices
 	private var _positions32:Float32Array;
 	private var _normals32:Float32Array;		// updated normals for the VBO
 	private var _fixedNormal32:Float32Array;	// initial normal references
@@ -208,27 +209,21 @@ class SolidParticleSystem implements IDisposable {
 			this.addShape(triangle, 1);
 			triangle.dispose();
 		}
-		
+		this._indices32 = new UInt32Array(this._indices)
 		this._positions32 = new Float32Array(this._positions);
 		this._uvs32 = new Float32Array(this._uvs);
 		this._colors32 = new Float32Array(this._colors);
 		if (this.recomputeNormals) {
-			VertexData.ComputeNormals(this._positions, this._indices, this._normals);
+			VertexData.ComputeNormals(this._positions, this._indices32, this._normals);
 		}
 		this._normals32 = new Float32Array(this._normals);
 		this._fixedNormal32 = new Float32Array(this._normals);
 		if (this._mustUnrotateFixedNormals) {  // the particles could be created already rotated in the mesh with a positionFunction
 			this._unrotateFixedNormals();
 		}
+		
 		var vertexData:VertexData = new VertexData();
-		if (this._depthSort) {
-			this._depthSortedIndices = new UInt32Array(this._indices); //(this._needs32Bits) ? new UInt32Array(this._indices) : new Uint16Array(this._indices);
-			vertexData.indices = this._depthSortedIndices;
-		}
-		else {
-			vertexData.indices = new UInt32Array(this._indices);
-		}
-		//vertexData.indices = new Int32Array(this._indices);
+		vertexData.indices = /*(this._depthSort) ? this._indices :*/ this._indices32;
 		vertexData.set(this._positions32, VertexBuffer.PositionKind);
 		vertexData.set(this._normals32, VertexBuffer.NormalKind);
 		if (this._uvs32 != null) {
@@ -243,13 +238,14 @@ class SolidParticleSystem implements IDisposable {
 		this.mesh.isPickable = this._pickable;
 		
 		// free memory
+		this._indices = null;
 		this._positions = null;
 		this._normals = null;
 		this._uvs = null;
 		this._colors = null;
 		
 		if (!this._updatable) {
-			this.particles.splice(0, this.particles.length - 1); // = [];
+			this.particles.splice(0, this.particles.length); // = [];
 		}
 		
 		return mesh;
@@ -667,13 +663,14 @@ class SolidParticleSystem implements IDisposable {
 	} 
 
 	/**
-	*  Sets all the particles : this method actually really updates the mesh according to the particle positions, rotations, colors, textures, etc.
-	*  This method calls updateParticle() for each particles of the SPS.
-	*  For an animated SPS, it is usually called within the render loop.
-	* @param start (default 0) the particle index in the particle array where to start to compute the particle property values
-	* @param end (default nbParticle - 1)  the particle index in the particle array where to stop to compute the particle property values
-	* @param update (default true) if the mesh must be finally updated on this call after all the particle computations.
-	*/
+	 *  Sets all the particles : this method actually really updates the mesh according to the particle positions, rotations, colors, textures, etc.
+	 *  This method calls `updateParticle()` for each particle of the SPS.
+	 *  For an animated SPS, it is usually called within the render loop.
+	 * @param start The particle index in the particle array where to start to compute the particle property values _(default 0)_
+	 * @param end The particle index in the particle array where to stop to compute the particle property values _(default nbParticle - 1)_
+	 * @param update If the mesh must be finally updated on this call after all the particle computations _(default true)_   
+	 * Returns the SPS.  
+	 */
 	public function setParticles(start:Int = 0, end:Int = -1, update:Bool = true):SolidParticleSystem {
 		if (!this._updatable) {
 			return this;
@@ -723,13 +720,13 @@ class SolidParticleSystem implements IDisposable {
         }
 		
 		Matrix.IdentityToRef(this._rotMatrix);
-		var idx = 0;
-		var index = 0;
-		var colidx = 0;
-		var colorIndex = 0;
-		var uvidx = 0;
-		var uvIndex = 0;
-		var pt = 0;
+		var idx = 0;            // current position index in the global array positions32
+		var index = 0;          // position start index in the global array positions32 of the current particle
+		var colidx = 0;         // current color index in the global array colors32
+		var colorIndex = 0;     // color start index in the global array colors32 of the current particle
+		var uvidx = 0;          // current uv index in the global array uvs32
+		var uvIndex = 0;        // uv start index in the global array uvs32 of the current particle
+		var pt = 0;             // current index in the particle model shape
 		
 		if (this.mesh.isFacetDataEnabled) {
 			this._computeBoundingBox = true;
@@ -742,8 +739,10 @@ class SolidParticleSystem implements IDisposable {
 				Vector3.FromFloatsToRef(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, this._maximum);
 			}
 			else {      // only some particles are updated, then use the current existing BBox basis. Note : it can only increase.
-				this._minimum.copyFrom(this.mesh._boundingInfo.boundingBox.minimum);
-				this._maximum.copyFrom(this.mesh._boundingInfo.boundingBox.maximum);
+				if (this.mesh._boundingInfo != null) {
+					this._minimum.copyFrom(this.mesh._boundingInfo.boundingBox.minimum);
+					this._maximum.copyFrom(this.mesh._boundingInfo.boundingBox.maximum);
+				}
 			}
 		}
 		
@@ -764,6 +763,14 @@ class SolidParticleSystem implements IDisposable {
 			// call to custom user function to update the particle properties
 			if (this.updateParticle != null) {
 				this.updateParticle(this._particle);
+			}
+			
+			// camera-particle distance for depth sorting
+			if (this._depthSort && this._depthSortParticles) {
+				var dsp = this.depthSortedParticles[p];
+				dsp.ind = this._particle._ind;
+				dsp.indicesLength = this._particle._model._indicesLength;
+				dsp.sqDistance = Vector3.DistanceSquared(this._particle.position, this._camInvertedPosition);
 			}
 			
 			// skip the computations for inactive or already invisible particles
@@ -797,14 +804,6 @@ class SolidParticleSystem implements IDisposable {
 					this._quaternionToRotationMatrix();
 				}
 				
-				// camera-particle distance for depth sorting
-				if (this._depthSort && this._depthSortParticles) {
-					var dsp = this.depthSortedParticles[p];
-					dsp.ind = this._particle._ind;
-					dsp.indicesLength = this._particle._model._indicesLength;
-					dsp.sqDistance = Vector3.DistanceSquared(this._particle.position, this._camInvertedPosition);
-				}
-				
 				// particle vertex loop
 				for (pt in 0...this._shape.length) {
 					idx = index + pt * 3;
@@ -823,6 +822,10 @@ class SolidParticleSystem implements IDisposable {
 					this._vertex.x *= this._particle.scaling.x;
 					this._vertex.y *= this._particle.scaling.y;
 					this._vertex.z *= this._particle.scaling.z;
+					
+					this._vertex.x += this._particle.pivot.x;
+					this._vertex.y += this._particle.pivot.y;
+					this._vertex.z += this._particle.pivot.z;
 					
 					this._rotated.x = this._vertex.x * this._rotMatrix.m[0] + this._vertex.y * this._rotMatrix.m[4] + this._vertex.z * this._rotMatrix.m[8];
                     this._rotated.y = this._vertex.x * this._rotMatrix.m[1] + this._vertex.y * this._rotMatrix.m[5] + this._vertex.z * this._rotMatrix.m[9];
@@ -960,7 +963,7 @@ class SolidParticleSystem implements IDisposable {
 				if (this._computeParticleVertex || this.mesh.isFacetDataEnabled) {
 					// recompute the normals only if the particles can be morphed, update then also the normal reference array _fixedNormal32[]
 					var params = this.mesh.isFacetDataEnabled ? this.mesh.getFacetDataParameters() : null;
-					VertexData.ComputeNormals(this._positions32, this._indices, this._normals32, params);
+					VertexData.ComputeNormals(this._positions32, this._indices32, this._normals32, params);
 					for (i in 0...this._normals32.length) {
 						this._fixedNormal32[i] = this._normals32[i];
 					}                       

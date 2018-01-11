@@ -116,15 +116,18 @@ class NodeCache {
 			return parent;
 		}
 		
-		if (this._parentNode != null) {
+		// Remove self from list of children of parent
+		if (this._parentNode != null && this._parentNode._children != null) {
 			var index = this._parentNode._children.indexOf(this);
 			if (index != -1) {
 				this._parentNode._children.splice(index, 1);
 			}
 		}
 		
+		// Store new parent
 		this._parentNode = parent;
 		
+		// Add as child to new parent
 		if (this._parentNode != null) {
 			if (this._parentNode._children == null) {
 				this._parentNode._children = new Array<Node>();
@@ -327,16 +330,22 @@ class NodeCache {
 	/**
 	 * Is this node enabled. 
 	 * If the node has a parent and is enabled, the parent will be inspected as well.
+	 * If the node has a parent, all ancestors will be checked and false will be returned if any are false (not enabled), otherwise will return true.
+     * @param {boolean} [checkAncestors=true] - Indicates if this method should check the ancestors. The default is to check the ancestors. If set to false, the method will return the value of this node without checking ancestors.
 	 * @return {boolean} whether this node (and its parent) is enabled.
 	 * @see setEnabled
 	 */
-	public function isEnabled():Bool {
+	public function isEnabled(checkAncestors:Bool = true):Bool {
+		if (checkAncestors == false) {
+			return this._isEnabled;
+		}
+		
 		if (!this._isEnabled) {
 			return false;
 		}
 		
 		if (this.parent != null) {
-			return this.parent.isEnabled();
+			return this.parent.isEnabled(checkAncestors);
 		}
 		
 		return true;

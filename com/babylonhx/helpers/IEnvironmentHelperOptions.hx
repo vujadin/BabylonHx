@@ -90,6 +90,12 @@ typedef IEnvironmentHelperOptions = {
 	 * Unsigned Int by Default.
 	 */
 	var groundMirrorTextureType:Null<Int>;
+	
+	/**
+     * Specifies a bias applied to the ground vertical position to prevent z-fighyting with
+     * the shown objects.
+     */
+    var groundYBias:Null<Float>;
 
 	/**
 	 * Specifies wether or not to create a skybox.

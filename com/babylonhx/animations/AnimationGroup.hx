@@ -1,6 +1,5 @@
 package com.babylonhx.animations;
 
-import com.babylonhx.animations.Animation.BabylonFrame;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.engine.Engine;
 
@@ -103,7 +102,7 @@ class AnimationGroup {
 			var endKey = keys[keys.length - 1];
 			
 			if (startKey.frame > beginFrame) {
-				var newKey:BabylonFrame = {
+				var newKey:IAnimationKey = {
 					frame: beginFrame,
 					value: startKey.value,
 					inTangent: startKey.inTangent,

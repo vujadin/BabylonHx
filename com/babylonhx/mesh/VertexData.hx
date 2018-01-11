@@ -1682,10 +1682,10 @@ import lime.utils.UInt32Array;
 	}
 
 	public static function CreateTiledGround(options:Dynamic):VertexData {
-		var xmin:Float = options.xmin;
-		var zmin:Float = options.zmin;
-		var xmax:Float = options.xmax;
-		var zmax:Float = options.zmax;
+		var xmin = (options.xmin != null) ? options.xmin : -1.0;
+        var zmin = (options.zmin != null) ? options.zmin : -1.0;
+        var xmax = (options.xmax != null) ? options.xmax : 1.0;
+        var zmax = (options.zmax != null) ? options.zmax : 1.0;
 		var subdivisions:Dynamic = options.subdivision != null ? options.subdivision : { w: 1, h: 1 };
 		var precision:Dynamic = options.precision != null ? options.precision : { w: 1, h: 1 };
 		

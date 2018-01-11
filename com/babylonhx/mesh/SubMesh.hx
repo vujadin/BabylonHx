@@ -106,7 +106,10 @@ import lime.utils.Int32Array;
 	public function getMaterial():Material {
 		var rootMaterial = this._renderingMesh.material;
 		
-		if (rootMaterial != null && Std.is(rootMaterial, MultiMaterial)) {
+		if (rootMaterial == null) {
+			return this._mesh.getScene().defaultMaterial;
+		}
+		else if(Std.is(rootMaterial, MultiMaterial)) {
 			var multiMaterial:MultiMaterial = cast rootMaterial;
 			var effectiveMaterial = multiMaterial.getSubMaterial(this.materialIndex);
 			
@@ -116,10 +119,6 @@ import lime.utils.Int32Array;
 			}
 			
 			return effectiveMaterial;
-		}
-		
-		if (rootMaterial == null) {
-			return this._mesh.getScene().defaultMaterial;
 		}
 		
 		return rootMaterial;

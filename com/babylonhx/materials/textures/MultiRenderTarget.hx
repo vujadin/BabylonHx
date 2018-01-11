@@ -71,7 +71,7 @@ class MultiRenderTarget extends RenderTargetTexture {
 				types.push(options.types[i]);
 			} 
 			else {
-				types.push(Engine.TEXTURETYPE_FLOAT);
+				types.push(options.defaultType != null ? options.defaultType : Engine.TEXTURETYPE_UNSIGNED_INT);
 			}
 			
 			if (options.samplingModes != null && options.samplingModes[i] != null) {
@@ -134,9 +134,7 @@ class MultiRenderTarget extends RenderTargetTexture {
 			return value;
 		}
 		
-		for (i in 0...this._internalTextures.length) {
-			this._samples = this._engine.updateRenderTargetTextureSampleCount(this._internalTextures[i], value);
-		}
+		this._samples = this._engine.updateMultipleRenderTargetTextureSampleCount(this._internalTextures, value);
 		return value;
 	}
 
@@ -145,6 +143,12 @@ class MultiRenderTarget extends RenderTargetTexture {
 		this._internalTextures = this._engine.createMultipleRenderTarget(size, this._multiRenderTargetOptions);
 		this._createInternalTextures();
 	}
+	
+	override public function unbindFrameBuffer(engine:Engine, faceIndex:Int) {
+        engine.unBindMultiColorAttachmentFramebuffer(this._internalTextures, this.isCube, function() {
+            this.onAfterRenderObservable.notifyObservers(faceIndex);
+        });
+    }
 
 	override public function dispose() {
 		this.releaseInternalTextures();

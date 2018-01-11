@@ -17,14 +17,6 @@ import com.babylonhx.Node;
 * ...
 * @author Krtolica Vujadin
 */
-
-@:expose('BABYLON.BabylonFrame') typedef BabylonFrame = {
-	frame:Int,
-	value:Dynamic,			// Vector3 or Quaternion or Matrix or Float or Color3 or Vector2
-	?outTangent:Dynamic,
-	?inTangent:Dynamic
-}
-
 @:expose('BABYLON.Animation') class Animation {
 	
 	public static inline var ANIMATIONTYPE_FLOAT:Int = 0;
@@ -41,7 +33,7 @@ import com.babylonhx.Node;
 	
 	public static var AllowMatricesInterpolation:Bool = false;
 	
-	private var _keys:Array<BabylonFrame>;
+	private var _keys:Array<IAnimationKey>;
 	private var _easingFunction:IEasingFunction;
 	
 	public var _runtimeAnimations:Array<RuntimeAnimation> = [];
@@ -91,7 +83,7 @@ import com.babylonhx.Node;
 		
 		var animation = new Animation(name, targetProperty, framePerSecond, dataType, loopMode);
 		
-		var keys:Array<BabylonFrame> = [];
+		var keys:Array<IAnimationKey> = [];
 		keys.push({ frame: 0, value: from });
 		keys.push({ frame: totalFrame, value: to });
 		animation.setKeys(keys);
@@ -123,6 +115,20 @@ import com.babylonhx.Node;
 		return animation;
 	}
 	
+	/**
+     * Create and start an animation on a node
+     * @param {string} name defines the name of the global animation that will be run on all nodes
+     * @param {BABYLON.Node} node defines the root node where the animation will take place
+     * @param {string} targetProperty defines property to animate
+     * @param {number} framePerSecond defines the number of frame per second yo use
+     * @param {number} totalFrame defines the number of frames in total
+     * @param {any} from defines the initial value
+     * @param {any} to defines the final value
+     * @param {number} loopMode defines which loop mode you want to use (off by default)
+     * @param {BABYLON.EasingFunction} easingFunction defines the easing function to use (linear by default)
+     * @param onAnimationEnd defines the callback to call when animation end
+     * @returns the animatable created for this animation
+     */
 	public static function CreateAndStartAnimation(name:String, node:Node, targetProperty:String, framePerSecond:Int, totalFrame:Int, from:Dynamic, to:Dynamic, ?loopMode:Int, ?easingFunction:EasingFunction, ?onAnimationEnd:Void->Void):Animatable {
 		var animation = Animation._PrepareAnimation(name, targetProperty, framePerSecond, totalFrame, from, to, loopMode, easingFunction);
 		
@@ -132,6 +138,33 @@ import com.babylonhx.Node;
 		
 		return node.getScene().beginDirectAnimation(node, [animation], 0, totalFrame, (animation.loopMode == 1), 1.0, onAnimationEnd);
 	}
+	
+	/**
+     * Create and start an animation on a node and its descendants
+     * @param {string} name defines the name of the global animation that will be run on all nodes
+     * @param {BABYLON.Node} node defines the root node where the animation will take place
+     * @param {boolean} directDescendantsOnly if true only direct descendants will be used, if false direct and also indirect (children of children, an so on in a recursive manner) descendants will be used.
+     * @param {string} targetProperty defines property to animate
+     * @param {number} framePerSecond defines the number of frame per second yo use
+     * @param {number} totalFrame defines the number of frames in total
+     * @param {any} from defines the initial value
+     * @param {any} to defines the final value
+     * @param {number} loopMode defines which loop mode you want to use (off by default)
+     * @param {BABYLON.EasingFunction} easingFunction defines the easing function to use (linear by default)
+     * @param onAnimationEnd defines the callback to call when an animation ends (will be called once per node)
+     * @returns the list of animatables created for all nodes
+     * @example https://www.babylonjs-playground.com/#MH0VLI
+     */
+    public static function CreateAndStartHierarchyAnimation(name:String, node:Node, directDescendantsOnly:Bool, targetProperty:String, framePerSecond:Int, totalFrame:Int, from:Dynamic, to:Dynamic, ?loopMode:Int, ?easingFunction:EasingFunction, ?onAnimationEnd:Void->Void):Array<Animatable> { 
+        var animation = Animation._PrepareAnimation(name, targetProperty, framePerSecond, totalFrame, from, to, loopMode, easingFunction);
+		
+		if (animation == null) {
+            return null;
+        }
+		
+        var scene = node.getScene();
+        return scene.beginDirectHierarchyAnimation(node, directDescendantsOnly, [animation], 0, totalFrame, (animation.loopMode == 1), 1, onAnimationEnd);
+    }
 	
 	public static function CreateMergeAndStartAnimation(name:String, node:Node, targetProperty:String, framePerSecond:Int, totalFrame:Int, from:Dynamic, to:Dynamic, ?loopMode:Int, ?easingFunction:EasingFunction, ?onAnimationEnd:Void->Void) {
 		var animation = Animation._PrepareAnimation(name, targetProperty, framePerSecond, totalFrame, from, to, loopMode, easingFunction);
@@ -302,7 +335,7 @@ import com.babylonhx.Node;
 		return this._ranges[name];
 	}
 
-	inline public function getKeys():Array<BabylonFrame> {
+	inline public function getKeys():Array<IAnimationKey> {
 		return this._keys;
 	}
 	
@@ -394,7 +427,7 @@ import com.babylonhx.Node;
 		return clone;
 	}
 
-	public function setKeys(values:Array<BabylonFrame>) {
+	public function setKeys(values:Array<IAnimationKey>) {
 		this._keys = values.slice(0);
 	}
 	
@@ -444,7 +477,7 @@ import com.babylonhx.Node;
         var animation = new Animation(parsedAnimation.name, parsedAnimation.property, parsedAnimation.framePerSecond, parsedAnimation.dataType, parsedAnimation.loopBehavior);
 		
         var dataType = parsedAnimation.dataType;
-        var keys:Array<BabylonFrame> = [];
+        var keys:Array<IAnimationKey> = [];
 		var data:Dynamic = null;
 		
 		if (parsedAnimation.enableBlending != null) {
@@ -500,7 +533,7 @@ import com.babylonhx.Node;
                     
             }
 			
-            var keyData:BabylonFrame = {
+            var keyData:IAnimationKey = {
 				frame: key.frame,
 				value: data,
 				inTangent: null,

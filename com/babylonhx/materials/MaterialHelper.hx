@@ -198,7 +198,7 @@ class MaterialHelper {
 		}
 		
 		if (useMorphTargets) {
-			if (Reflect.hasField(mesh, "morphTargetManager")) {
+			if (untyped mesh.morphTargetManager != null) {
 				var manager:MorphTargetManager = untyped mesh.morphTargetManager;
 				if (manager != null) {
 					untyped defines.MORPHTARGETS_TANGENT = manager.supportsTangents && defines.TANGENT;
@@ -470,30 +470,29 @@ class MaterialHelper {
 	}
 
 	public static function BindLights(scene:Scene, mesh:AbstractMesh, effect:Effect, specularTerm:Bool, maxSimultaneousLights:Int = 4, usePhysicalLightFalloff:Bool = false) {
-		var lightIndex:Int = 0;
-		for (light in mesh._lightSources) {
-			var scaledIntensity = light.getScaledIntensity();
-			light._uniformBuffer.bindToEffect(effect, "Light" + lightIndex);
+		var len:Int = cast Math.min(mesh._lightSources.length, maxSimultaneousLights);
+		
+		for (i in 0...len) {
+			var light = mesh._lightSources[i];
+			var iAsString = Std.string(i);
 			
-			MaterialHelper.BindLightProperties(light, effect, lightIndex);
+			var scaledIntensity = light.getScaledIntensity();
+			light._uniformBuffer.bindToEffect(effect, "Light" + iAsString);
+			
+			MaterialHelper.BindLightProperties(light, effect, i);
 			
 			light.diffuse.scaleToRef(scaledIntensity, Tmp.color3[0]);
-			light._uniformBuffer.updateColor4("vLightDiffuse", Tmp.color3[0], usePhysicalLightFalloff ? light.radius : light.range, lightIndex + "");
+			light._uniformBuffer.updateColor4("vLightDiffuse", Tmp.color3[0], usePhysicalLightFalloff ? light.radius : light.range, iAsString);
 			if (specularTerm) {
 				light.specular.scaleToRef(scaledIntensity, Tmp.color3[1]);
-				light._uniformBuffer.updateColor3("vLightSpecular", Tmp.color3[1], lightIndex + "");
+				light._uniformBuffer.updateColor3("vLightSpecular", Tmp.color3[1], iAsString);
 			}
 			
 			// Shadows
 			if (scene.shadowsEnabled) {
-				BindLightShadow(light, scene, mesh, lightIndex + "", effect);
+				BindLightShadow(light, scene, mesh, iAsString, effect);
 			}
 			light._uniformBuffer.update();
-			lightIndex++;
-			
-			if (lightIndex == maxSimultaneousLights) {
-				break;
-			}
 		}
 	}
 

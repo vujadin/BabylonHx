@@ -93,6 +93,9 @@ class RuntimeAnimation {
 			if (endKey != null && endKey.frame >= currentFrame) {
 				var startKey = keys[key];
 				var startValue:Dynamic = this._getKeyValue(startKey.value);
+				if (startKey.interpolation == AnimationKeyInterpolation.STEP) {
+                    return startValue;
+                }
 				var endValue:Dynamic = this._getKeyValue(endKey.value);
 				
 				var useTangent:Bool = startKey.outTangent != null && endKey.inTangent != null;

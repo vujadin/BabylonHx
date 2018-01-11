@@ -129,22 +129,21 @@ class MorphTargetManager {
 		this._supportsTangents = true;
 		this._vertexCount = 0;
 		for (target in this._targets) {
-			if (target.influence > 0) {
-				this._activeTargets.push(target);
-				this._tempInfluences[influenceCount++] = target.influence;
-				
+			this._activeTargets.push(target);
+			this._tempInfluences[influenceCount++] = target.influence;
+			
+			var positions = target.getPositions();
+			if (positions != null) {
 				this._supportsNormals = this._supportsNormals && target.hasNormals;
 				this._supportsTangents = this._supportsTangents && target.hasTangents;
-				
-				var positions = target.getPositions();
-                if (positions == null) {
-                    Tools.Error("Invalid target. Target must positions.");
-                    return;
-                }
 				
 				var vertexCount = Std.int(positions.length / 3);
 				if (this._vertexCount == 0) {
 					this._vertexCount = vertexCount;
+				}
+				else if (this._vertexCount != vertexCount) {
+					Tools.Error("Incompatible target. Targets must all have the same vertices count.");
+					return;
 				}
 			}
 		}

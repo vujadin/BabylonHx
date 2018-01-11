@@ -777,7 +777,7 @@ import openfl.display.OpenGLView;
 		this.setDepthWrite(true);
 		
 		// Texture maps
-        for (slot in 0...this._caps.maxTexturesImageUnits) {
+        for (slot in 0...this._caps.maxCombinedTexturesImageUnits) {
             this._nextFreeTextureSlots.push(slot);
         }
 		
@@ -1022,7 +1022,7 @@ import openfl.display.OpenGLView;
             this._boundTexturesCache[key] = null;
 		}
 		this._nextFreeTextureSlots = [];
-        for (slot in 0...this._caps.maxTexturesImageUnits) {
+        for (slot in 0...this._caps.maxCombinedTexturesImageUnits) {
             this._nextFreeTextureSlots.push(slot);
         }
         this._activeChannel = -1;
@@ -1596,6 +1596,60 @@ import openfl.display.OpenGLView;
 			if (texture._MSAAFramebuffer != null) {
 				// Bind the correct framebuffer
 				this.bindUnboundFramebuffer(texture._framebuffer);
+			}
+			onBeforeUnbind();
+		}
+		
+		this.bindUnboundFramebuffer(null);
+	}
+	
+	public function unBindMultiColorAttachmentFramebuffer(textures:Array<InternalTexture>, disableGenerateMipMaps:Bool = false, ?onBeforeUnbind:Void->Void) {
+		this._currentRenderTarget = null;
+		
+		// If MSAA, we need to bitblt back to main texture
+		if (textures[0]._MSAAFramebuffer != null) {
+			gl.bindFramebuffer(gl.READ_FRAMEBUFFER, textures[0]._MSAAFramebuffer);
+			gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, textures[0]._framebuffer);
+			
+			var attachments = textures[0]._attachments;
+			if (attachments == null) {
+				attachments = [];// new Array(textures.length);
+				textures[0]._attachments = attachments;
+			}
+			
+			for (i in 0...textures.length) {
+				var texture = textures[i];
+				
+				for (j in 0...attachments.length) {
+					attachments[j] = gl.NONE;
+				}
+				
+				attachments[i] = gl.COLOR_ATTACHMENT0 + i;// [this.webGLVersion > 1 ? gl.COLOR_ATTACHMENT + i : gl.COLOR_ATTACHMENT + i + "_WEBGL"];
+				gl.readBuffer(attachments[i]);
+				gl.drawBuffers(attachments);
+				gl.blitFramebuffer(0, 0, texture.width, texture.height,
+					0, 0, texture.width, texture.height,
+					gl.COLOR_BUFFER_BIT, gl.NEAREST);
+			}
+			for (i in 0...attachments.length) {
+				attachments[i] = gl.COLOR_ATTACHMENT0 + i;// [this.webGLVersion > 1 ? "COLOR_ATTACHMENT" + i : "COLOR_ATTACHMENT" + i + "_WEBGL"];
+			}
+			gl.drawBuffers(attachments);
+		}
+		
+		for (i in 0...textures.length) {
+			var texture = textures[i];
+			if (texture.generateMipMaps && !disableGenerateMipMaps && !texture.isCube) {
+				this._bindTextureDirectly(gl.TEXTURE_2D, texture);
+				gl.generateMipmap(gl.TEXTURE_2D);
+				this._bindTextureDirectly(gl.TEXTURE_2D, null);
+			}
+		}
+		
+		if (onBeforeUnbind != null) {
+			if (textures[0]._MSAAFramebuffer != null) {
+				// Bind the correct framebuffer
+				this.bindUnboundFramebuffer(textures[0]._framebuffer);
 			}
 			onBeforeUnbind();
 		}
@@ -2577,12 +2631,11 @@ import openfl.display.OpenGLView;
 			this._alphaState.reset();
 		}
 		
-		this._cachedVertexBuffers = null;
+		this._resetVertexBufferBinding();
 		this._cachedIndexBuffer = null;
 		this._cachedEffectForVertexBuffers = null;
 		this._unbindVertexArrayObject();
 		this.bindIndexBuffer(null);
-		this.bindArrayBuffer(null);
 	}
 	
 	/**
@@ -3712,23 +3765,32 @@ import openfl.display.OpenGLView;
 		// Dispose previous render buffers
 		if (texture._depthStencilBuffer != null) {
 			gl.deleteRenderbuffer(texture._depthStencilBuffer);
+			texture._depthStencilBuffer = null;
 		}
 		
 		if (texture._MSAAFramebuffer != null) {
 			gl.deleteFramebuffer(texture._MSAAFramebuffer);
+			texture._MSAAFramebuffer = null;
 		}
 		
 		if (texture._MSAARenderBuffer != null) {
 			gl.deleteRenderbuffer(texture._MSAARenderBuffer);
+			texture._MSAARenderBuffer = null;
 		}
 		
 		if (samples > 1) {
+			var framebuffer = gl.createFramebuffer();
+			
+            if (framebuffer == null) {
+                throw "Unable to create multi sampled framebuffer";
+            }
+			
 			texture._MSAAFramebuffer = gl.createFramebuffer();
 			this.bindUnboundFramebuffer(texture._MSAAFramebuffer);
 			
 			var colorRenderbuffer = gl.createRenderbuffer();
 			gl.bindRenderbuffer(gl.RENDERBUFFER, colorRenderbuffer);
-			gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, gl.RGBA8, texture.width, texture.height);
+			gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, this._getRGBAMultiSampleBufferFormat(texture.type), texture.width, texture.height);
 			
 			gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, colorRenderbuffer);
 			
@@ -3742,6 +3804,81 @@ import openfl.display.OpenGLView;
 		texture._depthStencilBuffer = this._setupFramebufferDepthAttachments(texture._generateStencilBuffer, texture._generateDepthBuffer, texture.width, texture.height, samples);
 		
 		gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+		this.bindUnboundFramebuffer(null);
+		
+		return samples;
+	}
+	
+	public function updateMultipleRenderTargetTextureSampleCount(textures:Array<InternalTexture>, samples:Int):Int {
+		if (this.webGLVersion < 2 || textures == null || textures.length == 0) {
+			return 1;
+		}
+		
+		if (textures[0].samples == samples) {
+			return samples;
+		}
+		
+		samples = cast Math.min(samples, cast gl.getParameter(gl.MAX_SAMPLES));
+		
+		// Dispose previous render buffers
+		if (textures[0]._depthStencilBuffer != null) {
+			gl.deleteRenderbuffer(textures[0]._depthStencilBuffer);
+			textures[0]._depthStencilBuffer = null;
+		}
+		
+		if (textures[0]._MSAAFramebuffer != null) {
+			gl.deleteFramebuffer(textures[0]._MSAAFramebuffer);
+			textures[0]._MSAAFramebuffer = null;
+		}
+		
+		for (i in 0...textures.length) {
+			if (textures[i]._MSAARenderBuffer != null) {
+				gl.deleteRenderbuffer(textures[i]._MSAARenderBuffer);
+				textures[i]._MSAARenderBuffer = null;
+			}
+		}
+		
+		if (samples > 1) {
+			var framebuffer = gl.createFramebuffer();
+			
+			if (framebuffer == null) {
+				throw "Unable to create multi sampled framebuffer";
+			}
+			
+			this.bindUnboundFramebuffer(framebuffer);
+			
+			var depthStencilBuffer = this._setupFramebufferDepthAttachments(textures[0]._generateStencilBuffer, textures[0]._generateDepthBuffer, textures[0].width, textures[0].height, samples);
+			
+			var attachments:Array<Int> = [];
+
+			for (i in 0...textures.length) {
+				var texture = textures[i];
+				var attachment = gl.COLOR_ATTACHMENT0 + i; // [this.webGLVersion > 1 ? "COLOR_ATTACHMENT" + i : "COLOR_ATTACHMENT" + i + "_WEBGL"];
+				
+				var colorRenderbuffer = gl.createRenderbuffer();
+				
+				if (colorRenderbuffer == null) {
+					throw "Unable to create multi sampled framebuffer";
+				}
+				
+				gl.bindRenderbuffer(gl.RENDERBUFFER, colorRenderbuffer);
+				gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, this._getRGBAMultiSampleBufferFormat(texture.type), texture.width, texture.height);
+				
+				gl.framebufferRenderbuffer(gl.FRAMEBUFFER, attachment, gl.RENDERBUFFER, colorRenderbuffer);
+				
+				texture._MSAAFramebuffer = framebuffer;
+				texture._MSAARenderBuffer = colorRenderbuffer;
+				texture.samples = samples;
+				texture._depthStencilBuffer = depthStencilBuffer;
+				gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+				attachments.push(attachment);
+			}
+			gl.drawBuffers(attachments);
+		} 
+		else {
+			this.bindUnboundFramebuffer(textures[0]._framebuffer);
+		}
+		
 		this.bindUnboundFramebuffer(null);
 		
 		return samples;
@@ -4219,7 +4356,7 @@ import openfl.display.OpenGLView;
 	}
 	
 	public function unbindAllTextures() {
-		for (channel in 0...this._caps.maxTexturesImageUnits) {
+		for (channel in 0...this._caps.maxCombinedTexturesImageUnits) {
 			this._activateTextureChannel(channel);
 			this._bindTextureDirectly(gl.TEXTURE_2D, null);
 			this._bindTextureDirectly(gl.TEXTURE_CUBE_MAP, null);
@@ -4716,6 +4853,17 @@ import openfl.display.OpenGLView;
 		
 		return gl.RGBA;
 	}
+	
+	public function _getRGBAMultiSampleBufferFormat(type:Int):Int {
+        if (type == Engine.TEXTURETYPE_FLOAT) {
+			return gl.RGBA32F;
+        }
+        else if (type == Engine.TEXTURETYPE_HALF_FLOAT) {
+            return gl.RGBA16F;
+        }
+		
+        return gl.RGBA8;
+    }
 	
 	public inline function createQuery():GLQuery {
 		return this.gl.createQuery();

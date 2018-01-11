@@ -8,6 +8,7 @@ import com.babylonhx.sprites.SpriteManager;
 import com.babylonhx.particles.IParticleSystem;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.Tools;
+import com.babylonhx.materials.Material;
 
 /**
  * ...
@@ -177,13 +178,20 @@ import com.babylonhx.tools.Tools;
         this._renderingGroups[renderingGroupId].dispatchParticles(particleSystem);
     }
 
-    public function dispatch(subMesh:SubMesh) {
-        var mesh = subMesh.getMesh();
+	/**
+     * @param subMesh The submesh to dispatch
+     * @param [mesh] Optional reference to the submeshes's mesh. Provide if you have an exiting reference to improve performance.
+     * @param [material] Optional reference to the submeshes's material. Provide if you have an exiting reference to improve performance.
+     */
+    public function dispatch(subMesh:SubMesh, ?mesh:AbstractMesh, ?material:Material) {
+		if (mesh == null) {
+			mesh = subMesh.getMesh();
+		}
         var renderingGroupId = mesh.renderingGroupId;
 		
         this._prepareRenderingGroup(renderingGroupId);
 		
-		this._renderingGroups[renderingGroupId].dispatch(subMesh);
+		this._renderingGroups[renderingGroupId].dispatch(subMesh, mesh, material);
     }
 	
 	/**

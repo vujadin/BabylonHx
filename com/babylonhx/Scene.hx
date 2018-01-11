@@ -84,7 +84,7 @@ import com.babylonhx.tools.StringDictionary;
 import com.babylonhx.tools.PerfCounter;
 import haxe.Timer;
 
-import com.babylonhx.d2.display.Stage;
+//import com.babylonhx.d2.display.Stage;
 
 #if (purejs || js)
 import com.babylonhx.audio.*;
@@ -894,6 +894,7 @@ import com.babylonhx.audio.*;
 	private var _pendingData:Array<Dynamic> = [];//ANY
 	private var _isDisposed:Bool = false;
 
+	public var dispatchAllSubMeshesOfActiveMeshes:Bool = false;
 	private var _activeMeshes:SmartArray<AbstractMesh> = new SmartArray<AbstractMesh>(256);				
 	private var _processedMaterials:SmartArray<Material> = new SmartArray<Material>(256);		
 	private var _renderTargets:SmartArrayNoDuplicate<RenderTargetTexture> = new SmartArrayNoDuplicate<RenderTargetTexture>(256);			
@@ -2033,21 +2034,50 @@ import com.babylonhx.audio.*;
         this._cachedVisibility = 0;
     }
 	
-	public function registerBeforeRender(func:Scene->Null<EventState>->Void) {
+	public function registerBeforeRender(func:Null<Scene>->Null<EventState>->Void) {
 		this.onBeforeRenderObservable.add(func);
 	}
 
-	public function unregisterBeforeRender(func:Scene->Null<EventState>->Void) {
+	public function unregisterBeforeRender(func:Null<Scene>->Null<EventState>->Void) {
 		this.onBeforeRenderObservable.removeCallback(func);
 	}
 	
-	public function registerAfterRender(func:Scene->Null<EventState>->Void) {
+	public function registerAfterRender(func:Null<Scene>->Null<EventState>->Void) {
 		this.onAfterRenderObservable.add(func);
     }
 	
-    public function unregisterAfterRender(func:Scene->Null<EventState>->Void) {
+    public function unregisterAfterRender(func:Null<Scene>->Null<EventState>->Void) {
         this.onAfterRenderObservable.removeCallback(func);
     }
+	
+	var execFunc:Null<Scene>->Null<EventState>->Void;
+	private function _executeOnceBeforeRender(func:Void->Void) {
+		execFunc = function(_, _) {
+			func();
+			Tools.delay(function() {
+				this.unregisterBeforeRender(execFunc);
+			}, 0);
+		};
+		this.registerBeforeRender(execFunc);
+	}
+
+	/**
+	 * The provided function will run before render once and will be disposed afterwards.
+	 * A timeout delay can be provided so that the function will be executed in N ms.
+	 * The timeout is using the browser's native setTimeout so time percision cannot be guaranteed.
+	 * @param func The function to be executed.
+	 * @param timeout optional delay in ms
+	 */
+	public function executeOnceBeforeRender(func:Void->Void, timeout:Int = -1) {
+		if (timeout != -1) {
+			Tools.delay(function() {
+				this._executeOnceBeforeRender(func);
+			}, timeout);
+		} 
+		else {
+			this._executeOnceBeforeRender(func);
+		}
+	}
 
 	public function _addPendingData(data:Dynamic) {
 		this._pendingData.push(data);
@@ -2147,11 +2177,44 @@ import com.babylonhx.audio.*;
 		return animatable;
 	}
 
+	/**
+     * Begin a new animation on a given node
+     * @param {BABYLON.Node} node defines the root node where the animation will take place
+     * @param {BABYLON.Animation[]} defines the list of animations to start
+     * @param {number} from defines the initial value
+     * @param {number} to defines the final value
+     * @param {boolean} loop defines if you want animation to loop (off by default)
+     * @param {number} speedRatio defines the speed ratio to apply to all animations
+     * @param onAnimationEnd defines the callback to call when an animation ends (will be called once per node)
+     * @returns the list of created animatables
+     */
 	public function beginDirectAnimation(target:Dynamic, animations:Array<Animation>, from:Int, to:Int, loop:Bool = false, ?speedRatio:Float = 1.0, ?onAnimationEnd:Void->Void):Animatable {
 		var animatable = new Animatable(this, target, from, to, loop, speedRatio, onAnimationEnd, animations);
 		
 		return animatable;
 	}
+	
+	/**
+     * Begin a new animation on a given node and its hierarchy
+     * @param {BABYLON.Node} node defines the root node where the animation will take place
+     * @param {boolean} directDescendantsOnly if true only direct descendants will be used, if false direct and also indirect (children of children, an so on in a recursive manner) descendants will be used.
+     * @param {BABYLON.Animation[]} defines the list of animations to start
+     * @param {number} from defines the initial value
+     * @param {number} to defines the final value
+     * @param {boolean} loop defines if you want animation to loop (off by default)
+     * @param {number} speedRatio defines the speed ratio to apply to all animations
+     * @param onAnimationEnd defines the callback to call when an animation ends (will be called once per node)
+     * @returns the list of animatables created for all nodes
+     */
+    public function beginDirectHierarchyAnimation(target:Node, directDescendantsOnly:Bool, animations:Array<Animation>, from:Int, to:Int, loop:Bool = false, ?speedRatio:Int, ?onAnimationEnd:Void->Void):Array<Animatable> {
+        var children = target.getDescendants(directDescendantsOnly);
+        var result:Array<Animatable> = [];
+        for (child in children) {
+            result.push(this.beginDirectAnimation(child, animations, from, to, loop, speedRatio, onAnimationEnd));
+        }
+		
+        return result;
+    }
 
 	public function getAnimatableByTarget(target:Dynamic):Animatable {
 		for (index in 0...this._activeAnimatables.length) {
@@ -2401,6 +2464,14 @@ import com.babylonhx.audio.*;
 	public function addLight(newLight:Light) {
 		this.lights.push(newLight);
 		this.sortLightsByPriority();
+		
+		// Add light to all meshes (To support if the light is removed and then readded)
+        for (mesh in this.meshes) {
+            if (mesh._lightSources.indexOf(newLight) == -1) {
+                mesh._lightSources.push(newLight);
+                mesh._resyncLightSources();
+            }
+        }
 		
 		this.onNewLightAddedObservable.notifyObservers(newLight);
 	}
@@ -3014,33 +3085,43 @@ import com.babylonhx.audio.*;
 	}
 
 	static var _eSMMaterial:Material;
-	inline private function _evaluateSubMesh(subMesh:SubMesh, mesh:AbstractMesh) {
-		if (mesh.alwaysSelectAsActiveMesh || mesh.subMeshes.length == 1 || subMesh.isInFrustum(this._frustumPlanes)) {
-			_eSMMaterial = subMesh.getMaterial();
-			
+	private function _evaluateSubMesh(subMesh:SubMesh, mesh:AbstractMesh) {
+		if (this.dispatchAllSubMeshesOfActiveMeshes || mesh.alwaysSelectAsActiveMesh || mesh.subMeshes.length == 1 || subMesh.isInFrustum(this._frustumPlanes)) {
 			if (mesh.showSubMeshesBoundingBox) {
-				this._boundingBoxRenderer.renderList.push(subMesh.getBoundingInfo().boundingBox);
+				var boundingInfo = subMesh.getBoundingInfo();
+				if (boundingInfo != null) {
+					this.getBoundingBoxRenderer().renderList.push(boundingInfo.boundingBox);
+				}
 			}
 			
-			if (_eSMMaterial != null) {
+			var material = subMesh.getMaterial();
+			if (material != null) {
 				// Render targets
-				if (_eSMMaterial.getRenderTargetTextures != null) {
-					if (this._processedMaterials.indexOf(_eSMMaterial) == -1) {
-						this._processedMaterials.push(_eSMMaterial);
+				if (material.getRenderTargetTextures != null) {
+					if (this._processedMaterials.indexOf(material) == -1) {
+						this._processedMaterials.push(material);
 						
-						this._renderTargets.concatSmartArrayWithNoDuplicate(_eSMMaterial.getRenderTargetTextures());
+						this._renderTargets.concatSmartArrayWithNoDuplicate(material.getRenderTargetTextures());
 					}
 				}
 				
 				// Dispatch
-				this._activeIndices.addCount(subMesh.verticesCount, false);
-				this._renderingManager.dispatch(subMesh);
+				this._activeIndices.addCount(subMesh.indexCount, false);
+				this._renderingManager.dispatch(subMesh, mesh, material);
 			}
 		}
 	}
 	
 	public function _isInIntermediateRendering():Bool {
         return this._intermediateRendering;
+    }
+	
+	private var _activeMeshCandidateProvider:IActiveMeshCandidateProvider;
+    public function setActiveMeshCandidateProvider(provider:IActiveMeshCandidateProvider) {
+        this._activeMeshCandidateProvider = provider;
+    }
+    public function getActiveMeshCandidateProvider():IActiveMeshCandidateProvider {
+        return this._activeMeshCandidateProvider;
     }
 	
 	private var _activeMeshesFrozen:Bool = false;
@@ -3063,6 +3144,16 @@ import com.babylonhx.audio.*;
 	}
 
 	private function _evaluateActiveMeshes() {
+		if (this._activeMeshesFrozen && this._activeMeshes.length > 0) {
+            return;
+        }
+		
+        if (this.activeCamera == null) {
+            return;
+        }
+		
+        this.onBeforeActiveMeshesEvaluationObservable.notifyObservers(this);
+		
 		this.activeCamera._activeMeshes.reset();
 		this._activeMeshes.reset();
 		this._renderingManager.reset();
@@ -3078,18 +3169,37 @@ import com.babylonhx.audio.*;
 		var meshes:Array<AbstractMesh> = [];
 		var len:Int = 0;
 		
-		if (this._selectionOctree != null) { // Octree
+		var checkIsEnabled = true;
+		
+        // Determine mesh candidates
+        if (this._activeMeshCandidateProvider != null) {
+            // Use _activeMeshCandidateProvider
+            meshes = this._activeMeshCandidateProvider.getMeshes(this);
+            checkIsEnabled = this._activeMeshCandidateProvider.checksIsEnabled == false;
+            if (meshes != null) {
+                len = meshes.length;
+            } 
+			else {
+                len = 0;
+            }
+        } 
+		else if (this._selectionOctree != null) {
+            // Octree
 			var selection = this._selectionOctree.select(this._frustumPlanes);
 			meshes = selection.data;
 			len = selection.length;
 		} 
-		else { // Full scene traversal
+		else {
+			// Full scene traversal
 			len = this.meshes.length;
 			meshes = this.meshes;
 		}
 		
+		// Check each mesh
+		var mesh:Mesh = null;
+		var meshLOD:Mesh = null;
 		for (meshIndex in 0...len) {
-			var mesh = meshes[meshIndex];
+			mesh = cast meshes[meshIndex];
 			
 			if (mesh.isBlocked) {
 				continue;
@@ -3097,7 +3207,7 @@ import com.babylonhx.audio.*;
 			
 			this._totalVertices.addCount(mesh.getTotalVertices(), false);
 			
-			if (!mesh.isReady() || !mesh.isEnabled()) {
+			if (!mesh.isReady() || (checkIsEnabled && !mesh.isEnabled())) {
 				continue;
 			}
 			
@@ -3109,7 +3219,7 @@ import com.babylonhx.audio.*;
 			}
 			
 			// Switch to current LOD
-			var meshLOD = mesh.getLOD(this.activeCamera);
+			meshLOD = cast mesh.getLOD(this.activeCamera);
 			
 			if (meshLOD == null) {
 				continue;
@@ -3153,7 +3263,7 @@ import com.babylonhx.audio.*;
 	}
 
 	private function _activeMesh(sourceMesh:AbstractMesh, mesh:AbstractMesh) {
-		if (mesh.skeleton != null && this.skeletonsEnabled) {
+		if (this.skeletonsEnabled && mesh.skeleton != null) {
 			if (this._activeSkeletons.pushNoDuplicate(mesh.skeleton)) {
 				mesh.skeleton.prepare();
 			}
@@ -3169,12 +3279,12 @@ import com.babylonhx.audio.*;
 			this.getBoundingBoxRenderer().renderList.push(boundingInfo.boundingBox);
 		}
         
-		if (mesh != null && mesh.subMeshes != null) {
+		if (mesh != null && mesh.subMeshes != null && mesh.subMeshes.length > 0) {
 			// Submeshes Octrees
 			var len:Int = -1;
 			var subMeshes:Array<SubMesh> = null;
 			
-			if (mesh._submeshesOctree != null && mesh.useOctreeForRenderingSelection) {
+			if (mesh.useOctreeForRenderingSelection && mesh._submeshesOctree != null) {
 				var intersections = mesh._submeshesOctree.select(this._frustumPlanes);
 				
 				len = intersections.length;
@@ -3186,8 +3296,7 @@ import com.babylonhx.audio.*;
 			}
 			
 			for (subIndex in 0...len) {
-				var subMesh = subMeshes[subIndex];
-				this._evaluateSubMesh(subMesh, mesh);
+				this._evaluateSubMesh(subMeshes[subIndex], mesh);
 			}
 		}
 	}

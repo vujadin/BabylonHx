@@ -479,7 +479,7 @@ import com.babylonhx.postprocess.PostProcessManager;
 					for (subIndex in 0...mesh.subMeshes.length) {
 						var subMesh = mesh.subMeshes[subIndex];
 						scene._activeIndices.addCount(subMesh.indexCount, false);
-						this._renderingManager.dispatch(subMesh);
+						this._renderingManager.dispatch(subMesh, mesh);
 					}
 				}
 			}
@@ -529,6 +529,15 @@ import com.babylonhx.postprocess.PostProcessManager;
 		// Ensure we don't exceed the render dimension (while staying POT)
 		return Std.int(Math.min(MathTools.NearestPOT(renderDimension), curved));
 	}
+	
+	public function unbindFrameBuffer(engine:Engine, faceIndex:Int) {
+        if (this._texture == null) {
+            return;
+        }
+        engine.unBindFramebuffer(this._texture, this.isCube, function() {
+            this.onAfterRenderObservable.notifyObservers(faceIndex);
+        });
+    }
 
 	private function renderToTarget(faceIndex:Int, currentRenderList:Array<AbstractMesh>, currentRenderListLength:Int, useCameraPostProcess:Bool, dumpForDebug:Bool = false) {
 		var scene = this.getScene();
@@ -594,9 +603,7 @@ import com.babylonhx.postprocess.PostProcessManager;
 				}
 			}
 			
-			engine.unBindFramebuffer(this._texture, this.isCube, function() {
-				this.onAfterRenderObservable.notifyObservers(faceIndex);    
-			});
+			this.unbindFrameBuffer(engine, faceIndex);
 		} 
 		else {
 			this.onAfterRenderObservable.notifyObservers(faceIndex);

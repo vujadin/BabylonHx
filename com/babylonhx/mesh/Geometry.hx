@@ -1085,8 +1085,9 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		mesh.computeWorldMatrix(true);
 		
 		// Octree
-		if (scene._selectionOctree != null) {
-			scene._selectionOctree.addMesh(mesh);
+		var sceneOctree = scene.selectionOctree;
+		if (sceneOctree != null) {
+			sceneOctree.addMesh(mesh);
 		}
 	}
 	

@@ -62,6 +62,8 @@ class EnvironmentHelper {
 			groundMirrorFallOffDistance: 0,
 			groundMirrorTextureType: Engine.TEXTURETYPE_UNSIGNED_INT,
 			
+			groundYBias: 0.0001,
+			
 			createSkybox: true,
 			skyboxSize: 20,
 			skyboxTexture: _skyboxTextureUrl,
@@ -456,27 +458,24 @@ class EnvironmentHelper {
 		
 		var sceneExtends = this._scene.getWorldExtends();
 		var sceneDiagonal = sceneExtends.max.subtract(sceneExtends.min);
-		var bias = 0.0001;
 		
 		if (this._options.sizeAuto) {
 			if (Std.is(this._scene.activeCamera, ArcRotateCamera) && untyped this._scene.activeCamera.upperRadiusLimit != 0) {
 				groundSize = untyped this._scene.activeCamera.upperRadiusLimit * 2;
-			}
-			
-			if (this._scene.activeCamera != null) {
-				bias = (this._scene.activeCamera.maxZ - this._scene.activeCamera.minZ) / 10000;
+				skyboxSize = groundSize;
 			}
 			
 			var sceneDiagonalLenght = sceneDiagonal.length();
 			if (sceneDiagonalLenght > groundSize) {
 				groundSize = sceneDiagonalLenght * 2;
+				skyboxSize = groundSize;
 			}
 			
 			// 10 % bigger.
 			groundSize *= 1.1;
 			skyboxSize *= 1.5;
 			rootPosition = sceneExtends.min.add(sceneDiagonal.scale(0.5));
-			rootPosition.y = sceneExtends.min.y - bias;
+			rootPosition.y = sceneExtends.min.y - this._options.groundYBias;
 		}
 		
 		return { groundSize: groundSize, skyboxSize: skyboxSize, rootPosition: rootPosition };

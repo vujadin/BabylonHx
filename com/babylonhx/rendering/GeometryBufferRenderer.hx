@@ -137,6 +137,14 @@ class GeometryBufferRenderer {
 	public function getGBuffer():MultiRenderTarget {
 		return this._multiRenderTarget;
 	}
+	
+	public var samples(get, set):Int;
+	inline function get_samples():Int {
+        return this._multiRenderTarget.samples;
+    }
+    inline function set_samples(value:Int):Int {
+        return this._multiRenderTarget.samples = value;
+    }
 
 	// Methods
 	public function dispose() {
@@ -148,7 +156,7 @@ class GeometryBufferRenderer {
 		var count = this._enablePosition ? 3 : 2;
 		
 		// Render target
-		this._multiRenderTarget = new MultiRenderTarget("gBuffer", { width: engine.getRenderWidth() * this._ratio, height: engine.getRenderHeight() * this._ratio }, count, this._scene, { generateMipMaps: false, generateDepthTexture: true });
+		this._multiRenderTarget = new MultiRenderTarget("gBuffer", { width: engine.getRenderWidth() * this._ratio, height: engine.getRenderHeight() * this._ratio }, count, this._scene, { generateMipMaps: false, generateDepthTexture: true, defaultType: Engine.TEXTURETYPE_FLOAT });
 		if (!this.isSupported) {
 			return;
 		}

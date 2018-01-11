@@ -340,12 +340,19 @@ import com.babylonhx.particles.IParticleSystem;
 	}
 
 	/**
-	 * Inserts the submesh in its correct queue depending on its material.
-	 * @param subMesh The submesh to dispatch
-	 */
-	inline public function dispatch(subMesh:SubMesh) {
-		var material = subMesh.getMaterial();
-		var mesh = subMesh.getMesh();
+     * Inserts the submesh in its correct queue depending on its material.
+     * @param subMesh The submesh to dispatch
+     * @param [mesh] Optional reference to the submeshes's mesh. Provide if you have an exiting reference to improve performance.
+     * @param [material] Optional reference to the submeshes's material. Provide if you have an exiting reference to improve performance.
+     */
+	inline public function dispatch(subMesh:SubMesh, ?mesh:AbstractMesh, ?material:Material) {
+		// Get mesh and materials if not provided
+		if (mesh == null) {
+			mesh = subMesh.getMesh();
+		}
+		if (material == null) {
+			material = subMesh.getMaterial();
+		}
 		
 		if (material == null) {
 			return;
