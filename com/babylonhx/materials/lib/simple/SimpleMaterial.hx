@@ -5,6 +5,7 @@ import com.babylonhx.math.Color3;
 import com.babylonhx.materials.textures.BaseTexture;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.Mesh;
+import com.babylonhx.mesh.BaseSubMesh;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.lights.IShadowLight;
 import com.babylonhx.lights.DirectionalLight;
@@ -18,10 +19,7 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 /**
  * ...
  * @author Krtolica Vujadin
- */
-
-typedef SMD = SimpleMaterialDefines
- 
+ */ 
 class SimpleMaterial extends Material {
 	
 	static var fragmentShader:String = "precision highp float;\n\nuniform vec3 vEyePosition;\nuniform vec4 vDiffuseColor;\n\nvarying vec3 vPositionW;\n#ifdef NORMAL\nvarying vec3 vNormalW;\n#endif\n#ifdef VERTEXCOLOR\nvarying vec4 vColor;\n#endif\n\n#include<lightFragmentDeclaration>[0..maxSimultaneousLights]\n#include<lightsFragmentFunctions>\n#include<shadowsFragmentFunctions>\n\n#ifdef DIFFUSE\nvarying vec2 vDiffuseUV;\nuniform sampler2D diffuseSampler;\nuniform vec2 vDiffuseInfos;\n#endif\n#include<clipPlaneFragmentDeclaration>\n\n#include<fogFragmentDeclaration>\nvoid main(void) {\n#include<clipPlaneFragment>\nvec3 viewDirectionW=normalize(vEyePosition-vPositionW);\n\nvec4 baseColor=vec4(1.,1.,1.,1.);\nvec3 diffuseColor=vDiffuseColor.rgb;\n\nfloat alpha=vDiffuseColor.a;\n#ifdef DIFFUSE\nbaseColor=texture2D(diffuseSampler,vDiffuseUV);\n#ifdef ALPHATEST\nif (baseColor.a<0.4)\ndiscard;\n#endif\nbaseColor.rgb*=vDiffuseInfos.y;\n#endif\n#ifdef VERTEXCOLOR\nbaseColor.rgb*=vColor.rgb;\n#endif\n\n#ifdef NORMAL\nvec3 normalW=normalize(vNormalW);\n#else\nvec3 normalW=vec3(1.0,1.0,1.0);\n#endif\n\nvec3 diffuseBase=vec3(0.,0.,0.);\nlightingInfo info;\nfloat shadow=1.;\nfloat glossiness=0.;\n#include<lightFragment>[0..maxSimultaneousLights]\n#ifdef VERTEXALPHA\nalpha*=vColor.a;\n#endif\nvec3 finalDiffuse=clamp(diffuseBase*diffuseColor,0.0,1.0)*baseColor.rgb;\n\nvec4 color=vec4(finalDiffuse,alpha);\n#include<fogFragment>\ngl_FragColor=color;\n}";
@@ -89,170 +87,131 @@ class SimpleMaterial extends Material {
 		return false;
 	}
 
-	override public function isReady(?mesh:AbstractMesh, useInstances:Bool = false):Bool {
-		if (this.checkReadyOnlyOnce) {
-			if (this._wasPreviouslyReady) {
+	override public function isReadyForSubMesh(mesh:AbstractMesh, subMesh:BaseSubMesh, useInstances:Bool = false):Bool {
+		if (this.isFrozen) {
+			if (this._wasPreviouslyReady && subMesh.effect != null) {
 				return true;
 			}
 		}
 		
+		if (subMesh._materialDefines == null) {
+			subMesh._materialDefines = new SimpleMaterialDefines();
+		}
+		
+		var defines:SimpleMaterialDefines = cast subMesh._materialDefines;
 		var scene = this.getScene();
 		
-		if (!this.checkReadyOnEveryCall) {
+		if (!this.checkReadyOnEveryCall && subMesh.effect != null) {
 			if (this._renderId == scene.getRenderId()) {
-				if (this._checkCache(scene, mesh, useInstances)) {
-					return true;
-				}
+				return true;
 			}
 		}
 		
 		var engine = scene.getEngine();
-		var needNormals = false;
-		var needUVs = false;
-		
-		this._defines.reset();
 		
 		// Textures
-		if (scene.texturesEnabled) {
-			if (this.diffuseTexture != null && StandardMaterial.DiffuseTextureEnabled) {
-				if (!this.diffuseTexture.isReady()) {
-					return false;
-				} 
-				else {
-					needUVs = true;
-					this._defines.defines["DIFFUSE"] = true;
+		if (defines._areTexturesDirty) {
+			defines._needUVs = false;
+			if (scene.texturesEnabled) {
+				if (this._diffuseTexture != null && StandardMaterial.DiffuseTextureEnabled) {
+					if (!this._diffuseTexture.isReady()) {
+						return false;
+					} 
+					else {
+						defines._needUVs = true;
+						defines.DIFFUSE = true;
+					}
 				}
-			}                
+			}
 		}
 		
-		// Effect
-		if (scene.clipPlane != null) {
-			this._defines.defines["CLIPPLANE"] = true;
-		}
+		// Misc.
+		MaterialHelper.PrepareDefinesForMisc(mesh, scene, false, this.pointsCloud, this.fogEnabled, defines);
 		
-		if (engine.getAlphaTesting()) {
-			this._defines.defines["ALPHATEST"] = true;
-		}
+		// Lights
+		defines._needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, defines, false, this._maxSimultaneousLights, this._disableLighting);
 		
-		// Point size
-		if (this.pointsCloud || scene.forcePointsCloud) {
-			this._defines.defines["POINTSIZE"] = true;
-		}
-		
-		// Fog
-		if (scene.fogEnabled && mesh != null && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE && this.fogEnabled) {
-			this._defines.defines["FOG"] = true;
-		}
-		
-		if (scene.lightsEnabled && !this.disableLighting) {
-			needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, this._defines, this.maxSimultaneousLights);
-		}
+		// Values that need to be evaluated on every frame
+		MaterialHelper.PrepareDefinesForFrameBoundValues(scene, engine, defines, useInstances ? true : false, this._shouldTurnAlphaTestOn(mesh));
 		
 		// Attribs
-		if (mesh != null) {
-			if (needNormals && mesh.isVerticesDataPresent(VertexBuffer.NormalKind)) {
-				this._defines.defines["NORMAL"] = true;
-			}
-			
-			if (needUVs) {
-				if (mesh.isVerticesDataPresent(VertexBuffer.UVKind)) {
-					this._defines.defines["UV1"] = true;
-				}
-				if (mesh.isVerticesDataPresent(VertexBuffer.UV2Kind)) {
-					this._defines.defines["UV2"] = true;
-				}
-			}
-			
-			if (mesh.useVertexColors && mesh.isVerticesDataPresent(VertexBuffer.ColorKind)) {
-				this._defines.defines["VERTEXCOLOR"] = true;
-				
-				if (mesh.hasVertexAlpha) {
-					this._defines.defines["VERTEXALPHA"] = true;
-				}
-			}
-			
-			if (mesh.useBones && mesh.computeBonesUsingShaders) {
-				this._defines.NUM_BONE_INFLUENCERS = mesh.numBoneInfluencers;
-				this._defines.BonesPerMesh = (mesh.skeleton.bones.length + 1);
-			}
-			
-			// Instances
-			if (useInstances) {
-				this._defines.defines["INSTANCES"] = true;
-			}
-		}
+		MaterialHelper.PrepareDefinesForAttributes(mesh, defines, true, true);
 		
 		// Get correct effect      
-		if (!this._defines.isEqual(this._cachedDefines) || this._effect == null) {
-			this._defines.cloneTo(this._cachedDefines);
-			
+		if (defines.isDirty) {
+			defines.markAsProcessed();
 			scene.resetCachedMaterial();
 			
 			// Fallbacks
-			var fallbacks = new EffectFallbacks();             
-			if (this._defines.defines["FOG"]) {
+			var fallbacks = new EffectFallbacks();
+			if (defines.FOG) {
 				fallbacks.addFallback(1, "FOG");
 			}
 			
-			MaterialHelper.HandleFallbacksForShadows(this._defines, fallbacks, this.maxSimultaneousLights);
+			MaterialHelper.HandleFallbacksForShadows(defines, fallbacks, this.maxSimultaneousLights);
 			
-			if (this._defines.NUM_BONE_INFLUENCERS > 0) {
+			if (defines.NUM_BONE_INFLUENCERS > 0) {
 				fallbacks.addCPUSkinningFallback(0, mesh);
 			}
 			
 			//Attributes
 			var attribs:Array<String> = [VertexBuffer.PositionKind];
 			
-			if (this._defines.defines["NORMAL"]) {
+			if (defines.NORMAL) {
 				attribs.push(VertexBuffer.NormalKind);
 			}
 			
-			if (this._defines.defines["UV1"]) {
+			if (defines.UV1) {
 				attribs.push(VertexBuffer.UVKind);
 			}
 			
-			if (this._defines.defines["UV2"]) {
+			if (defines.UV2) {
 				attribs.push(VertexBuffer.UV2Kind);
 			}
 			
-			if (this._defines.defines["VERTEXCOLOR"]) {
+			if (defines.VERTEXCOLOR) {
 				attribs.push(VertexBuffer.ColorKind);
 			}
 			
-			MaterialHelper.PrepareAttributesForBones(attribs, mesh, this._defines, fallbacks);
-			MaterialHelper.PrepareAttributesForInstances(attribs, this._defines);
+			MaterialHelper.PrepareAttributesForBones(attribs, mesh, defines, fallbacks);
+			MaterialHelper.PrepareAttributesForInstances(attribs, defines);
 			
-			var shaderName = "simplemat";
-			var join = this._defines.toString();
-			var uniforms = ["world", "view", "viewProjection", "vEyePosition", "vLightsType", "vDiffuseColor",
-							"vFogInfos", "vFogColor", "pointSize",
-							"vDiffuseInfos", 
-							"mBones",
-							"vClipPlane", "diffuseMatrix", "depthValues"
+			var shaderName:String = "simple";
+			var join:String = defines.toString();
+			var uniforms:Array<String> = ["world", "view", "viewProjection", "vEyePosition", "vLightsType", "vDiffuseColor",
+				"vFogInfos", "vFogColor", "pointSize",
+				"vDiffuseInfos",
+				"mBones",
+				"vClipPlane", "diffuseMatrix"
 			];
+			var samplers:Array<String> = ["diffuseSampler"];
+			var uniformBuffers:Array<String> = [];
 			
-			var samplers = ["diffuseSampler"];
-			
-			MaterialHelper.PrepareUniformsAndSamplersList(uniforms, samplers, this._defines, this.maxSimultaneousLights);
-			
-			this._effect = scene.getEngine().createEffect(shaderName,
-				attribs, uniforms, samplers,
-				join, fallbacks, this.onCompiled, this.onError, { maxSimultaneousLights: this.maxSimultaneousLights });
+			MaterialHelper.PrepareUniformsAndSamplersList({
+				uniformsNames: uniforms,
+				uniformBuffersNames: uniformBuffers,
+				samplers: samplers,
+				defines: defines,
+				maxSimultaneousLights: this.maxSimultaneousLights
+			});
+			subMesh.setEffect(scene.getEngine().createEffect(shaderName, {
+					attributes: attribs,
+					uniformsNames: uniforms,
+					uniformBuffersNames: uniformBuffers,
+					samplers: samplers,
+					defines: join,
+					fallbacks: fallbacks,
+					onCompiled: this.onCompiled,
+					onError: this.onError,
+					indexParameters: { maxSimultaneousLights: this._maxSimultaneousLights - 1 }
+				}, engine), defines);
 		}
-		if (!this._effect.isReady()) {
+		if (subMesh.effect == null || !subMesh.effect.isReady()) {
 			return false;
 		}
 		
 		this._renderId = scene.getRenderId();
 		this._wasPreviouslyReady = true;
-		
-		if (mesh != null) {
-			if (mesh._materialDefines == null) {
-				mesh._materialDefines = new SimpleMaterialDefines();
-			}
-			
-			this._defines.cloneTo(mesh._materialDefines);
-		}
 		
 		return true;
 	}

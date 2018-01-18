@@ -332,7 +332,7 @@ class WaterMaterial extends PushMaterial {
 			}
 		}
 		
-		MaterialHelper.PrepareDefinesForFrameBoundValues(scene, engine, defines, useInstances);
+		MaterialHelper.PrepareDefinesForFrameBoundValues(scene, engine, defines, useInstances, this._shouldTurnAlphaTestOn(mesh));
 		
 		MaterialHelper.PrepareDefinesForMisc(mesh, scene, this._useLogarithmicDepth, this.pointsCloud, this.fogEnabled, defines);
 		

@@ -85,6 +85,14 @@ import lime.utils.Float32Array;
 	private function get_sourceMesh():Mesh {
 		return this._sourceMesh;
 	}
+	
+	/**
+     * Is this node ready to be used/rendered
+     * @return {boolean} is it ready
+     */
+    override public function isReady(forceInstanceSupport:Bool = false):Bool {
+        return this._sourceMesh.isReady(true);
+    }
 
 	/**
 	 * Returns a Float32Array of the requested kind of data : positons, normals, uvs, etc.  

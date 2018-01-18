@@ -229,8 +229,9 @@ class HighlightLayer {
 		this._glowMapMergeEffect = engine.createEffect("glowMapMerge",
 			[VertexBuffer.PositionKind],
 			["offset"],
-			["textureSampler"], "");
-		
+			["textureSampler"], 
+			this._options.isStroke ? "#define STROKE \n" : "");
+			
 		// Render target
 		this.setMainTextureSize();
 		
@@ -339,18 +340,6 @@ class HighlightLayer {
 			});
 		}
 		
-		var postProcesses = [this._downSamplePostprocess, this._horizontalBlurPostprocess, this._verticalBlurPostprocess];
-		
-		if (this._options.threshold != null) {
-            var threshold:Float = this._options.threshold;
-            this._thresholdPostProcess = new PostProcess("threshold", "highlightLayerThreshold", ["screenSize", "threshold"], null, 0.25, null, Texture.BILINEAR_SAMPLINGMODE, this._scene.getEngine());
-			this._thresholdPostProcess.onApplyObservable.add(function(effect:Effect, _) {
-                effect.setFloat("threshold", threshold);
-                effect.setFloat2("screenSize", blurTextureWidth, blurTextureHeight);
-            });
-            postProcesses.push(this._thresholdPostProcess);
-        }
-		
 		this._mainTexture.onAfterUnbindObservable.add(function(_, _) {
 			this.onBeforeBlurObservable.notifyObservers(this);
 			
@@ -358,8 +347,8 @@ class HighlightLayer {
 			
 			if (internalTexture != null) {			
 				this._scene.postProcessManager.directRender(
-					postProcesses, 
-					this._blurTexture.getInternalTexture(), true
+					[this._downSamplePostprocess, this._horizontalBlurPostprocess, this._verticalBlurPostprocess], 
+					internalTexture, true
 				);
 			}
 			
@@ -408,7 +397,7 @@ class HighlightLayer {
 				emissiveTexture = untyped material.emissiveTexture;
 			}
 			
-			if (this.isReady(subMesh, hardwareInstancedRendering, emissiveTexture)) {
+			if (this.isReady(subMesh, hardwareInstancedRendering)) {
 				engine.enableEffect(this._glowMapGenerationEffect);
 				mesh._bind(subMesh, this._glowMapGenerationEffect, Material.TriangleFillMode);
 				
@@ -497,10 +486,33 @@ class HighlightLayer {
 	 * Checks for the readiness of the element composing the layer.
 	 * @param subMesh the mesh to check for
 	 * @param useInstances specify wether or not to use instances to render the mesh
+	 * @return true if ready otherwise, false
+	 */
+	public function isReady(subMesh:SubMesh, useInstances:Bool):Bool {
+		var material = subMesh.getMaterial();
+		var mesh = subMesh.getRenderingMesh();
+		
+		if (material == null || mesh == null || this._meshes == null) {
+			return false;
+		}
+		
+		var emissiveTexture:Texture = null;
+		var highlightLayerMesh = this._meshes[mesh.uniqueId];
+		
+		if (highlightLayerMesh != null && highlightLayerMesh.glowEmissiveOnly && material != null) {
+			emissiveTexture = untyped material.emissiveTexture;
+		}
+		return this._isReady(subMesh, useInstances, emissiveTexture);
+	}
+
+	/**
+	 * Checks for the readiness of the element composing the layer.
+	 * @param subMesh the mesh to check for
+	 * @param useInstances specify wether or not to use instances to render the mesh
 	 * @param emissiveTexture the associated emissive texture used to generate the glow
 	 * @return true if ready otherwise, false
 	 */
-	private function isReady(subMesh:SubMesh, useInstances:Bool, emissiveTexture:Texture):Bool {
+	private function _isReady(subMesh:SubMesh, useInstances:Bool, emissiveTexture:Texture):Bool {
 		var material = subMesh.getMaterial();
 		
 		if (material == null) {
@@ -525,7 +537,7 @@ class HighlightLayer {
 			if (alphaTexture != null) {
 				defines.push("#define ALPHATEST");
 				if (mesh.isVerticesDataPresent(VertexBuffer.UV2Kind) &&
-					alphaTexture.coordinatesIndex == 1) {                    
+					alphaTexture.coordinatesIndex == 1) {
 					defines.push("#define DIFFUSEUV2");
 					uv2 = true;
 				}
@@ -540,7 +552,7 @@ class HighlightLayer {
 		if (emissiveTexture != null) {
 			defines.push("#define EMISSIVE");
 			if (mesh.isVerticesDataPresent(VertexBuffer.UV2Kind) &&
-				emissiveTexture.coordinatesIndex == 1) {                    
+				emissiveTexture.coordinatesIndex == 1) {
 				defines.push("#define EMISSIVEUV2");
 				uv2 = true;
 			}
@@ -584,7 +596,7 @@ class HighlightLayer {
 		}
 		
 		// Get correct effect      
-		var join = defines.join("\n");
+		var join:String = defines.join("\n");
 		if (this._cachedDefines != join) {
 			this._cachedDefines = join;
 			this._glowMapGenerationEffect = this._scene.getEngine().createEffect("glowMapGeneration",
@@ -716,6 +728,19 @@ class HighlightLayer {
 		}
 		
 		this._excludedMeshes[mesh.uniqueId] = null;
+	}
+	
+	/**
+	 * Determine if a given mesh will be highlighted by the current HighlightLayer
+	 * @param mesh mesh to test
+	 * @returns true if the mesh will be highlighted by the current HighlightLayer
+	 */
+	public function hasMesh(mesh:AbstractMesh):Bool {
+		if (this._meshes == null) {
+			return false;
+		}
+		
+		return this._meshes[mesh.uniqueId] != null;
 	}
 
 	/**

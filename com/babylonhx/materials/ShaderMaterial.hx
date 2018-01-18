@@ -287,7 +287,7 @@ import lime.utils.Float32Array;
 		}
 		
 		// Alpha test
-		if (engine.getAlphaTesting()) {
+		if (mesh != null && this._shouldTurnAlphaTestOn(mesh)) {
 			defines.push("#define ALPHATEST");
 		}
 		

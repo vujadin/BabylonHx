@@ -111,7 +111,7 @@ class GradientMaterial extends PushMaterial {
 		
 		var engine = scene.getEngine();
 		
-		MaterialHelper.PrepareDefinesForFrameBoundValues(scene, engine, defines, useInstances);
+		MaterialHelper.PrepareDefinesForFrameBoundValues(scene, engine, defines, useInstances, this._shouldTurnAlphaTestOn(mesh));
 		
 		MaterialHelper.PrepareDefinesForMisc(mesh, scene, false, this.pointsCloud, this.fogEnabled, defines);
 		

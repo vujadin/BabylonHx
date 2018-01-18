@@ -609,12 +609,70 @@ import lime.utils.Int32Array;
 		return this._masterMesh != null;
 	}
 
-	override public function isReady():Bool {
+	/**
+	 * Determine if the current mesh is ready to be rendered
+	 * @param forceInstanceSupport will check if the mesh will be ready when used with instances (false by default)
+	 * @returns true if all associated assets are ready (material, textures, shaders)
+	 */
+	override public function isReady(forceInstanceSupport:Bool = false):Bool {
 		if (this.delayLoadState == Engine.DELAYLOADSTATE_LOADING) {
 			return false;
 		}
 		
-		return super.isReady();
+		if (!super.isReady()) {
+			return false;
+		}
+		
+		if (this.subMeshes == null || this.subMeshes.length == 0) {
+			return true;
+		}
+		
+		var engine = this.getEngine();
+		var scene = this.getScene();
+		var hardwareInstancedRendering = forceInstanceSupport || engine.getCaps().instancedArrays && this.instances.length > 0;
+		
+		this.computeWorldMatrix();
+		
+		var mat = this.material != null ? this.material : scene.defaultMaterial;
+		if (mat != null) {			
+			if (mat.storeEffectOnSubMeshes) {
+				for (subMesh in this.subMeshes) {
+					var effectiveMaterial = subMesh.getMaterial();
+					if (effectiveMaterial != null) {
+						if (!effectiveMaterial.isReadyForSubMesh(this, subMesh, hardwareInstancedRendering)) {
+							return false;
+						}
+					}
+				}
+			} 
+			else {
+				if (!mat.isReady(this, hardwareInstancedRendering)) {
+					return false;
+				}
+			}			
+		}
+		
+		// Shadows
+		for (light in this._lightSources) {
+			var generator = light.getShadowGenerator();
+			
+			if (generator != null) {
+				for (subMesh in this.subMeshes) {
+					if (!generator.isReady(subMesh, hardwareInstancedRendering)) {
+						return false;
+					}
+				}
+			}
+		}
+		
+		// LOD
+		for (lod in this._LODLevels) {
+			if (lod.mesh != null && !lod.mesh.isReady(hardwareInstancedRendering)) {
+				return false;
+			}
+		}
+		
+		return true;
 	}
 	
 	/**

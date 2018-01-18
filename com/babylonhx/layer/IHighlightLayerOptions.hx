@@ -50,8 +50,8 @@ typedef IHighlightLayerOptions = {
     ?camera:Null<Camera>,
 	
 	/**
-     * Threshold for cutting glow.
+     * Should we display highlight as a solid stroke?
      */
-    ?threshold:Null<Float>
+    ?isStroke:Null<Bool>
   
 }

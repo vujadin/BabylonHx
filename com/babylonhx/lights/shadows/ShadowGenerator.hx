@@ -336,7 +336,6 @@ import haxe.Timer;
 	private var _cachedDirection:Vector3;
 	private var _cachedDefines:String;
 	private var _currentRenderID:Int;
-	private var _downSamplePostprocess:PassPostProcess;
 	private var _boxBlurPostprocess:PostProcess;
 	private var _kernelBlurXPostprocess:PostProcess;
 	private var _kernelBlurYPostprocess:PostProcess;
@@ -421,10 +420,6 @@ import haxe.Timer;
 		this._shadowMap.onAfterUnbindObservable.add(function(_, _) {
 			if (!this.useBlurExponentialShadowMap && !this.useBlurCloseExponentialShadowMap) {
 				return;
-			}
-			
-			if (this._blurPostProcesses == null) {
-				this._initializeBlurRTTAndPostProcesses();
 			}
 			
 			var shadowMap = this.getShadowMapForRendering();
@@ -715,7 +710,27 @@ import haxe.Timer;
 				["diffuseSampler"], join);
 		}
 		
-		return this._effect.isReady();
+		if (!this._effect.isReady()) {
+            return false;
+        }
+		
+        if (this.useBlurExponentialShadowMap || this.useBlurCloseExponentialShadowMap) {
+            if (this._blurPostProcesses != null || this._blurPostProcesses.length == 0) {
+                this._initializeBlurRTTAndPostProcesses();
+            }
+        }
+		
+        if (this._kernelBlurXPostprocess != null && !this._kernelBlurXPostprocess.isReady()) {
+            return false;
+        }
+        if (this._kernelBlurYPostprocess != null && !this._kernelBlurYPostprocess.isReady()) {
+            return false;
+        }
+        if (this._boxBlurPostprocess != null && !this._boxBlurPostprocess.isReady()) {
+            return false;
+        }
+		
+        return true;
 	}
 
 	/**
@@ -849,11 +864,6 @@ import haxe.Timer;
 		if (this._shadowMap2 != null) {
 			this._shadowMap2.dispose();
 			this._shadowMap2 = null;
-		}
-		
-		if (this._downSamplePostprocess != null) {
-			this._downSamplePostprocess.dispose();
-			this._downSamplePostprocess = null;
 		}
 		
 		if (this._boxBlurPostprocess != null) {

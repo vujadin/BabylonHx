@@ -811,7 +811,7 @@ class PBRBaseMaterial extends PushMaterial {
 		MaterialHelper.PrepareDefinesForMisc(mesh, scene, this._useLogarithmicDepth, this.pointsCloud, this.fogEnabled, defines);
 		
 		// Values that need to be evaluated on every frame
-		MaterialHelper.PrepareDefinesForFrameBoundValues(scene, engine, defines, useInstances, this._forceAlphaTest);
+		MaterialHelper.PrepareDefinesForFrameBoundValues(scene, engine, defines, useInstances, this._shouldTurnAlphaTestOn(mesh) || this._forceAlphaTest);
 		
 		// Attribs
 		if (MaterialHelper.PrepareDefinesForAttributes(mesh, defines, true, true, true)) {

@@ -381,6 +381,14 @@ typedef PostProcessOption = {
 		
 		return this.width / this.height;
 	}
+	
+	/**
+     * Get a value indicating if the post-process is ready to be used
+     * @returns true if the post-process is ready (shader is compiled)
+     */
+    public function isReady():Bool {
+        return this._effect != null && this._effect.isReady();
+    }
 
 	public function apply():Effect {
 		// Check

@@ -287,6 +287,14 @@ import openfl.display.OpenGLView;
     }
 	
 	private var _badOS:Bool = false;
+	
+	/**
+	 * Gets or sets a value indicating if we want to disable texture binding optmization.
+	 * This could be required on some buggy drivers which wants to have textures bound in a progressive order
+	 * By default Babylon.js will try to let textures bound where they are and only update the samplers to point where the texture is.
+	 */
+	public var disableTextureBindingOptimization:Bool = false;
+	
 	#if (js || purejs)
 	public var audioEngine:AudioEngine = new AudioEngine();
 	#end
@@ -302,7 +310,6 @@ import openfl.display.OpenGLView;
 	private var _hardwareScalingLevel:Float;	
 	private var _caps:EngineCapabilities;
 	private var _pointerLockRequested:Bool;
-	private var _alphaTest:Bool = false;
 	private var _isStencilEnable:Bool;
 	private var _colorWrite:Bool = true;
 	
@@ -347,7 +354,8 @@ import openfl.display.OpenGLView;
 
 	// Cache
 	private var _internalTexturesCache:Array<InternalTexture> = [];
-	private var _activeChannel:Int = -1;
+	private var _activeChannel:Int = 0;
+	private var _currentTextureChannel:Int = -1;
 	public var _boundTexturesCache:Map<Int, InternalTexture> = new Map();
 	private var _boundTexturesStack:Array<InternalTexture> = [];
 	private var _currentEffect:Effect;
@@ -392,6 +400,7 @@ import openfl.display.OpenGLView;
 	private var _frameHandler:Int;
 	
 	private var _nextFreeTextureSlots:Array<Int> = [];
+	private var _maxSimultaneousTextures:Int = 0;
 
 	// Hardware supported Compressed Textures
 	private var _texturesSupported:Array<String> = [];
@@ -451,6 +460,9 @@ import openfl.display.OpenGLView;
 		}
 		return '';
 	}
+	
+	var vertexArrayObjectExtension:Dynamic;   // for WebGL 1.0
+	var instanceExtension:Dynamic;			  // for WebGL 1.0
 	
 	// quick and dirty solution to handle mouse/keyboard 
 	public var mouseDown:Array<PointerEvent->Void> = [];
@@ -562,16 +574,16 @@ import openfl.display.OpenGLView;
 		_glRenderer = gl.getParameter(gl.RENDERER);
 		_glExtensions = gl.getSupportedExtensions();
 		
-		/*for (ext in glExtensions) {
+		for (ext in _glExtensions) {
 			trace(ext);
-		}*/
+		}
 		
 		Engine.HALF_FLOAT_OES = 0x140B;// 0x8D61; // Half floating-point type (16-bit).	
         Engine.RGBA16F = 0x881A; // RGBA 16-bit floating-point color-renderable internal sized format.
         Engine.RGBA32F = 0x8814; // RGBA 32-bit floating-point color-renderable internal sized format.
 		
 		// first try js
-		this._caps.standardDerivatives = true;// this._webGLVersion > 1 || (gl.getExtension('OES_standard_derivatives') != null);
+		this._caps.standardDerivatives = this._webGLVersion > 1 || (gl.getExtension('OES_standard_derivatives') != null);
 		
 		this._caps.astc = gl.getExtension('WEBGL_compressed_texture_astc');
 		this._caps.s3tc = gl.getExtension('WEBGL_compressed_texture_s3tc');
@@ -628,8 +640,7 @@ import openfl.display.OpenGLView;
 			this._caps.vertexArrayObject = true;
 		} 
 		else {
-			var vertexArrayObjectExtension = gl.getExtension('OES_vertex_array_object');
-			
+			vertexArrayObjectExtension = gl.getExtension('OES_vertex_array_object');
 			if (vertexArrayObjectExtension != null) {
 				this._caps.vertexArrayObject = true;
 				//untyped gl.createVertexArray = vertexArrayObjectExtension.createVertexArrayOES;
@@ -645,8 +656,7 @@ import openfl.display.OpenGLView;
 			this._caps.instancedArrays = true;
 		} 
 		else {
-			var instanceExtension = gl.getExtension('ANGLE_instanced_arrays');
-			
+			instanceExtension = gl.getExtension('ANGLE_instanced_arrays');			
 			if (instanceExtension != null) {
 				this._caps.instancedArrays = true;
 				//untyped gl.drawArraysInstanced = instanceExtension.drawArraysInstancedANGLE;
@@ -658,7 +668,7 @@ import openfl.display.OpenGLView;
 			}
 		}
 		
-		//#if cpp
+		#if cpp
 		if (this._caps.s3tc == null) {
 			this._caps.s3tc = gl.getExtension(GetExtensionName('texture_compression_s3tc'));
 		}
@@ -758,8 +768,8 @@ import openfl.display.OpenGLView;
 		this._caps.textureHalfFloatLinearFiltering = true;// gl.getExtension(GetExtensionName('texture_half_float_linear'));
 		this._caps.textureHalfFloatRender = true;// this._caps.textureHalfFloat && this._canRenderToHalfFloatFramebuffer();
 		
-		this._caps.vertexArrayObject = true;
-		this._caps.instancedArrays = true;
+		this._caps.vertexArrayObject = false;
+		this._caps.instancedArrays = false;
 		this._caps.highPrecisionShaderSupported = true;
 		
 		this._caps.fragmentDepthSupported = true;
@@ -769,7 +779,7 @@ import openfl.display.OpenGLView;
 		this._caps.textureLOD = true;
 		this._caps.drawBuffersExtension = true;
 		this._caps.colorBufferFloat = true;
-		//#end
+		#end
 		
 		// Depth buffer
 		this.setDepthBuffer(true);
@@ -777,7 +787,8 @@ import openfl.display.OpenGLView;
 		this.setDepthWrite(true);
 		
 		// Texture maps
-        for (slot in 0...this._caps.maxCombinedTexturesImageUnits) {
+        this._maxSimultaneousTextures = this._caps.maxTexturesImageUnits;
+        for (slot in 0...this._maxSimultaneousTextures) {
             this._nextFreeTextureSlots.push(slot);
         }
 		
@@ -1022,10 +1033,10 @@ import openfl.display.OpenGLView;
             this._boundTexturesCache[key] = null;
 		}
 		this._nextFreeTextureSlots = [];
-        for (slot in 0...this._caps.maxCombinedTexturesImageUnits) {
+        for (slot in 0...this._maxSimultaneousTextures) {
             this._nextFreeTextureSlots.push(slot);
         }
-        this._activeChannel = -1;
+        this._currentTextureChannel = -1;
 	}
 	
 	public function isDeterministicLockStep():Bool {
@@ -1912,7 +1923,16 @@ import openfl.display.OpenGLView;
 					this.vertexAttribPointer(buffer, order, vertexBuffer.getSize(), gl.FLOAT, false, Std.int(vertexBuffer.getStrideSize() * 4), Std.int(vertexBuffer.getOffset() * 4));
 					
 					if (vertexBuffer.getIsInstanced()) {
+						#if js
+						if (instanceExtension == null) {
+							gl.vertexAttribDivisor(order, vertexBuffer.getInstanceDivisor());
+						}
+						else {
+							instanceExtension.vertexAttribDivisorANGLE(order, vertexBuffer.getInstanceDivisor());
+						}
+						#else
 						gl.vertexAttribDivisor(order, vertexBuffer.getInstanceDivisor());
+						#end
 						if (!this._vaoRecordInProgress) {
 							this._currentInstanceLocations.push(order);
 							this._currentInstanceBuffers.push(buffer);
@@ -1924,11 +1944,19 @@ import openfl.display.OpenGLView;
 	}
 
 	public function recordVertexArrayObject(vertexBuffers:Map<String, VertexBuffer>, indexBuffer:WebGLBuffer, effect:Effect):GLVertexArrayObject {
+		#if js
+		var vao = vertexArrayObjectExtension != null ? vertexArrayObjectExtension.createVertexArrayOES() : gl.createVertexArray();
+		#else
 		var vao = gl.createVertexArray();
+		#end
 		
 		this._vaoRecordInProgress = true;
 		
+		#if js
+		vertexArrayObjectExtension != null ? vertexArrayObjectExtension.bindVertexArrayOES(vao) : gl.bindVertexArray(vao);
+		#else
 		gl.bindVertexArray(vao);
+		#end
 		
 		this._mustWipeVertexAttributes = true;
 		this._bindVertexBuffersAttributes(vertexBuffers, effect);
@@ -1936,7 +1964,12 @@ import openfl.display.OpenGLView;
 		this.bindIndexBuffer(indexBuffer);
 		
 		this._vaoRecordInProgress = false;
+		
+		#if js
+		vertexArrayObjectExtension != null ? vertexArrayObjectExtension.bindVertexArrayOES(null) : gl.bindVertexArray(null);
+		#else
 		gl.bindVertexArray(null);
+		#end
 		
 		return vao;
 	}
@@ -1945,7 +1978,12 @@ import openfl.display.OpenGLView;
 		if (this._cachedVertexArrayObject != vertexArrayObject) {
 			this._cachedVertexArrayObject = vertexArrayObject;
 			
+			#if js
+			vertexArrayObjectExtension != null ? vertexArrayObjectExtension.bindVertexArrayOES(vertexArrayObject) : gl.bindVertexArray(vertexArrayObject);
+			#else
 			gl.bindVertexArray(vertexArrayObject);
+			#end
+			
 			this._cachedVertexBuffers = null;
 			this._cachedIndexBuffer = null;
 			
@@ -1989,7 +2027,12 @@ import openfl.display.OpenGLView;
 		}
 		
 		this._cachedVertexArrayObject = null;
+		
+		#if js
+		vertexArrayObjectExtension != null ? vertexArrayObjectExtension.bindVertexArrayOES(null) : gl.bindVertexArray(null);
+		#else
 		gl.bindVertexArray(null);
+		#end
 	}
 
 	public function bindBuffers(vertexBuffers:Map<String, VertexBuffer>, indexBuffer:WebGLBuffer, effect:Effect) {
@@ -2012,7 +2055,16 @@ import openfl.display.OpenGLView;
 				this.bindArrayBuffer(instancesBuffer);
 			}
 			var offsetLocation = this._currentInstanceLocations[i];
+			#if js
+			if (instanceExtension == null) {
+				gl.vertexAttribDivisor(offsetLocation, 0);
+			}
+			else {
+				instanceExtension.vertexAttribDivisorANGLE(offsetLocation, 0);
+			}
+			#else
 			gl.vertexAttribDivisor(offsetLocation, 0);
+			#end
 		}
 		
 		this._currentInstanceBuffers.splice(0, this._currentInstanceBuffers.length);
@@ -2020,7 +2072,11 @@ import openfl.display.OpenGLView;
 	}
 	
 	inline public function releaseVertexArrayObject(vao:GLVertexArrayObject) {
+		#if js
+		vertexArrayObjectExtension != null ? vertexArrayObjectExtension.deleteVertexArrayOES(vao) : gl.deleteVertexArray(vao);
+		#else 
 		gl.deleteVertexArray(vao);
+		#end
 	}
 	
 	public function _releaseBuffer(buffer:WebGLBuffer):Bool {
@@ -2072,8 +2128,17 @@ import openfl.display.OpenGLView;
 					this._vertexAttribArraysEnabled[ai.index] = true;
 				}
 				
-				this.vertexAttribPointer(instancesBuffer, ai.index, ai.attributeSize, ai.attribyteType, ai.normalized, stride, ai.offset);
+				this.vertexAttribPointer(instancesBuffer, ai.index, ai.attributeSize, ai.attribyteType, ai.normalized, stride, ai.offset);				
+				#if js
+				if (instanceExtension == null) {
+					gl.vertexAttribDivisor(ai.index, 1);
+				}
+				else {
+					instanceExtension.vertexAttribDivisorANGLE(ai.index, 1);
+				}
+				#else
 				gl.vertexAttribDivisor(ai.index, 1);
+				#end
 				this._currentInstanceLocations.push(ai.index);
 				this._currentInstanceBuffers.push(instancesBuffer);
 			}
@@ -2088,7 +2153,16 @@ import openfl.display.OpenGLView;
 				}
 				
 				this.vertexAttribPointer(instancesBuffer, offsetLocation, 4, gl.FLOAT, false, 64, index * 16);
+				#if js
+				if (instanceExtension == null) {
+					gl.vertexAttribDivisor(offsetLocation, 1);
+				}
+				else {
+					instanceExtension.vertexAttribDivisorANGLE(offsetLocation, 1);
+				}
+				#else
 				gl.vertexAttribDivisor(offsetLocation, 1);
+				#end
 				this._currentInstanceLocations.push(offsetLocation);
 				this._currentInstanceBuffers.push(instancesBuffer);
 			}
@@ -2123,7 +2197,16 @@ import openfl.display.OpenGLView;
 		var indexFormat = this._uintIndicesCurrentlySet ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
 		var mult = this._uintIndicesCurrentlySet ? 4 : 2;
 		if (instancesCount > 0) {
+			#if js
+			if (instanceExtension == null) {
+				gl.drawElementsInstanced(drawMode, indexCount, indexFormat, indexStart * mult, instancesCount);
+			}
+			else {
+				instanceExtension.drawElementsInstancedANGLE(drawMode, indexCount, indexFormat, indexStart * mult, instancesCount);
+			}
+			#else
 			gl.drawElementsInstanced(drawMode, indexCount, indexFormat, indexStart * mult, instancesCount);
+			#end
 		} 
 		else {
 			gl.drawElements(drawMode, indexCount, indexFormat, indexStart * mult);
@@ -2137,7 +2220,16 @@ import openfl.display.OpenGLView;
 		
 		var drawMode = this.DrawMode(fillMode);
 		if (instancesCount > 0) {
+			#if js
+			if (instanceExtension == null) {
+				gl.drawArraysInstanced(drawMode, verticesStart, verticesCount, instancesCount);
+			}
+			else {
+				instanceExtension.drawArraysInstancedANGLE(drawMode, verticesStart, verticesCount, instancesCount);
+			}
+			#else
 			gl.drawArraysInstanced(drawMode, verticesStart, verticesCount, instancesCount);
+			#end
 		} 
 		else {
 			gl.drawArrays(drawMode, verticesStart, verticesCount);
@@ -2601,14 +2693,6 @@ import openfl.display.OpenGLView;
 	
 	inline public function getAlphaMode():Int {
 		return this._alphaMode;
-	}
-
-	inline public function setAlphaTesting(enable:Bool) {
-		this._alphaTest = enable;
-	}
-
-	inline public function getAlphaTesting():Bool {
-		return this._alphaTest;
 	}
 
 	// Textures
@@ -4259,6 +4343,7 @@ import openfl.display.OpenGLView;
 	}
 	
 	private var _boundUniforms:Map<Int, GLUniformLocation> = new Map();
+	private var _boundUniformsStates:Map<Int, Int> = new Map();
 
 	inline public function bindSamplers(effect:Effect) {
 		this.setProgram(effect.getProgram());
@@ -4269,16 +4354,10 @@ import openfl.display.OpenGLView;
 			
 			if ((uniform != #if (js && html5) null #else 0 #end)) {
                 this._boundUniforms[index] = uniform;
+				this._boundUniformsStates[index] = -1;
             }
 		}
 		this._currentEffect = null;
-	}
-	
-	private function _activateTextureChannel(channel:Int) {
-		if (this._activeChannel != channel && channel > -1) {
-			gl.activeTexture(gl.TEXTURE0 + channel);
-			this._activeChannel = channel;
-		}
 	}
 	
 	private function _moveBoundTextureOnTop(internalTexture:InternalTexture) {
@@ -4288,6 +4367,39 @@ import openfl.display.OpenGLView;
             this._boundTexturesStack.splice(index, 1);
             this._boundTexturesStack.push(internalTexture);
         }
+    }
+	
+	private function _getCorrectTextureChannel(channel:Int, ?internalTexture:InternalTexture):Int {
+        if (internalTexture == null) {
+            return -1;
+        }
+		
+		internalTexture._initialSlot = channel;
+		
+		if (this.disableTextureBindingOptimization) { // We want texture sampler ID == texture channel
+			if (channel != internalTexture._designatedSlot) {              
+				this._textureCollisions.addCount(1, false);
+			}
+		} 
+		else {          
+			if (channel != internalTexture._designatedSlot) {
+				if (internalTexture._designatedSlot > -1) { // Texture is already assigned to a slot
+					return internalTexture._designatedSlot;
+				} 
+				else {
+					// No slot for this texture, let's pick a new one (if we find a free slot)
+					if (this._nextFreeTextureSlots.length > 0) {
+						return this._nextFreeTextureSlots[0];
+					}
+					
+					// We need to recycle the oldest bound texture, sorry.
+					this._textureCollisions.addCount(1, false);
+					return this._removeDesignatedSlot(this._boundTexturesStack[0]);
+				}
+			}
+		}
+		
+        return channel;
     }
 
     private function _removeDesignatedSlot(internalTexture:InternalTexture):Int {
@@ -4305,37 +4417,51 @@ import openfl.display.OpenGLView;
 		
 		return currentSlot;
     }
+	
+	private function _activateCurrentTexture() {
+        if (this._currentTextureChannel != this._activeChannel) {
+            gl.activeTexture(gl.TEXTURE0 + this._activeChannel);
+            this._currentTextureChannel = this._activeChannel;
+        }
+    }
 
-	public function _bindTextureDirectly(target:Int, ?texture:InternalTexture, doNotBindUniformToTextureChannel:Bool = false) {
+	public function _bindTextureDirectly(target:Int, ?texture:InternalTexture, forTextureDataUpdate:Bool = false) {
+		if (forTextureDataUpdate && texture != null && texture._designatedSlot > -1) {
+            this._activeChannel = texture._designatedSlot;
+        }
+		
 		var currentTextureBound = this._boundTexturesCache[this._activeChannel];
         var isTextureForRendering = texture != null && texture._initialSlot > -1;
 		
-        if (currentTextureBound != texture) {
+        if (currentTextureBound != texture && !this.disableTextureBindingOptimization) {
             if (currentTextureBound != null) {
                 this._removeDesignatedSlot(currentTextureBound);
             }
 			
-            gl.bindTexture(target, texture != null ? texture._webGLTexture : null);
+            this._activateCurrentTexture();
 			
-            if (this._activeChannel >= 0) {
-                this._boundTexturesCache[this._activeChannel] = texture;
+            gl.bindTexture(target, texture != null ? texture._webGLTexture : null);
+			this._boundTexturesCache[this._activeChannel] = texture;
 				
-                if (isTextureForRendering) {
+			if (texture != null) {
+				if (!this.disableTextureBindingOptimization) {
 					var slotIndex = this._nextFreeTextureSlots.indexOf(this._activeChannel);
 					if (slotIndex > -1) {
 						this._nextFreeTextureSlots.splice(slotIndex, 1);
 					}
-                    this._boundTexturesStack.push(texture);
-                }
-            }
+					this._boundTexturesStack.push(texture);
+				}
+				
+				texture._designatedSlot = this._activeChannel;
+			}
+            else if (forTextureDataUpdate) {
+				this._activateCurrentTexture();				
+			}
         }
 		
-        if (isTextureForRendering && this._activeChannel > -1) {
-            texture._designatedSlot = this._activeChannel;
-            if (!doNotBindUniformToTextureChannel) {
-                this._bindSamplerUniformToChannel(texture._initialSlot, this._activeChannel);
-            }
-        }
+        if (isTextureForRendering && !forTextureDataUpdate) {
+			this._bindSamplerUniformToChannel(texture._initialSlot, this._activeChannel);
+		}
 	}
 
 	inline public function _bindTexture(channel:Int, texture:InternalTexture) {
@@ -4347,7 +4473,7 @@ import openfl.display.OpenGLView;
             channel = this._getCorrectTextureChannel(channel, texture);
         }
 		
-        this._activateTextureChannel(channel);
+        this._activeChannel = channel;
 		this._bindTextureDirectly(gl.TEXTURE_2D, texture);
 	}
 
@@ -4356,8 +4482,8 @@ import openfl.display.OpenGLView;
 	}
 	
 	public function unbindAllTextures() {
-		for (channel in 0...this._caps.maxCombinedTexturesImageUnits) {
-			this._activateTextureChannel(channel);
+		for (channel in 0...this._maxSimultaneousTextures) {
+			this._activeChannel = channel;
 			this._bindTextureDirectly(gl.TEXTURE_2D, null);
 			this._bindTextureDirectly(gl.TEXTURE_CUBE_MAP, null);
 			if (this.webGLVersion > 1) {
@@ -4373,47 +4499,26 @@ import openfl.display.OpenGLView;
 		
 		if (uniform != null) {
             this._boundUniforms[channel] = uniform;
+			this._boundUniformsStates[channel] = -1;
         }
 		
         this._setTexture(channel, texture);
 	}
 
-	private function _getCorrectTextureChannel(channel:Int, ?internalTexture:InternalTexture):Int {
-        if (internalTexture == null) {
-            return -1;
-        }
-		
-		internalTexture._initialSlot = channel;
-		
-        if (channel != internalTexture._designatedSlot) {
-            if (internalTexture._designatedSlot > -1) { // Texture is already assigned to a slot
-                return internalTexture._designatedSlot;
-            } 
-			else {
-                // No slot for this texture, let's pick a new one (if we find a free slot)
-                if (this._nextFreeTextureSlots.length > 0) {
-                    return this._nextFreeTextureSlots[0];
-                }
-				
-                // We need to recycle the oldest bound texture, sorry.
-                this._textureCollisions.addCount(1, false);
-                return this._removeDesignatedSlot(this._boundTexturesStack[0]);
-            }
-        }
-		
-        return channel;
-    }
-
     private function _bindSamplerUniformToChannel(sourceSlot:Int, destination:Int) {
         var uniform = this._boundUniforms[sourceSlot];
+		if (_boundUniformsStates[sourceSlot] == destination) {
+			return;
+		}
         gl.uniform1i(uniform, destination);
+		_boundUniformsStates[sourceSlot] = destination;
     }
 	
 	private function _setTexture(channel:Int, ?texture:BaseTexture, isPartOfTextureArray:Bool = false):Bool {
 		// Not ready?
 		if (texture == null) {
 			if (this._boundTexturesCache[channel] != null) {
-				this._activateTextureChannel(channel);
+				this._activeChannel = channel;
 				this._bindTextureDirectly(gl.TEXTURE_2D, null);
 				this._bindTextureDirectly(gl.TEXTURE_CUBE_MAP, null);
 				if (this.webGLVersion > 1) {
@@ -4425,10 +4530,8 @@ import openfl.display.OpenGLView;
 		}
 		
 		// Video
-		var alreadyActivated = false;
 		if (Std.is(texture, VideoTexture)) {
-			this._activateTextureChannel(channel);
-			alreadyActivated = true;
+			this._activeChannel = channel;
 			cast(texture, VideoTexture).update();
 		} 
 		else if (texture.delayLoadState == Engine.DELAYLOADSTATE_NOTLOADED) { // Delay loading
@@ -4462,9 +4565,7 @@ import openfl.display.OpenGLView;
 			return false;
 		}
 		
-		if (!alreadyActivated) {
-            this._activateTextureChannel(channel);
-        }
+		this._activeChannel = channel;
 		
 		if (internalTexture != null && internalTexture.is3D) {
 			this._bindTextureDirectly(gl.TEXTURE_3D, internalTexture, isPartOfTextureArray);
@@ -4712,6 +4813,7 @@ import openfl.display.OpenGLView;
 		var index = Engine.Instances.indexOf(this);
 		
 		if (index >= 0) {
+			Engine.Instances[index] = null;
 			Engine.Instances.splice(index, 1);
 		}
 		

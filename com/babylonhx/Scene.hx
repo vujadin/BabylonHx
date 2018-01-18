@@ -1986,10 +1986,21 @@ import com.babylonhx.audio.*;
 	}
 
 	// Ready
+	/**
+     * This function will check if the scene can be rendered (textures are loaded, shaders are compiled)
+     * Delay loaded resources are not taking in account
+     * @return true if all required resources are ready
+     */
 	public function isReady():Bool {
+		if (this._isDisposed) {
+            return false;
+        }
+		
 		if (this._pendingData.length > 0) {
 			return false;
 		}
+		
+		var engine = this.getEngine();
 		
 		// Geometries
 		for (index in 0...this._geometries.length) {
@@ -2016,12 +2027,19 @@ import com.babylonhx.audio.*;
 				return false;
 			}
 			
-			var mat = mesh.material;
-			if (mat != null) {
-				if (!mat.isReady(mesh)) {
-					return false;
-				}
-			}
+			// Highlight layers
+            var hardwareInstancedRendering = mesh.getClassName() == "InstancedMesh" || engine.getCaps().instancedArrays && cast(mesh, Mesh).instances.length > 0;
+			for (layer in this.highlightLayers) {
+                if (!layer.hasMesh(mesh)) {
+                    continue;
+                }
+				
+                for (subMesh in mesh.subMeshes) {
+                    if (!layer.isReady(subMesh, hardwareInstancedRendering)) {
+                        return false;
+                    }
+                }
+            }
 			
 		}
 		

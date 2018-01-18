@@ -146,7 +146,7 @@ import com.babylonhx.tools.EventState;
 		return "VolumetricLightScatteringPostProcess";
 	}
 
-	public function isReady(subMesh:SubMesh, useInstances:Bool):Bool {
+	private function _isReady(subMesh:SubMesh, useInstances:Bool):Bool {
 		var mesh:Mesh = cast subMesh.getMesh();
 		
 		// Render this.mesh as default
@@ -302,7 +302,7 @@ import com.babylonhx.tools.EventState;
 			
 			var hardwareInstancedRendering:Bool = (engine.getCaps().instancedArrays) && (batch.visibleInstances[subMesh._id] != null);
 			
-			if (this.isReady(subMesh, hardwareInstancedRendering)) {
+			if (this._isReady(subMesh, hardwareInstancedRendering)) {
 				var effect:Effect = this._volumetricLightScatteringPass;
                 if (mesh == this.mesh) {
                     if (subMesh.effect != null) {
@@ -373,11 +373,9 @@ import com.babylonhx.tools.EventState;
 				renderSubMesh(opaqueSubMeshes.data[index]);
 			}
 			
-			engine.setAlphaTesting(true);
 			for (index in 0...alphaTestSubMeshes.length) {
 				renderSubMesh(alphaTestSubMeshes.data[index]);
 			}			
-			engine.setAlphaTesting(false);
 			
 			if (transparentSubMeshes != null && transparentSubMeshes.length > 0) {
 				// Sort sub meshes

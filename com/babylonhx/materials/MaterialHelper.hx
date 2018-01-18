@@ -130,7 +130,15 @@ class MaterialHelper {
 		}
 	}
 
-	public static function PrepareDefinesForFrameBoundValues(scene:Scene, engine:Engine, defines:MaterialDefines, useInstances:Bool, forceAlphaTest:Bool = false) {
+	/**
+     * Helper used to prepare the list of defines for shader compilation
+     * @param scene defines the current scene
+     * @param engine defines the current engine
+     * @param defines specifies the list of active defines
+     * @param useInstances defines if instances have to be turned on
+     * @param alphaTest defines if alpha testing has to be turned on
+     */
+	public static function PrepareDefinesForFrameBoundValues(scene:Scene, engine:Engine, defines:MaterialDefines, useInstances:Bool, alphaTest:Bool) {
 		var changed:Bool = false;
 		
 		if (untyped defines.CLIPPLANE != (scene.clipPlane != null)) {
@@ -138,7 +146,7 @@ class MaterialHelper {
 			changed = true;
 		}
 		
-		if (untyped defines.ALPHATEST != engine.getAlphaTesting() || forceAlphaTest) {
+		if (untyped defines.ALPHATEST != alphaTest) {
 			untyped defines.ALPHATEST = !defines.ALPHATEST;
 			changed = true;
 		}

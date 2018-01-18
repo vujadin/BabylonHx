@@ -134,9 +134,6 @@ class TransformNode extends Node {
      * Returns the latest update of the World matrix determinant.
      */
     public function _getWorldMatrixDeterminant():Float {
-        if (this._currentRenderId != this.getScene().getRenderId()) {
-            this.computeWorldMatrix();
-        }
         return this._worldMatrixDeterminant;
     }
 

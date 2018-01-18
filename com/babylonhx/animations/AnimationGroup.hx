@@ -54,6 +54,14 @@ class AnimationGroup {
         }
 		return value;
     }
+	
+	/**
+     * Gets the targeted animations for this animation group
+     */
+	public var targetedAnimations(get, never):Array<TargetedAnimation>;
+    inline function get_targetedAnimations():Array<TargetedAnimation> {
+        return this._targetedAnimations;
+    }
 
 	
 	public function new(name:String, scene:Scene = null) {
@@ -106,17 +114,19 @@ class AnimationGroup {
 					frame: beginFrame,
 					value: startKey.value,
 					inTangent: startKey.inTangent,
-					outTangent: startKey.outTangent
+					outTangent: startKey.outTangent,
+					interpolation: startKey.interpolation
 				};
 				keys.insert(0, newKey);
 			}
 			
 			if (endKey.frame < endFrame) {
-				var newKey = {
+				var newKey:IAnimationKey = {
 					frame: endFrame,
 					value: endKey.value,
 					inTangent: startKey.outTangent,
-					outTangent: startKey.outTangent
+					outTangent: startKey.outTangent,
+					interpolation: startKey.interpolation
 				}
 				keys.push(newKey);
 			}

@@ -363,6 +363,10 @@ import haxe.Timer;
 			this.bindSceneUniformBuffer(effect, this.getScene().getSceneUniformBuffer());
 		}
 	}
+	
+	private function _shouldTurnAlphaTestOn(mesh:AbstractMesh):Bool {
+        return (!this.needAlphaBlendingForMesh(mesh) && this.needAlphaTesting());
+    }
 
 	public function _afterBind(mesh:Mesh, ?effect:Effect) {
 		this._scene._cachedMaterial = this;
@@ -425,7 +429,6 @@ import haxe.Timer;
 	var checkReady:Void->Void = null;
 	public function forceCompilation(mesh:AbstractMesh, onCompiled:Material->Void, ?options:Dynamic) {
 		var localOptions:Dynamic = {
-			alphaTest: null,
 			clipPlane: false
 		};
 		
@@ -440,7 +443,6 @@ import haxe.Timer;
 		
 		var subMesh = new BaseSubMesh();
 		var scene = this.getScene();
-		var engine = getScene().getEngine();
 		
 		checkReady = function() {
 			if (this._scene == null || this._scene.getEngine() == null) {
@@ -451,10 +453,7 @@ import haxe.Timer;
 				subMesh._materialDefines._renderId = -1;
 			}
 			
-			var alphaTestState = engine.getAlphaTesting();
 			var clipPlaneState = scene.clipPlane;
-			
-			engine.setAlphaTesting(localOptions.alphaTest != null ? localOptions.alphaTest : (!this.needAlphaBlendingForMesh(mesh) && this.needAlphaTesting()));
 			
 			if (localOptions.clipPlane) {
 				scene.clipPlane = new Plane(0, 0, 0, 1);
@@ -480,8 +479,6 @@ import haxe.Timer;
 					Timer.delay(checkReady, 16);
 				}
 			}
-			
-			engine.setAlphaTesting(alphaTestState);
 			
 			if (localOptions.clipPlane) {
 				scene.clipPlane = clipPlaneState;

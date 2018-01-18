@@ -123,10 +123,8 @@ import com.babylonhx.particles.IParticleSystem;
 		
 		// Depth only
         if (this._depthOnlySubMeshes.length != 0) {
-            engine.setAlphaTesting(true);
             engine.setColorWrite(false);
             this._renderAlphaTest(this._depthOnlySubMeshes);
-            engine.setAlphaTesting(false);
             engine.setColorWrite(true);
         } 
 		
@@ -137,9 +135,7 @@ import com.babylonhx.particles.IParticleSystem;
 		
 		// Alpha test
 		if (this._alphaTestSubMeshes.length != 0) {
-			engine.setAlphaTesting(true);
 			this._renderAlphaTest(this._alphaTestSubMeshes);
-			engine.setAlphaTesting(false);
 		}
 		
 		var stencilState = engine.getStencilBuffer();
@@ -232,10 +228,8 @@ import com.babylonhx.particles.IParticleSystem;
                 if (material != null && material.needDepthPrePass) {
                     var engine = material.getScene().getEngine();
                     engine.setColorWrite(false);
-                    engine.setAlphaTesting(true);
                     engine.setAlphaMode(Engine.ALPHA_DISABLE);
                     subMesh.render(false);
-                    engine.setAlphaTesting(false);
                     engine.setColorWrite(true);
                 }
             }

@@ -323,7 +323,7 @@ class NodeCache {
 	 * Is this node ready to be used/rendered
 	 * @return {boolean} is it ready
 	 */
-	public function isReady():Bool {
+	public function isReady(forceInstanceSupport:Bool = false):Bool {
 		return this._isReady;
 	}
 

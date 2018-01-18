@@ -32,9 +32,9 @@ class Image {
 		}
 	}
 	
-	public function perlinNoise(baseX:Float, baseY:Float, numOctaves:UInt, randomSeed:Int) {
-		var noise = new PerlinNoise(randomSeed, numOctaves, 0.01);
-		noise.fill(this, baseX, baseY, 0);
+	public function perlinNoise(baseX:Float, baseY:Float, randomSeed:Float) {
+		var noise = new Perlin(randomSeed);
+		noise.simplex2(baseX, baseY);
 	}
 	
 	inline public function getPixelAt(x:Int, y:Int):RGBA {
