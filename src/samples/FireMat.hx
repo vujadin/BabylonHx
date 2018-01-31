@@ -31,7 +31,7 @@ class FireMat {
 		// Light
 		var light = new SpotLight("light", new Vector3(8, 16, 8), new Vector3(-1, -2, -1), 3, 1, scene);
 		var shadowGenerator = new ShadowGenerator(512, light);
-		shadowGenerator.useBlurVarianceShadowMap = true;
+		shadowGenerator.useBlurCloseExponentialShadowMap = true;
 		shadowGenerator.blurBoxOffset = 1;
 		shadowGenerator.blurScale = 1;
 		shadowGenerator.setDarkness(0.0);
@@ -89,26 +89,23 @@ class FireMat {
 		fireMaterial.speed = 5.0;
 		
 		// Load candle 3D Model		
-		SceneLoader.ImportMesh("", "assets/models/", "candle.babylon", scene, function(meshes:Array<AbstractMesh>, ps, sks) {
-			var plane = scene.getMeshByName("Plane");
-			plane.receiveShadows = true;
-			
-			for (i in 0...meshes.length) {
-				if (meshes[i] != plane) {
-					shadowGenerator.getShadowMap().renderList.push(meshes[i]);
-					meshes[i].receiveShadows = false;
-				}
-				
-				if (meshes[i].parent == null) {
-					meshes[i].parent = rootMesh;
-				}
-			}
-			
-			var torus = scene.getMeshByName("Torus");
-			torus.receiveShadows = true;
+		//SceneLoader.ImportMesh("", "assets/models/", "candle.babylon", scene, function(meshes:Array<AbstractMesh>, ps, sks) {
+			//var plane = scene.getMeshByName("Plane");
+			//plane.receiveShadows = true;
+			//
+			//for (i in 0...meshes.length) {
+				//if (meshes[i] != plane) {
+					//shadowGenerator.getShadowMap().renderList.push(meshes[i]);
+					//meshes[i].receiveShadows = false;
+				//}
+				//
+				//if (meshes[i].parent == null) {
+					//meshes[i].parent = rootMesh;
+				//}
+			//}
 			
 			// Create the fire plane (billboarded on Y)
-			plane = Mesh.CreatePlane("firePlane", 1.5, scene);
+			var plane = Mesh.CreatePlane("firePlane", 1.5, scene);
 			plane.position = new Vector3(0, 8.3, 0);
 			plane.scaling.x = 0.45;
 			plane.scaling.y = 1.5;
@@ -118,7 +115,7 @@ class FireMat {
 			scene.getEngine().runRenderLoop(function () {
 				scene.render();
 			});
-		});
+		//});
 	}
 	
 }

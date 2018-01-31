@@ -151,7 +151,7 @@ import lime.utils.Float32Array;
 		this._scene.resetCachedMaterial();
 		this._colorShader.bind(worldMatrix);
 		
-		engine.drawElementsType(Material.TriangleFillMode, 0, 24);
+		engine.drawElementsType(Material.LineListDrawMode, 0, 24);
 		
 		this._colorShader.unbind();
 		engine.setDepthFunctionToLessOrEqual();

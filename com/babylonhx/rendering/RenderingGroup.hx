@@ -391,8 +391,8 @@ import com.babylonhx.particles.IParticleSystem;
 		// Particles
 		var activeCamera = this._scene.activeCamera;
 		this._scene.onBeforeParticlesRenderingObservable.notifyObservers(this._scene);
-		for (particleIndex in 0...this._scene._activeParticleSystems.length) {
-			var particleSystem = this._scene._activeParticleSystems.data[particleIndex];
+		for (particleIndex in 0...this._particleSystems.length) {
+			var particleSystem = this._particleSystems.data[particleIndex];
 			
 			if (activeCamera != null && (activeCamera.layerMask & particleSystem.layerMask) == 0) {
 				continue;

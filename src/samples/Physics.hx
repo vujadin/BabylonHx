@@ -14,12 +14,10 @@ import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.physics.PhysicsBodyCreationOptions;
-import com.babylonhx.physics.plugins.JigLibPlugin;
-//import com.babylonhx.physics.plugins.OimoPlugin;
+import com.babylonhx.physics.plugins.OimoPlugin;
 import com.babylonhx.Scene;
 import com.babylonhx.Engine;
 import com.babylonhx.physics.PhysicsEngine;
-import jiglib.cof.JConfig;
 
 /**
  * ...
@@ -27,21 +25,15 @@ import jiglib.cof.JConfig;
  */
 class Physics {
 
-	public function new(scene:Scene) {
-		JConfig.solverType = "FAST";
-		JConfig.doShockStep = true;
+	public function new(scene:Scene) {		
+		scene.enablePhysics(new Vector3(0, -2, 0), new OimoPlugin());
 		
-		scene.enablePhysics(new Vector3(0, -100, 0), new JigLibPlugin());
-		//scene.enablePhysics(new Vector3(0, -2, 0), new OimoPlugin());
-						
 		var camera = new ArcRotateCamera("Camera", 0.86, 1.37, 750, Vector3.Zero(), scene);
 		camera.attachControl(this);
 		camera.maxZ = 50000;
 		
 		var light = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);
 		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
-				
 		var mat = new StandardMaterial("ground", scene);
 		var texDiff = new Texture("assets/img/wood2.jpg", scene);
 		texDiff.uScale = texDiff.vScale = 5;
@@ -128,8 +120,8 @@ class Physics {
 		var materialBall = new StandardMaterial("ball", scene);
 		materialBall.diffuseTexture = new Texture("assets/img/metal.jpg", scene);
 		materialBall.emissiveColor = new Color3(0.5, 0.5, 0.5);
-		materialBall.diffuseTexture.uScale = 5;
-		materialBall.diffuseTexture.vScale = 5;
+		untyped materialBall.diffuseTexture.uScale = 5;
+		untyped materialBall.diffuseTexture.vScale = 5;
 		
 		var materialCrate = new StandardMaterial("crate", scene);
 		materialCrate.diffuseTexture = new Texture("assets/img/crate.jpg", scene);
@@ -152,7 +144,7 @@ class Physics {
 			var c = Mesh.CreateCylinder("c", randomNumber(20, 40), diam, diam, 10, 10, scene);
 			c.position = getPosition(y);
 			c.material = materialBall;
-			c.setPhysicsState(PhysicsEngine.CapsuleImpostor, physOpt);
+			//c.setPhysicsState(PhysicsEngine.CapsuleImpostor, physOpt);
 			
 			// BOXES
 			/*var d = Mesh.CreateBox("b", randomNumber(10, 30), scene);
@@ -167,7 +159,7 @@ class Physics {
 			// INCREMENT HEIGHT
 			y += 10;
 		}
-				
+		
 		scene.getEngine().runRenderLoop(function () {
 			scene.render();
 		});

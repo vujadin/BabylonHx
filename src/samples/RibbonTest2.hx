@@ -5,7 +5,7 @@ import com.babylonhx.lights.HemisphericLight;
 import com.babylonhx.lights.SpotLight;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.materials.textures.Texture;
-import com.babylonhx.materials.textures.procedurals.standard.FireProceduralTexture;
+import com.babylonhx.materials.textures.procedurals.standard.Fire;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Matrix;

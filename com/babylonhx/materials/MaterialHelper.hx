@@ -121,33 +121,39 @@ class MaterialHelper {
 		}
 	}
 	
-	public static function PrepareDefinesForMisc(mesh:AbstractMesh, scene:Scene, useLogarithmicDepth:Bool, pointsCloud:Bool, fogEnabled:Bool, defines:MaterialDefines) {
+	/**
+     * Helper used to prepare the list of defines associated with misc. values for shader compilation
+     * @param mesh defines the current mesh
+     * @param scene defines the current scene
+     * @param useLogarithmicDepth defines if logarithmic depth has to be turned on
+     * @param pointsCloud defines if point cloud rendering has to be turned on
+     * @param fogEnabled defines if fog has to be turned on
+     * @param alphaTest defines if alpha testing has to be turned on
+     * @param defines defines the current list of defines
+     */
+	public static function PrepareDefinesForMisc(mesh:AbstractMesh, scene:Scene, useLogarithmicDepth:Bool, pointsCloud:Bool, fogEnabled:Bool, alphaTest:Bool, defines:MaterialDefines) {
 		if (defines._areMiscDirty) {
 			untyped defines.LOGARITHMICDEPTH = useLogarithmicDepth;
 			untyped defines.POINTSIZE = (pointsCloud || scene.forcePointsCloud);
 			untyped defines.FOG = (scene.fogEnabled && mesh.applyFog && scene.fogMode != Scene.FOGMODE_NONE && fogEnabled);
 			untyped defines.NONUNIFORMSCALING = mesh.nonUniformScaling;
+			untyped defines.ALPHATEST = alphaTest;
 		}
 	}
 
 	/**
-     * Helper used to prepare the list of defines for shader compilation
+     * Helper used to prepare the list of defines associated with frame values for shader compilation
      * @param scene defines the current scene
      * @param engine defines the current engine
      * @param defines specifies the list of active defines
      * @param useInstances defines if instances have to be turned on
      * @param alphaTest defines if alpha testing has to be turned on
      */
-	public static function PrepareDefinesForFrameBoundValues(scene:Scene, engine:Engine, defines:MaterialDefines, useInstances:Bool, alphaTest:Bool) {
+	public static function PrepareDefinesForFrameBoundValues(scene:Scene, engine:Engine, defines:MaterialDefines, useInstances:Bool) {
 		var changed:Bool = false;
 		
 		if (untyped defines.CLIPPLANE != (scene.clipPlane != null)) {
 			untyped defines.CLIPPLANE = !defines.CLIPPLANE;
-			changed = true;
-		}
-		
-		if (untyped defines.ALPHATEST != alphaTest) {
-			untyped defines.ALPHATEST = !defines.ALPHATEST;
 			changed = true;
 		}
 		

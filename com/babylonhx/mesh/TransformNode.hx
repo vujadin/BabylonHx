@@ -231,17 +231,34 @@ class TransformNode extends Node {
 	}
 
 	/**
-	 * Sets a new pivot matrix to the mesh.  
-	 * Returns the AbstractMesh.
-	*/
-	public function setPivotMatrix(matrix:Matrix, postMultiplyPivotMatrix:Bool = false):TransformNode {
+	 * Sets a new matrix to apply before all other transformation
+	 * @param matrix defines the transform matrix
+	 * @returns the current TransformNode
+	 */
+	inline public function setPreTransformMatrix(matrix:Matrix):TransformNode {
+		return this.setPivotMatrix(matrix, false);
+	}
+
+	/**
+	 * Sets a new pivot matrix to the current node
+	 * @param matrix defines the new pivot matrix to use
+	 * @param postMultiplyPivotMatrix defines if the pivot matrix must be cancelled in the world matrix. When this parameter is set to true (default), the inverse of the pivot matrix is also applied at the end to cancel the transformation effect
+	 * @returns the current TransformNode
+	 */
+	public function setPivotMatrix(matrix:Matrix, postMultiplyPivotMatrix:Bool = true):TransformNode {
 		this._pivotMatrix = matrix.clone();
 		this._cache.pivotMatrixUpdated = true;
 		this._postMultiplyPivotMatrix = postMultiplyPivotMatrix;
 		
 		if (this._postMultiplyPivotMatrix) {
-			this._pivotMatrixInverse = Matrix.Invert(matrix);
+			if (this._pivotMatrixInverse == null) {
+				this._pivotMatrixInverse = Matrix.Invert(this._pivotMatrix);
+			} 
+			else {
+				this._pivotMatrix.invertToRef(this._pivotMatrixInverse);
+			}
 		}
+		
 		return this;
 	}
 
@@ -414,6 +431,12 @@ class TransformNode extends Node {
 		return this;
 	}
 
+	/**
+	 * Sets a new pivot point to the current node
+	 * @param point defines the new pivot point to use
+	 * @param space defines if the point is in world or local space (local by default)
+	 * @returns the current TransformNode
+	 */
 	public function setPivotPoint(point:Vector3, space:Int = Space.LOCAL):TransformNode {
 		if (this.getScene().getRenderId() == 0) {
 			this.computeWorldMatrix(true);
@@ -427,12 +450,7 @@ class TransformNode extends Node {
 			point = Vector3.TransformCoordinates(point, tmat);
 		}
 		
-		Vector3.TransformCoordinatesToRef(point, wm, this.position);
-		this._pivotMatrix.m[12] = -point.x;
-		this._pivotMatrix.m[13] = -point.y;
-		this._pivotMatrix.m[14] = -point.z;
-		this._cache.pivotMatrixUpdated = true;
-		return this;
+		return this.setPivotMatrix(Matrix.Translation(-point.x, -point.y, -point.z), true);
 	}
 
 	/**
@@ -886,7 +904,7 @@ class TransformNode extends Node {
 	*
 	* Returns the TransformNode. 
 	*/
-	public function registerAfterWorldMatrixUpdate(func:TransformNode->Null<EventState>->Void):TransformNode {
+	public function registerAfterWorldMatrixUpdate(func:TransformNode->Null<EventState<TransformNode>>->Void):TransformNode {
 		this.onAfterWorldMatrixUpdateObservable.add(func);
 		return this;
 	}
@@ -895,7 +913,7 @@ class TransformNode extends Node {
 	 * Removes a registered callback function.  
 	 * Returns the TransformNode.
 	 */
-	public function unregisterAfterWorldMatrixUpdate(func:TransformNode->Null<EventState>->Void):TransformNode {
+	public function unregisterAfterWorldMatrixUpdate(func:TransformNode->Null<EventState<TransformNode>>->Void):TransformNode {
 		this.onAfterWorldMatrixUpdateObservable.removeCallback(func);
 		return this;
 	}        

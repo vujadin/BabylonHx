@@ -6,7 +6,9 @@ import lime.utils.Float32Array;
  * ...
  * @author Krtolica Vujadin
  */
-
+/**
+ * Abstract class used to provide common services for all typed geometries
+ */
 @:expose('BABYLON._Primitive') class _Primitive extends Geometry {
 	
 	// Private 
@@ -14,6 +16,13 @@ import lime.utils.Float32Array;
 	private var _canBeRegenerated:Bool;
 	
 
+	/**
+	 * Creates a new typed geometry
+	 * @param id defines the unique ID of the geometry
+	 * @param scene defines the hosting scene
+	 * @param _canBeRegenerated defines if the geometry supports being regenerated with new parameters (false by default)
+	 * @param mesh defines the hosting mesh (can be null)
+	 */
 	public function new(id:String, scene:Scene, canBeRegenerated:Bool = false, ?mesh:Mesh) {
 		super(id, scene, null, false, mesh); // updatable = false to be sure not to update vertices
 		this._canBeRegenerated = canBeRegenerated;
@@ -22,10 +31,17 @@ import lime.utils.Float32Array;
 		this._beingRegenerated = false;
 	}
 
+	/**
+	 * Gets a value indicating if the geometry supports being regenerated with new parameters (false by default)
+	 * @returns true if the geometry can be regenerated
+	 */
 	inline public function canBeRegenerated():Bool {
 		return this._canBeRegenerated;
 	}
 
+	/**
+	 * If the geometry supports regeneration, the function will recreates the geometry with updated parameter values
+	 */
 	public function regenerate() {
 		if (!this._canBeRegenerated) {
 			return;
@@ -35,6 +51,11 @@ import lime.utils.Float32Array;
 		this._beingRegenerated = false;
 	}
 
+	/**
+	 * Clone the geometry
+	 * @param id defines the unique ID of the new geometry
+	 * @returns the new geometry
+	 */
 	public function asNewGeometry(id:String):Geometry {
 		return super.copy(id);
 	}

@@ -19,7 +19,7 @@ class IcoSphereTest {
 		
 		var light = new HemisphericLight("light1", new Vector3(0, 1, 0), scene);
 		
-		var sphere = Mesh.CreateIcoSphere("icosphere", { radius:2, flat:true, subdivisions: 16 }, scene);
+		var sphere = Mesh.CreateIcoSphere("icosphere", { radius:2, flat: true, subdivisions: 16 }, scene);
 		
 		scene.getEngine().runRenderLoop(function () {
             scene.render();

@@ -22,19 +22,18 @@ class CSGDemo {
 		light.specular = new Color3(0.7, 0.7, 0.4);
 		
 		var camera = new ArcRotateCamera("Camera", 0, 0, 10, new Vector3(0, 0, 0), scene);
-		camera.attachControl(this);
+		camera.attachControl();
 		camera.setPosition(new Vector3(10, 10, 15));
-		camera.minZ = 10.0;
-				
+		
 		var mat0 = new StandardMaterial("mat0", scene);
-				
+		
 		var a = Mesh.CreateTorus("torus", 8, 3, 20, scene);
 		var b = Mesh.CreateBox("box", 1.5, scene);
 		b.scaling.y *= 8;
 		b.rotation.x = Math.PI / 2;
 		a.isVisible = false;
 		b.isVisible = false;
-				
+		
 		var aCSG = CSG.FromMesh(a);
 		var bCSG = CSG.FromMesh(b);			
 		var subCSG:CSG = aCSG.subtract(bCSG);	
@@ -47,10 +46,10 @@ class CSGDemo {
 		
 		var newMesh = subCSG.toMesh("csg", mat0, scene);
 		newMesh.position = new Vector3(-12, 0, 0);
-				
+		
 		a = Mesh.CreateCylinder("cyl", 14, 4, 4, 15, 15, scene);
 		a.isVisible = false;
-				
+		
 		b.rotation.y = 0;
 		b.position.y += 5.5;		
 		
@@ -67,7 +66,7 @@ class CSGDemo {
 		
 		var newMesh2 = subCSG.toMesh("csg2", mat0, scene);
 		newMesh2.position = new Vector3(10, 0, 0);
-						
+		
 		a = Mesh.CreateSphere("sphere", 10, 5, scene);
 		b = Mesh.CreateBox("box2", 10, scene);
 		b.scaling.x = 0.02;
@@ -90,8 +89,8 @@ class CSGDemo {
 		a = null;
 		scene.removeMesh(b);
 		b = null;
-						
-		scene.registerBeforeRender(function () {
+		
+		scene.registerBeforeRender(function (_, _) {
 			camera.alpha += 0.01 * scene.getAnimationRatio();
 		});
 		

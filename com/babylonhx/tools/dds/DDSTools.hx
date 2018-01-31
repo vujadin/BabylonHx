@@ -328,34 +328,42 @@ class DDSTools {
 		return destArray;
 	}
 
-	private static function _GetRGBAArrayBuffer(width:Int, height:Int, dataOffset:Int, dataLength:Int, arrayBuffer:ArrayBuffer):UInt8Array {
+	private static function _GetRGBAArrayBuffer(width:Int, height:Int, dataOffset:Int, dataLength:Int, arrayBuffer:ArrayBuffer, rOffset:Int, gOffset:Int, bOffset:Int, aOffset:Int):UInt8Array {
 		var byteArray = new UInt8Array(dataLength);
 		var srcData = new UInt8Array(arrayBuffer, dataOffset);
 		var index = 0;
 		for (y in 0...height) {
 			for (x in 0...width) {
 				var srcPos = (x + y * width) * 4;
-				byteArray[index] = srcData[srcPos + 2];
-				byteArray[index + 1] = srcData[srcPos + 1];
-				byteArray[index + 2] = srcData[srcPos];
-				byteArray[index + 3] = srcData[srcPos + 3];
+				byteArray[index] = srcData[srcPos + rOffset];
+				byteArray[index + 1] = srcData[srcPos + gOffset];
+				byteArray[index + 2] = srcData[srcPos + bOffset];
+				byteArray[index + 3] = srcData[srcPos + aOffset];
 				index += 4;
 			}
 		}
 		
 		return byteArray;
 	}
+	
+	private static function _ExtractLongWordOrder(value:Int):Int {
+        if (value == 0 || value == 255 || value == -16777216) {
+            return 0;
+        }
+		
+        return 1 + DDSTools._ExtractLongWordOrder(value >> 8);
+    }
 
-	private static function _GetRGBArrayBuffer(width:Int, height:Int, dataOffset:Int, dataLength:Int, arrayBuffer:ArrayBuffer):UInt8Array {            
+	private static function _GetRGBArrayBuffer(width:Int, height:Int, dataOffset:Int, dataLength:Int, arrayBuffer:ArrayBuffer, rOffset:Int, gOffset:Int, bOffset:Int):UInt8Array {            
 		var byteArray = new UInt8Array(dataLength);
 		var srcData = new UInt8Array(arrayBuffer, dataOffset);
 		var index = 0;
 		for (y in 0...height) {
 			for (x in 0...width) {
 				var srcPos = (x + y * width) * 3;
-				byteArray[index] = srcData[srcPos + 2];
-				byteArray[index + 1] = srcData[srcPos + 1];
-				byteArray[index + 2] = srcData[srcPos];
+				byteArray[index] = srcData[srcPos + rOffset];
+				byteArray[index + 1] = srcData[srcPos + gOffset];
+				byteArray[index + 2] = srcData[srcPos + bOffset];
 				index += 3;
 			}
 		}
@@ -459,6 +467,11 @@ class DDSTools {
 			}
 		}
 		
+		var rOffset = DDSTools._ExtractLongWordOrder(header[off_RMask]);
+        var gOffset = DDSTools._ExtractLongWordOrder(header[off_GMask]);
+        var bOffset = DDSTools._ExtractLongWordOrder(header[off_BMask]);
+        var aOffset = DDSTools._ExtractLongWordOrder(header[off_AMask]);
+		
 		if (computeFormats) {
 			format = engine._getWebGLTextureType(info.textureType);    
 			internalFormat = @:privateAccess engine._getRGBABufferInternalSizedFormat(info.textureType);
@@ -517,12 +530,12 @@ class DDSTools {
 					else if (info.isRGB) {
 						if (bpp == 24) {
 							dataLength = width * height * 3;
-							byteArray = DDSTools._GetRGBArrayBuffer(width, height, dataOffset, dataLength, arrayBuffer);
+							byteArray = DDSTools._GetRGBArrayBuffer(width, height, dataOffset, dataLength, arrayBuffer, rOffset, gOffset, bOffset);
 							engine._uploadDataToTexture(sampler, i, gl.RGB, width, height, gl.RGB, gl.UNSIGNED_BYTE, byteArray);
 						} 
 						else { // 32
 							dataLength = width * height * 4;
-							byteArray = DDSTools._GetRGBAArrayBuffer(width, height, dataOffset, dataLength, arrayBuffer);
+							byteArray = DDSTools._GetRGBAArrayBuffer(width, height, dataOffset, dataLength, arrayBuffer, rOffset, gOffset, bOffset, aOffset);
 							engine._uploadDataToTexture(sampler, i, gl.RGBA, width, height, gl.RGBA, gl.UNSIGNED_BYTE, byteArray);
 						}
 					} 

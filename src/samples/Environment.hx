@@ -21,7 +21,7 @@ class Environment {
 		var light = new PointLight("Omni", new Vector3(10, 50, 50), scene);
 		
 		var camera = new ArcRotateCamera("Camera", 0.4, 1.2, 20, new Vector3(-10, 0, 0), scene);
-		camera.attachControl(this, true);
+		camera.attachControl();
 		
 		var material1 = new StandardMaterial("mat1", scene);
 		material1.diffuseColor = new Color3(1, 1, 0);
@@ -50,14 +50,15 @@ class Environment {
 		var skybox = Mesh.CreateBox("skyBox", 100.0, scene);
 		var skyboxMaterial = new StandardMaterial("skyBox", scene);
 		skyboxMaterial.backFaceCulling = false;
-		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/TropicalSunnyDay", scene);
+		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/skybox", scene);
 		skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
 		skyboxMaterial.diffuseColor = new Color3(0, 0, 0);
 		skyboxMaterial.specularColor = new Color3(0, 0, 0);
 		skybox.material = skyboxMaterial;
+		//skybox.infiniteDistance = true;
 		
 		var alpha = 0.0;
-		scene.registerBeforeRender(function(scene:Scene, es:Null<EventState>) {
+		scene.registerBeforeRender(function(scene:Scene, _) {
 			scene.fogDensity = Math.cos(alpha) / 10;
 			alpha += 0.02;
 		});

@@ -13,14 +13,14 @@ import com.babylonhx.tools.Tools;
 import com.babylonhx.collisions.PickingInfo;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.materials.StandardMaterial;
-import com.babylonhx.materials.lib.sky.SkyMaterial;
-import com.babylonhx.loading.plugins.ctmfileloader.CTMFile;
-import com.babylonhx.loading.plugins.ctmfileloader.CTMFileLoader;
+import com.babylonhx.loading.ctm.CTMFile;
+import com.babylonhx.loading.ctm.CTMFileLoader;
 import com.babylonhx.loading.SceneLoader;
 import com.babylonhx.loading.plugins.BabylonFileLoader;
 import com.babylonhx.bones.Skeleton;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.particles.ParticleSystem;
+import com.babylonhx.mesh.VertexBuffer;
 
 
 /**
@@ -31,31 +31,21 @@ class MultiLights {
 
 	public function new(scene:Scene) {
 		// Setup camera
-		var camera = new ArcRotateCamera("Camera", 0, 0, 10, Vector3.Zero(), scene);
-		camera.setPosition(new Vector3(-10, 10, 0));
+		var camera = new ArcRotateCamera("Camera", -Math.PI / 2.4, Math.PI / 2.2, 10, Vector3.Zero(), scene);
 		camera.attachControl();
-		
-		var light = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);
-		light.intensity = 1.8;
-		
-		/*// Sky material
-		var skyboxMaterial = new SkyMaterial("skyMaterial", scene);
-		skyboxMaterial.backFaceCulling = false;
-		skyboxMaterial.freeze();
-
-		// Sky mesh (box)
-		var skybox = Mesh.CreateBox("skyBox", 1000.0, scene);
-		skybox.material = skyboxMaterial;*/
 		
 		var lightSpheres:Array<Mesh> = [];
 		var lights:Array<PointLight> = [];
 		var lightTags:Array<Vector3> = [];
 		
-		var lightsCount = 64;
+		var sphere:Mesh = Mesh.CreateSphere('sphere', 10, 5, scene);
+		sphere.isVisible = false;
 		
-		var generateLight = function () {
+		var vertices = sphere.getVerticesData(VertexBuffer.PositionKind);
+		
+		var generateLight = function (x:Float, y:Float, z:Float) {
 			var light = new PointLight("Omni", new Vector3(0, 0, 0), scene);
-			var lightSphere = Mesh.CreateSphere("Sphere", 16, 0.1, scene);
+			var lightSphere = Mesh.CreateSphere("Sphere", 6, 0.1, scene);
 			
 			lightTags.push(new Vector3(
 				1 - Math.random() * 2,
@@ -66,49 +56,43 @@ class MultiLights {
 			lightSphere.material = new StandardMaterial("mat", scene);
 			untyped lightSphere.material.diffuseColor = new Color3(0, 0, 0);
 			untyped lightSphere.material.specularColor = new Color3(0, 0, 0);
-			untyped lightSphere.material.emissiveColor = new Color3(Math.random(), Math.random(), Math.random());
+			untyped lightSphere.material.emissiveColor = new Color3(
+				Math.random(), Math.random(), Math.random()
+			);
+			
+			light.intensity = 0.6;
 			
 			light.diffuse = untyped lightSphere.material.emissiveColor;
-			light.specular = untyped lightSphere.material.emissiveColor;
+			//light.specular = untyped lightSphere.material.emissiveColor;
 			
 			lightSpheres.push(lightSphere);
 			lights.push(light);
+			
+			light.position.set(x, y, z);
+			lightSphere.position.set(x, y, z);
 		};
 		
-		SceneLoader.ImportMesh("", "assets/models/chest/", "chest.babylon", scene, function (newMeshes:Array<AbstractMesh>, newParticles:Array<ParticleSystem>, newSkeletons:Array<Skeleton>) {
-			for (m in newMeshes) {
-				untyped m.material.maxSimultaneousLights = lightsCount;
-				m.material.freeze();
-			}
+		var ladyMesh:Mesh = null;
+		CTMFileLoader.load("assets/models/lady_with_primroses.ctm", scene, function(meshes:Array<Mesh>, _) {
+			ladyMesh = meshes[0];
+			ladyMesh.scaling.set(0.03, 0.03, 0.03);
+			ladyMesh.position.y -= 1.2;
+			ladyMesh.position.x -= 0.2;			
 		});
 		
-		/*CTMFileLoader.load("assets/models/frenkie/manu_jarvinen_excavator.ctm", scene, function(meshes:Array<Mesh>, triangleCount:Int) {
-			var mat = new StandardMaterial("mat", scene);
-			mat.diffuseColor = new Color3(0, 0, 0);
-			mat.diffuseTexture = new Texture("assets/models/chest/difuse.jpg", scene);
-			mat.bumpTexture = new Texture("assets/models/chest/normal.jpg", scene);
-			mat.specularTexture = new Texture("assets/models/chest/specular.jpg", scene);
-			mat.maxSimultaneousLights = lightsCount;
-			mat.freeze();
-			meshes[0].material = mat;
-			//meshes[0].scaling.set(0.3, 0.3, 0.3);
-		});*/
-		
-		for (index in 0...lightsCount) {
-			generateLight();
+		var vertexIndex = 0;
+		for (index in 0...Std.int(vertices.length / 3)) {
+			generateLight(
+				vertices[vertexIndex * 3],
+				vertices[vertexIndex * 3 + 1],
+				vertices[vertexIndex * 3 + 2]
+			);
+			
+			vertexIndex++;
 		}
 		
-		// Animations
-		var alpha = 0.0;
-		scene.beforeRender = function (scene:Scene, ?ev:Dynamic) {			
-			for (index in 0...lightsCount) {
-				var light = lights[index];
-				light.position = new Vector3(10 * Math.sin(alpha) * lightTags[index].x, -10 * Math.sin(alpha) * lightTags[index].y, 10 * Math.cos(alpha) * lightTags[index].z);
-				
-				lightSpheres[index].position = lights[index].position;
-			}
-			
-			alpha += 0.01;
+		scene.beforeRender = function (_, _) {			
+			ladyMesh.rotation.y += 0.01;
 		};
 		
 		scene.getEngine().runRenderLoop(function () {

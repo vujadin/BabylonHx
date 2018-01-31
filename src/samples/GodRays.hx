@@ -11,7 +11,7 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.lights.PointLight;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.cameras.ArcRotateCamera;
-import com.babylonhxext.loaders.ply.PlyLoader;
+import com.babylonhx.loading.ply.PlyLoader;
 
 import motion.Actuate;
 import motion.easing.Cubic;
@@ -50,7 +50,7 @@ class GodRays {
 			
 			godrays.mesh.position.copyFrom(obj.position);
 			
-			scene.registerBeforeRender(function() {
+			scene.registerBeforeRender(function(_, _) {
 				godrays.mesh.rotation.z += .01;
 				obj.rotation.x += 0.01;
 				obj.rotation.z += 0.01;

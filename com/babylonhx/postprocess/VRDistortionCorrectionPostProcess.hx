@@ -44,7 +44,7 @@ class VRDistortionCorrectionPostProcess extends PostProcess {
 			this._lensCenter = new Vector2(this._isRightEye ? 0.5 - this._lensCenterOffset * 0.5 : 0.5 + this._lensCenterOffset * 0.5, 0.5);
 		});
 		
-		this.onApplyObservable.add(function(effect:Effect, es:EventState = null) {
+		this.onApplyObservable.add(function(effect:Effect, _) {
 			effect.setFloat2("LensCenter", this._lensCenter.x, this._lensCenter.y);
 			effect.setFloat2("Scale", this._scaleFactor.x, this._scaleFactor.y);
 			effect.setFloat2("ScaleIn", this._scaleIn.x, this._scaleIn.y);

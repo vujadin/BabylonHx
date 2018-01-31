@@ -369,12 +369,12 @@ import lime.utils.Float32Array;
     }
 	
 	/**
-	 * Get angle between two vectors.
-	 * @param vector0 {BABYLON.Vector3}
-	 * @param vector1 {BABYLON.Vector3}
-	 * @param normal  {BABYLON.Vector3}  direction of the normal.
-	 * @return {number} the angle between vector0 and vector1.
-	 */
+     * Get angle between two vectors.
+     * @param vector0 angle between vector0 and vector1
+     * @param vector1 angle between vector0 and vector1
+     * @param normal direction of the normal.
+     * @return the angle between vector0 and vector1.
+     */
 	public static function GetAngleBetweenVectors(vector0:Vector3, vector1:Vector3, normal:Vector3):Float {
 		var v0:Vector3 = vector0.clone().normalize();
 		var v1:Vector3 = vector1.clone().normalize();
@@ -386,60 +386,92 @@ import lime.utils.Float32Array;
 		return -Math.acos(dot);
 	}
 	
+	/**
+	 * Returns a new Vector3 set from the index "offset" of the passed regular array.
+     */
 	inline public static function FromArray(array:Array<Float>, offset:Int = 0):Vector3 {
 		return new Vector3(array[offset], array[offset + 1], array[offset + 2]);
 	}
 	
+	/**
+	 * Returns a new Vector3 set from the index "offset" of the passed typed array.
+     */
 	inline public static function FromFloat32Array(array:Float32Array, offset:Int = 0):Vector3 {
         return new Vector3(array[offset], array[offset + 1], array[offset + 2]);
     }
 
+	/**
+	 * Sets the passed vector "result" with the element values from the index "offset" of the passed array.
+	 */
 	inline public static function FromArrayToRef(array:Array<Float>, offset:Int, result:Vector3) {
 		result.x = array[offset];
 		result.y = array[offset + 1];
 		result.z = array[offset + 2];
 	}
 
+	/**
+	 * Sets the passed vector "result" with the element values from the index "offset" of the passed typed array.
+	 */
 	inline public static function FromFloat32ArrayToRef(array:Float32Array, offset:Int, result:Vector3) {
 		result.x = array[offset];
 		result.y = array[offset + 1];
 		result.z = array[offset + 2];
 	}
 
+	/**
+	 * Sets the passed vector "result" with the passed floats.
+	 */
 	inline public static function FromFloatsToRef(x:Float, y:Float, z:Float, result:Vector3) {
 		result.x = x;
 		result.y = y;
 		result.z = z;
 	}
 
+	/**
+	 * Returns a new Vector3 set to (0.0, 0.0, 0.0).
+	 */
 	inline public static function Zero():Vector3 {
 		return new Vector3(0, 0, 0);
 	}
-	
+	/**
+	 * Returns a new Vector3 set to (1.0, 1.0, 1.0).
+	 */
 	inline public static function One():Vector3 {
 		return new Vector3(1, 1, 1);
 	}
-
+	/**
+	 * Returns a new Vector3 set to (0.0, 1.0, 0.0).
+	 */
 	inline public static function Up():Vector3 {
 		return new Vector3(0, 1.0, 0);
 	}
-	
+	/**
+	 * Returns a new Vector3 set to (0.0, -1.0, 0.0).
+	 */
 	inline public static function Down():Vector3 {
 		return new Vector3(0, -1.0, 0);
 	}
-	
+	/**
+	 * Returns a new Vector3 set to (0.0, 0.0, 1.0).
+	 */
 	inline public static function Forward():Vector3 {
 		return new Vector3(0, 0, 1.0);
 	}
-	
+	/**
+	 * Returns a new Vector3 set to (0.0, 0.0, -1.0).
+	 */
 	inline public static function Back():Vector3 {
 		return new Vector3(0, 0, -1.0);
 	}
-	
+	/**
+	 * Returns a new Vector3 set to (1.0, 0.0, 0.0).
+	 */
 	inline public static function Right():Vector3 {
 		return new Vector3(1.0, 0, 0);
 	}
-	
+	/**
+	 * Returns a new Vector3 set to (-1.0, 0.0, 0.0).
+	 */
 	inline public static function Left():Vector3 {
 		return new Vector3(-1.0, 0, 0);
 	}

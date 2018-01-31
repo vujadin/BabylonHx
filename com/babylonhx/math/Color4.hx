@@ -15,6 +15,9 @@ import com.babylonhx.tools.Tools;
 	public var a:Float;
 	
 	
+	/**
+	 * Creates a new Color4 object from the passed float values (< 1) : red, green, blue, alpha.  
+	 */
 	inline public function new(r:Float = 0, g:Float = 0, b:Float = 0, a:Float = 1.0) {
 		this.r = r;
 		this.g = g;
@@ -34,6 +37,10 @@ import com.babylonhx.tools.Tools;
     }
 
 	// Operators
+	/**
+	 * Adds in place the passed Color4 values to the current Color4.  
+	 * Returns the updated Color4.  
+	 */
 	public function addInPlace(right:Color4):Color4 {
 		this.r += right.r;
 		this.g += right.g;
@@ -52,6 +59,9 @@ import com.babylonhx.tools.Tools;
         return hash;
     }
 
+	/**
+	 * Returns a new array populated with 4 numeric elements : red, green, blue, alpha values.  
+	 */
 	public function asArray():Array<Float> {
 		var result:Array<Float> = [];
 		
@@ -60,6 +70,10 @@ import com.babylonhx.tools.Tools;
 		return result;
 	}
 
+	/**
+	 * Stores from the starting index in the passed array the Color4 successive values.  
+	 * Returns the Color4.  
+	 */
 	public function toArray(array:Array<Float>, index:Int = 0):Color4 {
 		array[index] = this.r;
 		array[index + 1] = this.g;
@@ -69,14 +83,24 @@ import com.babylonhx.tools.Tools;
 		return this;
 	}
 
+	/**
+	 * Returns a new Color4 set with the added values of the current Color4 and of the passed one.  
+	 */
 	public function add(right:Color4):Color4 {
 		return new Color4(this.r + right.r, this.g + right.g, this.b + right.b, this.a + right.a);
 	}
 
+	/**
+	 * Returns a new Color4 set with the subtracted values of the passed one from the current Color4.    
+	 */
 	public function subtract(right:Color4):Color4 {
 		return new Color4(this.r - right.r, this.g - right.g, this.b - right.b, this.a - right.a);
 	}
 
+	/**
+	 * Subtracts the passed ones from the current Color4 values and stores the results in "result".  
+	 * Returns the Color4.  
+	 */
 	public function subtractToRef(right:Color4, result:Color4):Color4 {
 		result.r = this.r - right.r;
 		result.g = this.g - right.g;
@@ -86,10 +110,17 @@ import com.babylonhx.tools.Tools;
 		return this;
 	}
 
+	/**
+	 * Creates a new Color4 with the current Color4 values multiplied by scale.  
+	 */
 	public function scale(scale:Float):Color4 {
 		return new Color4(this.r * scale, this.g * scale, this.b * scale, this.a * scale);
 	}
 
+	/**
+	 * Multiplies the current Color4 values by scale and stores the result in "result".  
+	 * Returns the Color4.  
+	 */
 	public function scaleToRef(scale:Float, result:Color4):Color4 {
 		result.r = this.r * scale;
 		result.g = this.g * scale;
@@ -98,6 +129,22 @@ import com.babylonhx.tools.Tools;
 		
 		return this;
 	}
+	
+	/**
+     * Clamps the rgb values by the min and max values and stores the result into "result".
+     * Returns the unmodified current Color4.
+     * @param min - minimum clamping value.  Defaults to 0
+     * @param max - maximum clamping value.  Defaults to 1
+     * @param result - color to store the result into.
+     * @returns - the original Color4
+     */
+    public function clampToRef(min:Float = 0, max:Float = 1, result:Color4):Color4 {
+        result.r = Scalar.Clamp(this.r, min, max);
+        result.g = Scalar.Clamp(this.g, min, max);
+        result.b = Scalar.Clamp(this.b, min, max);
+        result.a = Scalar.Clamp(this.a, min, max);
+        return this;
+    }
 	
 	/**
      * Multipy an RGBA Color4 value by another and return a new Color4 object

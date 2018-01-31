@@ -4,9 +4,9 @@ import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.lights.HemisphericLight;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.materials.textures.Texture;
-import com.babylonhx.layer.Layer;
-import com.babylonhx.materials.textures.procedurals.standard.FireProceduralTexture;
+import com.babylonhx.materials.textures.procedurals.standard.Fire;
 import com.babylonhx.math.Color3;
+import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
@@ -22,7 +22,7 @@ import haxe.Timer;
 class Ribbons {
 
 	public function new(scene:Scene) {
-		scene.clearColor = new Color3(0, 0, 0.2);
+		scene.clearColor = new Color4(0, 0, 0.2, 1.0);
 		var camera = new ArcRotateCamera("Camera", Math.PI / 2 - 0.5, 0.5, 6, Vector3.Zero(), scene);
 		camera.attachControl();
 		camera.wheelPrecision = 100;
@@ -31,7 +31,7 @@ class Ribbons {
 		
 		// fire material
 		var fireMaterial = new StandardMaterial("fireMaterial", scene);
-		var fireTexture = new FireProceduralTexture("firetexture", 256, scene);
+		var fireTexture = new Fire("firetexture", 256, scene);
 		fireTexture.level = 2;
 		fireTexture.vScale = 0.5;
 		fireMaterial.diffuseColor = new Color3(Math.random() / 2, Math.random() / 2, Math.random() / 2);
@@ -180,7 +180,7 @@ class Ribbons {
 		newSH(m, paths, targetPaths, deltas, deltaColors);
 		
 		// then animation
-		scene.registerBeforeRender(function (scene:Scene, es:EventState = null) {
+		scene.registerBeforeRender(function (_, _) {
 			if (morph) {
 				mesh = morphing(mesh, m, paths, targetPaths, deltas, deltaColors);
 			}

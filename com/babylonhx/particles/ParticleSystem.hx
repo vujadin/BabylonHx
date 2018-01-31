@@ -27,42 +27,130 @@ import lime.utils.Float32Array;
  * ...
  * @author Krtolica Vujadin
  */
-
+/**
+ * This represents a particle system in Babylon.
+ * Particles are often small sprites used to simulate hard-to-reproduce phenomena like fire, smoke, water, or abstract visual effects like magic glitter and faery dust.
+ * Particles can take different shapes while emitted like box, sphere, cone or you can write your custom function.
+ * @example https://doc.babylonjs.com/babylon101/particles
+ */
 @:expose('BABYLON.ParticleSystem') class ParticleSystem implements IAnimatable implements IParticleSystem {
 	
-	// Statics
-	public static var BLENDMODE_ONEONE:Int = 0;
-	public static var BLENDMODE_STANDARD:Int = 1;
+	/**
+	 * Source color is added to the destination color without alpha affecting the result.
+	 */
+	public static inline var BLENDMODE_ONEONE:Int = 0;
+	/**
+	 * Blend current color and particle color using particle’s alpha.
+	 */
+	public static inline var BLENDMODE_STANDARD:Int = 1;
+	
 
-	// Members
+	/**
+	 * List of animations used by the particle system.
+	 */
 	public var animations:Array<Animation> = [];
 	
-	public var name:String;
+	/**
+	 * The id of the Particle system.
+	 */
 	public var id:String;
+	
+	/**
+	 * The name of the Particle system.
+	 */
+	public var name:String;
+	
+	/**
+	 * ID of the rendering group used by the Particle system to chose when to render.
+	 */
 	public var renderingGroupId:Int = 0;
-	public var emitter:Dynamic = null;
+	
+	/**
+	 * The emitter represents the Mesh or position we are attaching the particle system to.
+	 */
+	public var emitter:Dynamic = null;		// AbstractMesh | Vector3
+	
+	/**
+	 * The density of particles, the rate of particle flow
+	 */
 	public var emitRate:Int = 10;
+	
+	/**
+	 * If you want to launch only a few particles at once, that can be done, as well.
+	 */
 	public var manualEmitCount:Int = -1;
+	
+	/**
+	 * The overall motion speed (0.01 is default update speed, faster updates = faster animation)
+	 */
 	public var updateSpeed:Float = 0.01;
+	
+	/**
+	 * The amount of time the particle system is running (depends of the overall speed above).
+	 */
 	public var targetStopDuration:Float = 0;
+	
+	/**
+	 * Specifies whether the particle system will be disposed once it reaches the end of the animation.
+	 */
 	public var disposeOnStop:Bool = false;
 
+	/**
+	 * Minimum power of emitting particles.
+	 */
 	public var minEmitPower:Float = 1;
+	/**
+	 * Maximum power of emitting particles.
+	 */
 	public var maxEmitPower:Float = 1;
 
+	/**
+	 * Minimum life time of emitting particles.
+	 */
 	public var minLifeTime:Float = 1;
+	/**
+	 * Maximum life time of emitting particles.
+	 */
 	public var maxLifeTime:Float = 1;
 
+	/**
+	 * Minimum Size of emitting particles.
+	 */
 	public var minSize:Float = 1;
+	/**
+	 * Maximum Size of emitting particles.
+	 */
 	public var maxSize:Float = 1;
+	
+	/**
+	 * Minimum angular speed of emitting particles (Z-axis rotation for each particle).
+	 */
 	public var minAngularSpeed:Float = 0;
+	/**
+	 * Maximum angular speed of emitting particles (Z-axis rotation for each particle).
+	 */
 	public var maxAngularSpeed:Float = 0;
 
+	/**
+	 * The texture used to render each particle. (this can be a spritesheet)
+	 */
 	public var particleTexture:Texture;
 	
+	/**
+	 * The layer mask we are rendering the particles through.
+	 */
 	public var layerMask:Int = 0x0FFFFFFF;
 	
+	/**
+	 * This can help using your own shader to render the particle system.
+	 * The according effect will be created 
+	 */
 	public var customShader:Dynamic = null;
+	
+	/**
+	 * By default particle system starts as soon as they are created. This prevents the 
+	 * automatic start to happen and let you decide when to start emitting particles.
+	 */
 	public var preventAutoStart:Bool = false;
 	
 	private var _epsilon:Float;
@@ -75,8 +163,8 @@ import lime.utils.Float32Array;
 	*/
 	public var onDisposeObservable:Observable<ParticleSystem> = new Observable<ParticleSystem>();
 	private var _onDisposeObserver:Observer<ParticleSystem>;
-	public var onDispose:ParticleSystem->Null<EventState>->Void;
-	private function set_onDispose(callback:ParticleSystem->Null<EventState>->Void):ParticleSystem->Null<EventState>->Void {
+	public var onDispose:ParticleSystem->Null<EventState<ParticleSystem>>->Void;
+	private function set_onDispose(callback:ParticleSystem->Null<EventState<ParticleSystem>>->Void):ParticleSystem->Null<EventState<ParticleSystem>>->Void {
 		if (this._onDisposeObserver != null) {
 			this.onDisposeObservable.remove(this._onDisposeObserver);
 		}
@@ -85,11 +173,27 @@ import lime.utils.Float32Array;
 		return callback;
 	}
 	
+	/**
+	 * This function can be defined to provide custom update for active particles.
+	 * This function will be called instead of regular update (age, position, color, etc.).
+	 * Do not forget that this function will be called on every frame so try to keep it simple and fast :)
+	 */
 	public var updateFunction:Array<Particle>->Void;
+	
+	/**
+	 * Callback triggered when the particle animation is ending.
+	 */
 	public var onAnimationEnd:Void->Void = null;
 
+	/**
+	 * Blend mode use to render the particle, it can be either ParticleSystem.BLENDMODE_ONEONE or ParticleSystem.BLENDMODE_STANDARD.
+	 */
 	public var blendMode:Int = ParticleSystem.BLENDMODE_ONEONE;
 
+	/**
+	 * Forces the particle to write their depth information to the depth buffer. This can help preventing other draw calls
+	 * to override the particles.
+	 */
 	public var forceDepthWrite:Bool = false;
 
 	public var gravity:Vector3 = Vector3.Zero();

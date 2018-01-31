@@ -4,6 +4,8 @@ import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.lights.DirectionalLight;
 import com.babylonhx.lights.PointLight;
 import com.babylonhx.materials.StandardMaterial;
+import com.babylonhx.materials.textures.CubeTexture;
+import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
@@ -20,7 +22,7 @@ class Lights {
 		// Setup camera
 		var camera = new ArcRotateCamera("Camera", 0, 0, 10, Vector3.Zero(), scene);
 		camera.setPosition(new Vector3(-10, 10, 0));
-		camera.attachControl(this, true);
+		camera.attachControl();
 		
 		// Lights
 		var light0 = new PointLight("Omni0", new Vector3(0, 10, 0), scene);
@@ -32,9 +34,9 @@ class Lights {
 		var sphere = Mesh.CreateSphere("Sphere", 16, 3, scene);
 		
 		// Creating light sphere
-		var lightSphere0 = Mesh.CreateSphere("Sphere0", 16, 0.5, scene);
-		var lightSphere1 = Mesh.CreateSphere("Sphere1", 16, 0.5, scene);
-		var lightSphere2 = Mesh.CreateSphere("Sphere2", 16, 0.5, scene);
+		var lightSphere0 = Mesh.CreateSphere("Sphere0", 16, 1, scene);
+		var lightSphere1 = Mesh.CreateSphere("Sphere1", 16, 1, scene);
+		var lightSphere2 = Mesh.CreateSphere("Sphere2", 16, 1, scene);
 		
 		lightSphere0.material = new StandardMaterial("red", scene);
 		cast(lightSphere0.material, StandardMaterial).diffuseColor = new Color3(0, 0, 0);
@@ -68,12 +70,24 @@ class Lights {
 		light3.diffuse = new Color3(1, 1, 1);
 		light3.specular = new Color3(1, 1, 1);
 		
+		// Skybox
+		var skybox = Mesh.CreateBox("skyBox", 100.0, scene);
+		var skyboxMaterial = new StandardMaterial("skyBox", scene);
+		skyboxMaterial.backFaceCulling = false;
+		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/skybox", scene);
+		skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
+		skyboxMaterial.diffuseColor = new Color3(0, 0, 0);
+		skyboxMaterial.specularColor = new Color3(0, 0, 0);
+		skyboxMaterial.disableLighting = true;
+		skybox.material = skyboxMaterial;
+		skybox.infiniteDistance = true;
+		
 		// Animations
 		var alpha = 0.0;
-		scene.beforeRender = function (scene:Scene, ?ev:Dynamic) {
-			light0.position = new Vector3(10 * Math.sin(alpha), 0, 10 * Math.cos(alpha));
-			light1.position = new Vector3(10 * Math.sin(alpha), 0, -10 * Math.cos(alpha));
-			light2.position = new Vector3(10 * Math.cos(alpha), 0, 10 * Math.sin(alpha));
+		scene.beforeRender = function (_, _) {
+			light0.position.set(10 * Math.sin(alpha), 0, 10 * Math.cos(alpha));
+			light1.position.set(10 * Math.sin(alpha), 0, -10 * Math.cos(alpha));
+			light2.position.set(10 * Math.cos(alpha), 0, 10 * Math.sin(alpha));
 			
 			lightSphere0.position = light0.position;
 			lightSphere1.position = light1.position;

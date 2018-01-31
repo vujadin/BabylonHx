@@ -7,7 +7,7 @@ import com.babylonhx.math.Color3;
 import com.babylonhx.math.Color4;
 import com.babylonhx.postprocess.VolumetricLightScatteringPostProcess;
 import com.babylonhx.Scene;
-import com.babylonhx.Engine;
+import com.babylonhx.engine.Engine;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.lights.PointLight;
@@ -17,8 +17,8 @@ import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.particles.ParticleSystem;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.MeshBuilder;
-import com.babylonhx.particles.SolidParticleSystem;
-import com.babylonhx.particles.SolidParticle;
+import com.babylonhx.particles.solid.SolidParticleSystem;
+import com.babylonhx.particles.solid.SolidParticle;
 
 /**
  * ...
@@ -90,7 +90,6 @@ class SolidParticles4 {
 		};
 		
 		var sps = new SolidParticleSystem('s', scene, { updatable: false } );
-		trace("sps");
 		//var model = Mesh.CreateBox('b', 0.2, scene);
 		var model = MeshBuilder.CreatePolyhedron('m', { size: 0.02 }, scene);
 		sps.addShape(model, Std.int(vertices.length / 3), { positionFunction: positionfunc } );

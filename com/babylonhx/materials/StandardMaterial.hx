@@ -44,7 +44,7 @@ typedef SMD = StandardMaterialDefines
 		return _diffuseTexture;
 	}
 	function set_diffuseTexture(value:BaseTexture):BaseTexture {
-		_markAllSubMeshesAsTexturesDirty();
+		_markAllSubMeshesAsTexturesAndMiscDirty();
 		_diffuseTexture = value;
 		return value;
 	}
@@ -68,7 +68,7 @@ typedef SMD = StandardMaterialDefines
 		return _opacityTexture;
 	}
 	function set_opacityTexture(value:BaseTexture):BaseTexture {
-		_markAllSubMeshesAsTexturesDirty();
+		_markAllSubMeshesAsTexturesAndMiscDirty();
 		_opacityTexture = value;
 		return value;
 	}
@@ -298,7 +298,7 @@ typedef SMD = StandardMaterialDefines
 		return _opacityFresnelParameters;
 	}
 	function set_opacityFresnelParameters(value:FresnelParameters):FresnelParameters {
-		_markAllSubMeshesAsFresnelDirty();
+		_markAllSubMeshesAsFresnelAndMiscDirty();
 		return _opacityFresnelParameters = value;
 	}  
 
@@ -886,13 +886,13 @@ typedef SMD = StandardMaterialDefines
 		}
 		
 		// Misc.
-		MaterialHelper.PrepareDefinesForMisc(mesh, scene, this._useLogarithmicDepth, this.pointsCloud, this.fogEnabled, defines);
+		MaterialHelper.PrepareDefinesForMisc(mesh, scene, this._useLogarithmicDepth, this.pointsCloud, this.fogEnabled, this._shouldTurnAlphaTestOn(mesh), defines);
 		
 		// Attribs
 		MaterialHelper.PrepareDefinesForAttributes(mesh, defines, true, true, true);
 		
 		// Values that need to be evaluated on every frame
-		MaterialHelper.PrepareDefinesForFrameBoundValues(scene, engine, defines, useInstances, this._shouldTurnAlphaTestOn(mesh));
+		MaterialHelper.PrepareDefinesForFrameBoundValues(scene, engine, defines, useInstances);
 		
 		// Get correct effect      
 		if (defines.isDirty) {

@@ -149,13 +149,13 @@ class LavaMaterial extends PushMaterial {
 		}
 		
 		// Misc.
-		MaterialHelper.PrepareDefinesForMisc(mesh, scene, false, this.pointsCloud, this.fogEnabled, defines);
+		MaterialHelper.PrepareDefinesForMisc(mesh, scene, false, this.pointsCloud, this.fogEnabled, this._shouldTurnAlphaTestOn(mesh), defines);
 		
 		// Lights
 		defines._needNormals = MaterialHelper.PrepareDefinesForLights(scene, mesh, defines, false, this._maxSimultaneousLights);
 		
 		// Values that need to be evaluated on every frame
-		MaterialHelper.PrepareDefinesForFrameBoundValues(scene, engine, defines, useInstances, this._shouldTurnAlphaTestOn(mesh));
+		MaterialHelper.PrepareDefinesForFrameBoundValues(scene, engine, defines, useInstances);
 		
 		// Attribs
 		MaterialHelper.PrepareDefinesForAttributes(mesh, defines, true, true);

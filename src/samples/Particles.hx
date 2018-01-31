@@ -1,7 +1,7 @@
 package samples;
 
 import com.babylonhx.animations.Animation;
-import com.babylonhx.animations.Animation.BabylonFrame;
+import com.babylonhx.animations.IAnimationKey;
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.lights.PointLight;
 import com.babylonhx.materials.StandardMaterial;
@@ -24,7 +24,7 @@ class Particles {
 		// Setup environment
 		var light0 = new PointLight("Omni", new Vector3(0, 2, 8), scene);
 		var camera = new ArcRotateCamera("ArcRotateCamera", 1, 0.8, 20, new Vector3(0, 0, 0), scene);
-		camera.attachControl(this, true);
+		camera.attachControl();
 		
 		// Fountain object
 		var fountain = Mesh.CreateBox("foutain", 1.0, scene);
@@ -79,7 +79,7 @@ class Particles {
 		particleSystem.start();
 		
 		// Fountain's animation
-		var keys:Array<BabylonFrame> = [];
+		var keys:Array<IAnimationKey> = [];
 		var animation = new Animation("animation", "rotation.x", 30, Animation.ANIMATIONTYPE_FLOAT,
 																		Animation.ANIMATIONLOOPMODE_CYCLE);
 		// At the animation key 0, the value of scaling is "1"

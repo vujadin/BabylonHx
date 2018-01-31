@@ -9,7 +9,7 @@ import com.babylonhx.mesh.Mesh;
 import com.babylonhx.shaderbuilder.ShaderBuilder;
 import com.babylonhx.shaderbuilder.ShaderMaterialHelper;
 import com.babylonhx.tools.EventState;
-import com.babylonhxext.loaders.obj.ObjLoader;
+import com.babylonhx.loading.obj.ObjLoader;
 import com.babylonhx.shaderbuilder.Shader;
 import com.babylonhx.shaderbuilder.Helper;
 

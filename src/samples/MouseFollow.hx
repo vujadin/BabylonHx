@@ -13,7 +13,6 @@ import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Space;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
-import com.babylonhx.Engine;
 
 /**
  * ...
@@ -33,8 +32,8 @@ class MouseFollow {
 		
 		var ball = Mesh.CreateSphere("ball", 8, 1, scene);
 		
-		scene.onPointerMove = function (_, _, _) {
-			var pinfo = scene.pick(scene.pointerX, scene.pointerY);
+		scene.onPointerMove = function (_, _) {
+			var pinfo = scene.pick(scene.pointerX, scene.pointerY, null, false, camera);
 			
 			if (pinfo.hit) {
 				ball.position.x = pinfo.pickedPoint.x;

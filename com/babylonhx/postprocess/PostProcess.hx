@@ -74,8 +74,8 @@ typedef PostProcessOption = {
 	public var onActivateObservable:Observable<Camera> = new Observable<Camera>();
 
 	private var _onActivateObserver:Observer<Camera>;
-	public var onActivate(never, set):Camera->Null<EventState>->Void;
-	private function set_onActivate(callback:Camera->Null<EventState>->Void):Camera->Null<EventState>->Void {
+	public var onActivate(never, set):Camera->Null<EventState<Camera>>->Void;
+	private function set_onActivate(callback:Camera->Null<EventState<Camera>>->Void):Camera->Null<EventState<Camera>>->Void {
 		if (this._onActivateObserver != null) {
 			this.onActivateObservable.remove(this._onActivateObserver);
 		}
@@ -92,8 +92,8 @@ typedef PostProcessOption = {
 	*/
 	public var onSizeChangedObservable:Observable<PostProcess> = new Observable<PostProcess>();
 	private var _onSizeChangedObserver:Observer<PostProcess>;
-	public var onSizeChanged:PostProcess->Null<EventState>->Void;
-	private function set_onSizeChanged(callback:PostProcess->Null<EventState>->Void):PostProcess->Null<EventState>->Void {
+	public var onSizeChanged:PostProcess->Null<EventState<PostProcess>>->Void;
+	private function set_onSizeChanged(callback:PostProcess->Null<EventState<PostProcess>>->Void):PostProcess->Null<EventState<PostProcess>>->Void {
 		if (this._onSizeChangedObserver != null) {
 			this.onSizeChangedObservable.remove(this._onSizeChangedObserver);
 		}
@@ -108,8 +108,8 @@ typedef PostProcessOption = {
 	*/
 	public var onApplyObservable:Observable<Effect> = new Observable<Effect>();
 	private var _onApplyObserver:Observer<Effect>;
-	public var onApply(never, set):Effect->Null<EventState>->Void;
-	private function set_onApply(callback:Effect->Null<EventState>->Void):Effect->Null<EventState>->Void {
+	public var onApply(never, set):Effect->Null<EventState<Effect>>->Void;
+	private function set_onApply(callback:Effect->Null<EventState<Effect>>->Void):Effect->Null<EventState<Effect>>->Void {
 		if (this._onApplyObserver != null) {
 			this.onApplyObservable.remove(this._onApplyObserver);
 		}
@@ -124,8 +124,8 @@ typedef PostProcessOption = {
 	*/
 	public var onBeforeRenderObservable:Observable<Effect> = new Observable<Effect>();
 	private var _onBeforeRenderObserver:Observer<Effect>;
-	public var onBeforeRender:Effect->Null<EventState>->Void;
-	private function set_onBeforeRender(callback:Effect->Null<EventState>->Void):Effect->Null<EventState>->Void {
+	public var onBeforeRender:Effect->Null<EventState<Effect>>->Void;
+	private function set_onBeforeRender(callback:Effect->Null<EventState<Effect>>->Void):Effect->Null<EventState<Effect>>->Void {
 		if (this._onBeforeRenderObserver != null) {
 			this.onBeforeRenderObservable.remove(this._onBeforeRenderObserver);
 		}
@@ -141,8 +141,8 @@ typedef PostProcessOption = {
 	public var onAfterRenderObservable:Observable<Effect> = new Observable<Effect>();
 
 	private var _onAfterRenderObserver:Observer<Effect>;
-	public var onAfterRender:Effect->Null<EventState>->Void;
-	private function set_onAfterRender(callback:Effect->Null<EventState>->Void):Effect->Null<EventState>->Void {
+	public var onAfterRender:Effect->Null<EventState<Effect>>->Void;
+	private function set_onAfterRender(callback:Effect->Null<EventState<Effect>>->Void):Effect->Null<EventState<Effect>>->Void {
 		if (this._onAfterRenderObserver != null) {
 			this.onAfterRenderObservable.remove(this._onAfterRenderObserver);
 		}

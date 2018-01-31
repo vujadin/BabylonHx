@@ -1,6 +1,7 @@
 package samples;
 
 import com.babylonhx.cameras.ArcRotateCamera;
+import com.babylonhx.layer.HighlightLayer;
 import com.babylonhx.lights.DirectionalLight;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.materials.textures.CubeTexture;
@@ -12,7 +13,7 @@ import com.babylonhx.postprocess.RefractionPostProcess;
 import com.babylonhx.Scene;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.tools.EventState;
-import com.babylonhxext.loaders.obj.ObjLoader;
+import com.babylonhx.loading.obj.ObjLoader;
 import haxe.Timer;
 
 /**
@@ -22,8 +23,8 @@ import haxe.Timer;
 class PostprocessRefraction {
 
 	public function new(scene:Scene) {
-		var camera = new ArcRotateCamera("Camera", 0, 0, 90, Vector3.Zero(), scene);
-		camera.attachControl(this);
+		var camera = new ArcRotateCamera("Camera", 0, 0, 100, Vector3.Zero(), scene);
+		camera.attachControl();
 		var light = new DirectionalLight("dir01", new Vector3(0, -1, -0.2), scene);
 		var light2 = new DirectionalLight("dir02", new Vector3(-1, -2, -1), scene);
 		light.position = new Vector3(0, 30, 0);
@@ -43,47 +44,37 @@ class PostprocessRefraction {
 		skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
 		skyboxMaterial.diffuseColor = new Color3(0, 0, 0);
 		skyboxMaterial.specularColor = new Color3(0, 0, 0);
+		skyboxMaterial.disableLighting = true;
 		skybox.material = skyboxMaterial;
-				
-		var objParser = new ObjLoader(scene);
-		objParser.load("assets/models/", "suzanne.obj", function(meshes:Array<Mesh>) {
-			var monkey1 = meshes[0];
-			var monkey2 = monkey1.clone("monkey2");
-			var monkey3 = monkey1.clone("monkey3");
+		
+		// Spheres
+		var sphere0 = Mesh.CreateSphere("Sphere0", 16, 10, scene);
+		var sphere1 = Mesh.CreateSphere("Sphere1", 16, 10, scene);
+		var sphere2 = Mesh.CreateSphere("Sphere2", 16, 10, scene);
+		
+		sphere0.material = new StandardMaterial("red", scene);
+		cast (sphere0.material, StandardMaterial).specularColor = new Color3(0, 0, 0);
+		cast (sphere0.material, StandardMaterial).diffuseColor = new Color3(1.0, 0, 0);
+		
+		sphere1.material = new StandardMaterial("green", scene);
+		cast (sphere1.material, StandardMaterial).specularColor = new Color3(0, 0, 0);
+		cast (sphere1.material, StandardMaterial).diffuseColor = new Color3(0, 1.0, 0);
+		
+		sphere2.material = new StandardMaterial("blue", scene);
+		cast (sphere2.material, StandardMaterial).specularColor = new Color3(0, 0, 0);
+		cast (sphere2.material, StandardMaterial).diffuseColor = new Color3(0, 0, 1.0);
+		
+		// Post-process
+		var postProcess = new RefractionPostProcess("Refraction", "assets/img/refMap.png", new Color3(1.0, 1.0, 1.0), 0.5, 0.5, 1.0, camera);
+		
+		// Animations
+		var alpha = 0.0;
+		scene.registerBeforeRender(function(_, _) {
+			sphere0.position = new Vector3(20 * Math.sin(alpha), 0, 20 * Math.cos(alpha));
+			sphere1.position = new Vector3(20 * Math.sin(alpha), 0, -20 * Math.cos(alpha));
+			sphere2.position = new Vector3(20 * Math.cos(alpha), 0, 20 * Math.sin(alpha));
 			
-			monkey1.material = new StandardMaterial("red", scene);
-			cast(monkey1.material, StandardMaterial).specularColor = new Color3(0, 0, 0);
-			cast(monkey1.material, StandardMaterial).diffuseColor = new Color3(1.0, 0, 0);
-			
-			monkey2.material = new StandardMaterial("green", scene);
-			cast(monkey2.material, StandardMaterial).specularColor = new Color3(0, 0, 0);
-			cast(monkey2.material, StandardMaterial).diffuseColor = new Color3(0, 1.0, 0);
-			
-			monkey3.material = new StandardMaterial("blue", scene);
-			cast(monkey3.material, StandardMaterial).specularColor = new Color3(0, 0, 0);
-			cast(monkey3.material, StandardMaterial).diffuseColor = new Color3(0, 0, 1.0);
-			   
-			// Post-process
-			var postProcess = new RefractionPostProcess("Refraction", "assets/img/refMap.png", new Color3(1.0, 1.0, 1.0), 0.5, 0.5, 1.0, camera);
-			
-			// Animations
-			var alpha = 0.0;
-			scene.registerBeforeRender(function(scene:Scene, es:Null<EventState>) {
-				monkey1.position = new Vector3(20 * Math.sin(alpha), 0, 20 * Math.cos(alpha));
-				monkey2.position = new Vector3(20 * Math.sin(alpha), 0, -20 * Math.cos(alpha));
-				monkey3.position = new Vector3(20 * Math.cos(alpha), 0, 20 * Math.sin(alpha));
-				
-				monkey1.rotation.x += 0.02;
-				monkey1.rotation.y += 0.02;
-				
-				monkey2.rotation.x += 0.02;
-				monkey2.rotation.y += 0.02;
-				
-				monkey3.rotation.x += 0.02;
-				monkey3.rotation.y += 0.02;
-				
-				alpha += 0.01;
-			});
+			alpha += 0.01;
 		});
 		
 		scene.getEngine().runRenderLoop(function () {

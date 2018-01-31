@@ -52,14 +52,15 @@ class MeshImport {
 		var mat = new StandardMaterial("torusmat", scene);
 		mat.alpha = 0.5;
 		
-		CTMFileLoader.load("assets/models/roundedcube.ctm", scene, function(meshes:Array<Mesh>, triangleCount:Int) {			
+		/*CTMFileLoader.load("assets/models/roundedcube.ctm", scene, function(meshes:Array<Mesh>, triangleCount:Int) {			
 			//meshes[0].material = mat;
 			meshes[0].position.y = 2;
-		});
+		});*/
 		
-		SceneLoader.ImportMesh("", "assets/models/", "torus.babylon", scene, function (newMeshes:Array<AbstractMesh>, newParticles:Array<ParticleSystem>, newSkeletons:Array<Skeleton>) {
-			newMeshes[0].material = mat;
-			newMeshes[0].material.alpha = 0.5;
+		SceneLoader.ImportMesh("", "assets/models/Dude/", "Dude.babylon", scene, function (newMeshes:Array<AbstractMesh>, _, _) {
+			trace(newMeshes);
+			//newMeshes[0].material = mat;
+			//newMeshes[0].material.alpha = 0.5;
 			
 			scene.getEngine().runRenderLoop(function () {
 				scene.render();
@@ -73,8 +74,8 @@ class MeshImport {
 	  
 		var i:Int = 0;
 		while (i < normals.length) {
-			var v1 = Vector3.FromArray(positions, i);
-			var v2 = v1.clone().add(Vector3.FromArray(normals, i).scaleInPlace(size));
+			var v1 = Vector3.FromFloat32Array(positions, i);
+			var v2 = v1.clone().add(Vector3.FromFloat32Array(normals, i).scaleInPlace(size));
 			Mesh.CreateLines("" + i, [v1, v2], mesh.getScene());
 			
 			i += 3;

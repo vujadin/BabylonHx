@@ -94,7 +94,7 @@ class Instances {
 				
 				var mat = new StandardMaterial("treemat", scene);
 				mat.diffuseTexture = new Texture("assets/img/treeskin.jpg", scene);
-				mat.diffuseTexture.uScale = mat.diffuseTexture.vScale = 0.1;
+				untyped mat.diffuseTexture.uScale = mat.diffuseTexture.vScale = 0.1;
 				
 				tree.material = mat;
 				
@@ -133,8 +133,8 @@ class Instances {
 		var groundMaterial = new StandardMaterial("ground", scene);
 		groundMaterial.diffuseTexture = new Texture("assets/img/rust.jpg", scene);
 		
-		groundMaterial.diffuseTexture.uScale = 12;
-		groundMaterial.diffuseTexture.vScale = 12;
+		untyped groundMaterial.diffuseTexture.uScale = 12;
+		untyped groundMaterial.diffuseTexture.vScale = 12;
 		groundMaterial.specularColor = new Color3(0, 0, 0);
 		//groundMaterial.emissiveColor = new Color3(0.3, 0.3, 0.3);
 		ground.material = groundMaterial;

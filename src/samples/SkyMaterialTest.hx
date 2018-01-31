@@ -42,14 +42,11 @@ class SkyMaterialTest {
 		ground.position.y = -2.05;
 		ground.material = groundMaterial;
 		
-		var hl1 = new HighlightLayer("hl1", scene);
-		hl1.addMesh(ground, Color3.Green());
-		
 		// Sky material
 		var skyboxMaterial = new SkyMaterial("skyMaterial", scene);
 		skyboxMaterial.backFaceCulling = false;
 		skyboxMaterial.freeze();
-
+		
 		// Sky mesh (box)
 		var skybox = Mesh.CreateBox("skyBox", 1000.0, scene);
 		skybox.material = skyboxMaterial;

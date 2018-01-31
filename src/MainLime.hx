@@ -207,7 +207,7 @@ class MainLime extends Application {
 		//new samples.WaterMat2(scene);
 		//new samples.LavaMat(scene);
 		//new samples.NormalMat(scene);
-		new samples.FurMat(scene);
+		//new samples.FurMat(scene);
 		//new samples.GradientMaterialTest(scene);
 		//new samples.CellMat(scene);
 		//new samples.ShadowTest(scene);
@@ -238,7 +238,7 @@ class MainLime extends Application {
 		//new samples.StandardRenderingPipelineTest(scene);
 		//new samples.MeshFacetDepthSortTest(scene);
 		//new samples.SuperEllipsoid(scene);
-		//new samples.MoleculeViewer(scene);
+		new samples.MoleculeViewer(scene);
 		//new samples.PPFilm(scene);
 		//new samples.PPDreamVision(scene);
 		//new samples.PPInk(scene);

@@ -217,8 +217,8 @@ import com.babylonhx.tools.Tools;
 	
 	/**
 	 * Unregisters an action to this action manager
-	 * @param {BABYLON.Action} action - the action to be unregistered
-	 * @return {Boolean}
+	 * @param action The action to be unregistered
+     * @return whether the action has been unregistered
 	 */
 	public function unregisterAction(action:Action):Bool {
 		var index = this.actions.indexOf(action);

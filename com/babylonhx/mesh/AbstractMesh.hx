@@ -161,23 +161,23 @@ typedef DepthSortedFacet = {
 	 * An event triggered before rendering the mesh
 	 * @type {BABYLON.Observable}
 	 */
-	public var onBeforeRenderObservable:Observable<Mesh> = new Observable<Mesh>();
+	public var onBeforeRenderObservable:Observable<AbstractMesh> = new Observable<AbstractMesh>();
 
 	/**
 	* An event triggered after rendering the mesh
 	* @type {BABYLON.Observable}
 	*/
-	public var onAfterRenderObservable:Observable<Mesh> = new Observable<Mesh>();
+	public var onAfterRenderObservable:Observable<AbstractMesh> = new Observable<AbstractMesh>();
 
 	/**
 	* An event triggered before drawing the mesh
 	* @type {BABYLON.Observable}
 	*/
-	public var onBeforeDrawObservable:Observable<Mesh> = new Observable<Mesh>();
+	public var onBeforeDrawObservable:Observable<AbstractMesh> = new Observable<AbstractMesh>();
 
-	private var _onBeforeDrawObserver:Observer<Mesh>;
-	public var onBeforeDraw(never, set):Mesh->Null<EventState>->Void;
-	private function set_onBeforeDraw(callback:Mesh->Null<EventState>->Void):Mesh->Null<EventState>->Void {
+	private var _onBeforeDrawObserver:Observer<AbstractMesh>;
+	public var onBeforeDraw(never, set):AbstractMesh->Null<EventState<AbstractMesh>>->Void;
+	private function set_onBeforeDraw(callback:AbstractMesh->Null<EventState<AbstractMesh>>->Void):AbstractMesh->Null<EventState<AbstractMesh>>->Void {
 		if (this._onBeforeDrawObserver != null) {
 			this.onBeforeDrawObservable.remove(this._onBeforeDrawObserver);
 		}
@@ -194,8 +194,8 @@ typedef DepthSortedFacet = {
 	*/
 	public var onCollideObservable:Observable<AbstractMesh> = new Observable<AbstractMesh>();
 	private var _onCollideObserver:Observer<AbstractMesh>;
-	public var onCollide(never, set):AbstractMesh->Null<EventState>->Void;
-	private function set_onCollide(callback:AbstractMesh->Null<EventState>->Void):AbstractMesh->Null<EventState>->Void {
+	public var onCollide(never, set):AbstractMesh->Null<EventState<AbstractMesh>>->Void;
+	private function set_onCollide(callback:AbstractMesh->Null<EventState<AbstractMesh>>->Void):AbstractMesh->Null<EventState<AbstractMesh>>->Void {
 		if (this._onCollideObserver != null) {
 			this.onCollideObservable.remove(this._onCollideObserver);
 		}
@@ -210,8 +210,8 @@ typedef DepthSortedFacet = {
 	*/
 	public var onCollisionPositionChangeObservable:Observable<Vector3> = new Observable<Vector3>();
 	private var _onCollisionPositionChangeObserver:Observer<Vector3>;
-	public var onCollisionPositionChange(never, set):Vector3->Null<EventState>->Void;
-	private function set_onCollisionPositionChange(callback:Vector3->Null<EventState>->Void):Vector3->Null<EventState>->Void {
+	public var onCollisionPositionChange(never, set):Vector3->Null<EventState<Vector3>>->Void;
+	private function set_onCollisionPositionChange(callback:Vector3->Null<EventState<Vector3>>->Void):Vector3->Null<EventState<Vector3>>->Void {
 		if (this._onCollisionPositionChangeObserver != null) {
 			this.onCollisionPositionChangeObservable.remove(this._onCollisionPositionChangeObserver);
 		}
@@ -274,7 +274,26 @@ typedef DepthSortedFacet = {
 
 	private var _occlusionQuery:GLQuery;
 	
-	public var visibility:Float = 1.0;
+	private var _visibility:Float = 1.0;
+	public var visibility(get, set):Float;
+	/**
+	 * Gets or sets mesh visibility between 0 and 1 (defult is 1)
+	 */
+	function get_visibility():Float {
+		return this._visibility;
+	}
+	/**
+	 * Gets or sets mesh visibility between 0 and 1 (defult is 1)
+	 */        
+	inline function set_visibility(value:Float):Float {
+		if (this._visibility == value) {
+			return value;
+		}
+		
+		this._visibility = value;
+		this._markSubMeshesAsMiscDirty();
+		return value;
+	}
 	public var alphaIndex:Float = Math.POSITIVE_INFINITY;
 	public var isVisible:Bool = true;
 	public var isPickable:Bool = true;
@@ -354,6 +373,7 @@ typedef DepthSortedFacet = {
 		
 		this._hasVertexAlpha = value;
 		this._markSubMeshesAsAttributesDirty();
+		this._markSubMeshesAsMiscDirty();
 		
 		return value;
 	}        

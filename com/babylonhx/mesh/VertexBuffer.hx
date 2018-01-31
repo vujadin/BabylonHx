@@ -139,6 +139,11 @@ import lime.utils.Float32Array;
 		return this._buffer.create(data);
 	}
 
+	/**
+	 * Updates the underlying WebGLBuffer according to the passed numeric array or Float32Array.  
+     * This function will create a new buffer if the current one is not updatable
+     * Returns the updated WebGLBuffer.  
+     */
 	inline public function update(data:Float32Array) {
 		this.create(data);
 	}

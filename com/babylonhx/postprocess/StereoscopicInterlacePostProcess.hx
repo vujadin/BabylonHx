@@ -26,7 +26,7 @@ class StereoscopicInterlacePostProcess extends PostProcess {
 			this._stepSize = new Vector2(1 / this.width, 1 / this.height);
 		});
 		
-		this.onApplyObservable.add(function(effect:Effect, eventState:EventState = null) {
+		this.onApplyObservable.add(function(effect:Effect, _) {
 			effect.setTextureFromPostProcess("camASampler", this._passedProcess);
 			effect.setFloat2("stepSize", this._stepSize.x, this._stepSize.y);
 		});

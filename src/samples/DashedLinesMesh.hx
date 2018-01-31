@@ -4,6 +4,7 @@ import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.lights.HemisphericLight;
 import com.babylonhx.layer.Layer;
 import com.babylonhx.math.Color3;
+import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
@@ -17,7 +18,7 @@ import com.babylonhx.tools.Tools;
 class DashedLinesMesh {
 
 	public function new(scene:Scene) {
-		scene.clearColor = new Color3(0.8, 0.8, 0.8);
+		scene.clearColor = new Color4(0.8, 0.8, 0.8, 1.0);
 		var camera = new ArcRotateCamera("Camera", 3 *Math.PI / 2, Math.PI / 2, 20, Vector3.Zero(), scene);
 		camera.attachControl();
 		
@@ -35,7 +36,7 @@ class DashedLinesMesh {
 			points.push(new Vector3(Math.cos(i) * 3, i / 3 - 2, Math.sin(i) * 3));
 			i += step;
 		}
-				
+		
 		var dashedLines = Mesh.CreateDashedLines("dl", points, 3, 1, 200, scene, true);
 		dashedLines.color = Color3.Blue();
 		

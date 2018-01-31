@@ -62,8 +62,8 @@ import com.babylonhx.postprocess.PostProcessManager;
 	*/
 	public var onAfterUnbindObservable:Observable<RenderTargetTexture> = new Observable<RenderTargetTexture>();
 	private var _onAfterUnbindObserver:Observer<RenderTargetTexture>;
-	public var onAfterUnbind(never, set):RenderTargetTexture->Null<EventState>->Void;
-	private  function set_onAfterUnbind(callback:RenderTargetTexture->Null<EventState>->Void):RenderTargetTexture->Null<EventState>->Void {
+	public var onAfterUnbind(never, set):RenderTargetTexture->Null<EventState<RenderTargetTexture>>->Void;
+	private  function set_onAfterUnbind(callback:RenderTargetTexture->Null<EventState<RenderTargetTexture>>->Void):RenderTargetTexture->Null<EventState<RenderTargetTexture>>->Void {
 		if (this._onAfterUnbindObserver != null) {
 			this.onAfterUnbindObservable.remove(this._onAfterUnbindObserver);
 		}
@@ -78,8 +78,8 @@ import com.babylonhx.postprocess.PostProcessManager;
 	*/
 	public var onBeforeRenderObservable:Observable<Int> = new Observable<Int>();
 	private var _onBeforeRenderObserver:Observer<Int>;
-	public var onBeforeRender(never, set):Int->Null<EventState>->Void;
-	private function set_onBeforeRender(callback:Int->Null<EventState>->Void):Int->Null<EventState>->Void {
+	public var onBeforeRender(never, set):Int->Null<EventState<Int>>->Void;
+	private function set_onBeforeRender(callback:Int->Null<EventState<Int>>->Void):Int->Null<EventState<Int>>->Void {
 		if (this._onBeforeRenderObserver != null) {
 			this.onBeforeRenderObservable.remove(this._onBeforeRenderObserver);
 		}
@@ -94,8 +94,8 @@ import com.babylonhx.postprocess.PostProcessManager;
 	*/
 	public var onAfterRenderObservable:Observable<Int> = new Observable<Int>();
 	private var _onAfterRenderObserver:Observer<Int>;
-	public var onAfterRender(never, set):Int->Null<EventState>->Void;
-	private function set_onAfterRender(callback:Int->Null<EventState>->Void):Int->Null<EventState>->Void {
+	public var onAfterRender(never, set):Int->Null<EventState<Int>>->Void;
+	private function set_onAfterRender(callback:Int->Null<EventState<Int>>->Void):Int->Null<EventState<Int>>->Void {
 		if (this._onAfterRenderObserver != null) {
 			this.onAfterRenderObservable.remove(this._onAfterRenderObserver);
 		}
@@ -110,8 +110,8 @@ import com.babylonhx.postprocess.PostProcessManager;
 	*/
 	public var onClearObservable:Observable<Engine> = new Observable<Engine>();
 	private var _onClearObserver:Observer<Engine>;
-	public var onClear(never, set):Engine->Null<EventState>->Void;
-	private function set_onClear(callback:Engine->Null<EventState>->Void):Engine->Null<EventState>->Void {
+	public var onClear(never, set):Engine->Null<EventState<Engine>>->Void;
+	private function set_onClear(callback:Engine->Null<EventState<Engine>>->Void):Engine->Null<EventState<Engine>>->Void {
 		if (this._onClearObserver != null) {
 			this.onClearObservable.remove(this._onClearObserver);
 		}

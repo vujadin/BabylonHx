@@ -23,6 +23,8 @@ import com.babylonhx.cameras.TargetCamera;
 import com.babylonhx.collisions.Collider;
 import com.babylonhx.collisions.PickingInfo;
 import com.babylonhx.culling.octrees.Octree;
+import com.babylonhx.helpers.EnvironmentHelper;
+import com.babylonhx.helpers.IEnvironmentHelperOptions;
 import com.babylonhx.layer.Layer;
 import com.babylonhx.layer.HighlightLayer;
 import com.babylonhx.lensflare.LensFlareSystem;
@@ -197,9 +199,9 @@ import com.babylonhx.audio.*;
 	*/
 	public var onDisposeObservable:Observable<Scene> = new Observable<Scene>();
 
-	public var onDispose(never, set):Scene->Null<EventState>->Void;
+	public var onDispose(never, set):Scene->Null<EventState<Scene>>->Void;
 	private var _onDisposeObserver:Observer<Scene>;
-	private function set_onDispose(callback:Scene->Null<EventState>->Void):Scene->Null<EventState>->Void {
+	private function set_onDispose(callback:Scene->Null<EventState<Scene>>->Void):Scene->Null<EventState<Scene>>->Void {
 		if (this._onDisposeObserver != null) {
 			this.onDisposeObservable.remove(this._onDisposeObserver);
 		}
@@ -215,9 +217,9 @@ import com.babylonhx.audio.*;
 	*/
 	public var onBeforeRenderObservable:Observable<Scene> = new Observable<Scene>();
 	/** A function to be executed before rendering this scene */
-	public var beforeRender(never, set):Scene->Null<EventState>->Void;
+	public var beforeRender(never, set):Scene->Null<EventState<Scene>>->Void;
 	private var _onBeforeRenderObserver:Observer<Scene>;
-	private function set_beforeRender(callback:Scene->Null<EventState>->Void):Scene->Null<EventState>->Void {
+	private function set_beforeRender(callback:Scene->Null<EventState<Scene>>->Void):Scene->Null<EventState<Scene>>->Void {
 		if (this._onBeforeRenderObserver != null) {
 			this.onBeforeRenderObservable.remove(this._onBeforeRenderObserver);
 		}
@@ -233,9 +235,9 @@ import com.babylonhx.audio.*;
 	*/
 	public var onAfterRenderObservable:Observable<Scene> = new Observable<Scene>();
 	/** A function to be executed after rendering this scene */
-	public var afterRender(never, set):Scene->Null<EventState>->Void;
+	public var afterRender(never, set):Scene->Null<EventState<Scene>>->Void;
 	private var _onAfterRenderObserver:Observer<Scene>;
-	private function set_afterRender(callback:Scene->Null<EventState>->Void):Scene->Null<EventState>->Void {
+	private function set_afterRender(callback:Scene->Null<EventState<Scene>>->Void):Scene->Null<EventState<Scene>>->Void {
 		if (this._onAfterRenderObserver != null) {
 			this.onAfterRenderObservable.remove(this._onAfterRenderObserver);
 		}
@@ -293,9 +295,9 @@ import com.babylonhx.audio.*;
 	*/
 	public var onBeforeCameraRenderObservable:Observable<Camera> = new Observable<Camera>();
 
-	public var beforeCameraRender(never, set):Camera->Null<EventState>->Void;
+	public var beforeCameraRender(never, set):Camera->Null<EventState<Camera>>->Void;
 	private var _onBeforeCameraRenderObserver:Observer<Camera>;
-	private function set_beforeCameraRender(callback:Camera->Null<EventState>->Void):Camera->Null<EventState>->Void {
+	private function set_beforeCameraRender(callback:Camera->Null<EventState<Camera>>->Void):Camera->Null<EventState<Camera>>->Void {
 		if (this._onBeforeCameraRenderObserver != null) {
 			this.onBeforeCameraRenderObservable.remove(this._onBeforeCameraRenderObserver);
 		}
@@ -311,9 +313,9 @@ import com.babylonhx.audio.*;
 	*/
 	public var onAfterCameraRenderObservable:Observable<Camera> = new Observable<Camera>();
 	
-	public var afterCameraRender(never, set):Camera->EventState->Void;
+	public var afterCameraRender(never, set):Camera->Null<EventState<Camera>>->Void;
 	private var _onAfterCameraRenderObserver:Observer<Camera>;
-	private function set_afterCameraRender(callback:Camera->EventState->Void) {
+	private function set_afterCameraRender(callback:Camera->Null<EventState<Camera>>->Void):Camera->Null<EventState<Camera>>->Void {
 		if (this._onAfterCameraRenderObserver != null) {
 			this.onAfterCameraRenderObservable.remove(this._onAfterCameraRenderObserver);
 		}
@@ -947,6 +949,23 @@ import com.babylonhx.audio.*;
 	
 	private var _depthRenderer:DepthRenderer;
 	private var _geometryBufferRenderer:GeometryBufferRenderer;
+	
+	public var geometryBufferRenderer(get, set):GeometryBufferRenderer;
+	/**
+     * Gets the current geometry buffer associated to the scene.
+     */
+    inline function get_geometryBufferRenderer():GeometryBufferRenderer {
+        return this._geometryBufferRenderer;
+    }
+    /**
+     * Sets the current geometry buffer for the scene.
+     */
+    inline function set_geometryBufferRenderer(geometryBufferRenderer:GeometryBufferRenderer):GeometryBufferRenderer {
+        if (geometryBufferRenderer != null && geometryBufferRenderer.isSupported) {
+            this._geometryBufferRenderer = geometryBufferRenderer;
+        }
+		return geometryBufferRenderer;
+    }
 	
 	private var _pickedDownMesh:AbstractMesh;
 	private var _pickedUpMesh:AbstractMesh;
@@ -2052,23 +2071,23 @@ import com.babylonhx.audio.*;
         this._cachedVisibility = 0;
     }
 	
-	public function registerBeforeRender(func:Null<Scene>->Null<EventState>->Void) {
+	public function registerBeforeRender(func:Null<Scene>->Null<EventState<Scene>>->Void) {
 		this.onBeforeRenderObservable.add(func);
 	}
 
-	public function unregisterBeforeRender(func:Null<Scene>->Null<EventState>->Void) {
+	public function unregisterBeforeRender(func:Null<Scene>->Null<EventState<Scene>>->Void) {
 		this.onBeforeRenderObservable.removeCallback(func);
 	}
 	
-	public function registerAfterRender(func:Null<Scene>->Null<EventState>->Void) {
+	public function registerAfterRender(func:Null<Scene>->Null<EventState<Scene>>->Void) {
 		this.onAfterRenderObservable.add(func);
     }
 	
-    public function unregisterAfterRender(func:Null<Scene>->Null<EventState>->Void) {
+    public function unregisterAfterRender(func:Null<Scene>->Null<EventState<Scene>>->Void) {
         this.onAfterRenderObservable.removeCallback(func);
     }
 	
-	var execFunc:Null<Scene>->Null<EventState>->Void;
+	var execFunc:Null<Scene>->Null<EventState<Scene>>->Void;
 	private function _executeOnceBeforeRender(func:Void->Void) {
 		execFunc = function(_, _) {
 			func();
@@ -2127,7 +2146,7 @@ import com.babylonhx.audio.*;
 	 * Registers a function to be executed when the scene is ready.
 	 * @param {Function} func - the function to be executed.
 	 */
-	public function executeWhenReady(func:Scene->Null<EventState>->Void) {
+	public function executeWhenReady(func:Scene->Null<EventState<Scene>>->Void) {
 		this.onReadyObservable.add(func);
 		
 		if (this._executeWhenReadyTimeoutId != -1) {
@@ -4474,15 +4493,14 @@ import com.babylonhx.audio.*;
             texture._rebuild();
         }
     }
- 
-	public function createDefaultCameraOrLight(createArcRotateCamera:Bool = false, replace:Bool = false, attachCameraControls:Bool = false) {
-		// Dispose existing camera or light in replace mode.
+	
+	/**
+	 * Creates a default light for the scene.
+	 * @param replace Whether to replace the existing lights in the scene.
+	 */
+	public function createDefaultLight(replace:Bool = false) {
+		// Dispose existing light in replace mode.
 		if (replace) {
-			if (this.activeCamera != null) {
-				this.activeCamera.dispose();
-				this.activeCamera = null;
-			}
-			
 			if (this.lights != null) {
 				for (i in 0...this.lights.length) {
 					this.lights[i].dispose();
@@ -4494,6 +4512,22 @@ import com.babylonhx.audio.*;
 		if (this.lights.length == 0) {
 			new HemisphericLight("default light", Vector3.Up(), this);
 		}
+	}
+
+	/**
+	 * Creates a default camera for the scene.
+	 * @param createArcRotateCamera Whether to create an arc rotate or a free camera.
+	 * @param replace Whether to replace the existing active camera in the scene.
+	 * @param attachCameraControls Whether to attach camera controls to the canvas.
+	 */
+	public function createDefaultCamera(createArcRotateCamera:Bool = false, replace:Bool = false, attachCameraControls:Bool = false) {
+		// Dispose existing camera in replace mode.
+		if (replace) {
+			if (this.activeCamera != null) {
+				this.activeCamera.dispose();
+				this.activeCamera = null;
+			}
+		}
 		
 		// Camera
 		if (this.activeCamera == null) {
@@ -4501,7 +4535,7 @@ import com.babylonhx.audio.*;
 			var worldSize = worldExtends.max.subtract(worldExtends.min);
 			var worldCenter = worldExtends.min.add(worldSize.scale(0.5));
 			
-			var camera:TargetCamera;
+			var camera:TargetCamera = null;
 			var radius = worldSize.length() * 1.5;
 			if (createArcRotateCamera) {
 				var arcRotateCamera = new ArcRotateCamera("default camera", -(Math.PI / 2), Math.PI / 2, radius, worldCenter, this);
@@ -4511,7 +4545,8 @@ import com.babylonhx.audio.*;
 			}
 			else {
 				var freeCamera = new FreeCamera("default camera", new Vector3(worldCenter.x, worldCenter.y, -radius), this);
-				freeCamera.setTarget(cast (worldCenter, Vector3));
+				var wcenter = new Vector3(worldCenter.min, worldCenter.max);
+				freeCamera.setTarget(wcenter);
 				camera = freeCamera;
 			}
 			camera.minZ = radius * 0.01;
@@ -4523,6 +4558,11 @@ import com.babylonhx.audio.*;
 				camera.attachControl();
 			}
 		}
+	}
+ 
+	public function createDefaultCameraOrLight(createArcRotateCamera:Bool = false, replace:Bool = false, attachCameraControls:Bool = false) {
+		this.createDefaultLight(replace);
+		this.createDefaultCamera(createArcRotateCamera, replace, attachCameraControls);
 	}
 	
 	public function createDefaultSkybox(?environmentTexture:BaseTexture, pbr:Bool = false, scale:Float = 1000, blur:Float = 0):Mesh {
@@ -4541,7 +4581,9 @@ import com.babylonhx.audio.*;
 			var hdrSkyboxMaterial = new PBRMaterial("skyBox", this);
 			hdrSkyboxMaterial.backFaceCulling = false;
 			hdrSkyboxMaterial.reflectionTexture = this.environmentTexture.clone();
-			hdrSkyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
+			if (hdrSkyboxMaterial.reflectionTexture != null) {
+				hdrSkyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
+			}
 			hdrSkyboxMaterial.microSurface = 1.0 - blur;
 			hdrSkyboxMaterial.disableLighting = true;
 			hdrSkyboxMaterial.twoSidedLighting = true;
@@ -4552,13 +4594,19 @@ import com.babylonhx.audio.*;
 			var skyboxMaterial = new StandardMaterial("skyBox", this);
 			skyboxMaterial.backFaceCulling = false;
 			skyboxMaterial.reflectionTexture = this.environmentTexture.clone();
-			skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
+			if (skyboxMaterial.reflectionTexture != null) {
+				skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
+			}
 			skyboxMaterial.disableLighting = true;
 			hdrSkybox.infiniteDistance = true;
 			hdrSkybox.material = skyboxMaterial;
 		}
 		
 		return hdrSkybox;
+	}
+	
+	public function createDefaultEnvironment(options:IEnvironmentHelperOptions):EnvironmentHelper {
+		return new EnvironmentHelper(options, this);
 	}
 
 	// Tags

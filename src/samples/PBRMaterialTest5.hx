@@ -10,11 +10,11 @@ import calikohx.FabrikStructure2D;
 import calikohx.FabrikStructure3D;*/
 
 import com.babylonhx.Scene;
-import com.babylonhx.Engine;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.MeshBuilder;
+import com.babylonhx.engine.Engine;
 import com.babylonhx.lights.PointLight;
 import com.babylonhx.lights.DirectionalLight;
 import com.babylonhx.cameras.ArcRotateCamera;
@@ -22,9 +22,9 @@ import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.materials.textures.CubeTexture;
 import com.babylonhx.materials.textures.HDRCubeTexture;
-import com.babylonhx.materials.PBRMaterial;
-import com.babylonhx.loading.plugins.ctmfileloader.CTMFile;
-import com.babylonhx.loading.plugins.ctmfileloader.CTMFileLoader;
+import com.babylonhx.materials.pbr.PBRMaterial;
+import com.babylonhx.loading.ctm.CTMFile;
+import com.babylonhx.loading.ctm.CTMFileLoader;
 import com.babylonhx.lights.shadows.ShadowGenerator;
 import com.babylonhx.math.Tools;
 import com.babylonhx.math.Quaternion;
@@ -111,7 +111,7 @@ class PBRMaterialTest5 {
 		
 		// Shadows
         shadowGenerator = new ShadowGenerator(1024, light);
-		shadowGenerator.useVarianceShadowMap = true;
+		shadowGenerator.useBlurExponentialShadowMap = true;
 		
 		initializePhysics();
 		
@@ -311,40 +311,40 @@ class PBRMaterialTest5 {
 		
 		var m = 0;
 		for (i in 0...25) {
-			physObjs.push(createCapsuleObject(Tools.randomFloat(3, 4), Tools.randomFloat(3, 6), new Vector3(-1.5, 75 + m, 15)));
-			physObjs[i].mesh.material = allPBRMaterials[Tools.randomInt(0, allPBRMaterials.length - 1)];
+			physObjs.push(createCapsuleObject(Tools.RandomFloat(3, 4), Tools.RandomFloat(3, 6), new Vector3(-1.5, 75 + m, 15)));
+			physObjs[i].mesh.material = allPBRMaterials[Tools.RandomInt(0, allPBRMaterials.length - 1)];
 			shadowGenerator.getShadowMap().renderList.push(physObjs[i].mesh);
 			m += 7;
 		}
 		
 		m = 0;
 		for (i in 25...50) {
-			physObjs.push(createCylinderObject(Tools.randomFloat(3, 4), Tools.randomFloat(3, 4), new Vector3(-1.4, 75 + m, 20)));
-			physObjs[i].mesh.material = allPBRMaterials[Tools.randomInt(0, allPBRMaterials.length - 1)];
+			physObjs.push(createCylinderObject(Tools.RandomFloat(3, 4), Tools.RandomFloat(3, 4), new Vector3(-1.4, 75 + m, 20)));
+			physObjs[i].mesh.material = allPBRMaterials[Tools.RandomInt(0, allPBRMaterials.length - 1)];
 			shadowGenerator.getShadowMap().renderList.push(physObjs[i].mesh);
 			m += 7;
 		}
 		
 		m = 0;
 		for (i in 50...75) {
-			physObjs.push(createConeObject(Tools.randomFloat(3, 5), Tools.randomFloat(3, 5), new Vector3(-2.5, 75 + m, 25)));
-			physObjs[i].mesh.material = allPBRMaterials[Tools.randomInt(0, allPBRMaterials.length - 1)];
+			physObjs.push(createConeObject(Tools.RandomFloat(3, 5), Tools.RandomFloat(3, 5), new Vector3(-2.5, 75 + m, 25)));
+			physObjs[i].mesh.material = allPBRMaterials[Tools.RandomInt(0, allPBRMaterials.length - 1)];
 			shadowGenerator.getShadowMap().renderList.push(physObjs[i].mesh);
 			m += 7;
 		}
 		
 		m = 0;
 		for (i in 75...100) {
-			physObjs.push(createSphereObject(Tools.randomFloat(4, 7), new Vector3(-0.5, 75 + m, 20)));
-			physObjs[i].mesh.material = allPBRMaterials[Tools.randomInt(0, allPBRMaterials.length - 1)];
+			physObjs.push(createSphereObject(Tools.RandomFloat(4, 7), new Vector3(-0.5, 75 + m, 20)));
+			physObjs[i].mesh.material = allPBRMaterials[Tools.RandomInt(0, allPBRMaterials.length - 1)];
 			shadowGenerator.getShadowMap().renderList.push(physObjs[i].mesh);
 			m += 7;
 		}
 		
 		m = 0;
 		for (i in 100...125) {
-			physObjs.push(createBoxObject(new Vector3(Tools.randomInt(3, 6), Tools.randomInt(3, 6), Tools.randomInt(3, 6)), new Vector3(-3.5, 75 + m, 25)));
-			physObjs[i].mesh.material = allPBRMaterials[Tools.randomInt(0, allPBRMaterials.length - 1)];
+			physObjs.push(createBoxObject(new Vector3(Tools.RandomInt(3, 6), Tools.RandomInt(3, 6), Tools.RandomInt(3, 6)), new Vector3(-3.5, 75 + m, 25)));
+			physObjs[i].mesh.material = allPBRMaterials[Tools.RandomInt(0, allPBRMaterials.length - 1)];
 			shadowGenerator.getShadowMap().renderList.push(physObjs[i].mesh);
 			m += 7;
 		}
@@ -382,7 +382,7 @@ class PBRMaterialTest5 {
 			}
 		});
 		
-		Engine.keyDown.push(function(keyCode:Int) {
+		scene.getEngine().keyDown.push(function(keyCode:Int) {
 			reset(keyCode);
 		});
 	}
@@ -600,7 +600,7 @@ class PBRMaterialTest5 {
 			rotation = Vector3.Zero();
 		}
 		
-		var mesh = Mesh.CreateCapsule("capsule_", radius, height, 10, scene);		
+		var mesh = Mesh.CreateCapsule("capsule_", scene, radius, height, 10);		
 		mesh.position.copyFrom(position);		
 		mesh.rotationQuaternion = Quaternion.RotationYawPitchRoll(rotation.y, rotation.x, rotation.z);
 		

@@ -21,7 +21,7 @@ import com.babylonhx.math.Color3;
 		}
 		
 		this._isEnabled = value;
-		Engine.MarkAllMaterialsAsDirty(Material.FresnelDirtyFlag);
+		Engine.MarkAllMaterialsAsDirty(Material.FresnelDirtyFlag | Material.MiscDirtyFlag);
 		
 		return value;
 	}

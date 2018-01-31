@@ -11,7 +11,7 @@ import com.babylonhx.math.Vector2;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
 
-import com.babylonhx.postprocess.DreamVisionPostProcess;
+/*import com.babylonhx.postprocess.DreamVisionPostProcess;
 import com.babylonhx.postprocess.ThermalVisionPostProcess;
 import com.babylonhx.postprocess.BloomPostProcess;
 import com.babylonhx.postprocess.CrossHatchingPostProcess;
@@ -28,7 +28,7 @@ import com.babylonhx.postprocess.HexagonalPixelatePostProcess;
 import com.babylonhx.postprocess.NaturalColorPostProcess;
 import com.babylonhx.postprocess.MosaicPostProcess;
 import com.babylonhx.postprocess.BleachBypassPostProcess;
-import com.babylonhx.postprocess.LimbDarkeningPostProcess;
+import com.babylonhx.postprocess.LimbDarkeningPostProcess;*/
 
 /**
  * ...
@@ -41,34 +41,35 @@ class DisplacementMap {
 		camera.attachControl(this);
 		
 		var light = new HemisphericLight("Omni0", new Vector3(0, 1, 0), scene);
+		
 		var material = new StandardMaterial("kosh", scene);
-		var sphere = Mesh.CreateSphere("Sphere", 120, 2, scene, true);
+		var sphere = Mesh.CreateSphere("Sphere", 80, 2, scene, true);
 		sphere.position.z -= 2;
 		
-		var sphere2 = Mesh.CreateSphere("Sphere", 120, 2, scene, true);
+		var sphere2 = Mesh.CreateSphere("Sphere", 80, 2, scene, true);
 		sphere2.position.z += 2;
 		
 		camera.setPosition(new Vector3(-10, 3, 0));
 		
-		sphere.applyDisplacementMap("assets/img/disp2.jpg", 0, 0.1);		
-		sphere2.applyDisplacementMap("assets/img/disp2.jpg", 0, 0.1, null, true);	// invert displacement
+		sphere.applyDisplacementMap("assets/img/golfball.jpg", 0, 0.1);		
+		sphere2.applyDisplacementMap("assets/img/golfball.jpg", 0, 0.1, null, true);	// invert displacement
 		
 		// Sphere material
-		material.diffuseTexture = new Texture("assets/img/disp2.jpg", scene);
+		material.diffuseTexture = new Texture("assets/img/golfball.jpg", scene);
 		sphere.material = material;
 		sphere2.material = material;
 		
 		// Skybox
-		var skybox = Mesh.CreateBox("skyBox", 2000, scene);
+		var skybox = Mesh.CreateBox("skyBox", 200, scene);
 		var skyboxMaterial = new StandardMaterial("skyBox", scene);
 		skyboxMaterial.backFaceCulling = false;
-		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/skybox", scene);
+		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/TropicalSunnyDay", scene);
 		skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
 		skyboxMaterial.emissiveColor = new Color3(0, 0, 0);
 		skyboxMaterial.specularColor = new Color3(0, 0, 0);
 		skyboxMaterial.disableLighting = true;
 		skybox.material = skyboxMaterial;
-		skybox.infiniteDistance = true;
+		//skybox.infiniteDistance = true;
 		
 		//var dreamPP = new DreamVisionPostProcess("dream", 1.0, camera);
 		//var thermalPP = new ThermalVisionPostProcess("thermal", 1.0, camera);

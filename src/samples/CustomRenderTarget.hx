@@ -2,6 +2,7 @@ package samples;
 
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.lights.PointLight;
+import com.babylonhx.materials.Material;
 import com.babylonhx.materials.ShaderMaterial;
 import com.babylonhx.materials.ShadersStore;
 import com.babylonhx.materials.StandardMaterial;
@@ -11,6 +12,7 @@ import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
+import com.babylonhx.mesh.TransformNode;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
 
@@ -35,7 +37,7 @@ class CustomRenderTarget {
 		var skybox = Mesh.CreateBox("skyBox", 100.0, scene);
 		var skyboxMaterial = new StandardMaterial("skyBox", scene);
 		skyboxMaterial.backFaceCulling = false;
-		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/TropicalSunnyDay", scene);
+		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/skybox", scene);
 		skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
 		skyboxMaterial.diffuseColor = new Color3(0, 0, 0);
 		skyboxMaterial.specularColor = new Color3(0, 0, 0);
@@ -43,7 +45,7 @@ class CustomRenderTarget {
 		skybox.material = skyboxMaterial;
 
 		// depth material
-		ShadersStore.Shaders["customDepth.vertex"] = 
+		ShadersStore.Shaders["customDepthVertexShader"] = 
 			"#ifdef GL_ES\n" +
 			"precision highp float;\n" +
 			"#endif\n" +
@@ -53,7 +55,7 @@ class CustomRenderTarget {
 			"gl_Position = worldViewProjection * vec4(position, 1.0);\n" +
 			"}";
 			
-		ShadersStore.Shaders["customDepth.fragment"] =
+		ShadersStore.Shaders["customDepthFragmentShader"] =
 			"#ifdef GL_ES\n" +
 			"precision highp float;\n" +
 			"#endif\n" +
@@ -73,17 +75,19 @@ class CustomRenderTarget {
 
 		// Plane
 		var plane = Mesh.CreatePlane("map", 10, scene);
-		plane.billboardMode = AbstractMesh.BILLBOARDMODE_ALL;
+		plane.billboardMode = TransformNode.BILLBOARDMODE_ALL;
 		plane.scaling.y = 1.0 / scene.getEngine().getAspectRatio(scene.activeCamera);
 
 		// Render target
 		var renderTarget = new RenderTargetTexture("depth", 1024, scene, true);
 		renderTarget.renderList.push(skybox);
 		scene.customRenderTargets.push(renderTarget);
+		
+		var savedMaterials:Array<Material> = [];
 
 		renderTarget.onBeforeRender = function (a:Int, _) {
 			for (index in 0...renderTarget.renderList.length) {
-				renderTarget.renderList[index]._savedMaterial = renderTarget.renderList[index].material;
+				savedMaterials[index] = renderTarget.renderList[index].material;
 				renderTarget.renderList[index].material = depthMaterial;
 			}
 		}
@@ -91,7 +95,7 @@ class CustomRenderTarget {
 		renderTarget.onAfterRender = function (a:Int, _) {
 			// Restoring previoux material
 			for (index in 0...renderTarget.renderList.length) {
-				renderTarget.renderList[index].material = renderTarget.renderList[index]._savedMaterial;
+				renderTarget.renderList[index].material = savedMaterials[index];
 			}
 		}
 
@@ -118,7 +122,7 @@ class CustomRenderTarget {
 
 		// Animations
 		scene.registerBeforeRender(function (_, _) {
-			camera.alpha += 0.01 * scene.getAnimationRatio();
+			camera.alpha += 0.001 * scene.getAnimationRatio();
 		});
 		
 		scene.getEngine().runRenderLoop(function () {

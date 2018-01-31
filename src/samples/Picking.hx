@@ -40,8 +40,6 @@ class Picking {
 			if (pickResult.hit) {
 				impact.position.x = pickResult.pickedPoint.x;
 				impact.position.y = pickResult.pickedPoint.y;
-				
-				trace(impact.position.x, impact.position.y);
 			}
 		};
 		

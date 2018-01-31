@@ -18,10 +18,8 @@ import com.babylonhx.Scene;
 class GlosinessAndRoughness {
 
 	public function new(scene:Scene) {
-		var camera = new FreeCamera("camera1", new Vector3(0, 5, -10), scene);
-		
-		camera.setTarget(Vector3.Zero());
-		
+		var camera = new FreeCamera("camera1", new Vector3(0, 5, -10), scene);		
+		camera.setTarget(Vector3.Zero());		
 		camera.attachControl();
 		
 		var light = new HemisphericLight("light1", new Vector3(0, 1, 0), scene);

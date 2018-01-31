@@ -8,6 +8,7 @@ import com.babylonhx.layer.Layer;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
+import com.babylonhx.mesh.InstancedMesh;
 import com.babylonhx.physics.PhysicsBodyCreationOptions;
 import com.babylonhx.physics.plugins.OimoPlugin;
 import com.babylonhx.Scene;
@@ -29,17 +30,15 @@ class Physics2 {
 		
 		var light = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);
 		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
-				
 		var mat = new StandardMaterial("ground", scene);
-		var texDiff = new Texture("assets/img/wood2.jpg", scene);
+		var texDiff = new Texture("assets/img/wood.jpg", scene);
 		texDiff.uScale = texDiff.vScale = 5;
 		mat.diffuseTexture = texDiff;
 		mat.specularColor = Color3.Black();
 		
 		var g = Mesh.CreateBox("ground", 400, scene);
 		g.position.y = -30;
-		g.scaling.y = 0.01;
+		g.scaling.y = 0.05;
 		g.material = mat;
 		var physOpt = new PhysicsBodyCreationOptions();
 		physOpt.mass = 0;
@@ -58,10 +57,10 @@ class Physics2 {
 		var y = 300;
 		
 		// all our objects
-		var objects:Array<Mesh> = [];
+		var objects:Array<InstancedMesh> = [];
 		
 		// max number of objects
-		var max = 50;
+		var max = 350;
 		
 		// Creates a random position above the ground
 		var getPosition = function(y:Float):Vector3 {
@@ -71,17 +70,22 @@ class Physics2 {
 		var materialBall = new StandardMaterial("ball", scene);
 		materialBall.diffuseTexture = new Texture("assets/img/metal.jpg", scene);
 		materialBall.emissiveColor = new Color3(0.5, 0.5, 0.5);
-		materialBall.diffuseTexture.uScale = 5;
-		materialBall.diffuseTexture.vScale = 5;
+		untyped materialBall.diffuseTexture.uScale = 5;
+		untyped materialBall.diffuseTexture.vScale = 5;
 		
 		var materialCrate = new StandardMaterial("crate", scene);
 		materialCrate.diffuseTexture = new Texture("assets/img/crate.jpg", scene);
+		
+		var sphere = Mesh.CreateSphere("s", 30, 40, scene);
+		var box = Mesh.CreateBox("b", 40, scene);
 		
 		// Create objects
 		for (index in 0...max) {
 			
 			// SPHERES
-			var s = Mesh.CreateSphere("s", 30, randomNumber(20, 50), scene);
+			var s = sphere.createInstance("sph_" + index);
+			var randScale = randomNumber(0.5, 1.5);
+			s.scaling.multiplyByFloats(randScale, randScale, randScale);
 			s.position = getPosition(y);
 			s.material = materialBall;
 			physOpt = new PhysicsBodyCreationOptions();
@@ -91,7 +95,8 @@ class Physics2 {
 			s.setPhysicsState(PhysicsEngine.SphereImpostor, physOpt);
 			
 			// BOXES
-			var d = Mesh.CreateBox("b", randomNumber(10, 30), scene);
+			var d = box.createInstance("box_" + index);
+			d.scaling.multiplyByFloats(randScale, randScale, randScale);
 			d.position = getPosition(y);
 			d.material = materialCrate;
 			
@@ -108,7 +113,7 @@ class Physics2 {
 			y += 10;
 		}
 				
-		scene.registerBeforeRender(function() {
+		scene.registerBeforeRender(function(_, _) {
 			for(obj in objects) {
 				// If object falls
 				if (obj.position.y < -200) {

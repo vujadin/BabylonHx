@@ -23,16 +23,14 @@ class Bones {
 		var light = new DirectionalLight("dir01", new Vector3(0, -0.5, -1.0), scene);
 		var camera = new ArcRotateCamera("Camera", 0, 0, 10, new Vector3(0, 30, 0), scene);
 		camera.setPosition(new Vector3(20, 70, 120));
-		camera.attachControl(this);
+		camera.attachControl();
 		light.position = new Vector3(20, 150, 70);
 		camera.minZ = 10.0;
 		
-		//new Layer("background", "assets/img/graygrad.jpg", scene, true);
-				
 		// Ground
 		var ground = Mesh.CreateGround("ground", 1000, 1000, 1, scene, false);
 		var groundMaterial = new StandardMaterial("ground", scene);
-		groundMaterial.diffuseColor = new Color3(0.3, 0.3, 0.3);
+		groundMaterial.diffuseColor = new Color3(0.9, 0.9, 0.9);
 		groundMaterial.specularColor = new Color3(0, 0, 0);
 		ground.material = groundMaterial;
 		ground.receiveShadows = true;
@@ -45,7 +43,7 @@ class Bones {
 		// Meshes
 		SceneLoader.ImportMesh("Rabbit", "assets/models/Rabbit/", "Rabbit.babylon", scene, function(newMeshes, particleSystems, skeletons) {
 			var rabbit = newMeshes[1];
-						
+			
 			rabbit.scaling = new Vector3(0.4, 0.4, 0.4);			
 			
 			var rabbit2 = rabbit.clone("rabbit2");
@@ -60,7 +58,7 @@ class Bones {
 			scene.beginAnimation(skeletons[0], 0, 100, true, 0.8);
 			scene.beginAnimation(rabbit2.skeleton, 73, 100, true, 0.8);
 			scene.beginAnimation(rabbit3.skeleton, 0, 72, true, 0.8);
-						
+			
 			// Dude
 			SceneLoader.ImportMesh("him", "assets/models/Dude/", "Dude.babylon", scene, function (newMeshes, particleSystems, skeletons) {
 				var dude = newMeshes[0];
@@ -71,7 +69,7 @@ class Bones {
 				
 				dude.rotation.y = Math.PI;
 				dude.position = new Vector3(0, 0, -80);
-					
+				
 				scene.beginAnimation(skeletons[0], 0, 100, true, 1.0);
 				
 				scene.getEngine().runRenderLoop(function () {
@@ -81,8 +79,7 @@ class Bones {
 			
 			shadowGenerator.getShadowMap().renderList.push(rabbit);
 			shadowGenerator.getShadowMap().renderList.push(rabbit2);
-			shadowGenerator.getShadowMap().renderList.push(rabbit3);
-			
+			shadowGenerator.getShadowMap().renderList.push(rabbit3);	
 		});
 	}
 	

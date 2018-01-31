@@ -6,15 +6,36 @@ import com.babylonhx.tools.Tags;
  * ...
  * @author Krtolica Vujadin
  */
-
+/**
+ * A sphere geometry
+ * @description see http://doc.babylonjs.com/how_to/set_shapes#sphere
+ */
 @:expose('BABYLON.Sphere') class Sphere extends _Primitive {
 	
-	// Members
+	/**
+	 * Defines the number of segments to use to create the sphere
+	 */
 	public var segments:Int;
+	/**
+	 * Defines the diameter of the sphere
+	 */
 	public var diameter:Float;
+	/**
+	 * Defines if the created geometry is double sided or not (default is BABYLON.Mesh.DEFAULTSIDE) 
+	 */
 	public var side:Int;
 	
 
+	/**
+	 * Create a new sphere geometry
+	 * @param id defines the unique ID of the geometry
+	 * @param scene defines the hosting scene
+	 * @param segments defines the number of segments to use to create the sphere
+	 * @param diameter defines the diameter of the sphere
+	 * @param canBeRegenerated defines if the geometry supports being regenerated with new parameters (false by default)
+	 * @param mesh defines the hosting mesh (can be null)
+	 * @param side defines if the created geometry is double sided or not (default is BABYLON.Mesh.DEFAULTSIDE) 
+	 */
 	public function new(id:String, scene:Scene, segments:Int, diameter:Float, ?canBeRegenerated:Bool, ?mesh:Mesh, side:Int = Mesh.DEFAULTSIDE) {
 		this.segments = segments;
 		this.diameter = diameter;

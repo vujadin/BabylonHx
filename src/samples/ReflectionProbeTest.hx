@@ -12,6 +12,7 @@ import com.babylonhx.math.Plane;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.lights.HemisphericLight;
+import com.babylonhx.lights.DirectionalLight;
 import com.babylonhx.probes.ReflectionProbe;
 import com.babylonhx.tools.EventState;
 
@@ -22,12 +23,11 @@ import com.babylonhx.tools.EventState;
 class ReflectionProbeTest {
 
 	public function new(scene:Scene) {
-		var camera = new ArcRotateCamera("camera1", 0, 0, 10, Vector3.Zero(), scene);
-		camera.attachControl();
+		var camera = new ArcRotateCamera("camera1", 0, 0, 10, Vector3.Zero(), scene);		
 		camera.setPosition(new Vector3(0, 5, -10));
-		
 		camera.upperBetaLimit = Math.PI / 2;
 		camera.lowerRadiusLimit = 4;
+		camera.attachControl();
 		
 		var light = new HemisphericLight("light1", new Vector3(0, 1, 0), scene);
 		light.intensity = 0.7;
@@ -43,7 +43,7 @@ class ReflectionProbeTest {
 		var greenSphere = Mesh.CreateSphere("greenSphere", 16, 1.5, scene);
 		greenSphere.setPivotMatrix(Matrix.Translation(0, 0, 3));
 		
-		var generateSatelliteMaterial = function(root:Mesh, color:Color3, others:Array<Mesh>) {
+		var generateSatelliteMaterial = function (root:Mesh, color:Color3, others:Array<Mesh>) {
 			var material = new StandardMaterial("satelliteMat" + root.name, scene);
 			material.diffuseColor = color;
 			var probe = new ReflectionProbe("satelliteProbe" + root.name, 512, scene);
@@ -63,14 +63,15 @@ class ReflectionProbeTest {
 		// Mirror
 		var mirror = Mesh.CreateBox("Mirror", 1.0, scene);
 		mirror.scaling = new Vector3(100.0, 0.01, 100.0);
-		mirror.material = new StandardMaterial("mirror", scene);
-		untyped mirror.material.diffuseTexture = new Texture("assets/img/amiga.jpg", scene);
-		untyped mirror.material.diffuseTexture.uScale = 10;
-		untyped mirror.material.diffuseTexture.vScale = 10;
-		untyped mirror.material.reflectionTexture = new MirrorTexture("mirror", 1024, scene, true);
-		untyped mirror.material.reflectionTexture.mirrorPlane = new Plane(0, -1.0, 0, -2.0);
-		untyped mirror.material.reflectionTexture.renderList = [greenSphere, yellowSphere, blueSphere, knot];
-		untyped mirror.material.reflectionTexture.level = 0.5;
+		var mat = new StandardMaterial("mirror", scene);
+		mat.diffuseTexture = new Texture("assets/img/amiga.jpg", scene);
+		mat.diffuseTexture.uScale = 10;
+		mat.diffuseTexture.vScale = 10;
+		mat.reflectionTexture = new MirrorTexture("mirror", 1024, scene, true);
+		cast (mat.reflectionTexture, MirrorTexture).mirrorPlane = new Plane(0, -1.0, 0, -2.0);
+		cast (mat.reflectionTexture, MirrorTexture).renderList = [greenSphere, yellowSphere, blueSphere, knot];
+		mat.reflectionTexture.level = 0.5;
+		mirror.material = mat;
 		mirror.position = new Vector3(0, -2, 0);
 		
 		// Main material	
@@ -96,12 +97,12 @@ class ReflectionProbeTest {
 		
 		// Fog
 		scene.fogMode = Scene.FOGMODE_LINEAR;
-		scene.fogColor = scene.clearColor;
+		scene.fogColor.copyFromColor4(scene.clearColor);
 		scene.fogStart = 20.0;
 		scene.fogEnd = 50.0;
 		
 		// Animations
-		scene.registerBeforeRender(function(scene:Scene, es:Null<EventState>) {
+		scene.registerBeforeRender(function(_, _) {
 			yellowSphere.rotation.y += 0.01;
 			greenSphere.rotation.y += 0.01;
 			blueSphere.rotation.y += 0.01;

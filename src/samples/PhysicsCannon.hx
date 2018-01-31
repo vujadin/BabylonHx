@@ -209,7 +209,7 @@ class PhysicsCannon {
 		physOpt.friction = 0.2;
 		physOpt.restitution = 0.2;
 		s.setPhysicsState(PhysicsEngine.SphereImpostor, physOpt);
-				
+		
 		var height = 20;
 		var radius = 32;
 		var sz = 40;
@@ -245,9 +245,6 @@ class PhysicsCannon {
 			}
 		}*/
 		
-		
-		
-						
 		/*var camera = new ArcRotateCamera("Camera", 0.95, 1.4, 1800, new Vector3(0, 150, 0), scene);
 		camera.attachControl(this);
 		camera.maxZ = 50000;

@@ -46,8 +46,8 @@ import lime.utils.UInt32Array;
 	*/
 	public var onDisposeObservable:Observable<Layer> = new Observable<Layer>();
 	private var _onDisposeObserver:Observer<Layer>;
-	public var onDispose(never, set):Layer->Null<EventState>->Void;
-	private function set_onDispose(callback:Layer->Null<EventState>->Void):Layer->Null<EventState>->Void {
+	public var onDispose(never, set):Layer->Null<EventState<Layer>>->Void;
+	private function set_onDispose(callback:Layer->Null<EventState<Layer>>->Void):Layer->Null<EventState<Layer>>->Void {
 		if (this._onDisposeObserver != null) {
 			this.onDisposeObservable.remove(this._onDisposeObserver);
 		}
@@ -62,8 +62,8 @@ import lime.utils.UInt32Array;
 	*/
 	public var onBeforeRenderObservable:Observable<Layer> = new Observable<Layer>();
 	private var _onBeforeRenderObserver:Observer<Layer>;
-	public var onBeforeRender(never, set):Layer->Null<EventState>->Void;
-	private function set_onBeforeRender(callback:Layer->Null<EventState>->Void):Layer->Null<EventState>->Void {
+	public var onBeforeRender(never, set):Layer->Null<EventState<Layer>>->Void;
+	private function set_onBeforeRender(callback:Layer->Null<EventState<Layer>>->Void):Layer->Null<EventState<Layer>>->Void {
 		if (this._onBeforeRenderObserver != null) {
 			this.onBeforeRenderObservable.remove(this._onBeforeRenderObserver);
 		}
@@ -78,8 +78,8 @@ import lime.utils.UInt32Array;
 	*/
 	public var onAfterRenderObservable:Observable<Layer> = new Observable<Layer>();
 	private var _onAfterRenderObserver:Observer<Layer>;
-	public var onAfterRender(never, set):Layer->Null<EventState>->Void;
-	private function set_onAfterRender(callback:Layer->Null<EventState>->Void):Layer->Null<EventState>->Void {
+	public var onAfterRender(never, set):Layer->Null<EventState<Layer>>->Void;
+	private function set_onAfterRender(callback:Layer->Null<EventState<Layer>>->Void):Layer->Null<EventState<Layer>>->Void {
 		if (this._onAfterRenderObserver != null) {
 			this.onAfterRenderObservable.remove(this._onAfterRenderObserver);
 		}

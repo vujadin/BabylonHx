@@ -66,7 +66,7 @@ import lime.utils.Float32Array;
 		return this._sourceMesh.material;
 	}
 
-	private function get_visibility():Float {
+	override private function get_visibility():Float {
 		return this._sourceMesh.visibility;
 	}
 

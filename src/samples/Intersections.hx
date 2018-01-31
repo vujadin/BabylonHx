@@ -70,10 +70,10 @@ class Intersections {
 		balloon1.position = new Vector3(6, 5, 0);
 		balloon2.position = new Vector3(-6, 5, 0);
 		balloon3.position = new Vector3( -30, 5, 0);
-				
+		
 		//Animation
 		var alpha = Math.PI;
-		scene.registerBeforeRender(function () {
+		scene.registerBeforeRender(function (_, _) {
 			
 			//Balloon 1 intersection -- Precise = false
 			if (balloon1.intersectsMesh(plan1, true)) {

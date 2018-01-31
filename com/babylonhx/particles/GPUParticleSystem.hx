@@ -14,13 +14,37 @@ import lime.utils.Float32Array;
  * ...
  * @author Krtolica Vujadin
  */
+/**
+ * This represents a GPU particle system in Babylon.
+ * This os the fastest particle system in Babylon as it uses the GPU to update the individual particle data.
+ */
 class GPUParticleSystem implements IParticleSystem {
 
-	// Members
+	/**
+	 * The id of the Particle system.
+	 */
 	public var id:String;
-	public var emitter:Dynamic = null;		// AbstractMesh | Vector3       
-	public var renderingGroupId:Int = 0;        
+	
+	/**
+	 * The friendly name of the Particle system.
+	 */
+	public var name:String;
+	
+	/**
+	 * The emitter represents the Mesh or position we are attaching the particle system to.
+	 */
+	public var emitter:Dynamic = null;		// AbstractMesh | Vector3
+	
+	/**
+	 * The rendering group used by the Particle system to chose when to render.
+	 */
+	public var renderingGroupId:Int = 0;
+	
+	/**
+	 * The layer mask we are rendering the particles through.
+	 */
 	public var layerMask:Int = 0x0FFFFFFF;  // TODO
+	
 	private var _capacity:Int;
 	private var _renderEffect:Effect;
 	private var _updateEffect:Effect;
@@ -47,26 +71,42 @@ class GPUParticleSystem implements IParticleSystem {
 
 	/**
 	* An event triggered when the system is disposed.
-	* @type {BABYLON.Observable}
 	*/
 	public var onDisposeObservable:Observable<GPUParticleSystem> = new Observable<GPUParticleSystem>();
 
-
+	/**
+	 * Gets Wether the system has been started.
+	 * @returns True if it has been started, otherwise false.
+	 */
 	public function isStarted():Bool {
 		return false;
 	}
 	
+	/**
+	 * Starts the particle system and begins to emit.
+	 */
 	public function start() {
 		this._started = true;
 	}
 
+	/**
+	 * Stops the particle system.
+	 */
 	public function stop() {
 		this._started = false;
 	} 
 	
 
+	/**
+	 * Instantiates a GPU particle system.
+	 * Particles are often small sprites used to simulate hard-to-reproduce phenomena like fire, smoke, water, or abstract visual effects like magic glitter and faery dust.
+	 * @param name The name of the particle system
+	 * @param capacity The max number of particles alive at the same time
+	 * @param scene The scene the particle system belongs to
+	 */
 	public function new(name:String, capacity:Int, ?scene:Scene) {
 		this.id = name;
+		this.name = name;
 		this._scene = scene != null ? scene : Engine.LastCreatedScene;
 		this._capacity = capacity;
 	    this._engine = this._scene.getEngine();
@@ -90,6 +130,13 @@ class GPUParticleSystem implements IParticleSystem {
 		};
 		
 		this._updateEffect = new Effect("gpuUpdateParticles", updateEffectOptions, this._scene.getEngine());  
+	}
+	
+	/**
+	 * Animates the particle system for the current frame by emitting new particles and or animating the living ones.
+	 */
+	public function animate() {
+		// Do nothing
 	}
 
 	private function _initialize() {
@@ -142,6 +189,10 @@ class GPUParticleSystem implements IParticleSystem {
 		this._targetBuffer = this._renderBuffer;
 	}
 
+	/**
+	 * Renders the particle system in its current state.
+	 * @returns the current number of particles.
+	 */
 	public function render():Int {
 		if (this.emitter == null| | !this._updateEffect.isReady() || !this._renderEffect.isReady() ) {
 			return 0;
@@ -194,10 +245,16 @@ class GPUParticleSystem implements IParticleSystem {
 		return 0;
 	}
 
+	/**
+	 * Rebuilds the particle system
+	 */
 	public function rebuild() {
 		
 	}
 
+	/**
+	 * Disposes the particle system and free the associated resources.
+	 */
 	public function dispose() {
 		var index = this._scene.particleSystems.indexOf(this);
 		if (index > -1) {
@@ -212,10 +269,21 @@ class GPUParticleSystem implements IParticleSystem {
 	}
 
 	//TODO: Clone / Parse / serialize
+	
+	/**
+	 * Clones the particle system.
+	 * @param name The name of the cloned object
+	 * @param newEmitter The new emitter to use
+	 * @returns the cloned particle system
+	 */
 	public function clone(name:String, ?newEmitter:Dynamic):GPUParticleSystem {
 		return null;
 	}
 
+	/**
+	 * Serializes the particle system to a JSON object.
+	 * @returns the JSON object
+	 */
 	public serialize():Dynamic {
 		
 	}

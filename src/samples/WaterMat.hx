@@ -27,16 +27,20 @@ class WaterMat {
 		var light = new HemisphericLight("light1", new Vector3(0, 1, 0), scene);
 		
 		// Skybox
-		var skybox = Mesh.CreateBox("skyBox", 1000, scene);
+		var skybox = Mesh.CreateBox("skyBox", 10000, scene);
 		var skyboxMaterial = new StandardMaterial("skyBox", scene);
 		skyboxMaterial.backFaceCulling = false;
-		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/TropicalSunnyDay", scene);
+		skyboxMaterial.reflectionTexture = new CubeTexture("assets/img/skybox/skybox", scene);
 		skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
 		skyboxMaterial.diffuseColor = new Color3(0, 0, 0);
 		skyboxMaterial.specularColor = new Color3(0, 0, 0);
-		//skyboxMaterial.disableLighting = true;
+		skyboxMaterial.disableLighting = true;
 		skybox.material = skyboxMaterial;
-				
+		skybox.infiniteDistance = true;
+		
+		var sphere = Mesh.CreateSphere("sphere1", 16, 30, scene);
+		sphere.position.y = 25;
+		
 		// Ground
 		var groundTexture = new Texture("assets/img/sand.jpg", scene);
 		groundTexture.vScale = groundTexture.uScale = 4.0;
@@ -47,19 +51,20 @@ class WaterMat {
 		var ground = Mesh.CreateGround("ground", 512, 512, 1, scene);
 		ground.position.y = -10;
 		ground.material = groundMaterial;
-			
+		
 		// Water
 		var waterMesh = Mesh.CreateGround("waterMesh", 512, 512, 32, scene);
 		waterMesh.position.y = 10;
 		var water = new WaterMaterial("water", scene, new Vector2(1024, 1024));
 		water.backFaceCulling = true;
 		water.bumpTexture = new Texture("assets/img/waterbump.png", scene);
-		water.windForce = -15;
-		water.waveHeight = 0.5;
+		water.windForce = -5;
+		water.waveHeight = 0.1;
 		water.bumpHeight = 0.1;
 		water.colorBlendFactor = 0;
 		water.addToRenderList(skybox);
 		water.addToRenderList(ground);
+		water.addToRenderList(sphere);
 		waterMesh.material = water;
 		
 		scene.getEngine().runRenderLoop(function () {

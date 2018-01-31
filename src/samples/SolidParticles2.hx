@@ -9,8 +9,8 @@ import com.babylonhx.lights.HemisphericLight;
 import com.babylonhx.lights.PointLight;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.MeshBuilder;
-import com.babylonhx.particles.SolidParticleSystem;
-import com.babylonhx.particles.SolidParticle;
+import com.babylonhx.particles.solid.SolidParticleSystem;
+import com.babylonhx.particles.solid.SolidParticle;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.tools.EventState;
@@ -37,7 +37,7 @@ class SolidParticles2 {
 		// texture and material
 		var mat = new StandardMaterial("mat1", scene);
 		//mat.backFaceCulling = false;
-		var texture = new Texture("assets/img/metal.jpg", scene);
+		var texture = new Texture("assets/img/ground.jpg", scene);
 		mat.diffuseTexture = texture;
 		
 		// SPS creation
@@ -119,7 +119,7 @@ class SolidParticles2 {
 		
 		//scene.debugLayer.show();
 		// animation
-		scene.registerBeforeRender(function(scene:Scene, es:EventState = null) {
+		scene.registerBeforeRender(function(_, _) {
 			SPS.setParticles();
 			pl.position = camera.position;
 			SPS.mesh.rotation.y += 0.01;

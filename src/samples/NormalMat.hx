@@ -42,6 +42,7 @@ class NormalMat {
 		
 		// material
 		var normalmat = new NormalMaterial("normalmat", scene);
+		normalmat.diffuseTexture = new Texture('assets/img/amiga.jpg', scene);
 		knot.material = normalmat;
 		
 		scene.getEngine().runRenderLoop(function () {

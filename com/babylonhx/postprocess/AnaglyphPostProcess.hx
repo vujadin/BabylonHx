@@ -19,7 +19,7 @@ import com.babylonhx.tools.EventState;
 		
 		this._passedProcess = rigCameras[0].rigPostProcess;
 		
-		this.onApplyObservable.add(function(effect:Effect, eventState:EventState = null) {
+		this.onApplyObservable.add(function(effect:Effect, eventState:EventState<Effect> = null) {
 			effect.setTextureFromPostProcess("leftSampler", this._passedProcess);
 		});
 	}

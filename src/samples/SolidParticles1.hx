@@ -1,6 +1,7 @@
 package samples;
 
 import com.babylonhx.Scene;
+import com.babylonhx.events.PointerEvent;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Color4;
@@ -8,8 +9,9 @@ import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.lights.PointLight;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.MeshBuilder;
-import com.babylonhx.particles.SolidParticleSystem;
+import com.babylonhx.particles.solid.SolidParticleSystem;
 import com.babylonhx.tools.EventState;
+import com.babylonhx.collisions.PickingInfo;
 
 /**
  * ...
@@ -18,7 +20,7 @@ import com.babylonhx.tools.EventState;
 class SolidParticles1 {
 
 	public function new(scene:Scene) {
-		scene.clearColor = Color3.Black();
+		scene.clearColor = new Color4(0, 0, 0, 1);
 		var camera = new ArcRotateCamera("camera1",  0, 0, 0, new Vector3(0, 0, -0), scene);
 		camera.setPosition(new Vector3(0, 10, -200));
 		camera.attachControl();
@@ -66,7 +68,7 @@ class SolidParticles1 {
 		// This will be used only for the next setParticles() calls
 		SPS.computeParticleTexture = false;
 	  
-		scene.onPointerDown = function(x, y, button, pickResult) {
+		scene.onPointerDown = function(evt:PointerEvent, pickResult:PickingInfo) {
 			var faceId = pickResult.faceId;
 			if (faceId == -1) {
 				return;

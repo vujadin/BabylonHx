@@ -225,7 +225,7 @@ import com.babylonhx.tools.EventState;
 				this.applyParameters(this._postProcesses[index]);
 			}
 			
-			this._postProcesses[index].onBeforeRenderObservable.add(function(effect:Effect, es:EventState = null) {
+			this._postProcesses[index].onBeforeRenderObservable.add(function(effect:Effect, _) {
 				this._linkTextures(effect);
 			});
 		}

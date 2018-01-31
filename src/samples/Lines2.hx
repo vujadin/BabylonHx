@@ -3,6 +3,7 @@ package samples;
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.math.Color3;
+import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.VertexBuffer;
@@ -18,11 +19,11 @@ class Lines2 {
 	public function new(scene:Scene) {
 		var camera = new ArcRotateCamera("Camera", 0, 0, 10, new Vector3(0, 0, 0), scene);
 		camera.setPosition(new Vector3(20, 200, 400));
-		camera.attachControl(this);
+		camera.attachControl();
 		camera.maxZ = 20000;		
 		camera.lowerRadiusLimit = 150;
 		
-		//scene.clearColor = new Color3(0, 0, 0);
+		scene.clearColor = new Color4(0, 0, 0, 1);
 		
 		// Create a whirlpool
 		var points = [];
@@ -39,9 +40,9 @@ class Lines2 {
 		whirlpool.color = new Color3(1, 1, 1);
 		
 		var positionData = whirlpool.getVerticesData(VertexBuffer.PositionKind);
-		var heightRange = 10;
+		var heightRange = 50;
 		var alpha = 0.0;
-		scene.registerBeforeRender(function(scene:Scene, es:Null<EventState>) {
+		scene.registerBeforeRender(function(scene:Scene, _) {
 			for (index in 0...1000) {
 				positionData[index * 3 + 1] = heightRange * Math.sin(alpha + index * 0.1);
 			}

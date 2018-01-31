@@ -35,7 +35,7 @@ import lime.utils.UInt8Array;
 			return value;
 		}
 		this._hasAlpha = value;
-		this._scene.markAllMaterialsAsDirty(Material.TextureDirtyFlag);
+		this._scene.markAllMaterialsAsDirty(Material.TextureDirtyFlag | Material.MiscDirtyFlag);
 		return value;
 	}
 	private function get_hasAlpha():Bool {
@@ -169,8 +169,8 @@ import lime.utils.UInt8Array;
 	*/
 	public var onDisposeObservable = new Observable<BaseTexture>();
 	private var _onDisposeObserver:Observer<BaseTexture>;
-	public var onDispose(never, set):BaseTexture->Null<EventState>->Void;
-	private function set_onDispose(callback:BaseTexture->Null<EventState>->Void):BaseTexture->Null<EventState>->Void {
+	public var onDispose(never, set):BaseTexture->Null<EventState<BaseTexture>>->Void;
+	private function set_onDispose(callback:BaseTexture->Null<EventState<BaseTexture>>->Void):BaseTexture->Null<EventState<BaseTexture>>->Void {
 		if (this._onDisposeObserver != null) {
 			this.onDisposeObservable.remove(this._onDisposeObserver);
 		}

@@ -54,10 +54,7 @@ class LoadObjFile {
 		var camera = new FreeCamera("Camera", new Vector3(0, 30, -0), scene);
 		camera.attachControl(this);
 		camera.speed = 0.4;
-		// Collisions
-		camera.checkCollisions = true;
-		camera.applyGravity = true;
-		  
+		
         // Torus
         var torus = Mesh.CreateTorus("torus", 4, 2, 30, scene, false);
 		torus.material = new StandardMaterial("torusmat", scene);
@@ -66,28 +63,7 @@ class LoadObjFile {
 		light.position = new Vector3(0, 10, 0);
 		light.intensity = 0.3;
 		
-		objLoader.load("assets/models/des/", "desert1.obj", function(meshes:Array<Mesh>) {
-			meshes[0].scaling.set(10, 10, 10);
-			meshes[0].material = new StandardMaterial("desmat", scene);
-			cast(meshes[0].material, StandardMaterial).diffuseTexture = new Texture("assets/models/des/sand tex.jpg", scene);
-			cast(meshes[0].material, StandardMaterial).specularTexture = new Texture("assets/models/des/sand02c_color_spec.jpg", scene);
-			cast(meshes[0].material, StandardMaterial).bumpTexture = new Texture("assets/models/des/sand02c_color_nrm.jpg", scene);
-			cast(meshes[0].material, StandardMaterial).specularPower = 15;
-			cast(meshes[0].material, StandardMaterial).backFaceCulling = false;
-			meshes[0].showBoundingBox = true;			
-			meshes[0].position.y = -2.05;
-			meshes[0].checkCollisions = true;
-			meshes[0].receiveShadows = true;
-			
-			// Shadows
-			var shadowGenerator = new ShadowGenerator(1024, light);
-			shadowGenerator.getShadowMap().renderList.push(torus);
-			shadowGenerator.useVarianceShadowMap = true;
-			
-			var shadowGenerator2 = new ShadowGenerator(1024, light2);
-			shadowGenerator2.getShadowMap().renderList.push(torus);
-			shadowGenerator2.usePoissonSampling = true;
-			
+		objLoader.load("assets/models/meleagre/", "meleagre.obj", function(meshes:Array<Mesh>) {			
 			// Skybox
 			var skybox = Mesh.CreateBox("skyBox", 1000.0, scene);
 			var skyboxMaterial = new StandardMaterial("skyBox", scene);
@@ -101,7 +77,7 @@ class LoadObjFile {
 			
 			// Animations
 			var alpha = 0.0;
-			scene.registerBeforeRender(function () {
+			scene.registerBeforeRender(function (_, _) {
 				torus.rotation.x += 0.01;
 				torus.rotation.z += 0.02;
 				torus.position = new Vector3(Math.cos(alpha) * 30, 10, Math.sin(alpha) * 30);

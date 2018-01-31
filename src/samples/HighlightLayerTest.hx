@@ -13,7 +13,6 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
-import com.babylonhx.Engine;
 
 /**
  * ...
@@ -46,11 +45,17 @@ class HighlightLayerTest {
 		// Our built-in 'ground' shape. Params: name, width, depth, subdivs, scene
 		var ground = Mesh.CreateGround("ground1", 6, 6, 2, scene);
 		
-		var hl1 = new HighlightLayer("hl1", scene);
+		var hl1 = new HighlightLayer("hl1", scene, {
+            mainTextureRatio: 1,
+            mainTextureFixedSize: 2048,
+            blurTextureSizeRatio: 1,
+            blurVerticalSize: 4,
+            blurHorizontalSize: 4
+        });
 		hl1.addMesh(sphere, Color3.Green());
 		
 		scene.getEngine().runRenderLoop(function () {
-            scene.render();
+			scene.render();
 		});
 	}
 	

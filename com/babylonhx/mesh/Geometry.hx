@@ -24,13 +24,27 @@ import lime.graphics.opengl.GLVertexArrayObject;
  * ...
  * @author Krtolica Vujadin
  */
-
+/**
+ * Class used to store geometry data (vertex buffers + index buffer)
+ */
 @:expose('BABYLON.Geometry') class Geometry implements IGetSetVerticesData {
 	
 	// Members
+	/**
+	 * The unique ID of the geometry
+	 */
 	public var id:String;
+	/**
+	 * Delay loading state of the geometry (none by default which means not delayed)
+	 */
 	public var delayLoadState = Engine.DELAYLOADSTATE_NONE;
+	/**
+	 * File containing the data to load when running in delay load state
+	 */
 	public var delayLoadingFile:String;
+	/**
+	 * Callback called when the geometry is updated
+	 */
 	public var onGeometryUpdated:Geometry->Null<String>->Void;
 
 	// Private
@@ -77,6 +91,11 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		return value;
 	}
 	
+	/**
+	 * Static function used to attach a new empty geometry to a mesh
+	 * @param mesh defines the mesh to attach the geometry to
+	 * @returns the new {BABYLON.Geometry}
+	 */
 	public static function CreateGeometryForMesh(mesh:Mesh):Geometry {
 		var geometry = new Geometry(Tools.uuid(), mesh.getScene());
 		
@@ -86,6 +105,14 @@ import lime.graphics.opengl.GLVertexArrayObject;
 	}
 	
 
+	/**
+	 * Creates a new geometry
+	 * @param id defines the unique ID
+	 * @param scene defines the hosting scene
+	 * @param vertexData defines the {BABYLON.VertexData} used to get geometry data
+	 * @param updatable defines if geometry must be updatable (false by default)
+	 * @param mesh defines the mesh that will be associated with the geometry
+	 */
 	public function new(id:String, scene:Scene, ?vertexData:VertexData, updatable:Bool = false, ?mesh:Mesh) {
 		this.id = id;
 		this._engine = scene.getEngine();
@@ -120,23 +147,41 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		}
 	}
 	
+	/**
+	 * Gets the current extend of the geometry
+	 */
 	public var extend(get, never):BabylonMinMax;
 	private function get_extend():BabylonMinMax {
 		return this._extend;
 	}
 	
+	/**
+	 * Gets the hosting scene
+	 * @returns the hosting {BABYLON.Scene}
+	 */
 	inline public function getScene():Scene {
 		return this._scene;
 	}
 
+	/**
+	 * Gets the hosting engine
+	 * @returns the hosting {BABYLON.Engine}
+	 */
 	inline public function getEngine():Engine {
 		return this._engine;
 	}
 
+	/**
+	 * Defines if the geometry is ready to use
+	 * @returns true if the geometry is ready to be used
+	 */
 	inline public function isReady():Bool {
 		return this.delayLoadState == Engine.DELAYLOADSTATE_LOADED || this.delayLoadState == Engine.DELAYLOADSTATE_NONE;
 	}
 	
+	/**
+	 * Gets a value indicating that the geometry should not be serialized
+	 */
 	public var doNotSerialize(get, never):Bool;
 	private function get_doNotSerialize():Bool {
 		for (index in 0...this._meshes.length) {
@@ -165,17 +210,33 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		}
 	}
 
+	/**
+	 * Affects all gemetry data in one call
+	 * @param vertexData defines the geometry data
+	 * @param updatable defines if the geometry must be flagged as updatable (false as default)
+	 */
 	public function setAllVerticesData(vertexData:VertexData, updatable:Bool = false) {
 		vertexData.applyToGeometry(this, updatable);
 		this.notifyUpdate();
 	}
 
+	/**
+	 * Set specific vertex data
+	 * @param kind defines the data kind (Position, normal, etc...)
+	 * @param data defines the vertex data to use
+	 * @param updatable defines if the vertex must be flagged as updatable (false as default)
+	 * @param stride defines the stride to use (0 by default). This value is deduced from the kind value if not specified
+	 */
 	public function setVerticesData(kind:String, data:Float32Array, updatable:Bool = false, ?stride:Int) {		
 		var buffer = new VertexBuffer(this._engine, data, kind, updatable, this._meshes.length == 0, stride);
 		
 		this.setVerticesBuffer(buffer);
 	}
 	
+	/**
+	 * Removes a specific vertex data
+	 * @param kind defines the data kind (Position, normal, etc...)
+	 */
 	public function removeVerticesData(kind:String) {
 		if (this._vertexBuffers[kind] != null) {
 			this._vertexBuffers[kind].dispose();
@@ -183,6 +244,10 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		}
 	}
 	
+	/**
+	 * Affect a vertex buffer to the geometry. the vertexBuffer.getKind() function is used to determine where to store the data
+	 * @param buffer defines the vertex buffer to use
+	 */
 	public function setVerticesBuffer(buffer:VertexBuffer) {
 		var kind = buffer.getKind();
 		if (this._vertexBuffers[kind] != null) {
@@ -220,6 +285,14 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		}
 	}
 
+	/**
+	 * Update a specific vertex buffer
+	 * This function will directly update the underlying WebGLBuffer according to the passed numeric array or Float32Array
+	 * It will do nothing if the buffer is not updatable
+	 * @param kind defines the data kind (Position, normal, etc...)
+	 * @param data defines the data to use 
+	 * @param offset defines the offset in the target buffer where to store the data
+	 */
 	inline public function updateVerticesDataDirectly(kind:String, data:Float32Array, offset:Int) {
 		var vertexBuffer = this.getVertexBuffer(kind);
 		
@@ -231,6 +304,13 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		this.notifyUpdate();
 	}
 	
+	/**
+	 * Update a specific vertex buffer
+	 * This function will create a new buffer if the current one is not updatable
+	 * @param kind defines the data kind (Position, normal, etc...)
+	 * @param data defines the data to use 
+	 * @param updateExtends defines if the geometry extends must be recomputed (false by default)
+	 */ 
 	// BHX: makeItUnique required by IGetSetVerticesData
 	public function updateVerticesData(kind:String, data:Float32Array, updateExtends:Bool = false, makeItUnique:Bool = false) {
 		var vertexBuffer = this.getVertexBuffer(kind);
@@ -302,6 +382,10 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		this._engine.bindVertexArrayObject(this._vertexArrayObjects[effect.key], indexToBind);
 	}
 
+	/**
+	 * Gets total number of vertices
+	 * @returns the total number of vertices
+	 */
 	public function getTotalVertices():Int {
 		if (!this.isReady()) {
 			return 0;
@@ -310,6 +394,13 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		return this._totalVertices;
 	}
 
+	/**
+	 * Gets a specific vertex data attached to this geometry
+	 * @param kind defines the data kind (Position, normal, etc...)
+	 * @param copyWhenShared defines if the returned array must be cloned upon returning it if the current geometry is shared between multiple meshes
+	 * @param forceCopy defines a boolean indicating that the returned array must be cloned upon returning it
+	 * @returns a float array containing vertex data
+	 */
 	public function getVerticesData(kind:String, copyWhenShared:Bool = false, forceCopy:Bool = false):Float32Array {
 		var vertexBuffer:VertexBuffer = this.getVertexBuffer(kind);
 		if (vertexBuffer == null) {
@@ -332,8 +423,10 @@ import lime.graphics.opengl.GLVertexArrayObject;
 	}
 	
 	/**
-	 * Returns a boolean defining if the vertex data for the requested `kind` is updatable.
-	 */        
+	 * Returns a boolean defining if the vertex data for the requested `kind` is updatable
+	 * @param kind defines the data kind (Position, normal, etc...)
+	 * @returns true if the vertex buffer with the specified kind is updatable
+	 */       
 	public function isVertexBufferUpdatable(kind:String):Bool {
 		var vb = this._vertexBuffers[kind];
 		
@@ -344,6 +437,11 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		return vb.isUpdatable();
 	}
 
+	/**
+	 * Gets a specific vertex buffer
+	 * @param kind defines the data kind (Position, normal, etc...)
+	 * @returns a {BABYLON.VertexBuffer}
+	 */
 	public function getVertexBuffer(kind:String):VertexBuffer {
 		if (!this.isReady()) {
 			return null;
@@ -352,6 +450,10 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		return this._vertexBuffers[kind];
 	}
 
+	/**
+	 * Returns all vertex buffers
+	 * @return an object holding all vertex buffers indexed by kind
+	 */
 	public function getVertexBuffers():Map<String, VertexBuffer> {
 		if (!this.isReady()) {
 			return null;
@@ -360,6 +462,11 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		return this._vertexBuffers;
 	}
 
+	/**
+	 * Gets a boolean indicating if specific vertex buffer is present
+	 * @param kind defines the data kind (Position, normal, etc...)
+	 * @returns true if data is present
+	 */
 	public function isVerticesDataPresent(kind:String):Bool {
 		if (this._vertexBuffers == null) {
 			if (this._delayInfo != null) {
@@ -372,6 +479,10 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		return this._vertexBuffers[kind] != null;
 	}
 
+	/**
+	 * Gets a list of all attached data kinds (Position, normal, etc...)
+	 * @returns a list of string containing all kinds
+	 */
 	public function getVerticesDataKinds():Array<String> {
 		var result:Array<String> = [];
 		if (this._vertexBuffers == null && this._delayInfo != null) {
@@ -388,6 +499,11 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		return result;
 	}
 	
+	/**
+	 * Update index buffer
+	 * @param indices defines the indices to store in the index buffer
+	 * @param offset defines the offset in the target buffer where to store the data
+	 */
 	public function updateIndices(indices:UInt32Array, offset:Int = 0) {
         if (this._indexBuffer == null) {
             return;
@@ -401,6 +517,12 @@ import lime.graphics.opengl.GLVertexArrayObject;
         }
     }
 
+	/**
+	 * Creates a new index buffer
+	 * @param indices defines the indices to store in the index buffer
+	 * @param totalVertices defines the total number of vertices (could be null)
+	 * @param updatable defines if the index buffer must be flagged as updatable (false by default)
+	 */
 	public function setIndices(indices:UInt32Array, totalVertices:Int = -1, updatable:Bool = false) {
 		if (this._indexBuffer != null) {
 			this._engine._releaseBuffer(this._indexBuffer);
@@ -427,6 +549,10 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		this.notifyUpdate();
 	}
 
+	/**
+	 * Return the total number of indices
+	 * @returns the total number of indices
+	 */
 	public function getTotalIndices():Int {
 		if (!this.isReady()) {
 			return 0;
@@ -435,6 +561,11 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		return this._indices.length;
 	}
 
+	/**
+	 * Gets the index buffer array
+	 * @param copyWhenShared defines if the returned array must be cloned upon returning it if the current geometry is shared between multiple meshes
+	 * @returns the index buffer array
+	 */
 	public function getIndices(copyWhenShared:Bool = false):UInt32Array {
 		if (!this.isReady()) {
 			return null;
@@ -456,6 +587,10 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		}
 	}
 
+	/**
+	 * Gets the index buffer
+	 * @return the index buffer
+	 */
 	public function getIndexBuffer():WebGLBuffer {
 		if (!this.isReady()) {
 			return null;
@@ -475,6 +610,11 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		}
 	}
 
+	/**
+	 * Release the associated resources for a specific mesh
+	 * @param mesh defines the source mesh
+	 * @param shouldDispose defines if the geometry must be disposed if there is no more mesh pointing to it
+	 */
 	public function releaseForMesh(mesh:Mesh, shouldDispose:Bool = false) {
 		var meshes = this._meshes;
 		var index = meshes.indexOf(mesh);
@@ -492,6 +632,10 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		}
 	}
 
+	/**
+	 * Apply current geometry to a given mesh
+	 * @param mesh defines the mesh to apply geometry to
+	 */
 	public function applyToMesh(mesh:Mesh) {
 		if (mesh._geometry == this) {
 			return;
@@ -572,6 +716,11 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		}
 	}
 
+	/**
+	 * Load the geometry if it was flagged as delay loaded
+	 * @param scene defines the hosting scene
+	 * @param onLoaded defines a callback called when the geometry is loaded
+	 */
 	public function load(scene:Scene, ?onLoaded:Void->Void) {
 		if (this.delayLoadState == Engine.DELAYLOADSTATE_LOADING) {
 			return;
@@ -679,6 +828,10 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		return true;
 	}
 	
+	/**
+	 * Gets a value indicating if the geometry is disposed
+	 * @returns true if the geometry was disposed
+	 */
 	inline public function isDisposed():Bool {
 		return this._isDisposed;
 	}
@@ -692,6 +845,9 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		}
 	}
 
+	/**
+	 * Free all associated resources
+	 */
 	public function dispose() {
 		var meshes = this._meshes;
 		var numOfMeshes = meshes.length;
@@ -726,6 +882,11 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		this._isDisposed = true;
 	}
 
+	/**
+	 * Clone the current geometry into a new geometry
+	 * @param id defines the unique ID of the new geometry
+	 * @returns a new geometry object
+	 */
 	public function copy(id:String):Geometry {
 		var indices = this.getIndices();
 		
@@ -747,8 +908,12 @@ import lime.graphics.opengl.GLVertexArrayObject;
 				//vertexData.set(data.copy(), kind);
 			//}
 			if (!stopChecking) {
-				updatable = this.getVertexBuffer(kind).isUpdatable();
-				stopChecking = !updatable;
+				var vb = this.getVertexBuffer(kind);
+				
+				if (vb != null) {
+					updatable = this.getVertexBuffer(kind).isUpdatable();
+					stopChecking = !updatable;
+				}
 			}
 		}
 		
@@ -769,6 +934,10 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		return geometry;
 	}
 	
+	/**
+	 * Serialize the current geometry info (and not the vertices data) into a JSON object
+	 * @return a JSON representation of the current geometry data (without the vertices data)
+	 */
 	public function serialize():Dynamic {
 		var serializationObject:Dynamic = { };
 		
@@ -791,6 +960,10 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		}
 	}*/
 
+	/**
+	 * Serialize all vertices data into a JSON oject
+	 * @returns a JSON representation of the current geometry data
+	 */
 	public function serializeVerticeData():Dynamic {
 		var serializationObject = this.serialize();
 		
@@ -878,6 +1051,13 @@ import lime.graphics.opengl.GLVertexArrayObject;
 	}
 
 	// Statics
+	
+	/**
+	 * Extracts a clone of a mesh geometry
+	 * @param mesh defines the source mesh
+	 * @param id defines the unique ID of the new geometry object
+	 * @returns the new geometry object
+	 */
 	public static function ExtractFromMesh(mesh:Mesh, id:String):Geometry {
 		var geometry = mesh._geometry;
 		
@@ -888,7 +1068,7 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		return geometry.copy(id);
 	}
 		
-	public static function ImportGeometry(parsedGeometry:Dynamic, mesh:Mesh) {
+	public static function _ImportGeometry(parsedGeometry:Dynamic, mesh:Mesh) {
 		var scene = mesh.getScene();
 		
 		// Geometry
@@ -1099,6 +1279,10 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		var noInfluenceBoneIndex = 0.0;
 		if (parsedGeometry.skeletonId > -1) {
 			var skeleton = mesh.getScene().getLastSkeletonByID(parsedGeometry.skeletonId);
+			
+			if (skeleton == null) {
+				return;
+			}
 			noInfluenceBoneIndex = skeleton.bones.length;
 		} 
 		else {
@@ -1164,6 +1348,13 @@ import lime.graphics.opengl.GLVertexArrayObject;
 		}
 	}
 	
+	/**
+	 * Create a new geometry from persisted data (Using .babylon file format)
+	 * @param parsedVertexData defines the persisted data
+	 * @param scene defines the hosting scene
+	 * @param rootUrl defines the root url to use to load assets (like delayed data)
+	 * @returns the new geometry object
+	 */
 	public static function Parse(parsedVertexData:Dynamic, scene:Scene, rootUrl:String = ""):Geometry {
         if (scene.getGeometryByID(parsedVertexData.id) != null) {
             return null; // null since geometry could be a primitive

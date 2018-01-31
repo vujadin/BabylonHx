@@ -4,7 +4,7 @@ import com.babylonhx.Scene;
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.cameras.FreeCamera;
 import com.babylonhx.loading.SceneLoader;
-import com.babylonhx.loading.plugins.BabylonFileLoader;
+import com.babylonhx.loading.ctm.CTMFileLoader;
 import com.babylonhx.materials.textures.CubeTexture;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.materials.Effect;
@@ -38,8 +38,7 @@ class PostprocessBloom2 {
 		var light = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);
 		light.intensity = 1.8;
 		
-		SceneLoader.ImportMesh("", "assets/models/chest/", "chest.babylon", scene, function (newMeshes:Array<AbstractMesh>, newParticles:Array<ParticleSystem>, newSkeletons:Array<Skeleton>) {
-			
+		CTMFileLoader.load("assets/models/suzanne.ctm", scene, function(meshes:Array<Mesh>, triangleCount:Int) {			
 			// Skybox
 			var skybox = Mesh.CreateBox("skyBox", 1000.0, scene);
 			var skyboxMaterial = new StandardMaterial("skyBox", scene);

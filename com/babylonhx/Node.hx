@@ -151,8 +151,8 @@ class NodeCache {
 	*/
 	public var onDisposeObservable:Observable<Node> = new Observable<Node>();
 	private var _onDisposeObserver:Observer<Node>;
-	public var onDispose(never, set):Node->Null<EventState>->Void;
-	private function set_onDispose(callback:Node->Null<EventState>->Void):Node->Null<EventState>->Void {
+	public var onDispose(never, set):Node->Null<EventState<Node>>->Void;
+	private function set_onDispose(callback:Node->Null<EventState<Node>>->Void):Node->Null<EventState<Node>>->Void {
 		if (this._onDisposeObserver != null) {
 			this.onDisposeObservable.remove(this._onDisposeObserver);
 		}

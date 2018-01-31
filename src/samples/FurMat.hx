@@ -16,6 +16,7 @@ import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.loading.SceneLoader;
 import com.babylonhx.loading.plugins.BabylonFileLoader;
+import com.babylonhx.tools.Tools;
 
 /**
  * ...
@@ -25,8 +26,6 @@ class FurMat {
 
 	public function new(scene:Scene) {
 		var light = new DirectionalLight("dir01", new Vector3(0, -0.5, -1.0), scene);
-		//var light = new HemisphericLight("hemi", new Vector3(0, -1, 0), scene);
-		//light.intensity = 3;
 		
 		var camera = new ArcRotateCamera("Camera", -2.5, 1.0, 200, new Vector3(0, 5, 0), scene);
 		camera.attachControl();
@@ -36,7 +35,7 @@ class FurMat {
 			fur.furLength = 0;
 			fur.furAngle = 0;
 			fur.furColor = new Color3(2, 2, 2);
-			fur.diffuseTexture = untyped mesh.material.diffuseTexture;
+			fur.diffuseTexture = cast (mesh.material, StandardMaterial).diffuseTexture;
 			fur.furTexture = FurMaterial.GenerateTexture("furTexture", scene);
 			fur.furSpacing = 6;
 			fur.furDensity = 20;
@@ -57,14 +56,16 @@ class FurMat {
 		// Meshes
 		SceneLoader.ImportMesh("Rabbit", "assets/models/Rabbit/", "Rabbit.babylon", scene, function(newMeshes, particleSystems, skeletons) {	
 			var rabbit = newMeshes[1];
-			configureFur(cast rabbit);
-			rabbit.isVisible = true;
-			//scene.beginAnimation(rabbit.skeleton, 0, 72, true, 0.8);
+			//configureFur(cast rabbit);
+			
+			rabbit.skeleton = skeletons[0];
+			
+			scene.beginAnimation(skeletons[0], 0, 100, true, 0.8);
 			
 			scene.getEngine().runRenderLoop(function () {
 				scene.render();
 			});
-		});		
+		});
 		
 	}
 	

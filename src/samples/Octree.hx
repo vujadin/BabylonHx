@@ -19,7 +19,7 @@ class Octree {
 	public function new(scene:Scene) {
 		var camera = new ArcRotateCamera("Camera", 0, 0, 10, Vector3.Zero(), scene);
 		//var camera = new FreeCamera("camera1", new Vector3(-10, 10, 0), scene);
-		camera.attachControl(this);
+		camera.attachControl();
 		var light0 = new PointLight("Omni0", new Vector3(0, 10, 0), scene);
 		var material = new StandardMaterial("kosh", scene);
 		var sphere = Mesh.CreateSphere("sphere0", 16, 1, scene);

@@ -154,13 +154,13 @@ class PBRMaterial extends PBRBaseMaterial {
 	}
 
 	@serializeAsTexture()
-	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
+	//@expandToProperty("_markAllSubMeshesAsTexturesAndMiscDirty")
 	public var opacityTexture(get, set):BaseTexture;
 	inline private function get_opacityTexture():BaseTexture {
 		return _opacityTexture;
 	}
 	inline private function set_opacityTexture(value:BaseTexture):BaseTexture {
-		_markAllSubMeshesAsTexturesDirty();
+		_markAllSubMeshesAsTexturesAndMiscDirty();
 		return _opacityTexture = value;
 	}
 
@@ -425,13 +425,13 @@ class PBRMaterial extends PBRBaseMaterial {
 	 * Specifies that the alpha is coming form the albedo channel alpha channel.
 	 */
 	@serialize()
-	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
+	//@expandToProperty("_markAllSubMeshesAsTexturesAndMiscDirty")
 	public var useAlphaFromAlbedoTexture(get, set):Bool;
 	inline private function get_useAlphaFromAlbedoTexture():Bool {
 		return _useAlphaFromAlbedoTexture;
 	}
 	inline private function set_useAlphaFromAlbedoTexture(value:Bool):Bool {
-		_markAllSubMeshesAsTexturesDirty();
+		_markAllSubMeshesAsTexturesAndMiscDirty();
 		return _useAlphaFromAlbedoTexture = value;
 	}
 
@@ -439,13 +439,13 @@ class PBRMaterial extends PBRBaseMaterial {
 	 * Enforces alpha test in opaque or blend mode in order to improve the performances of some situations.
 	 */
 	@serialize()
-	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
+	//@expandToProperty("_markAllSubMeshesAsTexturesAndMiscDirty")
 	public var forceAlphaTest(get, set):Bool;
 	inline private function get_forceAlphaTest():Bool {
 		return _forceAlphaTest;
 	}
 	inline private function set_forceAlphaTest(value:Bool):Bool {
-		_markAllSubMeshesAsTexturesDirty();
+		_markAllSubMeshesAsTexturesAndMiscDirty();
 		return _forceAlphaTest = value;
 	}
 
@@ -453,13 +453,13 @@ class PBRMaterial extends PBRBaseMaterial {
 	 * Defines the alpha limits in alpha test mode.
 	 */
 	@serialize()
-	//@expandToProperty("_markAllSubMeshesAsTexturesDirty")
+	//@expandToProperty("_markAllSubMeshesAsTexturesAndMiscDirty")
 	public var alphaCutOff(get, set):Float;
 	inline private function get_alphaCutOff():Float {
 		return _alphaCutOff;
 	}
 	inline private function set_alphaCutOff(value:Float):Float {
-		_markAllSubMeshesAsTexturesDirty();
+		_markAllSubMeshesAsTexturesAndMiscDirty();
 		return _alphaCutOff = value;
 	}
 	

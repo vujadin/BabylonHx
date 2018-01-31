@@ -29,19 +29,17 @@ class InstancedBones {
 
 	public function new(scene:Scene) {
 		var light = new DirectionalLight("dir01", new Vector3(0, -0.5, -1.0), scene);
-		var camera = new ArcRotateCamera("Camera", 0, 0, 20, new Vector3(0, 30, 0), scene);
-		camera.attachControl(this);
+		var camera = new ArcRotateCamera("Camera", 0, 0, 10, new Vector3(0, 30, 0), scene);
 		camera.setPosition(new Vector3(20, 70, 120));
+		camera.attachControl();
 		light.position = new Vector3(50, 250, 200);
 		light.shadowOrthoScale = 2.0;
 		camera.minZ = 1.0;
 		
-		new Layer("background", "assets/img/graygrad.jpg", scene, true);
-		
 		scene.ambientColor = new Color3(0.3, 0.3, 0.3);
 		
 		// Ground
-		var ground = Mesh.CreateGround("ground", 700, 700, 1, scene, false);
+		var ground = Mesh.CreateGround("ground", 1000, 1000, 1, scene, false);
 		var groundMaterial = new StandardMaterial("ground", scene);
 		groundMaterial.diffuseColor = new Color3(0.2, 0.2, 0.2);
 		groundMaterial.specularColor = new Color3(0, 0, 0);
@@ -50,27 +48,30 @@ class InstancedBones {
 		
 		// Shadows
 		var shadowGenerator = new ShadowGenerator(1024, light);
-		shadowGenerator.usePoissonSampling = true;
+		shadowGenerator.useBlurExponentialShadowMap = true;
 		
 		// Dude
-		SceneLoader.RegisterPlugin(BabylonFileLoader.plugin);
-		SceneLoader.ImportMesh("him", "assets/models/Dude/", "Dude.babylon", scene, function (newMeshes2:Array<AbstractMesh>, particleSystems2:Array<ParticleSystem>, skeletons2:Array<Skeleton>) {
+		SceneLoader.ImportMesh("him", "assets/models/Dude/", "Dude.babylon", scene, function (newMeshes2, particleSystems2, skeletons2) {
 			var dude = newMeshes2[0];
+			//newMeshes2[0].material.freeze();
 			
 			for (index in 1...newMeshes2.length) {
 				shadowGenerator.getShadowMap().renderList.push(newMeshes2[index]);
+				//newMeshes2[index].material.freeze();
 			}
 			
-			for (count in 0...10) {
+			for (count in 0...50) {
 				var offsetX = 200 * Math.random() - 100;
 				var offsetZ = 200 * Math.random() - 100;
 				for (index in 1...newMeshes2.length) {
-					var instance:InstancedMesh = cast(newMeshes2[index], Mesh).createInstance("instance" + count);
+					var instance = cast(newMeshes2[index], Mesh).createInstance("instance" + count);
+					
+					shadowGenerator.getShadowMap().renderList.push(instance);
 					
 					instance.parent = newMeshes2[index].parent;
-					instance.position = newMeshes2[index].position.clone();					
+					instance.position = newMeshes2[index].position.clone();
 					
-					if (cast(instance.parent, Mesh).subMeshes == null) {
+					if (cast (instance.parent, Mesh).subMeshes == null) {
 						instance.position.x += offsetX;
 						instance.position.z -= offsetZ;
 					}

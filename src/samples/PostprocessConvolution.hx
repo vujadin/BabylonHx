@@ -9,6 +9,7 @@ import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.postprocess.ConvolutionPostProcess;
+import com.babylonhx.postprocess.ImageProcessingPostProcess;
 import com.babylonhx.Scene;
 import com.babylonhx.tools.EventState;
 
@@ -20,7 +21,7 @@ class PostprocessConvolution {
 
 	public function new(scene:Scene) {
 		var camera = new ArcRotateCamera("Camera", 0, 0, 10, Vector3.Zero(), scene);
-		camera.attachControl(this);
+		camera.attachControl();
 		
 		var light = new DirectionalLight("dir01", new Vector3(0, -1, -0.2), scene);
 		var light2 = new DirectionalLight("dir02", new Vector3(-1, 2, -1), scene);
@@ -42,7 +43,7 @@ class PostprocessConvolution {
 		skyboxMaterial.specularColor = new Color3(0, 0, 0);
 		skybox.material = skyboxMaterial;
 		skybox.infiniteDistance = true;
-			
+		
 		// Spheres
 		var sphere0 = Mesh.CreateSphere("Sphere0", 16, 10, scene);
 		var sphere1 = Mesh.CreateSphere("Sphere1", 16, 10, scene);
@@ -62,7 +63,7 @@ class PostprocessConvolution {
 		cube.material = new StandardMaterial("red", scene);
 		cast(cube.material, StandardMaterial).diffuseColor = new Color3(1.0, 0.5, 0.5);
 		cast(cube.material, StandardMaterial).specularColor = new Color3(0, 0, 0);
-		   
+		
 		// Post-process
 		var postProcess = new ConvolutionPostProcess("convolution", ConvolutionPostProcess.EmbossKernel, 1.0, camera);
 		

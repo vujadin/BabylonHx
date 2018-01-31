@@ -46,8 +46,8 @@ import lime.utils.Float32Array;
 	public var onDisposeObservable = new Observable<SpriteManager>();
 
 	private var _onDisposeObserver:Observer<SpriteManager>;
-	public var onDispose(never, set):SpriteManager->Null<EventState>->Void;
-	private function set_onDispose(callback:SpriteManager->Null<EventState>->Void):SpriteManager->Null<EventState>->Void {
+	public var onDispose(never, set):SpriteManager->Null<EventState<SpriteManager>>->Void;
+	private function set_onDispose(callback:SpriteManager->Null<EventState<SpriteManager>>->Void):SpriteManager->Null<EventState<SpriteManager>>->Void {
 		if (this._onDisposeObserver != null) {
 			this.onDisposeObservable.remove(this._onDisposeObserver);
 		}

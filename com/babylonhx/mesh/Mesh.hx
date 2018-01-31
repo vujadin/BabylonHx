@@ -370,6 +370,14 @@ import lime.utils.Int32Array;
 		return this._LODLevels.length > 0;
 	}
 	
+	/**
+     * Gets the list of {BABYLON.MeshLODLevel} associated with the current mesh
+     * @returns an array of {BABYLON.MeshLODLevel} 
+     */
+	inline public function getLODLevels():Array<MeshLODLevel> {
+        return this._LODLevels;
+    }
+	
 	private function _sortLODLevels() {
 		this._LODLevels.sort(function(a:MeshLODLevel, b:MeshLODLevel):Int {
 			if (a.distance < b.distance) {
@@ -1136,7 +1144,7 @@ import lime.utils.Int32Array;
 	 * This function is passed the current mesh.  
 	 * Return the Mesh.  
 	 */
-	public function registerBeforeRender(func:AbstractMesh->Null<EventState>->Void) {
+	public function registerBeforeRender(func:AbstractMesh->Null<EventState<AbstractMesh>>->Void) {
 		this.onBeforeRenderObservable.add(func);
 	}
 
@@ -1145,7 +1153,7 @@ import lime.utils.Int32Array;
 	 * This function is passed the current mesh.  
 	 * Returns the Mesh.  
 	 */
-	public function unregisterBeforeRender(func:AbstractMesh->Null<EventState>->Void) {
+	public function unregisterBeforeRender(func:AbstractMesh->Null<EventState<AbstractMesh>>->Void) {
 		this.onBeforeRenderObservable.removeCallback(func);
 	}
 
@@ -1154,7 +1162,7 @@ import lime.utils.Int32Array;
 	 * This function is passed the current mesh.  
 	 * Returns the Mesh.  
 	 */
-	public function registerAfterRender(func:AbstractMesh->Null<EventState>->Void) {
+	public function registerAfterRender(func:AbstractMesh->Null<EventState<AbstractMesh>>->Void) {
 		this.onAfterRenderObservable.add(func);
 	}
 
@@ -1163,7 +1171,7 @@ import lime.utils.Int32Array;
 	 * This function is passed the current mesh.  
 	 * Return the Mesh.  
 	 */
-	public function unregisterAfterRender(func:AbstractMesh->Null<EventState>->Void) {
+	public function unregisterAfterRender(func:AbstractMesh->Null<EventState<AbstractMesh>>->Void) {
 		this.onAfterRenderObservable.removeCallback(func);
 	}
 
@@ -2898,7 +2906,7 @@ import lime.utils.Int32Array;
 		}
 		
 		if (parsedMesh.localMatrix != null) {
-			mesh.setPivotMatrix(Matrix.FromArray(parsedMesh.localMatrix));
+			mesh.setPreTransformMatrix(Matrix.FromArray(parsedMesh.localMatrix));
 		} 
 		else if (parsedMesh.pivotMatrix != null) {
 			mesh.setPivotMatrix(Matrix.FromArray(parsedMesh.pivotMatrix));
@@ -3039,14 +3047,14 @@ import lime.utils.Int32Array;
 				mesh._delayInfo.push(VertexBuffer.MatricesWeightsKind);
 			}
 			
-			mesh._delayLoadingFunction = Geometry.ImportGeometry;
+			mesh._delayLoadingFunction = Geometry._ImportGeometry;
 			
 			if (SceneLoader.ForceFullSceneLoadingForIncremental) {
 				mesh._checkDelayState();
 			}
 		} 
 		else {
-			Geometry.ImportGeometry(parsedMesh, mesh);
+			Geometry._ImportGeometry(parsedMesh, mesh);
 		}
 		
 		// Material

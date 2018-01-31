@@ -31,7 +31,7 @@ class Materials {
 		camera.setTarget(Vector3.Zero());
 		
 		camera.attachControl();
-				
+		
 		//Creation of 6 spheres
 		var sphere1 = Mesh.CreateSphere("Sphere1", 10, 9, scene);
 		var sphere2 = Mesh.CreateSphere("Sphere2", 2, 9, scene);//Only two segments
@@ -103,9 +103,11 @@ class Materials {
 		
 		plane.material = materialPlane;
 		
+		try {
 		scene.getEngine().runRenderLoop(function () {
             scene.render();
         });
+		} catch (err:Dynamic) { trace(err); }
 	}
 	
 }

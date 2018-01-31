@@ -64,8 +64,20 @@ import haxe.Timer;
 	@serialize()
 	public var state:String = "";
 	
-	@serialize()
-	public var alpha:Float = 1.0;
+	@serialize("alpha")
+	private var _alpha:Float = 1.0;
+	public var alpha(get, set):Float;
+    inline function set_alpha(value:Float):Float {
+        if (this._alpha == value) {
+            return value;
+        }
+        this._alpha = value;
+        this.markAsDirty(Material.MiscDirtyFlag);
+		return value;
+    }
+    inline function get_alpha():Float {
+        return this._alpha;
+    }
 	
 	@serialize("backFaceCulling")
 	private var _backFaceCulling:Bool = true;
@@ -100,8 +112,8 @@ import haxe.Timer;
 	*/
 	public var onDisposeObservable:Observable<Material> = new Observable<Material>();
 	private var _onDisposeObserver:Observer<Material>;
-	public var onDispose(never, set):Material->Null<EventState>->Void;
-	private function set_onDispose(callback:Material->Null<EventState>->Void):Material->Null<EventState>->Void {
+	public var onDispose(never, set):Material->Null<EventState<Material>>->Void;
+	private function set_onDispose(callback:Material->Null<EventState<Material>>->Void):Material->Null<EventState<Material>>->Void {
 		if (this._onDisposeObserver != null) {
 			this.onDisposeObservable.remove(this._onDisposeObserver);
 		}
@@ -116,8 +128,8 @@ import haxe.Timer;
 	*/
 	public var onBindObservable:Observable<AbstractMesh> = new Observable<AbstractMesh>();
 	private var _onBindObserver:Observer<AbstractMesh>;
-	public var onBind(never, set):AbstractMesh->Null<EventState>->Void;
-	private function set_onBind(callback:AbstractMesh->Null<EventState>->Void):AbstractMesh->Null<EventState>->Void {
+	public var onBind(never, set):AbstractMesh->Null<EventState<AbstractMesh>>->Void;
+	private function set_onBind(callback:AbstractMesh->Null<EventState<AbstractMesh>>->Void):AbstractMesh->Null<EventState<AbstractMesh>>->Void {
 		if (this._onBindObserver != null) {
 			this.onBindObservable.remove(this._onBindObserver);
 		}
@@ -542,6 +554,13 @@ import haxe.Timer;
 	public function _markAllSubMeshesAsFresnelDirty() {
 		this._markAllSubMeshesAsDirty(function(defines:MaterialDefines) { defines.markAsFresnelDirty(); } );
 	}
+	
+	public function _markAllSubMeshesAsFresnelAndMiscDirty() {
+        this._markAllSubMeshesAsDirty(function(defines:MaterialDefines) {
+            defines.markAsFresnelDirty();
+            defines.markAsMiscDirty();
+        });
+    }
 
 	public function _markAllSubMeshesAsLightsDirty() {
 		this._markAllSubMeshesAsDirty(function(defines:MaterialDefines) { defines.markAsLightDirty(); } );
@@ -554,6 +573,13 @@ import haxe.Timer;
 	public function _markAllSubMeshesAsMiscDirty() {
 		this._markAllSubMeshesAsDirty(function(defines:MaterialDefines) { defines.markAsMiscDirty(); } );
 	}
+	
+	public function _markAllSubMeshesAsTexturesAndMiscDirty() {
+        this._markAllSubMeshesAsDirty(function(defines:MaterialDefines) {
+            defines.markAsTexturesDirty();
+            defines.markAsMiscDirty();
+        });
+    }
 
 	public function dispose(forceDisposeEffect:Bool = false, forceDisposeTextures:Bool = false) {	
 		// Animations

@@ -22,7 +22,7 @@ class Instances2 {
 	public function new(scene:Scene) {
 		//Adding a light
 		var light = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);
-		light.diffuse = Color3.FromInt(0xf68712);
+		//light.diffuse = Color3.FromInt(0xf68712);
 		
 		//Adding an Arc Rotate Camera
 		var camera = new ArcRotateCamera("Camera", 4, 1.4, 60, Vector3.Zero(), scene);
@@ -36,9 +36,9 @@ class Instances2 {
 			_suzanne.material = mat;
 			var instances:Array<InstancedMesh> = [];
 			_suzanne.scaling = new Vector3(0.4, 0.4, 0.4);
-			for (i in 0...8) {
-				for (j in 0...8) {
-					for(m in 0...8) {
+			for (i in 0...20) {
+				for (j in 0...20) {
+					for (m in 0...20) {
 						var suzanne = _suzanne.createInstance("inst_" + (i + j + m));
 						suzanne.material = _suzanne.material;
 						suzanne.position.x = i * 4;
@@ -49,17 +49,17 @@ class Instances2 {
 				}
 			}	
 			
-			camera.target = instances[220].position;
+			camera.target = instances[1500].position;
 			
 			scene.removeMesh(_suzanne);
 			_suzanne = null;
 			
-			scene.registerBeforeRender(function(scene:Scene, es:Null<EventState>) {
+			/*scene.registerBeforeRender(function(scene:Scene, es:Null<EventState>) {
 				for (mesh in instances) {
 					mesh.rotation.y += 0.05;
 					mesh.rotation.z += 0.05;
 				}
-			});
+			});*/
 			
 			scene.getEngine().runRenderLoop(function () {
 				scene.render();

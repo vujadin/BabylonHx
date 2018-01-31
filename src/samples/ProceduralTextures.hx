@@ -5,13 +5,13 @@ import com.babylonhx.lights.DirectionalLight;
 import com.babylonhx.lights.shadows.ShadowGenerator;
 import com.babylonhx.materials.Material;
 import com.babylonhx.materials.StandardMaterial;
-import com.babylonhx.materials.textures.procedurals.standard.BrickProceduralTexture;
-import com.babylonhx.materials.textures.procedurals.standard.CloudProceduralTexture;
-import com.babylonhx.materials.textures.procedurals.standard.FireProceduralTexture;
-import com.babylonhx.materials.textures.procedurals.standard.GrassProceduralTexture;
-import com.babylonhx.materials.textures.procedurals.standard.MarbleProceduralTexture;
-import com.babylonhx.materials.textures.procedurals.standard.RoadProceduralTexture;
-import com.babylonhx.materials.textures.procedurals.standard.WoodProceduralTexture;
+import com.babylonhx.materials.textures.procedurals.standard.Brick;
+import com.babylonhx.materials.textures.procedurals.standard.Cloud;
+import com.babylonhx.materials.textures.procedurals.standard.Fire;
+import com.babylonhx.materials.textures.procedurals.standard.Grass;
+import com.babylonhx.materials.textures.procedurals.standard.Marble;
+import com.babylonhx.materials.textures.procedurals.standard.Road;
+import com.babylonhx.materials.textures.procedurals.standard.Wood;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color3;
 import com.babylonhx.math.Vector3;
@@ -20,10 +20,10 @@ import com.babylonhx.math.Space;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
 import com.babylonhx.tools.EventState;
-
 import com.babylonhx.postprocess.BlurPostProcess;
 import com.babylonhx.postprocess.PassPostProcess;
 import com.babylonhx.postprocess.PostProcess;
+
 
 /**
  * ...
@@ -113,37 +113,37 @@ class ProceduralTextures {
 		//Ok, enough helpers, let the building start 
 		var camera = new ArcRotateCamera("Camera", 1, 1.2, 25, new Vector3(10, 0, 0), scene);
 		camera.upperBetaLimit = 1.2;
-		camera.attachControl(this, true);
+		camera.attachControl();
 		
 		var name = "wood";
 		
 		//Material declaration
 		var woodMaterial = new StandardMaterial(name, scene);
-		var woodTexture = new WoodProceduralTexture(name + "text", 1024, scene);
+		var woodTexture = new Wood(name + "text", 1024, scene);
 		woodTexture.ampScale = 50.0;
 		woodMaterial.diffuseTexture = woodTexture;
 		
 		name = "grass";
 		
 		var grassMaterial = new StandardMaterial(name + "bawl", scene);
-		var grassTexture = new GrassProceduralTexture(name + "textbawl", 256, scene);
+		var grassTexture = new Grass(name + "textbawl", 256, scene);
 		grassMaterial.ambientTexture = grassTexture;
 		
 		var marbleMaterial = new StandardMaterial("torus", scene);
-		var marbleTexture = new MarbleProceduralTexture("marble", 512, scene);
+		var marbleTexture = new Marble("marble", 512, scene);
 		marbleTexture.numberOfTilesHeight = 5;
 		marbleTexture.numberOfTilesWidth = 5;
 		marbleMaterial.ambientTexture = marbleTexture;
 		
 		var fireMaterial = new StandardMaterial("fontainSculptur2", scene);
-		var fireTexture = new FireProceduralTexture("fire", 256, scene);
+		var fireTexture = new Fire("fire", 256, scene);
 		fireMaterial.diffuseTexture = fireTexture;
 		fireMaterial.opacityTexture = fireTexture;
 		
 		name = "brick";
 		
 		var brickMaterial = new StandardMaterial(name, scene);
-		var brickTexture = new BrickProceduralTexture(name + "text", 512, scene);
+		var brickTexture = new Brick(name + "text", 512, scene);
 		brickTexture.numberOfBricksHeight = 2;
 		brickTexture.numberOfBricksWidth = 3;
 		brickMaterial.diffuseTexture = brickTexture;
@@ -158,7 +158,7 @@ class ProceduralTextures {
 		var square = Mesh.CreateGround("square", 20, 20, 2, scene);
 		square.position = new Vector3(0, 0, 0);
 		var customMaterial = new StandardMaterial("custommat", scene);
-		var customProcText = new BrickProceduralTexture("customtext1", 512, scene);
+		var customProcText = new Brick("customtext1", 512, scene);
 		customMaterial.diffuseTexture = customProcText;
 		//var customProcText = new CustomProceduralTexture("customtext", "./textures/customProceduralTextures/land", 1024, scene);
 		customMaterial.ambientTexture = customProcText;
@@ -182,7 +182,7 @@ class ProceduralTextures {
 		var macadam = Mesh.CreateGround("square", 20, 20, 2, scene);
 		macadam.position = new Vector3(20, 0, 0);
 		var customMaterialmacadam = new StandardMaterial("macadam", scene);
-		var customProcTextmacadam = new RoadProceduralTexture("customtext", 512, scene);
+		var customProcTextmacadam = new Road("customtext", 512, scene);
 		customMaterialmacadam.diffuseTexture = customProcTextmacadam;
 		macadam.material = customMaterialmacadam;
 		//#if !android
@@ -200,7 +200,7 @@ class ProceduralTextures {
 		var boxCloud = Mesh.CreateSphere("boxCloud", 100, 1000, scene);
 		boxCloud.position = new Vector3(0, 0, 12);
 		var cloudMaterial = new StandardMaterial("cloudMat", scene);
-		var cloudProcText = new CloudProceduralTexture("cloud", 1024, scene);
+		var cloudProcText = new Cloud("cloud", 1024, scene);
 		cloudMaterial.emissiveTexture = cloudProcText;
 		cloudMaterial.backFaceCulling = false;
 		cloudMaterial.emissiveTexture.coordinatesMode = Texture.SKYBOX_MODE;

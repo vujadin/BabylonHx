@@ -23,11 +23,11 @@ class RefractionTexture extends RenderTargetTexture {
 	public function new(name:String, size:Int, scene:Scene, generateMipMaps:Bool = true) {
 		super(name, size, scene, generateMipMaps, true);
 		
-		this.onBeforeRenderObservable.add(function(val:Int, eventState:EventState = null) {
+		this.onBeforeRenderObservable.add(function(_, _) {
 			scene.clipPlane = this.refractionPlane;
 		});
 		
-		this.onAfterRenderObservable.add(function(val:Int, eventState:EventState = null) {
+		this.onAfterRenderObservable.add(function(_, _) {
 			scene.clipPlane = null;
 		});
 	}

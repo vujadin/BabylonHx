@@ -22,7 +22,7 @@ class Lines {
 	public function new(scene:Scene) {
 		var camera = new ArcRotateCamera("Camera", 0, 0, 10, new Vector3(0, 0, 0), scene);
 		camera.setPosition(new Vector3(20, 200, 400));
-		camera.attachControl(this);
+		camera.attachControl();
 		camera.maxZ = 20000;		
 		camera.lowerRadiusLimit = 150;
 		
@@ -57,7 +57,7 @@ class Lines {
 		var z1 = z0;
 		var interval = 0.02;
 		var zoom = 10;
-				
+		
 		for(i in 0...pointsNum) {
 			x1 = x0 + ( y0 - x0 ) * r * interval;
 			y1 = y0 + ( x0 * ( o - z0 ) - y0 ) * interval;

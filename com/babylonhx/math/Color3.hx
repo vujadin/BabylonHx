@@ -16,6 +16,9 @@ import lime.utils.Float32Array;
 	public var b:Float;
 	
 	
+	/**
+	 * Creates a new Color3 object from red, green, blue values, all between 0 and 1.  
+	 */
 	inline public function new(r:Float = 0, g:Float = 0, b:Float = 0) {
 		this.r = r;
 		this.g = g;
@@ -26,10 +29,16 @@ import lime.utils.Float32Array;
 		return "{R:" + this.r + " G:" + this.g + " B:" + this.b + "}";
 	}
 	
+	/**
+	 * Returns the string "Color3".
+	 */
 	public function getClassName():String {
         return "Color3";
     }
 	
+	/**
+	 * Returns the Color3 hash code.  
+	 */
 	public function getHashCode():Int {
         var hash = Std.int(this.r);
         hash = Std.int(hash * 397) ^ Std.int(this.g);
@@ -45,14 +54,17 @@ import lime.utils.Float32Array;
 	}
 
 	// Operators
+	/**
+	 * Stores in the passed array from the passed starting index the red, green, blue values as successive elements.  
+	 * Returns the Color3.  
+	 */
 	inline public function toArray(array:Array<Float>, index:Int = 0):Color3 {
 		array[index] = this.r;
 		array[index + 1] = this.g;
 		array[index + 2] = this.b;
 		
 		return this;
-	}
-	
+	}	
 	inline public function toFloat32Array(array:Float32Array, index:Int = 0):Color3 {
 		array[index] = this.r;
 		array[index + 1] = this.g;
@@ -61,10 +73,16 @@ import lime.utils.Float32Array;
 		return this;
 	}
 
+	/**
+	 * Returns a new Color4 object from the current Color3 and the passed alpha.  
+	 */
 	inline public function toColor4(alpha:Float = 1):Color4 {
 		return new Color4(this.r, this.g, this.b, alpha);
 	}
 
+	/**
+	 * Returns a new array populated with 3 numeric elements : red, green and blue values.  
+	 */
 	inline public function asArray():Array<Float> {
 		var result:Array<Float> = [];
 		
@@ -73,14 +91,25 @@ import lime.utils.Float32Array;
 		return result;
 	}
 
+	/**
+	 * Returns the luminance value (float).  
+	 */
 	inline public function toLuminance():Float {
 		return this.r * 0.3 + this.g * 0.59 + this.b * 0.11;
 	}
 
+	/**
+	 * Multiply each Color3 rgb values by the passed Color3 rgb values in a new Color3 object.  
+	 * Returns this new object.  
+	 */
 	inline public function multiply(otherColor:Color3):Color3 {
 		return new Color3(this.r * otherColor.r, this.g * otherColor.g, this.b * otherColor.b);
 	}
 
+	/**
+	 * Multiply the rgb values of the Color3 and the passed Color3 and stores the result in the object "result".  
+	 * Returns the current Color3.  
+	 */
 	inline public function multiplyToRef(otherColor:Color3, result:Color3):Color3 {
 		result.r = this.r * otherColor.r;
 		result.g = this.g * otherColor.g;
@@ -89,18 +118,32 @@ import lime.utils.Float32Array;
 		return this;
 	}
 
+	/**
+	 * Boolean : True if the rgb values are equal to the passed ones.  
+	 */
 	inline public function equals(otherColor:Color3):Bool {
 		return otherColor != null && this.r == otherColor.r && this.g == otherColor.g && this.b == otherColor.b;
 	}
 	
+	/**
+	 * Boolean : True if the rgb values are equal to the passed ones.  
+	 */
 	inline public function equalsFloats(r:Float, g:Float, b:Float):Bool {
 		return this.r == r && this.g == g && this.b == b;
 	}
 
+	/**
+	 * Multiplies in place each rgb value by scale.  
+	 * Returns the updated Color3.  
+	 */
 	public function scale(scale:Float):Color3 {
 		return new Color3(this.r * scale, this.g * scale, this.b * scale);
 	}
 
+	/**
+	 * Multiplies the rgb values by scale and stores the result into "result".  
+	 * Returns the unmodified current Color3.  
+	 */
 	inline public function scaleToRef(scale:Float, result:Color3):Color3 {
 		result.r = this.r * scale;
 		result.g = this.g * scale;
@@ -108,7 +151,25 @@ import lime.utils.Float32Array;
 		
 		return this;
 	}
+	
+	/**
+     * Clamps the rgb values by the min and max values and stores the result into "result".
+     * Returns the unmodified current Color3.
+     * @param min - minimum clamping value.  Defaults to 0
+     * @param max - maximum clamping value.  Defaults to 1
+     * @param result - color to store the result into.
+     * @returns - the original Color3
+     */
+    public function clampToRef(min:Float = 0, max:Float = 1, result:Color3):Color3 {
+        result.r = Scalar.Clamp(this.r, min, max);
+		result.g = Scalar.Clamp(this.g, min, max);
+        result.b = Scalar.Clamp(this.b, min, max);
+        return this;
+    }
 
+	/**
+	 * Returns a new Color3 set with the added values of the current Color3 and of the passed one.  
+	 */
 	inline public function add(otherColor:Color3):Color3 {
 		return new Color3(this.r + otherColor.r, this.g + otherColor.g, this.b + otherColor.b);
 	}

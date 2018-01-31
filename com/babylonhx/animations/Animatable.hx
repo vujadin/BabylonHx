@@ -213,6 +213,7 @@ package com.babylonhx.animations;
 		
 		if (this._localDelayOffset == -1) {
 			this._localDelayOffset = delay;
+			this._pausedDelay = -1;
 		} 
 		else if (this._pausedDelay != -1) {
 			this._localDelayOffset += delay - this._pausedDelay;

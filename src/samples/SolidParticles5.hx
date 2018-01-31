@@ -7,7 +7,7 @@ import com.babylonhx.math.Color3;
 import com.babylonhx.math.Color4;
 import com.babylonhx.postprocess.VolumetricLightScatteringPostProcess;
 import com.babylonhx.Scene;
-import com.babylonhx.Engine;
+import com.babylonhx.engine.Engine;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.lights.HemisphericLight;
@@ -18,9 +18,9 @@ import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.particles.ParticleSystem;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.MeshBuilder;
-import com.babylonhx.particles.SolidParticleSystem;
-import com.babylonhx.particles.SolidParticle;
-import com.babylonhx.particles.ModelShape;
+import com.babylonhx.particles.solid.SolidParticleSystem;
+import com.babylonhx.particles.solid.SolidParticle;
+import com.babylonhx.particles.solid.ModelShape;
 import com.babylonhx.tools.EventState;
 
 /**
@@ -30,7 +30,7 @@ import com.babylonhx.tools.EventState;
 class SolidParticles5 {
 
 	public function new(scene:Scene) {
-		scene.clearColor = new Color3( .4, .6, .8);
+		scene.clearColor = new Color4( .4, .6, .8, 1.0);
 		var camera = new ArcRotateCamera("camera1",  0, 0, 0, new Vector3(0, 0, -0), scene);
 		camera.setPosition(new Vector3(0, 60, -200));
 		camera.attachControl();

@@ -15,6 +15,7 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.physics.PhysicsBodyCreationOptions;
 import com.babylonhx.physics.plugins.JigLibPlugin;
+import com.babylonhx.physics.plugins.OimoPlugin;
 import com.babylonhx.Scene;
 import com.babylonhx.physics.PhysicsEngine;
 
@@ -25,7 +26,7 @@ import com.babylonhx.physics.PhysicsEngine;
 class PhysicsSimple {
 
 	public function new(scene:Scene) {
-		scene.enablePhysics(new Vector3(0, -100, 0), new JigLibPlugin());
+		scene.enablePhysics(new Vector3(0, -1, 0), new OimoPlugin());
 						
 		var camera = new ArcRotateCamera("Camera", 0.86, 1.80, 650, new Vector3(0, 150, 0), scene);
 		camera.position = new Vector3(200, 0, 0);
@@ -45,7 +46,7 @@ class PhysicsSimple {
 		skybox.infiniteDistance = true;*/
 				
 		var mat = new StandardMaterial("ground", scene);
-		var texDiff = new Texture("assets/img/ground.jpg", scene);
+		var texDiff = new Texture("assets/img/grass.jpg", scene);
 		texDiff.uScale = texDiff.vScale = 30;
 		mat.diffuseTexture = texDiff;
 		mat.specularColor = Color3.Black();
@@ -56,9 +57,8 @@ class PhysicsSimple {
 		var materialSphere = new StandardMaterial("sphere", scene);
 		materialSphere.diffuseTexture = new Texture("assets/img/metal.jpg", scene);
 		
-		var g = Mesh.CreateBox("ground", 1000, scene);
-		g.position.y = -10;
-		g.scaling.y = 0.01;
+		var g = Mesh.CreateBox("ground", 500, scene);
+		g.position.y = -250;
 		g.material = mat;
 		var physOpt = new PhysicsBodyCreationOptions();
 		physOpt.mass = 0;
@@ -73,7 +73,7 @@ class PhysicsSimple {
 		physOpt.restitution = 0.2;
 		s.setPhysicsState(PhysicsEngine.SphereImpostor, physOpt);
 				
-		var height = 40;
+		var height = 30;
 		var radius = 32;
 		var sz = 40;
 		var sy = sz * 0.15;

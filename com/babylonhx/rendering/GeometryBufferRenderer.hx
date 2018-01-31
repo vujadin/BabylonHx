@@ -20,33 +20,40 @@ class GeometryBufferRenderer {
 
 	private var _scene:Scene;
 	private var _multiRenderTarget:MultiRenderTarget;
-	private var _effect:Effect;
+	private var _enablePosition:Bool = false;
 	private var _ratio:Float;
-
-	private var _viewMatrix:Matrix = Matrix.Zero();
-	private var _projectionMatrix:Matrix = Matrix.Zero();
-	private var _transformMatrix:Matrix = Matrix.Zero();
-	private var _worldViewProjection:Matrix = Matrix.Zero();
-
+	
+	private var _effect:Effect;
 	private var _cachedDefines:String;
 	
-	private var _enablePosition:Bool = false;
-
 	public var renderList(never, set):Array<Mesh>;
+	/**
+	 * Set the render list (meshes to be rendered) used in the G buffer.
+	 */
 	private function set_renderList(meshes:Array<Mesh>):Array<Mesh> {
 		this._multiRenderTarget.renderList = cast meshes;
 		return cast meshes;
 	}
 
 	public var isSupported(get, never):Bool;
+	/**
+	 * Gets wether or not G buffer are supported by the running hardware.
+	 * This requires draw buffer supports
+	 */
 	private function get_isSupported():Bool {
 		return this._multiRenderTarget.isSupported;
 	}
 	
 	public var enablePosition(get, set):Bool;
+	/**
+	 * Gets wether or not position are enabled for the G buffer.
+	 */
 	inline private function get_enablePosition():Bool {
 		return this._enablePosition;
 	}
+	/**
+	 * Sets wether or not position are enabled for the G buffer.
+	 */
 	private function set_enablePosition(enable:Bool):Bool {
 		this._enablePosition = enable;
 		this.dispose();
@@ -54,7 +61,29 @@ class GeometryBufferRenderer {
 		return enable;
 	}
 
-	
+	/**
+	 * Gets the scene associated with the buffer.
+	 */
+	public var scene(get, never):Scene;
+	inline function get_scene():Scene {
+		return this._scene;
+	}
+
+	/**
+	 * Gets the ratio used by the buffer during its creation.
+	 * How big is the buffer related to the main canvas.
+	 */
+	public var ratio(get, never):Float;
+	inline function get_ratio():Float {
+		return this._ratio;
+	}
+
+
+	/**
+	 * Creates a new G Buffer for the scene. @see GeometryBufferRenderer
+	 * @param scene The scene the buffer belongs to
+	 * @param ratio How big is the buffer related to the main canvas.
+	 */		
 	public function new(scene:Scene, ratio:Float = 1) {
 		this._scene = scene;
 		this._ratio = ratio;
@@ -63,6 +92,12 @@ class GeometryBufferRenderer {
 		this._createRenderTargets();
 	}
 
+	/**
+	 * Checks wether everything is ready to render a submesh to the G buffer.
+	 * @param subMesh the submesh to check readiness for
+	 * @param useInstances is the mesh drawn using instance or not
+	 * @returns true if ready otherwise false
+	 */
 	public function isReady(subMesh:SubMesh, useInstances:Bool):Bool {
 		var material:Material = subMesh.getMaterial();
 		
@@ -134,19 +169,31 @@ class GeometryBufferRenderer {
 		return this._effect.isReady();
 	}
 
-	public function getGBuffer():MultiRenderTarget {
+	/**
+	 * Gets the current underlying G Buffer.
+	 * @returns the buffer
+	 */
+	inline public function getGBuffer():MultiRenderTarget {
 		return this._multiRenderTarget;
 	}
 	
 	public var samples(get, set):Int;
+	/**
+	 * Gets the number of samples used to render the buffer (anti aliasing).
+	 */
 	inline function get_samples():Int {
         return this._multiRenderTarget.samples;
     }
+	/**
+	 * Sets the number of samples used to render the buffer (anti aliasing).
+	 */
     inline function set_samples(value:Int):Int {
         return this._multiRenderTarget.samples = value;
     }
 
-	// Methods
+	/**
+	 * Disposes the renderer and frees up associated resources.
+	 */
 	public function dispose() {
 		this.getGBuffer().dispose();
 	}

@@ -9,6 +9,8 @@ import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.Scene;
 
+import com.babylonhx.postprocess.renderpipeline.pipelines.StandardRenderingPipeline;
+
 /**
  * ...
  * @author Krtolica Vujadin
@@ -20,7 +22,7 @@ class LOD {
 		camera.attachControl();
 		var hemi = new HemisphericLight("hemi", new Vector3(0, 1.0, 0), scene);
 		
-		scene.fogColor = scene.clearColor;
+		scene.fogColor.copyFromColor4(scene.clearColor);
 		scene.fogMode = Scene.FOGMODE_LINEAR;
 		scene.fogStart = 10;
 		scene.fogEnd = 50;
@@ -29,8 +31,8 @@ class LOD {
 		var materialAmiga = new StandardMaterial("amiga", scene);
 		materialAmiga.diffuseTexture = new Texture("assets/img/amiga.jpg", scene);
 		materialAmiga.emissiveColor = new Color3(0.5, 0.5, 0.5);
-		untyped materialAmiga.diffuseTexture.uScale = 5;
-		untyped materialAmiga.diffuseTexture.vScale = 5;
+		materialAmiga.diffuseTexture.uScale = 5;
+		materialAmiga.diffuseTexture.vScale = 5;
 		
 		var materialRed = new StandardMaterial("red", scene);
 		materialRed.emissiveColor = new Color3(0.5, 0, 0);

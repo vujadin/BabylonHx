@@ -18,11 +18,11 @@ class Particles3 {
 	
 	var math = Math;
 	var ps:ParticleSystem;
-
+	
+	
 	public function new(scene:Scene) {		
-		
 		var camera = new ArcRotateCamera("cam", -1.57079633, 1.57079633, 5, new Vector3(0, 0, 0), scene);
-		camera.attachControl(this, true);
+		camera.attachControl();
 		
 		var light = new HemisphericLight("light1", new Vector3(0, 1, 0), scene);
 		light.intensity = 0.7;

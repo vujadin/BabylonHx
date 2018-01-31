@@ -24,7 +24,7 @@ class PostprocessBloom {
 
 	public function new(scene:Scene) {
 		var camera = new ArcRotateCamera("Camera", 0, 0, 10, Vector3.Zero(), scene);
-		camera.attachControl(this);
+		camera.attachControl();
 		var light = new DirectionalLight("dir01", new Vector3(0, -1, -0.2), scene);
 		var light2 = new DirectionalLight("dir02", new Vector3(-1, -2, -1), scene);
 		light.position = new Vector3(0, 30, 0);
@@ -64,7 +64,7 @@ class PostprocessBloom {
 		cast(cube.material, StandardMaterial).diffuseColor = new Color3(0, 0, 0);
 		cast(cube.material, StandardMaterial).specularColor = new Color3(0, 0, 0);
 		cast(cube.material, StandardMaterial).emissiveColor = new Color3(1.0, 0, 0);
-		   
+		
 		// Post-process
 		var blurWidth = 1.0;
 		
@@ -86,7 +86,7 @@ class PostprocessBloom {
 		
 		// Animations
 		var alpha = 0.0;
-		scene.registerBeforeRender(function(scene:Scene, es:Null<EventState>) {
+		scene.registerBeforeRender(function(_, _) {
 			sphere0.position = new Vector3(20 * Math.sin(alpha), 0, 20 * Math.cos(alpha));
 			sphere1.position = new Vector3(20 * Math.sin(alpha), 0, -20 * Math.cos(alpha));
 			sphere2.position = new Vector3(20 * Math.cos(alpha), 0, 20 * Math.sin(alpha));

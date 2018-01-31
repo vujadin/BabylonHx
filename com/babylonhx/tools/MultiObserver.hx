@@ -33,7 +33,9 @@ class MultiObserver<T> {
 		result._observables = observables;
 		
 		for (observable in observables) {
-			result._observers.push(observable.add(callback, mask, false, scope));
+			if (observable != null) {
+				result._observers.push(observable);
+			}
 		}
 		
 		return result;

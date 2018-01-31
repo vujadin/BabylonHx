@@ -4,6 +4,8 @@ import com.babylonhx.events.PointerEvent;
 import com.babylonhx.materials.EffectCreationOptions;
 import com.babylonhx.materials.Material;
 import com.babylonhx.materials.UniformBuffer;
+import com.babylonhx.materials.textures.DummyInternalTextureTracker;
+import com.babylonhx.materials.textures.IInternalTextureTracker;
 import com.babylonhx.materials.textures.InternalTexture;
 import com.babylonhx.materials.textures.RenderTargetCreationOptions;
 import com.babylonhx.math.Scalar;
@@ -357,7 +359,6 @@ import openfl.display.OpenGLView;
 	private var _activeChannel:Int = 0;
 	private var _currentTextureChannel:Int = -1;
 	public var _boundTexturesCache:Map<Int, InternalTexture> = new Map();
-	private var _boundTexturesStack:Array<InternalTexture> = [];
 	private var _currentEffect:Effect;
 	private var _currentProgram:GLProgram;
 	private var _compiledEffects:Map<String, Effect> = new Map<String, Effect>();
@@ -375,6 +376,8 @@ import openfl.display.OpenGLView;
 	private var _currentInstanceLocations:Array<Int> = [];
 	private var _currentInstanceBuffers:Array<WebGLBuffer> = [];
 	private var _textureUnits:Int32Array;
+	private var _firstBoundInternalTextureTracker:DummyInternalTextureTracker = new DummyInternalTextureTracker();
+	private var _lastBoundInternalTextureTracker:DummyInternalTextureTracker = new DummyInternalTextureTracker();
 
 	public var _canvasClientRect:Dynamic = { x: 0, y: 0, width: 960, height: 640 };
 
@@ -640,9 +643,9 @@ import openfl.display.OpenGLView;
 			this._caps.vertexArrayObject = true;
 		} 
 		else {
-			vertexArrayObjectExtension = gl.getExtension('OES_vertex_array_object');
+			//vertexArrayObjectExtension = gl.getExtension('OES_vertex_array_object');
 			if (vertexArrayObjectExtension != null) {
-				this._caps.vertexArrayObject = true;
+				//this._caps.vertexArrayObject = true;
 				//untyped gl.createVertexArray = vertexArrayObjectExtension.createVertexArrayOES;
 				//untyped gl.bindVertexArray = vertexArrayObjectExtension.bindVertexArrayOES;
 				//untyped gl.deleteVertexArray = vertexArrayObjectExtension.deleteVertexArrayOES;
@@ -656,9 +659,9 @@ import openfl.display.OpenGLView;
 			this._caps.instancedArrays = true;
 		} 
 		else {
-			instanceExtension = gl.getExtension('ANGLE_instanced_arrays');			
+			//instanceExtension = gl.getExtension('ANGLE_instanced_arrays');			
 			if (instanceExtension != null) {
-				this._caps.instancedArrays = true;
+				//this._caps.instancedArrays = true;
 				//untyped gl.drawArraysInstanced = instanceExtension.drawArraysInstancedANGLE;
 				//untyped gl.drawElementsInstanced = instanceExtension.drawElementsInstancedANGLE;
 				//untyped gl.vertexAttribDivisor = instanceExtension.vertexAttribDivisorANGLE;
@@ -804,6 +807,8 @@ import openfl.display.OpenGLView;
         for (i in 0...this._caps.maxVertexAttribs) {
             this._currentBufferPointers[i] = new BufferPointer();
         }
+		
+		this._linkTrackers(this._firstBoundInternalTextureTracker, this._lastBoundInternalTextureTracker);
 		
 		for (entry in Reflect.fields(this._caps)) {
 			trace(entry + ' , ' + Reflect.field(this._caps, entry));
@@ -4361,12 +4366,18 @@ import openfl.display.OpenGLView;
 	}
 	
 	private function _moveBoundTextureOnTop(internalTexture:InternalTexture) {
-        var index = this._boundTexturesStack.indexOf(internalTexture);
+        if (this.disableTextureBindingOptimization || this._lastBoundInternalTextureTracker.previous == internalTexture) {
+			return;
+		}
 		
-        if (index > -1 && index != this._boundTexturesStack.length - 1) {
-            this._boundTexturesStack.splice(index, 1);
-            this._boundTexturesStack.push(internalTexture);
-        }
+		// Remove
+		this._linkTrackers(internalTexture.previous, internalTexture.next);
+		
+		// Bind last to it
+		this._linkTrackers(this._lastBoundInternalTextureTracker.previous, internalTexture);
+		
+		// Bind to dummy
+		this._linkTrackers(internalTexture, this._lastBoundInternalTextureTracker);
     }
 	
 	private function _getCorrectTextureChannel(channel:Int, ?internalTexture:InternalTexture):Int {
@@ -4394,26 +4405,33 @@ import openfl.display.OpenGLView;
 					
 					// We need to recycle the oldest bound texture, sorry.
 					this._textureCollisions.addCount(1, false);
-					return this._removeDesignatedSlot(this._boundTexturesStack[0]);
+					return this._removeDesignatedSlot(cast this._firstBoundInternalTextureTracker.next);
 				}
 			}
 		}
 		
         return channel;
     }
+	
+	private function _linkTrackers(previous:IInternalTextureTracker, next:IInternalTextureTracker) {
+		previous.next = next;
+		next.previous = previous;
+	}
 
     private function _removeDesignatedSlot(internalTexture:InternalTexture):Int {
         var currentSlot = internalTexture._designatedSlot;
-        internalTexture._designatedSlot = -1;
-        var index = this._boundTexturesStack.indexOf(internalTexture);
+        if (currentSlot == -1) {
+			return -1;
+		}
 		
-        if (index > -1) {
-            this._boundTexturesStack.splice(index, 1);
-			if (currentSlot > -1) {
-                this._boundTexturesCache[currentSlot] = null;
-                this._nextFreeTextureSlots.push(currentSlot);
-            }
-        }
+		internalTexture._designatedSlot = -1;
+		
+		// Remove from bound list
+		this._linkTrackers(internalTexture.previous, internalTexture.next);
+		
+		// Free the slot
+		this._boundTexturesCache[currentSlot] = null;
+		this._nextFreeTextureSlots.push(currentSlot);
 		
 		return currentSlot;
     }
@@ -4449,7 +4467,9 @@ import openfl.display.OpenGLView;
 					if (slotIndex > -1) {
 						this._nextFreeTextureSlots.splice(slotIndex, 1);
 					}
-					this._boundTexturesStack.push(texture);
+					
+					this._linkTrackers(this._lastBoundInternalTextureTracker.previous, texture);
+                    this._linkTrackers(texture, this._lastBoundInternalTextureTracker);
 				}
 				
 				texture._designatedSlot = this._activeChannel;

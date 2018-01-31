@@ -17,11 +17,9 @@ import com.babylonhx.Scene;
  */
 class GridMaterialTest {
 
-	public function new(scene:Scene) {
-		
+	public function new(scene:Scene) {		
 		// This creates and positions a free camera (non-mesh)
-		var camera = new FreeCamera("camera1", new Vector3(0, 5, -10), scene);
-		//camera.setCameraRigMode(Camera.RIG_MODE_VR, { } );
+		var camera = new FreeCamera("camera1", new Vector3(0, 20, -150), scene);
 		
 		// This targets the camera to scene origin
 		camera.setTarget(Vector3.Zero());
@@ -35,9 +33,14 @@ class GridMaterialTest {
 		// Default intensity is 1. Let's dim the light a small amount
 		light.intensity = 0.7;
 		
+		var sphere = Mesh.CreateSphere("sphere1", 16, 20, scene);
+		sphere.position.y = 10;
+		
 		// Our built-in 'ground' shape. Params: name, width, depth, subdivs, scene
-		var ground = Mesh.CreateGround("ground1", 6, 6, 2, scene);
-		ground.material = new GridMaterial("gridmat", scene);
+		var ground = Mesh.CreatePlane("ground1", 200, scene);
+		ground.rotation.x = Math.PI / 2;
+		var gridmat = new GridMaterial("gridmat", scene);
+		ground.material = gridmat;
 		
 		scene.getEngine().runRenderLoop(function () {
             scene.render();

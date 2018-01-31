@@ -20,7 +20,7 @@ class LensFlares {
 
 	public function new(scene:Scene) {
 		var camera = new ArcRotateCamera("Camera", 0, 0, 10, Vector3.Zero(), scene);
-		camera.attachControl(this);
+		camera.attachControl();
 		camera.alpha = 2.8;
 		camera.beta = 2.25;
 		

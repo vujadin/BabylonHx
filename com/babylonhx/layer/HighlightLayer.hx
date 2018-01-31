@@ -696,11 +696,11 @@ class HighlightLayer {
 		var meshExcluded = this._excludedMeshes[mesh.uniqueId];
 		if (meshExcluded == null) {
 			this._excludedMeshes[mesh.uniqueId] = {
-				mesh: mesh,
-				beforeRender: mesh.onBeforeRenderObservable.add(function(mesh:Mesh, _) {
+				mesh: cast mesh,
+				beforeRender: mesh.onBeforeRenderObservable.add(function(mesh:AbstractMesh, _) {
 					mesh.getEngine().setStencilBuffer(false);
 				}),
-				afterRender: mesh.onAfterRenderObservable.add(function(mesh:Mesh, _) {
+				afterRender: mesh.onAfterRenderObservable.add(function(mesh:AbstractMesh, _) {
 					mesh.getEngine().setStencilBuffer(true);
 				})
 			}
@@ -760,12 +760,12 @@ class HighlightLayer {
 		}
 		else {
 			this._meshes.set(mesh.uniqueId, {
-				mesh: mesh,
+				mesh: cast mesh,
 				color: color,
 				// Lambda required for capture due to Observable this context
-				observerHighlight: mesh.onBeforeRenderObservable.add(function(mesh:Mesh, _) {
+				observerHighlight: mesh.onBeforeRenderObservable.add(function(mesh:AbstractMesh, _) {
 					if (this._excludedMeshes[mesh.uniqueId] != null) {
-						this.defaultStencilReference(mesh, null);
+						this.defaultStencilReference(cast mesh, null);
 					}
 					else {
 						mesh.getScene().getEngine().setStencilFunctionReference(this._instanceGlowingMeshStencilReference);
@@ -838,7 +838,7 @@ class HighlightLayer {
 	/**
 	 * Force the stencil to the normal expected value for none glowing parts
 	 */
-	private function defaultStencilReference(mesh:Mesh, _) {
+	private function defaultStencilReference(mesh:AbstractMesh, _) {
 		mesh.getScene().getEngine().setStencilFunctionReference(HighlightLayer.normalMeshStencilReference);
 	}
 

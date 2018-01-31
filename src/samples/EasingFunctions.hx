@@ -1,6 +1,7 @@
 package samples;
 
 import com.babylonhx.animations.Animation;
+import com.babylonhx.animations.IAnimationKey;
 import com.babylonhx.animations.easing.BezierCurveEase;
 import com.babylonhx.animations.easing.CircleEase;
 import com.babylonhx.animations.easing.EasingFunction;
@@ -22,7 +23,7 @@ class EasingFunctions {
 	public function new(scene:Scene) {
 		var light = new PointLight("Omni", new Vector3(0, 100, 100), scene);
 		var camera = new ArcRotateCamera("Camera", 0, 0.8, 100, Vector3.Zero(), scene);
-		camera.attachControl(this, true);
+		camera.attachControl();
 		
 		// Torus
 		var torus = Mesh.CreateTorus("torus", 8, 2, 32, scene, false);
@@ -37,15 +38,15 @@ class EasingFunctions {
 		// ------------------------------------------
 		
 		//Create a Vector3 animation at 30 FPS
-		var animationTorus = new Animation("torusEasingAnimation", "position", 30, Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CYCLE);
+		var animationTorus = new Animation("torusEasingAnimation", "position.x", 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
 
 		// the torus destination position
 		var nextPos = torus.position.add(new Vector3( -80, 0, 0));
 		
 		// Animation keys
-		var keysTorus:Array<BabylonFrame> = [];
-		keysTorus.push({ frame: 0, value: torus.position });
-		keysTorus.push({ frame: 120, value: nextPos });
+		var keysTorus:Array<IAnimationKey> = [];
+		keysTorus.push({ frame: 0, value: 0 });
+		keysTorus.push({ frame: 120, value: -80 });
 		animationTorus.setKeys(keysTorus);
 		
 		// Adding an easing function
@@ -89,7 +90,7 @@ class EasingFunctions {
 		
 		// Create the animation
 		var animationBezierTorus = new Animation("animationBezierTorus", "position", 30, Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CYCLE);
-		var keysBezierTorus:Array<BabylonFrame> = [];
+		var keysBezierTorus:Array<IAnimationKey> = [];
 		keysBezierTorus.push({ frame: 0, value: bezierTorus.position });
 		keysBezierTorus.push({ frame: 120, value: bezierTorus.position.add(new Vector3(-80, 0, 0)) });
 		animationBezierTorus.setKeys(keysBezierTorus);
@@ -107,9 +108,8 @@ class EasingFunctions {
 		torus0.position.z = -30;
 		torus0.material = materialBox;
 		
-		Animation.CreateAndStartAnimation("anim", torus0, "position", 30, 120,
-				 torus0.position, torus0.position.add(new Vector3( -80, 0, 0)));
-				 
+		Animation.CreateAndStartAnimation("anim", torus0, "position", 30, 120, torus0.position, torus0.position.add(new Vector3(-80, 0, 0)));
+		
 		scene.getEngine().runRenderLoop(function () {
             scene.render();
         });

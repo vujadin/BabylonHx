@@ -30,7 +30,7 @@ class Particles2 {
 		emitter0.isVisible = false;
 		
 		// Custom shader for particles
-		ShadersStore.Shaders["myParticle.fragment"] =
+		ShadersStore.Shaders["myParticleFragmentShader"] =
 		"#ifdef GL_ES\n" +
 		"precision highp float;\n" +
 		"#endif\n" +

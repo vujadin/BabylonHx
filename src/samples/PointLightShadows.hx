@@ -1,21 +1,24 @@
 package samples;
 
 import com.babylonhx.Scene;
-import com.babylonhx.Engine;
+import com.babylonhx.engine.Engine;
 import com.babylonhx.Node;
 import com.babylonhx.math.Axis;
 import com.babylonhx.math.Color3;
+import com.babylonhx.math.Color4;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.Mesh;
+import com.babylonhx.mesh.MeshBuilder;
 import com.babylonhx.cameras.ArcRotateCamera;
 import com.babylonhx.lights.PointLight;
 import com.babylonhx.lights.SpotLight;
 import com.babylonhx.lights.HemisphericLight;
 import com.babylonhx.lights.shadows.ShadowGenerator;
-import com.babylonhx.materials.textures.procedurals.standard.BrickProceduralTexture;
-import com.babylonhx.materials.textures.procedurals.standard.RoadProceduralTexture;
+import com.babylonhx.materials.textures.procedurals.standard.Brick;
+import com.babylonhx.materials.textures.procedurals.standard.Road;
 import com.babylonhx.materials.StandardMaterial;
 import com.babylonhx.utils.Keycodes;
+import com.babylonhx.collisions.CollisionCoordinator;
 
 
 /**
@@ -28,9 +31,13 @@ class PointLightShadows {
 	
 	
 	public function new(scene:Scene) {
+		var engine = scene.getEngine();
+		
+		scene.collisionCoordinator = new CollisionCoordinator(scene);
+		
 		var bgcolor = Color3.FromHexString('#101230');
-		scene.clearColor = bgcolor;
-		scene.ambientColor = bgcolor;
+		scene.clearColor = new Color4(bgcolor.r, bgcolor.g, bgcolor.b, 1.0);
+		scene.ambientColor.copyFromColor4(scene.clearColor);
 		scene.fogMode = Scene.FOGMODE_LINEAR;
 		scene.fogColor = bgcolor;
 		scene.fogDensity = 0.03;
@@ -55,19 +62,19 @@ class PointLightShadows {
 		var shadowGenerator = new ShadowGenerator(1024, torch);
 		shadowGenerator.setDarkness(0.2);
 		//shadowGenerator.usePoissonSampling = true;
-		shadowGenerator.useBlurVarianceShadowMap = true;
+		shadowGenerator.useBlurCloseExponentialShadowMap = true;
 		shadowGenerator.blurBoxOffset = 1.0;
 		shadowGenerator.blurScale = 20;
 		//shadowGenerator.bias = 0.00001;
 
 		// materials
-		var brickTexture = new BrickProceduralTexture("text", 512, scene);
+		var brickTexture = new Brick("text", 512, scene);
 		brickTexture.numberOfBricksHeight = 5;
 		brickTexture.numberOfBricksWidth = 5;
 		var wallMat = new StandardMaterial("wmat", scene);
 		wallMat.diffuseTexture = brickTexture;
 
-		var customProcTextmacadam = new RoadProceduralTexture("customtext", 512, scene);
+		var customProcTextmacadam = new Road("customtext", 512, scene);
 		var groundMat = new StandardMaterial("gmat", scene);
 		groundMat.diffuseTexture = customProcTextmacadam;
 		untyped groundMat.diffuseTexture.uScale = 10;
@@ -87,32 +94,32 @@ class PointLightShadows {
 			
 		//player ----
 		var player:Player = new Player();
-		player.mesh = Mesh.CreateSphere("playerbody", { segments: 8, diameterX: 1.8, diameterY: 1.8, diameterZ: 1.8 }, scene);
+		player.mesh = MeshBuilder.CreateSphere("playerbody", { segments: 8, diameterX: 1.8, diameterY: 1.8, diameterZ: 1.8 }, scene);
 		player.mesh.material = player1Mat;
 		player.mesh.position.y = 0.9;
 	
-		var playere1 = Mesh.CreateSphere("eye1", { segments: 8, diameterX: 0.5, diameterY: 0.5, diameterZ: 0.5 }, scene);
+		var playere1 = MeshBuilder.CreateSphere("eye1", { segments: 8, diameterX: 0.5, diameterY: 0.5, diameterZ: 0.5 }, scene);
 		playere1.material = playereMat;
 		playere1.position.y = 0.5;
 		playere1.position.z = 0.5;
 		playere1.position.x = -0.3;
 		playere1.parent = player.mesh;
 	
-		var playere2 = Mesh.CreateSphere("eye2", { segments: 8, diameterX: 0.5, diameterY: 0.5, diameterZ: 0.5 }, scene);
+		var playere2 = MeshBuilder.CreateSphere("eye2", { segments: 8, diameterX: 0.5, diameterY: 0.5, diameterZ: 0.5 }, scene);
 		playere2.material = playereMat;
 		playere2.position.y = 0.5;
 		playere2.position.z = 0.5;
 		playere2.position.x = 0.3;
 		playere2.parent = player.mesh;
 	
-		var playereb1 = Mesh.CreateSphere("eye1b", { segments: 8, diameterX: 0.25, diameterY: 0.25, diameterZ: 0.25 }, scene);
+		var playereb1 = MeshBuilder.CreateSphere("eye1b", { segments: 8, diameterX: 0.25, diameterY: 0.25, diameterZ: 0.25 }, scene);
 		playereb1.material = playerbMat;
 		playereb1.position.y = 0.5;
 		playereb1.position.z = 0.7;
 		playereb1.position.x = -0.3;
 		playereb1.parent = player.mesh;
 	
-		var playereb2 = Mesh.CreateSphere("eye2b", { segments: 8, diameterX: 0.25, diameterY: 0.25, diameterZ: 0.25 }, scene);
+		var playereb2 = MeshBuilder.CreateSphere("eye2b", { segments: 8, diameterX: 0.25, diameterY: 0.25, diameterZ: 0.25 }, scene);
 		playereb2.material = playerbMat;
 		playereb2.position.y = 0.5;
 		playereb2.position.z = 0.7;
@@ -126,7 +133,7 @@ class PointLightShadows {
 		player.nextspeed = Vector3.Zero();
 		player.nexttorch = Vector3.Zero();
 
-		var lightImpostor = Mesh.CreateSphere("sphere1", { segments: 16, diameterX: 0.1, diameterY: 0.1, diameterZ: 0.1 }, scene);
+		var lightImpostor = MeshBuilder.CreateSphere("sphere1", { segments: 16, diameterX: 0.1, diameterY: 0.1, diameterZ: 0.1 }, scene);
 		var lightImpostorMat = new StandardMaterial("mat", scene);
 		lightImpostor.material = lightImpostorMat;
 		lightImpostorMat.emissiveColor = Color3.Yellow();
@@ -138,7 +145,7 @@ class PointLightShadows {
 
 		// ground
 		 
-		var ground = Mesh.CreatePlane("g", { width: 120, height: 120 }, scene);
+		var ground = MeshBuilder.CreatePlane("g", { width: 120, height: 120 }, scene);
 		ground.position = new Vector3(0, 0, 0);
 		ground.rotation.x = Math.PI / 2;
 		ground.material = groundMat;
@@ -149,7 +156,7 @@ class PointLightShadows {
 			var px = Math.random() * 100 - 50;
 			var pz = Math.random() * 100 - 50;
 			if ((px > 4 || px < -4) && (pz > 4 || pz < -4)) {
-				var wall = Mesh.CreateBox("w" + i, { width: 3, height: 3, depth: 3 }, scene);
+				var wall = MeshBuilder.CreateBox("w" + i, { width: 3, height: 3, depth: 3 }, scene);
 				wall.position = new Vector3(px, 1.5, pz);
 				if (Math.random() > 0.5) {
 					wall.scaling.x = 3;
@@ -165,7 +172,7 @@ class PointLightShadows {
 		}
 
 		//keypress events
-		Engine.keyDown.push(function(keyCode:Int) {
+		engine.keyDown.push(function(keyCode:Int) {
 			if (keyCode == Keycodes.left) {
 				keysDown[Keycodes.left] = true;
 			}
@@ -179,7 +186,7 @@ class PointLightShadows {
 				keysDown[Keycodes.down] = true;
 			}
 		});
-		Engine.keyUp.push(function(keyCode:Int) {
+		engine.keyUp.push(function(keyCode:Int) {
 			if (keyCode == Keycodes.left) {
 				keysDown[Keycodes.left] = false;
 			}
@@ -196,7 +203,7 @@ class PointLightShadows {
 		
 		var tempv = Vector3.Zero();
 		var v = 0.5;
-		scene.registerBeforeRender(function () {			
+		scene.registerBeforeRender(function (_, _) {			
 			//player speed
 			player.nextspeed.x = 0.0;
 			player.nextspeed.z = 0.00001;

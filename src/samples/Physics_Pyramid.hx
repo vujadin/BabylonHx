@@ -33,7 +33,7 @@ class Physics_Pyramid {
 
 	public function new(scene:Scene) {
 				
-		scene.enablePhysics(new Vector3(0, -290, 0), new CannonPlugin());
+		scene.enablePhysics(new Vector3(0, -9, 0), new OimoPlugin());
 						
 		var camera = new ArcRotateCamera("Camera", 0.95, 1.4, 1800, new Vector3(0, 150, 0), scene);
 		camera.attachControl(this);
@@ -105,7 +105,7 @@ class Physics_Pyramid {
 		physOpt.restitution = 0.2;
 		
 		var height = 12;
-		var depth = 1;
+		var depth = 2;
 		var sx = 60;
 		var sy = 40;
 		var sz = 60;

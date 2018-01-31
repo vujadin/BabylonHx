@@ -137,7 +137,7 @@ class FireMaterial extends PushMaterial {
 		}
 		
 		// Values that need to be evaluated on every frame
-		MaterialHelper.PrepareDefinesForFrameBoundValues(scene, engine, defines, useInstances, this._shouldTurnAlphaTestOn(mesh));
+		MaterialHelper.PrepareDefinesForFrameBoundValues(scene, engine, defines, useInstances);
 		
 		// Attribs
 		MaterialHelper.PrepareDefinesForAttributes(mesh, defines, false, true);
