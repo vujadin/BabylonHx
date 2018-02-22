@@ -127,12 +127,12 @@ class SSAORenderingPipeline extends PostProcessRenderPipeline {
 		this._createSSAOCombinePostProcess(combineRatio);
 		
 		// Set up pipeline
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), SSAOOriginalSceneColorEffect, function() { return this._originalColorPostProcess; }, true));
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), SSAORenderEffect, function() { return this._ssaoPostProcess; }, true));
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), SSAOBlurHRenderEffect, function() { return this._blurHPostProcess; }, true));
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), SSAOBlurVRenderEffect, function() { return this._blurVPostProcess; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), SSAOOriginalSceneColorEffect, function() { return [this._originalColorPostProcess]; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), SSAORenderEffect, function() { return [this._ssaoPostProcess]; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), SSAOBlurHRenderEffect, function() { return [this._blurHPostProcess]; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), SSAOBlurVRenderEffect, function() { return [this._blurVPostProcess]; }, true));
 		
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), SSAOCombineRenderEffect, function() { return this._ssaoCombinePostProcess; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), SSAOCombineRenderEffect, function() { return [this._ssaoCombinePostProcess]; }, true));
 		
 		// Finish
 		scene.postProcessRenderPipelineManager.addPipeline(this);

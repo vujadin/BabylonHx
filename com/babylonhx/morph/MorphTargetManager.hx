@@ -6,7 +6,7 @@ import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.Tools;
 
-import lime.utils.Float32Array;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 /**
  * ...

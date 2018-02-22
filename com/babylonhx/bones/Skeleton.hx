@@ -11,7 +11,7 @@ import com.babylonhx.animations.Animation;
 import com.babylonhx.animations.Animatable;
 import com.babylonhx.animations.AnimationRange;
 
-import lime.utils.Float32Array;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 import haxe.ds.Vector;
 

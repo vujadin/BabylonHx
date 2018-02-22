@@ -132,7 +132,7 @@ package com.babylonhx.animations;
             var fps = runtimeAnimations[0].animation.framePerSecond;
             var currentFrame = runtimeAnimations[0].currentFrame;
             var adjustTime = frame - currentFrame;
-            var delay = adjustTime * 1000 / fps;
+            var delay = adjustTime * 1000 / (fps * this.speedRatio);
 			if (this._localDelayOffset == -1) {
 				this._localDelayOffset = 0;
 			}

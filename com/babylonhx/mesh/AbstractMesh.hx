@@ -37,10 +37,10 @@ import com.babylonhx.tools.EventState;
 import com.babylonhx.math.Tools.BabylonMinMax;
 import com.babylonhx.math.Tools as MathTools;
 
-import lime.graphics.opengl.GLQuery;
-import lime.utils.UInt32Array;
-import lime.utils.Float32Array;
-import lime.utils.UInt16Array;
+import com.babylonhx.utils.GL.GLQuery;
+import com.babylonhx.utils.typedarray.UInt32Array;
+import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.UInt16Array;
 
 typedef DepthSortedFacet = {
 	ind: Int,
@@ -176,8 +176,8 @@ typedef DepthSortedFacet = {
 	public var onBeforeDrawObservable:Observable<AbstractMesh> = new Observable<AbstractMesh>();
 
 	private var _onBeforeDrawObserver:Observer<AbstractMesh>;
-	public var onBeforeDraw(never, set):AbstractMesh->Null<EventState<AbstractMesh>>->Void;
-	private function set_onBeforeDraw(callback:AbstractMesh->Null<EventState<AbstractMesh>>->Void):AbstractMesh->Null<EventState<AbstractMesh>>->Void {
+	public var onBeforeDraw(never, set):AbstractMesh->Null<EventState>->Void;
+	private function set_onBeforeDraw(callback:AbstractMesh->Null<EventState>->Void) {
 		if (this._onBeforeDrawObserver != null) {
 			this.onBeforeDrawObservable.remove(this._onBeforeDrawObserver);
 		}
@@ -194,8 +194,8 @@ typedef DepthSortedFacet = {
 	*/
 	public var onCollideObservable:Observable<AbstractMesh> = new Observable<AbstractMesh>();
 	private var _onCollideObserver:Observer<AbstractMesh>;
-	public var onCollide(never, set):AbstractMesh->Null<EventState<AbstractMesh>>->Void;
-	private function set_onCollide(callback:AbstractMesh->Null<EventState<AbstractMesh>>->Void):AbstractMesh->Null<EventState<AbstractMesh>>->Void {
+	public var onCollide(never, set):AbstractMesh->Null<EventState>->Void;
+	private function set_onCollide(callback:AbstractMesh->Null<EventState>->Void) {
 		if (this._onCollideObserver != null) {
 			this.onCollideObservable.remove(this._onCollideObserver);
 		}
@@ -210,8 +210,8 @@ typedef DepthSortedFacet = {
 	*/
 	public var onCollisionPositionChangeObservable:Observable<Vector3> = new Observable<Vector3>();
 	private var _onCollisionPositionChangeObserver:Observer<Vector3>;
-	public var onCollisionPositionChange(never, set):Vector3->Null<EventState<Vector3>>->Void;
-	private function set_onCollisionPositionChange(callback:Vector3->Null<EventState<Vector3>>->Void):Vector3->Null<EventState<Vector3>>->Void {
+	public var onCollisionPositionChange(never, set):Vector3->Null<EventState>->Void;
+	private function set_onCollisionPositionChange(callback:Vector3->Null<EventState>->Void) {
 		if (this._onCollisionPositionChangeObserver != null) {
 			this.onCollisionPositionChangeObservable.remove(this._onCollisionPositionChangeObserver);
 		}
@@ -517,7 +517,6 @@ typedef DepthSortedFacet = {
 	public var _masterMesh:AbstractMesh;
 
 	public var _boundingInfo:BoundingInfo;
-	public var _isDisposed:Bool = false;
 	public var _renderId:Int = 0;
 
 	public var subMeshes:Array<SubMesh>;
@@ -576,13 +575,6 @@ typedef DepthSortedFacet = {
 		
 		this._resyncLightSources();
 	}
-	
-	/**
-     * Boolean : true if the mesh has been disposed.  
-     */
-    public function isDisposed():Bool {
-        return this._isDisposed;
-    }
 
 	/**
 	 * Returns the string "AbstractMesh"
@@ -1894,7 +1886,7 @@ typedef DepthSortedFacet = {
 			normals = this.getVerticesData(VertexBuffer.NormalKind);
 		} 
 		else {
-			normals = new Float32Array();
+			normals = new Float32Array( #if (purejs) [] #end );
 		}
 		
 		VertexData.ComputeNormals(positions, indices, normals, { useRightHandedSystem: this.getScene().useRightHandedSystem });

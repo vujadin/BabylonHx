@@ -14,10 +14,10 @@ import com.babylonhx.materials.Effect;
 
 import haxe.Json;
 
-import lime.utils.ArrayBufferView;
-import lime.utils.Float32Array;
-import lime.utils.UInt32Array;
-import lime.graphics.opengl.GLVertexArrayObject;
+import com.babylonhx.utils.typedarray.ArrayBufferView;
+import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.UInt32Array;
+import com.babylonhx.utils.GL.GLVertexArrayObject;
 
 
 /**
@@ -56,7 +56,7 @@ import lime.graphics.opengl.GLVertexArrayObject;
 	private var _vertexBuffers:Map<String, VertexBuffer>;
 	private var _isDisposed:Bool = false;
 	private var _extend:BabylonMinMax;
-	private var _boundingBias:Vector2;
+	private var _boundingBias:Vector2 = null;
 	public var _delayInfo:Array<String> = []; //ANY
 	private var _indexBuffer:WebGLBuffer;
 	private var _indexBufferIsUpdatable:Bool = false;
@@ -1160,35 +1160,44 @@ import lime.graphics.opengl.GLVertexArrayObject;
 			}
 		} */
 		else if (parsedGeometry.positions != null && parsedGeometry.normals != null && parsedGeometry.indices != null) {
-			mesh.setVerticesData(VertexBuffer.PositionKind, new Float32Array(parsedGeometry.positions), false);
-			mesh.setVerticesData(VertexBuffer.NormalKind, new Float32Array(parsedGeometry.normals), false);
+			var pos:Array<Float> = cast parsedGeometry.positions;	// BHX: otherwise it won't work on cpp
+			mesh.setVerticesData(VertexBuffer.PositionKind, new Float32Array(pos), false);
+			var nrm:Array<Float> = cast parsedGeometry.normals;		// BHX: otherwise it won't work on cpp
+			mesh.setVerticesData(VertexBuffer.NormalKind, new Float32Array(nrm), false);
 			
 			if (parsedGeometry.uvs != null) {
-				mesh.setVerticesData(VertexBuffer.UVKind, new Float32Array(parsedGeometry.uvs), false);
+				var uvs:Array<Float> = cast parsedGeometry.uvs;		// BHX: otherwise it won't work on cpp
+				mesh.setVerticesData(VertexBuffer.UVKind, new Float32Array(uvs), false);
 			}
 			
 			if (parsedGeometry.uvs2 != null) {
-				mesh.setVerticesData(VertexBuffer.UV2Kind, new Float32Array(parsedGeometry.uvs2), false);
+				var uvs2:Array<Float> = cast parsedGeometry.uvs2;	// BHX: otherwise it won't work on cpp
+				mesh.setVerticesData(VertexBuffer.UV2Kind, new Float32Array(uvs2), false);
 			}
 			
 			if (parsedGeometry.uvs3 != null) {
-				mesh.setVerticesData(VertexBuffer.UV3Kind, new Float32Array(parsedGeometry.uvs3), false);
+				var uvs3:Array<Float> = cast parsedGeometry.uvs3;	// BHX: otherwise it won't work on cpp
+				mesh.setVerticesData(VertexBuffer.UV3Kind, new Float32Array(uvs3), false);
 			}
 			
 			if (parsedGeometry.uvs4 != null) {
-				mesh.setVerticesData(VertexBuffer.UV4Kind, new Float32Array(parsedGeometry.uvs4), false);
+				var uvs4:Array<Float> = cast parsedGeometry.uvs4;	// BHX: otherwise it won't work on cpp
+				mesh.setVerticesData(VertexBuffer.UV4Kind, new Float32Array(uvs4), false);
 			}
 			
 			if (parsedGeometry.uvs5 != null) {
-				mesh.setVerticesData(VertexBuffer.UV5Kind, new Float32Array(parsedGeometry.uvs5), false);
+				var uvs5:Array<Float> = cast parsedGeometry.uvs5;	// BHX: otherwise it won't work on cpp
+				mesh.setVerticesData(VertexBuffer.UV5Kind, new Float32Array(uvs5), false);
 			}
 			
 			if (parsedGeometry.uvs6 != null) {
-				mesh.setVerticesData(VertexBuffer.UV6Kind, new Float32Array(parsedGeometry.uvs6), false);
+				var uvs6:Array<Float> = cast parsedGeometry.uvs6;	// BHX: otherwise it won't work on cpp
+				mesh.setVerticesData(VertexBuffer.UV6Kind, new Float32Array(uvs6), false);
 			}
 			
 			if (parsedGeometry.colors != null) {
-				mesh.setVerticesData(VertexBuffer.ColorKind, new Float32Array(Color4.CheckColors4(parsedGeometry.colors, Std.int(parsedGeometry.positions.length / 3))), false);
+				var colors:Array<Float> = cast parsedGeometry.colors;	// BHX: otherwise it won't work on cpp
+				mesh.setVerticesData(VertexBuffer.ColorKind, new Float32Array(Color4.CheckColors4(colors, Std.int(parsedGeometry.positions.length / 3))), false);
 			}
 			
 			if (parsedGeometry.matricesIndices != null) {
@@ -1204,11 +1213,12 @@ import lime.graphics.opengl.GLVertexArrayObject;
 						floatIndices.push(matricesIndex >> 24);
 					}
 					
-					mesh.setVerticesData(VertexBuffer.MatricesIndicesKind, new Float32Array(floatIndices), false);
+					mesh.setVerticesData(VertexBuffer.MatricesIndicesKind, new Float32Array( #if purejs untyped #end floatIndices), false);
 				} 
 				else {
 					parsedGeometry.matricesIndices._isExpanded = null;
-					mesh.setVerticesData(VertexBuffer.MatricesIndicesKind, new Float32Array(parsedGeometry.matricesIndices), false);
+					var midc:Array<Int> = cast parsedGeometry.matricesIndices;
+					mesh.setVerticesData(VertexBuffer.MatricesIndicesKind, new Float32Array(midc), false);
 				}
 			}
 			
@@ -1225,24 +1235,28 @@ import lime.graphics.opengl.GLVertexArrayObject;
 						floatIndices.push(matricesIndex >> 24);
 					}
 					
-					mesh.setVerticesData(VertexBuffer.MatricesIndicesExtraKind, new Float32Array(floatIndices), false);
+					mesh.setVerticesData(VertexBuffer.MatricesIndicesExtraKind, new Float32Array( #if purejs untyped #end floatIndices), false);
 				} 
 				else {
-					parsedGeometry.matricesIndices._isExpanded = null;
-					mesh.setVerticesData(VertexBuffer.MatricesIndicesExtraKind, new Float32Array(parsedGeometry.matricesIndicesExtra), false);
+					parsedGeometry.matricesIndicesExtra._isExpanded = null;
+					var midc:Array<Int> = cast parsedGeometry.matricesIndicesExtra;
+					mesh.setVerticesData(VertexBuffer.MatricesIndicesExtraKind, new Float32Array(midc), false);
 				}
 			}
 			
 			if (parsedGeometry.matricesWeights != null) {
 				Geometry._CleanMatricesWeights(parsedGeometry, mesh);
-                mesh.setVerticesData(VertexBuffer.MatricesWeightsKind, parsedGeometry.matricesWeights, parsedGeometry.matricesWeights._updatable);
+				var mwgh:Array<Float> = cast parsedGeometry.matricesWeights;
+                mesh.setVerticesData(VertexBuffer.MatricesWeightsKind, mwgh, parsedGeometry.matricesWeights._updatable);
 			}
 			
-			if (parsedGeometry.matricesWeightsExtra != null) {       
-                mesh.setVerticesData(VertexBuffer.MatricesWeightsExtraKind, parsedGeometry.matricesWeightsExtra, parsedGeometry.matricesWeights._updatable);
+			if (parsedGeometry.matricesWeightsExtra != null) {
+				var mwghe:Array<Float> = cast parsedGeometry.matricesWeightsExtra;
+                mesh.setVerticesData(VertexBuffer.MatricesWeightsExtraKind, mwghe, parsedGeometry.matricesWeights._updatable);
             }
 			
-			mesh.setIndices(new UInt32Array(parsedGeometry.indices));
+			var idc:Array<Int> = cast parsedGeometry.indices; 	
+			mesh.setIndices(new UInt32Array(idc));
 		}
 		
 		// SubMeshes

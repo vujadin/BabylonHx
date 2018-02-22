@@ -10,96 +10,74 @@ import com.babylonhx.tools.EventState;
  * ...
  * @author Krtolica Vujadin
  */
-
+/**
+ * This represents a set of one or more post processes in Babylon.
+ * A post process can be used to apply a shader to a texture after it is rendered.
+ * @example https://doc.babylonjs.com/how_to/how_to_use_postprocessrenderpipeline
+ */
 @:expose('BABYLON.PostProcessRenderEffect') class PostProcessRenderEffect {
 	
 	private var _engine:Engine;
 
-	private var _postProcesses:Map<String, PostProcess>;
-	private var _getPostProcess:Void->PostProcess;
+	private var _postProcesses:Map<String, Array<PostProcess>>;
+	@:allow(com.babylonhx.postprocess.renderpipeline.PostProcessRenderPipeline)
+	private var _getPostProcesses:Void->Array<PostProcess>;
 
 	private var _singleInstance:Bool;
 
 	private var _cameras:Map<String, Camera>;
 	private var _indicesForCamera:Map<String, Array<Int>>;
 
-	private var _renderPasses:Map<String, PostProcessRenderPass>;
-	private var _renderEffectAsPasses:Map<String, PostProcessRenderEffect>;
-
 	// private
 	public var _name:String;
-
-	public var applyParameters:PostProcess->Void;
 	
 
-	public function new(engine:Engine, name:String, getPostProcess:Void->PostProcess, singleInstance:Bool = true) {
+	/**
+	 * Instantiates a post process render effect.
+	 * A post process can be used to apply a shader to a texture after it is rendered.
+	 * @param engine The engine the effect is tied to
+	 * @param name The name of the effect
+	 * @param getPostProcesses A function that returns a set of post processes which the effect will run in order to be run.
+	 * @param singleInstance False if this post process can be run on multiple cameras. (default: true)
+	 */
+	public function new(engine:Engine, name:String, getPostProcesses:Void->Array<PostProcess>, singleInstance:Bool = true) {
 		this._engine = engine;
 		this._name = name;
 		this._singleInstance = singleInstance;
 		
-		this._getPostProcess = getPostProcess;
+		this._getPostProcesses = getPostProcesses;
 		
 		this._cameras = new Map<String, Camera>();
 		this._indicesForCamera = new Map<String, Array<Int>>();
 		
-		this._postProcesses = new Map<String, PostProcess>();
-		
-		this._renderPasses = new Map<String, PostProcessRenderPass>();
-		this._renderEffectAsPasses = new Map<String, PostProcessRenderEffect>();
+		this._postProcesses = new Map();
 	}
 	
+	/**
+	 * Checks if all the post processes in the effect are supported.
+	 */
 	public var isSupported(get, never):Bool;
 	private function get_isSupported():Bool {
 		for (index in this._postProcesses.keys()) {
-			if (!this._postProcesses[index].isSupported) {
-				return false;
+			for (ppIndex in 0...this._postProcesses[index].length) {
+				if (!this._postProcesses[index][ppIndex].isSupported) {
+					return false;
+				}
 			}
 		}
 		
 		return true;
 	}
 
-	public function _update() {
-		for (renderPassName in this._renderPasses.keys()) {
-			this._renderPasses[renderPassName]._update();
-		}
-	}
+	/**
+	 * Updates the current state of the effect
+	 */
+	public function _update() { }
 
-	public function addPass(renderPass:PostProcessRenderPass) {
-		this._renderPasses.set(renderPass._name, renderPass);
-		
-		this._linkParameters();
-	}
-
-	public function removePass(renderPass:PostProcessRenderPass) {
-		this._renderPasses[renderPass._name] = null;
-		this._renderPasses.remove(renderPass._name);
-		
-		this._linkParameters();
-	}
-
-	public function addRenderEffectAsPass(renderEffect:PostProcessRenderEffect) {
-		this._renderEffectAsPasses.set(renderEffect._name, renderEffect);
-		
-		this._linkParameters();
-	}
-
-	public function getPass(passName:String):PostProcessRenderPass {
-		for (renderPassName in this._renderPasses.keys()) {
-			if (renderPassName == passName) {
-				return this._renderPasses[passName];
-			}
-		}
-		return null;
-	}
-
-	public function emptyPasses() {
-		this._renderPasses = new Map();
-		
-		this._linkParameters();
-	}
-
-	// private
+	/**
+	 * Attaches the effect on cameras
+	 * @param cameras The camera to attach to.
+	 */
 	public function _attachCameras(cameras:Dynamic) {
 		var cameraKey:String = "";
 		
@@ -120,31 +98,33 @@ import com.babylonhx.tools.EventState;
 				cameraKey = cameraName;
 			}
 			
-			this._postProcesses.set(cameraKey, this._postProcesses.exists(cameraKey) ? this._postProcesses[cameraKey] : this._getPostProcess());
-			
-			var index = camera.attachPostProcess(this._postProcesses[cameraKey]);
-			
-			if (!this._indicesForCamera.exists(cameraName)) {
-				this._indicesForCamera.set(cameraName, []);
+			if (this._postProcesses[cameraKey] == null) {
+				var postProcess = this._getPostProcesses();
+				if (postProcess != null) {
+					this._postProcesses[cameraKey] = postProcess;
+				}
 			}
 			
-			this._indicesForCamera[cameraName].push(index);
-			
-			if (!this._cameras.exists(camera.name)) {
-				this._cameras.set(cameraName, camera);
+			if (this._indicesForCamera[cameraName] == null) {
+				this._indicesForCamera[cameraName] = [];
 			}
 			
-			for (passName in this._renderPasses.keys()) {
-				this._renderPasses[passName]._incRefCount();
+			for (postProcess in this._postProcesses[cameraKey]) {
+				var index = camera.attachPostProcess(postProcess);
+				
+				this._indicesForCamera[cameraName].push(index);
+			}
+			
+			if (this._cameras[cameraName] == null) {
+				this._cameras[cameraName] = camera;
 			}
 		}
-		
-		this._linkParameters();
 	}
 
-	// private
-	//public _detachCameras(cameras:Camera);
-	//public _detachCameras(cameras:Camera[]);
+	/**
+	 * Detatches the effect on cameras
+	 * @param cameras The camera to detatch from.
+	 */
 	public function _detachCameras(cameras:Dynamic) {
 		var cams = Tools.MakeArray(cameras != null ? cameras : this._cameras);
 		
@@ -156,22 +136,27 @@ import com.babylonhx.tools.EventState;
 			var camera:Camera = c;
 			var cameraName = camera.name;
 			
-			camera.detachPostProcess(this._postProcesses[this._singleInstance ? "0" : cameraName], this._indicesForCamera[cameraName]);
+			for (postProcess in this._postProcesses[this._singleInstance ? "0" : cameraName]) {
+				camera.detachPostProcess(postProcess);
+			}
 			
-			this._cameras.remove(cameraName);
-			this._indicesForCamera.remove(cameraName);
-			
-			for (passName in this._renderPasses.keys()) {
-				this._renderPasses[passName]._decRefCount();
+			if (this._cameras[cameraName] != null) {
+				//this._indicesForCamera.splice(index, 1);
+				this._cameras[cameraName] = null;
 			}
 		}
 	}
 
-	// private
-	//public _enable(cameras:Camera);
-	//public _enable(cameras:Camera[]);
+	/**
+	 * Enables the effect on given cameras
+	 * @param cameras The camera to enable.
+	 */
 	public function _enable(cameras:Dynamic) {
 		var cams = Tools.MakeArray(cameras != null ? cameras : this._cameras);
+		
+		if (cams == null) {
+			return;
+		}
 		
 		for (c in cams) {
 			var camera:Camera = c;
@@ -179,35 +164,41 @@ import com.babylonhx.tools.EventState;
 			
 			for (j in 0...this._indicesForCamera[cameraName].length) {
 				if (camera._postProcesses[this._indicesForCamera[cameraName][j]] == null) {
-					c.attachPostProcess(this._postProcesses[this._singleInstance ? "0" : cameraName], this._indicesForCamera[cameraName][j]);
+					for (postProcess in this._postProcesses[this._singleInstance ? "0" : cameraName]) {
+						camera.attachPostProcess(postProcess, this._indicesForCamera[cameraName][j]);
+					}
 				}
-			}
-			
-			for (passName in this._renderPasses.keys()) {
-				this._renderPasses[passName]._incRefCount();
 			}
 		}
 	}
 
-	// private
-	//public _disable(cameras:Camera);
-	//public _disable(cameras:Camera[]);
+	/**
+	 * Disables the effect on the given cameras
+	 * @param cameras The camera to disable.
+	 */
 	public function _disable(cameras:Dynamic) {
 		var cams = Tools.MakeArray(cameras != null ? cameras : this._cameras);
+		
+		if (cams == null) {
+			return;
+		}
 		
 		for (c in cams) {
 			var camera:Camera = c;
 			var cameraName = c.name;
 			
-			camera.detachPostProcess(this._postProcesses[this._singleInstance ? "0" : cameraName], this._indicesForCamera[cameraName]);
-			
-			for (passName in this._renderPasses.keys()) {
-				this._renderPasses[passName]._decRefCount();
+			for (postProcess in this._postProcesses[this._singleInstance ? "0" : cameraName]) {
+				camera.detachPostProcess(postProcess);
 			}
 		}
 	}
 
-	public function getPostProcess(?camera:Camera):PostProcess {
+	/**
+	 * Gets a list of the post processes contained in the effect.
+	 * @param camera The camera to get the post processes on.
+	 * @returns The list of the post processes in the effect.
+	 */
+	public function getPostProcess(?camera:Camera):Array<PostProcess> {
 		if (this._singleInstance) {
 			return this._postProcesses["0"];
 		}
@@ -216,28 +207,6 @@ import com.babylonhx.tools.EventState;
 				return null;
 			}
 			return this._postProcesses[camera.name];
-		}
-	}
-
-	private function _linkParameters() {
-		for (index in this._postProcesses.keys()) {
-			if (this.applyParameters != null) {
-				this.applyParameters(this._postProcesses[index]);
-			}
-			
-			this._postProcesses[index].onBeforeRenderObservable.add(function(effect:Effect, _) {
-				this._linkTextures(effect);
-			});
-		}
-	}
-
-	private function _linkTextures(effect:Effect) {
-		for (renderPassName in this._renderPasses.keys()) {
-			effect.setTexture(renderPassName, this._renderPasses[renderPassName].getRenderTexture());
-		}
-		
-		for (renderEffectName in this._renderEffectAsPasses.keys()) {
-			effect.setTextureFromPostProcess(renderEffectName + "Sampler", this._renderEffectAsPasses[renderEffectName].getPostProcess());
 		}
 	}
 	

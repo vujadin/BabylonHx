@@ -70,20 +70,22 @@ class BackgroundMaterialDefines extends MaterialDefines implements IImageProcess
 	 */
 	public var NOISE:Bool = false;
 
-	// Image Processing Configuration.
-	public var IMAGEPROCESSING:Bool = false;
-	public var VIGNETTE:Bool = false;
-	public var VIGNETTEBLENDMODEMULTIPLY:Bool = false;
-	public var VIGNETTEBLENDMODEOPAQUE:Bool = false;
-	public var TONEMAPPING:Bool = false;
-	public var CONTRAST:Bool = false;
-	public var COLORCURVES:Bool = false;
-	public var COLORGRADING:Bool = false;
-	public var COLORGRADING3D:Bool = false;
-	public var SAMPLER3DGREENDEPTH:Bool = false;
-	public var SAMPLER3DBGRMAP:Bool = false;
-	public var IMAGEPROCESSINGPOSTPROCESS:Bool = false;
-	public var EXPOSURE:Bool = false;
+	
+	// Image Processing Configuration.	
+	public var IMAGEPROCESSING:Int = 0;
+	public var VIGNETTE:Int = 0;
+	public var VIGNETTEBLENDMODEMULTIPLY:Int = 0;
+	public var VIGNETTEBLENDMODEOPAQUE:Int = 0;
+	public var TONEMAPPING:Int = 0;
+	public var CONTRAST:Int = 0;
+	public var COLORCURVES:Int = 0;
+	public var COLORGRADING:Int = 0;
+	public var COLORGRADING3D:Int = 0;
+	public var FROMLINEARSPACE:Int = 0;				// BHX: not used - needed because of IImageProcessingConfigurationDefines
+	public var SAMPLER3DGREENDEPTH:Int = 0;
+	public var SAMPLER3DBGRMAP:Int = 0;
+	public var IMAGEPROCESSINGPOSTPROCESS:Int = 0;
+	public var EXPOSURE:Int = 0;
 
 	// Reflection.
 	public var REFLECTION:Bool = false;
@@ -101,6 +103,7 @@ class BackgroundMaterialDefines extends MaterialDefines implements IImageProcess
 	public var REFLECTIONMAP_OPPOSITEZ:Bool = false;
 	public var LODINREFLECTIONALPHA:Bool = false;
 	public var GAMMAREFLECTION:Bool = false;
+	public var EQUIRECTANGULAR_RELFECTION_FOV:Bool = false;
 
 	// Default BJS.
 	public var MAINUV1:Bool = false;
@@ -121,8 +124,6 @@ class BackgroundMaterialDefines extends MaterialDefines implements IImageProcess
 	public var NONUNIFORMSCALING:Bool = false;		// BHX: always false
 	public var ALPHATEST:Bool = false;				// BHX: always false
 	public var DEPTHPREPASS:Bool = false;			// BHX: always false
-	
-	public var FROMLINEARSPACE:Bool = false;	// BHX: not used - needed because of IImageProcessingConfigurationDefines
 	
 
 	public function new() {
@@ -298,19 +299,19 @@ class BackgroundMaterialDefines extends MaterialDefines implements IImageProcess
 		this.PREMULTIPLYALPHA = false;
 		this.USERGBCOLOR = false;
 		this.NOISE = false;
-		this.IMAGEPROCESSING = false;
-		this.VIGNETTE = false;
-		this.VIGNETTEBLENDMODEMULTIPLY = false;
-		this.VIGNETTEBLENDMODEOPAQUE = false;
-		this.TONEMAPPING = false;
-		this.CONTRAST = false;
-		this.COLORCURVES = false;
-		this.COLORGRADING = false;
-		this.COLORGRADING3D = false;
-		this.SAMPLER3DGREENDEPTH = false;
-		this.SAMPLER3DBGRMAP = false;
-		this.IMAGEPROCESSINGPOSTPROCESS = false;
-		this.EXPOSURE = false;
+		this.IMAGEPROCESSING = 0;
+		this.VIGNETTE = 0;
+		this.VIGNETTEBLENDMODEMULTIPLY = 0;
+		this.VIGNETTEBLENDMODEOPAQUE = 0;
+		this.TONEMAPPING = 0;
+		this.CONTRAST = 0;
+		this.COLORCURVES = 0;
+		this.COLORGRADING = 0;
+		this.COLORGRADING3D = 0;
+		this.SAMPLER3DGREENDEPTH = 0;
+		this.SAMPLER3DBGRMAP = 0;
+		this.IMAGEPROCESSINGPOSTPROCESS = 0;
+		this.EXPOSURE = 0;
 		this.REFLECTION = false;
 		this.REFLECTIONMAP_3D = false;
 		this.REFLECTIONMAP_SPHERICAL = false;
@@ -377,43 +378,43 @@ class BackgroundMaterialDefines extends MaterialDefines implements IImageProcess
 		if (this.NOISE) {
 			result += "#define NOISE \n";
 		}
-		if (this.IMAGEPROCESSING) {
+		if (this.IMAGEPROCESSING != 0) {
 			result += "#define IMAGEPROCESSING \n";
 		}
-		if (this.VIGNETTE) {
+		if (this.VIGNETTE != 0) {
 			result += "#define VIGNETTE \n";
 		}
-		if (this.VIGNETTEBLENDMODEMULTIPLY) {
+		if (this.VIGNETTEBLENDMODEMULTIPLY != 0) {
 			result += "#define VIGNETTEBLENDMODEMULTIPLY \n";
 		}
-		if (this.VIGNETTEBLENDMODEOPAQUE) {
+		if (this.VIGNETTEBLENDMODEOPAQUE != 0) {
 			result += "#define VIGNETTEBLENDMODEOPAQUE \n";
 		}
-		if (this.TONEMAPPING) {
+		if (this.TONEMAPPING != 0) {
 			result += "#define TONEMAPPING \n";
 		}
-		if (this.CONTRAST) {
+		if (this.CONTRAST != 0) {
 			result += "#define CONTRAST \n";
 		}
-		if (this.COLORCURVES) {
+		if (this.COLORCURVES != 0) {
 			result += "#define COLORCURVES \n";
 		}
-		if (this.COLORGRADING) {
+		if (this.COLORGRADING != 0) {
 			result += "#define COLORGRADING \n";
 		}
-		if (this.COLORGRADING3D) {
+		if (this.COLORGRADING3D != 0) {
 			result += "#define COLORGRADING3D \n";
 		}
-		if (this.SAMPLER3DGREENDEPTH) {
+		if (this.SAMPLER3DGREENDEPTH != 0) {
 			result += "#define SAMPLER3DGREENDEPTH \n";
 		}
-		if (this.SAMPLER3DBGRMAP) {
+		if (this.SAMPLER3DBGRMAP != 0) {
 			result += "#define SAMPLER3DBGRMAP \n";
 		}
-		if (this.IMAGEPROCESSINGPOSTPROCESS) {
+		if (this.IMAGEPROCESSINGPOSTPROCESS != 0) {
 			result += "#define IMAGEPROCESSINGPOSTPROCESS \n";
 		}
-		if (this.EXPOSURE) {
+		if (this.EXPOSURE != 0) {
 			result += "#define EXPOSURE \n";
 		}
 		if (this.REFLECTION) {

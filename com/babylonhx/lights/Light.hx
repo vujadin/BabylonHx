@@ -183,9 +183,15 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	@serialize("lightmapMode")
 	private var _lightmapMode = 0;
 	public var lightmapMode(get, set):Int;
+	/**
+	 * Gets the lightmap mode of this light (should be one of the constants defined by Light.LIGHTMAP_x)
+	 */
 	private function get_lightmapMode():Int {
 		return this._lightmapMode;
 	}
+	/**
+         * Sets the lightmap mode of this light (should be one of the constants defined by Light.LIGHTMAP_x)
+         */
 	private function set_lightmapMode(value:Int):Int {
 		if (this._lightmapMode == value) {
 			return value;
@@ -197,17 +203,35 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	}
 
 	private var _parentedWorldMatrix:Matrix;
+	
+	/**
+	 * Shadow generator associted to the light.
+	 * Internal use only.
+	 */
 	public var _shadowGenerator:IShadowGenerator;
+	
+	/**
+	 * @ignore Internal use only.
+	 */
 	public var _excludedMeshesIds:Array<String> = [];
+	
+	/**
+	 * @ignore Internal use only.
+	 */
 	public var _includedOnlyMeshesIds:Array<String> = [];
 
-	// Light uniform buffer
+	/**
+	 * The current light unifom buffer.
+	 * @ignore Internal use only.
+	 */
 	public var _uniformBuffer:UniformBuffer;
 	
 
 	/**
 	 * Creates a Light object in the scene.  
 	 * Documentation : http://doc.babylonjs.com/tutorials/lights  
+	 * @param name The firendly name of the light
+	 * @param scene The scene the light belongs too 
 	 */
 	public function new(name:String, scene:Scene) {
 		super(name, scene);
@@ -222,7 +246,26 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	}
 
 	public function _buildUniformLayout() {
-		// Overridden
+		// to be overridden
+	}
+	
+	/**
+	 * Sets the passed Effect "effect" with the Light information.
+	 * @param effect The effect to update
+	 * @param lightIndex The index of the light in the effect to update
+	 * @returns The light
+	 */
+	public function transferToEffect(effect:Effect, lightIndex:String):Light {
+		// to be overridden
+		return this;
+	}
+	
+	/**
+	 * @ignore internal use only.
+	 */
+	public function _getWorldMatrix():Matrix {
+		// to be overridden
+		return Matrix.Identity();
 	}
 
 	/**
@@ -260,7 +303,8 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	}
 
 	/**
-	 * Returns the Light associated shadow generator.  
+	 * Returns the Light associated shadow generator if any.
+	 * @return the associated shadow generator.
 	 */
 	public function getShadowGenerator():IShadowGenerator {
 		return this._shadowGenerator;
@@ -268,19 +312,16 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 
 	/**
 	 * Returns a Vector3, the absolute light position in the World.  
+	 * @returns the world space position of the light
 	 */
 	public function getAbsolutePosition():Vector3 {
 		return Vector3.Zero();
 	}
 
-	public function transferToEffect(effect:Effect, lightIndex:String):Light { return this; }
-
-	public function _getWorldMatrix():Matrix {
-		return Matrix.Identity();
-	}
-
 	/**
-	 * Boolean : True if the light will affect the passed mesh.  
+	 * Specifies if the light will affect the passed mesh.
+	 * @param mesh The mesh to test against the light
+	 * @return true the mesh is affected otherwise, false.
 	 */
 	public function canAffectMesh(mesh:AbstractMesh):Bool {
 		if (mesh == null) {
@@ -307,7 +348,8 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	}
 
 	/**
-	 * Returns the light World matrix.  
+	 * Computes and Returns the light World matrix.
+	 * @returns the world matrix 
 	 */
 	override public function getWorldMatrix():Matrix {
 		this._currentRenderId = this.getScene().getRenderId();
@@ -369,7 +411,8 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	}
 
 	/**
-	 * Returns the light type ID (integer).  
+	 * Returns the light type ID (integer).
+	 * @returns The light Type id as a constant defines in Light.LIGHTTYPEID_x
 	 */
 	public function getTypeID():Int {
 		return 0;
@@ -377,13 +420,16 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 
 	/**
 	 * Returns the intensity scaled by the Photometric Scale according to the light type and intensity mode.
+	 * @returns the scaled intensity in intensity mode unit
 	 */
 	public function getScaledIntensity():Float {
 		return this._photometricScale * this.intensity;
 	}
 
 	/**
-	 * Returns a new Light object, named "name", from the current one.  
+	 * Returns a new Light object, named "name", from the current one.
+	 * @param name The name of the cloned light
+	 * @returns the new created light
 	 */
 	public function clone(name:String):Light {
 		// VK TODO:
@@ -433,7 +479,11 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 
 	/**
 	 * Creates a new typed light from the passed type (integer) : point light = 0, directional light = 1, spot light = 2, hemispheric light = 3.  
-	 * This new light is named "name" and added to the passed scene.  
+	 * This new light is named "name" and added to the passed scene.
+	 * @param type Type according to the types available in Light.LIGHTTYPEID_x
+	 * @param name The friendly name of the light
+	 * @param scene The scene the new light will belong to
+	 * @returns the constructor function
 	 */
 	static public function GetConstructorFromName(type:Int, name:String, scene:Scene):Void->Light {
 		switch (type) {
@@ -454,7 +504,10 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 	}
 
 	/**
-	 * Parses the passed "parsedLight" and returns a new instanced Light from this parsing.  
+	 * Parses the passed "parsedLight" and returns a new instanced Light from this parsing.
+	 * @param parsedLight The JSON representation of the light
+	 * @param scene The scene to create the parsed light in
+	 * @returns the created light after parsing
 	 */
 	public static function Parse(parsedLight:Dynamic, scene:Scene):Light {
 		var light = SerializationHelper.Parse(Light.GetConstructorFromName(parsedLight.type, parsedLight.name, scene), parsedLight, scene);
@@ -496,6 +549,10 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		}
 	}
 
+	/**
+	 * Forces the meshes to update their light related information in their rendering used effects
+	 * @ignore Internal Use Only
+	 */
 	public function _markMeshesAsLightDirty() {
 		for (mesh in this.getScene().meshes) {
 			if (mesh._lightSources.indexOf(this) != -1) {
@@ -569,6 +626,10 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		return photometricScale;
 	}
 
+	/**
+	 * Reorder the light in the scene according to their defined priority.
+	 * @ignore Internal Use Only
+	 */
 	private function _reorderLightsInScene() {
 		var scene = this.getScene();
 		if (this.renderPriority != 0) {

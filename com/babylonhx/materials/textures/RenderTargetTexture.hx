@@ -7,6 +7,7 @@ import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Color4;
+import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Tools as MathTools;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
@@ -62,8 +63,8 @@ import com.babylonhx.postprocess.PostProcessManager;
 	*/
 	public var onAfterUnbindObservable:Observable<RenderTargetTexture> = new Observable<RenderTargetTexture>();
 	private var _onAfterUnbindObserver:Observer<RenderTargetTexture>;
-	public var onAfterUnbind(never, set):RenderTargetTexture->Null<EventState<RenderTargetTexture>>->Void;
-	private  function set_onAfterUnbind(callback:RenderTargetTexture->Null<EventState<RenderTargetTexture>>->Void):RenderTargetTexture->Null<EventState<RenderTargetTexture>>->Void {
+	public var onAfterUnbind(never, set):RenderTargetTexture->Null<EventState>->Void;
+	private  function set_onAfterUnbind(callback:RenderTargetTexture->Null<EventState>->Void) {
 		if (this._onAfterUnbindObserver != null) {
 			this.onAfterUnbindObservable.remove(this._onAfterUnbindObserver);
 		}
@@ -78,8 +79,8 @@ import com.babylonhx.postprocess.PostProcessManager;
 	*/
 	public var onBeforeRenderObservable:Observable<Int> = new Observable<Int>();
 	private var _onBeforeRenderObserver:Observer<Int>;
-	public var onBeforeRender(never, set):Int->Null<EventState<Int>>->Void;
-	private function set_onBeforeRender(callback:Int->Null<EventState<Int>>->Void):Int->Null<EventState<Int>>->Void {
+	public var onBeforeRender(never, set):Int->Null<EventState>->Void;
+	private function set_onBeforeRender(callback:Int->Null<EventState>->Void) {
 		if (this._onBeforeRenderObserver != null) {
 			this.onBeforeRenderObservable.remove(this._onBeforeRenderObserver);
 		}
@@ -94,8 +95,8 @@ import com.babylonhx.postprocess.PostProcessManager;
 	*/
 	public var onAfterRenderObservable:Observable<Int> = new Observable<Int>();
 	private var _onAfterRenderObserver:Observer<Int>;
-	public var onAfterRender(never, set):Int->Null<EventState<Int>>->Void;
-	private function set_onAfterRender(callback:Int->Null<EventState<Int>>->Void):Int->Null<EventState<Int>>->Void {
+	public var onAfterRender(never, set):Int->Null<EventState>->Void;
+	private function set_onAfterRender(callback:Int->Null<EventState>->Void) {
 		if (this._onAfterRenderObserver != null) {
 			this.onAfterRenderObservable.remove(this._onAfterRenderObserver);
 		}
@@ -110,8 +111,8 @@ import com.babylonhx.postprocess.PostProcessManager;
 	*/
 	public var onClearObservable:Observable<Engine> = new Observable<Engine>();
 	private var _onClearObserver:Observer<Engine>;
-	public var onClear(never, set):Engine->Null<EventState<Engine>>->Void;
-	private function set_onClear(callback:Engine->Null<EventState<Engine>>->Void):Engine->Null<EventState<Engine>>->Void {
+	public var onClear(never, set):Engine->Null<EventState>->Void;
+	private function set_onClear(callback:Engine->Null<EventState>->Void) {
 		if (this._onClearObserver != null) {
 			this.onClearObservable.remove(this._onClearObserver);
 		}
@@ -149,7 +150,59 @@ import com.babylonhx.postprocess.PostProcessManager;
 		}
 	}
 	
+	/**
+     * Gets or sets the center of the bounding box associated with the texture (when in cube mode)
+     * It must define where the camera used to render the texture is set
+     */
+    public var boundingBoxPosition:Vector3 = Vector3.Zero();
+
+    private var _boundingBoxSize:Vector3;
+
+    /**
+     * Gets or sets the size of the bounding box associated with the texture (when in cube mode)
+     * When defined, the cubemap will switch to local mode
+     * @see https://community.arm.com/graphics/b/blog/posts/reflections-based-on-local-cubemaps-in-unity
+     * @example https://www.babylonjs-playground.com/#RNASML
+     */        
+	public var boundingBoxSize(get, set):Vector3;
+    function set_boundingBoxSize(value:Vector3):Vector3 {
+        if (this._boundingBoxSize != null && this._boundingBoxSize.equals(value)) {
+            return value;
+        }
+        this._boundingBoxSize = value;
+        var scene = this.getScene();
+        if (scene != null) {
+            scene.markAllMaterialsAsDirty(Material.TextureDirtyFlag);
+        }
+		return value;
+    }
+    inline function get_boundingBoxSize():Vector3 {
+        return this._boundingBoxSize;
+    }	
 	
+	/**
+	 * In case the RTT has been created with a depth texture, get the associated 
+	 * depth texture.
+	 * Otherwise, return null.
+	 */
+	public var depthStencilTexture:InternalTexture;
+	
+
+	/**
+	 * Instantiate a render target texture. This is mainly to render of screen the scene to for instance apply post processse
+	 * or used a shadow, depth texture...
+	 * @param name The friendly name of the texture
+	 * @param size The size of the RTT (number if square, or {with: number, height:number} or {ratio:} to define a ratio from the main scene)
+	 * @param scene The scene the RTT belongs to. The latest created scene will be used if not precised.
+	 * @param generateMipMaps True if mip maps need to be generated after render.
+	 * @param doNotChangeAspectRatio True to not change the aspect ratio of the scene in the RTT
+	 * @param type The type of the buffer in the RTT (int, half float, float...)
+	 * @param isCube True if a cube texture needs to be created
+	 * @param samplingMode The sampling mode to be usedwith the render target (Linear, Nearest...)
+	 * @param generateDepthBuffer True to generate a depth buffer
+	 * @param generateStencilBuffer True to generate a stencil buffer
+	 * @param isMulti True if multiple textures need to be created (Draw Buffers)
+	 */
 	public function new(name:String, size:Dynamic, scene:Scene, ?generateMipMaps:Bool, doNotChangeAspectRatio:Bool = true, type:Int = Engine.TEXTURETYPE_UNSIGNED_INT, isCube:Bool = false, samplingMode:Int = Texture.TRILINEAR_SAMPLINGMODE, generateDepthBuffer:Bool = true, generateStencilBuffer:Bool = false, isMulti:Bool = false) {
 		super(null, scene, !generateMipMaps);
 		scene = this.getScene();
@@ -558,7 +611,7 @@ import com.babylonhx.postprocess.PostProcessManager;
 		}
 		else if (!useCameraPostProcess || !scene.postProcessManager._prepareFrame(this._texture)) {
 			if (this._texture != null) {
-				engine.bindFramebuffer(this._texture, this.isCube ? faceIndex : 0, null, null, this.ignoreCameraViewport);
+				engine.bindFramebuffer(this._texture, this.isCube ? faceIndex : 0, null, null, this.ignoreCameraViewport, this.depthStencilTexture != null ? this.depthStencilTexture : null);
 			}
 		}
 		

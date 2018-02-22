@@ -7,7 +7,6 @@ import com.babylonhx.actions.ValueCondition;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.bones.Bone;
 import com.babylonhx.bones.Skeleton;
-import lime.utils.UInt32Array;
 //import com.babylonhx.cameras.AnaglyphArcRotateCamera;
 import com.babylonhx.cameras.AnaglyphFreeCamera;
 import com.babylonhx.cameras.ArcRotateCamera;
@@ -65,9 +64,10 @@ import haxe.io.Bytes;
 import haxe.Json;
 import haxe.Timer;
 
-import lime.utils.ArrayBuffer;
-import lime.utils.Float32Array;
-import lime.utils.Int32Array;
+import com.babylonhx.utils.typedarray.UInt32Array;
+import com.babylonhx.utils.typedarray.ArrayBuffer;
+import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.Int32Array;
 
 
 /**
@@ -257,7 +257,7 @@ import lime.utils.Int32Array;
                 var parsedData = Json.parse(data);
                 log = "";
                 //var fullDetails = SceneLoader.loggingLevel == SceneLoader.DETAILED_LOGGING;
-                if (meshesNames == null) {
+                if (meshesNames == "" || meshesNames == null) {
                     meshesNames = null;
                 } 
 				else if (!Std.is(meshesNames, Array)) {
@@ -427,7 +427,7 @@ import lime.utils.Int32Array;
 				
                 return true;
 				
-            } catch (err:Dynamic) {
+            }// catch (err:Dynamic) {
                 //let msg = logOperation("importMesh", parsedData ? parsedData.producer : "Unknown") + log;
                 //if (onError) {
                 //    onError(msg, err);
@@ -435,8 +435,8 @@ import lime.utils.Int32Array;
                 //    Tools.Log(msg);
                 //    throw err;
                 //}
-				Tools.Error('importMesh error!');
-            }
+				//Tools.Error('importMesh error! ' + err);
+            //}
 			
             return false;
         },

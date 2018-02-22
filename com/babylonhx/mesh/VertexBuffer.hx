@@ -2,7 +2,7 @@ package com.babylonhx.mesh;
 
 import com.babylonhx.engine.Engine;
 
-import lime.utils.Float32Array;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 
 /**
@@ -35,36 +35,29 @@ import lime.utils.Float32Array;
 	private var _size:Int;
 	private var _stride:Int;
 	private var _ownsBuffer:Bool;
+	private var _instanced:Bool;        
+	private var _instanceDivisor:Int;
+	
+	public var instanceDivisor(get, set):Int;
+	/**
+	 * Gets or sets the instance divisor when in instanced mode
+	 */
+	inline function get_instanceDivisor():Int {
+		return this._instanceDivisor;
+	}
+	function set_instanceDivisor(value:Int):Int {
+		this._instanceDivisor = value;
+		if (value == 0) {
+			this._instanced = false;
+		} 
+		else {
+			this._instanced = true;
+		}
+		return value;
+	} 
 	
 	
 	public function new(engine:Engine, data:Dynamic, kind:String, updatable:Bool, postponeInternalCreation:Bool = false, ?stride:Int, ?instanced:Bool, offset:Int = 0, ?size:Int) {		
-		if (stride == null) {		
-			// Deduce stride from kind
-			switch (kind) {
-				case VertexBuffer.PositionKind:
-					stride = 3;
-					
-				case VertexBuffer.NormalKind:
-					stride = 3;
-					
-				case VertexBuffer.UVKind, VertexBuffer.UV2Kind, VertexBuffer.UV3Kind, 
-					 VertexBuffer.UV4Kind, VertexBuffer.UV5Kind, VertexBuffer.UV6Kind:
-					stride = 2;
-					
-				case VertexBuffer.TangentKind, VertexBuffer.ColorKind:
-					stride = 4;
-					
-				case VertexBuffer.MatricesIndicesKind, VertexBuffer.MatricesIndicesExtraKind:
-					stride = 4;
-					
-				case VertexBuffer.MatricesWeightsKind, VertexBuffer.MatricesWeightsExtraKind:
-					stride = 4;
-					
-				default:
-					stride = 4;					
-			}
-		}
-		
 		if (Std.is(data, Buffer)) {
 			if (stride == null) {
 				stride = untyped data.getStrideSize();
@@ -74,11 +67,16 @@ import lime.utils.Float32Array;
 			this._ownsBuffer = false;
 		} 
 		else {
+			if (stride == null) {
+				stride = VertexBuffer.DeduceStride(kind);
+			}
 			this._buffer = new Buffer(engine, data, updatable, stride, postponeInternalCreation, instanced);			
 			this._ownsBuffer = true;
 		}
 		
 		this._stride = stride;
+		this._instanced = instanced != null ? instanced : false;
+		this._instanceDivisor = instanced ? 1 : 0;
 		
 		this._offset = offset;
 		this._size = size != null ? size : stride;
@@ -124,17 +122,21 @@ import lime.utils.Float32Array;
 	}
 	
 	inline public function getIsInstanced():Bool {
-		return this._buffer.getIsInstanced();
+		return this._instanced;
 	}
 	
 	/**
      * Returns the instancing divisor, zero for non-instanced (integer).  
      */
     public function getInstanceDivisor():Int {
-        return this._buffer.instanceDivisor;
+        return this._instanceDivisor;
     }
 
 	// Methods
+	/**
+	 * Creates the underlying WebGLBuffer from the passed numeric array or Float32Array.  
+	 * Returns the created WebGLBuffer.   
+	 */
 	public function create(?data:Float32Array) {		
 		return this._buffer.create(data);
 	}
@@ -148,14 +150,43 @@ import lime.utils.Float32Array;
 		this.create(data);
 	}
 
-	public function updateDirectly(data:Float32Array, offset:Int) {
+	/**
+	 * Updates directly the underlying WebGLBuffer according to the passed numeric array or Float32Array.  
+	 * Returns the directly updated WebGLBuffer. 
+	 */
+	inline public function updateDirectly(data:Float32Array, offset:Int) {
 		return this._buffer.updateDirectly(data, offset);		
 	}
 
-	inline public function dispose() {
+	/** 
+	 * Disposes the VertexBuffer and the underlying WebGLBuffer.  
+	 */
+	public function dispose() {
 		if (this._ownsBuffer) {
 			this._buffer.dispose();
 		}		
 	}	
+	
+	/**
+	 * Deduces the stride given a kind.
+	 * @param kind The kind string to deduce
+	 * @returns The deduced stride
+	 */
+	public static function DeduceStride(kind:String):Int {
+		switch (kind) {
+			case VertexBuffer.UVKind, VertexBuffer.UV2Kind, VertexBuffer.UV3Kind, VertexBuffer.UV4Kind, VertexBuffer.UV5Kind, VertexBuffer.UV6Kind:
+				return 2;
+				
+			case VertexBuffer.NormalKind, VertexBuffer.PositionKind:
+				return 3;
+				
+			case VertexBuffer.ColorKind, VertexBuffer.MatricesIndicesKind, VertexBuffer.MatricesIndicesExtraKind, 
+					VertexBuffer.MatricesWeightsKind, VertexBuffer.MatricesWeightsExtraKind, VertexBuffer.TangentKind:
+				return 4;
+				
+			default:
+				throw ("Invalid kind '" + kind + "'");
+		}
+	}
 	
 }

@@ -1,5 +1,6 @@
 package com.babylonhx.cameras;
 
+import com.babylonhx.Scene;
 import com.babylonhx.materials.textures.RenderTargetTexture;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
@@ -86,7 +87,7 @@ import com.babylonhx.culling.Ray;
 	public var isIntermediate:Bool = false;
 	
 	public var viewport:Viewport = new Viewport(0, 0, 1, 1);
-		
+	
 	@serialize()
 	public var layerMask:Int = 0xFFFFFFFF;
 	
@@ -104,6 +105,7 @@ import com.babylonhx.culling.Ray;
 	public var isStereoscopicSideBySide:Bool;
 	
 	public var _cameraRigParams:Dynamic;
+	@:allow(com.babylonhx.Scene) 
 	private var _rigCameras:Array<Camera> = [];
 	private var _rigPostProcess:PostProcess = null;
 	private var _webvrViewMatrix:Matrix = Matrix.Identity();

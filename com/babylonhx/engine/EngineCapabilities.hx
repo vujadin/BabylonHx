@@ -1,8 +1,14 @@
 package com.babylonhx.engine;
 
-import lime.graphics.opengl.ext.WEBGL_compressed_texture_s3tc;
-import lime.graphics.opengl.ext.EXT_texture_filter_anisotropic;
-import lime.graphics.opengl.ext.WEBGL_draw_buffers;
+#if (lime || openfl)
+typedef WEBGL_compressed_texture_s3tc = lime.graphics.opengl.ext.EXT_texture_compression_s3tc
+typedef EXT_texture_filter_anisotropic = lime.graphics.opengl.ext.EXT_texture_filter_anisotropic
+typedef WEBGL_draw_buffers = lime.graphics.opengl.ext.NV_draw_buffers
+#elseif (js || purejs) 
+typedef WEBGL_compressed_texture_s3tc = js.html.webgl.ExtensionCompressedTextureS3TC
+typedef EXT_texture_filter_anisotropic = js.html.webgl.ExtensionTextureFilterAnisotropic
+typedef WEBGL_draw_buffers = js.html.webgl.ExtensionDrawBuffers
+#end
 
 /**
  * ...
@@ -51,7 +57,7 @@ typedef IAMethods = {
 	public var textureHalfFloatRender:Bool;
 	public var textureLOD:Bool;
 	public var drawBuffersExtension:Bool;// WEBGL_draw_buffers;
-	public var depthTextureExtension:Bool;
+	public var depthTextureExtension:Dynamic;
 	public var colorBufferFloat:Bool;
 	
 	// BHx

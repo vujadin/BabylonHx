@@ -11,58 +11,120 @@ import com.babylonhx.cameras.Camera;
  * ...
  * @author Krtolica Vujadin
  */
+/**
+ * Base implementation of @see IShadowLight
+ * It groups all the common behaviour in order to reduce dupplication and better follow the DRY pattern.
+ */
 class ShadowLight extends Light implements IShadowLight {
 
 	public function _setDefaultShadowProjectionMatrix(matrix:Matrix, viewMatrix:Matrix, renderList:Array<AbstractMesh>) { }
 
+	private var _position:Vector3;
+	public function _setPosition(value:Vector3) {
+		this._position = value;
+	}
+	
+	public var position(get, set):Vector3;
+	/**
+	 * Sets the position the shadow will be casted from. Also use as the light position for both 
+	 * point and spot lights.
+	 */
 	@serializeAsVector3()
-	public var position:Vector3;
+	inline function get_position():Vector3 {
+		return this._position;
+	}
+	/**
+	 * Sets the position the shadow will be casted from. Also use as the light position for both 
+	 * point and spot lights.
+	 */
+	inline function set_position(value:Vector3):Vector3 {
+		this._setPosition(value);
+		return value;
+	}
 
 	private var _direction:Vector3;
-	@serializeAsVector3()
+	public function _setDirection(value:Vector3) {
+		this._direction = value;
+	}
+	
 	public var direction(get, set):Vector3;
-	private function get_direction():Vector3 {
+	/**
+	 * In 2d mode (needCube being false), gets the direction used to cast the shadow.
+	 * Also use as the light direction on spot and directional lights.
+	 */
+	@serializeAsVector3()
+	inline function get_direction():Vector3 {
 		return this._direction;
 	}
-	private function set_direction(value:Vector3):Vector3 {
-		return this._direction = value;
+	/**
+	 * In 2d mode (needCube being false), sets the direction used to cast the shadow.
+	 * Also use as the light direction on spot and directional lights.
+	 */
+	function set_direction(value:Vector3):Vector3 {
+		this._setDirection(value);
+		return value;
 	}
 
-	private var _shadowMinZ:Float = Math.NEGATIVE_INFINITY;
-	@serialize()
+	private var _shadowMinZ:Float;
+	
 	public var shadowMinZ(get, set):Float;
-	private function get_shadowMinZ():Float {
+	/**
+	 * Gets the shadow projection clipping minimum z value.
+	 */
+	@serialize()
+	inline function get_shadowMinZ():Float {
 		return this._shadowMinZ;
 	}
-	private function set_shadowMinZ(value:Float):Float {
+	/**
+	 * Sets the shadow projection clipping minimum z value.
+	 */
+	inline function set_shadowMinZ(value:Float):Float {
 		this._shadowMinZ = value;
 		this.forceProjectionMatrixCompute();
 		return value;
 	}
 
-	private var _shadowMaxZ:Float = Math.POSITIVE_INFINITY;
-	@serialize()
+	private var _shadowMaxZ:Float;
+	
 	public var shadowMaxZ(get, set):Float;
-	private function get_shadowMaxZ():Float {
+	/**
+	 * Sets the shadow projection clipping maximum z value.
+	 */
+	@serialize()
+	inline function get_shadowMaxZ():Float {
 		return this._shadowMaxZ;
 	}
-	private function set_shadowMaxZ(value:Float):Float {
+	/**
+	 * Gets the shadow projection clipping maximum z value.
+	 */
+	inline function set_shadowMaxZ(value:Float):Float {
 		this._shadowMaxZ = value;
 		this.forceProjectionMatrixCompute();
 		return value;
 	}
 
+	/**
+	 * Callback defining a custom Projection Matrix Builder.
+	 * This can be used to override the default projection matrix computation.
+	 */
 	public var customProjectionMatrixBuilder:Matrix->Array<AbstractMesh>->Matrix->Void = null;
 
+	/**
+	 * The transformed position. Position of the light in world space taking parenting in account.
+	 */
 	public var transformedPosition:Vector3;
 
+	/**
+	 * The transformed direction. Direction of the light in world space taking parenting in account.
+	 */
 	public var transformedDirection:Vector3;
 
 	private var _worldMatrix:Matrix;
 	private var _needProjectionMatrixCompute:Bool = true;
 
 	/**
-	 * Computes the light transformed position/direction in case the light is parented. Returns true if parented, else false.
+	 * Computes the transformed information (transformedPosition and transformedDirection in World space) of the current light
+	 * @returns true if the information has been computed, false if it does not need to (no parenting)
 	 */
 	public function computeTransformedInformation():Bool {
 		if (this.parent != null && this.parent.getWorldMatrix() != null) {

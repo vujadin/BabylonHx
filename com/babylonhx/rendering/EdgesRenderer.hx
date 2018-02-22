@@ -11,8 +11,8 @@ import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.cameras.Camera;
 
-import lime.utils.UInt32Array;
-import lime.utils.Float32Array;
+import com.babylonhx.utils.typedarray.UInt32Array;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 
 /**

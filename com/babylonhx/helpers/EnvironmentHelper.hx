@@ -456,7 +456,9 @@ class EnvironmentHelper {
             return { groundSize: groundSize, skyboxSize: skyboxSize, rootPosition: rootPosition };
         }
 		
-		var sceneExtends = this._scene.getWorldExtends();
+		var sceneExtends = this._scene.getWorldExtends(function(mesh:AbstractMesh):Bool {
+            return (mesh != this._ground && mesh != this._rootMesh && mesh != this._skybox);
+        });
 		var sceneDiagonal = sceneExtends.max.subtract(sceneExtends.min);
 		
 		if (this._options.sizeAuto) {

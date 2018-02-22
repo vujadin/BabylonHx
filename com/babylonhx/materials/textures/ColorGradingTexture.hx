@@ -5,8 +5,8 @@ import com.babylonhx.math.Matrix;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.Scene;
 
-import lime.utils.Float32Array;
-import lime.utils.UInt8Array;
+import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.UInt8Array;
 
 /**
  * ...

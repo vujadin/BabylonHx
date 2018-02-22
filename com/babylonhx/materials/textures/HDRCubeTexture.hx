@@ -5,16 +5,17 @@ import com.babylonhx.math.SphericalHarmonics;
 import com.babylonhx.math.SphericalPolynomial;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Tools;
+import com.babylonhx.math.Vector3;
 import com.babylonhx.engine.Engine;
 import com.babylonhx.tools.hdr.CubeMapToSphericalPolynomialTools;
 import com.babylonhx.tools.hdr.PMREMGenerator;
 import com.babylonhx.tools.hdr.HDRTools;
 
-import lime.utils.ArrayBuffer;
-import lime.utils.ArrayBufferView;
-import lime.utils.Float32Array;
-import lime.utils.UInt8Array;
-import lime.utils.Int32Array;
+import com.babylonhx.utils.typedarray.ArrayBuffer;
+import com.babylonhx.utils.typedarray.ArrayBufferView;
+import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.UInt8Array;
+import com.babylonhx.utils.typedarray.Int32Array;
 
 
 /**
@@ -75,6 +76,35 @@ class HDRCubeTexture extends BaseTexture {
 	//private inline function get_isBlocking():Bool {
 		//return this._isBlocking;
 	//}
+	
+	/**
+	 * Gets or sets the center of the bounding box associated with the cube texture
+	 * It must define where the camera used to render the texture was set
+	 */
+	public var boundingBoxPosition:Vector3 = Vector3.Zero();
+
+	private var _boundingBoxSize:Vector3;
+	public var boundingBoxSize(get, set):Vector3;
+	/**
+	 * Gets or sets the size of the bounding box associated with the cube texture
+	 * When defined, the cubemap will switch to local mode
+	 * @see https://community.arm.com/graphics/b/blog/posts/reflections-based-on-local-cubemaps-in-unity
+	 * @example https://www.babylonjs-playground.com/#RNASML
+	 */
+	function set_boundingBoxSize(value:Vector3):Vector3 {
+		if (this._boundingBoxSize != null && this._boundingBoxSize.equals(value)) {
+			return value;
+		}
+		this._boundingBoxSize = value;
+		var scene = this.getScene();
+		if (scene != null) {
+			scene.markAllMaterialsAsDirty(Material.TextureDirtyFlag);
+		}
+		return value;
+	}
+	inline function get_boundingBoxSize():Vector3 {
+		return this._boundingBoxSize;
+	}
 	
 
 	/**
@@ -463,6 +493,14 @@ class HDRCubeTexture extends BaseTexture {
 			texture.level = parsedTexture.level;
 			texture.coordinatesMode = parsedTexture.coordinatesMode;
 			texture.isBlocking = parsedTexture.isBlocking;
+		}
+		if (texture != null) {
+			if (parsedTexture.boundingBoxPosition != null) {
+				texture.boundingBoxPosition = Vector3.FromArray(cast parsedTexture.boundingBoxPosition);
+			}
+			if (parsedTexture.boundingBoxSize) {
+				texture.boundingBoxSize = Vector3.FromArray(cast parsedTexture.boundingBoxSize);
+			}
 		}
 		
 		return texture;

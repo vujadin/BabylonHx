@@ -1,6 +1,6 @@
 package com.babylonhx;
 
-import lime.graphics.opengl.GL;
+import com.babylonhx.utils.GL;
 
 /**
  * ...

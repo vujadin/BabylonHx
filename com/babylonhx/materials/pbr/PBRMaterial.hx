@@ -608,6 +608,16 @@ class PBRMaterial extends PBRBaseMaterial {
 		return _useRadianceOverAlpha = value;
 	}
 	
+	@serialize("useObjectSpaceNormalMap")
+    public var useObjectSpaceNormalMap(get, set):Bool;
+	function get_useObjectSpaceNormalMap():Bool {
+		return _useObjectSpaceNormalMap;
+	}
+	function set_useObjectSpaceNormalMap(value:Bool):Bool {
+		_markAllSubMeshesAsTexturesDirty();
+		return _useObjectSpaceNormalMap = value;
+	}
+	
 	/**
 	 * Allows using the bump map in parallax mode.
 	 */

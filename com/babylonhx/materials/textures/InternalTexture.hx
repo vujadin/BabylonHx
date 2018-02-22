@@ -1,15 +1,16 @@
 package com.babylonhx.materials.textures;
 
+import com.babylonhx.engine.DepthTextureCreationOptions;
 import com.babylonhx.engine.Engine;
 import com.babylonhx.tools.Observable;
 import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.math.SphericalPolynomial;
 
-import lime.utils.ArrayBuffer;
-import lime.utils.ArrayBufferView;
-import lime.graphics.opengl.GLTexture;
-import lime.graphics.opengl.GLFramebuffer;
-import lime.graphics.opengl.GLRenderbuffer;
+import com.babylonhx.utils.typedarray.ArrayBuffer;
+import com.babylonhx.utils.typedarray.ArrayBufferView;
+import com.babylonhx.utils.GL.GLTexture;
+import com.babylonhx.utils.GL.GLFramebuffer;
+import com.babylonhx.utils.GL.GLRenderbuffer;
 
 /**
  * ...
@@ -66,6 +67,10 @@ class InternalTexture implements ISmartArrayCompatible implements IInternalTextu
 	 * Texture content is raw 3D data
 	 */
 	public static inline var DATASOURCE_RAW3D:Int = 10;
+	/**
+     * Texture content is a depth texture
+     */
+    public static inline var DATASOURCE_DEPTHTEXTURE:Int = 11;
 
 	/**
 	 * Defines if the texture is ready
@@ -171,6 +176,7 @@ class InternalTexture implements ISmartArrayCompatible implements IInternalTextu
 	public var _compression:String;
 	public var _generateStencilBuffer:Bool;
 	public var _generateDepthBuffer:Bool;
+	public var _comparisonFunction:Int = 0;
 	public var _sphericalPolynomial:SphericalPolynomial;
 	public var _lodGenerationScale:Float;
     public var _lodGenerationOffset:Float;
@@ -295,6 +301,24 @@ class InternalTexture implements ISmartArrayCompatible implements IInternalTextu
 				proxy._swapAndDie(this);
 				
 				this.isReady = true;
+                return;
+				
+			case InternalTexture.DATASOURCE_DEPTHTEXTURE:
+                var depthTextureOptions:DepthTextureCreationOptions = {
+                    bilinearFiltering: this.samplingMode != Texture.BILINEAR_SAMPLINGMODE,
+                    comparisonFunction: this._comparisonFunction,
+                    generateStencil: this._generateStencilBuffer,
+                };
+				
+                if (this.isCube) {
+                    proxy = this._engine.createDepthStencilTexture({ width: this.width, height: this.height }, depthTextureOptions);
+                } 
+				else {
+                    proxy = this._engine.createDepthStencilCubeTexture(this.width, depthTextureOptions);
+                }
+                proxy._swapAndDie(this);
+				
+                this.isReady = true;
                 return;
 				
 			case InternalTexture.DATASOURCE_CUBE:

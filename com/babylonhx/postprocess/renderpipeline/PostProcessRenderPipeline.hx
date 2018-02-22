@@ -12,9 +12,6 @@ import com.babylonhx.tools.Tools;
 
 @:expose('BABYLON.PostProcessRenderPipeline') class PostProcessRenderPipeline {
 	
-	private static inline var PASS_EFFECT_NAME:String = "passEffect";
-	private static inline var PASS_SAMPLER_NAME:String = "passSampler";
-	
 	private var _engine:Engine;
 
 	private var _renderEffects:Map<String, PostProcessRenderEffect>;
@@ -128,66 +125,6 @@ import com.babylonhx.tools.Tools;
 		}
 	}
 
-	public function _enableDisplayOnlyPass(passName:String, cameras:Dynamic) {
-		var cams = Tools.MakeArray(cameras != null ? cameras : this._cameras);
-		
-		if (cams == null) {
-			return;
-		}
-		
-		var pass:PostProcessRenderPass = null;
-		
-		for (renderEffectName in this._renderEffects.keys()) {
-			if (this._renderEffects.exists(renderEffectName)) {
-				pass = this._renderEffects[renderEffectName].getPass(passName);
-				
-				if (pass != null) {
-					break;
-				}
-			}
-		}
-		
-		if (pass == null) {
-			return;
-		}
-		
-		for (renderEffectName in this._renderEffects.keys()) {
-			if (this._renderEffects.exists(renderEffectName)) {
-				this._renderEffects[renderEffectName]._disable(cams);
-			}
-		}
-		
-		pass._name = PostProcessRenderPipeline.PASS_SAMPLER_NAME;
-		
-		for (c in cams) {
-			var camera:Camera = c;
-			var cameraName = c.name;
-			
-			this._renderEffectsForIsolatedPass[cameraName] = this._renderEffectsForIsolatedPass[cameraName] != null ? this._renderEffectsForIsolatedPass[cameraName] : new PostProcessRenderEffect(this._engine, PostProcessRenderPipeline.PASS_EFFECT_NAME, function() { return new DisplayPassPostProcess(PostProcessRenderPipeline.PASS_EFFECT_NAME, 1.0, null, null, this._engine, true); } );
-			this._renderEffectsForIsolatedPass[cameraName].emptyPasses();
-			this._renderEffectsForIsolatedPass[cameraName].addPass(pass);
-			this._renderEffectsForIsolatedPass[cameraName]._attachCameras(camera);
-		}
-	}
-
-	public function _disableDisplayOnlyPass(cameras:Dynamic) {
-		var cams = Tools.MakeArray(cameras != null ? cameras : this._cameras);
-		
-		for (c in cams) {
-			var camera:Camera = c;
-			var cameraName = c.name;
-			
-			this._renderEffectsForIsolatedPass[cameraName] = this._renderEffectsForIsolatedPass[cameraName] != null ? this._renderEffectsForIsolatedPass[cameraName] : new PostProcessRenderEffect(this._engine, PostProcessRenderPipeline.PASS_EFFECT_NAME,  function() { return new DisplayPassPostProcess(PostProcessRenderPipeline.PASS_EFFECT_NAME, 1.0, null, null, this._engine, true); } );
-			this._renderEffectsForIsolatedPass[cameraName]._disable(camera);
-		}
-		
-		for (renderEffectName in this._renderEffects.keys()) {
-			if (this._renderEffects.exists(renderEffectName)) {
-				this._renderEffects[renderEffectName]._enable(cams);
-			}
-		}
-	}
-
 	public function _update() {
 		for (renderEffectName in this._renderEffects.keys()) {
 			if (this._renderEffects.exists(renderEffectName)) {
@@ -206,6 +143,23 @@ import com.babylonhx.tools.Tools;
 	public function _reset() {
 		this._renderEffects = new Map<String, PostProcessRenderEffect>();
 		this._renderEffectsForIsolatedPass = new Map<String, PostProcessRenderEffect>();
+	}
+	
+	private function _enableMSAAOnFirstPostProcess():Bool {
+		// Set samples of the very first post process to 4 to enable native anti-aliasing in browsers that support webGL 2.0 (See: https://github.com/BabylonJS/Babylon.js/issues/3754)
+		var effectKeys:Array<String> = [];
+		for (key in this._renderEffects.keys()) {
+			effectKeys.push(key);
+		}
+		
+		if (this._engine.webGLVersion >= 2 && effectKeys.length > 0) {
+			var postProcesses = this._renderEffects[effectKeys[0]]._getPostProcesses();
+			if (postProcesses != null) {
+				postProcesses[0].samples = 4;
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public function dispose(disableDepthRender:Bool = false) {

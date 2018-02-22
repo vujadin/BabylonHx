@@ -3,9 +3,9 @@ package com.babylonhx.materials.textures;
 import com.babylonhx.ISmartArrayCompatible;
 import com.babylonhx.math.SphericalPolynomial;
 
-import lime.graphics.opengl.GLTexture;
-import lime.graphics.opengl.GLFramebuffer;
-import lime.graphics.opengl.GLRenderbuffer;
+import com.babylonhx.utils.GL.GLTexture;
+import com.babylonhx.utils.GL.GLFramebuffer;
+import com.babylonhx.utils.GL.GLRenderbuffer;
 
 
 /**

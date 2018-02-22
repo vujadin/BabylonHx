@@ -1,8 +1,8 @@
 package com.babylonhx.loading.ctm;
 
 import haxe.io.BytesInput;
-import lime.utils.Float32Array;
-import lime.utils.UInt32Array;
+import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.UInt32Array;
 
 /**
  * ...

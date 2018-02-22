@@ -3,12 +3,13 @@ package com.babylonhx.tools.dds;
 import com.babylonhx.engine.Engine;
 import com.babylonhx.math.Scalar;
 
-import lime.utils.ArrayBufferView;
-import lime.utils.ArrayBuffer;
-import lime.utils.Float32Array;
-import lime.utils.Int32Array;
-import lime.utils.UInt16Array;
-import lime.utils.UInt8Array;
+import com.babylonhx.utils.GL;
+import com.babylonhx.utils.typedarray.ArrayBufferView;
+import com.babylonhx.utils.typedarray.ArrayBuffer;
+import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.Int32Array;
+import com.babylonhx.utils.typedarray.UInt16Array;
+import com.babylonhx.utils.typedarray.UInt8Array;
 
 /**
  * ...
@@ -483,7 +484,7 @@ class DDSTools {
 		}
 		
 		for (face in 0...faces) {
-			var sampler = faces == 1 ? gl.TEXTURE_2D : (gl.TEXTURE_CUBE_MAP_POSITIVE_X + face);
+			var sampler = faces == 1 ? GL.TEXTURE_2D : (GL.TEXTURE_CUBE_MAP_POSITIVE_X + face);
 			
 			width = header[off_width];
 			height = header[off_height];
@@ -525,28 +526,28 @@ class DDSTools {
 							}
 						}
 						
-						engine._uploadDataToTexture(sampler, i, internalFormat, width, height, gl.RGBA, format, floatArray);
+						engine._uploadDataToTexture(sampler, i, internalFormat, width, height, GL.RGBA, format, floatArray);
 					} 
 					else if (info.isRGB) {
 						if (bpp == 24) {
 							dataLength = width * height * 3;
 							byteArray = DDSTools._GetRGBArrayBuffer(width, height, dataOffset, dataLength, arrayBuffer, rOffset, gOffset, bOffset);
-							engine._uploadDataToTexture(sampler, i, gl.RGB, width, height, gl.RGB, gl.UNSIGNED_BYTE, byteArray);
+							engine._uploadDataToTexture(sampler, i, GL.RGB, width, height, GL.RGB, GL.UNSIGNED_BYTE, byteArray);
 						} 
 						else { // 32
 							dataLength = width * height * 4;
 							byteArray = DDSTools._GetRGBAArrayBuffer(width, height, dataOffset, dataLength, arrayBuffer, rOffset, gOffset, bOffset, aOffset);
-							engine._uploadDataToTexture(sampler, i, gl.RGBA, width, height, gl.RGBA, gl.UNSIGNED_BYTE, byteArray);
+							engine._uploadDataToTexture(sampler, i, GL.RGBA, width, height, GL.RGBA, GL.UNSIGNED_BYTE, byteArray);
 						}
 					} 
 					else if (info.isLuminance) {
-						var unpackAlignment = gl.getParameter(gl.UNPACK_ALIGNMENT);
+						var unpackAlignment = gl.getParameter(GL.UNPACK_ALIGNMENT);
 						var unpaddedRowSize = width;
 						var paddedRowSize = Math.floor((width + unpackAlignment - 1) / unpackAlignment) * unpackAlignment;
-						dataLength = paddedRowSize * (height - 1) + unpaddedRowSize;
+						dataLength = Std.int(paddedRowSize * (height - 1) + unpaddedRowSize);
 						
 						byteArray = DDSTools._GetLuminanceArrayBuffer(width, height, dataOffset, dataLength, arrayBuffer);
-						engine._uploadDataToTexture(sampler, i, gl.LUMINANCE, width, height, gl.LUMINANCE, gl.UNSIGNED_BYTE, byteArray);
+						engine._uploadDataToTexture(sampler, i, GL.LUMINANCE, width, height, GL.LUMINANCE, GL.UNSIGNED_BYTE, byteArray);
 					} 
 					else {
 						dataLength = Std.int(Math.max(4, width) / 4 * Math.max(4, height) / 4 * blockBytes);

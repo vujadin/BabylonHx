@@ -184,7 +184,7 @@ import com.babylonhx.utils.Keycodes;
 		}
 		
 	#if purejs
-		
+		var eventPrefix = "pointer";
 		this.getScene().getEngine().getRenderingCanvas().addEventListener(eventPrefix + "down", function(e) {
 			this._onMouseDown(e.clientX, e.clientY, e.button);
 		}, false);
@@ -220,7 +220,7 @@ import com.babylonhx.utils.Keycodes;
 
 	override public function detachControl() {	
 	#if purejs
-	
+		var eventPrefix = "pointer";
 		this.getScene().getEngine().getRenderingCanvas().removeEventListener(eventPrefix + "down", this._onMouseDown, false);
 		this.getScene().getEngine().getRenderingCanvas().removeEventListener(eventPrefix + "up", this._onMouseUp, false);
 		this.getScene().getEngine().getRenderingCanvas().removeEventListener(eventPrefix + "out", this._onMouseUp, false);

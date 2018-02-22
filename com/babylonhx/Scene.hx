@@ -25,6 +25,8 @@ import com.babylonhx.collisions.PickingInfo;
 import com.babylonhx.culling.octrees.Octree;
 import com.babylonhx.helpers.EnvironmentHelper;
 import com.babylonhx.helpers.IEnvironmentHelperOptions;
+import com.babylonhx.layer.EffectLayer;
+import com.babylonhx.layer.GlowLayer;
 import com.babylonhx.layer.Layer;
 import com.babylonhx.layer.HighlightLayer;
 import com.babylonhx.lensflare.LensFlareSystem;
@@ -43,6 +45,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.cameras.Camera;
 import com.babylonhx.math.Tmp;
+import com.babylonhx.math.Tools as MathTools;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Plane;
 import com.babylonhx.math.Color3;
@@ -199,9 +202,9 @@ import com.babylonhx.audio.*;
 	*/
 	public var onDisposeObservable:Observable<Scene> = new Observable<Scene>();
 
-	public var onDispose(never, set):Scene->Null<EventState<Scene>>->Void;
+	public var onDispose(never, set):Scene->Null<EventState>->Void;
 	private var _onDisposeObserver:Observer<Scene>;
-	private function set_onDispose(callback:Scene->Null<EventState<Scene>>->Void):Scene->Null<EventState<Scene>>->Void {
+	private function set_onDispose(callback:Scene->Null<EventState>->Void) {
 		if (this._onDisposeObserver != null) {
 			this.onDisposeObservable.remove(this._onDisposeObserver);
 		}
@@ -217,9 +220,9 @@ import com.babylonhx.audio.*;
 	*/
 	public var onBeforeRenderObservable:Observable<Scene> = new Observable<Scene>();
 	/** A function to be executed before rendering this scene */
-	public var beforeRender(never, set):Scene->Null<EventState<Scene>>->Void;
+	public var beforeRender(default, set):Scene->Null<EventState>->Void;
 	private var _onBeforeRenderObserver:Observer<Scene>;
-	private function set_beforeRender(callback:Scene->Null<EventState<Scene>>->Void):Scene->Null<EventState<Scene>>->Void {
+	private function set_beforeRender(callback:Scene->Null<EventState>->Void) {
 		if (this._onBeforeRenderObserver != null) {
 			this.onBeforeRenderObservable.remove(this._onBeforeRenderObserver);
 		}
@@ -235,9 +238,9 @@ import com.babylonhx.audio.*;
 	*/
 	public var onAfterRenderObservable:Observable<Scene> = new Observable<Scene>();
 	/** A function to be executed after rendering this scene */
-	public var afterRender(never, set):Scene->Null<EventState<Scene>>->Void;
+	public var afterRender(default, set):Scene->Null<EventState>->Void;
 	private var _onAfterRenderObserver:Observer<Scene>;
-	private function set_afterRender(callback:Scene->Null<EventState<Scene>>->Void):Scene->Null<EventState<Scene>>->Void {
+	private function set_afterRender(callback:Scene->Null<EventState>->Void) {
 		if (this._onAfterRenderObserver != null) {
 			this.onAfterRenderObservable.remove(this._onAfterRenderObserver);
 		}
@@ -295,9 +298,9 @@ import com.babylonhx.audio.*;
 	*/
 	public var onBeforeCameraRenderObservable:Observable<Camera> = new Observable<Camera>();
 
-	public var beforeCameraRender(never, set):Camera->Null<EventState<Camera>>->Void;
+	public var beforeCameraRender(never, set):Camera->Null<EventState>->Void;
 	private var _onBeforeCameraRenderObserver:Observer<Camera>;
-	private function set_beforeCameraRender(callback:Camera->Null<EventState<Camera>>->Void):Camera->Null<EventState<Camera>>->Void {
+	private function set_beforeCameraRender(callback:Camera->Null<EventState>->Void) {
 		if (this._onBeforeCameraRenderObserver != null) {
 			this.onBeforeCameraRenderObservable.remove(this._onBeforeCameraRenderObserver);
 		}
@@ -313,9 +316,9 @@ import com.babylonhx.audio.*;
 	*/
 	public var onAfterCameraRenderObservable:Observable<Camera> = new Observable<Camera>();
 	
-	public var afterCameraRender(never, set):Camera->Null<EventState<Camera>>->Void;
+	public var afterCameraRender(never, set):Camera->Null<EventState>->Void;
 	private var _onAfterCameraRenderObserver:Observer<Camera>;
-	private function set_afterCameraRender(callback:Camera->Null<EventState<Camera>>->Void):Camera->Null<EventState<Camera>>->Void {
+	private function set_afterCameraRender(callback:Camera->Null<EventState>->Void) {
 		if (this._onAfterCameraRenderObserver != null) {
 			this.onAfterCameraRenderObservable.remove(this._onAfterCameraRenderObserver);
 		}
@@ -763,9 +766,15 @@ import com.babylonhx.audio.*;
 	public var spritesEnabled:Bool = true;
 	public var spriteManagers:Array<SpriteManager> = [];
 
-	// Layers
+	/**
+	 * The list of layers (background and foreground) of the scene.
+	 */
 	public var layers:Array<Layer> = [];
-	public var highlightLayers:Array<HighlightLayer> = [];
+	
+	/**
+	 * The list of effect layers (highlights/glow) contained in the scene.
+	 */
+	public var effectLayers:Array<EffectLayer> = [];
 
 	// Skeletons
 	private var _skeletonsEnabled:Bool = true;
@@ -947,7 +956,7 @@ import com.babylonhx.audio.*;
 	
 	//private var _debugLayer:DebugLayer;
 	
-	private var _depthRenderer:DepthRenderer;
+	private var _depthRenderer:Map<String, DepthRenderer> = new Map();
 	private var _geometryBufferRenderer:GeometryBufferRenderer;
 	
 	public var geometryBufferRenderer(get, set):GeometryBufferRenderer;
@@ -2042,13 +2051,13 @@ import com.babylonhx.audio.*;
 				continue;
 			}
 			
-			if (!mesh.isReady()) {
+			if (!mesh.isReady(true)) {
 				return false;
 			}
 			
-			// Highlight layers
+			// Effect layers
             var hardwareInstancedRendering = mesh.getClassName() == "InstancedMesh" || engine.getCaps().instancedArrays && cast(mesh, Mesh).instances.length > 0;
-			for (layer in this.highlightLayers) {
+			for (layer in this.effectLayers) {
                 if (!layer.hasMesh(mesh)) {
                     continue;
                 }
@@ -2071,24 +2080,24 @@ import com.babylonhx.audio.*;
         this._cachedVisibility = 0;
     }
 	
-	public function registerBeforeRender(func:Null<Scene>->Null<EventState<Scene>>->Void) {
+	public function registerBeforeRender(func:Null<Scene>->Null<EventState>->Void) {
 		this.onBeforeRenderObservable.add(func);
 	}
 
-	public function unregisterBeforeRender(func:Null<Scene>->Null<EventState<Scene>>->Void) {
+	public function unregisterBeforeRender(func:Null<Scene>->Null<EventState>->Void) {
 		this.onBeforeRenderObservable.removeCallback(func);
 	}
 	
-	public function registerAfterRender(func:Null<Scene>->Null<EventState<Scene>>->Void) {
+	public function registerAfterRender(func:Null<Scene>->Null<EventState>->Void) {
 		this.onAfterRenderObservable.add(func);
     }
 	
-    public function unregisterAfterRender(func:Null<Scene>->Null<EventState<Scene>>->Void) {
+    public function unregisterAfterRender(func:Null<Scene>->Null<EventState>->Void) {
         this.onAfterRenderObservable.removeCallback(func);
     }
 	
-	var execFunc:Null<Scene>->Null<EventState<Scene>>->Void;
-	private function _executeOnceBeforeRender(func:Void->Void) {
+	var execFunc:Null<Scene>->Null<EventState>->Void;
+	private function _executeOnceBeforeRender(func:Void->Void, timeout:Float = -1) {
 		execFunc = function(_, _) {
 			func();
 			Tools.delay(function() {
@@ -2146,7 +2155,7 @@ import com.babylonhx.audio.*;
 	 * Registers a function to be executed when the scene is ready.
 	 * @param {Function} func - the function to be executed.
 	 */
-	public function executeWhenReady(func:Scene->Null<EventState<Scene>>->Void) {
+	public function executeWhenReady(func:Scene->Null<EventState>->Void) {
 		this.onReadyObservable.add(func);
 		
 		if (this._executeWhenReadyTimeoutId != -1) {
@@ -2270,7 +2279,8 @@ import com.babylonhx.audio.*;
 
 	/**
 	 * Will stop the animation of the given target
-	 * @param target - the target 
+	 * @param target - the target
+	 * @param animationName - the name of the animation to stop (all animations will be stopped is empty)
 	 * @see beginAnimation 
 	 */
 	public function stopAnimation(target:Dynamic, ?animationName:String) {
@@ -2278,6 +2288,18 @@ import com.babylonhx.audio.*;
 		
 		if (animatable != null) {
 			animatable.stop(animationName);
+		}
+	}
+	
+	/**
+	 * Stops and removes all animations that have been applied to the scene
+	 */
+	public function stopAllAnimations() {
+		if (this._activeAnimatables != null) {
+			for (i in 0...this._activeAnimatables.length) {
+				this._activeAnimatables[i].stop();
+			}
+			this._activeAnimatables = [];
 		}
 	}
 	
@@ -2497,6 +2519,54 @@ import com.babylonhx.audio.*;
 		
 		return index;
 	}
+	
+	public function removeParticleSystem(toRemove:IParticleSystem):Int {
+		var index = this.particleSystems.indexOf(toRemove);
+		if (index != -1) {
+			this.particleSystems.splice(index, 1);
+		}
+		return index;
+	}
+	
+	public function removeAnimation(toRemove:Animation):Int {
+		var index = this.animations.indexOf(toRemove);
+		if (index != -1) {
+			this.animations.splice(index, 1);
+		}
+		return index;
+	}
+	
+	public function removeMultiMaterial(toRemove:MultiMaterial):Int {
+		var index = this.multiMaterials.indexOf(toRemove);
+		if (index != -1) {
+			this.multiMaterials.splice(index, 1);
+		}
+		return index;
+	}
+	
+	public function removeMaterial(toRemove:Material):Int {
+		var index = this.materials.indexOf(toRemove);
+		if (index != -1) {
+			this.materials.splice(index, 1);
+		}
+		return index;
+	}
+	
+	public function removeLensFlareSystem(toRemove:LensFlareSystem):Int {
+		var index = this.lensFlareSystems.indexOf(toRemove);
+		if (index != -1) {
+			this.lensFlareSystems.splice(index, 1);
+		}
+		return index;
+	}
+	
+	public function removeActionManager(toRemove:ActionManager):Int {
+		var index = this._actionManagers.indexOf(toRemove);
+		if (index != -1) {
+			this._actionManagers.splice(index, 1);
+		}
+		return index;
+	}
 
 	public function addLight(newLight:Light) {
 		this.lights.push(newLight);
@@ -2524,15 +2594,53 @@ import com.babylonhx.audio.*;
 		this.onNewCameraAddedObservable.notifyObservers(newCamera);
 	}
 	
+	public function addSkeleton(newSkeleton:Skeleton) {
+		this.skeletons.push(newSkeleton);
+	}
+
+	public function addParticleSystem(newParticleSystem:IParticleSystem) {
+		this.particleSystems.push(newParticleSystem);
+	}
+
+	public function addAnimation(newAnimation:Animation) {
+		this.animations.push(newAnimation);
+	}
+
+	public function addMultiMaterial(newMultiMaterial:MultiMaterial) {
+		this.multiMaterials.push(newMultiMaterial);
+	}
+
+	public function addMaterial(newMaterial:Material) {
+		this.materials.push(newMaterial);
+	}
+
+	public function addMorphTargetManager(newMorphTargetManager:MorphTargetManager) {
+		this.morphTargetManagers.push(newMorphTargetManager);
+	}
+
+	public function addGeometry(newGeometrie:Geometry) {
+		this._geometries.push(newGeometrie);
+	}
+
+	public function addLensFlareSystem(newLensFlareSystem:LensFlareSystem) {
+		this.lensFlareSystems.push(newLensFlareSystem);
+	}
+
+	public function addActionManager(newActionManager:ActionManager) {
+		this._actionManagers.push(newActionManager);
+	}
+	
 	/**
 	 * Swith the active camera of the scene
 	 * @param {Camera} newCamera - the new camera
-	 * @param {boolean} control - attachControl for the camera (default true)
+	 * @param {boolean} attachControl - attachControl for the camera (default true)
 	 */
-	public function switchActiveCamera(newCamera:Camera, control:Bool = true) {				
-		this.activeCamera.detachControl();			
+	public function switchActiveCamera(newCamera:Camera, attachControl:Bool = true) {
+		if (this.activeCamera != null) {
+			this.activeCamera.detachControl();			
+		}
 		this.activeCamera = newCamera;			
-		if (control) {
+		if (attachControl) {
 			newCamera.attachControl();
 		}	
 	}
@@ -2883,6 +2991,27 @@ import com.babylonhx.audio.*;
     }
 	
 	/**
+	 * Get the first added transform node found of a given ID
+	 * @param {string} id - the id to search for
+	 * @return {BABYLON.TransformNode|null} the transform node found or null if not found at all.
+	 */
+	public function getTransformNodeByID(id:String):TransformNode {
+		for (index in 0...this.transformNodes.length) {
+			if (this.transformNodes[index].id == id) {
+				return this.transformNodes[index];
+			}
+		}
+		
+		return null;
+	}
+
+	public function getTransformNodesByID(id:String):Array<TransformNode> {
+		return this.transformNodes.filter(function(m) {
+			return m.id == id;
+		});
+	}
+	
+	/**
 	 * Get a mesh with its auto-generated unique id
 	 * @param {number} uniqueId - the unique id to search for
 	 * @return {BABYLON.AbstractMesh|null} the mesh found or null if not found at all.
@@ -3057,9 +3186,24 @@ import com.babylonhx.audio.*;
 	 * @return The highlight layer if found otherwise null.
 	 */
 	public function getHighlightLayerByName(name:String):HighlightLayer {
-		for (index in 0...this.highlightLayers.length) {
-			if (this.highlightLayers[index].name == name) {
-				return this.highlightLayers[index];
+		for (index in 0...this.effectLayers.length) {
+			if (this.effectLayers[index].name == name && this.effectLayers[index].getEffectName() == HighlightLayer.EffectName) {
+				return cast this.effectLayers[index];
+			}
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Return a the first highlight layer of the scene with a given name.
+	 * @param name The name of the highlight layer to look for.
+	 * @return The highlight layer if found otherwise null.
+	 */
+	public function getGlowLayerByName(name:String):GlowLayer {
+		for (index in 0...this.effectLayers.length) {
+			if (this.effectLayers[index].name == name && this.effectLayers[index].getEffectName() == GlowLayer.EffectName) {
+				return cast this.effectLayers[index];
 			}
 		}
 		
@@ -3121,7 +3265,6 @@ import com.babylonhx.audio.*;
 		return this._externalData.remove(key);
 	}
 
-	static var _eSMMaterial:Material;
 	private function _evaluateSubMesh(subMesh:SubMesh, mesh:AbstractMesh) {
 		if (this.dispatchAllSubMeshesOfActiveMeshes || mesh.alwaysSelectAsActiveMesh || mesh.subMeshes.length == 1 || subMesh.isInFrustum(this._frustumPlanes)) {
 			if (mesh.showSubMeshesBoundingBox) {
@@ -3204,8 +3347,7 @@ import com.babylonhx.audio.*;
 		
 		// Meshes
 		var meshes:Array<AbstractMesh> = [];
-		var len:Int = 0;
-		
+		var len:Int = 0;		
 		var checkIsEnabled = true;
 		
         // Determine mesh candidates
@@ -3277,10 +3419,11 @@ import com.babylonhx.audio.*;
 			}
 		}
 		
+		this.onAfterActiveMeshesEvaluationObservable.notifyObservers(this);
+		
 		// Particle systems
-		this._particlesDuration.beginMonitoring();
-		var beforeParticlesDate = Tools.Now();
 		if (this.particlesEnabled) {
+			this.onBeforeParticlesRenderingObservable.notifyObservers(this);
 			for (particleIndex in 0...this.particleSystems.length) {
 				var particleSystem = this.particleSystems[particleIndex];
 				
@@ -3296,7 +3439,7 @@ import com.babylonhx.audio.*;
 				}
 			}
 		}
-		this._particlesDuration.endMonitoring(false);
+		this.onAfterParticlesRenderingObservable.notifyObservers(this);
 	}
 
 	private function _activeMesh(sourceMesh:AbstractMesh, mesh:AbstractMesh) {
@@ -3349,7 +3492,7 @@ import com.babylonhx.audio.*;
 		this._setAlternateTransformMatrix(alternateCamera.getViewMatrix(), alternateCamera.getProjectionMatrix(false));
 	}
 
-	private function _renderForCamera(camera:Camera) {
+	private function _renderForCamera(camera:Camera, ?rigParent:Camera) {
 		if (camera != null && camera._skipRendering) {
 			return;
 		}
@@ -3370,7 +3513,6 @@ import com.babylonhx.audio.*;
 		// Camera
 		this.resetCachedMaterial();
 		this._renderId++;
-		this.activeCamera.update();
 		this.updateTransformMatrix();
 		
 		if (camera._alternateCamera != null) {
@@ -3394,10 +3536,12 @@ import com.babylonhx.audio.*;
 		this.OnBeforeRenderTargetsRenderObservable.notifyObservers(this);
 		var needsRestoreFrameBuffer = false;
 		
-		var beforeRenderTargetDate = Tools.Now();
-		
 		if (camera.customRenderTargets != null && camera.customRenderTargets.length > 0) {
 			this._renderTargets.concatArrayWithNoDuplicate(camera.customRenderTargets);
+		}
+		
+		if (rigParent != null && rigParent.customRenderTargets != null && rigParent.customRenderTargets.length > 0) {
+			this._renderTargets.concatArrayWithNoDuplicate(rigParent.customRenderTargets);
 		}
 		
 		if (this.renderTargetsEnabled && this._renderTargets.length > 0) {
@@ -3410,8 +3554,7 @@ import com.babylonhx.audio.*;
 					var hasSpecialRenderTargetCamera:Bool = renderTarget.activeCamera != null && renderTarget.activeCamera != this.activeCamera;
 					renderTarget.render(hasSpecialRenderTargetCamera);
 				}
-			}
-			
+			}			
 			//Tools.EndPerformanceCounter("Render targets", this._renderTargets.length > 0);
 			
 			this._intermediateRendering = false;
@@ -3420,22 +3563,24 @@ import com.babylonhx.audio.*;
             needsRestoreFrameBuffer = true;  // Restore back buffer
         }
 		
-		// Render HighlightLayer Texture
+		// Render EffecttLayer Texture
 		var stencilState = this._engine.getStencilBuffer();
-		var renderhighlights = false;
-		if (this.renderTargetsEnabled && this.highlightLayers != null && this.highlightLayers.length > 0) {
+		var renderEffects = false;
+		var needStencil = false;
+		if (this.renderTargetsEnabled && this.effectLayers != null && this.effectLayers.length > 0) {
 			this._intermediateRendering = true;
-			for (i in 0...this.highlightLayers.length) {
-				var highlightLayer:HighlightLayer = this.highlightLayers[i];
+			for (i in 0...this.effectLayers.length) {
+				var effectLayer = this.effectLayers[i];
 				
-				if (highlightLayer.shouldRender() &&
-					(highlightLayer.camera == null ||
-						(highlightLayer.camera.cameraRigMode == Camera.RIG_MODE_NONE && camera == highlightLayer.camera) ||
-						(highlightLayer.camera.cameraRigMode != Camera.RIG_MODE_NONE && highlightLayer.camera.rigCameras.indexOf(camera) > -1))) {
+				if (effectLayer.shouldRender() &&
+					(effectLayer.camera == null ||
+						(effectLayer.camera.cameraRigMode == Camera.RIG_MODE_NONE && camera == effectLayer.camera) ||
+						(effectLayer.camera.cameraRigMode != Camera.RIG_MODE_NONE && effectLayer.camera.rigCameras.indexOf(camera) > -1))) {
 					
-					renderhighlights = true;
+					renderEffects = true;
+					needStencil = needStencil || effectLayer.needStencil();
 					
-					var renderTarget:RenderTargetTexture = cast highlightLayer._mainTexture;
+					var renderTarget:RenderTargetTexture = effectLayer._mainTexture;
 					if (renderTarget._shouldRender()) {
 						this._renderId++;
 						renderTarget.render(false);
@@ -3470,8 +3615,8 @@ import com.babylonhx.audio.*;
 			engine.setDepthBuffer(true);
 		}
 		
-		// Activate  HighlightLayer stencil
-		if (renderhighlights) {
+		// Activate effect Layer stencil
+		if (needStencil) {
 			this._engine.setStencilBuffer(true);
 		}
 		
@@ -3480,8 +3625,8 @@ import com.babylonhx.audio.*;
 		this._renderingManager.render(null, null, true, true);
 		this.onAfterDrawPhaseObservable.notifyObservers(this);
 		
-		// Restore HighlightLayer stencil
-		if (renderhighlights) {
+		// Restore effect Layer stencil
+		if (needStencil) {
 			engine.setStencilBuffer(stencilState);
 		}
 		
@@ -3514,12 +3659,12 @@ import com.babylonhx.audio.*;
 			engine.setDepthBuffer(true);
 		}
 		
-		// Highlight Layer
-		if (renderhighlights) {
+		// Effect Layer
+		if (renderEffects) {
 			engine.setDepthBuffer(false);
-			for (i in 0...this.highlightLayers.length) {
-				if (this.highlightLayers[i].shouldRender()) {
-					this.highlightLayers[i].render();
+			for (i in 0...this.effectLayers.length) {
+				if (this.effectLayers[i].shouldRender()) {
+					this.effectLayers[i].render();
 				}
 			}
 			engine.setDepthBuffer(true);
@@ -3544,11 +3689,6 @@ import com.babylonhx.audio.*;
 			return;
 		}
 		
-		// Update camera
-		if (this.activeCamera != null) {
-			this.activeCamera.update();
-		}
-		
 		// rig cameras
         for (index in 0...camera.rigCameras.length) {
             this._renderForCamera(camera.rigCameras[index]);
@@ -3561,6 +3701,10 @@ import com.babylonhx.audio.*;
 	private function _checkIntersections() {
 		for (index in 0...this._meshesForIntersections.length) {
 			var sourceMesh:AbstractMesh = cast this._meshesForIntersections.data[index];
+			
+			if (sourceMesh.actionManager == null) {
+				continue;
+			}
 			
 			for (actionIndex in 0...sourceMesh.actionManager.actions.length) {
 				var action:Action = sourceMesh.actionManager.actions[actionIndex];
@@ -3658,10 +3802,6 @@ import com.babylonhx.audio.*;
 				this.onAfterStepObservable.notifyObservers(this);
 				this._currentStepId++;
 				
-				if ((internalSteps > 1) && (stepsTaken != internalSteps - 1)) {
-					this._evaluateActiveMeshes();
-				}
-				
 				stepsTaken++;
 				deltaTime -= defaultFrameTime;
 			} 
@@ -3687,6 +3827,29 @@ import com.babylonhx.audio.*;
 		
 		// Before render
 		this.onBeforeRenderObservable.notifyObservers(this);
+		
+		// Update Cameras
+		if (this.activeCameras.length > 0) {
+			for (cameraIndex in 0...this.activeCameras.length) {
+				var camera = this.activeCameras[cameraIndex];
+				camera.update();
+				if (camera.cameraRigMode != Camera.RIG_MODE_NONE) {
+					// rig cameras
+					for (index in 0...camera._rigCameras.length) {
+						camera._rigCameras[index].update();
+					}
+				}
+			}
+		} 
+		else if (this.activeCamera != null) {
+			this.activeCamera.update();
+			if (this.activeCamera.cameraRigMode != Camera.RIG_MODE_NONE) {
+				// rig cameras
+				for (index in 0...this.activeCamera._rigCameras.length) {
+					this.activeCamera._rigCameras[index].update();
+				}
+			}
+		}
 		
 		// Customs render targets
 		this.OnBeforeRenderTargetsRenderObservable.notifyObservers(this);
@@ -3761,8 +3924,8 @@ import com.babylonhx.audio.*;
 		}
 		
 		// Depth renderer
-		if (this._depthRenderer != null) {
-			this._renderTargets.push(this._depthRenderer.getDepthMap());
+		for (key in this._depthRenderer.keys()) {
+			this._renderTargets.push(this._depthRenderer[key].getDepthMap());
 		}
 		
 		// Geometry renderer
@@ -3805,7 +3968,10 @@ import com.babylonhx.audio.*;
 		
 		// Cleaning
 		for (index in 0...this._toBeDisposed.length) {
-            untyped this._toBeDisposed.data[index].dispose();
+			var data = this._toBeDisposed.data[index];
+			if (data != null) {
+				untyped data.dispose();
+			}
 			this._toBeDisposed.data[index] = null;
 			//this._toBeDisposed.data.splice(index, 1);
 		}
@@ -3827,23 +3993,32 @@ import com.babylonhx.audio.*;
 		this._activeParticles.addCount(0, true);
 	}
 	
-	public function enableDepthRenderer():DepthRenderer {
-		if (this._depthRenderer != null) {
-			return this._depthRenderer;
+	/**
+	 * Creates a depth renderer a given camera which contains a depth map which can be used for post processing.
+	 * @param camera The camera to create the depth renderer on (default: scene's active camera)
+	 * @returns the created depth renderer
+	 */
+	public function enableDepthRenderer(?camera:Camera):DepthRenderer {
+		camera = camera != null ? camera : this.activeCamera;
+		if (camera == null) {
+			throw "No camera available to enable depth renderer";
+		}
+		if (this._depthRenderer[camera.id] == null) {
+			this._depthRenderer[camera.id] = new DepthRenderer(this, Engine.TEXTURETYPE_FLOAT, camera);
 		}
 		
-		this._depthRenderer = new DepthRenderer(this);
-		
-		return this._depthRenderer;
+		return this._depthRenderer[camera.id];
 	}
 
-	public function disableDepthRenderer() {
-		if (this._depthRenderer == null) {
+	public function disableDepthRenderer(?camera:Camera) {
+		camera = camera != null ? camera : this.activeCamera;
+		if (camera == null || this._depthRenderer[camera.id] == null) {
 			return;
 		}
 		
-		this._depthRenderer.dispose();
-		this._depthRenderer = null;
+		this._depthRenderer[camera.id].dispose();
+		this._depthRenderer[camera.id] = null;
+		this._depthRenderer.remove(camera.id);
 	}
 	
 	public function enableGeometryBufferRenderer(ratio:Float = 1):GeometryBufferRenderer {
@@ -3891,8 +4066,8 @@ import com.babylonhx.audio.*;
 		
 		this.resetCachedMaterial();
 		
-		if (this._depthRenderer != null) {
-			this._depthRenderer.dispose();
+		for (key in this._depthRenderer.keys()) {
+			this._depthRenderer[key].dispose();
 		}
 		
 		// Smart arrays            
@@ -4010,9 +4185,9 @@ import com.babylonhx.audio.*;
 			this.layers[0].dispose();
 			this.layers.shift();
 		}
-		while (this.highlightLayers.length > 0) {
-			this.highlightLayers[0].dispose();
-			this.highlightLayers.shift();
+		while (this.effectLayers.length > 0) {
+			this.effectLayers[0].dispose();
+			this.effectLayers.shift();
 		}
 		
 		// Release textures
@@ -4058,18 +4233,24 @@ import com.babylonhx.audio.*;
 
 	
 	// Octrees
-	public function getWorldExtends():Dynamic {
+	public function getWorldExtends(?filterPredicate:AbstractMesh->Bool):Dynamic {
 		var min = new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY);
 		var max = new Vector3(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY);
-		for (index in 0...this.meshes.length) {
-			var mesh = this.meshes[index];
-			
+		filterPredicate = filterPredicate != null ? filterPredicate : function(_) { return false; };
+		for (mesh in this.meshes.filter(filterPredicate)) {
 			mesh.computeWorldMatrix(true);
-			var minBox = mesh.getBoundingInfo().boundingBox.minimumWorld;
-			var maxBox = mesh.getBoundingInfo().boundingBox.maximumWorld;
 			
-			com.babylonhx.math.Tools.CheckExtends(minBox, min, max);
-			com.babylonhx.math.Tools.CheckExtends(maxBox, min, max);
+			if (mesh.subMeshes == null || mesh.subMeshes.length == 0 || mesh.infiniteDistance) {
+				return null;
+			}
+			
+			var boundingInfo = mesh.getBoundingInfo();
+			
+			var minBox = boundingInfo.boundingBox.minimumWorld;
+			var maxBox = boundingInfo.boundingBox.maximumWorld;
+			
+			MathTools.CheckExtends(minBox, min, max);
+			MathTools.CheckExtends(maxBox, min, max);
 		}
 		
 		return {
@@ -4471,8 +4652,8 @@ import com.babylonhx.audio.*;
             layer._rebuild();
         }
 		
-		for (highlightLayer in this.highlightLayers) {
-            highlightLayer._rebuild();
+		for (effectLayer in this.effectLayers) {
+            effectLayer._rebuild();
         }
 		
         if (this._boundingBoxRenderer != null) {
@@ -4537,6 +4718,11 @@ import com.babylonhx.audio.*;
 			
 			var camera:TargetCamera = null;
 			var radius = worldSize.length() * 1.5;
+			// empty scene scenario!
+            if (!Math.isFinite(radius)) {
+                radius = 1;
+                worldCenter.copyFromFloats(0, 0, 0);
+            }
 			if (createArcRotateCamera) {
 				var arcRotateCamera = new ArcRotateCamera("default camera", -(Math.PI / 2), Math.PI / 2, radius, worldCenter, this);
 				arcRotateCamera.lowerRadiusLimit = radius * 0.01;
@@ -4605,7 +4791,7 @@ import com.babylonhx.audio.*;
 		return hdrSkybox;
 	}
 	
-	public function createDefaultEnvironment(options:IEnvironmentHelperOptions):EnvironmentHelper {
+	public function createDefaultEnvironment(?options:IEnvironmentHelperOptions):EnvironmentHelper {
 		return new EnvironmentHelper(options, this);
 	}
 

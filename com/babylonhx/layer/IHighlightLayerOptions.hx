@@ -16,42 +16,42 @@ typedef IHighlightLayerOptions = {
 	 * Multiplication factor apply to the canvas size to compute the render target size
 	 * used to generated the glowing objects (the smaller the faster).
 	 */
-	?mainTextureRatio:Null<Float>,
+	@:optional var mainTextureRatio:Null<Float>;
 	
 	/**
      * Enforces a fixed size texture to ensure resize independant blur.
      */
-	?mainTextureFixedSize:Null<Int>,
+	@:optional var mainTextureFixedSize:Null<Int>;
 
 	/**
 	 * Multiplication factor apply to the main texture size in the first step of the blur to reduce the size 
 	 * of the picture to blur (the smaller the faster).
 	 */
-	?blurTextureSizeRatio:Null<Float>,
+	@:optional var blurTextureSizeRatio:Null<Float>;
 
 	/**
 	 * How big in texel of the blur texture is the vertical blur.
 	 */
-	?blurVerticalSize:Null<Float>,
+	@:optional var blurVerticalSize:Null<Float>;
 
 	/**
 	 * How big in texel of the blur texture is the horizontal blur.
 	 */
-	?blurHorizontalSize:Null<Float>,
+	@:optional var blurHorizontalSize:Null<Float>;
 
 	/**
 	 * Alpha blending mode used to apply the blur. Default is combine.
 	 */
-	?alphaBlendingMode:Null<Int>,
+	@:optional var alphaBlendingMode:Null<Int>;
 	
 	/**
      * The camera attached to the layer.
      */
-    ?camera:Null<Camera>,
+    @:optional var camera:Null<Camera>;
 	
 	/**
-     * Should we display highlight as a solid stroke?
+     * Should we display highlight as a solid stroke@:optional var 
      */
-    ?isStroke:Null<Bool>
+    @:optional var isStroke:Null<Bool>;
   
 }

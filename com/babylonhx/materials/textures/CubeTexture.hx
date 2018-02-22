@@ -2,6 +2,7 @@ package com.babylonhx.materials.textures;
 
 import com.babylonhx.engine.Engine;
 import com.babylonhx.math.Matrix;
+import com.babylonhx.math.Vector3;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.animations.Animation;
 import com.babylonhx.tools.serialization.SerializationHelper;
@@ -14,6 +15,36 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 @:expose('BABYLON.CubeTexture') class CubeTexture extends BaseTexture {
 	
 	public var url:String;
+	
+	/**
+     * Gets or sets the center of the bounding box associated with the texture (when in cube mode)
+     * It must define where the camera used to render the texture is set
+     */
+    public var boundingBoxPosition:Vector3 = Vector3.Zero();
+
+    private var _boundingBoxSize:Vector3;
+
+    /**
+     * Gets or sets the size of the bounding box associated with the texture (when in cube mode)
+     * When defined, the cubemap will switch to local mode
+     * @see https://community.arm.com/graphics/b/blog/posts/reflections-based-on-local-cubemaps-in-unity
+     * @example https://www.babylonjs-playground.com/#RNASML
+     */        
+	public var boundingBoxSize(get, set):Vector3;
+    function set_boundingBoxSize(value:Vector3):Vector3 {
+        if (this._boundingBoxSize != null && this._boundingBoxSize.equals(value)) {
+            return value;
+        }
+        this._boundingBoxSize = value;
+        var scene = this.getScene();
+        if (scene != null) {
+            scene.markAllMaterialsAsDirty(Material.TextureDirtyFlag);
+        }
+		return value;
+    }
+    inline function get_boundingBoxSize():Vector3 {
+        return this._boundingBoxSize;
+    }
 	
 	private var _noMipmap:Bool;
 	private var _files:Array<String>;
@@ -131,6 +162,14 @@ import com.babylonhx.tools.serialization.SerializationHelper;
 		var texture = SerializationHelper.Parse(function() {
 			return new CubeTexture(rootUrl + parsedTexture.name, scene, parsedTexture.extensions);
 		}, parsedTexture, scene);
+		
+		// Local Cubemaps
+		if (parsedTexture.boundingBoxPosition != null) {
+			texture.boundingBoxPosition = Vector3.FromArray(parsedTexture.boundingBoxPosition);
+		}
+		if (parsedTexture.boundingBoxSize != null) {
+			texture.boundingBoxSize = Vector3.FromArray(parsedTexture.boundingBoxSize);
+		}
 		
 		// Animations
 		if (parsedTexture.animations != null) {

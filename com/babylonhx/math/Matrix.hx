@@ -2,7 +2,7 @@ package com.babylonhx.math;
 
 import com.babylonhx.cameras.Camera;
 
-import lime.utils.Float32Array;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 
 /**
@@ -463,13 +463,25 @@ import lime.utils.Float32Array;
 	}
 	
 	/**
+	 * Returns a new Matrix which is the normal matrix computed from the current one (using values from identity matrix for fourth row and column).  
+	 */
+	public function toNormalMatrix(ref:Matrix) {            
+		this.invertToRef(ref);
+		ref.transpose();
+		var m = ref.m;
+		Matrix.FromValuesToRef(
+			m[0], m[1], m[2],  0,
+			m[4], m[5], m[6],  0,
+			m[8], m[9], m[10], 0,
+			0,    0,    0,     1, ref);
+	}
+	
+	/**
 	 * Returns a new Matrix as the extracted rotation matrix from the current one.  
 	 */
 	public function getRotationMatrix():Matrix {
-		var result = Matrix.Identity();
-		
-		this.getRotationMatrixToRef(result);
-		
+		var result = Matrix.Identity();		
+		this.getRotationMatrixToRef(result);		
 		return result;
 	}
 
@@ -586,6 +598,24 @@ import lime.utils.Float32Array;
 		this.m[i + 3] = row.w;
 		
 		this._markAsUpdated();
+		
+		return this;
+	}
+	
+	/**
+	 * Compute the transpose of the matrix.  
+	 * Returns a new Matrix.  
+	 */
+	inline public function transpose():Matrix {
+		return Matrix.Transpose(this);
+	}
+
+	/**
+	 * Compute the transpose of the matrix.  
+	 * Returns the current matrix.  
+	 */
+	inline public function transposeToRef(result:Matrix):Matrix {
+		Matrix.TransposeToRef(this, result);
 		
 		return this;
 	}
@@ -1331,6 +1361,15 @@ import lime.utils.Float32Array;
 	inline public static function Transpose(matrix:Matrix):Matrix {
 		var result = new Matrix();
 		
+		Matrix.TransposeToRef(matrix, result);
+		
+		return result;
+	}
+	
+	/**
+	 * Compute the transpose of the passed Matrix and store it in the result matrix.  
+	 */
+	public static function TransposeToRef(matrix:Matrix, result:Matrix) {
 		result.m[0] = matrix.m[0];
 		result.m[1] = matrix.m[4];
 		result.m[2] = matrix.m[8];
@@ -1350,8 +1389,6 @@ import lime.utils.Float32Array;
 		result.m[13] = matrix.m[7];
 		result.m[14] = matrix.m[11];
 		result.m[15] = matrix.m[15];
-		
-		return result;
 	}
 
 	/**

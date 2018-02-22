@@ -112,8 +112,8 @@ import haxe.Timer;
 	*/
 	public var onDisposeObservable:Observable<Material> = new Observable<Material>();
 	private var _onDisposeObserver:Observer<Material>;
-	public var onDispose(never, set):Material->Null<EventState<Material>>->Void;
-	private function set_onDispose(callback:Material->Null<EventState<Material>>->Void):Material->Null<EventState<Material>>->Void {
+	public var onDispose(never, set):Material->Null<EventState>->Void;
+	private function set_onDispose(callback:Material->Null<EventState>->Void) {
 		if (this._onDisposeObserver != null) {
 			this.onDisposeObservable.remove(this._onDisposeObserver);
 		}
@@ -128,8 +128,8 @@ import haxe.Timer;
 	*/
 	public var onBindObservable:Observable<AbstractMesh> = new Observable<AbstractMesh>();
 	private var _onBindObserver:Observer<AbstractMesh>;
-	public var onBind(never, set):AbstractMesh->Null<EventState<AbstractMesh>>->Void;
-	private function set_onBind(callback:AbstractMesh->Null<EventState<AbstractMesh>>->Void):AbstractMesh->Null<EventState<AbstractMesh>>->Void {
+	public var onBind(never, set):AbstractMesh->Null<EventState>->Void;
+	private function set_onBind(callback:AbstractMesh->Null<EventState>->Void) {
 		if (this._onBindObserver != null) {
 			this.onBindObservable.remove(this._onBindObserver);
 		}
@@ -439,7 +439,7 @@ import haxe.Timer;
 	 * Force shader compilation including textures ready check
 	 */
 	var checkReady:Void->Void = null;
-	public function forceCompilation(mesh:AbstractMesh, onCompiled:Material->Void, ?options:Dynamic) {
+	public function forceCompilation(mesh:AbstractMesh, ?onCompiled:Material->Void, ?options:Dynamic) {
 		var localOptions:Dynamic = {
 			clipPlane: false
 		};

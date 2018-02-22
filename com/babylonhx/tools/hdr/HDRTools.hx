@@ -2,12 +2,11 @@ package com.babylonhx.tools.hdr;
 
 import com.babylonhx.tools.hdr.PanoramaToCubeMapTools.CubeMapInfo;
 import haxe.io.Bytes;
-import lime.utils.Int32Array;
-import lime.utils.UInt8ClampedArray;
-
-import lime.utils.ArrayBuffer;
-import lime.utils.Float32Array;
-import lime.utils.UInt8Array;
+import com.babylonhx.utils.typedarray.Int32Array;
+import com.babylonhx.utils.typedarray.UInt8ClampedArray;
+import com.babylonhx.utils.typedarray.ArrayBuffer;
+import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.UInt8Array;
 
 /**
  * ...
@@ -140,7 +139,12 @@ class HDRTools {
 	 * @return The Cube Map information.
 	 */
 	public static function GetCubeMapTextureData(buffer:Bytes, size:Int):CubeMapInfo {
+		#if purejs
+		var uint8array:UInt8Array = new UInt8Array(cast buffer);
+		#else
 		var uint8array:UInt8Array = UInt8Array.fromBytes(buffer);
+		#end
+		
 		var hdrInfo = HDRTools.RGBE_ReadHeader(uint8array);
 		var data = HDRTools.RGBE_ReadPixels_RLE(uint8array, hdrInfo);
 		

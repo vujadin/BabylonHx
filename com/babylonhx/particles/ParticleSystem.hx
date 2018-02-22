@@ -8,10 +8,16 @@ import com.babylonhx.materials.textures.Texture;
 import com.babylonhx.math.Color4;
 import com.babylonhx.math.Matrix;
 import com.babylonhx.math.Vector3;
+import com.babylonhx.math.Scalar;
 import com.babylonhx.mesh.WebGLBuffer;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.Buffer;
 import com.babylonhx.particles.Particle;
+import com.babylonhx.particles.emittertypes.BoxParticleEmitter;
+import com.babylonhx.particles.emittertypes.ConeParticleEmitter;
+import com.babylonhx.particles.emittertypes.IParticleEmitterType;
+import com.babylonhx.particles.emittertypes.SphereDirectedParticleEmitter;
+import com.babylonhx.particles.emittertypes.SphereParticleEmitter;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.animations.IAnimatable;
 import com.babylonhx.animations.Animation;
@@ -19,8 +25,8 @@ import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
 
-import lime.utils.UInt32Array;
-import lime.utils.Float32Array;
+import com.babylonhx.utils.typedarray.UInt32Array;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 
 /**
@@ -153,26 +159,6 @@ import lime.utils.Float32Array;
 	 */
 	public var preventAutoStart:Bool = false;
 	
-	private var _epsilon:Float;
-	
-	public var __smartArrayFlags:Array<Int> = [];	// BHX
-
-	/**
-	* An event triggered when the system is disposed.
-	* @type {BABYLON.Observable}
-	*/
-	public var onDisposeObservable:Observable<ParticleSystem> = new Observable<ParticleSystem>();
-	private var _onDisposeObserver:Observer<ParticleSystem>;
-	public var onDispose:ParticleSystem->Null<EventState<ParticleSystem>>->Void;
-	private function set_onDispose(callback:ParticleSystem->Null<EventState<ParticleSystem>>->Void):ParticleSystem->Null<EventState<ParticleSystem>>->Void {
-		if (this._onDisposeObserver != null) {
-			this.onDisposeObservable.remove(this._onDisposeObserver);
-		}
-		this._onDisposeObserver = this.onDisposeObservable.add(callback);
-		
-		return callback;
-	}
-	
 	/**
 	 * This function can be defined to provide custom update for active particles.
 	 * This function will be called instead of regular update (age, position, color, etc.).
@@ -196,22 +182,170 @@ import lime.utils.Float32Array;
 	 */
 	public var forceDepthWrite:Bool = false;
 
+	/**
+	 * You can use gravity if you want to give an orientation to your particles.
+	 */
 	public var gravity:Vector3 = Vector3.Zero();
-	public var direction1:Vector3 = new Vector3(0, 1.0, 0);
-	public var direction2:Vector3 = new Vector3(0, 1.0, 0);
-	public var minEmitBox:Vector3 = new Vector3(-0.5, -0.5, -0.5);
-	public var maxEmitBox:Vector3 = new Vector3(0.5, 0.5, 0.5);
+	
+	public var direction1(get, set):Vector3;
+	/**
+	 * Random direction of each particle after it has been emitted, between direction1 and direction2 vectors.
+	 * This only works when particleEmitterTyps is a BoxParticleEmitter
+	 */
+	function get_direction1():Vector3 {
+		if (this.particleEmitterType.getClassName() == "BoxEmitter") {
+			return untyped this.particleEmitterType.direction1;
+		}		
+		return Vector3.Zero();
+	}
+	function set_direction1(value:Vector3):Vector3 {
+		if (this.particleEmitterType.getClassName() == "BoxEmitter") {
+			untyped this.particleEmitterType.direction1 = value;
+		}
+		return value;
+	}
+
+	public var direction2(get, set):Vector3;
+	/**
+	 * Random direction of each particle after it has been emitted, between direction1 and direction2 vectors.
+	 * This only works when particleEmitterTyps is a BoxParticleEmitter
+	 */
+	function get_direction2():Vector3 {
+		if (this.particleEmitterType.getClassName() == "BoxEmitter") {
+			return untyped this.particleEmitterType.direction2;
+		}		
+		return Vector3.Zero();
+	}
+	function set_direction2(value:Vector3):Vector3 {
+		if (this.particleEmitterType.getClassName() == "BoxEmitter") {
+			untyped this.particleEmitterType.direction2 = value;
+		}
+		return value;
+	}
+
+	public var minEmitBox(get, set):Vector3;
+	/**
+	 * Minimum box point around our emitter. Our emitter is the center of particles source, but if you want your particles to emit from more than one point, then you can tell it to do so.
+	 * This only works when particleEmitterTyps is a BoxParticleEmitter
+	 */
+	function get_minEmitBox():Vector3 {
+		if (this.particleEmitterType.getClassName() == "BoxEmitter") {
+			return untyped this.particleEmitterType.minEmitBox;
+		}		
+		return Vector3.Zero();
+	}
+	function set_minEmitBox(value:Vector3):Vector3 {
+		if (this.particleEmitterType.getClassName() == "BoxEmitter") {
+			untyped this.particleEmitterType.minEmitBox = value;
+		}
+		return Vector3.Zero();
+	}
+
+	public var maxEmitBox(get, set):Vector3;
+	/**
+	 * Maximum box point around our emitter. Our emitter is the center of particles source, but if you want your particles to emit from more than one point, then you can tell it to do so.
+	 * This only works when particleEmitterTyps is a BoxParticleEmitter
+	 */
+	function get_maxEmitBox():Vector3 {
+		if (this.particleEmitterType.getClassName() == "BoxEmitter") {
+			return untyped this.particleEmitterType.maxEmitBox;
+		}
+		return Vector3.Zero();
+	}
+	function set_maxEmitBox(value:Vector3):Vector3 {
+		if (this.particleEmitterType.getClassName() == "BoxEmitter") {
+			untyped this.particleEmitterType.maxEmitBox = value;
+		}
+		return Vector3.Zero();
+	}
+	
+	/**
+	 * Random color of each particle after it has been emitted, between color1 and color2 vectors.
+	 */
 	public var color1:Color4 = new Color4(1.0, 1.0, 1.0, 0.5);
+	/**
+	 * Random color of each particle after it has been emitted, between color1 and color2 vectors.
+	 */
 	public var color2:Color4 = new Color4(1.0, 1.0, 1.0, 0.4);
+	/**
+	 * Color the particle will have at the end of its lifetime.
+	 */
 	public var colorDead:Color4 = new Color4(0, 0, 0, 0.0);
+	
+	/**
+	 * An optional mask to filter some colors out of the texture, or filter a part of the alpha channel.
+	 */
 	public var textureMask:Color4 = new Color4(1.0, 1.0, 1.0, 1.0);
+	
+	/**
+	 * The particle emitter type defines the emitter used by the particle system.
+	 * It can be for example box, sphere, or cone...
+	 */
 	public var particleEmitterType:IParticleEmitterType;
-	public var startDirectionFunction:Float->Matrix->Vector3->Particle->Void;
-	public var startPositionFunction:Matrix->Vector3->Particle->Void;
+	
+	/**
+	 * This function can be defined to specify initial direction for every new particle.
+	 * It by default use the emitterType defined function.
+	 */
+	public var startDirectionFunction:Float->Matrix->Vector3->Particle-> Void;
+	/**
+	 * This function can be defined to specify initial position for every new particle.
+	 * It by default use the emitterType defined function.
+	 */
+	public var startPositionFunction:Matrix->Vector3->Particle-> Void;
+	
+	/**
+	 * If using a spritesheet (isAnimationSheetEnabled), defines if the sprite animation should loop between startSpriteCellID and endSpriteCellID or not.
+	 */
+	public var spriteCellLoop:Bool = true;
+	/**
+	 * If using a spritesheet (isAnimationSheetEnabled) and spriteCellLoop defines the speed of the sprite loop.
+	 */
+	public var spriteCellChangeSpeed:Float = 0;
+	/**
+	 * If using a spritesheet (isAnimationSheetEnabled) and spriteCellLoop defines the first sprite cell to display.
+	 */
+	public var startSpriteCellID:Int = 0;
+	/**
+	 * If using a spritesheet (isAnimationSheetEnabled) and spriteCellLoop defines the last sprite cell to display.
+	 */
+	public var endSpriteCellID:Int = 0;
+	/**
+	 * If using a spritesheet (isAnimationSheetEnabled), defines the sprite cell width to use.
+	 */
+	public var spriteCellWidth:Int = 0;
+	/**
+	 * If using a spritesheet (isAnimationSheetEnabled), defines the sprite cell height to use.
+	 */
+	public var spriteCellHeight:Int = 0;
+	
+	/**
+	* An event triggered when the system is disposed.
+	* @type {BABYLON.Observable}
+	*/
+	public var onDisposeObservable:Observable<ParticleSystem> = new Observable<ParticleSystem>();
+	private var _onDisposeObserver:Observer<ParticleSystem>;
+	public var onDispose:ParticleSystem->Null<EventState>->Void;
+	private function set_onDispose(callback:ParticleSystem->Null<EventState>->Void) {
+		if (this._onDisposeObserver != null) {
+			this.onDisposeObservable.remove(this._onDisposeObserver);
+		}
+		this._onDisposeObserver = this.onDisposeObservable.add(callback);
+		
+		return callback;
+	}
+	
+	/**
+	 * Gets wether an animation sprite sheet is enabled or not on the particle system.
+	 */
+	private var _isAnimationSheetEnabled:Bool = false;
+	public var isAnimationSheetEnabled(get, never):Bool;
+	inline private function get_isAnimationSheetEnabled():Bool {
+		return this._isAnimationSheetEnabled;
+	}
 
-	private var particles:Array<Particle> = [];
-	private var particle:Particle;
-
+	private var _particles:Array<Particle> = [];
+	private var _epsilon:Float;
 	private var _capacity:Int;
 	private var _scene:Scene;
 	private var _stockParticles:Array<Particle> = [];
@@ -223,42 +357,52 @@ import lime.utils.Float32Array;
 	private var _effect:Effect;
 	private var _customEffect:Effect;
 	private var _cachedDefines:String;
-
 	private var _scaledColorStep:Color4 = new Color4(0, 0, 0, 0);
 	private var _colorDiff:Color4 = new Color4(0, 0, 0, 0);
 	private var _scaledDirection:Vector3 = Vector3.Zero();
 	private var _scaledGravity:Vector3 = Vector3.Zero();
 	private var _currentRenderId:Int = -1;
-
 	private var _alive:Bool = true;
 	private var _started:Bool = false;
 	private var _stopped:Bool = false;
 	private var _actualFrame:Int = 0;
 	public var _scaledUpdateSpeed:Float;
-	
-	// sheet animation
-	public var startSpriteCellID:Int = 0;
-	public var endSpriteCellID:Int = 0;
-	public var spriteCellLoop:Bool = true;
-	public var spriteCellChangeSpeed:Float = 0;
-
-	public var spriteCellWidth:Int = 0;
-	public var spriteCellHeight:Int = 0;
 	private var _vertexBufferSize:Int = 11;
-
-	private var _isAnimationSheetEnabled:Bool = false;
-	public var isAnimationSheetEnabled(get, never):Bool;
-	inline private function get_isAnimationSheetEnabled():Bool {
-		return this._isAnimationSheetEnabled;
+	
+	private var _engine:Engine;	
+	public var __smartArrayFlags:Array<Int> = [];	// BHX
+	
+	/**
+	 * Gets the current list of active particles
+	 */
+	public var particles(get, never):Array<Particle>;
+	inline function get_particles():Array<Particle> {
+		return this._particles;
 	}
-	// end of sheet animation
-	
-	private var _engine:Engine;
+
+	/**
+	 * Returns the string "ParticleSystem"
+	 * @returns a string containing the class name
+	 */
+	public function getClassName():String {
+		return "ParticleSystem";
+	} 
 	
 
+	/**
+	 * Instantiates a particle system.
+	 * Particles are often small sprites used to simulate hard-to-reproduce phenomena like fire, smoke, water, or abstract visual effects like magic glitter and faery dust.
+	 * @param name The name of the particle system
+	 * @param capacity The max number of particles alive at the same time
+	 * @param scene The scene the particle system belongs to
+	 * @param customEffect a custom effect used to change the way particles are rendered by default
+	 * @param isAnimationSheetEnabled Must be true if using a spritesheet to animate the particles texture
+	 * @param epsilon Offset used to render the particles
+	 */
 	public function new(name:String, capacity:Int, ?scene:Scene, ?customEffect:Effect, isAnimationSheetEnabled:Bool = false, epsilon:Float = 0.01) {
-		this.name = name;
 		this.id = name;
+		this.name = name;
+		
 		this._capacity = capacity;
 		
 		this._epsilon = epsilon;
@@ -278,9 +422,6 @@ import lime.utils.Float32Array;
 		
 		// 11 floats per particle (x, y, z, r, g, b, a, angle, size, offsetX, offsetY) + 1 filler
         this._vertexData = new Float32Array(Std.int(capacity * this._vertexBufferSize * 4)); 
-		for (i in 0...Std.int(capacity * 11 * 4)) {
-			this._vertexData[i] = 0;
-		}
 		this._vertexBuffer = new Buffer(this._engine, this._vertexData, true, this._vertexBufferSize);
 		
 		var positions = this._vertexBuffer.createVertexBuffer(VertexBuffer.PositionKind, 0, 3);
@@ -297,9 +438,9 @@ import lime.utils.Float32Array;
 		this._vertexBuffers["options"] = options;
 		
 		// Default behaviors
-		this.particleEmitterType = new BoxParticleEmitter(this);
+		this.particleEmitterType = new BoxParticleEmitter();
 		
-		this.updateFunction = function(particles:Array<Particle>):Void {
+		this.updateFunction = function(particles:Array<Particle>) {
 			var index:Int = 0;
 			while (index < particles.length && index >= 0) {
 				var particle = particles[index];
@@ -331,11 +472,9 @@ import lime.utils.Float32Array;
 					}
 				}
 				
-				index++;
+				++index;
 			}
-		}
-		
-		this._effect = this._getEffect();
+		}		
 	}
 	
 	private function _createIndexBuffer() {
@@ -354,8 +493,13 @@ import lime.utils.Float32Array;
 		this._indexBuffer = this._engine.createIndexBuffer(new UInt32Array(indices));
 	}
 	
+	/**
+	 * "Recycles" one of the particle by copying it back to the "stock" of particles and removing it from the active list.
+	 * Its lifetime will start back at 0.
+	 * @param particle The particle to recycle
+	 */
 	inline public function recycleParticle(particle:Particle) {
-		var lastParticle = this.particles.pop();
+		var lastParticle = this._particles.pop();
 		
 		if (lastParticle != particle) {
 			lastParticle.copyTo(particle);
@@ -363,31 +507,58 @@ import lime.utils.Float32Array;
 		}
 	}
 
+	/**
+	 * Gets the maximum number of particles active at the same time.
+	 * @returns The max number of active particles.
+	 */
 	inline public function getCapacity():Int {
 		return this._capacity;
 	}
 
+	/**
+	 * Gets Wether there are still active particles in the system.
+	 * @returns True if it is alive, otherwise false.
+	 */
 	inline public function isAlive():Bool {
 		return this._alive;
 	}
 
+	/**
+	 * Gets Wether the system has been started.
+	 * @returns True if it has been started, otherwise false.
+	 */
 	inline public function isStarted():Bool {
 		return this._started;
 	}
 
-	public function start():Void {
+	/**
+	 * Starts the particle system and begins to emit.
+	 */
+	public function start() {
 		this._started = true;
 		this._stopped = false;
 		this._actualFrame = 0;
 	}
 
+	/**
+	 * Stops the particle system.
+	 */
 	public function stop():Void {
 		this._stopped = true;
 	}
 	
-	// animation sheet
-
-	inline public function _appendParticleVertex(index:Int, particle:Particle, offsetX:Float, offsetY:Float) {
+	/**
+	 * Remove all active particles
+	 */
+	public function reset() {
+		this._stockParticles = [];
+		this._particles = [];
+	}
+	
+	/**
+	 * @ignore (for internal use only)
+	 */
+	public function _appendParticleVertex(index:Int, particle:Particle, offsetX:Float, offsetY:Float) {
 		var offset = index * 11;
 		this._vertexData[offset] = particle.position.x;
 		this._vertexData[offset + 1] = particle.position.y;
@@ -402,6 +573,9 @@ import lime.utils.Float32Array;
 		this._vertexData[offset + 10] = offsetY;
 	}
 	
+	/**
+	 * @ignore (for internal use only)
+	 */
 	public function _appendParticleVertexWithAnimation(index:Int, particle:Particle, offsetX:Float, offsetY:Float) {
 		if (offsetX == 0) {
 			offsetX = this._epsilon;
@@ -435,9 +609,9 @@ import lime.utils.Float32Array;
 	static var worldMatrix:Matrix = Matrix.Zero();
 	private function _update(newParticles:Int) {
 		// Update current
-		this._alive = this.particles.length > 0;
+		this._alive = this._particles.length > 0;
 		
-		this.updateFunction(this.particles);
+		this.updateFunction(this._particles);
 		
 		// Add new ones		
 		if (this.emitter.position != null) {
@@ -447,28 +621,24 @@ import lime.utils.Float32Array;
 			worldMatrix = Matrix.Translation(this.emitter.x, this.emitter.y, this.emitter.z);
 		}
 		
+		var particle:Particle = null;
 		for (index in 0...newParticles) {
-			if (this.particles.length == this._capacity) {
+			if (this._particles.length == this._capacity) {
 				break;
 			}
 			
 			if (this._stockParticles.length != 0) {
 				particle = this._stockParticles.pop();
 				particle.age = 0;
+				particle.cellIndex = this.startSpriteCellID;
 			} 
 			else {
 				particle = new Particle(this);
 			}
-			this.particles.push(particle);
 			
-			var emitPower = ParticleSystem.randomNumber(this.minEmitPower, this.maxEmitPower);
+			this._particles.push(particle);
 			
-			if (this.startDirectionFunction != null) {
-                this.startDirectionFunction(emitPower, worldMatrix, particle.direction, particle);
-            }
-            else {
-                this.particleEmitterType.startDirectionFunction(emitPower, worldMatrix, particle.direction, particle);
-            }
+			var emitPower = Scalar.RandomRange(this.minEmitPower, this.maxEmitPower);
 			
 			if (this.startPositionFunction != null) {
                 this.startPositionFunction(worldMatrix, particle.position, particle);
@@ -477,12 +647,19 @@ import lime.utils.Float32Array;
                 this.particleEmitterType.startPositionFunction(worldMatrix, particle.position, particle);
             }
 			
-			particle.lifeTime = ParticleSystem.randomNumber(this.minLifeTime, this.maxLifeTime);
+			if (this.startDirectionFunction != null) {
+                this.startDirectionFunction(emitPower, worldMatrix, particle.direction, particle);
+            }
+            else {
+                this.particleEmitterType.startDirectionFunction(emitPower, worldMatrix, particle.direction, particle);
+            }
 			
-			particle.size = ParticleSystem.randomNumber(this.minSize, this.maxSize);
-            particle.angularSpeed = ParticleSystem.randomNumber(this.minAngularSpeed, this.maxAngularSpeed);
+			particle.lifeTime = Scalar.RandomRange(this.minLifeTime, this.maxLifeTime);
 			
-			var step = ParticleSystem.randomNumber(0, 1.0);
+			particle.size = Scalar.RandomRange(this.minSize, this.maxSize);
+            particle.angularSpeed = Scalar.RandomRange(this.minAngularSpeed, this.maxAngularSpeed);
+			
+			var step =Scalar.RandomRange(0, 1.0);
 			
 			Color4.LerpToRef(this.color1, this.color2, step, particle.color);
 			
@@ -533,13 +710,18 @@ import lime.utils.Float32Array;
 		return this._effect;
 	}
 
+	/**
+	 * Animates the particle system for the current frame by emitting new particles and or animating the living ones.
+	 */
 	public function animate() {
 		if (!this._started) {
 			return;
 		}
 		
+		var effect = this._getEffect();
+		
 		// Check
-		if (this.emitter == null || !this._effect.isReady() || this.particleTexture == null || !this.particleTexture.isReady()) {
+		if (this.emitter == null || !effect.isReady() || this.particleTexture == null || !this.particleTexture.isReady()) {
 			return;
 		}
 			
@@ -607,8 +789,8 @@ import lime.utils.Float32Array;
 		
 		// Update VBO
 		var offset:Int = 0;
-		for (index in 0...this.particles.length) {
-			var particle = this.particles[index];
+		for (index in 0...this._particles.length) {
+			var particle = this._particles[index];
 			this.appendParticleVertexes(offset, particle);
 			offset += 4;
 		}
@@ -634,16 +816,24 @@ import lime.utils.Float32Array;
 		this._appendParticleVertex(offset++, particle, 0, 1);
 	}
 	
+	/**
+	 * Rebuilds the particle system.
+	 */
 	public function rebuild() {
         this._createIndexBuffer();
+		
 		if (this._vertexBuffer != null) {
 			this._vertexBuffer._rebuild();
 		}
     }
 
+	/**
+	 * Renders the particle system in its current state.
+	 * @returns the current number of particles.
+	 */
 	public function render():Int {		
 		// Check
-		if (this.emitter == null || !this._effect.isReady() || this.particleTexture == null || !this.particleTexture.isReady() || this.particles.length == 0) {
+		if (this.emitter == null || !this._effect.isReady() || this.particleTexture == null || !this.particleTexture.isReady() || this._particles.length == 0) {
 			return 0;
 		}
 		
@@ -686,13 +876,17 @@ import lime.utils.Float32Array;
 			this._engine.setDepthWrite(true);
 		}
 		
-		this._engine.drawElementsType(Material.TriangleFillMode, 0, this.particles.length * 6);
+		this._engine.drawElementsType(Material.TriangleFillMode, 0, this._particles.length * 6);
 		this._engine.setAlphaMode(Engine.ALPHA_DISABLE);
 		
-		return this.particles.length;
+		return this._particles.length;
 	}
 
-	public function dispose() {
+	/*
+	 * Disposes the particle system and free the associated resources
+	 * @param disposeTexture defines if the particule texture must be disposed as well (true by default)
+	 */
+	public function dispose(disposeTexture:Bool = true) {
 		if (this._vertexBuffer != null) {
 			this._vertexBuffer.dispose();
 			this._vertexBuffer = null;
@@ -703,7 +897,7 @@ import lime.utils.Float32Array;
 			this._indexBuffer = null;
 		}
 		
-		if (this.particleTexture != null) {
+		if (disposeTexture && this.particleTexture != null) {
 			this.particleTexture.dispose();
 			this.particleTexture = null;
 		}
@@ -716,12 +910,24 @@ import lime.utils.Float32Array;
         this.onDisposeObservable.clear();
 	}
 	
+	/**
+	 * Creates a Sphere Emitter for the particle system. (emits along the sphere radius)
+	 * @param radius The radius of the sphere to emit from
+	 * @returns the emitter
+	 */
 	public function createSphereEmitter(radius:Float = 1):SphereParticleEmitter {
         var particleEmitter = new SphereParticleEmitter(radius);
         this.particleEmitterType = particleEmitter;
         return particleEmitter;
     }
 
+	/**
+	 * Creates a Directed Sphere Emitter for the particle system. (emits between direction1 and direction2)
+	 * @param radius The radius of the sphere to emit from
+	 * @param direction1 Particles are emitted between the direction1 and direction2 from within the sphere
+	 * @param direction2 Particles are emitted between the direction1 and direction2 from within the sphere
+	 * @returns the emitter
+	 */
     public function createDirectedSphereEmitter(radius:Float = 1, ?direction1:Vector3, ?direction2:Vector3):SphereDirectedParticleEmitter {
 		if (direction1 == null) {
 			direction1 = new Vector3(0, 1.0, 0);
@@ -734,6 +940,12 @@ import lime.utils.Float32Array;
         return particleEmitter;
     }
 
+	/**
+	 * Creates a Cone Emitter for the particle system. (emits from the cone to the particle position)
+	 * @param radius The radius of the cone to emit from
+	 * @param angle The base angle of the cone
+	 * @returns the emitter
+	 */
     public function createConeEmitter(radius:Float = 1, angle:Float = 0.7854):ConeParticleEmitter {
         var particleEmitter = new ConeParticleEmitter(radius, angle);
         this.particleEmitterType = particleEmitter;
@@ -741,8 +953,16 @@ import lime.utils.Float32Array;
     }
 
     // this method needs to be changed when breaking changes will be allowed to match the sphere and cone methods and properties direction1,2 and minEmitBox,maxEmitBox to be removed from the system.
+	/**
+	 * Creates a Box Emitter for the particle system. (emits between direction1 and direction2 from withing the box defined by minEmitBox and maxEmitBox)
+	 * @param direction1 Particles are emitted between the direction1 and direction2 from within the box
+	 * @param direction2 Particles are emitted between the direction1 and direction2 from within the box
+	 * @param minEmitBox Particles are emitted from the box between minEmitBox and maxEmitBox
+	 * @param maxEmitBox  Particles are emitted from the box between minEmitBox and maxEmitBox
+	 * @returns the emitter
+	 */
     public function createBoxEmitter(direction1:Vector3, direction2:Vector3, minEmitBox:Vector3, maxEmitBox:Vector3):BoxParticleEmitter {
-        var particleEmitter = new BoxParticleEmitter(this);
+        var particleEmitter = new BoxParticleEmitter();
         this.direction1 = direction1;
         this.direction2 = direction2;
         this.minEmitBox = minEmitBox;
@@ -751,19 +971,22 @@ import lime.utils.Float32Array;
         return particleEmitter;
     }
 
-    public static inline function randomNumber(min:Float, max:Float):Float {
-        if (min == max) {
-            return (min);
-        }
-		
-        var random = Math.random();
-		
-        return ((random * (max - min)) + min);
-    }
-
-	// Clone
-	public function clone(name:String, ?newEmitter:Dynamic):ParticleSystem {
-		var result = new ParticleSystem(name, this._capacity, this._scene);
+	/**
+	 * Clones the particle system.
+	 * @param name The name of the cloned object
+	 * @param newEmitter The new emitter to use
+	 * @returns the cloned particle system
+	 */
+	public function clone(name:String, newEmitter:Dynamic):ParticleSystem {
+		var custom:Effect = null;
+		var program:Dynamic = null;
+		if (this.customShader != null) {
+			program = this.customShader;
+			var defines:String = (program.shaderOptions.defines.length > 0) ? program.shaderOptions.defines.join("\n") : "";
+			custom = this._engine.createEffectForParticles(program.shaderPath.fragmentElement, program.shaderOptions.uniforms, program.shaderOptions.samplers, defines);
+		}
+		var result = new ParticleSystem(name, this._capacity, this._scene, custom);
+		result.customShader = program;
 		
 		// TODO:
 		//Tools.DeepCopy(this, result, ["particles"], ["_vertexDeclaration", "_vertexStrideSize"]);
@@ -782,17 +1005,10 @@ import lime.utils.Float32Array;
 		return result;
 	}
 	
-	var randomColor:Color4 = new Color4();
-	inline function doubleColor4():Color4 {
-		randomColor.b = Math.random() * 2;
-		randomColor.r = Math.random() * 2;
-		randomColor.g = Math.random() * 2;
-		randomColor.a = Math.random();
-		
-		return randomColor;
-		//return new Color4(Math.random() * 2, Math.random() * 2, Math.random() * 2, 0.2);
-	}
-	
+	/**
+	 * Serializes the particle system to a JSON object.
+	 * @returns the JSON object
+	 */
 	public function serialize():Dynamic {
 		var serializationObject:Dynamic = { };
 		
@@ -849,9 +1065,21 @@ import lime.utils.Float32Array;
 		
         serializationObject.isAnimationSheetEnabled = this._isAnimationSheetEnabled;
 		
+		// Emitter
+		if (this.particleEmitterType != null) {
+			serializationObject.particleEmitterType = this.particleEmitterType.serialize();
+		} 
+		
 		return serializationObject;
 	}
 
+	/**
+	 * Parses a JSON object to create a particle system.
+	 * @param parsedParticleSystem The JSON object to parse
+	 * @param scene The scene to create the particle system in
+	 * @param rootUrl The root url to use to load external dependencies like texture
+	 * @returns the Parsed particle system
+	 */
 	public static function Parse(parsedParticleSystem:Dynamic, scene:Scene, rootUrl:String):ParticleSystem {
 		var name = parsedParticleSystem.name;
 		var custom:Effect = null;
@@ -886,6 +1114,10 @@ import lime.utils.Float32Array;
             }
         }
 		
+		if (parsedParticleSystem.autoAnimate == true) {
+			scene.beginAnimation(particleSystem, parsedParticleSystem.autoAnimateFrom, parsedParticleSystem.autoAnimateTo, parsedParticleSystem.autoAnimateLoop, parsedParticleSystem.autoAnimateSpeed != null ? parsedParticleSystem.autoAnimateSpeed : 1.0);
+		}
+		
 		// Particle system
 		particleSystem.minAngularSpeed = parsedParticleSystem.minAngularSpeed;
 		particleSystem.maxAngularSpeed = parsedParticleSystem.maxAngularSpeed;
@@ -916,7 +1148,7 @@ import lime.utils.Float32Array;
         particleSystem.spriteCellWidth = parsedParticleSystem.spriteCellWidth;
         particleSystem.spriteCellHeight = parsedParticleSystem.spriteCellHeight;
 		
-		if (parsedParticleSystem.preventAutoStart == null || parsedParticleSystem.preventAutoStart == true) {
+		if (parsedParticleSystem.preventAutoStart == true) {
             particleSystem.start();
         }
 		

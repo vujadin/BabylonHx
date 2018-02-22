@@ -14,28 +14,111 @@ import com.babylonhx.mesh.IHasBoundingInfo;
  * ...
  * @author Krtolica Vujadin
  */
+/**
+ * Represents one particle of a solid particle system.
+ * @see SolidParticleSystem
+ */
 class SolidParticle implements IHasBoundingInfo {
 	
-	public var idx:Int;                     				// particle global index
-	public var color:Color4 = new Color4(1, 1, 1, 1);  		// color
-	public var position:Vector3 = Vector3.Zero();       	// position
-	public var rotation:Vector3 = Vector3.Zero();       	// rotation
-	public var rotationQuaternion:Quaternion;    			// quaternion, will overwrite rotation
-	public var scaling:Vector3 = new Vector3(1, 1, 1);  	// scaling
-	public var uvs:Vector4 = new Vector4(0, 0, 1, 1);   	// uvs
-	public var velocity:Vector3 = Vector3.Zero();       	// velocity
-	public var pivot:Vector3 = Vector3.Zero();              // pivot point in the particle local space
-	public var alive:Bool = true;                    		// alive
-	public var isVisible:Bool = true;                		// visibility
-	public var _pos:Int;                    				// index of this particle in the global "positions" array
-	public var _ind:Int = 0;                        		// index of this particle in the global "indices" array
-	public var _model:ModelShape;							// model shape reference
-	public var shapeId:Int;                 				// model shape id
-	public var idxInShape:Int;              				// index of the particle in its shape id
-	public var _modelBoundingInfo:BoundingInfo;        		// reference to the shape model BoundingInfo object
-    public var _boundingInfo:BoundingInfo;             		// particle BoundingInfo
-	public var _sps:SolidParticleSystem;               		// reference to the SPS what the particle belongs to
-	public var _stillInvisible:Bool = false;         		// still set as invisible in order to skip useless computations
+	/**
+	 * particle global index
+	 */
+	public var idx:Int = 0;
+	/**
+	 * The color of the particle
+	 */
+	public var color:Color4 = new Color4(1.0, 1.0, 1.0, 1.0);
+	/**
+	 * The world space position of the particle.
+	 */
+	public var position:Vector3 = Vector3.Zero();
+	/**
+	 * The world space rotation of the particle. (Not use if rotationQuaternion is set)
+	 */
+	public var rotation:Vector3 = Vector3.Zero();
+	/**
+	 * The world space rotation quaternion of the particle.
+	 */
+	public var rotationQuaternion:Quaternion;
+	/**
+	 * The scaling of the particle.
+	 */
+	public var scaling:Vector3 = Vector3.One();
+	/**
+	 * The uvs of the particle.
+	 */
+	public var uvs:Vector4 = new Vector4(0.0, 0.0, 1.0, 1.0);
+	/**
+	 * The current speed of the particle.
+	 */
+	public var velocity:Vector3 = Vector3.Zero();
+	/**
+	 * The pivot point in the particle local space.
+	 */
+	public var pivot:Vector3 = Vector3.Zero();
+	/**
+	 * Must the particle be translated from its pivot point in its local space ?
+	 * In this case, the pivot point is set at the origin of the particle local space and the particle is translated.  
+	 * Default : false
+	 */
+	public var translateFromPivot:Bool = false;
+	/**
+	 * Is the particle active or not ?
+	 */
+	public var alive:Bool = true;
+	/**
+	 * Is the particle visible or not ?
+	 */
+	public var isVisible:Bool = true;
+	/**
+	 * Index of this particle in the global "positions" array (Internal use)
+	 */
+	public var _pos:Int = 0;
+	/**
+	 * Index of this particle in the global "indices" array (Internal use)
+	 */
+	public var _ind:Int = 0;
+	/**
+	 * ModelShape of this particle (Internal use)
+	 */
+	public var _model:ModelShape;
+	/**
+	 * ModelShape id of this particle
+	 */
+	public var shapeId:Int = 0;
+	/**
+	 * Index of the particle in its shape id (Internal use)
+	 */
+	public var idxInShape:Int = 0;
+	/**
+	 * Reference to the shape model BoundingInfo object (Internal use)
+	 */
+	public var _modelBoundingInfo:BoundingInfo;
+	/**
+	 * Particle BoundingInfo object (Internal use)
+	 */
+	public var _boundingInfo:BoundingInfo;
+	/**
+	 * Reference to the SPS what the particle belongs to (Internal use)
+	 */
+	public var _sps:SolidParticleSystem;
+	/**
+	 * Still set as invisible in order to skip useless computations (Internal use)
+	 */
+	public var _stillInvisible:Bool = false;
+	/**
+	 * Last computed particle rotation matrix
+	 */
+	public var _rotationMatrix:Array<Float> = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0];
+	/**
+	 * Parent particle Id, if any.
+	 * Default null.
+	 */
+	public var parentId:Null<Int> = null;
+	/**
+	 * Internal global position in the SPS.
+	 */
+	public var _globalPosition:Vector3 = Vector3.Zero();
 	
 
 	/**
@@ -52,9 +135,7 @@ class SolidParticle implements IHasBoundingInfo {
 	public function new(?particleIndex:Int, ?positionIndex:Int, ?indiceIndex:Int, ?model:ModelShape, ?shapeId:Int, ?idxInShape:Int, ?sps:SolidParticleSystem, ?modelBoundingInfo:BoundingInfo) {
 		this.idx = particleIndex;
 		this._pos = positionIndex;
-		if (indiceIndex != null) {
-			this._ind = indiceIndex;
-		}
+		this._ind = indiceIndex;
 		this._model = model;
 		this.shapeId = shapeId;
 		this.idxInShape = idxInShape;
@@ -68,7 +149,8 @@ class SolidParticle implements IHasBoundingInfo {
 	/**
 	 * Returns a boolean. True if the particle intersects another particle or another mesh, else false.
 	 * The intersection is computed on the particle bounding sphere and Axis Aligned Bounding Box (AABB)
-	 * `target` is the object (solid particle or mesh) what the intersection is computed against.
+	 * @param target is the object (solid particle or mesh) what the intersection is computed against.
+	 * @returns true if it intersects
 	 */
 	public function intersectsMesh(target:IHasBoundingInfo):Bool {
 		if (this._boundingInfo == null || target._boundingInfo == null) {

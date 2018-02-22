@@ -309,7 +309,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 			this.originalPostProcess = this._basePostProcess;
 		}
 		
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRPassPostProcess", function() { return this.originalPostProcess; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRPassPostProcess", function() { return [this.originalPostProcess]; }, true));
 		
 		this._currentDepthOfFieldSource = this.originalPostProcess;
 		
@@ -319,7 +319,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 			
 			// Create volumetric light final post-process
 			this.volumetricLightFinalPostProcess = new PostProcess("HDRVLSFinal", "standard", [], [], ratio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false, "#define PASS_POST_PROCESS", Engine.TEXTURETYPE_UNSIGNED_INT);
-			this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRVLSFinal", function() { return this.volumetricLightFinalPostProcess; }, true));
+			this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRVLSFinal", function() { return [this.volumetricLightFinalPostProcess]; }, true));
 		}
 		
 		if (this._bloomEnabled) {
@@ -337,7 +337,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 			
 			// Create depth-of-field source post-process
 			this.textureAdderFinalPostProcess = new PostProcess("HDRDepthOfFieldSource", "standard", [], [], ratio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false, "#define PASS_POST_PROCESS", Engine.TEXTURETYPE_UNSIGNED_INT);
-			this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRBaseDepthOfFieldSource", function() { return this.textureAdderFinalPostProcess; }, true));
+			this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRBaseDepthOfFieldSource", function() { return [this.textureAdderFinalPostProcess]; }, true));
 		}
 		
 		if (this._lensFlareEnabled) {
@@ -346,7 +346,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 			
 			// Create depth-of-field source post-process post lens-flare and disable it now
 			this.lensFlareFinalPostProcess = new PostProcess("HDRPostLensFlareDepthOfFieldSource", "standard", [], [], ratio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false, "#define PASS_POST_PROCESS", Engine.TEXTURETYPE_UNSIGNED_INT);
-			this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRPostLensFlareDepthOfFieldSource", function() { return this.lensFlareFinalPostProcess; }, true));
+			this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRPostLensFlareDepthOfFieldSource", function() { return [this.lensFlareFinalPostProcess]; }, true));
 		}
 		
 		if (this._hdrEnabled) {
@@ -358,7 +358,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 			
 			// Create depth-of-field source post-process post hdr and disable it now
 			this.hdrFinalPostProcess = new PostProcess("HDRPostHDReDepthOfFieldSource", "standard", [], [], ratio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false, "#define PASS_POST_PROCESS", Engine.TEXTURETYPE_UNSIGNED_INT);
-			this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRPostHDReDepthOfFieldSource", function() { return this.hdrFinalPostProcess; }, true));
+			this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRPostHDReDepthOfFieldSource", function() { return [this.hdrFinalPostProcess]; }, true));
 		}
 		
 		if (this._depthOfFieldEnabled) {
@@ -401,7 +401,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 		};
 		
 		// Add to pipeline
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRDownSampleX4", function() { return this.downSampleX4PostProcess; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRDownSampleX4", function() { return [this.downSampleX4PostProcess]; }, true));
 	}
 
 	// Brightpass Post-Process
@@ -427,7 +427,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 		}
 		
 		// Add to pipeline
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRBrightPass", function() { return this.brightPassPostProcess; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRBrightPass", function() { return [this.brightPassPostProcess]; }, true));
 	}
 
 	// Create blur H&V post-processes
@@ -447,8 +447,8 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 			blurY.kernel = this.horizontalBlur ? 64 * dw : Reflect.getProperty(this, blurWidthKey) * dw;
 		});
 		
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRBlurH" + indice, function() { return blurX; }, true));
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRBlurV" + indice, function() { return blurY; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRBlurH" + indice, function() { return [blurX]; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRBlurV" + indice, function() { return [blurY]; }, true));
 		
 		this.blurHPostProcesses.push(blurX);
 		this.blurVPostProcesses.push(blurY);
@@ -467,7 +467,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 		};
 		
 		// Add to pipeline
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRTextureAdder", function() { return this.textureAdderPostProcess; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRTextureAdder", function() { return [this.textureAdderPostProcess]; }, true));
 	}
 
 	private function _createVolumetricLightPostProcess(scene:Scene, ratio:Float) {
@@ -510,7 +510,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 			}
 		};
 		
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRVLS", function() { return this.volumetricLightPostProcess; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRVLS", function() { return [this.volumetricLightPostProcess]; }, true));
 		
 		// Smooth
 		this._createBlurPostProcesses(scene, ratio / 4, 0, "volumetricLightBlurScale");
@@ -524,7 +524,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 			this._currentDepthOfFieldSource = this.volumetricLightFinalPostProcess;
 		};
 		
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRVLSMerge", function() { return this.volumetricLightMergePostProces; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRVLSMerge", function() { return [this.volumetricLightMergePostProces]; }, true));
 	}
 
 	// Create luminance
@@ -551,7 +551,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 		};
 		
 		// Add to pipeline
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRLuminance", function() { return this.luminancePostProcess; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRLuminance", function() { return [this.luminancePostProcess]; }, true));
 		
 		// Create down sample luminance
 		var i = StandardRenderingPipeline.LuminanceSteps - 1;
@@ -606,7 +606,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 				};
 			}
 			
-			this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRLuminanceDownSample" + index, function() { return pp; }, true));
+			this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRLuminanceDownSample" + index, function() { return [pp]; }, true));
 		}
 	}
 
@@ -649,18 +649,18 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 			this._currentDepthOfFieldSource = this.hdrFinalPostProcess;
 		};
 		
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDR", function() { return this.hdrPostProcess; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDR", function() { return [this.hdrPostProcess]; }, true));
 	}
 
 	// Create lens flare post-process
 	private function _createLensFlarePostProcess(scene:Scene, ratio:Float) {
 		this.lensFlarePostProcess = new PostProcess("HDRLensFlare", "standard", ["strength", "ghostDispersal", "haloWidth", "resolution", "distortionStrength"], ["lensColorSampler"], ratio / 2, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false, "#define LENS_FLARE", Engine.TEXTURETYPE_UNSIGNED_INT);
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRLensFlare", function() { return this.lensFlarePostProcess; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRLensFlare", function() { return [this.lensFlarePostProcess]; }, true));
 		
 		this._createBlurPostProcesses(scene, ratio / 4, 2);
 		
 		this.lensFlareComposePostProcess = new PostProcess("HDRLensFlareCompose", "standard", ["lensStarMatrix"], ["otherSampler", "lensDirtSampler", "lensStarSampler"], ratio, null, Texture.BILINEAR_SAMPLINGMODE, scene.getEngine(), false, "#define LENS_FLARE_COMPOSE", Engine.TEXTURETYPE_UNSIGNED_INT);
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRLensFlareCompose", function() { return this.lensFlareComposePostProcess; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRLensFlareCompose", function() { return [this.lensFlareComposePostProcess]; }, true));
 		
 		var resolution = new Vector2(0, 0);
 		
@@ -736,7 +736,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 		};
 		
 		// Add to pipeline
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRDepthOfField", function() { return this.depthOfFieldPostProcess; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRDepthOfField", function() { return [this.depthOfFieldPostProcess]; }, true));
 	}
 
 	// Create motion blur post-process
@@ -772,7 +772,7 @@ class StandardRenderingPipeline extends PostProcessRenderPipeline implements IDi
 			effect.setTexture("depthSampler", this._getDepthTexture());
 		};
 		
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRMotionBlur", function() { return this.motionBlurPostProcess; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), "HDRMotionBlur", function() { return [this.motionBlurPostProcess]; }, true));
 	}
 
 	private function _getDepthTexture():Texture {

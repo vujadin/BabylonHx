@@ -23,7 +23,7 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 	private var _add:Vector3 = Vector3.Zero();
 	private var _attachedMesh:AbstractMesh;
 
-	public var invertYAxis:Bool = false;
+	private var _invertYAxis:Bool = false;
 	public var position:Vector3 = Vector3.Zero();
 	
 	public var name:String;
@@ -46,10 +46,10 @@ import com.babylonhx.materials.textures.RenderTargetTexture;
 					this._add.copyFromFloats(-1, 0, 0);
 					
 				case 2:
-					this._add.copyFromFloats(0, this.invertYAxis ? 1 : -1, 0);
+					this._add.copyFromFloats(0, this._invertYAxis ? 1 : -1, 0);
 					
 				case 3:
-					this._add.copyFromFloats(0, this.invertYAxis ? -1 : 1, 0);
+					this._add.copyFromFloats(0, this._invertYAxis ? -1 : 1, 0);
 					
 				case 4:
 					this._add.copyFromFloats(0, 0, 1);

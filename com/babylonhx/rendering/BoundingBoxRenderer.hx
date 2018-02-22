@@ -11,8 +11,8 @@ import com.babylonhx.mesh.VertexData;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.culling.BoundingBox;
 
-import lime.utils.UInt32Array;
-import lime.utils.Float32Array;
+import com.babylonhx.utils.typedarray.UInt32Array;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 /**
  * ...

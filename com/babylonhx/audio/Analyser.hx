@@ -5,10 +5,10 @@ import com.babylonhx.audio.AudioEngine;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.math.Vector2;
 
-import lime.utils.ArrayBuffer;
-import lime.utils.Float32Array;
-import lime.utils.Int32Array;
-import lime.utils.UInt8Array;
+import com.babylonhx.utils.typedarray.ArrayBuffer;
+import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.Int32Array;
+import com.babylonhx.utils.typedarray.UInt8Array;
 
 #if (js || purejs)
 import js.html.audio.*;

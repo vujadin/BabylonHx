@@ -18,6 +18,18 @@ import com.babylonhx.tools.EventState;
 	public var colorLevel:Float;
 	
 	private var _refTexture:Texture;
+	private var _ownRefractionTexture:Bool = true;
+	
+	public var refractionTexture(never, set):Texture;
+	function set_refractionTexture(value:Texture):Texture {
+		if (this._refTexture != null && this._ownRefractionTexture) {
+			this._refTexture.dispose();
+		}
+		
+		this._refTexture = value;
+		this._ownRefractionTexture = false;
+		return value;
+	}
 	
 	
 	public function new(name:String, refractionTextureUrl:String, color:Color3, depth:Float, colorLevel:Float, options:Dynamic, camera:Camera, ?samplingMode:Int, ?engine:Engine, reusable:Bool = false) {
@@ -42,8 +54,9 @@ import com.babylonhx.tools.EventState;
 
 	// Methods
 	override public function dispose(?camera:Camera):Void {
-		if (this._refTexture != null) {
+		if (this._refTexture != null && this._ownRefractionTexture) {
 			this._refTexture.dispose();
+			this._refTexture = null;
 		}
 		
 		super.dispose(camera);

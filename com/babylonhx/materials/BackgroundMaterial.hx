@@ -406,7 +406,30 @@ class BackgroundMaterial extends PushMaterial {
 		_markAllSubMeshesAsTexturesDirty();
 		return value;
 	}
-
+	
+	private var _fovMultiplier:Float = 1.0;
+	/**
+     * The current fov(field of view) multiplier, 0.0 - 2.0. Defaults to 1.0. Lower values "zoom in" and higher values "zoom out".
+     * Best used when trying to implement visual zoom effects like fish-eye or binoculars while not adjusting camera fov.
+     * Recommended to be keep at 1.0 except for special cases.
+     */
+	public var fovMultiplier(get, set):Float;
+    inline function get_fovMultiplier():Float {
+        return this._fovMultiplier;
+    }
+    inline function set_fovMultiplier(value:Float):Float {
+        if (Math.isNaN(value)) {
+            value = 1.0;
+        }
+        this._fovMultiplier = Math.max(0.0, Math.min(2.0, value));
+		return value;
+    }
+    
+    /**
+     * Enable the FOV adjustment feature controlled by fovMultiplier.
+     * @type {boolean}
+     */
+    public var useEquirectangularFOV:Bool = false;
 
 	/**
 	 * Number of Simultaneous lights allowed on the material.
@@ -705,6 +728,7 @@ class BackgroundMaterial extends PushMaterial {
 					defines.REFLECTIONBLUR = this._reflectionBlur > 0;
 					defines.REFLECTIONMAP_OPPOSITEZ = this.getScene().useRightHandedSystem ? !reflectionTexture.invertZ : reflectionTexture.invertZ;
 					defines.LODINREFLECTIONALPHA = reflectionTexture.lodLevelInAlpha;
+					defines.EQUIRECTANGULAR_RELFECTION_FOV = this.useEquirectangularFOV;
 					
 					if (reflectionTexture.coordinatesMode == Texture.INVCUBIC_MODE) {
 						defines.INVERTCUBICMAP = true;

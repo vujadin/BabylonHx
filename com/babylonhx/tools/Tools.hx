@@ -12,10 +12,9 @@ import com.babylonhx.math.Vector2;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.AbstractMesh;
-import lime.utils.Int32Array;
-
+import com.babylonhx.utils.typedarray.Int32Array;
 import com.babylonhx.utils.Image;
-import lime.utils.UInt8Array;
+import com.babylonhx.utils.typedarray.UInt8Array;
 
 import haxe.io.BytesInput;
 import haxe.io.Bytes;
@@ -23,11 +22,11 @@ import haxe.crypto.Base64;
 import haxe.Json;
 import haxe.Timer;
 
-//#if openfl
+#if (openfl || lime)
 //typedef Assets = openfl.Assets;
 //#elseif lime
 typedef Assets = lime.Assets;
-//#end
+#end
 
 
 /**
@@ -69,6 +68,17 @@ typedef Assets = lime.Assets;
 	
 	public static function SetImmediate(action:Dynamic/*Void->Void*/) {
 		delay(action, 1);
+	}
+	
+	public static function ExtendOptions(source:Dynamic, target:Dynamic):Dynamic {
+		var sourceFileds = Reflect.fields(source);
+		for (field in sourceFileds) {
+			var sfVal = Reflect.field(source, field);
+			if (sfVal != null) {
+				Reflect.setField(target, field, sfVal);
+			}
+		}
+		return target;
 	}
 	
 	#if (js || purejs)
@@ -484,7 +494,6 @@ typedef Assets = lime.Assets;
 				trace("File '" + path + "' doesn't exist!");
 			}
 			#else*/
-			trace(Assets.list());
 			if (Assets.exists(path)) {
 				var callBackFunction = callbackFn != null ?
 					function(result:Dynamic) {

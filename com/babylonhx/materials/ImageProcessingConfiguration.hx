@@ -349,21 +349,21 @@ class ImageProcessingConfiguration {
 	 * @param defines the list of defines currently in use
 	 */
 	public static function PrepareUniforms(uniforms:Array<String>, defines:IImageProcessingConfigurationDefines) {
-		if (defines.EXPOSURE) {
+		if (defines.EXPOSURE > 0) {
 			uniforms.push("exposureLinear");
 		}
-		if (defines.CONTRAST) {
+		if (defines.CONTRAST > 0) {
 			uniforms.push("contrast");
 		}
-		if (defines.COLORGRADING) {
+		if (defines.COLORGRADING > 0) {
 			uniforms.push("colorTransformSettings");
 		}
-		if (defines.VIGNETTE) {
+		if (defines.VIGNETTE > 0) {
 			uniforms.push("vInverseScreenSize");
 			uniforms.push("vignetteSettings1");
 			uniforms.push("vignetteSettings2");
 		}
-		if (defines.COLORCURVES) {
+		if (defines.COLORCURVES > 0) {
 			ColorCurves.PrepareUniforms(uniforms);
 		}
 	}
@@ -374,7 +374,7 @@ class ImageProcessingConfiguration {
 	 * @param defines the list of defines currently in use
 	 */
 	public static function PrepareSamplers(samplersList:Array<String>, defines:IImageProcessingConfigurationDefines) {
-		if (defines.COLORGRADING) {
+		if (defines.COLORGRADING > 0) {
 			samplersList.push("txColorTransform");
 		}
 	}
@@ -385,36 +385,36 @@ class ImageProcessingConfiguration {
 	 */
 	public function prepareDefines(defines:IImageProcessingConfigurationDefines, forPostProcess:Bool = false) {
 		if (forPostProcess != this.applyByPostProcess || !this._isEnabled) {
-            defines.VIGNETTE = false;
-            defines.TONEMAPPING = false;
-            defines.CONTRAST = false;
-            defines.EXPOSURE = false;
-            defines.COLORCURVES = false;
-            defines.COLORGRADING = false;
-			defines.COLORGRADING3D = false;
-            defines.IMAGEPROCESSING = false;              
-            defines.IMAGEPROCESSINGPOSTPROCESS = this.applyByPostProcess && this._isEnabled;
+            defines.VIGNETTE = 0;
+            defines.TONEMAPPING = 0;
+            defines.CONTRAST = 0;
+            defines.EXPOSURE = 0;
+            defines.COLORCURVES = 0;
+            defines.COLORGRADING = 0;
+			defines.COLORGRADING3D = 0;
+            defines.IMAGEPROCESSING = 0;              
+            defines.IMAGEPROCESSINGPOSTPROCESS = (this.applyByPostProcess && this._isEnabled) ? 1 : 0;
             return;
         }
-		defines.VIGNETTE = this.vignetteEnabled;
-		defines.VIGNETTEBLENDMODEMULTIPLY = (this.vignetteBlendMode == ImageProcessingConfiguration.VIGNETTEMODE_MULTIPLY);
-		defines.VIGNETTEBLENDMODEOPAQUE = !defines.VIGNETTEBLENDMODEMULTIPLY;
-		defines.TONEMAPPING = this.toneMappingEnabled;
-		defines.CONTRAST = (this.contrast != 1.0);
-		defines.EXPOSURE = (this.exposure != 1.0);
-		defines.COLORCURVES = (this.colorCurvesEnabled && this.colorCurves != null);
-		defines.COLORGRADING = (this.colorGradingEnabled && this.colorGradingTexture != null);
-		if (defines.COLORGRADING) {
+		defines.VIGNETTE = this.vignetteEnabled ? 1 : 0;
+		defines.VIGNETTEBLENDMODEMULTIPLY = (this.vignetteBlendMode == ImageProcessingConfiguration.VIGNETTEMODE_MULTIPLY) ? 1 : 0;
+		defines.VIGNETTEBLENDMODEOPAQUE = defines.VIGNETTEBLENDMODEMULTIPLY == 0 ? 1 : 0;
+		defines.TONEMAPPING = this.toneMappingEnabled ? 1 : 0;
+		defines.CONTRAST = (this.contrast != 1.0) ? 1 : 0;
+		defines.EXPOSURE = (this.exposure != 1.0) ? 1 : 0;
+		defines.COLORCURVES = (this.colorCurvesEnabled && this.colorCurves != null) ? 1 : 0;
+		defines.COLORGRADING = (this.colorGradingEnabled && this.colorGradingTexture != null) ? 1 : 0;
+		if (defines.COLORGRADING > 0) {
             var texture:BaseTexture = this.colorGradingTexture;
-            defines.COLORGRADING3D = (texture.getScene().getEngine().webGLVersion > 1) ? true : false;                 
+            defines.COLORGRADING3D = (texture.getScene().getEngine().webGLVersion > 1) ? 1 : 0;                 
         } 
 		else {
-            defines.COLORGRADING3D = false;
+            defines.COLORGRADING3D = 0;
         }
-		defines.SAMPLER3DGREENDEPTH = this.colorGradingWithGreenDepth;
-		defines.SAMPLER3DBGRMAP = this.colorGradingBGR;
-		defines.IMAGEPROCESSINGPOSTPROCESS = this.applyByPostProcess;
-		defines.IMAGEPROCESSING = defines.VIGNETTE || defines.TONEMAPPING || defines.CONTRAST || defines.EXPOSURE || defines.COLORCURVES || defines.COLORGRADING;
+		defines.SAMPLER3DGREENDEPTH = this.colorGradingWithGreenDepth ? 1 : 0;
+		defines.SAMPLER3DBGRMAP = this.colorGradingBGR ? 1 : 0;
+		defines.IMAGEPROCESSINGPOSTPROCESS = this.applyByPostProcess ? 1 : 0;
+		defines.IMAGEPROCESSING = (defines.VIGNETTE == 1 || defines.TONEMAPPING == 1 || defines.CONTRAST == 1 || defines.EXPOSURE == 1 || defines.COLORCURVES == 1 || defines.COLORGRADING== 1 ) ? 1 : 0;
 	}
 
 	/**

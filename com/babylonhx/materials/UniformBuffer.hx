@@ -9,8 +9,8 @@ import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Color3;
 import com.babylonhx.tools.Tools;
 
-import lime.graphics.opengl.GLUniformLocation;
-import lime.utils.Float32Array;
+import com.babylonhx.utils.GL.GLUniformLocation;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 /**
  * ...

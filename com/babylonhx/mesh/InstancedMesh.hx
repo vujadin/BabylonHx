@@ -10,8 +10,8 @@ import com.babylonhx.culling.BoundingSphere;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.animations.IAnimatable;
 
-import lime.utils.UInt32Array;
-import lime.utils.Float32Array;
+import com.babylonhx.utils.typedarray.UInt32Array;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 
 /**
@@ -88,10 +88,11 @@ import lime.utils.Float32Array;
 	
 	/**
      * Is this node ready to be used/rendered
+	 * @param completeCheck defines if a complete check (including materials and lights) has to be done (false by default)
      * @return {boolean} is it ready
      */
-    override public function isReady(forceInstanceSupport:Bool = false):Bool {
-        return this._sourceMesh.isReady(true);
+    override public function isReady(completeCheck:Bool = false, forceInstanceSupport:Bool = false):Bool {
+        return this._sourceMesh.isReady(completeCheck, true);
     }
 
 	/**

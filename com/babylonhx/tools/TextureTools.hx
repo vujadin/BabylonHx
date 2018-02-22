@@ -9,7 +9,7 @@ import com.babylonhx.utils.Image;
 import com.babylonhx.engine.Engine;
 
 import haxe.crypto.Base64;
-import lime.utils.UInt8Array;
+import com.babylonhx.utils.typedarray.UInt8Array;
 
 /**
  * ...
@@ -82,7 +82,12 @@ class TextureTools {
 		if (scene._environmentBRDFTexture == null) {
 			//var texture = Texture.CreateFromBase64String(_environmentBRDFBase64Texture, "EnvironmentBRDFTexture", scene, true, false, Texture.BILINEAR_SAMPLINGMODE);
 			
+			#if purejs
+			var image = new Image(new UInt8Array(untyped Base64.decode(_environmentBRDFBase64Texture)), 256, 256);
+			#else
 			var image = new Image(UInt8Array.fromBytes(Base64.decode(_environmentBRDFBase64Texture)), 256, 256);
+			#end
+			
 			var texture = Texture.fromImage("EnvironmentBRDFTexture", image, scene, true, Texture.BILINEAR_SAMPLINGMODE);
 			
 			texture.wrapU = Texture.CLAMP_ADDRESSMODE;

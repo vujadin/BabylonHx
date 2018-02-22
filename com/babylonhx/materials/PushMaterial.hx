@@ -11,6 +11,7 @@ import com.babylonhx.mesh.Mesh;
 class PushMaterial extends Material {
 
 	private var _activeEffect:Effect;
+	private var _normalMatrix:Matrix = new Matrix();
 	
 
 	public function new(name:String, scene:Scene) {
@@ -34,10 +35,24 @@ class PushMaterial extends Material {
 		return this.isReadyForSubMesh(mesh, mesh.subMeshes[0], useInstances);
 	}
 
+	/**
+	 * Binds the given world matrix to the active effect
+	 * 
+	 * @param world the matrix to bind
+	 */
 	override public function bindOnlyWorldMatrix(world:Matrix) {
 		this._activeEffect.setMatrix("world", world);
 	}
 
+	/**
+	 * Binds the given normal matrix to the active effect
+	 * 
+	 * @param normalMatrix the matrix to bind
+	 */
+	public function bindOnlyNormalMatrix(normalMatrix:Matrix) {                        
+		this._activeEffect.setMatrix("normalMatrix", normalMatrix);
+	}
+	
 	override public function bind(world:Matrix, mesh:Mesh = null) {
 		if (mesh == null) {
 			return;

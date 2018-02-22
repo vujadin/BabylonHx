@@ -2,11 +2,11 @@ package com.babylonhx.loading.ctm;
 
 import com.babylonhx.loading.ctm.lzma.LZMA;
 
-import lime.utils.ArrayBuffer;
-import lime.utils.Float32Array;
-import lime.utils.UInt16Array;
-import lime.utils.UInt32Array;
-import lime.utils.UInt8Array;
+import com.babylonhx.utils.typedarray.ArrayBuffer;
+import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.UInt16Array;
+import com.babylonhx.utils.typedarray.UInt32Array;
+import com.babylonhx.utils.typedarray.UInt8Array;
 
 import haxe.io.BytesInput;
 

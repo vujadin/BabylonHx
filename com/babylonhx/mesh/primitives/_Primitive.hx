@@ -1,6 +1,6 @@
 package com.babylonhx.mesh.primitives;
 
-import lime.utils.Float32Array;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 /**
  * ...

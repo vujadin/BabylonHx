@@ -2,9 +2,9 @@ package com.babylonhx.math;
 
 import com.babylonhx.engine.Engine;
 
-import lime.utils.UInt32Array;
-import lime.utils.Float32Array;
-import lime.utils.Int32Array;
+import com.babylonhx.utils.typedarray.UInt32Array;
+import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.Int32Array;
 
 /**
  * ...
@@ -24,7 +24,7 @@ import lime.utils.Int32Array;
 	static public inline var LN2:Float = 0.6931471805599453;
 	static public var TWOPI:Float = Math.PI * 2;
 	
-	public static function ExtractMinAndMaxIndexed(positions:Float32Array, indices:UInt32Array, indexStart:Int, indexCount:Int, bias:Vector2 = null):BabylonMinMax {
+	public static function ExtractMinAndMaxIndexed(positions:Float32Array, indices:UInt32Array, indexStart:Int, indexCount:Int, ?bias:Vector2 = null):BabylonMinMax {
 		var minimum = new Vector3(Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY, Math.POSITIVE_INFINITY);
 		var maximum = new Vector3(Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY, Math.NEGATIVE_INFINITY);
 		

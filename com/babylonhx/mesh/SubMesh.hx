@@ -14,9 +14,8 @@ import com.babylonhx.collisions.IntersectionInfo;
 import com.babylonhx.culling.BoundingInfo;
 import com.babylonhx.culling.ICullable;
 import com.babylonhx.math.Tools as MathTools;
-import lime.utils.UInt32Array;
-
-import lime.utils.Int32Array;
+import com.babylonhx.utils.typedarray.UInt32Array;
+import com.babylonhx.utils.typedarray.Int32Array;
 
 
 /**
@@ -156,6 +155,12 @@ import lime.utils.Int32Array;
 			extend = { minimum: this._renderingMesh.getBoundingInfo().minimum.clone(), maximum: this._renderingMesh.getBoundingInfo().maximum.clone() };
 		}
 		else {
+			trace(data);
+			trace(indices);
+			trace(this.indexStart);
+			trace(this.indexCount);
+			trace(this._renderingMesh.geometry);
+			trace(this._renderingMesh.geometry.boundingBias);
 			extend = MathTools.ExtractMinAndMaxIndexed(data, indices, this.indexStart, this.indexCount, this._renderingMesh.geometry.boundingBias);
 		}
 		
@@ -171,9 +176,12 @@ import lime.utils.Int32Array;
 	 * Returns the Submesh.  
 	 */
 	inline public function updateBoundingInfo(world:Matrix):SubMesh {
-		if (this.getBoundingInfo() == null) {
+		var boundingInfo = this.getBoundingInfo();
+		
+		if (boundingInfo == null) {
 			this.refreshBoundingInfo();
-		}		
+			boundingInfo = this.getBoundingInfo();
+		}	
 		this.getBoundingInfo().update(world);
 		return this;
 	}
@@ -183,7 +191,12 @@ import lime.utils.Int32Array;
 	 * Boolean returned.  
 	 */
 	inline public function isInFrustum(frustumPlanes:Array<Plane>):Bool {
-		return this.getBoundingInfo().isInFrustum(frustumPlanes);
+		var boundingInfo = this.getBoundingInfo();
+		
+		if (boundingInfo == null) {
+			return false;
+		}
+		return boundingInfo.isInFrustum(frustumPlanes);
 	}
 	
 	/**
@@ -191,7 +204,12 @@ import lime.utils.Int32Array;
 	 * Boolean returned.  
 	 */        
 	inline public function isCompletelyInFrustum(frustumPlanes:Array<Plane>):Bool {
-		return this.getBoundingInfo().isCompletelyInFrustum(frustumPlanes);
+		var boundingInfo = this.getBoundingInfo();
+		
+		if (boundingInfo == null) {
+			return false;
+		}
+		return boundingInfo.isCompletelyInFrustum(frustumPlanes);
 	}
 
 	public function render(enableAlphaMode:Bool):SubMesh {
@@ -231,7 +249,12 @@ import lime.utils.Int32Array;
 	 * Boolean returned.  
 	 */
 	inline public function canIntersects(ray:Ray):Bool {
-		return ray.intersectsBox(this.getBoundingInfo().boundingBox);
+		var boundingInfo = this.getBoundingInfo();
+		
+		if (boundingInfo == null) {
+			return false;
+		}
+		return ray.intersectsBox(boundingInfo.boundingBox);
 	}
 
 	/**

@@ -58,26 +58,6 @@ package com.babylonhx.postprocess.renderpipeline;
 		renderPipeline._disableEffect(renderEffectName, cameras);
 	}
 
-	public function enableDisplayOnlyPassInPipeline(renderPipelineName:String, passName:String, cameras:Dynamic) {
-		var renderPipeline:PostProcessRenderPipeline = this._renderPipelines[renderPipelineName];
-		
-		if (renderPipeline == null) {
-			return;
-		}
-		
-		renderPipeline._enableDisplayOnlyPass(passName, cameras);
-	}
-
-	public function disableDisplayOnlyPassInPipeline(renderPipelineName:String, cameras:Dynamic) {
-		var renderPipeline:PostProcessRenderPipeline = this._renderPipelines[renderPipelineName];
-		
-		if (renderPipeline == null) {
-			return;
-		}
-		
-		renderPipeline._disableDisplayOnlyPass(cameras);
-	}
-
 	public function update() {
 		for (renderPipelineName in this._renderPipelines.keys()) {
 			if (this._renderPipelines[renderPipelineName] != null) {

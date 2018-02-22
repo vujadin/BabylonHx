@@ -22,10 +22,10 @@ class RayHelper {
 
 	private var _renderPoints:Array<Vector3>;
 	private var _renderLine:LinesMesh;
-	private var _renderFunction:Scene->Null<EventState<Scene>>->Void;
+	private var _renderFunction:Scene->Null<EventState>->Void;
 	private var _scene:Scene;
 	
-	private var _updateToMeshFunction:Scene->Null<EventState<Scene>>->Void;
+	private var _updateToMeshFunction:Scene->Null<EventState>->Void;
 	private var _attachedToMesh:AbstractMesh;
 	private var _meshSpaceDirection:Vector3;
 	private var _meshSpaceOrigin:Vector3;

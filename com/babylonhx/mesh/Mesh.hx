@@ -65,11 +65,11 @@ import com.babylonhx.utils.Image;
 import haxe.Json;
 import haxe.ds.Vector;
 
-import lime.utils.UInt32Array;
-import lime.utils.Float32Array;
-import lime.utils.UInt8Array;
-import lime.utils.ArrayBuffer;
-import lime.utils.Int32Array;
+import com.babylonhx.utils.typedarray.UInt32Array;
+import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.UInt8Array;
+import com.babylonhx.utils.typedarray.ArrayBuffer;
+import com.babylonhx.utils.typedarray.Int32Array;
 
 
 /**
@@ -607,7 +607,11 @@ import lime.utils.Int32Array;
      */
 	override public function getIndices(copyWhenShared:Bool = false):UInt32Array {
 		if (this._geometry == null) {
+			#if purejs 
+			return untyped [];
+			#else
 			return new UInt32Array();
+			#end
 		}
 		
 		return this._geometry.getIndices(copyWhenShared);
@@ -619,21 +623,26 @@ import lime.utils.Int32Array;
 
 	/**
 	 * Determine if the current mesh is ready to be rendered
+	 * @param completeCheck defines if a complete check (including materials and lights) has to be done (false by default)
 	 * @param forceInstanceSupport will check if the mesh will be ready when used with instances (false by default)
 	 * @returns true if all associated assets are ready (material, textures, shaders)
 	 */
-	override public function isReady(forceInstanceSupport:Bool = false):Bool {
+	override public function isReady(completeCheck:Bool = false, forceInstanceSupport:Bool = false):Bool {
 		if (this.delayLoadState == Engine.DELAYLOADSTATE_LOADING) {
 			return false;
 		}
 		
-		if (!super.isReady()) {
+		if (!super.isReady(completeCheck)) {
 			return false;
 		}
 		
 		if (this.subMeshes == null || this.subMeshes.length == 0) {
 			return true;
 		}
+		
+		if (!completeCheck) {
+            return true;
+        }
 		
 		var engine = this.getEngine();
 		var scene = this.getScene();
@@ -910,6 +919,8 @@ import lime.utils.Int32Array;
      * If the `kind` is the `PositionKind`, the mesh `BoundingInfo` is renewed, so the bounding box and sphere, and the mesh World Matrix is recomputed.
      */
 	override public function setVerticesData(kind:String, data:Float32Array, updatable:Bool = false, ?stride:Int) {
+		trace(kind);
+		trace(data);
 		if (this._geometry == null) {
 			var vertexData = new VertexData();
 			vertexData.set(data, kind);
@@ -1002,7 +1013,11 @@ import lime.utils.Int32Array;
 			normals = this.getVerticesData(VertexBuffer.NormalKind);
 		} 
 		else {
+			#if purejs
+			normals = new Float32Array([]);
+			#else
 			normals = new Float32Array();
+			#end
 		}
 		VertexData.ComputeNormals(positions, indices, normals);
 		this.setVerticesData(VertexBuffer.NormalKind, normals, markDataAsUpdatable);
@@ -1144,7 +1159,7 @@ import lime.utils.Int32Array;
 	 * This function is passed the current mesh.  
 	 * Return the Mesh.  
 	 */
-	public function registerBeforeRender(func:AbstractMesh->Null<EventState<AbstractMesh>>->Void) {
+	public function registerBeforeRender(func:AbstractMesh->Null<EventState>->Void) {
 		this.onBeforeRenderObservable.add(func);
 	}
 
@@ -1153,7 +1168,7 @@ import lime.utils.Int32Array;
 	 * This function is passed the current mesh.  
 	 * Returns the Mesh.  
 	 */
-	public function unregisterBeforeRender(func:AbstractMesh->Null<EventState<AbstractMesh>>->Void) {
+	public function unregisterBeforeRender(func:AbstractMesh->Null<EventState>->Void) {
 		this.onBeforeRenderObservable.removeCallback(func);
 	}
 
@@ -1162,7 +1177,7 @@ import lime.utils.Int32Array;
 	 * This function is passed the current mesh.  
 	 * Returns the Mesh.  
 	 */
-	public function registerAfterRender(func:AbstractMesh->Null<EventState<AbstractMesh>>->Void) {
+	public function registerAfterRender(func:AbstractMesh->Null<EventState>->Void) {
 		this.onAfterRenderObservable.add(func);
 	}
 
@@ -1171,7 +1186,7 @@ import lime.utils.Int32Array;
 	 * This function is passed the current mesh.  
 	 * Return the Mesh.  
 	 */
-	public function unregisterAfterRender(func:AbstractMesh->Null<EventState<AbstractMesh>>->Void) {
+	public function unregisterAfterRender(func:AbstractMesh->Null<EventState>->Void) {
 		this.onAfterRenderObservable.removeCallback(func);
 	}
 
@@ -1711,13 +1726,12 @@ import lime.utils.Int32Array;
 			this.instances.shift();
 		}
 		
-		// Highlight layers.
-        var highlightLayers = this.getScene().highlightLayers;
-        for (i in 0...highlightLayers.length) {
-            var highlightLayer = highlightLayers[i];
-            if (highlightLayer != null) {
-                highlightLayer.removeMesh(this);
-				highlightLayer.removeExcludedMesh(this);
+		// Effect layers
+        var effectLayers = this.getScene().effectLayers;
+        for (i in 0...effectLayers.length) {
+            var effectLayer = effectLayers[i];
+            if (effectLayer != null) {
+                effectLayer._disposeMesh(this);
             }
         }		
 		super.dispose(doNotRecurse);

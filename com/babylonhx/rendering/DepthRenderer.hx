@@ -14,28 +14,35 @@ import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.Scene;
 import com.babylonhx.tools.SmartArray;
 import com.babylonhx.tools.EventState;
+import com.babylonhx.cameras.Camera;
 
 /**
  * ...
  * @author Krtolica Vujadin
  */
-
+/**
+ * This represents a depth renderer in Babylon.
+ * A depth renderer will render to it's depth map every frame which can be displayed or used in post processing
+ */
 @:expose('BABYLON.DepthRenderer') class DepthRenderer {
 	
 	private var _scene:Scene;
 	private var _depthMap:RenderTargetTexture;
 	private var _effect:Effect;
 
-	private var _viewMatrix = Matrix.Zero();
-	private var _projectionMatrix = Matrix.Zero();
-	private var _transformMatrix = Matrix.Zero();
-	private var _worldViewProjection = Matrix.Zero();
-
 	private var _cachedDefines:String;
+	private var _camera:Camera;
 	
 
-	public function new(scene:Scene, type:Int = Engine.TEXTURETYPE_FLOAT) {
+	/**
+	 * Instantiates a depth renderer
+	 * @param scene The scene the renderer belongs to
+	 * @param type The texture type of the depth map (default: Engine.TEXTURETYPE_FLOAT)
+	 * @param camera The camera to be used to render the depth map (default: scene's active camera)
+	 */
+	public function new(scene:Scene, type:Int = Engine.TEXTURETYPE_FLOAT, camera:Camera = null) {
 		this._scene = scene;
+		this._camera = camera;
 		var engine = scene.getEngine();
 		
 		// Render target
@@ -45,6 +52,11 @@ import com.babylonhx.tools.EventState;
 		this._depthMap.refreshRate = 1;
 		this._depthMap.renderParticles = false;
 		this._depthMap.renderList = null;
+		
+		// Camera to get depth map from to support multiple concurrent cameras
+		this._depthMap.activeCamera = this._camera;
+		this._depthMap.ignoreCameraViewport = true;
+		this._depthMap.useCameraPostProcesses = false;
 		
 		// set default depth value to 1.0 (far away)
 		this._depthMap.onClearObservable.add(function(engine:Engine, _) {
@@ -74,7 +86,8 @@ import com.babylonhx.tools.EventState;
 			
 			var hardwareInstancedRendering:Bool = (engine.getCaps().instancedArrays) && (batch.visibleInstances[subMesh._id] != null);
 			
-			if (this.isReady(subMesh, hardwareInstancedRendering)) {
+			var camera = this._camera != null ? this._camera : scene.activeCamera;
+			if (this.isReady(subMesh, hardwareInstancedRendering) && camera != null) {
 				engine.enableEffect(this._effect);
 				mesh._bind(subMesh, this._effect, Material.TriangleFillMode);
 				
@@ -99,7 +112,7 @@ import com.babylonhx.tools.EventState;
 				
 				// Draw
 				mesh._processRendering(subMesh, this._effect, Material.TriangleFillMode, batch, hardwareInstancedRendering,
-					function(isInstance:Bool, world:Matrix, ?mat:Material) { this._effect.setMatrix("world", world); } );
+					function(_, world:Matrix, _) { this._effect.setMatrix("world", world); } );
 			}
 		};
 		
@@ -122,6 +135,12 @@ import com.babylonhx.tools.EventState;
 		};
 	}
 
+	/**
+	 * Creates the depth rendering effect and checks if the effect is ready.
+	 * @param subMesh The submesh to be used to render the depth map of
+	 * @param useInstances If multiple world instances should be used
+	 * @returns if the depth renderer is ready to render the depth map
+	 */
 	public function isReady(subMesh:SubMesh, useInstances:Bool):Bool {
 		var material:Material = subMesh.getMaterial();
 		if (material.disableDepthWrite) {
@@ -184,11 +203,17 @@ import com.babylonhx.tools.EventState;
 		return this._effect.isReady();
 	}
 
+	/**
+	 * Gets the texture which the depth map will be written to.
+	 * @returns The depth map texture
+	 */
 	public function getDepthMap():RenderTargetTexture {
 		return this._depthMap;
 	}
 
-	// Methods
+	/**
+	 * Disposes of the depth renderer.
+	 */
 	public function dispose() {
 		this._depthMap.dispose();
 	}

@@ -4,7 +4,7 @@ import com.babylonhx.tools.Observable;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.mesh.AbstractMesh;
 
-import lime.utils.Float32Array;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 /**
  * ...

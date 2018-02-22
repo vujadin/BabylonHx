@@ -1,7 +1,7 @@
 package com.babylonhx.loading.ctm;
 
-import lime.utils.ArrayBufferView;
-import lime.utils.UInt8Array;
+import com.babylonhx.utils.typedarray.ArrayBufferView;
+import com.babylonhx.utils.typedarray.UInt8Array;
 
 /**
  * ...

@@ -8,9 +8,9 @@ import com.babylonhx.math.Color4;
 import com.babylonhx.mesh.MeshBuilder;
 import com.babylonhx.particles.solid.DepthSortedParticle;
 
-import lime.utils.UInt8Array;
-import lime.utils.Float32Array;
-import lime.utils.UInt32Array;
+import com.babylonhx.utils.typedarray.UInt8Array;
+import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.UInt32Array;
 
 /**
  * ...

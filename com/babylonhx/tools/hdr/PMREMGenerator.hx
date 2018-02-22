@@ -2,10 +2,10 @@ package com.babylonhx.tools.hdr;
 
 import com.babylonhx.math.Vector4;
 
-import lime.utils.ArrayBufferView;
-import lime.utils.Float32Array;
-import lime.utils.UInt8Array;
-import lime.utils.UInt32Array;
+import com.babylonhx.utils.typedarray.ArrayBufferView;
+import com.babylonhx.utils.typedarray.Float32Array;
+import com.babylonhx.utils.typedarray.UInt8Array;
+import com.babylonhx.utils.typedarray.UInt32Array;
 
 /**
  * ...

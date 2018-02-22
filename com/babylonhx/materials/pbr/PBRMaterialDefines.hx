@@ -1,145 +1,288 @@
 package com.babylonhx.materials.pbr;
 
+import com.babylonhx.utils.typedarray.UInt8Array;
+
 /**
  * ...
  * @author Krtolica Vujadin
  */
 class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConfigurationDefines {
 	
+	static inline var _flagsCount:Int = 110;
+	
+	var _flags:UInt8Array = new UInt8Array(_flagsCount);
+	
 	public var PBR:Bool = true;
 
-	public var MAINUV1:Bool = false;
-	public var MAINUV2:Bool = false;
-	public var UV1:Bool = false;
-	public var UV2:Bool = false;
+	public var MAINUV1:Int;
+	public var MAINUV2:Int;
+	public var UV1:Int;
+	public var UV2:Int;
 
-	public var ALBEDO:Bool = false;
-	public var ALBEDODIRECTUV:Float = 0;
-	public var VERTEXCOLOR:Bool = false;
+	public var ALBEDO:Int;
+	public var ALBEDODIRECTUV:Int;
+	public var VERTEXCOLOR:Int;
 
-	public var AMBIENT:Bool = false;
-	public var AMBIENTDIRECTUV:Float = 0;
-	public var AMBIENTINGRAYSCALE:Bool = false;
+	public var AMBIENT:Int;
+	public var AMBIENTDIRECTUV:Int;
+	public var AMBIENTINGRAYSCALE:Int;
 
-	public var OPACITY:Bool = false;
-	public var VERTEXALPHA:Bool = false;
-	public var OPACITYDIRECTUV:Float = 0;
-	public var OPACITYRGB:Bool = false;
-	public var ALPHATEST:Bool = false;
-	public var DEPTHPREPASS:Bool = false;
-	public var ALPHABLEND:Bool = false;
-	public var ALPHAFROMALBEDO:Bool = false;
+	public var OPACITY:Int;
+	public var VERTEXALPHA:Int;
+	public var OPACITYDIRECTUV:Int;
+	public var OPACITYRGB:Int;
+	public var ALPHATEST:Int;
+	public var DEPTHPREPASS:Int;
+	public var ALPHABLEND:Int;
+	public var ALPHAFROMALBEDO:Int;
 	public var ALPHATESTVALUE:Float = 0.5;
-	public var SPECULAROVERALPHA:Bool = false;
-	public var RADIANCEOVERALPHA:Bool = false;
-	public var ALPHAFRESNEL:Bool = false;
-	public var LINEARALPHAFRESNEL:Bool = false;
-	public var PREMULTIPLYALPHA:Bool = false;
+	public var SPECULAROVERALPHA:Int;
+	public var RADIANCEOVERALPHA:Int;
+	public var ALPHAFRESNEL:Int;
+	public var LINEARALPHAFRESNEL:Int;
+	public var PREMULTIPLYALPHA:Int;
 
-	public var EMISSIVE:Bool = false;
-	public var EMISSIVEDIRECTUV:Float = 0;
+	public var EMISSIVE:Int;
+	public var EMISSIVEDIRECTUV:Int;
 
-	public var REFLECTIVITY:Bool = false;
-	public var REFLECTIVITYDIRECTUV:Float = 0;
-	public var SPECULARTERM:Bool = false;
+	public var REFLECTIVITY:Int;
+	public var REFLECTIVITYDIRECTUV:Int;
+	public var SPECULARTERM:Int;
 
-	public var MICROSURFACEFROMREFLECTIVITYMAP:Bool = false;
-	public var MICROSURFACEAUTOMATIC:Bool = false;
-	public var LODBASEDMICROSFURACE:Bool = false;
-	public var MICROSURFACEMAP:Bool = false;
-	public var MICROSURFACEMAPDIRECTUV:Float = 0;
+	public var MICROSURFACEFROMREFLECTIVITYMAP:Int;
+	public var MICROSURFACEAUTOMATIC:Int;
+	public var LODBASEDMICROSFURACE:Int;
+	public var MICROSURFACEMAP:Int;
+	public var MICROSURFACEMAPDIRECTUV:Int;
 
-	public var METALLICWORKFLOW:Bool = false;
-	public var ROUGHNESSSTOREINMETALMAPALPHA:Bool = false;
-	public var ROUGHNESSSTOREINMETALMAPGREEN:Bool = false;
-	public var METALLNESSSTOREINMETALMAPBLUE:Bool = false;
-	public var AOSTOREINMETALMAPRED:Bool = false;
-	public var ENVIRONMENTBRDF:Bool = false;
+	public var METALLICWORKFLOW:Int;
+	public var ROUGHNESSSTOREINMETALMAPALPHA:Int;
+	public var ROUGHNESSSTOREINMETALMAPGREEN:Int;
+	public var METALLNESSSTOREINMETALMAPBLUE:Int;
+	public var AOSTOREINMETALMAPRED:Int;
+	public var ENVIRONMENTBRDF:Int;
 
-	public var NORMAL:Bool = false;
-	public var TANGENT:Bool = false;
-	public var BUMP:Bool = false;
-	public var BUMPDIRECTUV:Float = 0;
-	public var PARALLAX:Bool = false;
-	public var PARALLAXOCCLUSION:Bool = false;
-	public var NORMALXYSCALE:Bool = true;
+	public var NORMAL:Int;
+	public var TANGENT:Int;
+	public var BUMP:Int;
+	public var BUMPDIRECTUV:Int;
+	public var OBJECTSPACE_NORMALMAP:Int;
+	public var PARALLAX:Int;
+	public var PARALLAXOCCLUSION:Int;
+	public var NORMALXYSCALE:Int;
 	
-	public var SHADOWS:Bool = false;				// BHX
+	public var SHADOWS:Int;				// BHX
 
-	public var LIGHTMAP:Bool = false;
-	public var LIGHTMAPDIRECTUV:Float = 0;
-	public var USELIGHTMAPASSHADOWMAP:Bool = false;
+	public var LIGHTMAP:Int;
+	public var LIGHTMAPDIRECTUV:Int;
+	public var USELIGHTMAPASSHADOWMAP:Int;
 
-	public var REFLECTION:Bool = false;
-	public var REFLECTIONMAP_3D:Bool = false;
-	public var REFLECTIONMAP_SPHERICAL:Bool = false;
-	public var REFLECTIONMAP_PLANAR:Bool = false;
-	public var REFLECTIONMAP_CUBIC:Bool = false;
-	public var REFLECTIONMAP_PROJECTION:Bool = false;
-	public var REFLECTIONMAP_SKYBOX:Bool = false;
-	public var REFLECTIONMAP_EXPLICIT:Bool = false;
-	public var REFLECTIONMAP_EQUIRECTANGULAR:Bool = false;
-	public var REFLECTIONMAP_EQUIRECTANGULAR_FIXED:Bool = false;
-	public var REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED:Bool = false;
-	public var INVERTCUBICMAP:Bool = false;
-	public var USESPHERICALFROMREFLECTIONMAP:Bool = false;
-	public var USESPHERICALINVERTEX:Bool = false;
-	public var REFLECTIONMAP_OPPOSITEZ:Bool = false;
-	public var LODINREFLECTIONALPHA:Bool = false;
-	public var GAMMAREFLECTION:Bool = false;
-	public var RADIANCEOCCLUSION:Bool = false;
-    public var HORIZONOCCLUSION:Bool = false;
+	public var REFLECTION:Int;
+	public var REFLECTIONMAP_3D:Int;
+	public var REFLECTIONMAP_SPHERICAL:Int;
+	public var REFLECTIONMAP_PLANAR:Int;
+	public var REFLECTIONMAP_CUBIC:Int;
+	public var USE_LOCAL_REFLECTIONMAP_CUBIC:Int;
+	public var REFLECTIONMAP_PROJECTION:Int;
+	public var REFLECTIONMAP_SKYBOX:Int;
+	public var REFLECTIONMAP_EXPLICIT:Int;
+	public var REFLECTIONMAP_EQUIRECTANGULAR:Int;
+	public var REFLECTIONMAP_EQUIRECTANGULAR_FIXED:Int;
+	public var REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED:Int;
+	public var INVERTCUBICMAP:Int;
+	public var USESPHERICALFROMREFLECTIONMAP:Int;
+	public var USESPHERICALINVERTEX:Int;
+	public var REFLECTIONMAP_OPPOSITEZ:Int;
+	public var LODINREFLECTIONALPHA:Int;
+	public var GAMMAREFLECTION:Int;
+	public var RADIANCEOCCLUSION:Int;
+    public var HORIZONOCCLUSION:Int;
 
-	public var REFRACTION:Bool = false;
-	public var REFRACTIONMAP_3D:Bool = false;
-	public var REFRACTIONMAP_OPPOSITEZ:Bool = false;
-	public var LODINREFRACTIONALPHA:Bool = false;
-	public var GAMMAREFRACTION:Bool = false;
-	public var LINKREFRACTIONTOTRANSPARENCY:Bool = false;
+	public var REFRACTION:Int;
+	public var REFRACTIONMAP_3D:Int;
+	public var REFRACTIONMAP_OPPOSITEZ:Int;
+	public var LODINREFRACTIONALPHA:Int;
+	public var GAMMAREFRACTION:Int;
+	public var LINKREFRACTIONTOTRANSPARENCY:Int;
 
-	public var INSTANCES:Bool = false;
+	public var INSTANCES:Int;
 	
-	public var NUM_BONE_INFLUENCERS:Int = 0;
-	public var BonesPerMesh:Int = 0;
+	public var NUM_BONE_INFLUENCERS:Int;
+	public var BonesPerMesh:Int;
 	
-	public var NONUNIFORMSCALING:Bool = false;
+	public var NONUNIFORMSCALING:Int;
 
-	public var MORPHTARGETS:Bool = false;
-	public var MORPHTARGETS_NORMAL:Bool = false;
-	public var MORPHTARGETS_TANGENT:Bool = false;
-	public var NUM_MORPH_INFLUENCERS:Int = 0;
+	public var MORPHTARGETS:Int;
+	public var MORPHTARGETS_NORMAL:Int;
+	public var MORPHTARGETS_TANGENT:Int;
+	public var NUM_MORPH_INFLUENCERS:Int;
 
-	public var IMAGEPROCESSING:Bool = false;
-	public var VIGNETTE:Bool = false;
-	public var VIGNETTEBLENDMODEMULTIPLY:Bool = false;
-	public var VIGNETTEBLENDMODEOPAQUE:Bool = false;
-	public var TONEMAPPING:Bool = false;
-	public var CONTRAST:Bool = false;
-	public var COLORCURVES:Bool = false;
-	public var COLORGRADING:Bool = false;
-	public var COLORGRADING3D:Bool = false;
-	public var SAMPLER3DGREENDEPTH:Bool = false;
-	public var SAMPLER3DBGRMAP:Bool = false;
-	public var IMAGEPROCESSINGPOSTPROCESS:Bool = false;
-	public var EXPOSURE:Bool = false;
+	public var IMAGEPROCESSING:Int;
+	public var VIGNETTE:Int;
+	public var VIGNETTEBLENDMODEMULTIPLY:Int;
+	public var VIGNETTEBLENDMODEOPAQUE:Int;
+	public var TONEMAPPING:Int;
+	public var CONTRAST:Int;
+	public var COLORCURVES:Int;
+	public var COLORGRADING:Int;
+	public var COLORGRADING3D:Int;
+	public var SAMPLER3DGREENDEPTH:Int;
+	public var SAMPLER3DBGRMAP:Int;
+	public var IMAGEPROCESSINGPOSTPROCESS:Int;
+	public var EXPOSURE:Int;
 
-	public var USEPHYSICALLIGHTFALLOFF:Bool = false;
-	public var TWOSIDEDLIGHTING:Bool = false;
-	public var SHADOWFLOAT:Bool = false;
-	public var USERIGHTHANDEDSYSTEM:Bool = false;
-	public var CLIPPLANE:Bool = false;
-	public var POINTSIZE:Bool = false;
-	public var FOG:Bool = false;
-	public var LOGARITHMICDEPTH:Bool = false;
+	public var USEPHYSICALLIGHTFALLOFF:Int;
+	public var TWOSIDEDLIGHTING:Int;
+	public var SHADOWFLOAT:Int;
+	public var USERIGHTHANDEDSYSTEM:Int;
+	public var CLIPPLANE:Int;
+	public var POINTSIZE:Int;
+	public var FOG:Int;
+	public var LOGARITHMICDEPTH:Int;
 
-	public var FORCENORMALFORWARD:Bool = false;
+	public var FORCENORMALFORWARD:Int;
 	
 	// BHX: reqired by IImageProcessingConfigurationDefines
-	public var FROMLINEARSPACE:Bool = false;
+	public var FROMLINEARSPACE:Int;
 	
 
 	public function new() {
 		super();
+		
+		for (i in 0..._flagsCount) {
+			_flags[i] = 0;
+		}
+		
+		this.MAINUV1 = _flags[0];
+		this.MAINUV2 = _flags[1];
+		this.UV1 = _flags[2];
+		this.UV2 = _flags[3];
+		
+		this.ALBEDO = _flags[4];
+		this.ALBEDODIRECTUV = _flags[5];
+		this.VERTEXCOLOR = _flags[6];
+		
+		this.AMBIENT = _flags[7];
+		this.AMBIENTDIRECTUV = _flags[8];
+		this.AMBIENTINGRAYSCALE = _flags[9];
+		
+		this.OPACITY = _flags[10];
+		this.VERTEXALPHA = _flags[11];
+		this.OPACITYDIRECTUV = _flags[12];
+		this.OPACITYRGB = _flags[13];
+		this.ALPHATEST = _flags[14];
+		this.DEPTHPREPASS = _flags[15];
+		this.ALPHABLEND = _flags[16];
+		this.ALPHAFROMALBEDO = _flags[17];
+		this.ALPHATESTVALUE = 0.5;
+		this.SPECULAROVERALPHA = _flags[18];
+		this.RADIANCEOVERALPHA = _flags[19];
+		this.ALPHAFRESNEL = _flags[20];
+		this.LINEARALPHAFRESNEL = _flags[21];
+		this.PREMULTIPLYALPHA = _flags[22];
+		
+		this.EMISSIVE = _flags[23];
+		this.EMISSIVEDIRECTUV = _flags[24];
+		
+		this.REFLECTIVITY = _flags[25];
+		this.REFLECTIVITYDIRECTUV = _flags[26];
+		this.SPECULARTERM = _flags[27];
+		
+		this.MICROSURFACEFROMREFLECTIVITYMAP = _flags[28];
+		this.MICROSURFACEAUTOMATIC = _flags[29];
+		this.LODBASEDMICROSFURACE = _flags[30];
+		this.MICROSURFACEMAP = _flags[31];
+		this.MICROSURFACEMAPDIRECTUV = _flags[32];
+		
+		this.METALLICWORKFLOW = _flags[33];
+		this.ROUGHNESSSTOREINMETALMAPALPHA = _flags[34];
+		this.ROUGHNESSSTOREINMETALMAPGREEN = _flags[35];
+		this.METALLNESSSTOREINMETALMAPBLUE = _flags[36];
+		this.AOSTOREINMETALMAPRED = _flags[37];
+		this.ENVIRONMENTBRDF = _flags[38];
+		
+		this.NORMAL = _flags[39];
+		this.TANGENT = _flags[40];
+		this.BUMP = _flags[41];
+		this.BUMPDIRECTUV = _flags[42];
+		this.OBJECTSPACE_NORMALMAP = _flags[43];
+		this.PARALLAX = _flags[44];
+		this.PARALLAXOCCLUSION = _flags[45];
+		this.NORMALXYSCALE = _flags[46] = 1;		// true by default
+		
+		this.SHADOWS = _flags[47];				// BHX
+		
+		this.LIGHTMAP = _flags[48];
+		this.LIGHTMAPDIRECTUV = _flags[49];
+		this.USELIGHTMAPASSHADOWMAP = _flags[50];
+		
+		this.REFLECTION = _flags[51];
+		this.REFLECTIONMAP_3D = _flags[52];
+		this.REFLECTIONMAP_SPHERICAL = _flags[53];
+		this.REFLECTIONMAP_PLANAR = _flags[54];
+		this.REFLECTIONMAP_CUBIC = _flags[55];
+		this.USE_LOCAL_REFLECTIONMAP_CUBIC = _flags[56];
+		this.REFLECTIONMAP_PROJECTION = _flags[57];
+		this.REFLECTIONMAP_SKYBOX = _flags[58];
+		this.REFLECTIONMAP_EXPLICIT = _flags[59];
+		this.REFLECTIONMAP_EQUIRECTANGULAR = _flags[60];
+		this.REFLECTIONMAP_EQUIRECTANGULAR_FIXED = _flags[61];
+		this.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED = _flags[62];
+		this.INVERTCUBICMAP = _flags[63];
+		this.USESPHERICALFROMREFLECTIONMAP = _flags[64];
+		this.USESPHERICALINVERTEX = _flags[65];
+		this.REFLECTIONMAP_OPPOSITEZ = _flags[66];
+		this.LODINREFLECTIONALPHA = _flags[67];
+		this.GAMMAREFLECTION = _flags[68];
+		this.RADIANCEOCCLUSION = _flags[69];
+		this.HORIZONOCCLUSION = _flags[70];
+		
+		this.REFRACTION = _flags[71];
+		this.REFRACTIONMAP_3D = _flags[72];
+		this.REFRACTIONMAP_OPPOSITEZ = _flags[73];
+		this.LODINREFRACTIONALPHA = _flags[74];
+		this.GAMMAREFRACTION = _flags[75];
+		this.LINKREFRACTIONTOTRANSPARENCY = _flags[76];
+		
+		this.INSTANCES = _flags[77];
+		
+		this.NUM_BONE_INFLUENCERS = _flags[78];
+		this.BonesPerMesh = _flags[79];
+		
+		this.NONUNIFORMSCALING = _flags[80];
+		
+		this.MORPHTARGETS = _flags[81];
+		this.MORPHTARGETS_NORMAL = _flags[82];
+		this.MORPHTARGETS_TANGENT = _flags[83];
+		this.NUM_MORPH_INFLUENCERS = _flags[84];
+		
+		this.IMAGEPROCESSING = _flags[85];
+		this.VIGNETTE = _flags[86];
+		this.VIGNETTEBLENDMODEMULTIPLY = _flags[87];
+		this.VIGNETTEBLENDMODEOPAQUE = _flags[88];
+		this.TONEMAPPING = _flags[89];
+		this.CONTRAST = _flags[90];
+		this.COLORCURVES = _flags[91];
+		this.COLORGRADING = _flags[92];
+		this.COLORGRADING3D = _flags[93];
+		this.SAMPLER3DGREENDEPTH = _flags[94];
+		this.SAMPLER3DBGRMAP = _flags[95];
+		this.IMAGEPROCESSINGPOSTPROCESS = _flags[96];
+		this.EXPOSURE = _flags[97];
+		
+		this.USEPHYSICALLIGHTFALLOFF = _flags[98];
+		this.TWOSIDEDLIGHTING = _flags[99];
+		this.SHADOWFLOAT = _flags[100];
+		this.USERIGHTHANDEDSYSTEM = _flags[101];
+		this.CLIPPLANE = _flags[102];
+		this.POINTSIZE = _flags[103];
+		this.FOG = _flags[104];
+		this.LOGARITHMICDEPTH = _flags[105];
+		
+		this.FORCENORMALFORWARD = _flags[106];
+		
+		// BHX: reqired by IImageProcessingConfigurationDefines
+		this.FROMLINEARSPACE = _flags[107];
 	}
 	
 	override public function reset() {
@@ -147,166 +290,50 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		
 		this.PBR = true;
 		
-		this.MAINUV1 = false;
-		this.MAINUV2 = false;
-		this.UV1 = false;
-		this.UV2 = false;
+		for (i in 0..._flagsCount) {
+			_flags[i] = 0;
+		}
 		
-		this.ALBEDO = false;
-		this.ALBEDODIRECTUV = 0;
-		this.VERTEXCOLOR = false;
-		
-		this.AMBIENT = false;
-		this.AMBIENTDIRECTUV = 0;
-		this.AMBIENTINGRAYSCALE = false;
-		
-		this.OPACITY = false;
-		this.VERTEXALPHA = false;
-		this.OPACITYDIRECTUV = 0;
-		this.OPACITYRGB = false;
-		this.ALPHATEST = false;
-		this.DEPTHPREPASS = false;
-		this.ALPHABLEND = false;
-		this.ALPHAFROMALBEDO = false;
 		this.ALPHATESTVALUE = 0.5;
-		this.SPECULAROVERALPHA = false;
-		this.RADIANCEOVERALPHA = false;
-		this.ALPHAFRESNEL = false;
-		this.LINEARALPHAFRESNEL = false;
-		this.PREMULTIPLYALPHA = false;
 		
-		this.EMISSIVE = false;
-		this.EMISSIVEDIRECTUV = 0;
+		this.NORMALXYSCALE = 1;
 		
-		this.REFLECTIVITY = false;
-		this.REFLECTIVITYDIRECTUV = 0;
-		this.SPECULARTERM = false;
-		
-		this.MICROSURFACEFROMREFLECTIVITYMAP = false;
-		this.MICROSURFACEAUTOMATIC = false;
-		this.LODBASEDMICROSFURACE = false;
-		this.MICROSURFACEMAP = false;
-		this.MICROSURFACEMAPDIRECTUV = 0;
-		
-		this.METALLICWORKFLOW = false;
-		this.ROUGHNESSSTOREINMETALMAPALPHA = false;
-		this.ROUGHNESSSTOREINMETALMAPGREEN = false;
-		this.METALLNESSSTOREINMETALMAPBLUE = false;
-		this.AOSTOREINMETALMAPRED = false;
-		this.ENVIRONMENTBRDF = false;
-		
-		this.NORMAL = false;
-		this.TANGENT = false;
-		this.BUMP = false;
-		this.BUMPDIRECTUV = 0;
-		this.PARALLAX = false;
-		this.PARALLAXOCCLUSION = false;
-		this.NORMALXYSCALE = true;
-		
-		this.SHADOWS = false;				// BHX
-		
-		this.LIGHTMAP = false;
-		this.LIGHTMAPDIRECTUV = 0;
-		this.USELIGHTMAPASSHADOWMAP = false;
-		
-		this.REFLECTION = false;
-		this.REFLECTIONMAP_3D = false;
-		this.REFLECTIONMAP_SPHERICAL = false;
-		this.REFLECTIONMAP_PLANAR = false;
-		this.REFLECTIONMAP_CUBIC = false;
-		this.REFLECTIONMAP_PROJECTION = false;
-		this.REFLECTIONMAP_SKYBOX = false;
-		this.REFLECTIONMAP_EXPLICIT = false;
-		this.REFLECTIONMAP_EQUIRECTANGULAR = false;
-		this.REFLECTIONMAP_EQUIRECTANGULAR_FIXED = false;
-		this.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED = false;
-		this.INVERTCUBICMAP = false;
-		this.USESPHERICALFROMREFLECTIONMAP = false;
-		this.USESPHERICALINVERTEX = false;
-		this.REFLECTIONMAP_OPPOSITEZ = false;
-		this.LODINREFLECTIONALPHA = false;
-		this.GAMMAREFLECTION = false;
-		this.RADIANCEOCCLUSION = false;
-		this.HORIZONOCCLUSION = false;
-		
-		this.REFRACTION = false;
-		this.REFRACTIONMAP_3D = false;
-		this.REFRACTIONMAP_OPPOSITEZ = false;
-		this.LODINREFRACTIONALPHA = false;
-		this.GAMMAREFRACTION = false;
-		this.LINKREFRACTIONTOTRANSPARENCY = false;
-		
-		this.INSTANCES = false;
-		
-		this.NUM_BONE_INFLUENCERS = 0;
-		this.BonesPerMesh = 0;
-		
-		this.NONUNIFORMSCALING = false;
-		
-		this.MORPHTARGETS = false;
-		this.MORPHTARGETS_NORMAL = false;
-		this.MORPHTARGETS_TANGENT = false;
-		this.NUM_MORPH_INFLUENCERS = 0;
-		
-		this.IMAGEPROCESSING = false;
-		this.VIGNETTE = false;
-		this.VIGNETTEBLENDMODEMULTIPLY = false;
-		this.VIGNETTEBLENDMODEOPAQUE = false;
-		this.TONEMAPPING = false;
-		this.CONTRAST = false;
-		this.COLORCURVES = false;
-		this.COLORGRADING = false;
-		this.COLORGRADING3D = false;
-		this.SAMPLER3DGREENDEPTH = false;
-		this.SAMPLER3DBGRMAP = false;
-		this.IMAGEPROCESSINGPOSTPROCESS = false;
-		this.EXPOSURE = false;
-		
-		this.USEPHYSICALLIGHTFALLOFF = false;
-		this.TWOSIDEDLIGHTING = false;
-		this.SHADOWFLOAT = false;
-		this.CLIPPLANE = false;
-		this.POINTSIZE = false;
-		this.FOG = false;
-		this.LOGARITHMICDEPTH = false;
-		
-		this.FORCENORMALFORWARD = false;
-		
-		// BHX: reqired by IImageProcessingConfigurationDefines
-		this.FROMLINEARSPACE = false;
 	}
 	
 	public function setReflectionMode(modeToEnable:String) {		
 		switch (modeToEnable) {
 			case "REFLECTIONMAP_CUBIC":
-				this.REFLECTIONMAP_CUBIC = true;
+				this.REFLECTIONMAP_CUBIC = 1;
+				
+			case "USE_LOCAL_REFLECTIONMAP_CUBIC":
+				this.USE_LOCAL_REFLECTIONMAP_CUBIC = 1;
 				
 			case "REFLECTIONMAP_EXPLICIT":
-				this.REFLECTIONMAP_EXPLICIT = true;
+				this.REFLECTIONMAP_EXPLICIT = 1;
 				
 			case "REFLECTIONMAP_PLANAR":
-				this.REFLECTIONMAP_PLANAR = true;
+				this.REFLECTIONMAP_PLANAR = 1;
 				
 			case "REFLECTIONMAP_3D":
-				this.REFLECTIONMAP_3D = true;
+				this.REFLECTIONMAP_3D = 1;
 				
 			case "REFLECTIONMAP_PROJECTION":
-				this.REFLECTIONMAP_PROJECTION = true;
+				this.REFLECTIONMAP_PROJECTION = 1;
 				
 			case "REFLECTIONMAP_SKYBOX":
-				this.REFLECTIONMAP_SKYBOX = true;
+				this.REFLECTIONMAP_SKYBOX = 1;
 				
 			case "REFLECTIONMAP_SPHERICAL":
-				this.REFLECTIONMAP_SPHERICAL = true;
+				this.REFLECTIONMAP_SPHERICAL = 1;
 				
 			case "REFLECTIONMAP_EQUIRECTANGULAR":
-				this.REFLECTIONMAP_EQUIRECTANGULAR = true;
+				this.REFLECTIONMAP_EQUIRECTANGULAR = 1;
 				
 			case "REFLECTIONMAP_EQUIRECTANGULAR_FIXED":
-				this.REFLECTIONMAP_EQUIRECTANGULAR_FIXED = true;
+				this.REFLECTIONMAP_EQUIRECTANGULAR_FIXED = 1;
 				
 			case "REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED":
-				this.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED = true;
+				this.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED = 1;
 		}
 	}
 	
@@ -314,130 +341,14 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		if (super.isEqual(other)) {
 			if (untyped this.PBR != other.PBR) return false;
 			
-			if (untyped this.MAINUV1 != other.MAINUV1) return false;
-			if (untyped this.MAINUV2 != other.MAINUV2) return false;
-			if (untyped this.UV1 != other.UV1) return false;
-			if (untyped this.UV2 != other.UV2) return false;
+			var len = _flags.length;
+			for (i in 0...len) {
+				if (this._flags[i] != untyped other._flags[i]) {
+					return false;
+				}
+			}
 			
-			if (untyped this.SHADOWS != other.SHADOWS) return false;		// BHX
-			
-			if (untyped this.ALBEDO != other.ALBEDO) return false;
-			if (untyped this.ALBEDODIRECTUV != other.ALBEDODIRECTUV) return false;
-			if (untyped this.VERTEXCOLOR != other.VERTEXCOLOR) return false;
-			
-			if (untyped this.AMBIENT != other.AMBIENT) return false;
-			if (untyped this.AMBIENTDIRECTUV != other.AMBIENTDIRECTUV) return false;
-			if (untyped this.AMBIENTINGRAYSCALE != other.AMBIENTINGRAYSCALE) return false;
-			
-			if (untyped this.OPACITY != other.OPACITY) return false;
-			if (untyped this.VERTEXALPHA != other.VERTEXALPHA) return false;
-			if (untyped this.OPACITYDIRECTUV != other.OPACITYDIRECTUV) return false;
-			if (untyped this.OPACITYRGB != other.OPACITYRGB) return false;
-			if (untyped this.ALPHATEST != other.ALPHATEST) return false;
-			if (untyped this.DEPTHPREPASS != other.DEPTHPREPASS) return false;
-			if (untyped this.ALPHABLEND != other.ALPHABLEND) return false;
-			if (untyped this.ALPHAFROMALBEDO != other.ALPHAFROMALBEDO) return false;
 			if (untyped this.ALPHATESTVALUE != other.ALPHATESTVALUE) return false;
-			if (untyped this.SPECULAROVERALPHA != other.SPECULAROVERALPHA) return false;
-			if (untyped this.RADIANCEOVERALPHA != other.RADIANCEOVERALPHA) return false;
-			if (untyped this.ALPHAFRESNEL != other.ALPHAFRESNEL) return false;
-			if (untyped this.LINEARALPHAFRESNEL != other.LINEARALPHAFRESNEL) return false;
-			if (untyped this.PREMULTIPLYALPHA != other.PREMULTIPLYALPHA) return false;
-			
-			if (untyped this.EMISSIVE != other.EMISSIVE) return false;
-			if (untyped this.EMISSIVEDIRECTUV != other.EMISSIVEDIRECTUV) return false;
-			
-			if (untyped this.REFLECTIVITY != other.REFLECTIVITY) return false;
-			if (untyped this.REFLECTIVITYDIRECTUV != other.REFLECTIVITYDIRECTUV) return false;
-			if (untyped this.SPECULARTERM != other.SPECULARTERM) return false;
-			
-			if (untyped this.MICROSURFACEFROMREFLECTIVITYMAP != other.MICROSURFACEFROMREFLECTIVITYMAP) return false;
-			if (untyped this.MICROSURFACEAUTOMATIC != other.MICROSURFACEAUTOMATIC) return false;
-			if (untyped this.LODBASEDMICROSFURACE != other.LODBASEDMICROSFURACE) return false;
-			if (untyped this.MICROSURFACEMAP != other.MICROSURFACEMAP) return false;
-			if (untyped this.MICROSURFACEMAPDIRECTUV != other.MICROSURFACEMAPDIRECTUV) return false;
-			
-			if (untyped this.METALLICWORKFLOW != other.METALLICWORKFLOW) return false;
-			if (untyped this.ROUGHNESSSTOREINMETALMAPALPHA != other.ROUGHNESSSTOREINMETALMAPALPHA) return false;
-			if (untyped this.ROUGHNESSSTOREINMETALMAPGREEN != other.ROUGHNESSSTOREINMETALMAPGREEN) return false;
-			if (untyped this.METALLNESSSTOREINMETALMAPBLUE != other.METALLNESSSTOREINMETALMAPBLUE) return false;
-			if (untyped this.AOSTOREINMETALMAPRED != other.AOSTOREINMETALMAPRED) return false;
-			if (untyped this.ENVIRONMENTBRDF != other.ENVIRONMENTBRDF) return false;
-			
-			if (untyped this.NORMAL != other.NORMAL) return false;
-			if (untyped this.TANGENT != other.TANGENT) return false;
-			if (untyped this.BUMP != other.BUMP) return false;
-			if (untyped this.BUMPDIRECTUV != other.BUMPDIRECTUV) return false;
-			if (untyped this.PARALLAX != other.PARALLAX) return false;
-			if (untyped this.PARALLAXOCCLUSION != other.PARALLAXOCCLUSION) return false;
-			if (untyped this.NORMALXYSCALE != other.NORMALXYSCALE) return true;
-			
-			if (untyped this.LIGHTMAP != other.LIGHTMAP) return false;
-			if (untyped this.LIGHTMAPDIRECTUV != other.LIGHTMAPDIRECTUV) return false;
-			if (untyped this.USELIGHTMAPASSHADOWMAP != other.USELIGHTMAPASSHADOWMAP) return false;
-			
-			if (untyped this.REFLECTION != other.REFLECTION) return false;
-			if (untyped this.REFLECTIONMAP_3D != other.REFLECTIONMAP_3D) return false;
-			if (untyped this.REFLECTIONMAP_SPHERICAL != other.REFLECTIONMAP_SPHERICAL) return false;
-			if (untyped this.REFLECTIONMAP_PLANAR != other.REFLECTIONMAP_PLANAR) return false;
-			if (untyped this.REFLECTIONMAP_CUBIC != other.REFLECTIONMAP_CUBIC) return false;
-			if (untyped this.REFLECTIONMAP_PROJECTION != other.REFLECTIONMAP_PROJECTION) return false;
-			if (untyped this.REFLECTIONMAP_SKYBOX != other.REFLECTIONMAP_SKYBOX) return false;
-			if (untyped this.REFLECTIONMAP_EXPLICIT != other.REFLECTIONMAP_EXPLICIT) return false;
-			if (untyped this.REFLECTIONMAP_EQUIRECTANGULAR != other.REFLECTIONMAP_EQUIRECTANGULAR) return false;
-			if (untyped this.REFLECTIONMAP_EQUIRECTANGULAR_FIXED != other.REFLECTIONMAP_EQUIRECTANGULAR_FIXED) return false;
-			if (untyped this.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED != other.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED) return false;
-			if (untyped this.INVERTCUBICMAP != other.INVERTCUBICMAP) return false;
-			if (untyped this.USESPHERICALFROMREFLECTIONMAP != other.USESPHERICALFROMREFLECTIONMAP) return false;
-			if (untyped this.USESPHERICALINVERTEX != other.USESPHERICALINVERTEX) return false;
-			if (untyped this.REFLECTIONMAP_OPPOSITEZ != other.REFLECTIONMAP_OPPOSITEZ) return false;
-			if (untyped this.LODINREFLECTIONALPHA != other.LODINREFLECTIONALPHA) return false;
-			if (untyped this.GAMMAREFLECTION != other.GAMMAREFLECTION) return false;
-			if (untyped this.RADIANCEOCCLUSION != other.RADIANCEOCCLUSION) return false;
-			if (untyped this.HORIZONOCCLUSION != other.HORIZONOCCLUSION) return false;
-			
-			if (untyped this.REFRACTION != other.REFRACTION) return false;
-			if (untyped this.REFRACTIONMAP_3D != other.REFRACTIONMAP_3D) return false;
-			if (untyped this.REFRACTIONMAP_OPPOSITEZ != other.REFRACTIONMAP_OPPOSITEZ) return false;
-			if (untyped this.LODINREFRACTIONALPHA != other.LODINREFRACTIONALPHA) return false;
-			if (untyped this.GAMMAREFRACTION != other.GAMMAREFRACTION) return false;
-			if (untyped this.LINKREFRACTIONTOTRANSPARENCY != other.LINKREFRACTIONTOTRANSPARENCY) return false;
-			
-			if (untyped this.INSTANCES != other.INSTANCES) return false;
-			
-			if (untyped this.NUM_BONE_INFLUENCERS != other.NUM_BONE_INFLUENCERS) return false;
-			if (untyped this.BonesPerMesh != other.BonesPerMesh) return false;
-			
-			if (untyped this.NONUNIFORMSCALING != other.NONUNIFORMSCALING) return false;
-			
-			if (untyped this.MORPHTARGETS != other.MORPHTARGETS) return false;
-			if (untyped this.MORPHTARGETS_NORMAL != other.MORPHTARGETS_NORMAL) return false;
-			if (untyped this.MORPHTARGETS_TANGENT != other.MORPHTARGETS_TANGENT) return false;
-			if (untyped this.NUM_MORPH_INFLUENCERS != other.NUM_MORPH_INFLUENCERS) return false;
-			
-			if (untyped this.IMAGEPROCESSING != other.IMAGEPROCESSING) return false;
-			if (untyped this.VIGNETTE != other.VIGNETTE) return false;
-			if (untyped this.VIGNETTEBLENDMODEMULTIPLY != other.VIGNETTEBLENDMODEMULTIPLY) return false;
-			if (untyped this.VIGNETTEBLENDMODEOPAQUE != other.VIGNETTEBLENDMODEOPAQUE) return false;
-			if (untyped this.TONEMAPPING != other.TONEMAPPING) return false;
-			if (untyped this.CONTRAST != other.CONTRAST) return false;
-			if (untyped this.COLORCURVES != other.COLORCURVES) return false;
-			if (untyped this.COLORGRADING != other.COLORGRADING) return false;
-			if (untyped this.COLORGRADING3D != other.COLORGRADING3D) return false;
-			if (untyped this.SAMPLER3DGREENDEPTH != other.SAMPLER3DGREENDEPTH) return false;
-			if (untyped this.SAMPLER3DBGRMAP != other.SAMPLER3DBGRMAP) return false;
-			if (untyped this.IMAGEPROCESSINGPOSTPROCESS != other.IMAGEPROCESSINGPOSTPROCESS) return false;
-			if (untyped this.EXPOSURE != other.EXPOSURE) return false;
-			
-			if (untyped this.USEPHYSICALLIGHTFALLOFF != other.USEPHYSICALLIGHTFALLOFF) return false;
-			if (untyped this.TWOSIDEDLIGHTING != other.TWOSIDEDLIGHTING) return false;
-			if (untyped this.SHADOWFLOAT != other.SHADOWFLOAT) return false;
-			if (untyped this.CLIPPLANE != other.CLIPPLANE) return false;
-			if (untyped this.POINTSIZE != other.POINTSIZE) return false;
-			if (untyped this.FOG != other.FOG) return false;
-			if (untyped this.LOGARITHMICDEPTH != other.LOGARITHMICDEPTH) return false;
-			
-			if (untyped this.FORCENORMALFORWARD != other.FORCENORMALFORWARD) return false;
 			
 			return true;
 		}
@@ -449,450 +360,342 @@ class PBRMaterialDefines extends MaterialDefines implements IImageProcessingConf
 		super.cloneTo(other);
 		
 		untyped other.PBR = this.PBR;
-		
-		untyped other.MAINUV1 = this.MAINUV1;
-		untyped other.MAINUV2 = this.MAINUV2;
-		untyped other.UV1 = this.UV1;
-		untyped other.UV2 = this.UV2;
-		
-		untyped other.SHADOWS = this.SHADOWS;		// BHX
-		
-		untyped other.ALBEDO = this.ALBEDO;
-		untyped other.ALBEDODIRECTUV = this.ALBEDODIRECTUV;
-		untyped other.VERTEXCOLOR = this.VERTEXCOLOR;
-		
-		untyped other.AMBIENT = this.AMBIENT;
-		untyped other.AMBIENTDIRECTUV = this.AMBIENTDIRECTUV;
-		untyped other.AMBIENTINGRAYSCALE = this.AMBIENTINGRAYSCALE;
-		
-		untyped other.OPACITY = this.OPACITY;
-		untyped other.VERTEXALPHA = this.VERTEXALPHA;
-		untyped other.OPACITYDIRECTUV = this.OPACITYDIRECTUV;
-		untyped other.OPACITYRGB = this.OPACITYRGB;
-		untyped other.ALPHATEST = this.ALPHATEST;
-		untyped other.DEPTHPREPASS = this.DEPTHPREPASS;
-		untyped other.ALPHABLEND = this.ALPHABLEND;
-		untyped other.ALPHAFROMALBEDO = this.ALPHAFROMALBEDO;
 		untyped other.ALPHATESTVALUE = this.ALPHATESTVALUE;
-		untyped other.SPECULAROVERALPHA = this.SPECULAROVERALPHA;
-		untyped other.RADIANCEOVERALPHA = this.RADIANCEOVERALPHA;
-		untyped other.ALPHAFRESNEL = this.ALPHAFRESNEL;
-		untyped other.LINEARALPHAFRESNEL = this.LINEARALPHAFRESNEL;
-		untyped other.PREMULTIPLYALPHA = this.PREMULTIPLYALPHA;
 		
-		untyped other.EMISSIVE = this.EMISSIVE;
-		untyped other.EMISSIVEDIRECTUV = this.EMISSIVEDIRECTUV;
-		
-		untyped other.REFLECTIVITY = this.REFLECTIVITY;
-		untyped other.REFLECTIVITYDIRECTUV = this.REFLECTIVITYDIRECTUV;
-		untyped other.SPECULARTERM = this.SPECULARTERM;
-		
-		untyped other.MICROSURFACEFROMREFLECTIVITYMAP = this.MICROSURFACEFROMREFLECTIVITYMAP;
-		untyped other.MICROSURFACEAUTOMATIC = this.MICROSURFACEAUTOMATIC;
-		untyped other.LODBASEDMICROSFURACE = this.LODBASEDMICROSFURACE;
-		untyped other.MICROSURFACEMAP = this.MICROSURFACEMAP;
-		untyped other.MICROSURFACEMAPDIRECTUV = this.MICROSURFACEMAPDIRECTUV;
-		
-		untyped other.METALLICWORKFLOW = this.METALLICWORKFLOW;
-		untyped other.ROUGHNESSSTOREINMETALMAPALPHA = this.ROUGHNESSSTOREINMETALMAPALPHA;
-		untyped other.ROUGHNESSSTOREINMETALMAPGREEN = this.ROUGHNESSSTOREINMETALMAPGREEN;
-		untyped other.METALLNESSSTOREINMETALMAPBLUE = this.METALLNESSSTOREINMETALMAPBLUE;
-		untyped other.AOSTOREINMETALMAPRED = this.AOSTOREINMETALMAPRED;
-		untyped other.ENVIRONMENTBRDF = this.ENVIRONMENTBRDF;
-		
-		untyped other.NORMAL = this.NORMAL;
-		untyped other.TANGENT = this.TANGENT;
-		untyped other.BUMP = this.BUMP;
-		untyped other.BUMPDIRECTUV = this.BUMPDIRECTUV;
-		untyped other.PARALLAX = this.PARALLAX;
-		untyped other.PARALLAXOCCLUSION = this.PARALLAXOCCLUSION;
-		untyped other.NORMALXYSCALE = this.NORMALXYSCALE;
-		
-		untyped other.LIGHTMAP = this.LIGHTMAP;
-		untyped other.LIGHTMAPDIRECTUV = this.LIGHTMAPDIRECTUV;
-		untyped other.USELIGHTMAPASSHADOWMAP = this.USELIGHTMAPASSHADOWMAP;
-		
-		untyped other.REFLECTION = this.REFLECTION;
-		untyped other.REFLECTIONMAP_3D = this.REFLECTIONMAP_3D;
-		untyped other.REFLECTIONMAP_SPHERICAL = this.REFLECTIONMAP_SPHERICAL;
-		untyped other.REFLECTIONMAP_PLANAR = this.REFLECTIONMAP_PLANAR;
-		untyped other.REFLECTIONMAP_CUBIC = this.REFLECTIONMAP_CUBIC;
-		untyped other.REFLECTIONMAP_PROJECTION = this.REFLECTIONMAP_PROJECTION;
-		untyped other.REFLECTIONMAP_SKYBOX = this.REFLECTIONMAP_SKYBOX;
-		untyped other.REFLECTIONMAP_EXPLICIT = this.REFLECTIONMAP_EXPLICIT;
-		untyped other.REFLECTIONMAP_EQUIRECTANGULAR = this.REFLECTIONMAP_EQUIRECTANGULAR;
-		untyped other.REFLECTIONMAP_EQUIRECTANGULAR_FIXED = this.REFLECTIONMAP_EQUIRECTANGULAR_FIXED;
-		untyped other.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED = this.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED;
-		untyped other.INVERTCUBICMAP = this.INVERTCUBICMAP;
-		untyped other.USESPHERICALFROMREFLECTIONMAP = this.USESPHERICALFROMREFLECTIONMAP;
-		untyped other.USESPHERICALINVERTEX = this.USESPHERICALINVERTEX;
-		untyped other.REFLECTIONMAP_OPPOSITEZ = this.REFLECTIONMAP_OPPOSITEZ;
-		untyped other.LODINREFLECTIONALPHA = this.LODINREFLECTIONALPHA;
-		untyped other.GAMMAREFLECTION = this.GAMMAREFLECTION;
-		untyped other.RADIANCEOCCLUSION = this.RADIANCEOCCLUSION;
-		untyped other.HORIZONOCCLUSION = this.HORIZONOCCLUSION;
-		
-		untyped other.REFRACTION = this.REFRACTION;
-		untyped other.REFRACTIONMAP_3D = this.REFRACTIONMAP_3D;
-		untyped other.REFRACTIONMAP_OPPOSITEZ = this.REFRACTIONMAP_OPPOSITEZ;
-		untyped other.LODINREFRACTIONALPHA = this.LODINREFLECTIONALPHA;
-		untyped other.GAMMAREFRACTION = this.GAMMAREFRACTION;
-		untyped other.LINKREFRACTIONTOTRANSPARENCY = this.LINKREFRACTIONTOTRANSPARENCY;
-		
-		untyped other.INSTANCES = this.INSTANCES;
-		
-		untyped other.NUM_BONE_INFLUENCERS = this.NUM_BONE_INFLUENCERS;
-		untyped other.BonesPerMesh = this.BonesPerMesh;
-		
-		untyped other.NONUNIFORMSCALING = this.NONUNIFORMSCALING;
-		
-		untyped other.MORPHTARGETS = this.MORPHTARGETS;
-		untyped other.MORPHTARGETS_NORMAL = this.MORPHTARGETS_NORMAL;
-		untyped other.MORPHTARGETS_TANGENT = this.MORPHTARGETS_TANGENT;
-		untyped other.NUM_MORPH_INFLUENCERS = this.NUM_MORPH_INFLUENCERS;
-		
-		untyped other.IMAGEPROCESSING = this.IMAGEPROCESSING;
-		untyped other.VIGNETTE = this.VIGNETTE;
-		untyped other.VIGNETTEBLENDMODEMULTIPLY = this.VIGNETTEBLENDMODEMULTIPLY;
-		untyped other.VIGNETTEBLENDMODEOPAQUE = this.VIGNETTEBLENDMODEOPAQUE;
-		untyped other.TONEMAPPING = this.TONEMAPPING;
-		untyped other.CONTRAST = this.CONTRAST;
-		untyped other.COLORCURVES = this.COLORCURVES;
-		untyped other.COLORGRADING = this.COLORGRADING;
-		untyped other.COLORGRADING3D = this.COLORGRADING3D;
-		untyped other.SAMPLER3DGREENDEPTH = this.SAMPLER3DGREENDEPTH;
-		untyped other.SAMPLER3DBGRMAP = this.SAMPLER3DBGRMAP;
-		untyped other.IMAGEPROCESSINGPOSTPROCESS = this.IMAGEPROCESSINGPOSTPROCESS;
-		untyped other.EXPOSURE = this.EXPOSURE;
-		
-		untyped other.USEPHYSICALLIGHTFALLOFF = this.USEPHYSICALLIGHTFALLOFF;
-		untyped other.TWOSIDEDLIGHTING = this.TWOSIDEDLIGHTING;
-		untyped other.SHADOWFLOAT = this.SHADOWFLOAT;
-		untyped other.CLIPPLANE = this.CLIPPLANE;
-		untyped other.POINTSIZE = this.POINTSIZE;
-		untyped other.FOG = this.FOG;
-		untyped other.LOGARITHMICDEPTH = this.LOGARITHMICDEPTH;
-		
-		untyped other.FORCENORMALFORWARD = this.FORCENORMALFORWARD;
+		var len = _flags.length;
+		for (i in 0...len) {
+			untyped other._flags[i] = this._flags[i];
+		}
 	}
 	
 	override public function toString():String {
-		var result = super.toString();
+		var result = "";
+		
+		var sb:StringBuf = new StringBuf();
+		sb.add(super.toString());
 		
 		if (this.PBR) {
-			result += "#define PBR \n";
+			sb.add("#define PBR \n");
 		}
 		
-		if (this.MAINUV1) {
-			result += "#define MAINUV1 \n";
+		if (this.MAINUV1 != 0) {
+			sb.add("#define MAINUV1 \n");
 		}
-		if (this.MAINUV2) {
-			result += "#define MAINUV2 \n";
+		if (this.MAINUV2 != 0) {
+			sb.add("#define MAINUV2 \n");
 		}
-		if (this.UV1) {
-			result += "#define UV1 \n";
+		if (this.UV1 != 0) {
+			sb.add("#define UV1 \n");
 		}
-		if (this.UV2) {
-			result += "#define UV2 \n";
-		}
-		
-		if (this.SHADOWS) {
-			result += "#define SHADOWS \n";
+		if (this.UV2 != 0) {
+			sb.add("#define UV2 \n");
 		}
 		
-		if (this.ALBEDO) {
-			result += "#define ALBEDO \n";
-		}
-		result += "#define ALBEDODIRECTUV " + this.ALBEDODIRECTUV + " \n";
-		if (this.VERTEXCOLOR) {
-			result += "#define VERTEXCOLOR \n";
+		if (this.SHADOWS != 0) {
+			sb.add("#define SHADOWS \n");
 		}
 		
-		if (this.AMBIENT) {
-			result += "#define AMBIENT \n";
+		if (this.ALBEDO != 0) {
+			sb.add("#define ALBEDO \n");
 		}
-		result += "#define AMBIENTDIRECTUV " + this.AMBIENTDIRECTUV + " \n";
-		if (this.AMBIENTINGRAYSCALE) {
-			result += "#define AMBIENTINGRAYSCALE \n";
-		}
-		
-		if (this.OPACITY) {
-			result += "#define OPACITY \n";
-		}
-		if (this.VERTEXALPHA) {
-			result += "#define VERTEXALPHA \n";
-		}
-		result += "#define OPACITYDIRECTUV " + this.OPACITYDIRECTUV + " \n";
-		if (this.OPACITYRGB) {
-			result += "#define OPACITYRGB \n";
-		}
-		if (this.ALPHATEST) {
-			result += "#define ALPHATEST \n";
-		}
-		if (this.DEPTHPREPASS) {
-			result += "#define DEPTHPREPASS \n";
-		}
-		if (this.ALPHABLEND) {
-			result += "#define ALPHABLEND \n";
-		}
-		if (this.ALPHAFROMALBEDO) {
-			result += "#define ALPHAFROMALBEDO \n";
-		}
-		result += "#define ALPHATESTVALUE " + this.ALPHATESTVALUE + " \n";
-		if (this.SPECULAROVERALPHA) {
-			result += "#define SPECULAROVERALPHA \n";
-		}
-		if (this.RADIANCEOVERALPHA) {
-			result += "#define RADIANCEOVERALPHA \n";
-		}
-		if (this.ALPHAFRESNEL) {
-			result += "#define ALPHAFRESNEL \n";
-		}
-		if (this.LINEARALPHAFRESNEL) {
-			result += "#define LINEARALPHAFRESNEL \n";
-		}
-		if (this.PREMULTIPLYALPHA) {
-			result += "#define PREMULTIPLYALPHA \n";
+		sb.add("#define ALBEDODIRECTUV " + this.ALBEDODIRECTUV + " \n");
+		if (this.VERTEXCOLOR != 0) {
+			sb.add("#define VERTEXCOLOR \n");
 		}
 		
-		if (this.EMISSIVE) {
-			result += "#define EMISSIVE \n";
+		if (this.AMBIENT != 0) {
+			sb.add("#define AMBIENT \n");
 		}
-		result += "#define EMISSIVEDIRECTUV " + this.EMISSIVEDIRECTUV + " \n";
-		
-		if (this.REFLECTIVITY) {
-			result += "#define REFLECTIVITY \n";
-		}
-		result += "#define REFLECTIVITYDIRECTUV " + this.REFLECTIVITYDIRECTUV + " \n";
-		if (this.SPECULARTERM) {
-			result += "#define SPECULARTERM \n";
+		sb.add("#define AMBIENTDIRECTUV " + this.AMBIENTDIRECTUV + " \n");
+		if (this.AMBIENTINGRAYSCALE != 0) {
+			sb.add("#define AMBIENTINGRAYSCALE \n");
 		}
 		
-		if (this.MICROSURFACEFROMREFLECTIVITYMAP) {
-			result += "#define MICROSURFACEFROMREFLECTIVITYMAP \n";
+		if (this.OPACITY != 0) {
+			sb.add("#define OPACITY \n");
 		}
-		if (this.MICROSURFACEAUTOMATIC) {
-			result += "#define MICROSURFACEAUTOMATIC \n";
+		if (this.VERTEXALPHA != 0) {
+			sb.add("#define VERTEXALPHA \n");
 		}
-		if (this.LODBASEDMICROSFURACE) {
-			result += "#define LODBASEDMICROSFURACE \n";
+		sb.add("#define OPACITYDIRECTUV " + this.OPACITYDIRECTUV + " \n");
+		if (this.OPACITYRGB != 0) {
+			sb.add("#define OPACITYRGB \n");
 		}
-		if (this.MICROSURFACEMAP) {
-			result += "#define MICROSURFACEMAP \n";
+		if (this.ALPHATEST != 0) {
+			sb.add("#define ALPHATEST \n");
 		}
-		result += "#define MICROSURFACEMAPDIRECTUV " + this.MICROSURFACEMAPDIRECTUV + " \n";
-		
-		if (this.METALLICWORKFLOW) {
-			result += "#define METALLICWORKFLOW \n";
+		if (this.DEPTHPREPASS != 0) {
+			sb.add("#define DEPTHPREPASS \n");
 		}
-		if (this.ROUGHNESSSTOREINMETALMAPALPHA) {
-			result += "#define ROUGHNESSSTOREINMETALMAPALPHA \n";
+		if (this.ALPHABLEND != 0) {
+			sb.add("#define ALPHABLEND \n");
 		}
-		if (this.ROUGHNESSSTOREINMETALMAPGREEN) {
-			result += "#define ROUGHNESSSTOREINMETALMAPGREEN \n";
+		if (this.ALPHAFROMALBEDO != 0) {
+			sb.add("#define ALPHAFROMALBEDO \n");
 		}
-		if (this.METALLNESSSTOREINMETALMAPBLUE) {
-			result += "#define METALLNESSSTOREINMETALMAPBLUE \n";
+		sb.add("#define ALPHATESTVALUE " + this.ALPHATESTVALUE + " \n");
+		if (this.SPECULAROVERALPHA != 0) {
+			sb.add("#define SPECULAROVERALPHA \n");
 		}
-		if (this.AOSTOREINMETALMAPRED) {
-			result += "#define AOSTOREINMETALMAPRED \n";
+		if (this.RADIANCEOVERALPHA != 0) {
+			sb.add("#define RADIANCEOVERALPHA \n");
 		}
-		if (this.ENVIRONMENTBRDF) {
-			result += "#define ENVIRONMENTBRDF \n";
+		if (this.ALPHAFRESNEL != 0) {
+			sb.add("#define ALPHAFRESNEL \n");
 		}
-		
-		if (this.NORMAL) {
-			result += "#define NORMAL \n";
+		if (this.LINEARALPHAFRESNEL != 0) {
+			sb.add("#define LINEARALPHAFRESNEL \n");
 		}
-		if (this.TANGENT) {
-			result += "#define TANGENT \n";
-		}
-		if (this.BUMP) {
-			result += "#define BUMP \n";
-		}
-		result += "#define BUMPDIRECTUV " + this.BUMPDIRECTUV + " \n";
-		if (this.PARALLAX) {
-			result += "#define PARALLAX \n";
-		}
-		if (this.PARALLAXOCCLUSION) {
-			result += "#define PARALLAXOCCLUSION \n";
-		}
-		if (this.NORMALXYSCALE) {
-			result += "#define NORMALXYSCALE \n";
+		if (this.PREMULTIPLYALPHA != 0) {
+			sb.add("#define PREMULTIPLYALPHA \n");
 		}
 		
-		if (this.LIGHTMAP) {
-			result += "#define LIGHTMAP \n";
+		if (this.EMISSIVE != 0) {
+			sb.add("#define EMISSIVE \n");
 		}
-		result += "#define LIGHTMAPDIRECTUV " + this.LIGHTMAPDIRECTUV + " \n";
-		if (this.USELIGHTMAPASSHADOWMAP) {
-			result += "#define USELIGHTMAPASSHADOWMAP \n";
+		sb.add("#define EMISSIVEDIRECTUV " + this.EMISSIVEDIRECTUV + " \n");
+		
+		if (this.REFLECTIVITY != 0) {
+			sb.add("#define REFLECTIVITY \n");
+		}
+		sb.add("#define REFLECTIVITYDIRECTUV " + this.REFLECTIVITYDIRECTUV + " \n");
+		if (this.SPECULARTERM != 0) {
+			sb.add("#define SPECULARTERM \n");
 		}
 		
-		if (this.REFLECTION) {
-			result += "#define REFLECTION \n";
+		if (this.MICROSURFACEFROMREFLECTIVITYMAP != 0) {
+			sb.add("#define MICROSURFACEFROMREFLECTIVITYMAP \n");
 		}
-		if (this.REFLECTIONMAP_3D) {
-			result += "#define REFLECTIONMAP_3D \n";
+		if (this.MICROSURFACEAUTOMATIC != 0) {
+			sb.add("#define MICROSURFACEAUTOMATIC \n");
 		}
-		if (this.REFLECTIONMAP_SPHERICAL) {
-			result += "#define REFLECTIONMAP_SPHERICAL \n";
+		if (this.LODBASEDMICROSFURACE != 0) {
+			sb.add("#define LODBASEDMICROSFURACE \n");
 		}
-		if (this.REFLECTIONMAP_PLANAR) {
-			result += "#define REFLECTIONMAP_PLANAR \n";
+		if (this.MICROSURFACEMAP != 0) {
+			sb.add("#define MICROSURFACEMAP \n");
 		}
-		if (this.REFLECTIONMAP_CUBIC) {
-			result += "#define REFLECTIONMAP_CUBIC \n";
+		sb.add("#define MICROSURFACEMAPDIRECTUV " + this.MICROSURFACEMAPDIRECTUV + " \n");
+		
+		if (this.METALLICWORKFLOW != 0) {
+			sb.add("#define METALLICWORKFLOW \n");
 		}
-		if (this.REFLECTIONMAP_PROJECTION) {
-			result += "#define REFLECTIONMAP_PROJECTION \n";
+		if (this.ROUGHNESSSTOREINMETALMAPALPHA != 0) {
+			sb.add("#define ROUGHNESSSTOREINMETALMAPALPHA \n");
 		}
-		if (this.REFLECTIONMAP_SKYBOX) {
-			result += "#define REFLECTIONMAP_SKYBOX \n";
+		if (this.ROUGHNESSSTOREINMETALMAPGREEN != 0) {
+			sb.add("#define ROUGHNESSSTOREINMETALMAPGREEN \n");
 		}
-		if (this.REFLECTIONMAP_EXPLICIT) {
-			result += "#define REFLECTIONMAP_EXPLICIT \n";
+		if (this.METALLNESSSTOREINMETALMAPBLUE != 0) {
+			sb.add("#define METALLNESSSTOREINMETALMAPBLUE \n");
 		}
-		if (this.REFLECTIONMAP_EQUIRECTANGULAR) {
-			result += "#define REFLECTIONMAP_EQUIRECTANGULAR \n";
+		if (this.AOSTOREINMETALMAPRED != 0) {
+			sb.add("#define AOSTOREINMETALMAPRED \n");
 		}
-		if (this.REFLECTIONMAP_EQUIRECTANGULAR_FIXED) {
-			result += "#define REFLECTIONMAP_EQUIRECTANGULAR_FIXED \n";
-		}
-		if (this.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED) {
-			result += "#define REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED \n";
-		}
-		if (this.INVERTCUBICMAP) {
-			result += "#define INVERTCUBICMAP \n";
-		}
-		if (this.USESPHERICALFROMREFLECTIONMAP) {
-			result += "#define USESPHERICALFROMREFLECTIONMAP \n";
-		}
-		if (this.USESPHERICALINVERTEX) {
-			result += "#define USESPHERICALINVERTEX \n";
-		}
-		if (this.REFLECTIONMAP_OPPOSITEZ) {
-			result += "#define REFLECTIONMAP_OPPOSITEZ \n";
-		}
-		if (this.LODINREFLECTIONALPHA) {
-			result += "#define LODINREFLECTIONALPHA \n";
-		}
-		if (this.GAMMAREFLECTION) {
-			result += "#define GAMMAREFLECTION \n";
-		}
-		if (this.RADIANCEOCCLUSION) {
-			result += "#define RADIANCEOCCLUSION \n";
-		}
-		if (this.HORIZONOCCLUSION) {
-			result += "#define HORIZONOCCLUSION \n";
+		if (this.ENVIRONMENTBRDF != 0) {
+			sb.add("#define ENVIRONMENTBRDF \n");
 		}
 		
-		if (this.REFRACTION) {
-			result += "#define REFRACTION \n";
+		if (this.NORMAL != 0) {
+			sb.add("#define NORMAL \n");
 		}
-		if (this.REFRACTIONMAP_3D) {
-			result += "#define REFRACTIONMAP_3D \n";
+		if (this.TANGENT != 0) {
+			sb.add("#define TANGENT \n");
 		}
-		if (this.REFRACTIONMAP_OPPOSITEZ) {
-			result += "#define REFRACTIONMAP_OPPOSITEZ \n";
+		if (this.BUMP != 0) {
+			sb.add("#define BUMP \n");
 		}
-		if (this.LODINREFRACTIONALPHA) {
-			result += "#define LODINREFRACTIONALPHA \n";
+		sb.add("#define BUMPDIRECTUV " + this.BUMPDIRECTUV + " \n");
+		if (this.OBJECTSPACE_NORMALMAP != 0) {
+			sb.add("#define OBJECTSPACE_NORMALMAP \n");
 		}
-		if (this.GAMMAREFRACTION) {
-			result += "#define GAMMAREFRACTION \n";
+		if (this.PARALLAX != 0) {
+			sb.add("#define PARALLAX \n");
 		}
-		if (this.LINKREFRACTIONTOTRANSPARENCY) {
-			result += "#define LINKREFRACTIONTOTRANSPARENCY \n";
+		if (this.PARALLAXOCCLUSION != 0) {
+			sb.add("#define PARALLAXOCCLUSION \n");
 		}
-		
-		if (this.INSTANCES) {
-			result += "#define INSTANCES \n";
-		}
-		
-		result += "#define NUM_BONE_INFLUENCERS " + this.NUM_BONE_INFLUENCERS + " \n";
-		result += "#define BonesPerMesh " + this.BonesPerMesh + " \n";
-		
-		if (this.NONUNIFORMSCALING) {
-			result += "#define NONUNIFORMSCALING \n";
+		if (this.NORMALXYSCALE != 0) {
+			sb.add("#define NORMALXYSCALE \n");
 		}
 		
-		if (this.MORPHTARGETS) {
-			result += "#define MORPHTARGETS \n";
+		if (this.LIGHTMAP != 0) {
+			sb.add("#define LIGHTMAP \n");
 		}
-		if (this.MORPHTARGETS_NORMAL) {
-			result += "#define MORPHTARGETS_NORMAL \n";
-		}
-		if (this.MORPHTARGETS_TANGENT) {
-			result += "#define MORPHTARGETS_TANGENT \n";
-		}
-		result += "#define NUM_MORPH_INFLUENCERS " + this.NUM_MORPH_INFLUENCERS + " \n";
-		
-		if (this.IMAGEPROCESSING) {
-			result += "#define IMAGEPROCESSING \n";
-		}
-		if (this.VIGNETTE) {
-			result += "#define VIGNETTE \n";
-		}
-		if (this.VIGNETTEBLENDMODEMULTIPLY) {
-			result += "#define VIGNETTEBLENDMODEMULTIPLY \n";
-		}
-		if (this.VIGNETTEBLENDMODEOPAQUE) {
-			result += "#define VIGNETTEBLENDMODEOPAQUE \n";
-		}
-		if (this.TONEMAPPING) {
-			result += "#define TONEMAPPING \n";
-		}
-		if (this.CONTRAST) {
-			result += "#define CONTRAST \n";
-		}
-		if (this.COLORCURVES) {
-			result += "#define COLORCURVES \n";
-		}
-		if (this.COLORGRADING) {
-			result += "#define COLORGRADING \n";
-		}
-		if (this.COLORGRADING3D) {
-			result += "#define COLORGRADING3D \n";
-		}
-		if (this.SAMPLER3DGREENDEPTH) {
-			result += "#define SAMPLER3DGREENDEPTH \n";
-		}
-		if (this.SAMPLER3DBGRMAP) {
-			result += "#define SAMPLER3DBGRMAP \n";
-		}
-		if (this.IMAGEPROCESSINGPOSTPROCESS) {
-			result += "#define IMAGEPROCESSINGPOSTPROCESS \n";
-		}
-		if (this.EXPOSURE) {
-			result += "#define EXPOSURE \n";
+		sb.add("#define LIGHTMAPDIRECTUV " + this.LIGHTMAPDIRECTUV + " \n");
+		if (this.USELIGHTMAPASSHADOWMAP != 0) {
+			sb.add("#define USELIGHTMAPASSHADOWMAP \n");
 		}
 		
-		if (this.USEPHYSICALLIGHTFALLOFF) {
-			result += "#define USEPHYSICALLIGHTFALLOFF \n";
+		if (this.REFLECTION != 0) {
+			sb.add("#define REFLECTION \n");
 		}
-		if (this.TWOSIDEDLIGHTING) {
-			result += "#define TWOSIDEDLIGHTING \n";
+		if (this.REFLECTIONMAP_3D != 0) {
+			sb.add("#define REFLECTIONMAP_3D \n");
 		}
-		if (this.SHADOWFLOAT) {
-			result += "#define SHADOWFLOAT \n";
+		if (this.REFLECTIONMAP_SPHERICAL != 0) {
+			sb.add("#define REFLECTIONMAP_SPHERICAL \n");
 		}
-		if (this.CLIPPLANE) {
-			result += "#define CLIPPLANE \n";
+		if (this.REFLECTIONMAP_PLANAR != 0) {
+			sb.add("#define REFLECTIONMAP_PLANAR \n");
 		}
-		if (this.POINTSIZE) {
-			result += "#define POINTSIZE \n";
+		if (this.REFLECTIONMAP_CUBIC != 0) {
+			sb.add("#define REFLECTIONMAP_CUBIC \n");
 		}
-		if (this.FOG) {
-			result += "#define FOG \n";
+		if (this.USE_LOCAL_REFLECTIONMAP_CUBIC != 0) {
+			sb.add("#define USE_LOCAL_REFLECTIONMAP_CUBIC \n");
 		}
-		if (this.LOGARITHMICDEPTH) {
-			result += "#define LOGARITHMICDEPTH \n";
+		if (this.REFLECTIONMAP_PROJECTION != 0) {
+			sb.add("#define REFLECTIONMAP_PROJECTION \n");
+		}
+		if (this.REFLECTIONMAP_SKYBOX != 0) {
+			sb.add("#define REFLECTIONMAP_SKYBOX \n");
+		}
+		if (this.REFLECTIONMAP_EXPLICIT != 0) {
+			sb.add("#define REFLECTIONMAP_EXPLICIT \n");
+		}
+		if (this.REFLECTIONMAP_EQUIRECTANGULAR != 0) {
+			sb.add("#define REFLECTIONMAP_EQUIRECTANGULAR \n");
+		}
+		if (this.REFLECTIONMAP_EQUIRECTANGULAR_FIXED != 0) {
+			sb.add("#define REFLECTIONMAP_EQUIRECTANGULAR_FIXED \n");
+		}
+		if (this.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED != 0) {
+			sb.add("#define REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED \n");
+		}
+		if (this.INVERTCUBICMAP != 0) {
+			sb.add("#define INVERTCUBICMAP \n");
+		}
+		if (this.USESPHERICALFROMREFLECTIONMAP != 0) {
+			sb.add("#define USESPHERICALFROMREFLECTIONMAP \n");
+		}
+		if (this.USESPHERICALINVERTEX != 0) {
+			sb.add("#define USESPHERICALINVERTEX \n");
+		}
+		if (this.REFLECTIONMAP_OPPOSITEZ != 0) {
+			sb.add("#define REFLECTIONMAP_OPPOSITEZ \n");
+		}
+		if (this.LODINREFLECTIONALPHA != 0) {
+			sb.add("#define LODINREFLECTIONALPHA \n");
+		}
+		if (this.GAMMAREFLECTION != 0) {
+			sb.add("#define GAMMAREFLECTION \n");
+		}
+		if (this.RADIANCEOCCLUSION != 0) {
+			sb.add("#define RADIANCEOCCLUSION \n");
+		}
+		if (this.HORIZONOCCLUSION != 0) {
+			sb.add("#define HORIZONOCCLUSION \n");
 		}
 		
-		if (this.FORCENORMALFORWARD) {
-			result += "#define FORCENORMALFORWARD \n";
+		if (this.REFRACTION != 0) {
+			sb.add("#define REFRACTION \n");
 		}
+		if (this.REFRACTIONMAP_3D != 0) {
+			sb.add("#define REFRACTIONMAP_3D \n");
+		}
+		if (this.REFRACTIONMAP_OPPOSITEZ != 0) {
+			sb.add("#define REFRACTIONMAP_OPPOSITEZ \n");
+		}
+		if (this.LODINREFRACTIONALPHA != 0) {
+			sb.add("#define LODINREFRACTIONALPHA \n");
+		}
+		if (this.GAMMAREFRACTION != 0) {
+			sb.add("#define GAMMAREFRACTION \n");
+		}
+		if (this.LINKREFRACTIONTOTRANSPARENCY != 0) {
+			sb.add("#define LINKREFRACTIONTOTRANSPARENCY \n");
+		}
+		
+		if (this.INSTANCES != 0) {
+			sb.add("#define INSTANCES \n");
+		}
+		
+		sb.add("#define NUM_BONE_INFLUENCERS " + this.NUM_BONE_INFLUENCERS + " \n");
+		sb.add("#define BonesPerMesh " + this.BonesPerMesh + " \n");
+		
+		if (this.NONUNIFORMSCALING != 0) {
+			sb.add("#define NONUNIFORMSCALING \n");
+		}
+		
+		if (this.MORPHTARGETS != 0) {
+			sb.add("#define MORPHTARGETS \n");
+		}
+		if (this.MORPHTARGETS_NORMAL != 0) {
+			sb.add("#define MORPHTARGETS_NORMAL \n");
+		}
+		if (this.MORPHTARGETS_TANGENT != 0) {
+			sb.add("#define MORPHTARGETS_TANGENT \n");
+		}
+		sb.add("#define NUM_MORPH_INFLUENCERS " + this.NUM_MORPH_INFLUENCERS + " \n");
+		
+		if (this.IMAGEPROCESSING != 0) {
+			sb.add("#define IMAGEPROCESSING \n");
+		}
+		if (this.VIGNETTE != 0) {
+			sb.add("#define VIGNETTE \n");
+		}
+		if (this.VIGNETTEBLENDMODEMULTIPLY != 0) {
+			sb.add("#define VIGNETTEBLENDMODEMULTIPLY \n");
+		}
+		if (this.VIGNETTEBLENDMODEOPAQUE != 0) {
+			sb.add("#define VIGNETTEBLENDMODEOPAQUE \n");
+		}
+		if (this.TONEMAPPING != 0) {
+			sb.add("#define TONEMAPPING \n");
+		}
+		if (this.CONTRAST != 0) {
+			sb.add("#define CONTRAST \n");
+		}
+		if (this.COLORCURVES != 0) {
+			sb.add("#define COLORCURVES \n");
+		}
+		if (this.COLORGRADING != 0) {
+			sb.add("#define COLORGRADING \n");
+		}
+		if (this.COLORGRADING3D != 0) {
+			sb.add("#define COLORGRADING3D \n");
+		}
+		if (this.SAMPLER3DGREENDEPTH != 0) {
+			sb.add("#define SAMPLER3DGREENDEPTH \n");
+		}
+		if (this.SAMPLER3DBGRMAP != 0) {
+			sb.add("#define SAMPLER3DBGRMAP \n");
+		}
+		if (this.IMAGEPROCESSINGPOSTPROCESS != 0) {
+			sb.add("#define IMAGEPROCESSINGPOSTPROCESS \n");
+		}
+		if (this.EXPOSURE != 0) {
+			sb.add("#define EXPOSURE \n");
+		}
+		
+		if (this.USEPHYSICALLIGHTFALLOFF != 0) {
+			sb.add("#define USEPHYSICALLIGHTFALLOFF \n");
+		}
+		if (this.TWOSIDEDLIGHTING != 0) {
+			sb.add("#define TWOSIDEDLIGHTING \n");
+		}
+		if (this.SHADOWFLOAT != 0) {
+			sb.add("#define SHADOWFLOAT \n");
+		}
+		if (this.CLIPPLANE != 0) {
+			sb.add("#define CLIPPLANE \n");
+		}
+		if (this.POINTSIZE != 0) {
+			sb.add("#define POINTSIZE \n");
+		}
+		if (this.FOG != 0) {
+			sb.add("#define FOG \n");
+		}
+		if (this.LOGARITHMICDEPTH != 0) {
+			sb.add("#define LOGARITHMICDEPTH \n");
+		}
+		
+		if (this.FORCENORMALFORWARD != 0) {
+			sb.add("#define FORCENORMALFORWARD \n");
+		}
+		
+		result = sb.toString();
 		
 		return result;
 	}

@@ -15,7 +15,7 @@ class Observer<T> {
 	/**
 	 * Defines the callback to call when the observer is notified
 	 */
-	public var callback:T->Null<EventState<T>>->Void;
+	public var callback:T->Null<EventState>->Void;
 	/**
 	 * Defines the mask of the observer (used to filter notifications)
 	 */
@@ -32,7 +32,7 @@ class Observer<T> {
 	 * @param mask defines the mask of the observer (used to filter notifications)
 	 * @param scope defines the current scope used to restore the JS context
 	 */
-	public function new(callback:T->Null<EventState<T>>->Void, mask:Int, scope:Dynamic = null) {
+	public function new(callback:T->Null<EventState>->Void, mask:Int, scope:Dynamic = null) {
 		this.callback = callback;
 		this.mask = mask;
 		this.scope = scope;

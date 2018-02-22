@@ -19,20 +19,20 @@ import com.babylonhx.tools.Observer;
 // BHX only
 class IPCD implements IImageProcessingConfigurationDefines {
 	
-	public var IMAGEPROCESSING:Bool = false;
-	public var VIGNETTE:Bool = false;
-	public var VIGNETTEBLENDMODEMULTIPLY:Bool = false;
-	public var VIGNETTEBLENDMODEOPAQUE:Bool = false;
-	public var TONEMAPPING:Bool = false;
-	public var CONTRAST:Bool = false;
-	public var COLORCURVES:Bool = false;
-	public var COLORGRADING:Bool = false;
-	public var COLORGRADING3D:Bool = false;
-	public var FROMLINEARSPACE:Bool = false;
-	public var SAMPLER3DGREENDEPTH:Bool = false;
-	public var SAMPLER3DBGRMAP:Bool = false;
-	public var IMAGEPROCESSINGPOSTPROCESS:Bool = false;
-	public var EXPOSURE:Bool = false;	
+	public var IMAGEPROCESSING:Int = 0;
+	public var VIGNETTE:Int = 0;
+	public var VIGNETTEBLENDMODEMULTIPLY:Int = 0;
+	public var VIGNETTEBLENDMODEOPAQUE:Int = 0;
+	public var TONEMAPPING:Int = 0;
+	public var CONTRAST:Int = 0;
+	public var COLORCURVES:Int = 0;
+	public var COLORGRADING:Int = 0;
+	public var COLORGRADING3D:Int = 0;
+	public var FROMLINEARSPACE:Int = 0;
+	public var SAMPLER3DGREENDEPTH:Int = 0;
+	public var SAMPLER3DBGRMAP:Int = 0;
+	public var IMAGEPROCESSINGPOSTPROCESS:Int = 0;
+	public var EXPOSURE:Int = 0;	
 	
 	
 	public function new() { }
@@ -399,47 +399,47 @@ class ImageProcessingPostProcess extends PostProcess {
 	}
 
 	private function _updateParameters() {
-		this._defines.FROMLINEARSPACE = this._fromLinearSpace;
+		this._defines.FROMLINEARSPACE = this._fromLinearSpace ? 1 : 0;
 		this.imageProcessingConfiguration.prepareDefines(this._defines, true);
 		
 		var defines = "";
-		if (this._defines.IMAGEPROCESSING) {
+		if (this._defines.IMAGEPROCESSING != 0) {
 			defines = '#define IMAGEPROCESSING;\r\n';
 		}
-		if (this._defines.VIGNETTE) {
+		if (this._defines.VIGNETTE != 0) {
 			defines += '#define VIGNETTE;\r\n';
 		}
-		if (this._defines.VIGNETTEBLENDMODEMULTIPLY) {
+		if (this._defines.VIGNETTEBLENDMODEMULTIPLY != 0) {
 			defines += '#define VIGNETTEBLENDMODEMULTIPLY;\r\n';
 		}
-		if (this._defines.VIGNETTEBLENDMODEOPAQUE) {
+		if (this._defines.VIGNETTEBLENDMODEOPAQUE != 0) {
 			defines += '#define VIGNETTEBLENDMODEOPAQUE;\r\n';
 		}
-		if (this._defines.TONEMAPPING) {
+		if (this._defines.TONEMAPPING != 0) {
 			defines += '#define TONEMAPPING;\r\n';
 		}
-		if (this._defines.CONTRAST) {
+		if (this._defines.CONTRAST != 0) {
 			defines += '#define CONTRAST;\r\n';
 		}
-		if (this._defines.COLORCURVES) {
+		if (this._defines.COLORCURVES != 0) {
 			defines += '#define COLORCURVES;\r\n';
 		}
-		if (this._defines.COLORGRADING) {
+		if (this._defines.COLORGRADING != 0) {
 			defines += '#define COLORGRADING;\r\n';
 		}
-		if (this._defines.FROMLINEARSPACE) {
+		if (this._defines.FROMLINEARSPACE != 0) {
 			defines += '#define FROMLINEARSPACE;\r\n';
 		}
-		if (this._defines.SAMPLER3DGREENDEPTH) {
+		if (this._defines.SAMPLER3DGREENDEPTH != 0) {
 			defines += '#define SAMPLER3DGREENDEPTH;\r\n';
 		}
-		if (this._defines.SAMPLER3DBGRMAP) {
+		if (this._defines.SAMPLER3DBGRMAP != 0) {
 			defines += '#define SAMPLER3DBGRMAP;\r\n';
 		}
-		if (this._defines.IMAGEPROCESSINGPOSTPROCESS) {
+		if (this._defines.IMAGEPROCESSINGPOSTPROCESS != 0) {
 			defines += '#define IMAGEPROCESSINGPOSTPROCESS;\r\n';
 		}
-		if (this._defines.EXPOSURE) {
+		if (this._defines.EXPOSURE != 0) {
 			defines += '#define EXPOSURE;\r\n';
 		}
 		

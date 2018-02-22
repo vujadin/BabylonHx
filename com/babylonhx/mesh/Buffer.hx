@@ -2,7 +2,7 @@ package com.babylonhx.mesh;
 
 import com.babylonhx.engine.Engine;
 
-import lime.utils.Float32Array;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 /**
  * ...
@@ -29,26 +29,35 @@ class Buffer {
 	private var _updatable:Bool;
 	private var _strideSize:Int;
 	private var _instanced:Bool;
-	private var _instanceDivisor:Int;
 	
 
 	public function new(engine:Engine, data:Float32Array, updatable:Bool, stride:Int, postponeInternalCreation:Bool = false, instanced:Bool = false) {
-		this._engine = engine;		
+		this._engine = engine;	
+		
 		this._updatable = updatable;
+		this._instanced = instanced;
+		
 		this._data = data;
+		
 		this._strideSize = stride;
 		
 		if (!postponeInternalCreation) { // by default
 			this.create();
 		}
-		
-		this._instanced = instanced;
-		this._instanceDivisor = instanced ? 1 : 0;
 	}
 
-	public function createVertexBuffer(kind:String, offset:Int, size:Int, ?stride:Int):VertexBuffer {
+	/**
+	 * Create a new {BABYLON.VertexBuffer} based on the current buffer
+	 * @param kind defines the vertex buffer kind (position, normal, etc.)
+	 * @param offset defines offset in the buffer (0 by default)
+	 * @param size defines the size in floats of attributes (position is 3 for instance)
+	 * @param stride defines the stride size in floats in the buffer (the offset to apply to reach next value when data is interleaved)
+	 * @param instanced defines if the vertex buffer contains indexed data
+	 * @returns the new vertex buffer
+	 */
+	public function createVertexBuffer(kind:String, offset:Int, size:Int, ?stride:Int, ?instanced:Bool):VertexBuffer {
 		// a lot of these parameters are ignored as they are overriden by the buffer
-		return new VertexBuffer(this._engine, this, kind, this._updatable, true, stride != null ? stride : this._strideSize, this._instanced, offset, size);
+		return new VertexBuffer(this._engine, this, kind, this._updatable, true, stride != null ? stride : this._strideSize, instanced != null ? instanced : this._instanced, offset, size);
 	}
 
 	// Properties
@@ -68,7 +77,7 @@ class Buffer {
 		return this._strideSize;
 	}
 
-	inline public function getIsInstanced():Bool {
+	/*inline public function getIsInstanced():Bool {
 		return this._instanced;
 	}
 	
@@ -85,7 +94,7 @@ class Buffer {
 			this._instanced = true;
 		}
 		return value;
-	}
+	}*/
 
 	// Methods
 	public function create(?data:Float32Array) {
@@ -95,6 +104,10 @@ class Buffer {
 		
 		if (data == null) {
 			data = this._data;
+		}
+		
+		if (data == null) {
+			return;
 		}
 		
 		if (this._buffer == null) { // create buffer

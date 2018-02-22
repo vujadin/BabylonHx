@@ -904,7 +904,7 @@ class TransformNode extends Node {
 	*
 	* Returns the TransformNode. 
 	*/
-	public function registerAfterWorldMatrixUpdate(func:TransformNode->Null<EventState<TransformNode>>->Void):TransformNode {
+	public function registerAfterWorldMatrixUpdate(func:TransformNode->Null<EventState>->Void):TransformNode {
 		this.onAfterWorldMatrixUpdateObservable.add(func);
 		return this;
 	}
@@ -913,7 +913,7 @@ class TransformNode extends Node {
 	 * Removes a registered callback function.  
 	 * Returns the TransformNode.
 	 */
-	public function unregisterAfterWorldMatrixUpdate(func:TransformNode->Null<EventState<TransformNode>>->Void):TransformNode {
+	public function unregisterAfterWorldMatrixUpdate(func:TransformNode->Null<EventState>->Void):TransformNode {
 		this.onAfterWorldMatrixUpdateObservable.removeCallback(func);
 		return this;
 	}        

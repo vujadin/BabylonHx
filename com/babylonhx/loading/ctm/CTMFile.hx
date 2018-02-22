@@ -17,7 +17,7 @@ class CTMFile {
 		this.file = file;
 	}
 	
-	public function load(){
+	public function load() {
 		this.header = new CTMFileHeader(this.file);
 		this.body = new CTMFileBody(this.header);
 		this.getReader().read(this.file, this.body);

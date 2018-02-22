@@ -126,9 +126,9 @@ class LensRenderingPipeline extends PostProcessRenderPipeline {
 		this._createDepthOfFieldPostProcess(ratio / 4);
 		
 		// Set up pipeline
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), this.LensChromaticAberrationEffect, function() { return this._chromaticAberrationPostProcess; }, true));
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), this.HighlightsEnhancingEffect, function() { return this._highlightsPostProcess; }, true));
-		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), this.LensDepthOfFieldEffect, function() { return this._depthOfFieldPostProcess; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), this.LensChromaticAberrationEffect, function() { return [this._chromaticAberrationPostProcess]; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), this.HighlightsEnhancingEffect, function() { return [this._highlightsPostProcess]; }, true));
+		this.addEffect(new PostProcessRenderEffect(scene.getEngine(), this.LensDepthOfFieldEffect, function() { return [this._depthOfFieldPostProcess]; }, true));
 		
 		if (this._highlightsGain == -1) {
 			this._disableEffect(this.HighlightsEnhancingEffect, null);

@@ -4,8 +4,8 @@ import com.babylonhx.math.Plane;
 import com.babylonhx.math.Vector3;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.SubMesh;
-import lime.utils.Int32Array;
-import lime.utils.UInt32Array;
+import com.babylonhx.utils.typedarray.Int32Array;
+import com.babylonhx.utils.typedarray.UInt32Array;
 
 /**
 * ...

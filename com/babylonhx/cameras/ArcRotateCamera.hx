@@ -302,9 +302,9 @@ import com.babylonhx.events.PointerEvent;
 				var _dummy = { dummy: 'dummy' };
 				pointers.add(evt.pointerId != null ? evt.pointerId : _dummy, { x: evt.clientX, y: evt.clientY, type: evt.pointerType });
 				cacheSoloPointer = pointers.item(evt.pointerId != null ? evt.pointerId : _dummy);
-				if (!noPreventDefault) {
+				/*if (!noPreventDefault) {
 					evt.preventDefault();
-				}
+				}*/
 			};
 			
 			this._onPointerUp = function(evt:Dynamic) {
@@ -317,9 +317,9 @@ import com.babylonhx.events.PointerEvent;
 				//will be ok to put back pointers.remove(evt.pointerId); when iPhone bug corrected
 				pointers.empty();
 				
-				if (!noPreventDefault) {
+				/*if (!noPreventDefault) {
 					evt.preventDefault();
-				}
+				}*/
 			};
 			
 			this._onContextMenu = function(evt:Dynamic) {
@@ -327,9 +327,9 @@ import com.babylonhx.events.PointerEvent;
 			};
 			
 			this._onPointerMove = function(evt:Dynamic) {
-				if (!noPreventDefault) {
+				/*if (!noPreventDefault) {
 					evt.preventDefault();
-				}
+				}*/
 				
 				switch (pointers.count) {
 					
@@ -384,9 +384,9 @@ import com.babylonhx.events.PointerEvent;
 				this.inertialAlphaOffset -= offsetX / this.angularSensibilityX;
 				this.inertialBetaOffset -= offsetY / this.angularSensibilityY;
 				
-				if (!noPreventDefault) {
+				/*if (!noPreventDefault) {
 					evt.preventDefault();
-				}
+				}*/
 			};
 			
 			this._wheel = function(event:Dynamic) {
@@ -403,9 +403,9 @@ import com.babylonhx.events.PointerEvent;
 				}
 				
 				if (event.preventDefault != null) {
-					if (!noPreventDefault) {
+					/*if (!noPreventDefault) {
 						event.preventDefault();
-					}
+					}*/
 				}
 			};
 			
@@ -519,6 +519,7 @@ import com.babylonhx.events.PointerEvent;
 		if (!useCtrlForPanning) {
 			canvas.addEventListener("contextmenu", this._onContextMenu, false);
 		}
+		var eventPrefix = "pointer";
 		canvas.addEventListener(eventPrefix + "down", this._onPointerDown, false);
 		canvas.addEventListener(eventPrefix + "up", this._onPointerUp, false);
 		canvas.addEventListener(eventPrefix + "out", this._onPointerUp, false);
@@ -554,6 +555,7 @@ import com.babylonhx.events.PointerEvent;
 		#if purejs
 		var canvas = this.getScene().getEngine().getRenderingCanvas();
 		canvas.removeEventListener("contextmenu", this._onContextMenu, false);
+		var eventPrefix = "pointer";
 		canvas.removeEventListener(eventPrefix + "down", this._onPointerDown, false);
 		canvas.removeEventListener(eventPrefix + "up", this._onPointerUp, false);
 		canvas.removeEventListener(eventPrefix + "out", this._onPointerUp, false);

@@ -1,7 +1,7 @@
 package com.babylonhx.states;
 
-import lime.graphics.opengl.GL;
-import lime.graphics.opengl.WebGL2Context;
+import com.babylonhx.states._AlphaState.WebGL2Context;
+import com.babylonhx.utils.GL;
 
 /**
  * ...
@@ -164,10 +164,10 @@ import lime.graphics.opengl.WebGL2Context;
 		// Cull
 		if (this._isCullDirty) {
 			if (this.cull) {
-				gl.enable(gl.CULL_FACE);
+				gl.enable(GL.CULL_FACE);
 			} 
 			else {
-				gl.disable(gl.CULL_FACE);
+				gl.disable(GL.CULL_FACE);
 			}
 			
 			this._isCullDirty = false;
@@ -188,10 +188,10 @@ import lime.graphics.opengl.WebGL2Context;
 		// Depth test
 		if (this._isDepthTestDirty) {
 			if (this.depthTest) {
-				gl.enable(gl.DEPTH_TEST);
+				gl.enable(GL.DEPTH_TEST);
 			} 
 			else {
-				gl.disable(gl.DEPTH_TEST);
+				gl.disable(GL.DEPTH_TEST);
 			}
 			this._isDepthTestDirty = false;
 		}
@@ -205,11 +205,11 @@ import lime.graphics.opengl.WebGL2Context;
 		// zOffset
 		if (this._isZOffsetDirty) {
 			if (this.zOffset != 0) {
-				gl.enable(gl.POLYGON_OFFSET_FILL);
+				gl.enable(GL.POLYGON_OFFSET_FILL);
 				gl.polygonOffset(this.zOffset, 0);
 			} 
 			else {
-				gl.disable(gl.POLYGON_OFFSET_FILL);
+				gl.disable(GL.POLYGON_OFFSET_FILL);
 			}
 			
 			this._isZOffsetDirty = false;

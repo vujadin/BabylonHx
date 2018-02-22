@@ -1,6 +1,7 @@
 package com.babylonhx.materials.pbr;
 
 import com.babylonhx.engine.Engine;
+import com.babylonhx.materials.textures.CubeTexture;
 import com.babylonhx.math.Vector2;
 import com.babylonhx.math.Vector4;
 import com.babylonhx.math.Color3;
@@ -17,6 +18,7 @@ import com.babylonhx.tools.Tools;
 import com.babylonhx.mesh.Mesh;
 import com.babylonhx.mesh.SubMesh;
 import com.babylonhx.mesh.BaseSubMesh;
+import com.babylonhx.mesh.InstancedMesh;
 import com.babylonhx.mesh.AbstractMesh;
 import com.babylonhx.mesh.VertexBuffer;
 import com.babylonhx.lights.shadows.ShadowGenerator;
@@ -232,6 +234,11 @@ class PBRBaseMaterial extends PushMaterial {
 	 * A car glass is a good exemple of that. When the street lights reflects on it you can not see what is behind.
 	 */
 	private var _useRadianceOverAlpha:Bool = true;
+	
+	/**
+	 * Allows using an object space normal map (instead of tangent space).
+	 */
+	private var _useObjectSpaceNormalMap:Bool = false;
 	
 	/**
 	 * Allows using the bump map in parallax mode.
@@ -454,6 +461,9 @@ class PBRBaseMaterial extends PushMaterial {
 			this._transparencyMode == PBRMaterial.PBRMATERIAL_ALPHATEST);
 	}
 
+	/**
+	 * Specifies whether or not this material should be rendered in alpha blend mode.
+	 */
 	override public function needAlphaBlending():Bool {
 		if (this._linkRefractionWithTransparency) {
 			return false;
@@ -462,7 +472,8 @@ class PBRBaseMaterial extends PushMaterial {
 	}
 	
 	/**
-	 * Specifies whether or not this material should be rendered in alpha blend mode for the given mesh.
+	 * Specifies if the mesh will require alpha blending.
+	 * @param mesh - BJS mesh.
 	 */
 	override public function needAlphaBlendingForMesh(mesh:AbstractMesh):Bool {
 		if (this._disableAlphaBlending) {
@@ -472,6 +483,9 @@ class PBRBaseMaterial extends PushMaterial {
 		return super.needAlphaBlendingForMesh(mesh);
 	}
 
+	/**
+	 * Specifies whether or not this material should be rendered in alpha test mode.
+	 */
 	override public function needAlphaTesting():Bool {
 		if (this._forceAlphaTest) {
 			return true;
@@ -483,16 +497,32 @@ class PBRBaseMaterial extends PushMaterial {
 		return this._albedoTexture != null && this._albedoTexture.hasAlpha && (this._transparencyMode == -1 || this._transparencyMode == PBRMaterial.PBRMATERIAL_ALPHATEST);
 	}
 
+	/**
+	 * Specifies whether or not the alpha value of the albedo texture should be used for alpha blending.
+	 */
 	private function _shouldUseAlphaFromAlbedoTexture():Bool {
 		return this._albedoTexture != null && this._albedoTexture.hasAlpha && this._useAlphaFromAlbedoTexture && this._transparencyMode != PBRMaterial.PBRMATERIAL_OPAQUE;
 	}
 
+	/**
+	 * Gets the texture used for the alpha test.
+	 */
 	override public function getAlphaTestTexture():BaseTexture {
 		return this._albedoTexture;
 	}
 
+	/**
+	 * Stores the reflectivity values based on metallic roughness workflow.
+	 */
 	private static var _scaledReflectivity:Color3 = new Color3();
 
+	/**
+	 * Specifies that the submesh is ready to be used.
+	 * @param mesh - BJS mesh.
+	 * @param subMesh - A submesh of the BJS mesh.  Used to check if it is ready. 
+	 * @param useInstances - Specifies that instances should be used.
+	 * @returns - boolean indicating that the submesh is ready or not.
+	 */
 	override public function isReadyForSubMesh(mesh:AbstractMesh, subMesh:BaseSubMesh, useInstances:Bool = false):Bool { 
 		if (subMesh.effect != null && this.isFrozen) {
 			if (this._wasPreviouslyReady) {
@@ -514,51 +544,24 @@ class PBRBaseMaterial extends PushMaterial {
 		
 		var engine = scene.getEngine();
 		
-		// Lights
-		MaterialHelper.PrepareDefinesForLights(scene, mesh, defines, true, this._maxSimultaneousLights, this._disableLighting);
-		defines._needNormals = true;
-		
-		// Textures
 		if (defines._areTexturesDirty) {
-			defines._needUVs = false;
 			if (scene.texturesEnabled) {
-				if (scene.getEngine().getCaps().textureLOD) {
-					defines.LODBASEDMICROSFURACE = true;
-				}
-				
 				if (this._albedoTexture != null && StandardMaterial.DiffuseTextureEnabled) {
 					if (!this._albedoTexture.isReadyOrNotBlocking()) {
 						return false;
 					}
-					
-					MaterialHelper.PrepareDefinesForMergedUV(this._albedoTexture, defines, "ALBEDO");
-				} 
-				else {
-					defines.ALBEDO = false;
 				}
 				
 				if (this._ambientTexture != null && StandardMaterial.AmbientTextureEnabled) {
 					if (!this._ambientTexture.isReadyOrNotBlocking()) {
 						return false;
 					}
-					
-					MaterialHelper.PrepareDefinesForMergedUV(this._ambientTexture, defines, "AMBIENT"); 
-					defines.AMBIENTINGRAYSCALE = this._useAmbientInGrayScale;
-				} 
-				else {
-					defines.AMBIENT = false;
 				}
 				
 				if (this._opacityTexture != null && StandardMaterial.OpacityTextureEnabled) {
 					if (!this._opacityTexture.isReadyOrNotBlocking()) {
 						return false;
 					}
-					
-					MaterialHelper.PrepareDefinesForMergedUV(this._opacityTexture, defines, "OPACITY"); 
-					defines.OPACITYRGB = this._opacityTexture.getAlphaFromRGB;
-				} 
-				else {
-					defines.OPACITY = false;
 				}
 				
 				var reflectionTexture = this._getReflectionTexture();
@@ -566,101 +569,18 @@ class PBRBaseMaterial extends PushMaterial {
 					if (!reflectionTexture.isReadyOrNotBlocking()) {
 						return false;
 					}
-					
-					defines.REFLECTION = true;
-					defines.GAMMAREFLECTION = reflectionTexture.gammaSpace;
-					defines.REFLECTIONMAP_OPPOSITEZ = this.getScene().useRightHandedSystem ? !reflectionTexture.invertZ : reflectionTexture.invertZ;
-					defines.LODINREFLECTIONALPHA = reflectionTexture.lodLevelInAlpha;
-					
-					if (reflectionTexture.coordinatesMode == Texture.INVCUBIC_MODE) {
-						defines.INVERTCUBICMAP = true;
-					}
-					
-					defines.REFLECTIONMAP_3D = reflectionTexture.isCube;
-					
-					switch (reflectionTexture.coordinatesMode) {
-						case Texture.CUBIC_MODE, Texture.INVCUBIC_MODE:
-							defines.REFLECTIONMAP_CUBIC = true;
-							
-						case Texture.EXPLICIT_MODE:
-							defines.REFLECTIONMAP_EXPLICIT = true;
-							
-						case Texture.PLANAR_MODE:
-							defines.REFLECTIONMAP_PLANAR = true;
-							
-						case Texture.PROJECTION_MODE:
-							defines.REFLECTIONMAP_PROJECTION = true;
-							
-						case Texture.SKYBOX_MODE:
-							defines.REFLECTIONMAP_SKYBOX = true;
-							
-						case Texture.SPHERICAL_MODE:
-							defines.REFLECTIONMAP_SPHERICAL = true;
-							
-						case Texture.EQUIRECTANGULAR_MODE:
-							defines.REFLECTIONMAP_EQUIRECTANGULAR = true;
-							
-						case Texture.FIXED_EQUIRECTANGULAR_MODE:
-							defines.REFLECTIONMAP_EQUIRECTANGULAR_FIXED = true;
-							
-						case Texture.FIXED_EQUIRECTANGULAR_MIRRORED_MODE:
-							defines.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED = true;
-							
-					}
-					
-					if (reflectionTexture.coordinatesMode != Texture.SKYBOX_MODE) {
-						if (reflectionTexture.sphericalPolynomial != null) {
-							defines.USESPHERICALFROMREFLECTIONMAP = true;
-							if (this._forceIrradianceInFragment || scene.getEngine().getCaps().maxVaryingVectors <= 8) {
-								defines.USESPHERICALINVERTEX = true;
-							}
-							else {
-								defines.USESPHERICALINVERTEX = true;
-							}
-						}
-					}
-				} 
-				else {
-					defines.REFLECTION = false;
-					defines.REFLECTIONMAP_3D = false;
-					defines.REFLECTIONMAP_SPHERICAL = false;
-					defines.REFLECTIONMAP_PLANAR = false;
-					defines.REFLECTIONMAP_CUBIC = false;
-					defines.REFLECTIONMAP_PROJECTION = false;
-					defines.REFLECTIONMAP_SKYBOX = false;
-					defines.REFLECTIONMAP_EXPLICIT = false;
-					defines.REFLECTIONMAP_EQUIRECTANGULAR = false;
-					defines.REFLECTIONMAP_EQUIRECTANGULAR_FIXED = false;
-					defines.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED = false;
-					defines.INVERTCUBICMAP = false;
-					defines.USESPHERICALFROMREFLECTIONMAP = false;
-					defines.USESPHERICALINVERTEX = false;
-					defines.REFLECTIONMAP_OPPOSITEZ = false;
-					defines.LODINREFLECTIONALPHA = false;
-					defines.GAMMAREFLECTION = false;
 				}
 				
 				if (this._lightmapTexture != null && StandardMaterial.LightmapTextureEnabled) {
 					if (!this._lightmapTexture.isReadyOrNotBlocking()) {
 						return false;
 					}
-					
-					MaterialHelper.PrepareDefinesForMergedUV(this._lightmapTexture, defines, "LIGHTMAP"); 
-					defines.USELIGHTMAPASSHADOWMAP = this._useLightmapAsShadowmap;
-				} 
-				else {
-					defines.LIGHTMAP = false;
 				}
 				
 				if (this._emissiveTexture != null && StandardMaterial.EmissiveTextureEnabled) {
 					if (!this._emissiveTexture.isReadyOrNotBlocking()) {
 						return false;
 					}
-					
-					MaterialHelper.PrepareDefinesForMergedUV(this._emissiveTexture, defines, "EMISSIVE");
-				} 
-				else {
-					defines.EMISSIVE = false;
 				}
 				
 				if (StandardMaterial.SpecularTextureEnabled) {
@@ -668,63 +588,25 @@ class PBRBaseMaterial extends PushMaterial {
 						if (!this._metallicTexture.isReadyOrNotBlocking()) {
 							return false;
 						}
-						
-						MaterialHelper.PrepareDefinesForMergedUV(this._metallicTexture, defines, "REFLECTIVITY");
-						defines.METALLICWORKFLOW = true;
-						defines.ROUGHNESSSTOREINMETALMAPALPHA = this._useRoughnessFromMetallicTextureAlpha;
-						defines.ROUGHNESSSTOREINMETALMAPGREEN = !this._useRoughnessFromMetallicTextureAlpha && this._useRoughnessFromMetallicTextureGreen;
-						defines.METALLNESSSTOREINMETALMAPBLUE = this._useMetallnessFromMetallicTextureBlue;
-						defines.AOSTOREINMETALMAPRED = this._useAmbientOcclusionFromMetallicTextureRed;
 					}
 					else if (this._reflectivityTexture != null) {
 						if (!this._reflectivityTexture.isReadyOrNotBlocking()) {
 							return false;
 						}
-						
-						defines.METALLICWORKFLOW = false;
-						MaterialHelper.PrepareDefinesForMergedUV(this._reflectivityTexture, defines, "REFLECTIVITY");
-						defines.MICROSURFACEFROMREFLECTIVITYMAP = this._useMicroSurfaceFromReflectivityMapAlpha;
-						defines.MICROSURFACEAUTOMATIC = this._useAutoMicroSurfaceFromReflectivityMap;
-					} 
-					else {
-						defines.METALLICWORKFLOW = false;
-						defines.REFLECTIVITY = false;
 					}
 					
 					if (this._microSurfaceTexture != null) {
 						if (!this._microSurfaceTexture.isReadyOrNotBlocking()) {
 							return false;
 						}
-						
-						MaterialHelper.PrepareDefinesForMergedUV(this._microSurfaceTexture, defines, "MICROSURFACEMAP");
-					} 
-					else {
-						defines.MICROSURFACEMAP = false;
 					}
-				} 
-				else {
-					defines.REFLECTIVITY = false;
-					defines.MICROSURFACEMAP = false;
 				}
 				
-				if (scene.getEngine().getCaps().standardDerivatives && this._bumpTexture != null && StandardMaterial.BumpTextureEnabled && !this._disableBumpMap) {
-					// Bump texure can not be none blocking.
+				if (engine.getCaps().standardDerivatives && this._bumpTexture != null && StandardMaterial.BumpTextureEnabled && !this._disableBumpMap) {
+					// Bump texture cannot be not blocking.
 					if (!this._bumpTexture.isReady()) {
 						return false;
 					}
-					
-					MaterialHelper.PrepareDefinesForMergedUV(this._bumpTexture, defines, "BUMP");
-					
-					if (this._useParallax && this._albedoTexture != null && StandardMaterial.DiffuseTextureEnabled) {
-						defines.PARALLAX = true;
-						defines.PARALLAXOCCLUSION = !!this._useParallaxOcclusion;
-					}
-					else {
-						defines.PARALLAX = false;
-					}
-				} 
-				else {
-					defines.BUMP = false;
 				}
 				
 				var refractionTexture = this._getRefractionTexture();
@@ -732,19 +614,6 @@ class PBRBaseMaterial extends PushMaterial {
 					if (!refractionTexture.isReadyOrNotBlocking()) {
 						return false;
 					}
-					
-					defines.REFRACTION = true;
-					defines.REFRACTIONMAP_3D = refractionTexture.isCube;
-					defines.GAMMAREFRACTION = refractionTexture.gammaSpace;
-					defines.REFRACTIONMAP_OPPOSITEZ = refractionTexture.invertZ;
-					defines.LODINREFRACTIONALPHA = refractionTexture.lodLevelInAlpha;
-					
-					if (this._linkRefractionWithTransparency) {
-						defines.LINKREFRACTIONTOTRANSPARENCY = true;
-					}
-				} 
-				else {
-					defines.REFRACTION = false;
 				}
 				
 				if (this._environmentBRDFTexture != null && StandardMaterial.ReflectionTextureEnabled) {
@@ -752,235 +621,35 @@ class PBRBaseMaterial extends PushMaterial {
 					if (!this._environmentBRDFTexture.isReady()) {
 						return false;
 					}
-					defines.ENVIRONMENTBRDF = true;
-				}
-				else {
-					defines.ENVIRONMENTBRDF = false;
-				}
-				
-				if (this._shouldUseAlphaFromAlbedoTexture()) {
-					defines.ALPHAFROMALBEDO = true;
-				}
-				else {
-					defines.ALPHAFROMALBEDO = false;
 				}
 			}
-			
-			defines.SPECULAROVERALPHA = this._useSpecularOverAlpha;
-			
-			defines.USEPHYSICALLIGHTFALLOFF = this._usePhysicalLightFalloff;
-			
-			defines.RADIANCEOVERALPHA = this._useRadianceOverAlpha;
-			
-			if (this._forceMetallicWorkflow || (this._metallic != Math.NEGATIVE_INFINITY) || (this._roughness != Math.NEGATIVE_INFINITY)) {
-				defines.METALLICWORKFLOW = true;
-			}
-			else {
-				defines.METALLICWORKFLOW = false;
-			}
-			
-			if (!this.backFaceCulling && this._twoSidedLighting) {
-				defines.TWOSIDEDLIGHTING = true;
-			}
-			else {
-				defines.TWOSIDEDLIGHTING = false;
-			}
-			
-			defines.ALPHATESTVALUE = this._alphaCutOff;
-			defines.PREMULTIPLYALPHA = (this.alphaMode == Engine.ALPHA_PREMULTIPLIED || this.alphaMode == Engine.ALPHA_PREMULTIPLIED_PORTERDUFF);
-			defines.ALPHABLEND = this.needAlphaBlending();
-			defines.ALPHAFRESNEL = this._useAlphaFresnel || this._useLinearAlphaFresnel;
-			defines.LINEARALPHAFRESNEL = this._useLinearAlphaFresnel;
 		}
 		
 		if (defines._areImageProcessingDirty) {
 			if (!this._imageProcessingConfiguration.isReady()) {
 				return false;
 			}
-			
-			this._imageProcessingConfiguration.prepareDefines(defines);
 		}
 		
-		defines.FORCENORMALFORWARD = this._forceNormalForward;
-		
-		defines.RADIANCEOCCLUSION = this._useRadianceOcclusion;
-		
-		defines.HORIZONOCCLUSION = this._useHorizonOcclusion;
-		
-		// Misc.
-		MaterialHelper.PrepareDefinesForMisc(mesh, scene, this._useLogarithmicDepth, this.pointsCloud, this.fogEnabled, this._shouldTurnAlphaTestOn(mesh) || this._forceAlphaTest, defines);
-		
-		// Values that need to be evaluated on every frame
-		MaterialHelper.PrepareDefinesForFrameBoundValues(scene, engine, defines, useInstances);
-		
-		// Attribs
-		if (MaterialHelper.PrepareDefinesForAttributes(mesh, defines, true, true, true)) {
-			if (mesh != null) {
-				if (!scene.getEngine().getCaps().standardDerivatives && !mesh.isVerticesDataPresent(VertexBuffer.NormalKind)) {
-					mesh.createNormals(true);
-					Tools.Warn("PBRMaterial: Normals have been created for the mesh: " + mesh.name);
-				}
+		if (!engine.getCaps().standardDerivatives) {
+			var bufferMesh:Mesh = null;
+			if (mesh.getClassName() == "InstancedMesh") {
+				bufferMesh = cast(mesh, InstancedMesh).sourceMesh;
+			}
+			else if (mesh.getClassName() == "Mesh") {
+				bufferMesh = cast mesh;
+			}
+			
+			if (bufferMesh != null && bufferMesh.geometry != null && bufferMesh.geometry.isReady() && !bufferMesh.geometry.isVerticesDataPresent(VertexBuffer.NormalKind)) {
+				bufferMesh.createNormals(true);
+				Tools.Warn("PBRMaterial: Normals have been created for the mesh: " + bufferMesh.name);
 			}
 		}
 		
-		// Get correct effect
-		if (defines.isDirty) {
-			defines.markAsProcessed();
+		var effect = this._prepareEffect(mesh, defines, this.onCompiled, this.onError, useInstances);
+		if (effect != null) {
 			scene.resetCachedMaterial();
-			
-			// Fallbacks
-			var fallbacks = new EffectFallbacks();
-			var fallbackRank:Int = 0;
-			if (defines.USESPHERICALINVERTEX) {
-				fallbacks.addFallback(fallbackRank++, "USESPHERICALINVERTEX");
-			}
-			
-			if (defines.FOG) {
-				fallbacks.addFallback(fallbackRank, "FOG");
-			}
-			if (defines.POINTSIZE) {
-				fallbacks.addFallback(fallbackRank, "POINTSIZE");
-			}
-			if (defines.LOGARITHMICDEPTH) {
-				fallbacks.addFallback(fallbackRank, "LOGARITHMICDEPTH");
-			}
-			if (defines.PARALLAX) {
-				fallbacks.addFallback(fallbackRank, "PARALLAX");
-			}
-			if (defines.PARALLAXOCCLUSION) {
-				fallbacks.addFallback(fallbackRank++, "PARALLAXOCCLUSION");
-			}
-			
-			if (defines.ENVIRONMENTBRDF) {
-				fallbacks.addFallback(fallbackRank++, "ENVIRONMENTBRDF");
-			}
-			
-			if (defines.TANGENT) {
-				fallbacks.addFallback(fallbackRank++, "TANGENT");
-			}
-			
-			if (defines.BUMP) {
-				fallbacks.addFallback(fallbackRank++, "BUMP");
-			}
-			
-			fallbackRank = MaterialHelper.HandleFallbacksForShadows(defines, fallbacks, this._maxSimultaneousLights, fallbackRank++);
-			
-			if (defines.SPECULARTERM) {
-				fallbacks.addFallback(fallbackRank++, "SPECULARTERM");
-			}
-			
-			if (defines.USESPHERICALFROMREFLECTIONMAP) {
-				fallbacks.addFallback(fallbackRank++, "USESPHERICALFROMREFLECTIONMAP");
-			}
-			
-			if (defines.LIGHTMAP) {
-				fallbacks.addFallback(fallbackRank++, "LIGHTMAP");
-			}
-			
-			if (defines.NORMAL) {
-				fallbacks.addFallback(fallbackRank++, "NORMAL");
-			}
-			
-			if (defines.AMBIENT) {
-				fallbacks.addFallback(fallbackRank++, "AMBIENT");
-			}
-			
-			if (defines.EMISSIVE) {
-				fallbacks.addFallback(fallbackRank++, "EMISSIVE");
-			}
-			
-			if (defines.VERTEXCOLOR) {
-				fallbacks.addFallback(fallbackRank++, "VERTEXCOLOR");
-			}
-			
-			if (defines.NUM_BONE_INFLUENCERS > 0) {
-				fallbacks.addCPUSkinningFallback(fallbackRank++, mesh);
-			}
-			
-			if (defines.MORPHTARGETS) {
-				fallbacks.addFallback(fallbackRank++, "MORPHTARGETS");
-			}
-			
-			//Attributes
-			var attribs:Array<String> = [VertexBuffer.PositionKind];
-			
-			if (defines.NORMAL) {
-				attribs.push(VertexBuffer.NormalKind);
-			}
-			
-			if (defines.TANGENT) {
-				attribs.push(VertexBuffer.TangentKind);
-			}
-			
-			if (defines.UV1) {
-				attribs.push(VertexBuffer.UVKind);
-			}
-			
-			if (defines.UV2) {
-				attribs.push(VertexBuffer.UV2Kind);
-			}
-			
-			if (defines.VERTEXCOLOR) {
-				attribs.push(VertexBuffer.ColorKind);
-			}
-			
-			MaterialHelper.PrepareAttributesForBones(attribs, mesh, defines.NUM_BONE_INFLUENCERS, fallbacks);
-			MaterialHelper.PrepareAttributesForInstances(attribs, defines);
-			MaterialHelper.PrepareAttributesForMorphTargets(attribs, mesh, defines);
-			
-			var uniforms = ["world", "view", "viewProjection", "vEyePosition", "vLightsType", "vAmbientColor", "vAlbedoColor", "vReflectivityColor", "vEmissiveColor", "vReflectionColor",
-				"vFogInfos", "vFogColor", "pointSize",
-				"vAlbedoInfos", "vAmbientInfos", "vOpacityInfos", "vReflectionInfos", "vEmissiveInfos", "vReflectivityInfos", "vMicroSurfaceSamplerInfos", "vBumpInfos", "vLightmapInfos", "vRefractionInfos",
-				"mBones",
-				"vClipPlane", "albedoMatrix", "ambientMatrix", "opacityMatrix", "reflectionMatrix", "emissiveMatrix", "reflectivityMatrix", "microSurfaceSamplerMatrix", "bumpMatrix", "lightmapMatrix", "refractionMatrix",
-				"vLightingIntensity",
-				"logarithmicDepthConstant",
-				"vSphericalX", "vSphericalY", "vSphericalZ",
-				"vSphericalXX", "vSphericalYY", "vSphericalZZ",
-				"vSphericalXY", "vSphericalYZ", "vSphericalZX",
-				"vReflectionMicrosurfaceInfos", "vRefractionMicrosurfaceInfos",
-				"vTangentSpaceParams"
-			];
-			
-			var samplers = ["albedoSampler", "reflectivitySampler", "ambientSampler", "emissiveSampler", 
-				"bumpSampler", "lightmapSampler", "opacitySampler",
-				"refractionSampler", "refractionSamplerLow", "refractionSamplerHigh",
-				"reflectionSampler", "reflectionSamplerLow", "reflectionSamplerHigh",
-				"microSurfaceSampler", "environmentBrdfSampler"];
-			var uniformBuffers = ["Material", "Scene"];
-			
-			ImageProcessingConfiguration.PrepareUniforms(uniforms, defines);
-			ImageProcessingConfiguration.PrepareSamplers(samplers, defines);
-			
-			MaterialHelper.PrepareUniformsAndSamplersList({
-				uniformsNames: uniforms, 
-				uniformBuffersNames: uniformBuffers,
-				samplers: samplers, 
-				defines: defines, 
-				maxSimultaneousLights: this._maxSimultaneousLights
-			});
-			
-			var _onCompiled = function(effect:Effect) {
-				if (this.onCompiled != null) {
-					this.onCompiled(effect);
-				}
-				
-				this.bindSceneUniformBuffer(effect, scene.getSceneUniformBuffer());
-			};
-			
-			var join = defines.toString();
-			subMesh.setEffect(scene.getEngine().createEffect("pbr", {
-				attributes: attribs,
-				uniformsNames: uniforms,
-				uniformBuffersNames: uniformBuffers,
-				samplers: samplers,
-				defines: join,
-				fallbacks: fallbacks,
-				onCompiled: _onCompiled,
-				onError: this.onError,
-				indexParameters: { maxSimultaneousLights: this._maxSimultaneousLights, maxSimultaneousMorphTargets: defines.NUM_MORPH_INFLUENCERS }
-			}, engine), defines);
-			
+			subMesh.setEffect(effect, defines);
 			this.buildUniformLayout();
 		}
 		
@@ -993,7 +662,449 @@ class PBRBaseMaterial extends PushMaterial {
 		
 		return true;
 	}
+	
+	private function _prepareEffect(mesh:AbstractMesh, defines:PBRMaterialDefines, onCompiled:Effect->Void = null, onError:Effect->String->Void = null, useInstances: Bool = false, useClipPlane:Bool = false):Effect {
+		this._prepareDefines(mesh, defines, useInstances, useClipPlane);
+		if (!defines.isDirty) {
+			return null;
+		}
+		
+		defines.markAsProcessed();
+		
+		var scene = this.getScene();
+		var engine = scene.getEngine();
+		
+		// Fallbacks
+		var fallbacks:EffectFallbacks = new EffectFallbacks();
+		var fallbackRank:Int = 0;
+		if (defines.USESPHERICALINVERTEX == 1) {
+			fallbacks.addFallback(fallbackRank++, "USESPHERICALINVERTEX");
+		}
+		
+		if (defines.FOG == 1) {
+			fallbacks.addFallback(fallbackRank, "FOG");
+		}
+		if (defines.POINTSIZE == 1) {
+			fallbacks.addFallback(fallbackRank, "POINTSIZE");
+		}
+		if (defines.LOGARITHMICDEPTH == 1) {
+			fallbacks.addFallback(fallbackRank, "LOGARITHMICDEPTH");
+		}
+		if (defines.PARALLAX == 1) {
+			fallbacks.addFallback(fallbackRank, "PARALLAX");
+		}
+		if (defines.PARALLAXOCCLUSION == 1) {
+			fallbacks.addFallback(fallbackRank++, "PARALLAXOCCLUSION");
+		}
+		
+		if (defines.ENVIRONMENTBRDF == 1) {
+			fallbacks.addFallback(fallbackRank++, "ENVIRONMENTBRDF");
+		}
+		
+		if (defines.TANGENT == 1) {
+			fallbacks.addFallback(fallbackRank++, "TANGENT");
+		}
+		
+		if (defines.BUMP == 1) {
+			fallbacks.addFallback(fallbackRank++, "BUMP");
+		}
+		
+		fallbackRank = MaterialHelper.HandleFallbacksForShadows(defines, fallbacks, this._maxSimultaneousLights, fallbackRank++);
+		
+		if (defines.SPECULARTERM == 1) {
+			fallbacks.addFallback(fallbackRank++, "SPECULARTERM");
+		}
+		
+		if (defines.USESPHERICALFROMREFLECTIONMAP == 1) {
+			fallbacks.addFallback(fallbackRank++, "USESPHERICALFROMREFLECTIONMAP");
+		}
+		
+		if (defines.LIGHTMAP == 1) {
+			fallbacks.addFallback(fallbackRank++, "LIGHTMAP");
+		}
+		
+		if (defines.NORMAL == 1) {
+			fallbacks.addFallback(fallbackRank++, "NORMAL");
+		}
+		
+		if (defines.AMBIENT == 1) {
+			fallbacks.addFallback(fallbackRank++, "AMBIENT");
+		}
+		
+		if (defines.EMISSIVE == 1) {
+			fallbacks.addFallback(fallbackRank++, "EMISSIVE");
+		}
+		
+		if (defines.VERTEXCOLOR == 1) {
+			fallbacks.addFallback(fallbackRank++, "VERTEXCOLOR");
+		}
+		
+		if (defines.NUM_BONE_INFLUENCERS > 0) {
+			fallbacks.addCPUSkinningFallback(fallbackRank++, mesh);
+		}
+		
+		if (defines.MORPHTARGETS == 1) {
+			fallbacks.addFallback(fallbackRank++, "MORPHTARGETS");
+		}
+		
+		//Attributes
+		var attribs:Array<String> = [VertexBuffer.PositionKind];
+		
+		if (defines.NORMAL == 1) {
+			attribs.push(VertexBuffer.NormalKind);
+		}
+		
+		if (defines.TANGENT == 1) {
+			attribs.push(VertexBuffer.TangentKind);
+		}
+		
+		if (defines.UV1 == 1) {
+			attribs.push(VertexBuffer.UVKind);
+		}
+		
+		if (defines.UV2 == 1) {
+			attribs.push(VertexBuffer.UV2Kind);
+		}
+		
+		if (defines.VERTEXCOLOR == 1) {
+			attribs.push(VertexBuffer.ColorKind);
+		}
+		
+		MaterialHelper.PrepareAttributesForBones(attribs, mesh, defines.NUM_BONE_INFLUENCERS, fallbacks);
+		MaterialHelper.PrepareAttributesForInstances(attribs, defines);
+		MaterialHelper.PrepareAttributesForMorphTargets(attribs, mesh, defines);
+		
+		var uniforms:Array<String> = ["world", "view", "viewProjection", "vEyePosition", "vLightsType", "vAmbientColor", "vAlbedoColor", "vReflectivityColor", "vEmissiveColor", "vReflectionColor",
+			"vFogInfos", "vFogColor", "pointSize",
+			"vAlbedoInfos", "vAmbientInfos", "vOpacityInfos", "vReflectionInfos", "vReflectionPosition", "vReflectionSize", "vEmissiveInfos", "vReflectivityInfos", 
+			"vMicroSurfaceSamplerInfos", "vBumpInfos", "vLightmapInfos", "vRefractionInfos",
+			"mBones",
+			"vClipPlane", "albedoMatrix", "ambientMatrix", "opacityMatrix", "reflectionMatrix", "emissiveMatrix", "reflectivityMatrix", "normalMatrix", "microSurfaceSamplerMatrix", "bumpMatrix", "lightmapMatrix", "refractionMatrix",
+			"vLightingIntensity",
+			"logarithmicDepthConstant",
+			"vSphericalX", "vSphericalY", "vSphericalZ",
+			"vSphericalXX", "vSphericalYY", "vSphericalZZ",
+			"vSphericalXY", "vSphericalYZ", "vSphericalZX",
+			"vReflectionMicrosurfaceInfos", "vRefractionMicrosurfaceInfos",
+			"vTangentSpaceParams"
+		];
+		
+		var samplers:Array<String> = ["albedoSampler", "reflectivitySampler", "ambientSampler", "emissiveSampler",
+			"bumpSampler", "lightmapSampler", "opacitySampler",
+			"refractionSampler", "refractionSamplerLow", "refractionSamplerHigh",
+			"reflectionSampler", "reflectionSamplerLow", "reflectionSamplerHigh",
+			"microSurfaceSampler", "environmentBrdfSampler"];
+		var uniformBuffers:Array<String> = ["Material", "Scene"];
+		
+		ImageProcessingConfiguration.PrepareUniforms(uniforms, defines);
+		ImageProcessingConfiguration.PrepareSamplers(samplers, defines);
+		
+		MaterialHelper.PrepareUniformsAndSamplersList({
+			uniformsNames: uniforms,
+			uniformBuffersNames: uniformBuffers,
+			samplers: samplers,
+			defines: defines,
+			maxSimultaneousLights: this._maxSimultaneousLights
+		});
+		
+		var join:String = defines.toString();
+		return engine.createEffect("pbr", {
+			attributes: attribs,
+			uniformsNames: uniforms,
+			uniformBuffersNames: uniformBuffers,
+			samplers: samplers,
+			defines: join,
+			fallbacks: fallbacks,
+			onCompiled: onCompiled,
+			onError: onError,
+			indexParameters: { maxSimultaneousLights: this._maxSimultaneousLights, maxSimultaneousMorphTargets: defines.NUM_MORPH_INFLUENCERS }
+		}, engine);
+	}
 
+	private function _prepareDefines(mesh:AbstractMesh, defines:PBRMaterialDefines, useInstances:Bool = null, useClipPlane:Bool = null) {
+		var scene = this.getScene();
+		var engine = scene.getEngine();
+		
+		// Lights
+		MaterialHelper.PrepareDefinesForLights(scene, mesh, defines, true, this._maxSimultaneousLights, this._disableLighting);
+		defines._needNormals = true;
+		
+		// Textures
+		if (defines._areTexturesDirty) {
+			defines._needUVs = false;
+			if (scene.texturesEnabled) {
+				if (scene.getEngine().getCaps().textureLOD) {
+					defines.LODBASEDMICROSFURACE = 1;
+				}
+				
+				if (this._albedoTexture != null && StandardMaterial.DiffuseTextureEnabled) {
+					MaterialHelper.PrepareDefinesForMergedUV(this._albedoTexture, defines, "ALBEDO");
+				} 
+				else {
+					defines.ALBEDO = 0;
+				}
+				
+				if (this._ambientTexture != null && StandardMaterial.AmbientTextureEnabled) {
+					MaterialHelper.PrepareDefinesForMergedUV(this._ambientTexture, defines, "AMBIENT");
+					defines.AMBIENTINGRAYSCALE = this._useAmbientInGrayScale ? 1 : 0;
+				} 
+				else {
+					defines.AMBIENT = 0;
+				}
+				
+				if (this._opacityTexture != null && StandardMaterial.OpacityTextureEnabled) {
+					MaterialHelper.PrepareDefinesForMergedUV(this._opacityTexture, defines, "OPACITY");
+					defines.OPACITYRGB = this._opacityTexture.getAlphaFromRGB ? 1 : 0;
+				} 
+				else {
+					defines.OPACITY = 0;
+				}
+				
+				var reflectionTexture = this._getReflectionTexture();
+				if (reflectionTexture != null && StandardMaterial.ReflectionTextureEnabled) {
+					defines.REFLECTION = 1;
+					defines.GAMMAREFLECTION = reflectionTexture.gammaSpace ? 1 : 0;
+					defines.REFLECTIONMAP_OPPOSITEZ = (this.getScene().useRightHandedSystem ? !reflectionTexture.invertZ : reflectionTexture.invertZ) ? 1 : 0;
+					defines.LODINREFLECTIONALPHA = reflectionTexture.lodLevelInAlpha ? 1 : 0;
+					
+					if (reflectionTexture.coordinatesMode == Texture.INVCUBIC_MODE) {
+						defines.INVERTCUBICMAP = 1;
+					}
+					
+					defines.REFLECTIONMAP_3D = reflectionTexture.isCube ? 1 : 0;
+					
+					switch (reflectionTexture.coordinatesMode) {
+						case Texture.CUBIC_MODE, Texture.INVCUBIC_MODE:
+							defines.REFLECTIONMAP_CUBIC = 1;
+							defines.USE_LOCAL_REFLECTIONMAP_CUBIC = untyped reflectionTexture.boundingBoxSize == null ? 0 : 1;
+							
+						case Texture.EXPLICIT_MODE:
+							defines.REFLECTIONMAP_EXPLICIT = 1;
+							
+						case Texture.PLANAR_MODE:
+							defines.REFLECTIONMAP_PLANAR = 1;
+							
+						case Texture.PROJECTION_MODE:
+							defines.REFLECTIONMAP_PROJECTION = 1;
+							
+						case Texture.SKYBOX_MODE:
+							defines.REFLECTIONMAP_SKYBOX = 1;
+							
+						case Texture.SPHERICAL_MODE:
+							defines.REFLECTIONMAP_SPHERICAL = 1;
+							
+						case Texture.EQUIRECTANGULAR_MODE:
+							defines.REFLECTIONMAP_EQUIRECTANGULAR = 1;
+							
+						case Texture.FIXED_EQUIRECTANGULAR_MODE:
+							defines.REFLECTIONMAP_EQUIRECTANGULAR_FIXED = 1;
+							
+						case Texture.FIXED_EQUIRECTANGULAR_MIRRORED_MODE:
+							defines.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED = 1;
+					}
+					
+					if (reflectionTexture.coordinatesMode != Texture.SKYBOX_MODE) {
+						if (reflectionTexture.sphericalPolynomial != null) {
+							defines.USESPHERICALFROMREFLECTIONMAP = 1;
+							if (this._forceIrradianceInFragment || scene.getEngine().getCaps().maxVaryingVectors <= 8) {
+								defines.USESPHERICALINVERTEX = 0;
+							}
+							else {
+								defines.USESPHERICALINVERTEX = 1;
+							}
+						}
+					}
+				} 
+				else {
+					defines.REFLECTION = 0;
+					defines.REFLECTIONMAP_3D = 0;
+					defines.REFLECTIONMAP_SPHERICAL = 0;
+					defines.REFLECTIONMAP_PLANAR = 0;
+					defines.REFLECTIONMAP_CUBIC = 0;
+					defines.USE_LOCAL_REFLECTIONMAP_CUBIC = 0;
+					defines.REFLECTIONMAP_PROJECTION = 0;
+					defines.REFLECTIONMAP_SKYBOX = 0;
+					defines.REFLECTIONMAP_EXPLICIT = 0;
+					defines.REFLECTIONMAP_EQUIRECTANGULAR = 0;
+					defines.REFLECTIONMAP_EQUIRECTANGULAR_FIXED = 0;
+					defines.REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED = 0;
+					defines.INVERTCUBICMAP = 0;
+					defines.USESPHERICALFROMREFLECTIONMAP = 0;
+					defines.USESPHERICALINVERTEX = 0;
+					defines.REFLECTIONMAP_OPPOSITEZ = 0;
+					defines.LODINREFLECTIONALPHA = 0;
+					defines.GAMMAREFLECTION = 0;
+				}
+				
+				if (this._lightmapTexture != null && StandardMaterial.LightmapTextureEnabled) {
+					MaterialHelper.PrepareDefinesForMergedUV(this._lightmapTexture, defines, "LIGHTMAP");
+					defines.USELIGHTMAPASSHADOWMAP = this._useLightmapAsShadowmap ? 1 : 0;
+				} 
+				else {
+					defines.LIGHTMAP = 0;
+				}
+				
+				if (this._emissiveTexture != null && StandardMaterial.EmissiveTextureEnabled) {
+					MaterialHelper.PrepareDefinesForMergedUV(this._emissiveTexture, defines, "EMISSIVE");
+				} 
+				else {
+					defines.EMISSIVE = 0;
+				}
+				
+				if (StandardMaterial.SpecularTextureEnabled) {
+					if (this._metallicTexture != null) {
+						MaterialHelper.PrepareDefinesForMergedUV(this._metallicTexture, defines, "REFLECTIVITY");
+						defines.METALLICWORKFLOW = 1;
+						defines.ROUGHNESSSTOREINMETALMAPALPHA = this._useRoughnessFromMetallicTextureAlpha ? 1 : 0;
+						defines.ROUGHNESSSTOREINMETALMAPGREEN = !this._useRoughnessFromMetallicTextureAlpha && this._useRoughnessFromMetallicTextureGreen ? 1 : 0;
+						defines.METALLNESSSTOREINMETALMAPBLUE = this._useMetallnessFromMetallicTextureBlue ? 1 : 0;
+						defines.AOSTOREINMETALMAPRED = this._useAmbientOcclusionFromMetallicTextureRed ? 1 : 0;
+					}
+					else if (this._reflectivityTexture != null) {
+						defines.METALLICWORKFLOW = 0;
+						MaterialHelper.PrepareDefinesForMergedUV(this._reflectivityTexture, defines, "REFLECTIVITY");
+						defines.MICROSURFACEFROMREFLECTIVITYMAP = this._useMicroSurfaceFromReflectivityMapAlpha ? 1 : 0;
+						defines.MICROSURFACEAUTOMATIC = this._useAutoMicroSurfaceFromReflectivityMap ? 1 : 0;
+					} 
+					else {
+						defines.METALLICWORKFLOW = 0;
+						defines.REFLECTIVITY = 0;
+					}
+					
+					if (this._microSurfaceTexture != null) {
+						MaterialHelper.PrepareDefinesForMergedUV(this._microSurfaceTexture, defines, "MICROSURFACEMAP");
+					} 
+					else {
+						defines.MICROSURFACEMAP = 0;
+					}
+				} 
+				else {
+					defines.REFLECTIVITY = 0;
+					defines.MICROSURFACEMAP = 0;
+				}
+				
+				if (scene.getEngine().getCaps().standardDerivatives && this._bumpTexture != null && StandardMaterial.BumpTextureEnabled && !this._disableBumpMap) {
+					MaterialHelper.PrepareDefinesForMergedUV(this._bumpTexture, defines, "BUMP");
+					
+					if (this._useParallax && this._albedoTexture != null && StandardMaterial.DiffuseTextureEnabled) {
+						defines.PARALLAX = 1;
+						defines.PARALLAXOCCLUSION = this._useParallaxOcclusion ? 1 : 0;
+					}
+					else {
+						defines.PARALLAX = 0;
+					}
+				} 
+				else {
+					defines.BUMP = 0;
+				}
+				
+				var refractionTexture = this._getRefractionTexture();
+				if (refractionTexture != null && StandardMaterial.RefractionTextureEnabled) {
+					defines.REFRACTION = 1;
+					defines.REFRACTIONMAP_3D = refractionTexture.isCube ? 1 : 0;
+					defines.GAMMAREFRACTION = refractionTexture.gammaSpace ? 1 : 0;
+					defines.REFRACTIONMAP_OPPOSITEZ = refractionTexture.invertZ ? 1 : 0;
+					defines.LODINREFRACTIONALPHA = refractionTexture.lodLevelInAlpha ? 1 : 0;
+					
+					if (this._linkRefractionWithTransparency) {
+						defines.LINKREFRACTIONTOTRANSPARENCY = 1;
+					}
+				} 
+				else {
+					defines.REFRACTION = 0;
+				}
+				
+				if (this._environmentBRDFTexture != null && StandardMaterial.ReflectionTextureEnabled) {
+					defines.ENVIRONMENTBRDF = 1;
+				} 
+				else {
+					defines.ENVIRONMENTBRDF = 0;
+				}
+				
+				if (this._shouldUseAlphaFromAlbedoTexture()) {
+					defines.ALPHAFROMALBEDO = 1;
+				} else {
+					defines.ALPHAFROMALBEDO = 0;
+				}
+			}
+			
+			defines.SPECULAROVERALPHA = this._useSpecularOverAlpha ? 1 : 0;
+			
+			defines.USEPHYSICALLIGHTFALLOFF = this._usePhysicalLightFalloff ? 1 : 0;
+			
+			defines.RADIANCEOVERALPHA = this._useRadianceOverAlpha ? 1 : 0;
+			
+			if (this._forceMetallicWorkflow || (this._metallic != Math.NEGATIVE_INFINITY) || (this._roughness != Math.NEGATIVE_INFINITY)) {
+				defines.METALLICWORKFLOW = 1;
+			} 
+			else {
+				defines.METALLICWORKFLOW = 0;
+			}
+			
+			if (!this.backFaceCulling && this._twoSidedLighting) {
+				defines.TWOSIDEDLIGHTING = 1;
+			} 
+			else {
+				defines.TWOSIDEDLIGHTING = 0;
+			}
+			
+			defines.ALPHATESTVALUE = this._alphaCutOff;
+			defines.PREMULTIPLYALPHA = (this.alphaMode == Engine.ALPHA_PREMULTIPLIED || this.alphaMode == Engine.ALPHA_PREMULTIPLIED_PORTERDUFF) ? 1 : 0;
+			defines.ALPHABLEND = this.needAlphaBlendingForMesh(mesh) ? 1 : 0;
+			defines.ALPHAFRESNEL = this._useAlphaFresnel || this._useLinearAlphaFresnel ? 1 : 0;
+			defines.LINEARALPHAFRESNEL = this._useLinearAlphaFresnel ? 1 : 0;
+		}
+		
+		if (defines._areImageProcessingDirty) {
+			this._imageProcessingConfiguration.prepareDefines(defines);
+		}
+		
+		defines.FORCENORMALFORWARD = this._forceNormalForward ? 1 : 0;
+		
+		defines.RADIANCEOCCLUSION = this._useRadianceOcclusion ? 1 : 0;
+		
+		defines.HORIZONOCCLUSION = this._useHorizonOcclusion ? 1 : 0;
+		
+		// Misc.
+		MaterialHelper.PrepareDefinesForMisc(mesh, scene, this._useLogarithmicDepth, this.pointsCloud, this.fogEnabled, this._shouldTurnAlphaTestOn(mesh) || this._forceAlphaTest, defines);
+		
+		// Values that need to be evaluated on every frame
+		MaterialHelper.PrepareDefinesForFrameBoundValues(scene, engine, defines, useInstances ? true : false, useClipPlane);
+		
+		// Attribs
+		MaterialHelper.PrepareDefinesForAttributes(mesh, defines, true, true, true, this._transparencyMode != PBRMaterial.PBRMATERIAL_OPAQUE);
+	}
+
+	/**
+	 * Force shader compilation
+	 */
+	override public function forceCompilation(mesh:AbstractMesh, ?onCompiled:Material->Void, ?options:Dynamic) {
+		var localOptions = {
+			clipPlane: false
+		};
+		if (options != null && options.clipPlane != null) {
+			localOptions.clipPlane = options.clipPlane;
+		}
+		
+		var defines = new PBRMaterialDefines();
+		var effect = this._prepareEffect(mesh, defines, null, null, false, localOptions.clipPlane);
+		if (effect.isReady()) {
+			if (onCompiled != null) {
+				onCompiled(this);
+			}
+		}
+		else {
+			effect.onCompileObservable.add(function(_, _) {
+				if (onCompiled != null) {
+					onCompiled(this);
+				}
+			});
+		}
+	}
+
+	/**
+	 * Initializes the uniform buffer layout for the shader.
+	 */
 	public function buildUniformLayout() {
 		// Order is important !
 		this._uniformBuffer.addUniform("vAlbedoInfos", 2);
@@ -1005,6 +1116,8 @@ class PBRBaseMaterial extends PushMaterial {
 		this._uniformBuffer.addUniform("vMicroSurfaceSamplerInfos", 2);
 		this._uniformBuffer.addUniform("vRefractionInfos", 4);
 		this._uniformBuffer.addUniform("vReflectionInfos", 2);
+		this._uniformBuffer.addUniform("vReflectionPosition", 3);
+		this._uniformBuffer.addUniform("vReflectionSize", 3);
 		this._uniformBuffer.addUniform("vBumpInfos", 3);
 		this._uniformBuffer.addUniform("albedoMatrix", 16);
 		this._uniformBuffer.addUniform("ambientMatrix", 16);
@@ -1017,20 +1130,23 @@ class PBRBaseMaterial extends PushMaterial {
 		this._uniformBuffer.addUniform("vTangentSpaceParams", 2);
 		this._uniformBuffer.addUniform("refractionMatrix", 16);
 		this._uniformBuffer.addUniform("reflectionMatrix", 16);
-
+		
 		this._uniformBuffer.addUniform("vReflectionColor", 3);
 		this._uniformBuffer.addUniform("vAlbedoColor", 4);
 		this._uniformBuffer.addUniform("vLightingIntensity", 4);
-
+		
 		this._uniformBuffer.addUniform("vRefractionMicrosurfaceInfos", 3);
 		this._uniformBuffer.addUniform("vReflectionMicrosurfaceInfos", 3);
 		this._uniformBuffer.addUniform("vReflectivityColor", 4);
 		this._uniformBuffer.addUniform("vEmissiveColor", 3);
-
+		
 		this._uniformBuffer.addUniform("pointSize", 1);
 		this._uniformBuffer.create();
 	}
 
+	/**
+	 * Unbinds the textures.
+	 */
 	override public function unbind() {
 		if (this._reflectionTexture != null && this._reflectionTexture.isRenderTarget) {
 			this._uniformBuffer.setTexture("reflectionSampler", null);
@@ -1043,10 +1159,20 @@ class PBRBaseMaterial extends PushMaterial {
 		super.unbind();
 	}
 
+	/**
+	 * Binds the world matrix.
+	 * @param world - The world matrix.
+	 */
 	override public function bindOnlyWorldMatrix(world:Matrix) {
 		this._activeEffect.setMatrix("world", world);
 	}
 
+	/**
+	 * Binds the submesh data.
+	 * @param world - The world matrix.
+	 * @param mesh - The BJS mesh.
+	 * @param subMesh - A submesh of the BJS mesh.
+	 */
 	override public function bindForSubMesh(world:Matrix, mesh:Mesh, subMesh:SubMesh) {
 		var scene = this.getScene();
 		
@@ -1064,6 +1190,12 @@ class PBRBaseMaterial extends PushMaterial {
 		
 		// Matrices
 		this.bindOnlyWorldMatrix(world);
+		
+		// Normal Matrix
+        if (defines.OBJECTSPACE_NORMALMAP > 0) {
+            world.toNormalMatrix(this._normalMatrix);
+            this.bindOnlyNormalMatrix(this._normalMatrix);               
+        }
 		
 		var mustRebind = this._mustRebind(scene, effect, mesh.visibility);
 		
@@ -1104,8 +1236,15 @@ class PBRBaseMaterial extends PushMaterial {
 						this._uniformBuffer.updateMatrix("reflectionMatrix", reflectionTexture.getReflectionTextureMatrix());
 						this._uniformBuffer.updateFloat2("vReflectionInfos", reflectionTexture.level, 0);
 						
+						if (Std.is(reflectionTexture, CubeTexture) && untyped reflectionTexture.boundingBoxSize != null) {
+                            var cubeTexture = cast (reflectionTexture, CubeTexture);
+							
+                            this._uniformBuffer.updateVector3("vReflectionPosition", cubeTexture.boundingBoxPosition);
+                            this._uniformBuffer.updateVector3("vReflectionSize", cubeTexture.boundingBoxSize);
+                        }
+						
 						var polynomials = reflectionTexture.sphericalPolynomial;
-						if (defines.USESPHERICALFROMREFLECTIONMAP && polynomials != null) {							
+						if (defines.USESPHERICALFROMREFLECTIONMAP != 0 && polynomials != null) {							
 							this._activeEffect.setFloat3("vSphericalX", polynomials.x.x, polynomials.x.y, polynomials.x.z);
 							this._activeEffect.setFloat3("vSphericalY", polynomials.y.x, polynomials.y.y, polynomials.y.z);
 							this._activeEffect.setFloat3("vSphericalZ", polynomials.z.x, polynomials.z.y, polynomials.z.z);
@@ -1188,7 +1327,7 @@ class PBRBaseMaterial extends PushMaterial {
 				}
 				
 				// Colors
-				if (defines.METALLICWORKFLOW) {
+				if (defines.METALLICWORKFLOW != 0) {
 					PBRBaseMaterial._scaledReflectivity.r = (this._metallic == Math.NEGATIVE_INFINITY) ? 1 : this._metallic;
 					PBRBaseMaterial._scaledReflectivity.g = (this._roughness == Math.NEGATIVE_INFINITY) ? 1 : this._roughness;
 					this._uniformBuffer.updateColor4("vReflectivityColor", PBRBaseMaterial._scaledReflectivity, 0);
@@ -1225,7 +1364,7 @@ class PBRBaseMaterial extends PushMaterial {
 				}
 				
 				if (reflectionTexture != null && StandardMaterial.ReflectionTextureEnabled) {
-					if (defines.LODBASEDMICROSFURACE) {
+					if (defines.LODBASEDMICROSFURACE != 0) {
 						this._uniformBuffer.setTexture("reflectionSampler", reflectionTexture);
 					}
 					else {
@@ -1235,12 +1374,12 @@ class PBRBaseMaterial extends PushMaterial {
 					}
 				}
 				
-				if (defines.ENVIRONMENTBRDF) {
+				if (defines.ENVIRONMENTBRDF != 0) {
 					this._uniformBuffer.setTexture("environmentBrdfSampler", this._environmentBRDFTexture);
 				}
 				
 				if (refractionTexture != null && StandardMaterial.RefractionTextureEnabled) {
-					if (defines.LODBASEDMICROSFURACE) {
+					if (defines.LODBASEDMICROSFURACE != 0) {
 						this._uniformBuffer.setTexture("refractionSampler", refractionTexture);
 					}
 					else {
@@ -1295,7 +1434,7 @@ class PBRBaseMaterial extends PushMaterial {
 		if (mustRebind || !this.isFrozen) {
 			// Lights
 			if (scene.lightsEnabled && !this._disableLighting) {
-				MaterialHelper.BindLights(scene, mesh, this._activeEffect, defines.SPECULARTERM, this._maxSimultaneousLights, this._usePhysicalLightFalloff);
+				MaterialHelper.BindLights(scene, mesh, this._activeEffect, defines.SPECULARTERM == 1, this._maxSimultaneousLights, this._usePhysicalLightFalloff);
 			}
 			
 			// View
@@ -1315,7 +1454,7 @@ class PBRBaseMaterial extends PushMaterial {
 			this._imageProcessingConfiguration.bind(this._activeEffect);
 			
 			// Log. depth
-			MaterialHelper.BindLogDepth(defines.LOGARITHMICDEPTH, this._activeEffect, scene);
+			MaterialHelper.BindLogDepth(defines.LOGARITHMICDEPTH == 1, this._activeEffect, scene);
 		}
 		
 		this._uniformBuffer.update();
@@ -1323,6 +1462,10 @@ class PBRBaseMaterial extends PushMaterial {
 		this._afterBind(mesh);
 	}
 
+	/**
+	 * Returns the animatable textures.
+	 * @returns - Array of animatable textures.
+	 */
 	public function getAnimatables():Array<IAnimatable> {
 		var results:Array<IAnimatable> = [];
 		
@@ -1368,6 +1511,10 @@ class PBRBaseMaterial extends PushMaterial {
 		return results;
 	}
 
+	/**
+	 * Returns the texture used for reflections.
+	 * @returns - Reflection texture if present.  Otherwise, returns the environment texture.
+	 */
 	private function _getReflectionTexture():BaseTexture {
 		if (this._reflectionTexture != null) {
 			return this._reflectionTexture;
@@ -1376,6 +1523,11 @@ class PBRBaseMaterial extends PushMaterial {
 		return this.getScene().environmentTexture;
 	}
 
+	/**
+	 * Returns the texture used for refraction or null if none is used.
+	 * @returns - Refection texture if present.  If no refraction texture and refraction 
+	 * is linked with transparency, returns environment texture.  Otherwise, returns null.
+	 */
 	private function _getRefractionTexture():BaseTexture {
 		if (this._refractionTexture != null) {
 			return this._refractionTexture;
@@ -1388,6 +1540,11 @@ class PBRBaseMaterial extends PushMaterial {
 		return null;
 	}
 
+	/**
+	 * Disposes the resources of the material.
+	 * @param forceDisposeEffect - Forces the disposal of effects.
+	 * @param forceDisposeTextures - Forces the disposal of all textures.
+	 */
 	override public function dispose(forceDisposeEffect:Bool = false, forceDisposeTextures:Bool = false) {
 		if (forceDisposeTextures) {
 			if (this._albedoTexture != null) {

@@ -1,8 +1,12 @@
 package com.babylonhx.states;
 
-import lime.graphics.opengl.GL;
-import lime.graphics.opengl.WebGL2Context;
+import com.babylonhx.utils.GL;
 
+#if (lime || openfl)
+typedef WebGL2Context = lime.graphics.opengl.WebGL2Context
+#elseif (js || purejs)
+typedef WebGL2Context = js.html.webgl.RenderingContext;
+#end
 
 /**
  * ...
@@ -124,10 +128,10 @@ import lime.graphics.opengl.WebGL2Context;
 		// Alpha blend
 		if (this._isAlphaBlendDirty) {
 			if (this._alphaBlend) {
-				gl.enable(gl.BLEND);
+				gl.enable(GL.BLEND);
 			} 
 			else {
-				gl.disable(gl.BLEND);
+				gl.disable(GL.BLEND);
 			}
 			
 			this._isAlphaBlendDirty = false;

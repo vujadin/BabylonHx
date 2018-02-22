@@ -12,8 +12,8 @@ import com.babylonhx.tools.EventState;
 import com.babylonhx.tools.Tools;
 import com.babylonhx.tools.hdr.CubeMapToSphericalPolynomialTools;
 
-import lime.utils.ArrayBufferView;
-import lime.utils.UInt8Array;
+import com.babylonhx.utils.typedarray.ArrayBufferView;
+import com.babylonhx.utils.typedarray.UInt8Array;
 
 /**
  * ...
@@ -87,6 +87,23 @@ import lime.utils.UInt8Array;
 	@serialize()
 	public var wAng:Float = 0;
 
+	/**
+	 * How a texture is mapped.
+	 *
+	 * | Value | Type                                | Description |
+	 * | ----- | ----------------------------------- | ----------- |
+	 * | 0     | EXPLICIT_MODE                       |             |
+	 * | 1     | SPHERICAL_MODE                      |             |
+	 * | 2     | PLANAR_MODE                         |             |
+	 * | 3     | CUBIC_MODE                          |             |
+	 * | 4     | PROJECTION_MODE                     |             |
+	 * | 5     | SKYBOX_MODE                         |             |
+	 * | 6     | INVCUBIC_MODE                       |             |
+	 * | 7     | EQUIRECTANGULAR_MODE                |             |
+	 * | 8     | FIXED_EQUIRECTANGULAR_MODE          |             |
+	 * | 9     | FIXED_EQUIRECTANGULAR_MIRRORED_MODE |             |
+	 */
+	
 	// BHX: must be property as get/set are overriden in child classes. Do not inline!
 	@serialize()
 	private var _wrapU:Int = Texture.WRAP_ADDRESSMODE;
@@ -97,6 +114,14 @@ import lime.utils.UInt8Array;
 	private function set_wrapU(value:Int):Int {
 		return this._wrapU = value;
 	}
+	
+	/**
+	 * | Value | Type               | Description |
+	 * | ----- | ------------------ | ----------- |
+	 * | 0     | CLAMP_ADDRESSMODE  |             |
+	 * | 1     | WRAP_ADDRESSMODE   |             |
+	 * | 2     | MIRROR_ADDRESSMODE |             |
+	 */
 
 	@serialize()
 	private var _wrapV:Int = Texture.WRAP_ADDRESSMODE;
@@ -164,13 +189,13 @@ import lime.utils.UInt8Array;
 	public var animations:Array<Animation> = [];
 	
 	/**
-	* An event triggered when the texture is disposed.
-	* @type {BABYLON.Observable}
-	*/
+	 * An event triggered when the texture is disposed.
+	 * @type {BABYLON.Observable}
+	 */
 	public var onDisposeObservable = new Observable<BaseTexture>();
 	private var _onDisposeObserver:Observer<BaseTexture>;
-	public var onDispose(never, set):BaseTexture->Null<EventState<BaseTexture>>->Void;
-	private function set_onDispose(callback:BaseTexture->Null<EventState<BaseTexture>>->Void):BaseTexture->Null<EventState<BaseTexture>>->Void {
+	public var onDispose(never, set):BaseTexture->Null<EventState>->Void;
+	private function set_onDispose(callback:BaseTexture->Null<EventState>->Void) {
 		if (this._onDisposeObserver != null) {
 			this.onDisposeObservable.remove(this._onDisposeObserver);
 		}

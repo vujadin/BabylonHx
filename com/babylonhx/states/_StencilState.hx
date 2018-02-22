@@ -1,7 +1,7 @@
 package com.babylonhx.states;
 
-import lime.graphics.opengl.GL;
-import lime.graphics.opengl.WebGL2Context;
+import com.babylonhx.states._AlphaState.WebGL2Context;
+import com.babylonhx.utils.GL;
 
 /**
  * ...
@@ -181,10 +181,10 @@ class _StencilState {
 		// Stencil test
 		if (this._isStencilTestDirty) {
 			if (this.stencilTest) {
-				gl.enable(gl.STENCIL_TEST);
+				gl.enable(GL.STENCIL_TEST);
 			} 
 			else {
-				gl.disable(gl.STENCIL_TEST);
+				gl.disable(GL.STENCIL_TEST);
 			}
 			this._isStencilTestDirty = false;
 		}

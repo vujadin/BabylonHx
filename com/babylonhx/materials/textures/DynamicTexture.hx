@@ -3,7 +3,7 @@ package com.babylonhx.materials.textures;
 import com.babylonhx.utils.Image;
 import com.babylonhx.engine.Engine;
 
-import lime.utils.UInt8Array;
+import com.babylonhx.utils.typedarray.UInt8Array;
 
 
 /**

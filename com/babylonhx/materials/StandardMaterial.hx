@@ -4,6 +4,7 @@ import com.babylonhx.engine.Engine;
 import com.babylonhx.lights.shadows.ShadowGenerator;
 import com.babylonhx.lights.IShadowLight;
 import com.babylonhx.materials.textures.BaseTexture;
+import com.babylonhx.materials.textures.CubeTexture;
 import com.babylonhx.materials.textures.RefractionTexture;
 import com.babylonhx.materials.textures.RenderTargetTexture;
 import com.babylonhx.materials.textures.ColorGradingTexture;
@@ -113,8 +114,7 @@ typedef SMD = StandardMaterialDefines
 	public var bumpTexture(get, set):BaseTexture;
 	function get_bumpTexture():BaseTexture {
 		return _bumpTexture;
-	}
-	
+	}	
 	function set_bumpTexture(value:BaseTexture):BaseTexture {
 		_markAllSubMeshesAsTexturesDirty();
 		_bumpTexture = value;
@@ -224,6 +224,17 @@ typedef SMD = StandardMaterialDefines
 	function set_disableLighting(value:Bool):Bool {
 		_markAllSubMeshesAsLightsDirty();
 		return _disableLighting = value;
+	}
+	
+	@serialize("useObjectSpaceNormalMap")
+    private var _useObjectSpaceNormalMap:Bool = false;
+    public var useObjectSpaceNormalMap(get, set):Bool;
+	function get_useObjectSpaceNormalMap():Bool {
+		return _useObjectSpaceNormalMap;
+	}
+	function set_useObjectSpaceNormalMap(value:Bool):Bool {
+		_markAllSubMeshesAsTexturesDirty();
+		return _useObjectSpaceNormalMap = value;
 	}
 
 	@serialize("useParallax")
@@ -669,8 +680,8 @@ typedef SMD = StandardMaterialDefines
 		// Textures
 		if (defines._areTexturesDirty) {
 			defines._needUVs = false;
-			defines.MAINUV1 = false;
-            defines.MAINUV2 = false;
+			defines.MAINUV1 = 0;
+            defines.MAINUV2 = 0;
 			if (scene.texturesEnabled) {
 				if (this._diffuseTexture != null && StandardMaterial.DiffuseTextureEnabled) {
 					if (!this._diffuseTexture.isReadyOrNotBlocking()) {
@@ -681,7 +692,7 @@ typedef SMD = StandardMaterialDefines
 					}
 				} 
 				else {
-					defines.DIFFUSE = false;
+					defines.DIFFUSE = 0;
 				}
 				
 				if (this._ambientTexture != null && StandardMaterial.AmbientTextureEnabled) {
@@ -693,7 +704,7 @@ typedef SMD = StandardMaterialDefines
 					}
 				} 
 				else {
-					defines.AMBIENT = false;
+					defines.AMBIENT = 0;
 				}
 				
 				if (this._opacityTexture != null && StandardMaterial.OpacityTextureEnabled) {
@@ -702,11 +713,11 @@ typedef SMD = StandardMaterialDefines
 					} 
 					else {
 						MaterialHelper.PrepareDefinesForMergedUV(this._opacityTexture, defines, "OPACITY");
-						defines.OPACITYRGB = this._opacityTexture.getAlphaFromRGB;
+						defines.OPACITYRGB = this._opacityTexture.getAlphaFromRGB ? 1 : 0;
 					}
 				} 
 				else {
-					defines.OPACITY = false;
+					defines.OPACITY = 0;
 				}
 				
 				if (this._reflectionTexture != null && StandardMaterial.ReflectionTextureEnabled) {
@@ -715,12 +726,12 @@ typedef SMD = StandardMaterialDefines
 					} 
 					else {
 						defines._needNormals = true;
-						defines.REFLECTION = true;
+						defines.REFLECTION = 1;
 						
-						defines.ROUGHNESS = (this._roughness > 0);
-						defines.REFLECTIONOVERALPHA = this._useReflectionOverAlpha;
-						defines.INVERTCUBICMAP = (this._reflectionTexture.coordinatesMode == Texture.INVCUBIC_MODE);
-						defines.REFLECTIONMAP_3D = this._reflectionTexture.isCube;
+						defines.ROUGHNESS = (this._roughness > 0) ? 1 : 0;
+						defines.REFLECTIONOVERALPHA = this._useReflectionOverAlpha ? 1 : 0;
+						defines.INVERTCUBICMAP = (this._reflectionTexture.coordinatesMode == Texture.INVCUBIC_MODE) ? 1 : 0;
+						defines.REFLECTIONMAP_3D = this._reflectionTexture.isCube ? 1 : 0;
 						
 						switch (this._reflectionTexture.coordinatesMode) {
 							case Texture.CUBIC_MODE, Texture.INVCUBIC_MODE:
@@ -751,10 +762,12 @@ typedef SMD = StandardMaterialDefines
 								defines.setReflectionMode("REFLECTIONMAP_MIRROREDEQUIRECTANGULAR_FIXED");
 								
 						}
+						
+						defines.USE_LOCAL_REFLECTIONMAP_CUBIC = untyped reflectionTexture.boundingBoxSize == null ? 0 : 1;
 					}
 				} 
 				else {
-					defines.REFLECTION = false;
+					defines.REFLECTION = 0;
 				}
 				
 				if (this._emissiveTexture != null && StandardMaterial.EmissiveTextureEnabled) {
@@ -766,7 +779,7 @@ typedef SMD = StandardMaterialDefines
 					}
 				} 
 				else {
-					defines.EMISSIVE = false;
+					defines.EMISSIVE = 0;
 				}
 				
 				if (this._lightmapTexture != null && StandardMaterial.LightmapTextureEnabled) {
@@ -775,11 +788,11 @@ typedef SMD = StandardMaterialDefines
 					} 
 					else {
 						MaterialHelper.PrepareDefinesForMergedUV(this._lightmapTexture, defines, "LIGHTMAP");
-						defines.USELIGHTMAPASSHADOWMAP = this._useLightmapAsShadowmap;
+						defines.USELIGHTMAPASSHADOWMAP = this._useLightmapAsShadowmap ? 1 : 0;
 					}
 				} 
 				else {
-					defines.LIGHTMAP = false;
+					defines.LIGHTMAP = 0;
 				}
 				
 				if (this._specularTexture != null && StandardMaterial.SpecularTextureEnabled) {
@@ -788,11 +801,11 @@ typedef SMD = StandardMaterialDefines
 					} 
 					else {
 						MaterialHelper.PrepareDefinesForMergedUV(this._specularTexture, defines, "SPECULAR");
-						defines.GLOSSINESS = this._useGlossinessFromSpecularMapAlpha;
+						defines.GLOSSINESS = this._useGlossinessFromSpecularMapAlpha ? 1 : 0;
 					}
 				} 
 				else {
-					defines.SPECULAR = false;
+					defines.SPECULAR = 0;
 				}
 				
 				if (scene.getEngine().getCaps().standardDerivatives && this._bumpTexture != null && StandardMaterial.BumpTextureEnabled) {
@@ -802,12 +815,14 @@ typedef SMD = StandardMaterialDefines
 					else {
 						MaterialHelper.PrepareDefinesForMergedUV(this._bumpTexture, defines, "BUMP");
 						
-						defines.PARALLAX = this._useParallax;
-						defines.PARALLAXOCCLUSION = this._useParallaxOcclusion;
+						defines.PARALLAX = this._useParallax ? 1 : 0;
+						defines.PARALLAXOCCLUSION = this._useParallaxOcclusion ? 1 : 0;
 					}
+					
+					defines.OBJECTSPACE_NORMALMAP = this._useObjectSpaceNormalMap ? 1 : 0;
 				} 
 				else {
-					defines.BUMP = false;
+					defines.BUMP = 0;
 				}
 				
 				if (this._refractionTexture != null && StandardMaterial.RefractionTextureEnabled) {
@@ -816,37 +831,37 @@ typedef SMD = StandardMaterialDefines
 					} 
 					else {
 						defines._needUVs = true;
-						defines.REFRACTION = true;
+						defines.REFRACTION = 1;
 						
-						defines.REFRACTIONMAP_3D = this._refractionTexture.isCube;
+						defines.REFRACTIONMAP_3D = this._refractionTexture.isCube ? 1 : 0;
 					}
 				} 
 				else {
-					defines.REFRACTION = false;
+					defines.REFRACTION = 0;
 				}
 				
-				defines.TWOSIDEDLIGHTING = !this._backFaceCulling && this._twoSidedLighting;
+				defines.TWOSIDEDLIGHTING = !this._backFaceCulling && this._twoSidedLighting ? 1 : 0;
 			} 
 			else {
-				defines.DIFFUSE = false;
-				defines.AMBIENT = false;
-				defines.OPACITY = false;
-				defines.REFLECTION = false;
-				defines.EMISSIVE = false;
-				defines.LIGHTMAP = false;
-				defines.BUMP = false;
-				defines.REFRACTION = false;
+				defines.DIFFUSE = 0;
+				defines.AMBIENT = 0;
+				defines.OPACITY = 0;
+				defines.REFLECTION = 0;
+				defines.EMISSIVE = 0;
+				defines.LIGHTMAP = 0;
+				defines.BUMP = 0;
+				defines.REFRACTION = 0;
 			}
 			
-			defines.ALPHAFROMDIFFUSE = this._shouldUseAlphaFromDiffuseTexture();
+			defines.ALPHAFROMDIFFUSE = this._shouldUseAlphaFromDiffuseTexture() ? 1 : 0;
 			
-			defines.EMISSIVEASILLUMINATION = this._useEmissiveAsIllumination;
+			defines.EMISSIVEASILLUMINATION = this._useEmissiveAsIllumination ? 1 : 0;
 			
-			defines.LINKEMISSIVEWITHDIFFUSE = this._linkEmissiveWithDiffuse;   
+			defines.LINKEMISSIVEWITHDIFFUSE = this._linkEmissiveWithDiffuse ? 1 : 0;   
 			
-			defines.SPECULAROVERALPHA = this._useSpecularOverAlpha;
+			defines.SPECULAROVERALPHA = this._useSpecularOverAlpha ? 1 : 0;
 			
-			defines.PREMULTIPLYALPHA = (this.alphaMode == Engine.ALPHA_PREMULTIPLIED || this.alphaMode == Engine.ALPHA_PREMULTIPLIED_PORTERDUFF);
+			defines.PREMULTIPLYALPHA = (this.alphaMode == Engine.ALPHA_PREMULTIPLIED || this.alphaMode == Engine.ALPHA_PREMULTIPLIED_PORTERDUFF) ? 1 : 0;
 		}
 		
 		if (defines._areImageProcessingDirty) {
@@ -864,24 +879,24 @@ typedef SMD = StandardMaterialDefines
 					this._emissiveFresnelParameters != null || this._refractionFresnelParameters != null ||
 					this._reflectionFresnelParameters != null) {
 						
-					defines.DIFFUSEFRESNEL = (this._diffuseFresnelParameters != null && this._diffuseFresnelParameters.isEnabled);
+					defines.DIFFUSEFRESNEL = (this._diffuseFresnelParameters != null && this._diffuseFresnelParameters.isEnabled) ? 1 : 0;
 					
-					defines.OPACITYFRESNEL = (this._opacityFresnelParameters != null && this._opacityFresnelParameters.isEnabled);
+					defines.OPACITYFRESNEL = (this._opacityFresnelParameters != null && this._opacityFresnelParameters.isEnabled) ? 1 : 0;
 					
-					defines.REFLECTIONFRESNEL = (this._reflectionFresnelParameters != null && this._reflectionFresnelParameters.isEnabled);
+					defines.REFLECTIONFRESNEL = (this._reflectionFresnelParameters != null && this._reflectionFresnelParameters.isEnabled) ? 1 : 0;
 					
-					defines.REFLECTIONFRESNELFROMSPECULAR = this._useReflectionFresnelFromSpecular;
+					defines.REFLECTIONFRESNELFROMSPECULAR = this._useReflectionFresnelFromSpecular ? 1 : 0;
 					
-					defines.REFRACTIONFRESNEL = (this._refractionFresnelParameters != null && this._refractionFresnelParameters.isEnabled);
+					defines.REFRACTIONFRESNEL = (this._refractionFresnelParameters != null && this._refractionFresnelParameters.isEnabled) ? 1 : 0;
 					
-					defines.EMISSIVEFRESNEL = (this._emissiveFresnelParameters != null && this._emissiveFresnelParameters.isEnabled);
+					defines.EMISSIVEFRESNEL = (this._emissiveFresnelParameters != null && this._emissiveFresnelParameters.isEnabled) ? 1 : 0;
 					
 					defines._needNormals = true;
-					defines.FRESNEL = true;
+					defines.FRESNEL = 1;
 				}
 			} 
 			else {
-				defines.FRESNEL = false;
+				defines.FRESNEL = 0;
 			}
 		}
 		
@@ -901,84 +916,84 @@ typedef SMD = StandardMaterialDefines
 			
 			// Fallbacks
 			var fallbacks = new EffectFallbacks();
-			if (defines.REFLECTION) {
+			if (defines.REFLECTION != 0) {
 				fallbacks.addFallback(0, "REFLECTION");
 			}
 			
-			if (defines.SPECULAR) {
+			if (defines.SPECULAR != 0) {
 				fallbacks.addFallback(0, "SPECULAR");
 			}
 			
-			if (defines.BUMP) {
+			if (defines.BUMP != 0) {
 				fallbacks.addFallback(0, "BUMP");
 			}
 			
-			if (defines.PARALLAX) {
+			if (defines.PARALLAX != 0) {
 				fallbacks.addFallback(1, "PARALLAX");
 			}
 			
-			if (defines.PARALLAXOCCLUSION) {
+			if (defines.PARALLAXOCCLUSION != 0) {
 				fallbacks.addFallback(0, "PARALLAXOCCLUSION");
 			}
 			
-			if (defines.SPECULAROVERALPHA) {
+			if (defines.SPECULAROVERALPHA != 0) {
 				fallbacks.addFallback(0, "SPECULAROVERALPHA");
 			}
 			
-			if (defines.FOG) {
+			if (defines.FOG != 0) {
 				fallbacks.addFallback(1, "FOG");
 			}
 			
-			if (defines.POINTSIZE) {
+			if (defines.POINTSIZE != 0) {
 				fallbacks.addFallback(0, "POINTSIZE");
 			}
 			
-			if (defines.LOGARITHMICDEPTH) {
+			if (defines.LOGARITHMICDEPTH != 0) {
 				fallbacks.addFallback(0, "LOGARITHMICDEPTH");
 			}
 			
 			MaterialHelper.HandleFallbacksForShadows(defines, fallbacks, this._maxSimultaneousLights);
 			
-			if (defines.SPECULARTERM) {
+			if (defines.SPECULARTERM != 0) {
 				fallbacks.addFallback(0, "SPECULARTERM");
 			}
 			
-			if (defines.DIFFUSEFRESNEL) {
+			if (defines.DIFFUSEFRESNEL != 0) {
 				fallbacks.addFallback(1, "DIFFUSEFRESNEL");
 			}
 			
-			if (defines.OPACITYFRESNEL) {
+			if (defines.OPACITYFRESNEL != 0) {
 				fallbacks.addFallback(2, "OPACITYFRESNEL");
 			}
 			
-			if (defines.REFLECTIONFRESNEL) {
+			if (defines.REFLECTIONFRESNEL != 0) {
 				fallbacks.addFallback(3, "REFLECTIONFRESNEL");
 			}
 			
-			if (defines.EMISSIVEFRESNEL) {
+			if (defines.EMISSIVEFRESNEL != 0) {
 				fallbacks.addFallback(4, "EMISSIVEFRESNEL");
 			}
 			
-			if (defines.FRESNEL) {
+			if (defines.FRESNEL != 0) {
 				fallbacks.addFallback(4, "FRESNEL");
 			}
 			
 			//Attributes
 			var attribs = [VertexBuffer.PositionKind];
 			
-			if (defines.NORMAL) {
+			if (defines.NORMAL != 0) {
 				attribs.push(VertexBuffer.NormalKind);
 			}
 			
-			if (defines.UV1) {
+			if (defines.UV1 != 0) {
 				attribs.push(VertexBuffer.UVKind);
 			}
 			
-			if (defines.UV2) {
+			if (defines.UV2 != 0) {
 				attribs.push(VertexBuffer.UV2Kind);
 			}
 			
-			if (defines.VERTEXCOLOR) {
+			if (defines.VERTEXCOLOR != 0) {
 				attribs.push(VertexBuffer.ColorKind);
 			}
 			
@@ -992,8 +1007,9 @@ typedef SMD = StandardMaterialDefines
 				"vFogInfos", "vFogColor", "pointSize",
 				"vDiffuseInfos", "vAmbientInfos", "vOpacityInfos", "vReflectionInfos", "vEmissiveInfos", "vSpecularInfos", "vBumpInfos", "vLightmapInfos", "vRefractionInfos",
 				"mBones",
-				"vClipPlane", "diffuseMatrix", "ambientMatrix", "opacityMatrix", "reflectionMatrix", "emissiveMatrix", "specularMatrix", "bumpMatrix", "lightmapMatrix", "refractionMatrix",
+				"vClipPlane", "diffuseMatrix", "ambientMatrix", "opacityMatrix", "reflectionMatrix", "emissiveMatrix", "specularMatrix", "bumpMatrix", "normalMatrix", "lightmapMatrix", "refractionMatrix",
 				"diffuseLeftColor", "diffuseRightColor", "opacityParts", "reflectionLeftColor", "reflectionRightColor", "emissiveLeftColor", "emissiveRightColor", "refractionLeftColor", "refractionRightColor",
+				"vReflectionPosition", "vReflectionSize",
 				"logarithmicDepthConstant", "vTangentSpaceParams"
 			];
 			
@@ -1062,6 +1078,8 @@ typedef SMD = StandardMaterialDefines
 		this._uniformBuffer.addUniform("vAmbientInfos", 2);
 		this._uniformBuffer.addUniform("vOpacityInfos", 2);
 		this._uniformBuffer.addUniform("vReflectionInfos", 2);
+		this._uniformBuffer.addUniform("vReflectionPosition", 3);
+        this._uniformBuffer.addUniform("vReflectionSize", 3);
 		this._uniformBuffer.addUniform("vEmissiveInfos", 2);
 		this._uniformBuffer.addUniform("vLightmapInfos", 2);
 		this._uniformBuffer.addUniform("vSpecularInfos", 2);
@@ -1117,6 +1135,12 @@ typedef SMD = StandardMaterialDefines
 		// Matrices        
 		this.bindOnlyWorldMatrix(world);
 		
+		// Normal Matrix
+        if (defines.OBJECTSPACE_NORMALMAP > 0) {
+            world.toNormalMatrix(this._normalMatrix);
+            this.bindOnlyNormalMatrix(this._normalMatrix);               
+        }
+		
 		var mustRebind = this._mustRebind(scene, effect, mesh.visibility);
 		
 		// Bones
@@ -1126,7 +1150,7 @@ typedef SMD = StandardMaterialDefines
 			
 			this.bindViewProjection(effect);
 			if (!this._uniformBuffer.useUbo || !this.isFrozen || !this._uniformBuffer.isSync) {
-				if (StandardMaterial.FresnelEnabled && defines.FRESNEL) {
+				if (StandardMaterial.FresnelEnabled && (defines.FRESNEL != 0)) {
 					// Fresnel
 					if (this.diffuseFresnelParameters != null && this.diffuseFresnelParameters.isEnabled) {
 						this._uniformBuffer.updateColor4("diffuseLeftColor", this.diffuseFresnelParameters.leftColor, this.diffuseFresnelParameters.power);
@@ -1173,6 +1197,13 @@ typedef SMD = StandardMaterialDefines
 					if (this._reflectionTexture != null && StandardMaterial.ReflectionTextureEnabled) {
 						this._uniformBuffer.updateFloat2("vReflectionInfos", this._reflectionTexture.level, this.roughness);
 						this._uniformBuffer.updateMatrix("reflectionMatrix", this._reflectionTexture.getReflectionTextureMatrix());
+						
+						if (untyped this._reflectionTexture.boundingBoxSize != null) {
+                            var cubeTexture:CubeTexture = cast this._reflectionTexture;
+							
+                            this._uniformBuffer.updateVector3("vReflectionPosition", cubeTexture.boundingBoxPosition);
+                            this._uniformBuffer.updateVector3("vReflectionSize", cubeTexture.boundingBoxSize);
+                        }
 					}
 					
 					if (this._emissiveTexture != null && StandardMaterial.EmissiveTextureEnabled) {
@@ -1220,7 +1251,7 @@ typedef SMD = StandardMaterialDefines
 					this._uniformBuffer.updateFloat("pointSize", this.pointSize);
 				}
 				
-				if (defines.SPECULARTERM) {
+				if (defines.SPECULARTERM != 0) {
 					this._uniformBuffer.updateColor4("vSpecularColor", this.specularColor, this.specularPower);
 				}
 				this._uniformBuffer.updateColor3("vEmissiveColor", this.emissiveColor);
@@ -1291,7 +1322,7 @@ typedef SMD = StandardMaterialDefines
 		if (mustRebind || !this.isFrozen) {
 			// Lights
 			if (scene.lightsEnabled && !this._disableLighting) {
-				MaterialHelper.BindLights(scene, mesh, effect, defines.SPECULARTERM, this._maxSimultaneousLights);
+				MaterialHelper.BindLights(scene, mesh, effect, defines.SPECULARTERM == 1, this._maxSimultaneousLights);
 			}
 			
 			// View
@@ -1308,7 +1339,7 @@ typedef SMD = StandardMaterialDefines
 			}
 			
 			// Log. depth
-			MaterialHelper.BindLogDepth(defines.LOGARITHMICDEPTH, effect, scene);
+			MaterialHelper.BindLogDepth(defines.LOGARITHMICDEPTH == 1, effect, scene);
 			
 			// image processing
 			if (!this._imageProcessingConfiguration.applyByPostProcess) {

@@ -17,8 +17,8 @@ import com.babylonhx.tools.Observable;
 import com.babylonhx.tools.Observer;
 import com.babylonhx.tools.EventState;
 
-import lime.utils.UInt32Array;
-import lime.utils.Float32Array;
+import com.babylonhx.utils.typedarray.UInt32Array;
+import com.babylonhx.utils.typedarray.Float32Array;
 
 
 /**
@@ -46,8 +46,8 @@ import lime.utils.Float32Array;
 	public var onDisposeObservable = new Observable<SpriteManager>();
 
 	private var _onDisposeObserver:Observer<SpriteManager>;
-	public var onDispose(never, set):SpriteManager->Null<EventState<SpriteManager>>->Void;
-	private function set_onDispose(callback:SpriteManager->Null<EventState<SpriteManager>>->Void):SpriteManager->Null<EventState<SpriteManager>>->Void {
+	public var onDispose(never, set):SpriteManager->Null<EventState>->Void;
+	private function set_onDispose(callback:SpriteManager->Null<EventState>->Void) {
 		if (this._onDisposeObserver != null) {
 			this.onDisposeObservable.remove(this._onDisposeObserver);
 		}

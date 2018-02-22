@@ -4,9 +4,9 @@ import com.babylonhx.math.RGBA;
 import com.babylonhx.math.Perlin;
 import com.babylonhx.math.Tools;
 
-import lime.utils.ArrayBuffer;
-import lime.utils.ArrayBufferView;
-import lime.utils.UInt8Array;
+import com.babylonhx.utils.typedarray.ArrayBuffer;
+import com.babylonhx.utils.typedarray.ArrayBufferView;
+import com.babylonhx.utils.typedarray.UInt8Array;
 
 
 /**

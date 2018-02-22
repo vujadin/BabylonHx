@@ -72,23 +72,47 @@ class NodeCache {
  */
 @:expose('BABYLON.Node') class Node implements ISmartArrayCompatible {
 	
+	/**
+	 * Gets or sets the name of the node
+	 */
 	@serialize()
 	public var name:String;
 	
+	/**
+	 * Gets or sets the id of the node
+	 */
 	@serialize()
 	public var id:String;
 	
+	/**
+	 * Gets or sets the unique id of the node
+	 */
 	@serialize()
 	public var uniqueId:Int;
 	
+	/**
+	 * Gets or sets a string used to store user defined state for the node
+	 */
 	@serialize()
 	public var state:String = "";
 	
+	/**
+	 * Gets or sets an object used to store user defined information for the node
+	 */
 	@serialize()
     public var metadata:Dynamic = null;
 	
+	/**
+	 * Gets or sets a boolean used to define if the node must be serialized
+	 */
 	public var doNotSerialize:Bool = false;
+	
+	/** @ignore */
+	public var _isDisposed:Bool = false;
 
+	/**
+	 * Gets a list of {BABYLON.Animation} associated with the node
+	 */
 	public var animations:Array<Animation> = [];
 	private var _ranges:Map<String, AnimationRange> = new Map();
 
@@ -110,6 +134,18 @@ class NodeCache {
 	private var _parentNode:Node = null;
 	private var _children:Array<Node>;
 	
+	/**
+	 * Gets a boolean indicating if the node has been disposed
+	 * @returns true if the node was disposed
+	 */
+	public var isDisposed(get, never):Bool;
+	inline function get_isDisposed():Bool {
+		return this._isDisposed;
+	} 
+	
+	/**
+	 * Gets or sets the parent of the node
+	 */
 	public var parent(get, set):Node;
 	private function set_parent(parent:Node):Node {
 		if (this._parentNode == parent) {
@@ -141,6 +177,10 @@ class NodeCache {
 		return this._parentNode;
 	}
 	
+	/**
+	 * Gets a string idenfifying the name of the class
+	 * @returns "Node" string
+	 */
 	public function getClassName():String {
 		return "Node";
 	}
@@ -151,8 +191,11 @@ class NodeCache {
 	*/
 	public var onDisposeObservable:Observable<Node> = new Observable<Node>();
 	private var _onDisposeObserver:Observer<Node>;
-	public var onDispose(never, set):Node->Null<EventState<Node>>->Void;
-	private function set_onDispose(callback:Node->Null<EventState<Node>>->Void):Node->Null<EventState<Node>>->Void {
+	public var onDispose(never, set):Node->Null<EventState>->Void;
+	/**
+	 * Sets a callback that will be raised when the node will be disposed
+	 */
+	private function set_onDispose(callback:Node->Null<EventState>->Void) {
 		if (this._onDisposeObserver != null) {
 			this.onDisposeObservable.remove(this._onDisposeObserver);
 		}
@@ -167,7 +210,7 @@ class NodeCache {
 	
 	
 	/**
-	 * @constructor
+	 * Creates a new Node
 	 * @param {string} name - the name and id to be given to this node
 	 * @param {BABYLON.Scene} the scene this node will be added to
 	 */
@@ -179,10 +222,18 @@ class NodeCache {
 		this._initCache();
 	}
 	
+	/**
+	 * Gets the scene of the node
+	 * @returns a {BABYLON.Scene}
+	 */
 	inline public function getScene():Scene {
 		return this._scene;
 	}
 
+	/**
+	 * Gets the engine of the node
+	 * @returns a {BABYLON.Engine}
+	 */
 	inline public function getEngine():Engine {
 		return this._scene.getEngine();
 	}
@@ -192,6 +243,12 @@ class NodeCache {
 	public var behaviors(get, never):Array<Behavior<Node>>;
 
 	var observer:Observer<Scene> = null;
+	/**
+	 * Attach a behavior to the node
+	 * @see http://doc.babylonjs.com/features/behaviour
+	 * @param behavior defines the behavior to attach
+	 * @returns the current Node
+	 */
 	public function addBehavior(behavior:Behavior<Node>):Node {
 		var index = this._behaviors.indexOf(behavior);
 		
@@ -218,6 +275,12 @@ class NodeCache {
 		return this;
 	}
 
+	/**
+	 * Remove an attached behavior
+	 * @see http://doc.babylonjs.com/features/behaviour
+	 * @param behavior defines the behavior to attach
+	 * @returns the current Node
+	 */
 	public function removeBehavior(behavior:Behavior<Node>):Node {
 		var index = this._behaviors.indexOf(behavior);
 		
@@ -231,10 +294,20 @@ class NodeCache {
 		return this;
 	}     
 	
+	/**
+	 * Gets the list of attached behaviors
+	 * @see http://doc.babylonjs.com/features/behaviour
+	 */
 	inline private function get_behaviors():Array<Behavior<Node>> {
 		return this._behaviors;
 	}
 
+	/**
+	 * Gets an attached behavior by name
+	 * @param name defines the name of the behavior to look for
+	 * @see http://doc.babylonjs.com/features/behaviour
+	 * @returns null if behavior was not found else the requested behavior
+	 */
 	public function getBehaviorByName(name:String):Behavior<Node> {
 		for (behavior in this._behaviors) {
 			if (behavior.name == name) {
@@ -245,8 +318,12 @@ class NodeCache {
 		return null;
 	}
 
-	// override it in derived class
+	/**
+	 * Returns the world matrix of the node
+	 * @returns a matrix containing the node's world matrix
+	 */
 	public function getWorldMatrix():Matrix {
+		// override it in derived class
 		return Matrix.Identity();
 	}
 	
@@ -323,7 +400,7 @@ class NodeCache {
 	 * Is this node ready to be used/rendered
 	 * @return {boolean} is it ready
 	 */
-	public function isReady(forceInstanceSupport:Bool = false):Bool {
+	public function isReady(completeCheck:Bool = false, forceInstanceSupport:Bool = false):Bool {
 		return this._isReady;
 	}
 
@@ -407,13 +484,10 @@ class NodeCache {
 	}
 
 	/**
-	 * Will return all nodes that have this node as parent.
-	 * @param {boolean} directDecendantsOnly if true only direct descendants of 'this' will be considered,
-	 * if false direct and also indirect (children of children, an so on in a recursive manner) descendants
-	 * of 'this' will be considered.
-     * @param predicate: an optional predicate that will be called on every evaluated children, the
-	 * predicate must return true for a given child to be part of the result, otherwise it will be ignored.
-	 * @return {BABYLON.Node[]} all children nodes of all types.
+	 * Will return all nodes that have this node as ascendant
+	 * @param directDescendantsOnly defines if true only direct descendants of 'this' will be considered, if false direct and also indirect (children of children, an so on in a recursive manner) descendants of 'this' will be considered
+	 * @param predicate defines an optional predicate that will be called on every evaluated child, the predicate must return true for a given child to be part of the result, otherwise it will be ignored
+	 * @return all children nodes of all types
 	 */
 	inline public function getDescendants(directDescendantsOnly:Bool = false, ?predicate:Node->Bool):Array<Node> {
 		var results:Array<Node> = [];
@@ -424,7 +498,10 @@ class NodeCache {
 	}
 	
 	/**
-	 * Get all child-meshes of this node.
+	 * Get all child-transformNodes of this node
+	 * @param directDescendantsOnly defines if true only direct descendants of 'this' will be considered, if false direct and also indirect (children of children, an so on in a recursive manner) descendants of 'this' will be considered
+	 * @param predicate defines an optional predicate that will be called on every evaluated child, the predicate must return true for a given child to be part of the result, otherwise it will be ignored
+	 * @returns an array of {BABYLON.TransformNode}
 	 */
 	public function getChildMeshes(directDecendantsOnly:Bool = false, ?predicate:Node->Bool):Array<AbstractMesh> {
 		var results:Array<AbstractMesh> = [];
@@ -437,7 +514,9 @@ class NodeCache {
 	}
 	
 	/**
-	 * Get all child-transformNodes of this node.
+	 * Get all direct children of this node
+	 * @param predicate defines an optional predicate that will be called on every evaluated child, the predicate must return true for a given child to be part of the result, otherwise it will be ignored
+	 * @returns an array of {BABYLON.Node}
 	 */
 	public function getChildTransformNodes(directDescendantsOnly:Bool = false, ?predicate:Node->Bool):Array<TransformNode> {
 		var results:Array<TransformNode> = [];
@@ -471,6 +550,12 @@ class NodeCache {
 		}
 	}
 	
+	/**
+	 * Creates an animation range for this node
+	 * @param name defines the name of the range
+	 * @param from defines the starting key
+	 * @param to defines the end key
+	 */
 	public function getAnimationByName(name:String):Animation {
 		for (i in 0...this.animations.length) {
 			var animation = this.animations[i];
@@ -495,6 +580,11 @@ class NodeCache {
 		}
 	}
 
+	/**
+	 * Delete a specific animation range
+	 * @param name defines the name of the range to delete
+	 * @param deleteFrames defines if animation frames from the range must be deleted as well
+	 */
 	public function deleteAnimationRange(name:String, deleteFrames:Bool = true) {
 		for (i in 0...this.animations.length) {
 			if (this.animations[i] != null) {
@@ -505,10 +595,23 @@ class NodeCache {
 		this._ranges.remove(name);
 	}
 
+	/**
+	 * Get an animation range by name
+	 * @param name defines the name of the animation range to look for
+	 * @returns null if not found else the requested animation range
+	 */
 	public function getAnimationRange(name:String):AnimationRange {
 		return this._ranges[name];
 	}
 
+	/**
+	 * Will start the animation sequence
+	 * @param name defines the range frames for animation sequence
+	 * @param loop defines if the animation should loop (false by default)
+	 * @param speedRatio defines the speed factor in which to run the animation (1 by default)
+	 * @param onAnimationEnd defines a function to be executed when the animation ended (undefined by default)
+	 * @returns the object created for this animation. If range does not exist, it will return null
+	 */
 	public function beginAnimation(name:String, loop:Bool = false, speedRatio:Float = 1.0, ?onAnimationEnd:Void->Void):Animatable {
 		var range = this.getAnimationRange(name);
 		
@@ -519,6 +622,10 @@ class NodeCache {
 		return this._scene.beginAnimation(this, cast range.from, cast range.to, loop, speedRatio, onAnimationEnd);
 	}
 	
+	/**
+	 * Serialize animation ranges into a JSON compatible object
+	 * @returns serialization object
+	 */
 	public function serializeAnimationRanges() {
 		var serializationRanges:Array<Dynamic> = [];
 		for (name in this._ranges.keys()) {
@@ -536,9 +643,14 @@ class NodeCache {
 		return serializationRanges;
 	}
 	
-	// override it in derived class
+	/**
+	 * Computes the world matrix of the node
+	 * @param force defines if the cache version should be invalidated forcing the world matrix to be created from scratch
+	 * @returns the world matrix
+	 */
     public function computeWorldMatrix(force:Bool = false):Matrix {
-        return Matrix.Identity();
+        // override it in derived class
+		return Matrix.Identity();
     }
 	
 	// BHX: doNotRecurse !!
@@ -555,8 +667,15 @@ class NodeCache {
 		}
 		
 		this._behaviors = [];
+		this._isDisposed = true;
 	}
 	
+	/**
+	 * Parse animation range data from a serialization object and store them into a given node
+	 * @param node defines where to store the animation ranges
+	 * @param parsedNode defines the serialization object to read data from
+	 * @param scene defines the hosting scene
+	 */
 	public static function ParseAnimationRanges(node:Node, parsedNode:Dynamic, scene:Scene) {
 		if (parsedNode.ranges != null){
 		    for (index in 0...parsedNode.ranges.length) {

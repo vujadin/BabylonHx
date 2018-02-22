@@ -12,14 +12,19 @@ import com.babylonhx.math.Tools;
  * ...
  * @author Krtolica Vujadin
  */
-
+/**
+ * The Blur Post Process which blurs an image based on a kernel and direction. 
+ * Can be used twice in x and y directions to perform a guassian blur in two passes.
+ */
 @:expose('BABYLON.BlurPostProcess') class BlurPostProcess extends PostProcess {
 	
+	/** The direction in which to blur the image. */
 	public var direction:Vector2;
 	
 	private var _kernel:Float;
 	private var _idealKernel:Float;
 	private var _packedFloat:Bool = false;
+	private var _staticDefines:String = "";
 
 	/**
 	 * Sets the length in pixels of the blur sample region
@@ -63,9 +68,22 @@ import com.babylonhx.math.Tools;
 	}
 
 	
-	public function new(name:String, direction:Vector2, kernel:Float, options:Dynamic, camera:Camera = null, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, ?engine:Engine, reusable:Bool = false, textureType:Int = Engine.TEXTURETYPE_UNSIGNED_INT) {
+	/**
+	 * Creates a new instance of @see BlurPostProcess
+	 * @param name The name of the effect.
+	 * @param direction The direction in which to blur the image.
+	 * @param kernel The size of the kernel to be used when computing the blur. eg. Size of 3 will blur the center pixel by 2 pixels surrounding it.
+	 * @param options The required width/height ratio to downsize to before computing the render pass. (Use 1.0 for full size)
+	 * @param camera The camera to apply the render pass to.
+	 * @param samplingMode The sampling mode to be used when computing the pass. (default: 0)
+	 * @param engine The engine which the post process will be applied. (default: current engine)
+	 * @param reusable If the post process can be reused on the same frame. (default: false)
+	 * @param textureType Type of textures used when performing the post process. (default: 0)
+	 */
+	public function new(name:String, direction:Vector2, kernel:Float, options:Dynamic, camera:Camera = null, samplingMode:Int = Texture.BILINEAR_SAMPLINGMODE, ?engine:Engine, reusable:Bool = false, textureType:Int = Engine.TEXTURETYPE_UNSIGNED_INT, defines:String = "") {
 		this.direction = direction;
 		super(name, "kernelBlur", ["delta", "direction"], null, options, camera, samplingMode, engine, reusable, null, textureType, "kernelBlur", {varyingCount: 0, depCount: 0}, true);
+		this._staticDefines = defines;
 		this.onApplyObservable.add(function(effect:Effect, _) {
 			effect.setFloat2('delta', (1 / this.width) * this.direction.x, (1 / this.height) * this.direction.y);
 		});
@@ -146,6 +164,7 @@ import com.babylonhx.math.Tools;
 		var varyingCount = Math.floor(Math.min(offsets.length, freeVaryingVec2));
 		
 		var defines = "";
+		defines += this._staticDefines;
 		for (i in 0...varyingCount) {
 			defines += '#define KERNEL_OFFSET${i} ${this._glslFloat(offsets[i])}\r\n';
 			defines += '#define KERNEL_WEIGHT${i} ${this._glslFloat(weights[i])}\r\n';

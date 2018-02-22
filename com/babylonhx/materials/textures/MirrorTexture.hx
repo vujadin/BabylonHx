@@ -149,7 +149,7 @@ import com.babylonhx.postprocess.BlurPostProcess;
 			this._blurX.autoClear = false;
 			
 			if (this._blurRatio == 1 && this.samples < 2 && this._texture != null) {
-				this._blurX.outputTexture = this._texture;
+				this._blurX.inputTexture = this._texture;
 			} 
 			else {
 				this._blurX.alwaysForcePOT = true;
