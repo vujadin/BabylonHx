@@ -1247,12 +1247,12 @@ import com.babylonhx.utils.GL.GLVertexArrayObject;
 			if (parsedGeometry.matricesWeights != null) {
 				Geometry._CleanMatricesWeights(parsedGeometry, mesh);
 				var mwgh:Array<Float> = cast parsedGeometry.matricesWeights;
-                mesh.setVerticesData(VertexBuffer.MatricesWeightsKind, mwgh, parsedGeometry.matricesWeights._updatable);
+                mesh.setVerticesData(VertexBuffer.MatricesWeightsKind, new Float32Array(mwgh), parsedGeometry.matricesWeights._updatable);
 			}
 			
 			if (parsedGeometry.matricesWeightsExtra != null) {
 				var mwghe:Array<Float> = cast parsedGeometry.matricesWeightsExtra;
-                mesh.setVerticesData(VertexBuffer.MatricesWeightsExtraKind, mwghe, parsedGeometry.matricesWeights._updatable);
+                mesh.setVerticesData(VertexBuffer.MatricesWeightsExtraKind, new Float32Array(mwghe), parsedGeometry.matricesWeights._updatable);
             }
 			
 			var idc:Array<Int> = cast parsedGeometry.indices; 	

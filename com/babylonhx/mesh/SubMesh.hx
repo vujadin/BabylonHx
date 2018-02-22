@@ -155,12 +155,6 @@ import com.babylonhx.utils.typedarray.Int32Array;
 			extend = { minimum: this._renderingMesh.getBoundingInfo().minimum.clone(), maximum: this._renderingMesh.getBoundingInfo().maximum.clone() };
 		}
 		else {
-			trace(data);
-			trace(indices);
-			trace(this.indexStart);
-			trace(this.indexCount);
-			trace(this._renderingMesh.geometry);
-			trace(this._renderingMesh.geometry.boundingBias);
 			extend = MathTools.ExtractMinAndMaxIndexed(data, indices, this.indexStart, this.indexCount, this._renderingMesh.geometry.boundingBias);
 		}
 		

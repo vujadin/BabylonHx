@@ -919,8 +919,6 @@ import com.babylonhx.utils.typedarray.Int32Array;
      * If the `kind` is the `PositionKind`, the mesh `BoundingInfo` is renewed, so the bounding box and sphere, and the mesh World Matrix is recomputed.
      */
 	override public function setVerticesData(kind:String, data:Float32Array, updatable:Bool = false, ?stride:Int) {
-		trace(kind);
-		trace(data);
 		if (this._geometry == null) {
 			var vertexData = new VertexData();
 			vertexData.set(data, kind);
